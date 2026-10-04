@@ -51,8 +51,14 @@ for /f "usebackq delims=" %%D in (`powershell -command "(New-Object -ComObject S
 REM Crear carpeta interna del actualizador
 if not exist "%DOWNLOADS%\W3Updater" mkdir "%DOWNLOADS%\W3Updater"
 
+REM Carpeta del juego (W3_JUEGO solo se define para probar el actualizador contra otra carpeta)
+if defined W3_JUEGO (set "JUEGO=%W3_JUEGO%") else (set "JUEGO=C:\Warlords3")
+
+REM Lista de parches publicada (W3_PARCHES_URL solo para pruebas)
+if defined W3_PARCHES_URL (set "PARCHES_URL=%W3_PARCHES_URL%") else (set "PARCHES_URL=https://github.com/elcoprofago/Warlords-updater/releases/download/Actualizador/PARCHES.txt")
+
 REM Crear carpeta del juego si no existe
-if not exist "C:\Warlords3" mkdir "C:\Warlords3"
+if not exist "%JUEGO%" mkdir "%JUEGO%"
 
 REM Mostrar banner
 color 0E
@@ -78,8 +84,9 @@ color 0C
 echo 6) *** ACTUALIZAR TODO EL JUEGO ***
 color 0A
 echo 7) NUEVA VERSION DEL VALIDATOR
+echo 8) PARCHES
 color 0C
-echo 8) SALIR
+echo 9) SALIR
 color 07
 set /p choices="Opciones: "
 
@@ -101,12 +108,13 @@ if "%choices%"=="6" goto FULLUPDATE
 REM Procesar opciones
 for %%c in (%choices%) do (
     if "%%c"=="1" call :UPDATE ARMY army_url.txt
-    if "%%c"=="2" call :UPDATE SPELL spell_url.txt
+    if "%%c"=="2" call :UPDATE SPELL spells_url.txt
     if "%%c"=="3" call :UPDATE HERO hero_url.txt
     if "%%c"=="4" call :UPDATE ESCEN escen_url.txt
     if "%%c"=="5" call :UPDATE ITEMS items_url.txt
     if "%%c"=="7" goto :VALIDATOR
-    if "%%c"=="8" goto :EXIT
+    if "%%c"=="8" goto :PARCHES
+    if "%%c"=="9" goto :EXIT
 )
 
 pause
@@ -121,7 +129,7 @@ REM ============================================================
 color 0C
 echo --------------------------------
 echo Vas a actualizar TODO el juego.
-echo Esto reemplazara completamente la carpeta C:\Warlords3
+echo Esto reemplazara completamente la carpeta %JUEGO%
 echo.
 set /p confirm="Confirmas la operacion? (Y/n): "
 set confirm=%confirm:"=%
@@ -177,7 +185,7 @@ if not exist "%zipfile%" (
 )
 
 echo Descomprimiendo...
-powershell -command "Expand-Archive -Force '%zipfile%' 'C:\Warlords3\'"
+powershell -command "Expand-Archive -Force '%zipfile%' '%JUEGO%\'"
 
 del /f /q "%zipfile%"
 
@@ -240,7 +248,7 @@ if not exist "%zipfile%" (
 )
 
 echo Descomprimiendo...
-powershell -command "Expand-Archive -Force '%zipfile%' 'C:\Warlords3'"
+powershell -command "Expand-Archive -Force '%zipfile%' '%JUEGO%'"
 
 del /f /q "%zipfile%"
 
@@ -275,6 +283,116 @@ color 0A
 echo VALIDATOR actualizado !!
 pause
 goto MENU
+
+
+REM ============================================================
+REM ==================== PARCHES ================================
+REM ============================================================
+REM PARCHES.txt (asset de la release "Actualizador"), una linea por parche:
+REM   ID|VERSION|SHA256 del zip|URL del zip|DESCRIPCION
+REM La version instalada de cada parche queda en %JUEGO%\PARCHES\<ID>.txt
+
+:PARCHES
+color 0B
+echo Verificando conexion...
+ping -n 1 github.com >nul || (color 0C & echo ERROR: Sin conexion & pause & goto MENU)
+
+set "manifest=%DOWNLOADS%\W3Updater\PARCHES.txt"
+if exist "%manifest%" del /f /q "%manifest%"
+echo Descargando lista de parches...
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%PARCHES_URL%' -OutFile '%manifest%'" 2>nul
+if not exist "%manifest%" (
+    color 0C
+    echo ERROR: No se pudo descargar la lista de parches.
+    pause
+    goto MENU
+)
+
+:PARCHES_MENU
+cls
+color 0E
+echo =================================
+echo PARCHES DISPONIBLES
+echo =================================
+set n=0
+for /f "usebackq eol=# tokens=1-5 delims=|" %%a in ("%manifest%") do (
+    set /a n+=1
+    set "P_ID_!n!=%%a"
+    set "P_VER_!n!=%%b"
+    set "P_SHA_!n!=%%c"
+    set "P_URL_!n!=%%d"
+    set "estado=no instalado"
+    if exist "%JUEGO%\PARCHES\%%a.txt" (
+        set "inst="
+        set /p inst=<"%JUEGO%\PARCHES\%%a.txt"
+        if "!inst!"=="%%b" (set "estado=instalado") else (set "estado=instalada la v!inst!, hay version nueva")
+    )
+    echo !n!^) %%e  [v%%b - !estado!]
+)
+if %n%==0 (
+    echo No hay parches publicados todavia.
+    pause
+    goto MENU
+)
+echo 0) VOLVER
+set "sel="
+set /p sel="Parche a instalar: "
+if "%sel%"=="0" goto MENU
+set "valido="
+for /l %%i in (1,1,%n%) do if "%sel%"=="%%i" set valido=1
+if not defined valido (
+    color 0C
+    echo Opcion invalida.
+    pause
+    goto PARCHES_MENU
+)
+call :INSTALAR_PARCHE %sel%
+pause
+goto PARCHES_MENU
+
+:INSTALAR_PARCHE
+set "id=!P_ID_%1!"
+set "ver=!P_VER_%1!"
+set "sha=!P_SHA_%1!"
+set "url=!P_URL_%1!"
+set "zipfile=%DOWNLOADS%\W3Updater\PARCHE-!id!.zip"
+
+color 0B
+echo --------------------------------
+echo Descargando parche !id! v!ver!...
+if exist "!zipfile!" del /f /q "!zipfile!"
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '!url!' -OutFile '!zipfile!'" 2>nul
+if not exist "!zipfile!" (
+    color 0C
+    echo ERROR: No se pudo descargar el parche.
+    goto :eof
+)
+
+REM El zip tiene que ser exactamente el publicado: si no coincide no se toca el juego
+set "got="
+for /f "usebackq delims=" %%H in (`powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath '!zipfile!').Hash"`) do set "got=%%H"
+if /I not "!got!"=="!sha!" (
+    color 0C
+    echo ERROR: El archivo descargado no coincide con el publicado. No se instala.
+    del /f /q "!zipfile!"
+    goto :eof
+)
+
+echo Instalando en %JUEGO%...
+powershell -NoProfile -Command "try { Expand-Archive -Force -LiteralPath '!zipfile!' -DestinationPath '%JUEGO%' -ErrorAction Stop } catch { Write-Host $_; exit 1 }"
+if errorlevel 1 (
+    color 0C
+    echo ERROR: No se pudo descomprimir el parche.
+    del /f /q "!zipfile!"
+    goto :eof
+)
+del /f /q "!zipfile!"
+
+if not exist "%JUEGO%\PARCHES" mkdir "%JUEGO%\PARCHES"
+>"%JUEGO%\PARCHES\!id!.txt" echo !ver!
+color 0A
+echo Parche !id! v!ver! instalado correctamente.
+goto :eof
 
 
 :EXIT

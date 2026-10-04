@@ -1,0 +1,42 @@
+#!/bin/sh
+# Se activa una vez por clon:  git config core.hooksPath hooks
+#
+# 1) BLOQUEA: cambios en parches/<ID>/ sin cambiar la VERSION de <ID> en parches/parches.txt
+#    en el mismo commit. El actualizador decide "hay version nueva" por ese numero; si el codigo
+#    cambia y el numero no, los jugadores que ya lo tienen nunca ven la actualizacion.
+#    No cuentan los *.md ni los prueba*.py (no cambian lo que se publica).
+# 2) RECUERDA (no bloquea): un cambio en source/ no le llega a nadie hasta recompilar el exe con
+#    Bat To Exe Converter y publicarlo; git no puede verificar ese paso.
+
+version_de() {  # stdin: parches.txt; $1: ID
+    tr -d '\r' | grep -v '^#' | awk -F'|' -v id="$1" '$1 == id { print $2 }'
+}
+
+staged=$(git diff --cached --name-only --diff-filter=ACMRD)
+fallo=0
+
+ids=$(printf '%s\n' "$staged" | grep -v -e '\.md$' -e '/prueba[^/]*\.py$' |
+      sed -n 's#^parches/\([^/]*\)/.*#\1#p' | sort -u)
+for id in $ids; do
+    antes=$(git show HEAD:parches/parches.txt 2>/dev/null | version_de "$id")
+    ahora=$(git show :parches/parches.txt 2>/dev/null | version_de "$id")
+    if [ -z "$ahora" ]; then
+        echo "pre-commit: cambia parches/$id/ pero '$id' no esta en parches/parches.txt." >&2
+        fallo=1
+    elif [ "$antes" = "$ahora" ]; then
+        echo "pre-commit: cambia parches/$id/ y su VERSION sigue en $ahora." >&2
+        echo "            Subila en parches/parches.txt en este mismo commit." >&2
+        fallo=1
+    fi
+done
+
+if printf '%s\n' "$staged" | grep -q '^source/'; then
+    cat >&2 <<'EOF'
+pre-commit (recordatorio): cambiaste source/. Para que llegue a los jugadores:
+  1. subir la version en source/banner.txt,
+  2. recompilar source/Actualizador.bat con Bat To Exe Converter, embebiendo los .txt de source/,
+  3. subir el exe a la release "Ejecutable" de GitHub.
+EOF
+fi
+
+exit $fallo

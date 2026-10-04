@@ -1,0 +1,7 @@
+* text=auto
+# cmd y el exe que se compila esperan CRLF
+*.bat text eol=crlf
+*.txt text eol=crlf
+*.ps1 text eol=crlf
+# el sh de Git no tolera CR en el hook
+hooks/* text eol=lf

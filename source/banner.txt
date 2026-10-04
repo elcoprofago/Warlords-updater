@@ -7,7 +7,7 @@
 
            WARLORDS 3 - UPDATER SCRIPT
 		 
-		  V. 1.0.0.7
+		  V. 1.0.0.8
 
          elcoprofago@gmail.com | 2026
 ===============================================
