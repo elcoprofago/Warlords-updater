@@ -9,6 +9,7 @@ Warlords 3 Darklords Rising v. 1.02 (actualizador de carpetas del juego).
 | `parches/parches.txt` | Lista de parches: ID, versión, archivos y descripción. |
 | `parches/<ID>/build.py` | Genera los archivos del parche a partir de los originales de `C:\Warlords3`. |
 | `tools/publicar-parche.ps1` | Compila, empaqueta y publica un parche. |
+| `tools/compilar-actualizador.ps1` | Compila el exe del actualizador, lo prueba y opcionalmente lo publica. |
 | `hooks/pre-commit` | Controles de commit (activar una vez por clon: `git config core.hooksPath hooks`). |
 
 Lo que baja el actualizador está en las releases de GitHub:
@@ -48,9 +49,15 @@ Crear `parches/<ID>/build.py` que acepte la carpeta de salida como primer argume
 
 ## Cambiar el actualizador mismo
 
-1. Editar `source/`, subir la versión en `source/banner.txt`.
-2. Compilar `source/Actualizador.bat` con Bat To Exe Converter, incluyendo los `.txt` de `source/`.
-3. Subir `Actualizador-v.<versión>.exe` (y su `.zip`) a la release **Ejecutable**.
+1. Editar `source/`, subir la versión en `source/banner.txt`. Commitear y `git push`.
+2. `.\tools\compilar-actualizador.ps1`: compila con Bat To Exe Converter 4.2 por línea de comandos
+   (embebe los `.txt` de `source/` y `tools/actualizador.ico`), prueba que el exe extraiga los `.txt`
+   junto a sí y muestre la versión, y arma `Actualizador-v.<versión>.exe` + `.exe.zip` en la raíz.
+3. `.\tools\compilar-actualizador.ps1 -Publicar`: además los sube a la release **Ejecutable** y los
+   verifica bajándolos de nuevo. Se niega si esa versión ya está subida.
+
+La línea de comandos del conversor ignora la cabecera `::[Bat To Exe Converter]` del `.bat`: el
+ícono, la versión, los `.txt` y la carpeta de extracción (`/extractdir 0`, junto al exe) los pone el script.
 
 Para probar el `.bat` sin tocar el juego ni lo publicado: `W3_JUEGO` cambia la carpeta del juego
 y `W3_PARCHES_URL` la URL de `PARCHES.txt` (acepta `file:///`).

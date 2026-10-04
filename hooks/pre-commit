@@ -34,8 +34,8 @@ if printf '%s\n' "$staged" | grep -q '^source/'; then
     cat >&2 <<'EOF'
 pre-commit (recordatorio): cambiaste source/. Para que llegue a los jugadores:
   1. subir la version en source/banner.txt,
-  2. recompilar source/Actualizador.bat con Bat To Exe Converter, embebiendo los .txt de source/,
-  3. subir el exe a la release "Ejecutable" de GitHub.
+  2. git push y despues .\tools\compilar-actualizador.ps1 -Publicar
+     (compila, prueba y sube el exe a la release "Ejecutable" de GitHub).
 EOF
 fi
 
