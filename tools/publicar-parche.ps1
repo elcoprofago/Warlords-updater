@@ -102,18 +102,18 @@ $shaZip = Sha256 $zip
 Write-Host "  $zip  SHA-256 $shaZip"
 
 # ---------------------------------------------------------------- 5. PARCHES.txt publicado
+# Por la API (gh), no por la URL publica: pedir la URL publica de un archivo que todavia no existe
+# deja un 404 en la cache de GitHub que siguio sirviendose despues de subirlo (4/10/2026).
 $publicado = @()
-try {
-    $r = Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/PARCHES.txt"
-    $texto = if ($r.Content -is [byte[]]) { [Text.Encoding]::ASCII.GetString($r.Content) } else { $r.Content }
-    $publicado = @($texto -split "`r?`n" | Where-Object { $_ -notmatch '^\s*(#|$)' })
+$subidos = @(gh release view $Release -R $Repo --json assets --jq '.assets[].name')
+if ($LASTEXITCODE) { Falla "no se pudo leer la release $Release" }
+if ($subidos -contains 'PARCHES.txt') {
+    $previo = Join-Path $raiz 'dist\PARCHES.publicado.txt'
+    gh release download $Release -p PARCHES.txt -O $previo --clobber -R $Repo
+    if ($LASTEXITCODE) { Falla 'no se pudo bajar el PARCHES.txt publicado' }
+    $publicado = @(Get-Content $previo | Where-Object { $_ -notmatch '^\s*(#|$)' })
 }
-catch {
-    if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {
-        Write-Host '  todavia no hay PARCHES.txt publicado: se crea'
-    }
-    else { Falla "no se pudo bajar el PARCHES.txt publicado: $($_.Exception.Message)" }
-}
+else { Write-Host '  todavia no hay PARCHES.txt publicado: se crea' }
 $anterior = $publicado | Where-Object { ($_ -split '\|')[0] -eq $Id }
 if ($anterior) {
     $verPublicada = [version](($anterior -split '\|')[1])
@@ -145,9 +145,13 @@ New-Item -ItemType Directory -Force $tmp | Out-Null
 foreach ($par in @(@("PARCHE-$Id.zip", $zip), @('PARCHES.txt', $manifiesto))) {
     $bajado = Join-Path $tmp $par[0]
     $ok = $false
+    # igual que lo pide el .bat (no-cache), para verificar lo que va a recibir el jugador
     for ($i = 1; $i -le 3 -and -not $ok; $i++) {
-        Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/$($par[0])" -OutFile $bajado
-        $ok = (Sha256 $bajado) -eq (Sha256 $par[1])
+        try {
+            Invoke-WebRequest -UseBasicParsing -Headers @{ 'Cache-Control' = 'no-cache' } -Uri "$BaseUrl/$($par[0])" -OutFile $bajado
+            $ok = (Sha256 $bajado) -eq (Sha256 $par[1])
+        }
+        catch { Write-Host "  intento ${i}: $($_.Exception.Message)" }
         if (-not $ok) { Start-Sleep -Seconds 10 }
     }
     if (-not $ok) { Falla "lo que se baja de $BaseUrl/$($par[0]) no coincide con lo subido" }

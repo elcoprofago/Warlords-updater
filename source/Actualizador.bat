@@ -300,7 +300,7 @@ ping -n 1 github.com >nul || (color 0C & echo ERROR: Sin conexion & pause & goto
 set "manifest=%DOWNLOADS%\W3Updater\PARCHES.txt"
 if exist "%manifest%" del /f /q "%manifest%"
 echo Descargando lista de parches...
-powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%PARCHES_URL%' -OutFile '%manifest%'" 2>nul
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Headers @{'Cache-Control'='no-cache'} -Uri '%PARCHES_URL%' -OutFile '%manifest%'" 2>nul
 if not exist "%manifest%" (
     color 0C
     echo ERROR: No se pudo descargar la lista de parches.
@@ -361,7 +361,7 @@ color 0B
 echo --------------------------------
 echo Descargando parche !id! v!ver!...
 if exist "!zipfile!" del /f /q "!zipfile!"
-powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '!url!' -OutFile '!zipfile!'" 2>nul
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Headers @{'Cache-Control'='no-cache'} -Uri '!url!' -OutFile '!zipfile!'" 2>nul
 if not exist "!zipfile!" (
     color 0C
     echo ERROR: No se pudo descargar el parche.
