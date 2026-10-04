@@ -11,7 +11,7 @@ Pasos:
      la etiqueta parche-<ID>-v<VERSION> (lo publicado tiene que corresponder a un commit).
   3. Recompila con parches\<ID>\build.py en dist\<ID> y exige que el resultado sea identico,
      archivo por archivo, a lo instalado en C:\Warlords3: se publica lo que se probo jugando.
-  4. Arma dist\PARCHE-<ID>.zip y su SHA-256.
+  4. Arma dist\PARCHE-<ID>-v<VERSION>.zip (reproducible: fecha del commit en cada entrada) y su SHA-256.
   5. Baja el PARCHES.txt publicado, exige que la VERSION sea mayor que la publicada y reescribe
      solo la linea de <ID> (las de los demas parches quedan como estaban).
   6. Sube el zip y despues PARCHES.txt, los vuelve a bajar y compara el SHA-256 con lo local.
@@ -88,13 +88,23 @@ foreach ($a in $archivos) {
 }
 
 # ---------------------------------------------------------------- 4. zip
-$zip = Join-Path $raiz "dist\PARCHE-$Id.zip"
+# Un nombre por version: GitHub cachea por un rato lo que sirvio en cada URL (visto el 4/10/2026: tras
+# reemplazar un asset, a Invoke-WebRequest le siguio dando el anterior), y una URL nueva no tiene cache.
+$nombreZip = "PARCHE-$Id-v$version.zip"
+$zip = Join-Path $raiz "dist\$nombreZip"
 if (Test-Path $zip) { Remove-Item -Force $zip }
+# Fecha fija (la del commit) en cada entrada: el mismo commit da el mismo zip, byte a byte, asi que
+# completar una publicacion interrumpida sube exactamente lo mismo.
+$fecha = [DateTimeOffset]::Parse((git log -1 --format=%cI))
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 $z = [IO.Compression.ZipFile]::Open($zip, 'Create')
 try {
     foreach ($a in $archivos) {
-        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($z, (Join-Path $build $a), ($a -replace '\\', '/')) | Out-Null
+        $e = $z.CreateEntry(($a -replace '\\', '/'), [IO.Compression.CompressionLevel]::Optimal)
+        $e.LastWriteTime = $fecha   # antes de abrirla: despues ya no se puede cambiar
+        $destino = $e.Open()
+        try { $destino.Write(($b = [IO.File]::ReadAllBytes((Join-Path $build $a))), 0, $b.Length) }
+        finally { $destino.Dispose() }
     }
 }
 finally { $z.Dispose() }
@@ -123,7 +133,7 @@ if ($anterior) {
     }
     else { Write-Host "  publicada: v$verPublicada" }
 }
-$nueva = "$Id|$version|$shaZip|$BaseUrl/PARCHE-$Id.zip|$descripcion"
+$nueva = "$Id|$version|$shaZip|$BaseUrl/$nombreZip|$descripcion"
 $lineas = @($publicado | Where-Object { ($_ -split '\|')[0] -ne $Id }) + $nueva
 $manifiesto = Join-Path $raiz 'dist\PARCHES.txt'
 $cabecera = '# ID|VERSION|SHA256 del zip|URL del zip|DESCRIPCION  (generado por tools\publicar-parche.ps1)'
@@ -142,13 +152,13 @@ if ($LASTEXITCODE) { Falla 'no se pudo subir PARCHES.txt' }
 
 $tmp = Join-Path $raiz 'dist\verificacion'
 New-Item -ItemType Directory -Force $tmp | Out-Null
-foreach ($par in @(@("PARCHE-$Id.zip", $zip), @('PARCHES.txt', $manifiesto))) {
+foreach ($par in @(@($nombreZip, $zip), @('PARCHES.txt', $manifiesto))) {
     $bajado = Join-Path $tmp $par[0]
     $ok = $false
-    # igual que lo pide el .bat (no-cache), para verificar lo que va a recibir el jugador
+    # igual que lo baja el .bat (?t=<aleatorio>, que esquiva la cache de GitHub; Cache-Control: no-cache no la esquiva)
     for ($i = 1; $i -le 3 -and -not $ok; $i++) {
         try {
-            Invoke-WebRequest -UseBasicParsing -Headers @{ 'Cache-Control' = 'no-cache' } -Uri "$BaseUrl/$($par[0])" -OutFile $bajado
+            Invoke-WebRequest -UseBasicParsing -Uri "$BaseUrl/$($par[0])?t=$([guid]::NewGuid().ToString('N'))" -OutFile $bajado
             $ok = (Sha256 $bajado) -eq (Sha256 $par[1])
         }
         catch { Write-Host "  intento ${i}: $($_.Exception.Message)" }

@@ -1,6 +1,6 @@
 # Parches que ofrece la opcion 8 (PARCHES) del actualizador. Una linea por parche:
 #   ID|VERSION|ARCHIVOS|DESCRIPCION
-# ID           carpeta parches\<ID>\ (con build.py) y nombre del zip publicado: PARCHE-<ID>.zip
+# ID           carpeta parches\<ID>\ (con build.py) y nombre del zip publicado: PARCHE-<ID>-v<VERSION>.zip
 # VERSION      cuatro numeros. Se sube en el mismo commit que cambie parches\<ID>\ (lo exige hooks\pre-commit)
 #              y tiene que ser mayor que la publicada (lo exige tools\publicar-parche.ps1).
 # ARCHIVOS     rutas relativas a C:\Warlords3 separadas por ; (exactamente lo que build.py genera y va en el zip)

@@ -14,7 +14,7 @@ Warlords 3 Darklords Rising v. 1.02 (actualizador de carpetas del juego).
 
 Lo que baja el actualizador está en las releases de GitHub:
 - **Actualizador**: `ARMY.zip`, `SPELL.zip`, `HERO.zip`, `ESCEN.zip`, `ITEMS.zip`, `Warlords3_FULL.zip`,
-  `DarkValidator.zip`, y para los parches `PARCHES.txt` + `PARCHE-<ID>.zip`.
+  `DarkValidator.zip`, y para los parches `PARCHES.txt` + `PARCHE-<ID>-v<VERSION>.zip`.
 - **Ejecutable**: el exe del actualizador.
 
 ## Parches (opción 8 del menú)
@@ -38,7 +38,12 @@ Publicar un parche, o una versión nueva, no requiere recompilar el exe del actu
 El script se niega si: no estás en `main`, hay cambios sin commitear, el commit no está en GitHub,
 la versión ya se publicó (existe la etiqueta `parche-<ID>-v<VERSION>`) o es menor que la publicada,
 o lo que compila no es idéntico, byte a byte, a lo que está en `C:\Warlords3` (lo que se probó).
-Después de subir, vuelve a bajar el zip y `PARCHES.txt` y compara los SHA-256.
+Después de subir, vuelve a bajar el zip y `PARCHES.txt` y compara los SHA-256. El zip de la versión
+anterior queda en la release; se puede borrar a mano.
+
+GitHub cachea por un rato lo que sirvió en cada URL de una release, aun después de reemplazar el
+archivo, y ignora `Cache-Control: no-cache`. Por eso cada versión del zip tiene su propio nombre, y
+el `.bat` y la verificación agregan `?t=<aleatorio>` a la URL.
 
 `build.py` requiere `pip install keystone-engine capstone`; `prueba_emulada.py`, `pefile unicorn`.
 
