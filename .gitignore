@@ -1,0 +1,10 @@
+# Binarios: se publican como assets de las releases de GitHub, no se versionan.
+*.exe
+*.zip
+# Los .txt que el exe extrae a su carpeta al ejecutarse (los fuentes están en source/).
+/*.txt
+# Instaladores descargados a mano.
+source/descargas/
+# Salida de los scripts de build y publicación.
+dist/
+__pycache__/
