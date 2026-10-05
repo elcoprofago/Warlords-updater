@@ -56,13 +56,16 @@ Crear `parches/<ID>/build.py` que acepte la carpeta de salida como primer argume
 
 1. Editar `source/`, subir la versión en `source/banner.txt`. Commitear y `git push`.
 2. `.\tools\compilar-actualizador.ps1`: compila con Bat To Exe Converter 4.2 por línea de comandos
-   (embebe los `.txt` de `source/` y `tools/actualizador.ico`), prueba que el exe extraiga los `.txt`
-   junto a sí y muestre la versión, y arma `Actualizador-v.<versión>.exe` + `.exe.zip` en la raíz.
+   (embebe los `.txt` de `source/` y `tools/actualizador.ico`), prueba el exe en una carpeta con
+   `.txt` viejos (tiene que mostrar su versión, leer los suyos y no tocar esos), y arma `Actualizador-v.<versión>.exe` + `.exe.zip` en la raíz.
 3. `.\tools\compilar-actualizador.ps1 -Publicar`: además los sube a la release **Ejecutable** y los
    verifica bajándolos de nuevo. Se niega si esa versión ya está subida.
 
 La línea de comandos del conversor ignora la cabecera `::[Bat To Exe Converter]` del `.bat`: el
-ícono, la versión, los `.txt` y la carpeta de extracción (`/extractdir 0`, junto al exe) los pone el script.
+ícono, la versión, los `.txt` y la carpeta de extracción los pone el script. Con `/extractdir 1` el
+exe extrae los `.txt` en una carpeta temporal nueva en cada ejecución y el `.bat` los lee de ahí
+(`%b2eincfilepath%`). Hasta el 1.0.0.8 se extraían junto al exe (`/extractdir 0`), que no pisa
+archivos existentes: el 1.0.0.8, donde había corrido el 1.0.0.7, mostraba "V. 1.0.0.7" y usaba sus URLs.
 
 Para probar el `.bat` sin tocar el juego ni lo publicado: `W3_JUEGO` cambia la carpeta del juego
 y `W3_PARCHES_URL` la URL de `PARCHES.txt` (acepta `file:///`).

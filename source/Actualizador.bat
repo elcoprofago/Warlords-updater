@@ -60,10 +60,16 @@ if defined W3_PARCHES_URL (set "PARCHES_URL=%W3_PARCHES_URL%") else (set "PARCHE
 REM Crear carpeta del juego si no existe
 if not exist "%JUEGO%" mkdir "%JUEGO%"
 
+REM banner.txt y los *_url.txt: en el exe, de la carpeta temporal donde los extrae en cada ejecucion
+REM (/extractdir 1; el conversor la deja en b2eincfilepath), nunca de la carpeta del exe, donde pueden
+REM quedar los de una version anterior (dentro del exe %~dp0 ES la carpeta del exe). Corriendo este
+REM .bat directamente, de su propia carpeta (source\).
+if defined b2eincfilepath (set "DATOS=%b2eincfilepath%\") else (set "DATOS=%~dp0")
+
 REM Mostrar banner
 color 0E
 cls
-type banner.txt
+type "%DATOS%banner.txt"
 echo.
 pause
 
@@ -107,11 +113,11 @@ if "%choices%"=="6" goto FULLUPDATE
 
 REM Procesar opciones
 for %%c in (%choices%) do (
-    if "%%c"=="1" call :UPDATE ARMY army_url.txt
-    if "%%c"=="2" call :UPDATE SPELL spells_url.txt
-    if "%%c"=="3" call :UPDATE HERO hero_url.txt
-    if "%%c"=="4" call :UPDATE ESCEN escen_url.txt
-    if "%%c"=="5" call :UPDATE ITEMS items_url.txt
+    if "%%c"=="1" call :UPDATE ARMY "%DATOS%army_url.txt"
+    if "%%c"=="2" call :UPDATE SPELL "%DATOS%spells_url.txt"
+    if "%%c"=="3" call :UPDATE HERO "%DATOS%hero_url.txt"
+    if "%%c"=="4" call :UPDATE ESCEN "%DATOS%escen_url.txt"
+    if "%%c"=="5" call :UPDATE ITEMS "%DATOS%items_url.txt"
     if "%%c"=="7" goto :VALIDATOR
     if "%%c"=="8" goto :PARCHES
     if "%%c"=="9" goto :EXIT
@@ -145,7 +151,7 @@ color 0B
 echo Verificando conexion...
 ping -n 1 github.com >nul || (color 0C & echo ERROR: Sin conexion & pause & goto MENU)
 
-if not exist "fullupdate_url.txt" (
+if not exist "%DATOS%fullupdate_url.txt" (
     color 0C
     echo ERROR: Falta fullupdate_url.txt
     pause
@@ -155,7 +161,7 @@ if not exist "fullupdate_url.txt" (
 set "URL1="
 set "URL2="
 
-for /f "usebackq tokens=* delims=" %%A in ("fullupdate_url.txt") do (
+for /f "usebackq tokens=* delims=" %%A in ("%DATOS%fullupdate_url.txt") do (
     if not defined URL1 (
         set "URL1=%%A"
         set "URL1=!URL1: =!"
