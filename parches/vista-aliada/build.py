@@ -2076,52 +2076,134 @@ portc = place('portc', '''
     jmp 0x4a514d
 ''')
 
-# ---------------------------------------------------------------- Barcos livianos: desembarco en cualquier costa
-# El juego no tiene tipos de barco: "embarcado" es un estado del ejército (bit 8 de +0x12). El ejecutor del paso
+# ---------------------------------------------------------------- Desembarco libre (bono de movimiento "Landing")
+# "Embarcado" es un estado del ejército (bit 8 de +0x12; el grupo lo refleja en +0x1a & 8) y el barco de cada bando es
+# su tipo de arma de la ranura 15 (registro 0x53c410 + (p*16 + 15)*0xfc, el .ARM tal cual). El ejecutor del paso
 # (0x49db70) y el costo del camino (0x4a61e0) ya desembarcan en cualquier paso de agua pura a tierra; lo único que lo
-# impide es el grafo de enlaces, que solo une agua y tierra en los puntos de transbordo (puertos). Si el grupo del
-# jugador que pide el camino ([0x58715c]) tiene BARCO_LIVIANO unidades o menos, el buscador (0x4a5c40, expansión, y su
-# rastreo de vuelta en 0x4a600e) suma a los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los
-# de una casilla con tierra las direcciones hacia agua pura. No toca los vuelos (otra rama) ni la tabla de enlaces.
-BARCO_LIVIANO = int(os.environ.get('AV_BARCO_LIVIANO', '0'))   # 0 = desactivado
-if BARCO_LIVIANO:
-    livexp = place('livexp', f'''
+# impide es el grafo de enlaces, que solo une agua y tierra en los puntos de transbordo (puertos).
+# Si el grupo del jugador que pide el camino ([0x58715c]) está embarcado y el barco de su bando tiene "Landing" en
+# alguno de sus 4 bonos de movimiento (+0xb2 + k*9, 9 B c/u; el cargador 0x42f1b0 ignora los textos que no conoce y
+# el editor los escribe en sus listas desplegables editables), el buscador (0x4a5c40, expansión, y su rastreo de
+# vuelta en 0x4a600e) suma a los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los de una
+# casilla con tierra las direcciones hacia agua pura. Nunca hacia tierra intransitable: clase de terreno 4
+# (montaña; 0x535f0c + tipo*0x58) sin camino ni puente (flags & 0x30), la misma regla del constructor (0x4a52c3).
+# No toca los vuelos (otra rama) ni la tabla de enlaces.
+LANDING = b'landing'    # se compara sin distinguir mayúsculas
+landstr = place_data('landstr', LANDING + b'\0')
+landchk = place('landchk', f'''
+    pushad
+    movsx eax, word ptr [0x58715c]
+    cmp eax, 8
+    jae landchk_no
+    imul edx, eax, 0x4f0
+    test byte ptr [edx + 0x56eaaa], 8
+    jz landchk_no
+    shl eax, 4
+    add eax, 15
+    imul esi, eax, 0xfc
+    add esi, {0x53c410 + 0xb2:#x}
+    mov edi, 4
+landchk_slot:
+    xor ecx, ecx
+landchk_ch:
+    mov al, byte ptr [esi + ecx]
+    cmp al, 0x41
+    jb landchk_nf
+    cmp al, 0x5a
+    ja landchk_nf
+    or al, 0x20
+landchk_nf:
+    cmp al, byte ptr [ecx + {landstr:#x}]
+    jne landchk_next
+    test al, al
+    jz landchk_yes
+    inc ecx
+    cmp ecx, 9
+    jb landchk_ch
+landchk_next:
+    add esi, 9
+    dec edi
+    jnz landchk_slot
+landchk_no:
+    xor eax, eax
+    popad
+    ret
+landchk_yes:
+    test esp, esp
+    popad
+    ret
+''')
+# ZF=1 si la casilla (ebp = x, edi = y; índice del grafo en edx) es tierra intransitable sin camino ni puente.
+# Usa ebp, edi; preserva el resto.
+mtnchk = place('mtnchk', '''
+    test byte ptr [edx + 0x57d158], 0x30
+    jnz mtnchk_ok
+    cmp byte ptr [0x4fe688], 0
+    jne mtnchk_ok
+    push ecx
+    lea edi, [edi + edi*4]
+    add edi, edi
+    mov cl, byte ptr [0x503e06]
+    shl edi, cl
+    pop ecx
+    lea ebp, [ebp + ebp*4]
+    lea edi, [edi + ebp*2]
+    movzx edi, word ptr [edi + 0x503e58]
+    and edi, 0x1f
+    imul edi, edi, 0x58
+    cmp word ptr [edi + 0x535f0c], 4
+    ret
+mtnchk_ok:
+    test esp, esp
+    ret
+''')
+livexp = place('livexp', f'''
     shl eax, 5
     movsx ecx, word ptr [esp + 0x1c]
     add eax, ecx
     mov cl, byte ptr [eax + 0x573158]
     cmp byte ptr [eax + 0x582158], 0x80
     jne livexp_end
-    movsx edx, word ptr [0x58715c]
-    imul edx, edx, 0x4f0
-    cmp word ptr [edx + 0x56eaa8], {BARCO_LIVIANO}
-    jg livexp_end
+    call {landchk:#x}
+    jz livexp_end
     push ebx
     push esi
     push edi
+    push ebp
     mov bl, byte ptr [eax + 0x578158]
     xor esi, esi
 livexp_loop:
     test byte ptr [esi + 0x4fe678], bl
     jz livexp_next
-    movsx edi, word ptr [esi*2 + 0x4fe640]
-    imul edi, edi, 0xa0
-    movsx edx, word ptr [esi*2 + 0x4fe658]
-    add edi, edx
-    test byte ptr [eax + edi + 0x582158], 0x40
+    movsx ebp, word ptr [esi*2 + 0x4fe640]
+    movsx edi, word ptr [esi*2 + 0x4fe658]
+    imul edx, ebp, 0xa0
+    add edx, edi
+    add edx, eax
+    test byte ptr [edx + 0x582158], 0x40
+    jz livexp_next
+    movsx ecx, cl
+    push ecx
+    movsx ecx, word ptr [esp + 0x2c]
+    add ebp, ecx
+    movsx ecx, word ptr [esp + 0x30]
+    add edi, ecx
+    pop ecx
+    call {mtnchk:#x}
     jz livexp_next
     or cl, byte ptr [esi + 0x4fe678]
 livexp_next:
     inc esi
     cmp esi, 8
     jb livexp_loop
+    pop ebp
     pop edi
     pop esi
     pop ebx
 livexp_end:
     jmp 0x4a5c79
 ''')
-    livback = place('livback', f'''
+livback = place('livback', f'''
     movsx ecx, word ptr [esp + 0x1e]
     lea ecx, [ecx + ecx*4]
     shl ecx, 5
@@ -2130,10 +2212,15 @@ livexp_end:
     mov cl, byte ptr [esi + 0x573158]
     test byte ptr [esi + 0x582158], 0x40
     jz livback_end
-    movsx edx, word ptr [0x58715c]
-    imul edx, edx, 0x4f0
-    cmp word ptr [edx + 0x56eaa8], {BARCO_LIVIANO}
-    jg livback_end
+    call {landchk:#x}
+    jz livback_end
+    push ebp
+    movsx ebp, word ptr [esp + 0x22]
+    movsx edi, word ptr [esp + 0x24]
+    mov edx, esi
+    call {mtnchk:#x}
+    pop ebp
+    jz livback_end
     push ebx
     push eax
     mov bl, byte ptr [esi + 0x578158]
@@ -2237,9 +2324,8 @@ patch(0x4b6677, bytes.fromhex('c3cccccccc'), asm('jmp 0x4a4f20', 0x4b6677))
 # (punto de transbordo, y paso de barcos por debajo). Reordenado en el lugar: con camino se saltea el "agua".
 patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
       asm('cmp word ptr [esp + 0x12], 0; jne 0x4a5147; mov word ptr [esp + 0x18], 1; xor bp, bp', 0x4a5135))
-if BARCO_LIVIANO:
-    patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
-    patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
+patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
+patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
