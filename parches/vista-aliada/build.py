@@ -992,8 +992,8 @@ gn_done:
 
 
 # ---------------------------------------------------------------- Army List: unidades no permitidas por el validador
-# Reglas del clan copiadas de EditorPGS (Reglas.cs, ArmyUnit.cs, AbilityTable.cs; transcriptas en reglas_ref.py).
-# Si el clan cambia las reglas, hay que volver a armar el parche.
+# Reglas 1-25 del manifiesto del clan, copiadas de DarklordsValidator (RulesEngine.cs, Unit.cs, AbilityTable.cs,
+# ParserUtils.cs; transcriptas en reglas_ref.py). Si el clan cambia las reglas, hay que volver a armar el parche.
 import re as _re
 import reglas_ref as RR
 
@@ -1015,32 +1015,39 @@ WTAB = place_data('al_wtab', bytes(1 if (chr(i).isascii() and (chr(i).isalnum() 
 AL_SKIP = {0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, 0xe0, 0xe2, 0xe3, 0xe8}
 SKIP = place_data('al_skip', bytes(1 if i in AL_SKIP else 0 for i in range(0xfc)))
 
-# Banderas de los textos (al_scan): 1 "none" (\bnone\b, \bn/a\b, \b-\b), 2 primer número válido y != 0,
-# 4 habilidad no vacía, 8 habilidad == "fly", 16 hay número, 32 hay algún carácter que no es espacio.
-# Átomos de las reglas en [ebp-0x10].
-AT = dict(TERR=1, FLY=2, SHIP=4, HP=8, TRC=16, TRS=32, SGS=64, PV2=128, PV4=256, HC=512)
+# Banderas del texto del Combat Bonus (al_scan): 1 "none" (\bnone\b, \bn/a\b, \b-\b), 2 primer número válido
+# y != 0, 4 habilidad no vacía, 16 hay número, 32 hay algún carácter que no es espacio.
+# Átomos de las reglas en [ebp-0x10]. FLY, LAND y CARR: "fly", "landing" o "carrier" en alguno de los 4 casilleros
+# de Move Bonus (0xb2, 0xbb, 0xc4, 0xcd), sin distinguir mayúsculas (Unit.TieneMoveBonus).
+AT = dict(TERR=1, FLY=2, SHIP=4, HP=8, TRC=16, TRS=32, SGS=64, PV2=128, PV4=256, HC=512, LAND=1024, CARR=2048)
 FLD = dict(S=('byte', 0x9a), M=('byte', 0x9b), H=('byte', 0x9c), T=('byte', 0x9d), U=('byte', 0x9e),
            C=('word', 0xe2), SE=('word', 0xe4))
-RULES = [  # Reglas.cs, en orden: conjunción de cláusulas, cada cláusula es una disyunción
-    [['TERR'], ['M>25']],
-    [['TERR'], ['HP'], ['TRC'], ['M>15']],
-    [['TERR'], ['HP'], ['SGS'], ['PV2'], ['M>17']],
-    [['FLY'], ['M>40']],
-    [['FLY'], ['HP'], ['TRS'], ['PV2'], ['M>20']],
-    [['FLY'], ['HP'], ['SGS'], ['PV2'], ['M>22']],
-    [['SHIP'], ['M>30']],
-    [['FLY'], ['S>3', 'H>1'], ['SE<600', 'U<10', 'T<3']],
-    [['FLY'], ['S>6', 'H>2'], ['SE<800', 'U<15', 'T<4']],
-    [['FLY'], ['S>8', 'H>3'], ['SE<1000', 'U<20', 'T<5']],
-    [['TERR'], ['S>3', 'H>1'], ['SE<300', 'U<5', 'T<2']],
-    [['TERR'], ['S>6', 'H>2'], ['SE<400', 'U<10', 'T<3']],
-    [['TERR'], ['S>8', 'H>3'], ['SE<500', 'U<15', 'T<4']],
-    [['FLY'], ['HP', 'HC'], ['C<600', 'U<10']],
-    [['FLY'], ['HP'], ['HC'], ['C<800', 'U<15']],
-    [['FLY'], ['PV4'], ['C<1000', 'U<20']],
-    [['TERR'], ['HP', 'HC'], ['C<150', 'U<4']],
-    [['TERR'], ['HP'], ['HC'], ['C<300', 'U<8']],
-    [['TERR'], ['PV4'], ['C<500', 'U<12']],
+RULES = [  # RulesEngine.cs, en orden (bit i = regla i+1): conjunción de cláusulas, cada cláusula es una disyunción
+    [['TERR'], ['M>25']],                                   # 1
+    [['TERR'], ['HP'], ['TRC'], ['M>15']],                  # 2
+    [['TERR'], ['HP'], ['SGS'], ['PV2'], ['M>17']],         # 3
+    [['FLY'], ['M>40']],                                    # 4
+    [['FLY'], ['HP'], ['TRS'], ['M>20']],                   # 5
+    [['FLY'], ['HP'], ['SGS'], ['PV2'], ['M>22']],          # 6
+    [['SHIP'], ['M>30']],                                   # 7
+    [['SHIP'], ['LAND'], ['M>12']],                         # 8
+    [['FLY'], ['S>3', 'H>1'], ['SE<600', 'U<10', 'T<3']],   # 9
+    [['FLY'], ['S>6', 'H>2'], ['SE<800', 'U<15', 'T<4']],   # 10
+    [['FLY'], ['S>8', 'H>3'], ['SE<1000', 'U<20', 'T<5']],  # 11
+    [['TERR'], ['S>3', 'H>1'], ['SE<300', 'U<5', 'T<2']],   # 12
+    [['TERR'], ['S>6', 'H>2'], ['SE<400', 'U<10', 'T<3']],  # 13
+    [['TERR'], ['S>8', 'H>3'], ['SE<500', 'U<15', 'T<4']],  # 14
+    [['FLY'], ['HP', 'HC'], ['C<600', 'U<10']],             # 15
+    [['FLY'], ['HP'], ['HC'], ['C<800', 'U<15']],           # 16
+    [['FLY'], ['PV4'], ['C<1000', 'U<20']],                 # 17
+    [['TERR'], ['HP', 'HC'], ['C<150', 'U<4']],             # 18
+    [['TERR'], ['HP'], ['HC'], ['C<300', 'U<8']],           # 19
+    [['TERR'], ['PV4'], ['C<500', 'U<12']],                 # 20
+    [['SHIP'], ['HP', 'HC'], ['C<400', 'U<8']],             # 21
+    [['SHIP'], ['HP'], ['HC'], ['C<600', 'U<12']],          # 22
+    [['SHIP'], ['PV4'], ['C<800', 'U<18']],                 # 23
+    [['SHIP'], ['LAND'], ['C<1000', 'U<17']],               # 24
+    [['SHIP'], ['CARR'], ['C<1200', 'U<34']],               # 25
 ]
 def rules_asm():
     out = []
@@ -1069,19 +1076,87 @@ armeval = place('armeval', f'''
     push esi
     push edi
     mov ebx, dword ptr [ebp + 8]
-    lea esi, [ebx + 0xb2]
-    call al_scan
-    mov dword ptr [ebp - 0xc], eax
     lea esi, [ebx + 0xd6]
     call al_scan
     mov dword ptr [ebp - 8], eax
     xor edx, edx
-    mov eax, dword ptr [ebp - 0xc]
-    and eax, 0xb
-    cmp eax, 8
-    jne ae_nofly
+    lea esi, [ebx + 0xb2]
+mb_slot:
+    lea edi, [ebp - 0x30]
+    xor ecx, ecx
+mb_cp:
+    movzx eax, byte ptr [esi + ecx]
+    test eax, eax
+    jz mb_cpe
+    inc ecx
+    cmp eax, 0x20
+    jb mb_nx
+    cmp eax, 0x7e
+    jbe mb_lo
+    cmp eax, 0x7f
+    je mb_nx
+    mov eax, 0x3f
+mb_lo:
+    cmp eax, 0x41
+    jb mb_put
+    cmp eax, 0x5a
+    ja mb_put
+    or eax, 0x20
+mb_put:
+    mov byte ptr [edi], al
+    inc edi
+mb_nx:
+    cmp ecx, 9
+    jb mb_cp
+mb_cpe:
+    lea ecx, [ebp - 0x30]
+mb_t1:
+    cmp edi, ecx
+    jbe mb_done
+    cmp byte ptr [edi - 1], 0x20
+    jne mb_t2
+    dec edi
+    jmp mb_t1
+mb_t2:
+    cmp byte ptr [ecx], 0x20
+    jne mb_t3
+    inc ecx
+    jmp mb_t2
+mb_t3:
+    mov eax, edi
+    sub eax, ecx
+    cmp eax, 3
+    jne mb_7
+    cmp word ptr [ecx], 0x6c66
+    jne mb_done
+    cmp byte ptr [ecx + 2], 0x79
+    jne mb_done
     or edx, {AT['FLY']}
-ae_nofly:
+    jmp mb_done
+mb_7:
+    cmp eax, 7
+    jne mb_done
+    cmp dword ptr [ecx], 0x646e616c
+    jne mb_car
+    cmp word ptr [ecx + 4], 0x6e69
+    jne mb_done
+    cmp byte ptr [ecx + 6], 0x67
+    jne mb_done
+    or edx, {AT['LAND']}
+    jmp mb_done
+mb_car:
+    cmp dword ptr [ecx], 0x72726163
+    jne mb_done
+    cmp word ptr [ecx + 4], 0x6569
+    jne mb_done
+    cmp byte ptr [ecx + 6], 0x72
+    jne mb_done
+    or edx, {AT['CARR']}
+mb_done:
+    add esi, 9
+    lea eax, [ebx + 0xd6]
+    cmp esi, eax
+    jb mb_slot
     cmp dword ptr [ebp + 0xc], 0
     je ae_noship
     or edx, {AT['SHIP']}
@@ -1138,7 +1213,12 @@ sc_cp:
     cmp eax, 0x20
     jb sc_cp
     cmp eax, 0x7e
-    ja sc_cp
+    jbe sc_asc
+    cmp eax, 0x7f
+    je sc_cp
+    mov eax, 0x3f
+    jmp sc_put
+sc_asc:
     lea ecx, [eax - 0x41]
     cmp ecx, 25
     ja sc_put
@@ -1232,15 +1312,6 @@ sc_t2:
     jmp sc_t2
 sc_t3:
     or edx, 4
-    mov ecx, edi
-    sub ecx, esi
-    cmp ecx, 3
-    jne sc_ret
-    cmp word ptr [esi], 0x6c66
-    jne sc_ret
-    cmp byte ptr [esi + 2], 0x79
-    jne sc_ret
-    or edx, 8
 sc_ret:
     mov eax, edx
     ret

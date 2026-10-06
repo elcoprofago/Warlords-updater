@@ -2,6 +2,22 @@
 
 Anotado el 5/10/2026. Para el chequeo del Army List (`build.py`).
 
+## Estado (6/10/2026): hecho en vista-aliada 1.0.3.0
+
+- `RULES` con las 25 reglas en el orden del validador. Átomos nuevos `LAND` y `CARR`.
+- `armeval` mira los 4 casilleros de Move Bonus igual que `Unit.TieneMoveBonus`: corta en el primer nulo, un byte
+  mayor a 0x7f cuenta como '?' (Encoding.ASCII), descarta los no imprimibles, quita espacios y compara sin
+  distinguir mayúsculas. El texto del Combat Bonus también lee los bytes mayores a 0x7f como '?'.
+- `reglas_ref.py` transcribe ahora DarklordsValidator, reglas 1–25.
+- `prueba_reglas.py` arma el parche, emula `armeval` y lo compara con `RulesEngine.Validate` del validador real
+  (lo compila con dotnet) y con `reglas_ref.py`. Resultado del 6/10/2026, cero diferencias:
+  - los 374 .ARM de `C:\Warlords3\ARMY`;
+  - 15 casos de juguete con su control en el límite;
+  - 20 000 casos sintéticos alrededor de cada umbral, con textos raros en Move Bonus y Combat Bonus.
+- Control de la prueba: contra el parche anterior (1.0.2.0) da 96 diferencias sobre los .ARM reales.
+
+Lo que sigue pendiente de esta nota es el punto 5 (war3ed_ssg).
+
 ## Objetivo
 
 El usuario no toma decisiones técnicas: dice lo que desea. Lo que desea es que esta app **coincida con la
