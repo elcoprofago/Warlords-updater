@@ -13,7 +13,7 @@ P = 1; GRP = P * 0x4f0; X, Y = 5, 6; SHIFT = 8
 WATER, LAND = 3, 2
 
 def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building=False, bridge=False,
-        noembark=()):
+        noembark=(), carrier=False):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(BASE, SIZE); mu.mem_write(BASE, img[:SIZE])
     mu.mem_map(0x100000, 0x10000)
@@ -64,6 +64,9 @@ casos = [
     ('embarcados 8 a agua vacia',        dict(count=8, occ=0, embarked=True), 'PASA'),
     ('embarcados 3 + 3',                 dict(count=3, occ=3, embarked=True), 'BLOQ'),
     ('embarcados 3 + 2',                 dict(count=3, occ=2, embarked=True), 'PASA'),
+    # barco con los dos bonos (plan B): el tope de 5 sigue valiendo; el código 4 es el que forma el convoy
+    ('landing+carrier: 3 + 3',           dict(count=3, occ=3, embarked=True, carrier=True), 'BLOQ'),
+    ('landing+carrier: 3 + 2',           dict(count=3, occ=2, embarked=True, carrier=True), 'PASA'),
 ]
 mal = 0
 for nombre, kw, esperado in casos:

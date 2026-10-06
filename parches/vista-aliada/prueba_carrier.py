@@ -238,10 +238,15 @@ for nombre, kw, esp_ in [('barco suelto', dict(link=False), 'SI'), ('mitad enlaz
 # los mismos registros y la misma pila; solo cambian imagen, srcX y srcY, y solo si la celda es la popa del grupo activo.
 VISTA, CELDA, HOJA = 0x120000, 0x130000, 0x1234
 def dibujo(F=(11, 10), dueno=P, imagen=None, sin_anim=False, activo=True, s59=0, s5b=0, gemb=True, enlazada=True,
-           bonos=('Carrier',), dir_grupo=2, mov=7, cara=None, turno=0, fijo=0, cuadro=0, L=(10, 10)):
+           bonos=('Carrier',), dir_grupo=2, mov=7, cara=None, turno=0, fijo=0, cuadro=0, L=(10, 10),
+           glink=None, flink=None, extra=(), cara2=None):
     w = Mundo(bonos)
-    G = [w.army(*L, link=0x80 | enc(F[0] - L[0], F[1] - L[1])) for _ in range(4)]
-    Q = [w.army(*F, owner=dueno, link=(0x80 | enc(L[0] - F[0], L[1] - F[1])) if enlazada else 0) for _ in range(3)]
+    G = [w.army(*L, link=glink if glink is not None else 0x80 | enc(F[0] - L[0], F[1] - L[1])) for _ in range(4)]
+    Q = [w.army(*F, owner=dueno, link=flink if flink is not None else
+                (0x80 | enc(L[0] - F[0], L[1] - F[1])) if enlazada else 0) for _ in range(3)]
+    for xy, l in extra:
+        w.army(*xy, link=l)
+    if cara2: w.mu.mem_write(CRFACE + 0x40 + P * 8, struct.pack('<hhB', *cara2))
     w.group(G, emb=gemb)
     mu = w.mu
     mu.mem_write(VISTA, bytes(0x2c * 8 + 0x80))
@@ -283,5 +288,187 @@ for nombre, kw in [('imagen 0xa4', dict(imagen=0xa4)), ('sin animaciones', dict(
                    ('celda del propio grupo', dict(F=(10, 10)))]:
     got, args, ok = dibujo(**kw)
     check(f'dibujo sin cambios: {nombre}', ok and got == args, (got, args, ok))
+
+# ================================================================ convoy de 3 casillas
+# Byte de enlace con dos vecinas: cod de la primera en los bits 0-3 y, en los bits 4-6, cuántos pasos más allá está la
+# segunda en la rosa N, NE, E, SE, S, SO, O, NO.
+RING = [1, 2, 6, 10, 9, 8, 4, 0]
+def lk(*ds):
+    es = [enc(*d) for d in ds]
+    return 0x80 | es[0] | ((((RING.index(es[1]) - RING.index(es[0])) & 7) << 4) if len(es) > 1 else 0)
+check('byte de enlace: una sola vecina igual que 1.0.8', lk((1, 0)) == 0x80 | enc(1, 0))
+
+# ---------------------------------------------------------------- formar con 3
+# Grupo en S = (10,10) con destino D; otros = [((x, y), byte)] barcos propios de 4 ejércitos, con destino (30,30).
+def formar3(D=(11, 10), s_link=0, d_link=0, otros=()):
+    w = Mundo()
+    A = [w.army(10, 10, dest=D, link=s_link) for _ in range(5)]
+    T = [w.army(*D, dest=(30, 30), link=d_link) for _ in range(6)]
+    O = {xy: [w.army(*xy, link=l, dest=(30, 30)) for _ in range(4)] for xy, l in otros}
+    lejos = w.army(40, 40); ajeno = w.army(13, 10, owner=2)
+    w.group(A)
+    entry = 0x150000
+    w.mu.mem_write(entry, struct.pack('<hbbhh', 4, P, 1, 0, 0))
+    regs = dict(EAX=0x11, EBX=0x1234, ECX=0x22, EDX=0x33, ESI=entry, EDI=0x5678, EBP=0x9abc)
+    at, out, esp = w.run(0x49d05d, None, regs, stack=struct.pack('<III', 0x5678, entry, 0x1234))
+    ok = (at == SENT and out['ESP'] == esp + 16 and out['ESI'] == entry and out['EDI'] == 0x5678
+          and out['EBX'] == 0x1234 and w.get(lejos)['link'] == 0 and w.get(ajeno)['link'] == 0)
+    return w, A, T, O, ok
+LLEGO = [(0x485e30, (P, -1, -1)), (0x49c960, (P, 1))]
+def links(w, ids): return {w.get(i)['link'] for i in ids}
+def dests(w, ids): return {w.get(i)['dest'] for i in ids}
+
+w, A, T, O, ok = formar3(d_link=lk((1, 0)), otros=[((12, 10), lk((-1, 0)))])
+check('formar 3: el grupo se suma a la punta de un convoy de 2', ok and links(w, A) == {lk((1, 0))}
+      and links(w, T) == {lk((-1, 0), (1, 0))} and links(w, O[(12, 10)]) == {lk((-1, 0))}
+      and dests(w, T) == {(-1, -1)} and dests(w, O[(12, 10)]) == {(30, 30)} and w.llamadas == LLEGO,
+      ([hex(w.get(i)['link']) for i in A + T], w.llamadas))
+w, A, T, O, ok = formar3(s_link=lk((-1, 0)), otros=[((9, 10), lk((1, 0)))])
+check('formar 3: la punta de un convoy de 2 se suma a un barco suelto', ok and links(w, A) == {lk((1, 0), (-1, 0))}
+      and links(w, T) == {lk((-1, 0))} and links(w, O[(9, 10)]) == {lk((1, 0))} and w.llamadas == LLEGO,
+      ([hex(w.get(i)['link']) for i in A + T], w.llamadas))
+w, A, T, O, ok = formar3(D=(11, 11), s_link=lk((0, 1)), otros=[((10, 11), lk((0, -1)))])
+check('formar 3: en ángulo (diagonal)', ok and links(w, A) == {lk((1, 1), (0, 1))}
+      and links(w, T) == {lk((-1, -1))} and w.llamadas == LLEGO, [hex(w.get(i)['link']) for i in A + T])
+w, A, T, O, ok = formar3(s_link=lk((-1, 0)))
+check('formar 3: enlace suelto en S (la otra se fue) -> par nuevo', ok and links(w, A) == {lk((1, 0))}
+      and links(w, T) == {lk((-1, 0))} and w.llamadas == LLEGO, [hex(w.get(i)['link']) for i in A + T])
+for nombre, kw in [('dos convoyes de 2', dict(s_link=lk((-1, 0)), d_link=lk((1, 0)),
+                                              otros=[((9, 10), lk((1, 0))), ((12, 10), lk((-1, 0)))])),
+                   ('D en el medio de un convoy de 3', dict(d_link=lk((1, 0), (0, 1)),
+                                                            otros=[((12, 10), lk((-1, 0))), ((11, 11), lk((0, -1)))])),
+                   ('S en la punta de un convoy de 3', dict(s_link=lk((-1, 0)),
+                                                            otros=[((9, 10), lk((1, 0), (-1, 0))), ((8, 10), lk((1, 0)))]))]:
+    w, A, T, O, ok = formar3(**kw)
+    antes = {xy: {kw_l for (xy2, kw_l) in kw['otros'] if xy2 == xy} for xy in O}
+    check(f'no forma (más de 3): {nombre}', ok and w.llamadas == [(0x49c960, (P, 5))]
+          and links(w, A) == {kw.get('s_link', 0)} and links(w, T) == {kw.get('d_link', 0)}
+          and dests(w, T) == {(30, 30)} and {xy: links(w, ids) for xy, ids in O.items()} == antes,
+          (w.llamadas, [hex(w.get(i)['link']) for i in A + T]))
+w, A, T, O, ok = formar3(s_link=lk((1, 0)), d_link=lk((-1, 0)))
+check('formar 3: D ya es del convoy -> llegó, sin cambios', ok and w.llamadas == LLEGO and links(w, A) == {lk((1, 0))}
+      and links(w, T) == {lk((-1, 0))} and dests(w, T) == {(30, 30)}, (w.llamadas, [hex(w.get(i)['link']) for i in A + T]))
+w, A, T, O, ok = formar3(s_link=lk((0, 1)), d_link=lk((-1, 1)), otros=[((10, 11), lk((0, -1), (1, -1)))])
+check('formar 3: D es la otra punta del convoy -> llegó, sin cambios', ok and w.llamadas == LLEGO
+      and links(w, A) == {lk((0, 1))} and links(w, T) == {lk((-1, 1))} and links(w, O[(10, 11)]) == {lk((0, -1), (1, -1))},
+      (w.llamadas, [hex(w.get(i)['link']) for i in A + T]))
+
+# ---------------------------------------------------------------- seguir con 3
+# Grupo que salió de A = (10,10) con el byte glink y ya está en N; otros = [((x, y), byte)] barcos propios de 3
+# ejércitos con destino (30,30) y 10 movimientos.
+def seguir3(N, glink, otros, cost=2):
+    w = Mundo(('Carrier',))
+    G = [w.army(*N, link=glink) for _ in range(5)]
+    O = {xy: [w.army(*xy, link=l, dest=(30, 30)) for _ in range(3)] for xy, l in otros}
+    lejos = w.army(40, 40); ajeno = w.army(14, 10, owner=2)
+    w.group(G)
+    w.mu.mem_write(0x572990, struct.pack('<h', 10)); w.mu.mem_write(0x572994, struct.pack('<h', 10))
+    w.mu.mem_write(0x4fe5f8, b'\x01')
+    entry = 0x150000
+    w.mu.mem_write(entry, struct.pack('<hbbhhhh', 0, P, cost, N[0], N[1], 0, 1))
+    regs = dict(EAX=0x11, EBX=0x1234, ECX=0x22, EDX=0x33, ESI=entry, EDI=entry + 4, EBP=0x9abc)
+    at, out, esp = w.run(0x49cdc7, 0x49cdce, regs, stack=bytes(0x14))
+    ok = (at == 0x49cdce and out['ESP'] == esp + 0x14 and out['ECX'] & 0xffff == N[1]
+          and all(out[k] == regs[k] for k in ('EAX', 'EBX', 'EDX', 'ESI', 'EDI', 'EBP'))
+          and w.get(lejos) == dict(x=40, y=40, dest=(-1, -1), moves=10, link=0) and w.get(ajeno)['x'] == 14)
+    return w, G, O, ok
+def face2(w, p=P): return struct.unpack('<hhB', w.mu.mem_read(CRFACE + 0x40 + p * 8, 5))
+def en(w, ids, x, y, moves, link, dest=(-1, -1)):
+    return all(w.get(i) == dict(x=x, y=y, dest=dest, moves=moves, link=link) for i in ids)
+def ft(dx, dy): return FTAB[(dx + 1) + 3 * (dy + 1)]
+
+w, G, O, ok = seguir3((9, 10), lk((1, 0)), [((11, 10), lk((-1, 0), (1, 0))), ((12, 10), lk((-1, 0)))])
+check('sigue 3: la punta avanza y los otros dos van en fila', ok and links(w, G) == {lk((1, 0))}
+      and en(w, O[(11, 10)], 10, 10, 8, lk((-1, 0), (1, 0))) and en(w, O[(12, 10)], 11, 10, 8, lk((-1, 0)))
+      and w.llamadas == [(0x49d450, (10, 10)), (0x49d450, (11, 10)), (0x49d450, (12, 10))]
+      and face(w) == (10, 10, ft(-1, 0)) and face2(w) == (11, 10, ft(-1, 0)) and w.mu.mem_read(0x4fe5f8, 1)[0] == 0,
+      ([w.get(i) for i in G + O[(11, 10)] + O[(12, 10)]], w.llamadas, face(w), face2(w)))
+w, G, O, ok = seguir3((9, 9), lk((1, 0)), [((11, 10), lk((-1, 0), (1, 1))), ((12, 11), lk((-1, -1)))])
+check('sigue 3: en ángulo', ok and links(w, G) == {lk((1, 1))}
+      and en(w, O[(11, 10)], 10, 10, 8, lk((-1, -1), (1, 0))) and en(w, O[(12, 11)], 11, 10, 8, lk((-1, 0)))
+      and face(w) == (10, 10, ft(-1, 0)) and face2(w) == (11, 10, ft(-1, -1)),
+      ([w.get(i) for i in G + O[(11, 10)] + O[(12, 11)]], face(w), face2(w)))
+w, G, O, ok = seguir3((11, 9), lk((-1, 0), (1, 0)), [((9, 10), lk((1, 0))), ((11, 10), lk((-1, 0)))])
+check('sigue 3: el del medio avanza, la punta lejana pasa a su casilla', ok and links(w, G) == {lk((-1, 1))}
+      and en(w, O[(9, 10)], 10, 10, 8, lk((1, -1), (1, 0))) and en(w, O[(11, 10)], 11, 10, 10, lk((-1, 0)), (30, 30))
+      and w.llamadas == [(0x49d450, (10, 10)), (0x49d450, (9, 10))]
+      and face(w) == (10, 10, ft(1, 0)) and face2(w)[0] == 0x7fff,
+      ([w.get(i) for i in G + O[(9, 10)] + O[(11, 10)]], w.llamadas, face(w), face2(w)))
+w, G, O, ok = seguir3((11, 9), lk((1, 0), (-1, 0)), [((9, 10), lk((1, 0))), ((11, 10), lk((-1, 0)))])
+check('sigue 3: el del medio, la lejana es la segunda vecina', ok and links(w, G) == {lk((-1, 1))}
+      and en(w, O[(9, 10)], 10, 10, 8, lk((1, -1), (1, 0))) and en(w, O[(11, 10)], 11, 10, 10, lk((-1, 0)), (30, 30)),
+      [w.get(i) for i in G + O[(9, 10)] + O[(11, 10)]])
+w, G, O, ok = seguir3((10, 9), lk((-1, 0), (1, 0)), [((9, 10), lk((1, 0))), ((11, 10), lk((-1, 0)))])
+check('sigue 3: el del medio, empate -> pasa la primera vecina', ok and links(w, G) == {lk((0, 1))}
+      and en(w, O[(9, 10)], 10, 10, 8, lk((0, -1), (1, 0))) and en(w, O[(11, 10)], 11, 10, 10, lk((-1, 0)), (30, 30)),
+      [w.get(i) for i in G + O[(9, 10)] + O[(11, 10)]])
+w, G, O, ok = seguir3((9, 10), lk((1, 0), (0, 1)), [((11, 10), lk((-1, 0)))])
+check('sigue 3: el grupo tenía un enlace suelto -> sigue como par', ok and links(w, G) == {lk((1, 0))}
+      and en(w, O[(11, 10)], 10, 10, 8, lk((-1, 0))) and face2(w)[0] == 0x7fff,
+      [w.get(i) for i in G + O[(11, 10)]])
+for nombre, N, gl, otros in [('el grupo entra en la tercera casilla', (11, 11), lk((1, 0)),
+                              [((11, 10), lk((-1, 0), (0, 1))), ((11, 11), lk((0, -1)))]),
+                             ('el del medio entra en una punta', (11, 10), lk((-1, 0), (1, 0)),
+                              [((9, 10), lk((1, 0))), ((11, 10), lk((-1, 0)))])]:
+    w, G, O, ok = seguir3(N, gl, otros)
+    check(f'no sigue 3: {nombre}', ok and w.llamadas == [] and w.mu.mem_read(0x4fe5f8, 1)[0] == 1
+          and all(en(w, ids, *xy, 10, l, (30, 30)) for (xy, l), ids in zip(otros, O.values())),
+          ([w.get(i) for i in G + sum(O.values(), [])], w.llamadas))
+
+# ---------------------------------------------------------------- defensa con 3
+# casillas = [((x, y), cuántos, byte)] del jugador 3; se ataca la primera.
+def defensa3(casillas):
+    w = Mundo(('Carrier',))
+    ids = [[w.army(*xy, owner=3, link=l) for _ in range(n)] for xy, n, l in casillas]
+    w.army(40, 40, owner=3); w.army(25, 20, owner=2)
+    frame = bytearray(0x30 + 64 + 8)
+    x, y = casillas[0][0]
+    regs = dict(EAX=0x11, EBX=0x1234, ECX=0x22, EDX=0x33, ESI=0xabcd0000 | x, EDI=0xdcba0000 | y, EBP=0x9abc)
+    at, out, esp = w.run(0x464c3d, 0x464c51, regs, stack=bytes(frame))
+    n = struct.unpack('<h', w.mu.mem_read(esp + 0x12, 2))[0]
+    buf = list(struct.unpack('<32h', w.mu.mem_read(esp + 0x30, 64)))
+    ok = at == 0x464c51 and out['ESP'] == esp and all(out[k] == regs[k] for k in ('EBX', 'ESI', 'EDI', 'EBP'))
+    return n, buf, ids, ok
+E3 = [((20, 20), 6, lk((0, 1))), ((20, 21), 5, lk((0, -1), (0, 1))), ((20, 22), 7, lk((0, -1)))]
+n, buf, ids, ok = defensa3(E3); check('defensa 3: atacan una punta -> 6 + 5 + 7', ok and n == 18 and buf[:18] == sum(ids, []) and buf[18:] == [0] * 14, (n, buf))
+n, buf, ids, ok = defensa3([E3[1], E3[0], E3[2]]); check('defensa 3: atacan el medio', ok and n == 18 and buf[:18] == sum(ids, []), (n, buf))
+n, buf, ids, ok = defensa3([E3[2], E3[1], E3[0]]); check('defensa 3: atacan la otra punta', ok and n == 18 and buf[:18] == sum(ids, []), (n, buf))
+n, buf, ids, ok = defensa3([(xy, 8, l) for xy, _, l in E3]); check('defensa 3: 8 + 8 + 8', ok and n == 24 and buf[:24] == sum(ids, []), (n, buf))
+n, buf, ids, ok = defensa3([E3[0], E3[1], ((20, 22), 7, lk((1, 0)))])
+check('defensa 3: la tercera no apunta de vuelta -> solo 2', ok and n == 11 and buf[:12] == ids[0] + ids[1] + [0], (n, buf))
+n, buf, ids, ok = defensa3([E3[0], ((20, 21), 5, lk((0, -1), (1, 1))), ((21, 22), 7, lk((-1, -1)))])
+check('defensa 3: en ángulo', ok and n == 18 and buf[:18] == sum(ids, []), (n, buf))
+
+# ---------------------------------------------------------------- Landing y dibujo con 3
+def landing3(glink, otros):
+    w = Mundo(('Landing', 'Carrier'))
+    G = [w.army(10, 10, link=glink) for _ in range(3)]
+    for xy, l in otros: w.army(*xy, link=l)
+    w.group(G)
+    w.mu.mem_write(0x58715c, struct.pack('<h', P))
+    regs = dict(EAX=0x11, EBX=0x1234, ECX=0x22, EDX=0x33, ESI=0x44, EDI=0x55, EBP=0x9abc)
+    at, out, esp = w.run(LANDCHK, None, regs)
+    return ('SI' if not out['EFLAGS'] & 0x40 else 'NO'), at == SENT and all(out[k] == regs[k] for k in REG)
+r, ok = landing3(lk((-1, 0), (1, 0)), [((9, 10), lk((1, 0))), ((11, 10), lk((-1, 0)))]); check('Landing 3: el medio -> NO', ok and r == 'NO', r)
+r, ok = landing3(lk((1, 0)), [((11, 10), lk((-1, 0), (1, 0))), ((12, 10), lk((-1, 0)))]); check('Landing 3: una punta -> NO', ok and r == 'NO', r)
+
+C3 = [((11, 10), lk((-1, 0), (1, 0)))]
+got, args, ok = dibujo(F=(12, 10), glink=lk((1, 0)), flink=lk((-1, 0)), extra=C3)
+check('dibujo 3: la punta lejana (a 2 casillas)', ok and got == anim(2, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(F=(12, 10), glink=lk((1, 0)), flink=lk((-1, 0)), extra=C3, cara2=(12, 10, 6))
+check('dibujo 3: la punta lejana con su dirección anotada', ok and got == anim(6, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(F=(12, 10), glink=lk((1, 0)), flink=lk((-1, 0)), extra=C3, cara=(12, 10, 5))
+check('dibujo 3: dirección anotada en la primera entrada', ok and got == anim(5, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(F=(11, 10), glink=lk((1, 0)), flink=lk((-1, 0), (1, 0)), extra=[((12, 10), lk((-1, 0)))], cara2=(12, 10, 6))
+check('dibujo 3: el medio quieto (la anotada es de otra casilla)', ok and got == anim(2, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(F=(11, 10), L=(12, 10), glink=lk((-1, 0)), flink=lk((1, 0), (-1, 0)), extra=[((10, 10), lk((1, 0)))], dir_grupo=6)
+check('dibujo 3: el grupo activo es una punta, el medio quieto', ok and got == anim(6, 3 * 0x31 + 1), got)
+for nombre, kw in [('a 2 casillas sin el medio', dict(F=(12, 10), glink=lk((1, 0)), flink=lk((-1, 0)))),
+                   ('a 2 casillas, el medio no apunta a la punta', dict(F=(12, 10), glink=lk((1, 0)), flink=lk((-1, 0)),
+                                                                       extra=[((11, 10), lk((-1, 0)))])),
+                   ('a 3 casillas', dict(F=(13, 10), glink=lk((1, 0)), flink=lk((-1, 0)),
+                                         extra=[((11, 10), lk((-1, 0), (1, 0))), ((12, 10), lk((-1, 0), (1, 0)))]))]:
+    got, args, ok = dibujo(**kw)
+    check(f'dibujo 3 sin cambios: {nombre}', ok and got == args, (got, args, ok))
 
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)

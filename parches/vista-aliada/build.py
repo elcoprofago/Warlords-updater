@@ -1,8 +1,9 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
 # TERRAIN\SUBTYPE\landing.STT y carrier.STT.
 # Tope de 5 en el stack de un barco con bono de movimiento "Landing" (LANDCAP).
-# Transporte doble: dos barcos vecinos de un bando con bono de movimiento "Carrier" forman uno de hasta 16 (crlink).
-# Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad).
+# Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
+# Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad); el diálogo
+# de derribar muestra el retrato del ariete orco.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -2162,7 +2163,7 @@ portc = place('portc', '''
 # alguno de sus 4 bonos de movimiento (+0xb2 + k*9, 9 B c/u; el cargador 0x42f1b0 ignora los textos que no conoce y
 # el editor los escribe en sus listas desplegables editables), el buscador (0x4a5c40, expansión, y su rastreo de
 # vuelta en 0x4a600e) suma a los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los de una
-# casilla con tierra las direcciones hacia agua pura, salvo que el líder sea mitad de un transporte doble (crpart): esos
+# casilla con tierra las direcciones hacia agua pura, salvo que el líder esté en un convoy (crconv): esos
 # atracan solo en puertos. Nunca hacia tierra intransitable: clase de terreno 4
 # (montaña; 0x535f0c + tipo*0x58) sin camino ni puente (flags & 0x30), la misma regla del constructor (0x4a52c3).
 # No toca los vuelos (otra rama) ni la tabla de enlaces.
@@ -2215,16 +2216,18 @@ def boatbon_src(lbl, straddr, rec=False):
 '''
 boatland = place('boatland', boatbon_src('boatland', landstr))
 
-# ---------------------------------------------------------------- Transporte doble (bono de movimiento "Carrier")
-# Dos stacks embarcados de un bando cuyo barco (ranura 15) tiene "Carrier", en casillas vecinas, forman un solo barco de
-# hasta 16: cada casilla conserva su tope, se mueven juntos (la mitad que se mueve arrastra a la otra a la casilla que
-# deja), atacan solo con el grupo que ataca y defienden con las dos mitades. Atracan solo en puertos: a una mitad
-# enlazada no se le aplica "Landing".
+# ---------------------------------------------------------------- Convoy (bono de movimiento "Carrier")
+# Hasta tres stacks embarcados de un bando cuyo barco (ranura 15) tiene "Carrier", en una cadena de casillas vecinas,
+# forman un solo barco de hasta 24: cada casilla conserva su tope, se mueven juntos (el stack que se mueve arrastra a
+# los demás en fila: cada uno pasa a la casilla que dejó el de adelante), atacan solo con el grupo que ataca y
+# defienden con todas las casillas. Atracan solo en puertos: a una casilla del convoy no se le aplica "Landing".
 # Enlace: byte +0x1b del ejército (0x54fe6b; en 1821 ejércitos vivos de 12 partidas siempre vale 0, ningún código lo
-# lee y se guarda con la partida). Bit 0x80 = enlazado; bits 0-1 = dx+1 y bits 2-3 = dy+1 hacia la otra mitad
-# (cod = dx + 4*dy + 5, el opuesto es 10 - cod). Una casilla es mitad si algún ejército vivo y embarcado de q tiene
-# el bit, el barco de q tiene "Carrier" y en la casilla vecina hay un ejército vivo y embarcado de q que apunta de
-# vuelta. Los bits que quedan sueltos (la otra mitad se fue o murió) no valen nada.
+# lee y se guarda con la partida). Bit 0x80 = enlazado; bits 0-3 = cod de la primera casilla vecina enlazada
+# (bits 0-1 = dx+1 y bits 2-3 = dy+1: cod = dx + 4*dy + 5, el opuesto es 10 - cod); bits 4-6 = k, la segunda
+# vecina enlazada está k pasos más allá de la primera en la rosa de direcciones CR_RING (0 = no hay segunda). Un
+# enlace de T hacia T + d vale si el barco de q tiene "Carrier" y en T + d hay un ejército vivo y embarcado de q
+# con la dirección -d en su byte. Los enlaces sueltos (la otra casilla se fue o murió) no valen nada. Los transportes
+# dobles de 1.0.7 y 1.0.8 (k = 0) son convoyes de 2 casillas con el mismo byte.
 # Formar: ordenar a un stack embarcado ir a una casilla vecina con un barco propio cuando la suma no entra (el paso
 # devuelve 4, "stack lleno"). Se ejecuta en todas las máquinas (comando de red 0x14d -> 0x49c9f0) y usa el destino
 # del líder, que viaja por red (el camino no).
@@ -2298,10 +2301,88 @@ ab_out:
     popad
     jmp {armrow:#x}
 ''')
+# Rosa de direcciones (cod de N, NE, E, SE, S, SO, O, NO) y su inversa (cod -> índice, 0xff si el cod no es dirección).
+CR_RING = [1, 2, 6, 10, 9, 8, 4, 0]
+CR_E2R = place_data('cr_e2r', bytes(CR_RING.index(e) if e in CR_RING else 0xff for e in range(16)))
+CR_R2E = place_data('cr_r2e', bytes(CR_RING))
+CRLK = place_data('crlk', b'\xff' * 12)     # crlinks: jugador, cod 1, cod 2 (-1 si no hay)
+CRCV = place_data('crcv', bytes(16))        # crconv: las otras casillas del convoy, 2 x (x, y)
+# eax = byte de enlace -> eax = cod 1, edx = cod 2 (-1 si no hay); los dos -1 si no está enlazado o el cod 1 no es
+# una dirección. Preserva el resto.
+crdec = place('crdec', f'''
+    push ecx
+    movzx ecx, al
+    test cl, 0x80
+    jz crd_none
+    mov eax, ecx
+    and eax, 0xf
+    movzx edx, byte ptr [eax + {CR_E2R:#x}]
+    cmp edx, 8
+    jae crd_none
+    shr ecx, 4
+    and ecx, 7
+    jz crd_one
+    add edx, ecx
+    and edx, 7
+    movzx edx, byte ptr [edx + {CR_R2E:#x}]
+    pop ecx
+    ret
+crd_one:
+    or edx, -1
+    pop ecx
+    ret
+crd_none:
+    or eax, -1
+    or edx, -1
+    pop ecx
+    ret
+''')
+# eax = cod 1, edx = cod 2 o -1 -> eax = byte de enlace. Preserva el resto.
+crenc = place('crenc', f'''
+    test edx, edx
+    js cre_one
+    push ecx
+    movzx ecx, byte ptr [edx + {CR_E2R:#x}]
+    sub cl, byte ptr [eax + {CR_E2R:#x}]
+    and ecx, 7
+    shl ecx, 4
+    or eax, ecx
+    pop ecx
+cre_one:
+    or eax, 0x80
+    ret
+''')
+# eax = cod, esi = x, edi = y -> eax, edx = la casilla vecina en esa dirección. Preserva el resto.
+crxy = place('crxy', '''
+    mov edx, eax
+    shr edx, 2
+    lea edx, [edi + edx - 1]
+    and eax, 3
+    lea eax, [esi + eax - 1]
+    ret
+''')
+# eax = dx, edx = dy -> eax = max(|dx|, |dy|). Preserva el resto (salvo edx).
+crcheb = place('crcheb', '''
+    push ecx
+    mov ecx, eax
+    sar ecx, 31
+    xor eax, ecx
+    sub eax, ecx
+    mov ecx, edx
+    sar ecx, 31
+    xor edx, ecx
+    sub edx, ecx
+    cmp eax, edx
+    jge crc_out
+    mov eax, edx
+crc_out:
+    pop ecx
+    ret
+''')
 # eax = x, edx = y, ebp = jugador, ecx = operación -> eax = cuántos ejércitos vivos del jugador en la casilla pasan los
-# filtros. Operación: 0x200 solo embarcados, 0x400 solo con byte de enlace == cl, 0x800 escribe cl en el byte de
-# enlace, 0x100 borra el destino. Preserva el resto (salvo edx).
-crscan = place('crscan', '''
+# filtros. Operación: 0x200 solo embarcados, 0x1000 solo con la dirección cl en el byte de enlace, 0x400 solo con byte
+# de enlace == cl, 0x800 escribe cl en el byte de enlace, 0x100 borra el destino. Preserva el resto (salvo edx).
+crscan = place('crscan', f'''
     push ebx
     push esi
     push edi
@@ -2328,9 +2409,23 @@ crs_loop:
     pop eax
     jne crs_next
     test ch, 2
-    jz crs_f1
+    jz crs_f0
     test byte ptr [edx + 0x54fe64], 8
     jz crs_next
+crs_f0:
+    test ch, 0x10
+    jz crs_f1
+    push eax
+    push edx
+    movzx eax, byte ptr [edx + 0x54fe6b]
+    call {crdec:#x}
+    cmp al, cl
+    je crs_f0b
+    cmp dl, cl
+crs_f0b:
+    pop edx
+    pop eax
+    jne crs_next
 crs_f1:
     test ch, 4
     jz crs_f2
@@ -2355,69 +2450,145 @@ crs_end:
     pop ebx
     ret
 ''')
-# esi = x, edi = y -> eax = 1 si la casilla es mitad de un transporte doble (ecx, edx = la otra mitad), 0 si no.
-# Preserva ebx, esi, edi, ebp.
-crpart = place('crpart', f'''
+# esi = x, edi = y, ebp = jugador, eax = cod -> eax = cuántos ejércitos vivos y embarcados del jugador en la casilla
+# vecina en esa dirección apuntan de vuelta. Preserva el resto (salvo edx).
+crback = place('crback', f'''
+    push ecx
+    mov ecx, 0x120a
+    sub ecx, eax
+    call {crxy:#x}
+    call {crscan:#x}
+    pop ecx
+    ret
+''')
+# esi = x, edi = y -> eax = cuántos enlaces de la casilla valen (0..2): los del primer ejército vivo y embarcado con
+# alguno que valga. En CRLK: jugador, cod 1, cod 2 (-1 los que no hay). Preserva el resto.
+crlinks = place('crlinks', f'''
     push ebx
+    push ecx
+    push edx
     push ebp
     mov ebx, 1
-crp_loop:
+crk_loop:
     movsx eax, word ptr [0x54fe50]
     cmp ebx, eax
-    jge crp_no
+    jge crk_no
     imul eax, ebx, 0x1c
     test byte ptr [eax + 0x54fe63], 0x40
-    jz crp_next
+    jz crk_next
     test byte ptr [eax + 0x54fe64], 8
-    jz crp_next
+    jz crk_next
     cmp word ptr [eax + 0x54fe52], si
-    jne crp_next
+    jne crk_next
     cmp word ptr [eax + 0x54fe54], di
-    jne crp_next
-    movzx ecx, byte ptr [eax + 0x54fe6b]
-    xor ecx, 0x80
-    cmp ecx, 10
-    ja crp_next
-    cmp ecx, 5
-    je crp_next
-    mov edx, ecx
-    and edx, 3
-    cmp edx, 3
-    je crp_next
+    jne crk_next
     movzx ebp, word ptr [eax + 0x54fe5e]
     shr ebp, 5
     and ebp, 0xf
     cmp ebp, 8
-    jae crp_next
+    jae crk_next
+    movzx eax, byte ptr [eax + 0x54fe6b]
+    call {crdec:#x}
+    test eax, eax
+    js crk_next
+    mov dword ptr [{CRLK + 4:#x}], eax
+    mov dword ptr [{CRLK + 8:#x}], edx
     mov eax, ebp
     call {boatcarr:#x}
     test eax, eax
-    jz crp_next
+    jz crk_next
+    xor ecx, ecx
+    mov eax, dword ptr [{CRLK + 4:#x}]
+    call {crback:#x}
+    test eax, eax
+    jz crk_2
+    inc ecx
+crk_2:
+    mov eax, dword ptr [{CRLK + 8:#x}]
+    test eax, eax
+    js crk_end
+    call {crback:#x}
+    test eax, eax
+    jz crk_end
+    mov eax, dword ptr [{CRLK + 8:#x}]
+    mov dword ptr [ecx*4 + {CRLK + 4:#x}], eax
+    inc ecx
+crk_end:
+    test ecx, ecx
+    jz crk_next
+    mov dword ptr [{CRLK:#x}], ebp
     mov eax, ecx
-    and eax, 3
-    lea eax, [esi + eax - 1]
-    mov edx, ecx
-    shr edx, 2
-    lea edx, [edi + edx - 1]
-    neg ecx
-    add ecx, 0x68a
-    push eax
-    push edx
-    call {crscan:#x}
+    cmp eax, 2
+    je crk_out
+    mov dword ptr [{CRLK + 8:#x}], -1
+crk_out:
+    pop ebp
     pop edx
     pop ecx
-    test eax, eax
-    jz crp_next
-    mov eax, 1
-    pop ebp
     pop ebx
     ret
-crp_next:
+crk_next:
     inc ebx
-    jmp crp_loop
-crp_no:
+    jmp crk_loop
+crk_no:
+    or eax, -1
+    mov dword ptr [{CRLK:#x}], eax
+    mov dword ptr [{CRLK + 4:#x}], eax
+    mov dword ptr [{CRLK + 8:#x}], eax
     xor eax, eax
-    pop ebp
+    jmp crk_out
+''')
+# esi = x, edi = y -> eax = cuántas otras casillas tiene el convoy de la casilla (0..2), en CRCV como (x, y): sigue
+# los enlaces que valen hasta 2 pasos. Preserva el resto.
+crconv = place('crconv', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    call {crlinks:#x}
+    test eax, eax
+    jz crv_out
+    mov ecx, eax
+    mov eax, dword ptr [{CRLK + 4:#x}]
+    call {crxy:#x}
+    mov dword ptr [{CRCV:#x}], eax
+    mov dword ptr [{CRCV + 4:#x}], edx
+    cmp ecx, 2
+    jne crv_far
+    mov eax, dword ptr [{CRLK + 8:#x}]
+    call {crxy:#x}
+    jmp crv_third
+crv_far:
+    mov ebx, esi
+    mov ecx, edi
+    mov esi, eax
+    mov edi, edx
+    call {crlinks:#x}
+    test eax, eax
+    jz crv_one
+    mov eax, dword ptr [{CRLK + 4:#x}]
+    call {crxy:#x}
+    cmp eax, ebx
+    jne crv_third
+    cmp edx, ecx
+    jne crv_third
+    mov eax, dword ptr [{CRLK + 8:#x}]
+    test eax, eax
+    js crv_one
+    call {crxy:#x}
+crv_third:
+    mov dword ptr [{CRCV + 8:#x}], eax
+    mov dword ptr [{CRCV + 0xc:#x}], edx
+    mov eax, 2
+    jmp crv_out
+crv_one:
+    mov eax, 1
+crv_out:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
     pop ebx
     ret
 ''')
@@ -2438,7 +2609,7 @@ landchk = place('landchk', f'''
     jz landchk_yes
     movsx esi, word ptr [eax + 0x54fe52]
     movsx edi, word ptr [eax + 0x54fe54]
-    call {crpart:#x}
+    call {crconv:#x}
     test eax, eax
     jnz landchk_no
 landchk_yes:
@@ -2639,10 +2810,12 @@ lc_pass:
     jmp 0x49e4ae
 ''')
 
-# Transporte doble: formar. Enganche en 0x49d05d (códigos 3, 4 y 7 del paso, "parar": 0x49c960(p, 5)). Con el código 4,
-# barco del bando con "Carrier", grupo embarcado y destino del líder en una casilla vecina con ejércitos propios
-# embarcados: enlaza todo lo propio de las dos casillas, borra los destinos de la otra mitad y termina como el
-# código 1 (llegó: 0x485e30(p, -1, -1) y 0x49c960(p, 1)), sin el aviso de stack lleno.
+# Convoy: formar. Enganche en 0x49d05d (códigos 3, 4 y 7 del paso, "parar": 0x49c960(p, 5)). Con el código 4, barco
+# del bando con "Carrier", grupo embarcado y destino D del líder en una casilla vecina con ejércitos propios
+# embarcados: si D ya es del convoy del grupo, no cambia nada; si los dos convoyes (la casilla S del grupo y D, con lo
+# que tengan enlazado) suman hasta 3 casillas, enlaza S con D sumando el enlace al que ya tenga cada una (S y D son
+# puntas: un convoy de 2 casillas solo tiene puntas) y borra los destinos de D. Las dos cosas terminan como el código
+# 1 (llegó: 0x485e30(p, -1, -1) y 0x49c960(p, 1)), sin el aviso de stack lleno. Si suman más, el aviso de siempre.
 crlink = place('crlink', f'''
     cmp word ptr [esi], 4
     jne crl_orig
@@ -2682,16 +2855,56 @@ crlink = place('crlink', f'''
     mov ecx, 0x200
     call {crscan:#x}
     test eax, eax
-    pop edx
-    pop eax
-    jz crl_no
-    mov ecx, 0x98a
-    sub ecx, ebx
-    call {crscan:#x}
+    jz crl_no2
+    call {crconv:#x}
+    mov ecx, eax
+    test eax, eax
+    jz crl_d
+    mov eax, dword ptr [esp + 4]
+    mov edx, dword ptr [esp]
+    cmp eax, dword ptr [{CRCV:#x}]
+    jne crl_c2
+    cmp edx, dword ptr [{CRCV + 4:#x}]
+    je crl_done
+crl_c2:
+    cmp ecx, 2
+    jb crl_d
+    cmp eax, dword ptr [{CRCV + 8:#x}]
+    jne crl_d
+    cmp edx, dword ptr [{CRCV + 0xc:#x}]
+    je crl_done
+crl_d:
+    push esi
+    push edi
+    mov esi, dword ptr [esp + 0xc]
+    mov edi, dword ptr [esp + 8]
+    call {crconv:#x}
+    pop edi
+    pop esi
+    add ecx, eax
+    cmp ecx, 1
+    ja crl_no2
+    call {crlinks:#x}
+    mov edx, dword ptr [{CRLK + 4:#x}]
+    mov eax, ebx
+    call {crenc:#x}
+    lea ecx, [eax + 0x800]
     mov eax, esi
     mov edx, edi
-    lea ecx, [ebx + 0x880]
     call {crscan:#x}
+    mov esi, dword ptr [esp + 4]
+    mov edi, dword ptr [esp]
+    call {crlinks:#x}
+    mov edx, dword ptr [{CRLK + 4:#x}]
+    mov eax, 10
+    sub eax, ebx
+    call {crenc:#x}
+    lea ecx, [eax + 0x900]
+    mov eax, esi
+    mov edx, edi
+    call {crscan:#x}
+crl_done:
+    add esp, 8
     popad
     movsx ax, byte ptr [esi + 2]
     push -1
@@ -2708,26 +2921,86 @@ crlink = place('crlink', f'''
     pop esi
     pop ebx
     ret
+crl_no2:
+    add esp, 8
 crl_no:
     popad
 crl_orig:
     movsx ax, byte ptr [esi + 2]
     jmp 0x49d062
 ''')
-# Transporte doble: seguir. Enganche en 0x49cdc7, en el paso (código 0) después de embarcar/desembarcar (0x49db70),
-# en todas las máquinas. A = de donde salió el grupo ([0x572990], [0x572994]), N = adonde llegó. Si algún ejército
-# del grupo está enlazado hacia P = A + d, el bando tiene "Carrier", el grupo sigue embarcado, N es vecina de A y no
-# es P, A quedó vacía y P es la otra mitad (apunta de vuelta a A), todo lo propio de P pasa a A: resta el costo del
-# paso a sus movimientos (sin bajar de 0), borra sus destinos, y el enlace queda entre N y A. Si no, el grupo se
-# desenlaza (salió del transporte una parte, o desembarcó). Ocupación de A y P con 0x49d450; mapa con 0x4a2170.
-# Anota en crface[jugador] la casilla A (x, y) y la dirección del paso P -> A, para dibujar esa mitad mirando hacia
-# donde avanzó (crdraw). Direcciones del juego (0x49cbf1..0x49ccfb): índice (dx + 1) + 3*(dy + 1).
+# eax = x, edx = y -> (esi, edi): mueve los ejércitos vivos del jugador ebp de la casilla, restando ecx (el costo del
+# paso) a sus movimientos sin bajar de 0, y borra sus destinos. Preserva todo.
+crmove = place('crmove', '''
+    push ebx
+    push ecx
+    mov ebx, 1
+crm_loop:
+    push eax
+    movsx eax, word ptr [0x54fe50]
+    cmp ebx, eax
+    pop eax
+    jge crm_end
+    imul ecx, ebx, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz crm_next
+    cmp word ptr [ecx + 0x54fe52], ax
+    jne crm_next
+    cmp word ptr [ecx + 0x54fe54], dx
+    jne crm_next
+    push edx
+    movzx edx, word ptr [ecx + 0x54fe5e]
+    shr edx, 5
+    and edx, 0xf
+    cmp edx, ebp
+    pop edx
+    jne crm_next
+    mov word ptr [ecx + 0x54fe52], si
+    mov word ptr [ecx + 0x54fe54], di
+    mov dword ptr [ecx + 0x54fe56], 0xffffffff
+    push edx
+    movzx edx, byte ptr [ecx + 0x54fe61]
+    and edx, 0x7f
+    sub edx, dword ptr [esp + 4]
+    jns crm_pos
+    xor edx, edx
+crm_pos:
+    cmp edx, 0x7f
+    jbe crm_set
+    mov edx, 0x7f
+crm_set:
+    and byte ptr [ecx + 0x54fe61], 0x80
+    or byte ptr [ecx + 0x54fe61], dl
+    pop edx
+crm_next:
+    inc ebx
+    jmp crm_loop
+crm_end:
+    pop ecx
+    pop ebx
+    ret
+''')
+# Convoy: seguir. Enganche en 0x49cdc7, en el paso (código 0) después de embarcar/desembarcar (0x49db70), en todas
+# las máquinas. A = de donde salió el grupo ([0x572990], [0x572994]), N = adonde llegó. Si algún ejército del grupo
+# está enlazado, el bando tiene "Carrier", el grupo sigue embarcado, N es vecina de A, A quedó vacía y alguno de los
+# enlaces de A vale (la casilla vecina apunta de vuelta):
+#  - A era punta, enlazada con P (y P quizá con Q): lo de P pasa a A y lo de Q a P, en fila;
+#  - A era el medio, enlazada con P y P': lo de la más lejana de N (P si empatan) pasa a A; la otra queda y sigue
+#    enlazada con A;
+# siempre que N no sea una casilla del convoy. Lo que se mueve resta el costo del paso a sus movimientos (sin bajar
+# de 0) y pierde el destino; los enlaces quedan N - A - (P o P'). Si no, el grupo se desenlaza (salió del convoy una
+# parte, o desembarcó). Ocupación de las casillas tocadas con 0x49d450; mapa con 0x4a2170.
+# Anota en crface[jugador] la casilla A (x, y) y la dirección del paso P -> A, y en crface2[jugador] P y la dirección
+# Q -> P (x = 0x7fff si no hubo), para dibujar esas casillas mirando hacia donde avanzaron (crdraw). Direcciones del
+# juego (0x49cbf1..0x49ccfb): índice (dx + 1) + 3*(dy + 1).
+# Marco: [esp] A, [+8] N, [+0x10] costo, [+0x14] cod de A a P, [+0x18] el otro enlace que le queda a A (o -1),
+# [+0x1c] 1 si A era el medio, [+0x20] P, [+0x28] Q o P' (x = 0x7fff: no hay), [+0x30] cod de A a N.
 CR_FTAB = place_data('cr_ftab', bytes([7, 0, 1, 6, 4, 2, 5, 4, 3]))
-CRFACE = place_data('crface', b'\xff\x7f' * 32)    # 8 x (x, y, dirección, -); x = 0x7fff: nada anotado
+CRFACE = place_data('crface', b'\xff\x7f' * 64)    # 2 x 8 x (x, y, dirección, -); x = 0x7fff: nada anotado
 crfollow = place('crfollow', f'''
     add esp, 0x14
     pushad
-    sub esp, 0x20
+    sub esp, 0x40
     movsx ebp, byte ptr [esi + 2]
     cmp ebp, 8
     jae cf_out
@@ -2745,138 +3018,204 @@ cf_find:
     inc edx
     jmp cf_find
 cf_found:
-    and edi, 0xf
-    mov [esp + 0x1c], edi
     mov eax, ebp
     call {boatcarr:#x}
     test eax, eax
     jz cf_clear
     test byte ptr [ebx + 0x56eaaa], 8
     jz cf_clear
-    movsx eax, word ptr [0x572990]
-    mov [esp], eax
-    movsx eax, word ptr [0x572994]
-    mov [esp + 4], eax
-    mov eax, edi
-    and eax, 3
-    dec eax
-    add eax, [esp]
-    mov [esp + 8], eax
-    shr edi, 2
-    and edi, 3
-    lea eax, [edi - 1]
-    add eax, [esp + 4]
-    mov [esp + 0xc], eax
     movsx eax, word ptr [esi + 4]
-    mov [esp + 0x10], eax
+    mov dword ptr [esp + 8], eax
     movsx eax, word ptr [esi + 6]
-    mov [esp + 0x14], eax
+    mov dword ptr [esp + 0xc], eax
     movsx eax, byte ptr [esi + 3]
-    mov [esp + 0x18], eax
-    mov eax, [esp + 0x10]
-    sub eax, [esp]
+    mov dword ptr [esp + 0x10], eax
+    mov eax, edi
+    call {crdec:#x}
+    test eax, eax
+    js cf_clear
+    mov dword ptr [esp + 0x14], eax
+    mov dword ptr [esp + 0x18], edx
+    movsx esi, word ptr [0x572990]
+    movsx edi, word ptr [0x572994]
+    mov dword ptr [esp], esi
+    mov dword ptr [esp + 4], edi
+    mov eax, dword ptr [esp + 8]
+    sub eax, esi
     lea ecx, [eax + 1]
     cmp ecx, 2
     ja cf_clear
-    mov edx, [esp + 0x14]
-    sub edx, [esp + 4]
+    mov edx, dword ptr [esp + 0xc]
+    sub edx, edi
     lea ecx, [edx + 1]
     cmp ecx, 2
     ja cf_clear
-    lea edi, [edx*4 + 5]
-    add edi, eax
-    cmp edi, 5
+    lea ecx, [edx*4 + 5]
+    add ecx, eax
+    cmp ecx, 5
     je cf_clear
-    mov eax, [esp + 0x10]
-    cmp eax, [esp + 8]
-    jne cf_np
-    mov eax, [esp + 0x14]
-    cmp eax, [esp + 0xc]
-    je cf_clear
-cf_np:
+    mov dword ptr [esp + 0x30], ecx
     push 0
-    push dword ptr [esp + 8]
-    push dword ptr [esp + 8]
+    push edi
+    push esi
     call 0x4411b0
     add esp, 12
     test ax, ax
     jnz cf_clear
-    mov eax, [esp + 8]
-    mov edx, [esp + 0xc]
-    mov ecx, 0x68a
-    sub ecx, [esp + 0x1c]
-    call {crscan:#x}
+    xor ecx, ecx
+    mov eax, dword ptr [esp + 0x14]
+    call {crback:#x}
     test eax, eax
-    jz cf_clear
-    mov ecx, 1
-cf_mv:
-    movsx eax, word ptr [0x54fe50]
-    cmp ecx, eax
-    jge cf_mvend
-    imul eax, ecx, 0x1c
-    test byte ptr [eax + 0x54fe63], 0x40
-    jz cf_mvnext
-    mov edx, [esp + 8]
-    cmp word ptr [eax + 0x54fe52], dx
-    jne cf_mvnext
-    mov edx, [esp + 0xc]
-    cmp word ptr [eax + 0x54fe54], dx
-    jne cf_mvnext
-    movzx edx, word ptr [eax + 0x54fe5e]
-    shr edx, 5
-    and edx, 0xf
-    cmp edx, ebp
-    jne cf_mvnext
-    mov edx, [esp]
-    mov word ptr [eax + 0x54fe52], dx
-    mov edx, [esp + 4]
-    mov word ptr [eax + 0x54fe54], dx
-    mov dword ptr [eax + 0x54fe56], 0xffffffff
-    movzx edx, byte ptr [eax + 0x54fe61]
-    and edx, 0x7f
-    sub edx, [esp + 0x18]
-    jns cf_mvpos
-    xor edx, edx
-cf_mvpos:
-    cmp edx, 0x7f
-    jbe cf_mvset
-    mov edx, 0x7f
-cf_mvset:
-    and byte ptr [eax + 0x54fe61], 0x80
-    or byte ptr [eax + 0x54fe61], dl
-cf_mvnext:
+    jz cf_l2
     inc ecx
-    jmp cf_mv
-cf_mvend:
-    mov eax, [esp]
-    sub eax, [esp + 8]
-    mov edx, [esp + 4]
-    sub edx, [esp + 0xc]
-    lea edx, [edx + edx*2 + 4]
-    add edx, eax
+cf_l2:
+    mov eax, dword ptr [esp + 0x18]
+    test eax, eax
+    js cf_l3
+    call {crback:#x}
+    test eax, eax
+    jz cf_l3
+    mov eax, dword ptr [esp + 0x18]
+    mov dword ptr [esp + ecx*4 + 0x14], eax
+    inc ecx
+cf_l3:
+    test ecx, ecx
+    jz cf_clear
+    mov dword ptr [esp + 0x1c], 0
+    mov dword ptr [esp + 0x28], 0x7fff
+    mov eax, dword ptr [esp + 0x14]
+    call {crxy:#x}
+    mov dword ptr [esp + 0x20], eax
+    mov dword ptr [esp + 0x24], edx
+    cmp ecx, 2
+    je cf_mid
+    mov dword ptr [esp + 0x18], -1
+    mov esi, eax
+    mov edi, edx
+    call {crlinks:#x}
+    test eax, eax
+    jz cf_chk
+    mov eax, dword ptr [{CRLK + 4:#x}]
+    call {crxy:#x}
+    mov dword ptr [esp + 0x28], eax
+    mov dword ptr [esp + 0x2c], edx
+    mov eax, dword ptr [esp + 0x14]
+    mov dword ptr [esp + 0x18], eax
+    jmp cf_chk
+cf_mid:
+    mov dword ptr [esp + 0x1c], 1
+    mov eax, dword ptr [esp + 0x18]
+    call {crxy:#x}
+    mov dword ptr [esp + 0x28], eax
+    mov dword ptr [esp + 0x2c], edx
+    mov eax, dword ptr [esp + 0x20]
+    sub eax, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0x24]
+    sub edx, dword ptr [esp + 0xc]
+    call {crcheb:#x}
+    mov ecx, eax
+    mov eax, dword ptr [esp + 0x28]
+    sub eax, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0x2c]
+    sub edx, dword ptr [esp + 0xc]
+    call {crcheb:#x}
+    cmp eax, ecx
+    jle cf_chk
+    mov eax, dword ptr [esp + 0x14]
+    mov edx, dword ptr [esp + 0x18]
+    mov dword ptr [esp + 0x14], edx
+    mov dword ptr [esp + 0x18], eax
+    mov eax, dword ptr [esp + 0x20]
+    mov edx, dword ptr [esp + 0x28]
+    mov dword ptr [esp + 0x20], edx
+    mov dword ptr [esp + 0x28], eax
+    mov eax, dword ptr [esp + 0x24]
+    mov edx, dword ptr [esp + 0x2c]
+    mov dword ptr [esp + 0x24], edx
+    mov dword ptr [esp + 0x2c], eax
+cf_chk:
+    mov eax, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0xc]
+    cmp eax, dword ptr [esp + 0x20]
+    jne cf_c2
+    cmp edx, dword ptr [esp + 0x24]
+    je cf_clear
+cf_c2:
+    cmp eax, dword ptr [esp + 0x28]
+    jne cf_go
+    cmp edx, dword ptr [esp + 0x2c]
+    je cf_clear
+cf_go:
+    cmp dword ptr [esp + 0x1c], 0
+    je cf_mv
+    mov dword ptr [esp + 0x28], 0x7fff
+cf_mv:
+    mov eax, dword ptr [esp + 0x20]
+    mov edx, dword ptr [esp + 0x24]
+    mov esi, dword ptr [esp]
+    mov edi, dword ptr [esp + 4]
+    mov ecx, dword ptr [esp + 0x10]
+    call {crmove:#x}
+    sub esi, eax
+    sub edi, edx
+    lea edx, [edi + edi*2 + 4]
+    add edx, esi
     mov al, byte ptr [edx + {CR_FTAB:#x}]
     mov byte ptr [ebp*8 + {CRFACE + 4:#x}], al
-    mov eax, [esp]
+    mov eax, dword ptr [esp]
     mov word ptr [ebp*8 + {CRFACE:#x}], ax
-    mov eax, [esp + 4]
+    mov eax, dword ptr [esp + 4]
     mov word ptr [ebp*8 + {CRFACE + 2:#x}], ax
-    mov eax, [esp]
-    mov edx, [esp + 4]
-    lea ecx, [edi + 0x880]
-    call {crscan:#x}
-    mov eax, [esp + 0x10]
-    mov edx, [esp + 0x14]
+    mov word ptr [ebp*8 + {CRFACE + 0x40:#x}], 0x7fff
+    cmp dword ptr [esp + 0x28], 0x7fff
+    je cf_lk
+    mov eax, dword ptr [esp + 0x28]
+    mov edx, dword ptr [esp + 0x2c]
+    mov esi, dword ptr [esp + 0x20]
+    mov edi, dword ptr [esp + 0x24]
+    mov ecx, dword ptr [esp + 0x10]
+    call {crmove:#x}
+    mov word ptr [ebp*8 + {CRFACE + 0x40:#x}], si
+    mov word ptr [ebp*8 + {CRFACE + 0x42:#x}], di
+    sub esi, eax
+    sub edi, edx
+    lea edx, [edi + edi*2 + 4]
+    add edx, esi
+    mov al, byte ptr [edx + {CR_FTAB:#x}]
+    mov byte ptr [ebp*8 + {CRFACE + 0x44:#x}], al
+    mov eax, dword ptr [esp + 0x20]
+    mov edx, dword ptr [esp + 0x24]
     mov ecx, 0x88a
-    sub ecx, edi
+    sub ecx, dword ptr [esp + 0x14]
+    call {crscan:#x}
+cf_lk:
+    mov eax, dword ptr [esp + 0x30]
+    mov edx, dword ptr [esp + 0x18]
+    call {crenc:#x}
+    lea ecx, [eax + 0x800]
+    mov eax, dword ptr [esp]
+    mov edx, dword ptr [esp + 4]
+    call {crscan:#x}
+    mov eax, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0xc]
+    mov ecx, 0x88a
+    sub ecx, dword ptr [esp + 0x30]
     call {crscan:#x}
     push dword ptr [esp + 4]
     push dword ptr [esp + 4]
     call 0x49d450
     add esp, 8
-    push dword ptr [esp + 0xc]
-    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
     call 0x49d450
     add esp, 8
+    cmp dword ptr [esp + 0x28], 0x7fff
+    je cf_draw
+    push dword ptr [esp + 0x2c]
+    push dword ptr [esp + 0x2c]
+    call 0x49d450
+    add esp, 8
+cf_draw:
     call {REDRAW:#x}
     jmp cf_out
 cf_clear:
@@ -2891,14 +3230,14 @@ cf_cl:
     inc edx
     jmp cf_cl
 cf_out:
-    add esp, 0x20
+    add esp, 0x40
     popad
     mov cx, word ptr [esi + 6]
     jmp 0x49cdce
 ''')
-# Transporte doble: defensa conjunta. Reemplaza 0x464c3d..0x464c51 de 0x464ac0 (armado del combate, casilla sin
-# ciudad; si = x, di = y, defensores en [esp+0x30], hasta 32 como en una ciudad de 4 casillas; cuenta en [esp+0x12]).
-# Si la casilla atacada es mitad de un transporte doble, suma los ejércitos de la otra mitad. Lo que muere se limpia
+# Convoy: defensa conjunta. Reemplaza 0x464c3d..0x464c51 de 0x464ac0 (armado del combate, casilla sin ciudad;
+# si = x, di = y, defensores en [esp+0x30], hasta 32 como en una ciudad de 4 casillas; cuenta en [esp+0x12]). Si la
+# casilla atacada es de un convoy, suma los ejércitos de las otras casillas (hasta 3 x 8 = 24). Lo que muere se limpia
 # después en la reconstrucción de ocupación (0x441290) que hace el combate.
 crdef = place('crdef', f'''
     lea eax, [esp + 0x30]
@@ -2911,30 +3250,35 @@ crdef = place('crdef', f'''
     pushad
     movsx esi, si
     movsx edi, di
-    call {crpart:#x}
-    test eax, eax
-    jz cd_out
+    call {crconv:#x}
+    mov ebx, eax
+    xor ebp, ebp
+cd_loop:
+    cmp ebp, ebx
+    jge cd_out
     movsx eax, word ptr [esp + 0x32]
     cmp eax, 24
     ja cd_out
     lea eax, [esp + eax*2 + 0x50]
     push eax
-    push edx
-    push ecx
+    push dword ptr [ebp*8 + {CRCV + 4:#x}]
+    push dword ptr [ebp*8 + {CRCV:#x}]
     call 0x4411b0
     add esp, 12
     add word ptr [esp + 0x32], ax
+    inc ebp
+    jmp cd_loop
 cd_out:
     popad
     jmp 0x464c51
 ''')
-# Transporte doble: dibujo. Reemplaza "call 0x4dd530" en 0x459d0d de 0x459790 (ejército quieto de una celda de la vista:
-# un solo cuadro por tipo, sin dirección; esi = celda, ebp = vista, columna y fila en [esp+0x14]/[esp+0x16] del
-# llamador, origen de la vista en [ebp+0x28]/[ebp+0x2a]; dueño en [esi+4] & 0xf, como lo carga 0x457909). Si la casilla es la mitad quieta de un transporte doble
-# cuya otra mitad es el grupo activo del dueño (estructura de sprite ebp + 0x2c*p, armada por 0x457cd0), la dibuja como
-# 0x459e4f dibuja ese grupo: su hoja animada [+0x60], columna de la dirección (dir*0x31 + 0x81) y el mismo cuadro.
-# Dirección: la anotada por crfollow si es esta casilla; si no, la del grupo [+0x50]. Sin animaciones ([0x560758]) o
-# con la imagen 0xa4 queda el dibujo original.
+# Convoy: dibujo. Reemplaza "call 0x4dd530" en 0x459d0d de 0x459790 (ejército quieto de una celda de la vista: un solo
+# cuadro por tipo, sin dirección; esi = celda, ebp = vista, columna y fila en [esp+0x14]/[esp+0x16] del llamador,
+# origen de la vista en [ebp+0x28]/[ebp+0x2a]; dueño en [esi+4] & 0xf, como lo carga 0x457909). Si la casilla es una
+# casilla quieta del convoy cuyo grupo activo es el del dueño (estructura de sprite ebp + 0x2c*p, armada por
+# 0x457cd0), la dibuja como 0x459e4f dibuja ese grupo: su hoja animada [+0x60], columna de la dirección
+# (dir*0x31 + 0x81) y el mismo cuadro. Dirección: la anotada por crfollow si es esta casilla (crface o crface2); si
+# no, la del grupo [+0x50]. Sin animaciones ([0x560758]) o con la imagen 0xa4 queda el dibujo original.
 crdraw = place('crdraw', f'''
     cmp dword ptr [esp + 4], 0xa4
     je cw_go
@@ -2956,29 +3300,29 @@ crdraw = place('crdraw', f'''
     jle cw_out
     imul eax, eax, 0x1c
     movsx edx, word ptr [eax + 0x54fe52]
-    mov [esp + 8], edx
+    mov dword ptr [esp + 8], edx
     movsx edx, word ptr [eax + 0x54fe54]
-    mov [esp + 0xc], edx
+    mov dword ptr [esp + 0xc], edx
     movsx eax, word ptr [esp + 0x68]
     movsx edx, word ptr [ebp + 0x28]
     add eax, edx
-    mov [esp], eax
+    mov dword ptr [esp], eax
     movsx eax, word ptr [esp + 0x6a]
     movsx edx, word ptr [ebp + 0x2a]
     add eax, edx
-    mov [esp + 4], eax
-    mov eax, [esp + 8]
-    sub eax, [esp]
-    inc eax
-    cmp eax, 2
+    mov dword ptr [esp + 4], eax
+    mov eax, dword ptr [esp + 8]
+    sub eax, dword ptr [esp]
+    add eax, 2
+    cmp eax, 4
     ja cw_out
-    mov edx, [esp + 0xc]
-    sub edx, [esp + 4]
-    inc edx
-    cmp edx, 2
+    mov edx, dword ptr [esp + 0xc]
+    sub edx, dword ptr [esp + 4]
+    add edx, 2
+    cmp edx, 4
     ja cw_out
-    lea eax, [eax + edx*4]
-    cmp eax, 5
+    lea eax, [eax + edx*8]
+    cmp eax, 18
     je cw_out
     imul edi, ebx, 0x2c
     add edi, ebp
@@ -2989,29 +3333,48 @@ crdraw = place('crdraw', f'''
     cmp byte ptr [edi + 0x5b], 0
     jne cw_out
     push edi
-    mov esi, [esp + 4]
-    mov edi, [esp + 8]
-    call {crpart:#x}
+    mov esi, dword ptr [esp + 4]
+    mov edi, dword ptr [esp + 8]
+    call {crconv:#x}
     pop edi
     test eax, eax
     jz cw_out
-    cmp ecx, [esp + 8]
+    mov ecx, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0xc]
+    cmp ecx, dword ptr [{CRCV:#x}]
+    jne cw_c2
+    cmp edx, dword ptr [{CRCV + 4:#x}]
+    je cw_in
+cw_c2:
+    cmp eax, 2
+    jb cw_out
+    cmp ecx, dword ptr [{CRCV + 8:#x}]
     jne cw_out
-    cmp edx, [esp + 0xc]
+    cmp edx, dword ptr [{CRCV + 0xc:#x}]
     jne cw_out
+cw_in:
     movzx eax, word ptr [edi + 0x50]
     movsx ecx, word ptr [ebx*8 + {CRFACE:#x}]
-    cmp ecx, [esp]
-    jne cw_dir
+    cmp ecx, dword ptr [esp]
+    jne cw_f2
     movsx ecx, word ptr [ebx*8 + {CRFACE + 2:#x}]
-    cmp ecx, [esp + 4]
-    jne cw_dir
+    cmp ecx, dword ptr [esp + 4]
+    jne cw_f2
     movzx eax, byte ptr [ebx*8 + {CRFACE + 4:#x}]
+    jmp cw_dir
+cw_f2:
+    movsx ecx, word ptr [ebx*8 + {CRFACE + 0x40:#x}]
+    cmp ecx, dword ptr [esp]
+    jne cw_dir
+    movsx ecx, word ptr [ebx*8 + {CRFACE + 0x42:#x}]
+    cmp ecx, dword ptr [esp + 4]
+    jne cw_dir
+    movzx eax, byte ptr [ebx*8 + {CRFACE + 0x44:#x}]
 cw_dir:
     and eax, 7
     imul eax, eax, 0x31
     add eax, 0x81
-    mov [esp + 0x38], eax
+    mov dword ptr [esp + 0x38], eax
     cmp byte ptr [ebx + 0x4fe110], 0
     jne cw_mov
     cmp word ptr [0x560b20], bx
@@ -3032,9 +3395,9 @@ cw_mov:
     imul eax, eax, 0x31
     inc eax
 cw_fr:
-    mov [esp + 0x3c], eax
-    mov eax, [edi + 0x60]
-    mov [esp + 0x34], eax
+    mov dword ptr [esp + 0x3c], eax
+    mov eax, dword ptr [edi + 0x60]
+    mov dword ptr [esp + 0x34], eax
 cw_out:
     add esp, 0x10
     popad
@@ -3450,6 +3813,19 @@ brt2_site:
     push eax
     jmp 0x495541
 ''')
+# Imagen del diálogo de arrasar (0x4954d0 dibuja la 153, "raze", en el marco de 142x168 con 0x4bbf20): para un
+# puente, el retrato del ariete orco (imagen RAM_IMG, que WAR3AV.RES agrega sobre ARMY\orcs_ram.pcx).
+RAM_FILE, RAM_IMG = 165, 206
+br_razepic = place('br_razepic', f'''
+    movsx edx, word ptr [0x572778]
+    cmp edx, {BR_CODE:#x}
+    jl brp_site
+    push {RAM_IMG}
+    jmp 0x4954e6
+brp_site:
+    push 0x99
+    jmp 0x4954e6
+''')
 br_razebtn = place('br_razebtn', f'''
     movsx eax, word ptr [0x572778]
     cmp eax, {BR_CODE:#x}
@@ -3863,7 +4239,7 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
       asm('cmp word ptr [esp + 0x12], 0; jne 0x4a5147; mov word ptr [esp + 0x18], 1; xor bp, bp', 0x4a5135))
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
-# Transporte doble (ver crlink, crfollow, crdef).
+# Convoy (ver crlink, crfollow, crdef, crdraw).
 assert rel(0x49d062, 2) == bytes.fromhex('6a05')
 patch(0x49d05d, asm('movsx ax, byte ptr [esi + 2]', 0x49d05d), asm(f'jmp {crlink:#x}', 0x49d05d))
 assert rel(0x49cdc2, 5) == asm('call 0x49db70', 0x49cdc2)
@@ -3881,6 +4257,7 @@ for va in (0x4b0a1c, 0x4b0a28):
     patch(va, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {br_menu:#x}', va))
 assert rel(0x495540, 1) == b'\x50' and rel(0x495541, 2) == bytes.fromhex('6a00')
 patch(0x495530, rel(0x495530, 0x495541 - 0x495530), asm(f'jmp {br_razetxt:#x}', 0x495530))
+patch(0x4954e1, asm('push 0x99', 0x4954e1), asm(f'jmp {br_razepic:#x}', 0x4954e1))
 patch(0x495288, bytes.fromhex('66a178275700') + b'\x50' + asm('call 0x4955d0', 0x49528f),
       asm(f'jmp {br_razebtn:#x}', 0x495288))
 patch(0x4d5e30, bytes.fromhex('83ec505657'), asm(f'jmp {br_razeapply:#x}', 0x4d5e30))
@@ -3999,6 +4376,36 @@ for did, cid, typ, off, size, old, new in RES_TEXTS:
     assert t == typ, (did, cid, t)
     assert bytes(res[p + off:p + off + len(old) + 1]) == old.encode('latin1') + b'\0', (did, cid)
     setstr(res, p + off, size, new)
+
+# Tablas de archivos (tipo 2, registros de 60 bytes) y de imágenes (tipo 4, de 32): el juego las carga enteras al
+# arrancar (0x4e4910 y 0x4eeb50), del registro 1 hasta la cantidad del encabezado, leyendo cada uno por su posición.
+# Se agrega el archivo RAM_FILE = ARMY\orcs_ram.pcx, con los campos de lightinf (46, el retrato de unidad), y la imagen
+# RAM_IMG = su retrato de 128x160 en (0,0), como la 63 sobre lightinf. Los ids son la posición: van al final.
+def table(d, typ):
+    o = 8
+    while o + 20 <= len(d):
+        h = struct.unpack_from('<5I', d, o)
+        if h[0] == typ and h[1] == 0: return o, h
+        o += 20 + h[4]
+    raise KeyError(typ)
+
+def table_add(d, typ, rid, rec):
+    o, h = table(d, typ)
+    assert h[2] == rid and h[3] == len(rec) and h[4] == h[2] * h[3], (typ, h)
+    d[o + 20 + h[4]:o + 20 + h[4]] = rec
+    struct.pack_into('<III', d, o + 8, h[2] + 1, h[3], h[4] + len(rec))
+
+o2, _ = table(res, 2)
+lightinf = bytes(res[o2 + 20 + 46 * 60:o2 + 20 + 47 * 60])
+assert lightinf[4:13] == b'lightinf\0' and struct.unpack_from('<6I', lightinf, 36) == (2, 1, 0, 0, 0, 6)
+o4, _ = table(res, 4)
+assert struct.unpack_from('<8i', res, o4 + 20 + 63 * 32) == (63, 46, 0, 0, 0, 0, 128, 160)
+assert struct.unpack_from('<8i', res, o4 + 20 + 0x99 * 32)[6:] == (128, 160)
+ram = bytearray(lightinf)
+struct.pack_into('<I', ram, 0, RAM_FILE)
+setstr(ram, 4, 32, 'orcs_ram')
+table_add(res, 4, RAM_IMG, struct.pack('<8i', RAM_IMG, RAM_FILE, 0, 0, 0, 0, 128, 160))   # la 4 va después de la 2
+table_add(res, 2, RAM_FILE, bytes(ram))
 
 # ---------------------------------------------------------------- subtipos de terreno "landing" y "carrier"
 # Para que war3ed_ssg los ofrezca en las listas de Move Bonus: arma esas listas con FindFirst sobre

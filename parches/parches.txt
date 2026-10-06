@@ -5,4 +5,4 @@
 #              y tiene que ser mayor que la publicada (lo exige tools\publicar-parche.ps1).
 # ARCHIVOS     rutas relativas a C:\Warlords3 separadas por ; (exactamente lo que build.py genera y va en el zip)
 # DESCRIPCION  lo que ve el jugador en el menu; sin | ni !
-vista-aliada|1.0.8.0|DarklordAV.exe;DATA\WAR3AV.RES;TERRAIN\SUBTYPE\landing.STT;TERRAIN\SUBTYPE\carrier.STT|Vista aliada compartida (jugar con DarklordAV.exe)
+vista-aliada|1.0.9.0|DarklordAV.exe;DATA\WAR3AV.RES;TERRAIN\SUBTYPE\landing.STT;TERRAIN\SUBTYPE\carrier.STT|Vista aliada compartida (jugar con DarklordAV.exe)
