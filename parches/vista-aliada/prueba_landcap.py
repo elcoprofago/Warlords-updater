@@ -30,7 +30,8 @@ def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building
     mu.mem_write(GRP + 0x56eaa8, struct.pack('<HHH', count, 8 if embarked else 0, mode))
     mu.mem_write(GRP + 0x56eab0, bytes(1 if i in noembark else 0 for i in range(8)))
     boat = 0x53c410 + (P * 16 + 15) * 0xfc + 0xb2
-    mu.mem_write(boat, b'Ice\0\0\0\0\0\0' + ((b'LANDING\0\0') if landing else b'Bridge\0\0\0'))
+    mu.mem_write(boat, b'Ice\0\0\0\0\0\0' + ((b'LANDING\0\0') if landing else b'Bridge\0\0\0')
+                 + (b'CARRIER\0\0' if carrier else b'\0' * 9))
     esp = 0x108000
     mu.mem_write(esp, b'\0' * 0x40)
     regs = dict(EAX=0x11111111, ECX=0x22222222, EDX=0x33333333, EBX=GRP, ESP=esp, EBP=P,
@@ -64,9 +65,14 @@ casos = [
     ('embarcados 8 a agua vacia',        dict(count=8, occ=0, embarked=True), 'PASA'),
     ('embarcados 3 + 3',                 dict(count=3, occ=3, embarked=True), 'BLOQ'),
     ('embarcados 3 + 2',                 dict(count=3, occ=2, embarked=True), 'PASA'),
-    # barco con los dos bonos (plan B): el tope de 5 sigue valiendo; el código 4 es el que forma el convoy
-    ('landing+carrier: 3 + 3',           dict(count=3, occ=3, embarked=True, carrier=True), 'BLOQ'),
-    ('landing+carrier: 3 + 2',           dict(count=3, occ=2, embarked=True, carrier=True), 'PASA'),
+    # barco con los dos bonos: tope de 6; el código 4 es el que forma el convoy
+    ('landing+carrier: 3 + 4',           dict(count=3, occ=4, embarked=True, carrier=True), 'BLOQ'),
+    ('landing+carrier: 3 + 3',           dict(count=3, occ=3, embarked=True, carrier=True), 'PASA'),
+    ('landing+carrier: 7 embarcan',      dict(count=7, occ=0, carrier=True), 'BLOQ'),
+    ('landing+carrier: 6 embarcan',      dict(count=6, occ=0, carrier=True), 'PASA'),
+    # "Carrier" solo: sin tope propio (rige el del bando)
+    ('carrier solo: 4 + 4',              dict(count=4, occ=4, embarked=True, landing=False, carrier=True), 'PASA'),
+    ('carrier solo: 8 embarcan',         dict(count=8, occ=0, landing=False, carrier=True), 'PASA'),
 ]
 mal = 0
 for nombre, kw, esperado in casos:

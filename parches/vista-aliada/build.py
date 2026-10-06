@@ -1,6 +1,7 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
 # TERRAIN\SUBTYPE\landing.STT y carrier.STT.
-# Tope de 5 en el stack de un barco con bono de movimiento "Landing" (LANDCAP).
+# Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
+# (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
 # Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
 # Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad); el diálogo
 # de derribar muestra el retrato del ariete orco.
@@ -2740,8 +2741,11 @@ livback_end:
 # sin estructura 1 (puente) y clase 1, y no es punto de transbordo (0x4a6610). Cuenta grupo + ejércitos en la
 # casilla (0x4411b0) y solo cuando el stack embarcado crece: el grupo se embarca ahora (no embarcado y con alguien que
 # se embarca, 0x56eab0[i] == 0) o se suma a ejércitos propios en el agua. Un stack que ya navega con más de 5 (de antes
-# del parche) sigue moviéndose; solo no crece, como el tope de voladores. Si pasa de LANDCAP, devuelve 4 (stack lleno).
+# del parche) sigue moviéndose; solo no crece, como el tope de voladores. Si pasa del tope, devuelve 4 (stack lleno):
+# LANDCAP con "Landing" solo, LANDCAP_LC si el barco tiene también "Carrier" (con "Carrier" solo rige el del bando).
 LANDCAP = 5
+LANDCAP_LC = 6
+assert LANDCAP_LC == LANDCAP + 1     # el código suma boatcarr (0 o 1) a LANDCAP
 landcap = place('landcap', f'''
     pushad
     movsx esi, si
@@ -2797,7 +2801,10 @@ lc_emb:
     jz lc_pass
 lc_count:
     add ecx, edx
-    cmp ecx, {LANDCAP}
+    mov eax, ebp
+    call {boatcarr:#x}
+    add eax, {LANDCAP}
+    cmp ecx, eax
     jle lc_pass
     popad
     mov word ptr [esp + 0x16], 4
@@ -2809,6 +2816,85 @@ lc_pass:
     call 0x49e770
     jmp 0x49e4ae
 ''')
+
+# Tope de pasos del barco según sus bonos de movimiento: el barco usa los pasos de su registro (+0x9b) pero nunca más
+# que MVCAP ("Landing" solo, "Landing" y "Carrier", "Carrier" solo; sin ninguno de los dos, sin tope). Un barco más
+# lento que el tope no se acelera. Se aplica al leer, no se escribe: el ajuste de partida 0x433b40 (que suma a los
+# pasos de las 16 ranuras y los guarda) sigue igual y el tope rige sobre su resultado.
+# Lecturas del barco (ranura 15, registro 0x53d2d4 + p*0xfc0): reinicio de pasos al empezar el turno (0x422b61),
+# 0x466463, 0x4667cb, 0x466976, 0x49dc8b, 0x49de3e, costo del camino (0x4a62c1) y 0x4d34e0. Lecturas de cualquier
+# ranura (solo cambian si es la 15): 0x43b773, 0x455a25, 0x477d0d, 0x4781f6, 0x48a793 y la columna de pasos de Army
+# List (0x4a2a7c).
+MVCAP = {'landing': 12, 'landing+carrier': 20, 'carrier': 24}
+mvcaptab = place_data('mvcaptab', bytes([255, MVCAP['landing'], MVCAP['carrier'], MVCAP['landing+carrier']]))
+# eax = pasos leídos (0..255), ecx = registro de unidad -> eax = con el tope si es el barco (ranura 15) de un bando
+# 0..7. Preserva el resto y los flags.
+bmvcap = place('bmvcap', f'''
+    pushfd
+    push ecx
+    push edx
+    push ebx
+    mov ebx, eax
+    lea eax, [ecx - 0x53c410]
+    cmp eax, {8 * 0xfc0:#x}
+    jae bmc_out
+    xor edx, edx
+    mov ecx, 0xfc
+    div ecx
+    test edx, edx
+    jnz bmc_out
+    mov ecx, eax
+    and ecx, 15
+    cmp ecx, 15
+    jne bmc_out
+    shr eax, 4
+    mov ecx, eax
+    call {boatland:#x}
+    mov edx, eax
+    mov eax, ecx
+    call {boatcarr:#x}
+    lea eax, [edx + eax*2]
+    movzx eax, byte ptr [eax + {mvcaptab:#x}]
+    cmp ebx, eax
+    jbe bmc_out
+    mov ebx, eax
+bmc_out:
+    mov eax, ebx
+    pop ebx
+    pop edx
+    pop ecx
+    popfd
+    ret
+''')
+# Un enganche por lectura (call al stub + nops sobre la instrucción original). Ninguno toca los flags.
+MV_SITES = [
+    # (va, instrucción original, stub)
+    (0x422b61, 'movzx di, byte ptr [edi + 0x53d36f]', '''push eax; push ecx; lea ecx, [edi + 0x53d2d4];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov di, ax; pop ecx; pop eax; ret'''),
+    (0x466463, 'mov cl, byte ptr [edx + 0x53d36f]', '''push eax; lea ecx, [edx + 0x53d2d4];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov ecx, eax; pop eax; ret'''),          # ecx en 0 antes
+    (0x4667cb, 'mov bl, byte ptr [edx + 0x53d36f]', '''push eax; push ecx; lea ecx, [edx + 0x53d2d4];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov bl, al; pop ecx; pop eax; ret'''),
+    (0x466976, 'mov al, byte ptr [ebx + 0x53d36f]', '''push ecx; lea ecx, [ebx + 0x53d2d4];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; pop ecx; ret'''),                        # eax en 0 antes
+    *[(va, 'movzx ax, byte ptr [eax + 0x53d36f]', '''push ecx; push eax; lea ecx, [eax + 0x53d2d4];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov word ptr [esp], ax; pop eax; pop ecx; ret''')
+      for va in (0x49dc8b, 0x49de3e, 0x4a62c1, 0x4d34e0)],
+    (0x43b773, 'mov dl, byte ptr [eax + 0x9b]', '''push eax; push ecx; mov ecx, eax;
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov dl, al; pop ecx; pop eax; ret'''),
+    (0x455a25, 'movzx di, byte ptr [esi + 0x53c4ab]', '''push eax; push ecx; lea ecx, [esi + 0x53c410];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov di, ax; pop ecx; pop eax; ret'''),
+    (0x477d0d, 'movzx ax, byte ptr [edi + 0x53c4ab]', '''push ecx; push eax; lea ecx, [edi + 0x53c410];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov word ptr [esp], ax; pop eax; pop ecx; ret'''),
+    (0x4781f6, 'movzx bx, byte ptr [ecx + 0x53c4ab]', '''push eax; push ecx; lea ecx, [ecx + 0x53c410];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; mov bx, ax; pop ecx; pop eax; ret'''),
+    (0x48a793, 'movzx cx, byte ptr [edx + 0x53c4ab]', '''push eax; push ecx; lea ecx, [edx + 0x53c410];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; pop ecx; mov cx, ax; pop eax; ret'''),
+    (0x4a2a7c, 'mov al, byte ptr [ecx*4 + 0x53c4ab]', '''push ecx; lea ecx, [ecx*4 + 0x53c410];
+        movzx eax, byte ptr [ecx + 0x9b]; call BMV; pop ecx; ret'''),                        # eax en 0 antes
+]
+mv_stubs = [(va, orig, place(f'bmv_{va:x}', stub.replace('BMV', f'{bmvcap:#x}').replace('\n', ';')))
+            for va, orig, stub in MV_SITES]
 
 # Convoy: formar. Enganche en 0x49d05d (códigos 3, 4 y 7 del paso, "parar": 0x49c960(p, 5)). Con el código 4, barco
 # del bando con "Carrier", grupo embarcado y destino D del líder en una casilla vecina con ejércitos propios
@@ -4226,6 +4312,8 @@ patch(0x49e48b, rel(0x49e48b, 0x49e49a - 0x49e48b), asm(f'jmp {stepcap:#x}', 0x4
 assert rel(0x49e49a, 2) == bytes.fromhex('3bca')
 assert rel(0x49e4a7, 7) == bytes.fromhex('5756e8c2020000')
 patch(0x49e4a7, rel(0x49e4a7, 7), asm(f'jmp {landcap:#x}', 0x49e4a7))
+for va, orig, stub in mv_stubs:     # tope de pasos del barco (ver bmvcap)
+    patch(va, asm(orig, va), asm(f'call {stub:#x}', va))
 patch(0x4d340a, rel(0x4d340a, 0x4d341d - 0x4d340a), asm(f'jmp {gatecap:#x}', 0x4d340a))
 assert rel(0x4d341d, 2) == bytes.fromhex('3bca')
 assert rel(0x43b5b7, 2) == asm('jle 0x43b5bd', 0x43b5b7)
