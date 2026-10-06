@@ -1,6 +1,7 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
 # TERRAIN\SUBTYPE\landing.STT y carrier.STT.
 # Tope de 5 en el stack de un barco con bono de movimiento "Landing" (LANDCAP).
+# Transporte doble: dos barcos vecinos de un bando con bono de movimiento "Carrier" forman uno de hasta 16 (crlink).
 # Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad).
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
@@ -2161,13 +2162,15 @@ portc = place('portc', '''
 # alguno de sus 4 bonos de movimiento (+0xb2 + k*9, 9 B c/u; el cargador 0x42f1b0 ignora los textos que no conoce y
 # el editor los escribe en sus listas desplegables editables), el buscador (0x4a5c40, expansión, y su rastreo de
 # vuelta en 0x4a600e) suma a los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los de una
-# casilla con tierra las direcciones hacia agua pura. Nunca hacia tierra intransitable: clase de terreno 4
+# casilla con tierra las direcciones hacia agua pura, salvo que el líder sea mitad de un transporte doble (crpart): esos
+# atracan solo en puertos. Nunca hacia tierra intransitable: clase de terreno 4
 # (montaña; 0x535f0c + tipo*0x58) sin camino ni puente (flags & 0x30), la misma regla del constructor (0x4a52c3).
 # No toca los vuelos (otra rama) ni la tabla de enlaces.
 LANDING = b'landing'    # se compara sin distinguir mayúsculas
 landstr = place_data('landstr', LANDING + b'\0')
 # eax = jugador (0..7) -> eax = 1 si el barco de su bando tiene "Landing", 0 si no. Preserva el resto.
-boatland = place('boatland', f'''
+def boatbon_src(lbl, straddr):
+    return f'''
     push ecx
     push esi
     push edi
@@ -2176,35 +2179,176 @@ boatland = place('boatland', f'''
     imul esi, eax, 0xfc
     add esi, {0x53c410 + 0xb2:#x}
     mov edi, 4
-boatland_slot:
+{lbl}_slot:
     xor ecx, ecx
-boatland_ch:
+{lbl}_ch:
     mov al, byte ptr [esi + ecx]
     cmp al, 0x41
-    jb boatland_nf
+    jb {lbl}_nf
     cmp al, 0x5a
-    ja boatland_nf
+    ja {lbl}_nf
     or al, 0x20
-boatland_nf:
-    cmp al, byte ptr [ecx + {landstr:#x}]
-    jne boatland_next
+{lbl}_nf:
+    cmp al, byte ptr [ecx + {straddr:#x}]
+    jne {lbl}_next
     test al, al
-    jz boatland_yes
+    jz {lbl}_yes
     inc ecx
     cmp ecx, 9
-    jb boatland_ch
-boatland_next:
+    jb {lbl}_ch
+{lbl}_next:
     add esi, 9
     dec edi
-    jnz boatland_slot
+    jnz {lbl}_slot
     xor eax, eax
-    jmp boatland_out
-boatland_yes:
+    jmp {lbl}_out
+{lbl}_yes:
     mov eax, 1
-boatland_out:
+{lbl}_out:
     pop edi
     pop esi
     pop ecx
+    ret
+'''
+boatland = place('boatland', boatbon_src('boatland', landstr))
+
+# ---------------------------------------------------------------- Transporte doble (bono de movimiento "Carrier")
+# Dos stacks embarcados de un bando cuyo barco (ranura 15) tiene "Carrier", en casillas vecinas, forman un solo barco de
+# hasta 16: cada casilla conserva su tope, se mueven juntos (la mitad que se mueve arrastra a la otra a la casilla que
+# deja), atacan solo con el grupo que ataca y defienden con las dos mitades. Atracan solo en puertos: a una mitad
+# enlazada no se le aplica "Landing".
+# Enlace: byte +0x1b del ejército (0x54fe6b; en 1821 ejércitos vivos de 12 partidas siempre vale 0, ningún código lo
+# lee y se guarda con la partida). Bit 0x80 = enlazado; bits 0-1 = dx+1 y bits 2-3 = dy+1 hacia la otra mitad
+# (cod = dx + 4*dy + 5, el opuesto es 10 - cod). Una casilla es mitad si algún ejército vivo y embarcado de q tiene
+# el bit, el barco de q tiene "Carrier" y en la casilla vecina hay un ejército vivo y embarcado de q que apunta de
+# vuelta. Los bits que quedan sueltos (la otra mitad se fue o murió) no valen nada.
+# Formar: ordenar a un stack embarcado ir a una casilla vecina con un barco propio cuando la suma no entra (el paso
+# devuelve 4, "stack lleno"). Se ejecuta en todas las máquinas (comando de red 0x14d -> 0x49c9f0) y usa el destino
+# del líder, que viaja por red (el camino no).
+CARRIER = b'carrier'
+carrstr = place_data('carrstr', CARRIER + b'\0')
+boatcarr = place('boatcarr', boatbon_src('boatcarr', carrstr))
+# eax = x, edx = y, ebp = jugador, ecx = operación -> eax = cuántos ejércitos vivos del jugador en la casilla pasan los
+# filtros. Operación: 0x200 solo embarcados, 0x400 solo con byte de enlace == cl, 0x800 escribe cl en el byte de
+# enlace, 0x100 borra el destino. Preserva el resto (salvo edx).
+crscan = place('crscan', '''
+    push ebx
+    push esi
+    push edi
+    mov esi, eax
+    mov edi, edx
+    xor eax, eax
+    mov ebx, 1
+crs_loop:
+    movsx edx, word ptr [0x54fe50]
+    cmp ebx, edx
+    jge crs_end
+    imul edx, ebx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz crs_next
+    cmp word ptr [edx + 0x54fe52], si
+    jne crs_next
+    cmp word ptr [edx + 0x54fe54], di
+    jne crs_next
+    push eax
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebp
+    pop eax
+    jne crs_next
+    test ch, 2
+    jz crs_f1
+    test byte ptr [edx + 0x54fe64], 8
+    jz crs_next
+crs_f1:
+    test ch, 4
+    jz crs_f2
+    cmp byte ptr [edx + 0x54fe6b], cl
+    jne crs_next
+crs_f2:
+    test ch, 8
+    jz crs_f3
+    mov byte ptr [edx + 0x54fe6b], cl
+crs_f3:
+    test ch, 1
+    jz crs_f4
+    mov dword ptr [edx + 0x54fe56], 0xffffffff
+crs_f4:
+    inc eax
+crs_next:
+    inc ebx
+    jmp crs_loop
+crs_end:
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# esi = x, edi = y -> eax = 1 si la casilla es mitad de un transporte doble (ecx, edx = la otra mitad), 0 si no.
+# Preserva ebx, esi, edi, ebp.
+crpart = place('crpart', f'''
+    push ebx
+    push ebp
+    mov ebx, 1
+crp_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp ebx, eax
+    jge crp_no
+    imul eax, ebx, 0x1c
+    test byte ptr [eax + 0x54fe63], 0x40
+    jz crp_next
+    test byte ptr [eax + 0x54fe64], 8
+    jz crp_next
+    cmp word ptr [eax + 0x54fe52], si
+    jne crp_next
+    cmp word ptr [eax + 0x54fe54], di
+    jne crp_next
+    movzx ecx, byte ptr [eax + 0x54fe6b]
+    xor ecx, 0x80
+    cmp ecx, 10
+    ja crp_next
+    cmp ecx, 5
+    je crp_next
+    mov edx, ecx
+    and edx, 3
+    cmp edx, 3
+    je crp_next
+    movzx ebp, word ptr [eax + 0x54fe5e]
+    shr ebp, 5
+    and ebp, 0xf
+    cmp ebp, 8
+    jae crp_next
+    mov eax, ebp
+    call {boatcarr:#x}
+    test eax, eax
+    jz crp_next
+    mov eax, ecx
+    and eax, 3
+    lea eax, [esi + eax - 1]
+    mov edx, ecx
+    shr edx, 2
+    lea edx, [edi + edx - 1]
+    neg ecx
+    add ecx, 0x68a
+    push eax
+    push edx
+    call {crscan:#x}
+    pop edx
+    pop ecx
+    test eax, eax
+    jz crp_next
+    mov eax, 1
+    pop ebp
+    pop ebx
+    ret
+crp_next:
+    inc ebx
+    jmp crp_loop
+crp_no:
+    xor eax, eax
+    pop ebp
+    pop ebx
     ret
 ''')
 landchk = place('landchk', f'''
@@ -2217,6 +2361,18 @@ landchk = place('landchk', f'''
     jz landchk_no
     call {boatland:#x}
     test eax, eax
+    jz landchk_no
+    movsx eax, word ptr [edx + 0x56ea90]
+    imul eax, eax, 0x1c
+    test byte ptr [eax + 0x54fe6b], 0x80
+    jz landchk_yes
+    movsx esi, word ptr [eax + 0x54fe52]
+    movsx edi, word ptr [eax + 0x54fe54]
+    call {crpart:#x}
+    test eax, eax
+    jnz landchk_no
+landchk_yes:
+    or eax, 1
     popad
     ret
 landchk_no:
@@ -2411,6 +2567,280 @@ lc_pass:
     push esi
     call 0x49e770
     jmp 0x49e4ae
+''')
+
+# Transporte doble: formar. Enganche en 0x49d05d (códigos 3, 4 y 7 del paso, "parar": 0x49c960(p, 5)). Con el código 4,
+# barco del bando con "Carrier", grupo embarcado y destino del líder en una casilla vecina con ejércitos propios
+# embarcados: enlaza todo lo propio de las dos casillas, borra los destinos de la otra mitad y termina como el
+# código 1 (llegó: 0x485e30(p, -1, -1) y 0x49c960(p, 1)), sin el aviso de stack lleno.
+crlink = place('crlink', f'''
+    cmp word ptr [esi], 4
+    jne crl_orig
+    pushad
+    movsx ebp, byte ptr [esi + 2]
+    cmp ebp, 8
+    jae crl_no
+    mov eax, ebp
+    call {boatcarr:#x}
+    test eax, eax
+    jz crl_no
+    imul ebx, ebp, 0x4f0
+    test byte ptr [ebx + 0x56eaaa], 8
+    jz crl_no
+    movsx eax, word ptr [ebx + 0x56ea90]
+    imul eax, eax, 0x1c
+    movsx esi, word ptr [eax + 0x54fe52]
+    movsx edi, word ptr [eax + 0x54fe54]
+    movsx ecx, word ptr [eax + 0x54fe56]
+    movsx edx, word ptr [eax + 0x54fe58]
+    sub ecx, esi
+    sub edx, edi
+    lea eax, [ecx + 1]
+    cmp eax, 2
+    ja crl_no
+    lea eax, [edx + 1]
+    cmp eax, 2
+    ja crl_no
+    lea ebx, [edx*4 + 5]
+    add ebx, ecx
+    cmp ebx, 5
+    je crl_no
+    lea eax, [esi + ecx]
+    lea edx, [edi + edx]
+    push eax
+    push edx
+    mov ecx, 0x200
+    call {crscan:#x}
+    test eax, eax
+    pop edx
+    pop eax
+    jz crl_no
+    mov ecx, 0x98a
+    sub ecx, ebx
+    call {crscan:#x}
+    mov eax, esi
+    mov edx, edi
+    lea ecx, [ebx + 0x880]
+    call {crscan:#x}
+    popad
+    movsx ax, byte ptr [esi + 2]
+    push -1
+    push -1
+    push eax
+    call 0x485e30
+    add esp, 12
+    movsx ax, byte ptr [esi + 2]
+    push 1
+    push eax
+    call 0x49c960
+    add esp, 8
+    pop edi
+    pop esi
+    pop ebx
+    ret
+crl_no:
+    popad
+crl_orig:
+    movsx ax, byte ptr [esi + 2]
+    jmp 0x49d062
+''')
+# Transporte doble: seguir. Enganche en 0x49cdc7, en el paso (código 0) después de embarcar/desembarcar (0x49db70),
+# en todas las máquinas. A = de donde salió el grupo ([0x572990], [0x572994]), N = adonde llegó. Si algún ejército
+# del grupo está enlazado hacia P = A + d, el bando tiene "Carrier", el grupo sigue embarcado, N es vecina de A y no
+# es P, A quedó vacía y P es la otra mitad (apunta de vuelta a A), todo lo propio de P pasa a A: resta el costo del
+# paso a sus movimientos (sin bajar de 0), borra sus destinos, y el enlace queda entre N y A. Si no, el grupo se
+# desenlaza (salió del transporte una parte, o desembarcó). Ocupación de A y P con 0x49d450; mapa con 0x4a2170.
+crfollow = place('crfollow', f'''
+    add esp, 0x14
+    pushad
+    sub esp, 0x20
+    movsx ebp, byte ptr [esi + 2]
+    cmp ebp, 8
+    jae cf_out
+    imul ebx, ebp, 0x4f0
+    movsx ecx, word ptr [ebx + 0x56eaa8]
+    xor edx, edx
+cf_find:
+    cmp edx, ecx
+    jge cf_out
+    movsx eax, word ptr [ebx + edx*2 + 0x56ea94]
+    imul eax, eax, 0x1c
+    movzx edi, byte ptr [eax + 0x54fe6b]
+    test edi, 0x80
+    jnz cf_found
+    inc edx
+    jmp cf_find
+cf_found:
+    and edi, 0xf
+    mov [esp + 0x1c], edi
+    mov eax, ebp
+    call {boatcarr:#x}
+    test eax, eax
+    jz cf_clear
+    test byte ptr [ebx + 0x56eaaa], 8
+    jz cf_clear
+    movsx eax, word ptr [0x572990]
+    mov [esp], eax
+    movsx eax, word ptr [0x572994]
+    mov [esp + 4], eax
+    mov eax, edi
+    and eax, 3
+    dec eax
+    add eax, [esp]
+    mov [esp + 8], eax
+    shr edi, 2
+    and edi, 3
+    lea eax, [edi - 1]
+    add eax, [esp + 4]
+    mov [esp + 0xc], eax
+    movsx eax, word ptr [esi + 4]
+    mov [esp + 0x10], eax
+    movsx eax, word ptr [esi + 6]
+    mov [esp + 0x14], eax
+    movsx eax, byte ptr [esi + 3]
+    mov [esp + 0x18], eax
+    mov eax, [esp + 0x10]
+    sub eax, [esp]
+    lea ecx, [eax + 1]
+    cmp ecx, 2
+    ja cf_clear
+    mov edx, [esp + 0x14]
+    sub edx, [esp + 4]
+    lea ecx, [edx + 1]
+    cmp ecx, 2
+    ja cf_clear
+    lea edi, [edx*4 + 5]
+    add edi, eax
+    cmp edi, 5
+    je cf_clear
+    mov eax, [esp + 0x10]
+    cmp eax, [esp + 8]
+    jne cf_np
+    mov eax, [esp + 0x14]
+    cmp eax, [esp + 0xc]
+    je cf_clear
+cf_np:
+    push 0
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    call 0x4411b0
+    add esp, 12
+    test ax, ax
+    jnz cf_clear
+    mov eax, [esp + 8]
+    mov edx, [esp + 0xc]
+    mov ecx, 0x68a
+    sub ecx, [esp + 0x1c]
+    call {crscan:#x}
+    test eax, eax
+    jz cf_clear
+    mov ecx, 1
+cf_mv:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge cf_mvend
+    imul eax, ecx, 0x1c
+    test byte ptr [eax + 0x54fe63], 0x40
+    jz cf_mvnext
+    mov edx, [esp + 8]
+    cmp word ptr [eax + 0x54fe52], dx
+    jne cf_mvnext
+    mov edx, [esp + 0xc]
+    cmp word ptr [eax + 0x54fe54], dx
+    jne cf_mvnext
+    movzx edx, word ptr [eax + 0x54fe5e]
+    shr edx, 5
+    and edx, 0xf
+    cmp edx, ebp
+    jne cf_mvnext
+    mov edx, [esp]
+    mov word ptr [eax + 0x54fe52], dx
+    mov edx, [esp + 4]
+    mov word ptr [eax + 0x54fe54], dx
+    mov dword ptr [eax + 0x54fe56], 0xffffffff
+    movzx edx, byte ptr [eax + 0x54fe61]
+    and edx, 0x7f
+    sub edx, [esp + 0x18]
+    jns cf_mvpos
+    xor edx, edx
+cf_mvpos:
+    cmp edx, 0x7f
+    jbe cf_mvset
+    mov edx, 0x7f
+cf_mvset:
+    and byte ptr [eax + 0x54fe61], 0x80
+    or byte ptr [eax + 0x54fe61], dl
+cf_mvnext:
+    inc ecx
+    jmp cf_mv
+cf_mvend:
+    mov eax, [esp]
+    mov edx, [esp + 4]
+    lea ecx, [edi + 0x880]
+    call {crscan:#x}
+    mov eax, [esp + 0x10]
+    mov edx, [esp + 0x14]
+    mov ecx, 0x88a
+    sub ecx, edi
+    call {crscan:#x}
+    push dword ptr [esp + 4]
+    push dword ptr [esp + 4]
+    call 0x49d450
+    add esp, 8
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    call 0x49d450
+    add esp, 8
+    call {REDRAW:#x}
+    jmp cf_out
+cf_clear:
+    movsx ecx, word ptr [ebx + 0x56eaa8]
+    xor edx, edx
+cf_cl:
+    cmp edx, ecx
+    jge cf_out
+    movsx eax, word ptr [ebx + edx*2 + 0x56ea94]
+    imul eax, eax, 0x1c
+    mov byte ptr [eax + 0x54fe6b], 0
+    inc edx
+    jmp cf_cl
+cf_out:
+    add esp, 0x20
+    popad
+    mov cx, word ptr [esi + 6]
+    jmp 0x49cdce
+''')
+# Transporte doble: defensa conjunta. Reemplaza 0x464c3d..0x464c51 de 0x464ac0 (armado del combate, casilla sin
+# ciudad; si = x, di = y, defensores en [esp+0x30], hasta 32 como en una ciudad de 4 casillas; cuenta en [esp+0x12]).
+# Si la casilla atacada es mitad de un transporte doble, suma los ejércitos de la otra mitad. Lo que muere se limpia
+# después en la reconstrucción de ocupación (0x441290) que hace el combate.
+crdef = place('crdef', f'''
+    lea eax, [esp + 0x30]
+    push eax
+    push edi
+    push esi
+    call 0x4411b0
+    mov word ptr [esp + 0x1e], ax
+    add esp, 0xc
+    pushad
+    movsx esi, si
+    movsx edi, di
+    call {crpart:#x}
+    test eax, eax
+    jz cd_out
+    movsx eax, word ptr [esp + 0x32]
+    cmp eax, 24
+    ja cd_out
+    lea eax, [esp + eax*2 + 0x50]
+    push eax
+    push edx
+    push ecx
+    call 0x4411b0
+    add esp, 12
+    add word ptr [esp + 0x32], ax
+cd_out:
+    popad
+    jmp 0x464c51
 ''')
 
 # ---------------------------------------------------------------- Puentes: derribar y reconstruir
@@ -3139,6 +3569,14 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
       asm('cmp word ptr [esp + 0x12], 0; jne 0x4a5147; mov word ptr [esp + 0x18], 1; xor bp, bp', 0x4a5135))
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
+# Transporte doble (ver crlink, crfollow, crdef).
+assert rel(0x49d062, 2) == bytes.fromhex('6a05')
+patch(0x49d05d, asm('movsx ax, byte ptr [esi + 2]', 0x49d05d), asm(f'jmp {crlink:#x}', 0x49d05d))
+assert rel(0x49cdc2, 5) == asm('call 0x49db70', 0x49cdc2)
+patch(0x49cdc7, bytes.fromhex('83c414') + asm('mov cx, word ptr [esi + 6]', 0x49cdca), asm(f'jmp {crfollow:#x}', 0x49cdc7))
+assert rel(0x464c3d, 0x464c51 - 0x464c3d) == asm('lea eax, [esp + 0x30]; push eax; push edi; push esi; call 0x4411b0; '
+                                                 'mov word ptr [esp + 0x1e], ax; add esp, 0xc', 0x464c3d)
+patch(0x464c3d, rel(0x464c3d, 0x464c51 - 0x464c3d), asm(f'jmp {crdef:#x}', 0x464c3d))
 # Puentes: derribar y reconstruir (ver br_* arriba).
 for va in (0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))
