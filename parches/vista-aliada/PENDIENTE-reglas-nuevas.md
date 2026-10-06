@@ -16,7 +16,13 @@ Anotado el 5/10/2026. Para el chequeo del Army List (`build.py`).
   - 20 000 casos sintéticos alrededor de cada umbral, con textos raros en Move Bonus y Combat Bonus.
 - Control de la prueba: contra el parche anterior (1.0.2.0) da 96 diferencias sobre los .ARM reales.
 
-Lo que sigue pendiente de esta nota es el punto 5 (war3ed_ssg).
+El punto 5 (war3ed_ssg) quedó hecho en vista-aliada 1.0.4.0:
+- `build.py` crea `TERRAIN\SUBTYPE\landing.STT` y `carrier.STT`.
+- war3ed_ssg arma sus listas con los `*.STT` de esa carpeta.
+- Comprobado el 6/10/2026 abriendo "Edit Army" y leyendo los combos:
+  - los 4 de Move Bonus y el de Combat Bonus muestran `carrier` y `landing` (19 subtipos);
+  - nada se guardó.
+- El juego abre un `.STT` solo por nombre, para el texto de un Combat Bonus, así que agregarlos no cambia la partida.
 
 ## Objetivo
 

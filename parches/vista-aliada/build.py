@@ -1,4 +1,5 @@
-# Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen).
+# Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
+# TERRAIN\SUBTYPE\landing.STT y carrier.STT.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -2501,11 +2502,32 @@ for did, cid, typ, off, size, old, new in RES_TEXTS:
     assert bytes(res[p + off:p + off + len(old) + 1]) == old.encode('latin1') + b'\0', (did, cid)
     setstr(res, p + off, size, new)
 
+# ---------------------------------------------------------------- subtipos de terreno "landing" y "carrier"
+# Para que war3ed_ssg los ofrezca en las listas de Move Bonus: arma esas listas con FindFirst sobre
+# TERRAIN\SUBTYPE\*.STT (0x428d60). El juego solo abre un .STT por nombre (0x46a6f0), para el texto de un Combat
+# Bonus, y lee el nombre largo (9) y el corto (25). Formato de 41 bytes: nombre (9 bytes), nombre largo (16), nombre
+# corto (7) y el resto como water.STT. El dword de 32 en 0 hace de terminador del nombre corto, que ocupa los 7
+# bytes (igual que lthills.STT); el editor tampoco lo respeta (escribe hasta 8 caracteres ahí).
+def stt(nombre, largo):
+    b = nombre.encode().ljust(9, b'\0') + largo.encode().ljust(16, b'\0') + nombre.encode().ljust(7, b'\0')
+    b += struct.pack('<IIB', 0, 1, 0x34)
+    assert len(b) == 0x29
+    return b
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'))}
+
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):
     assert os.path.abspath(path).lower() not in (os.path.abspath(SRC_EXE).lower(), os.path.abspath(SRC_RES).lower())
+for rel_, data in STTS.items():   # un .STT distinto ya presente lo hizo alguien con el editor: no se pisa
+    path = os.path.join(OUT_DIR, rel_)
+    if os.path.exists(path) and open(path, 'rb').read() != data:
+        sys.exit(f'{path} ya existe con otro contenido; no lo piso. Renombralo o borralo y volve a armar.')
 os.makedirs(os.path.dirname(OUT_RES), exist_ok=True)
 open(OUT_EXE, 'wb').write(exe)
 open(OUT_RES, 'wb').write(res)
+for rel_, data in STTS.items():
+    path = os.path.join(OUT_DIR, rel_)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    open(path, 'wb').write(data)
 print('caves', {k: hex(CAVE + sum(len(caves[j]) for j in list(caves)[:list(caves).index(k)])) for k in caves})
-print('exe', OUT_EXE, len(exe), 'res', OUT_RES, len(res))
+print('exe', OUT_EXE, len(exe), 'res', OUT_RES, len(res), 'stt', ', '.join(STTS))
