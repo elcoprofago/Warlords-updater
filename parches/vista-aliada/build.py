@@ -2169,15 +2169,18 @@ portc = place('portc', '''
 LANDING = b'landing'    # se compara sin distinguir mayúsculas
 landstr = place_data('landstr', LANDING + b'\0')
 # eax = jugador (0..7) -> eax = 1 si el barco de su bando tiene "Landing", 0 si no. Preserva el resto.
-def boatbon_src(lbl, straddr):
+# Con rec=True: eax = registro de unidad y edx = texto en minúsculas (para cualquier unidad, no solo el barco).
+def boatbon_src(lbl, straddr, rec=False):
+    head = 'lea esi, [eax + 0xb2]' if rec else f'''shl eax, 4
+    add eax, 15
+    imul esi, eax, 0xfc
+    add esi, {0x53c410 + 0xb2:#x}'''
+    straddr = 'edx' if rec else f'{straddr:#x}'
     return f'''
     push ecx
     push esi
     push edi
-    shl eax, 4
-    add eax, 15
-    imul esi, eax, 0xfc
-    add esi, {0x53c410 + 0xb2:#x}
+    {head}
     mov edi, 4
 {lbl}_slot:
     xor ecx, ecx
@@ -2189,7 +2192,7 @@ def boatbon_src(lbl, straddr):
     ja {lbl}_nf
     or al, 0x20
 {lbl}_nf:
-    cmp al, byte ptr [ecx + {straddr:#x}]
+    cmp al, byte ptr [ecx + {straddr}]
     jne {lbl}_next
     test al, al
     jz {lbl}_yes
@@ -2228,6 +2231,73 @@ boatland = place('boatland', boatbon_src('boatland', landstr))
 CARRIER = b'carrier'
 carrstr = place_data('carrstr', CARRIER + b'\0')
 boatcarr = place('boatcarr', boatbon_src('boatcarr', carrstr))
+
+# Army List: el renglón de habilidades de una unidad (texto en [esp+8] al llegar a 0x4a2c24, búfer de 0x50 bytes del
+# marco de 0x4a2560) nombra también los bonos de movimiento "Landing" y "Carrier" de su registro: reemplazan "No Special
+# Abilities" (palabra de habilidades +0xe6 en 0) o se agregan con ", " si entran en el búfer. Después sigue armrow.
+recbon = place('recbon', boatbon_src('recbon', None, rec=True))
+AB_TXT = [place_data(f'ab_txt{k}', cstr_(s)) for k, s in enumerate(('Landing', 'Carrier', 'Landing, Carrier'), 1)]
+AB_TAB = place_data('ab_tab', b''.join(a.to_bytes(4, 'little') for a in [0] + AB_TXT))
+AB_SEP = place_data('ab_sep', cstr_(', '))
+armab = place('armab', f'''
+    pushad
+    mov eax, dword ptr [esp + 0xa0]
+    movsx edi, word ptr [eax*2 + 0x5730b0]
+    cmp edi, 15
+    ja ab_out
+    movsx eax, word ptr [0x5730dc]
+    cmp eax, 7
+    ja ab_out
+    shl eax, 4
+    add eax, edi
+    imul ebx, eax, 0xfc
+    add ebx, 0x53c410
+    mov eax, ebx
+    mov edx, {landstr:#x}
+    call {recbon:#x}
+    mov ebp, eax
+    mov eax, ebx
+    mov edx, {carrstr:#x}
+    call {recbon:#x}
+    lea ebp, [ebp + eax*2]
+    test ebp, ebp
+    jz ab_out
+    mov edi, dword ptr [esp + 0x28]
+    cmp word ptr [ebx + 0xe6], 0
+    jne ab_app
+    mov byte ptr [edi], 0
+    jmp ab_cat
+ab_app:
+    xor ecx, ecx
+ab_len:
+    cmp byte ptr [edi + ecx], 0
+    je ab_lend
+    inc ecx
+    cmp ecx, 0x50
+    jb ab_len
+    jmp ab_out
+ab_lend:
+    cmp ecx, {0x50 - 1 - len(', Landing, Carrier')}
+    ja ab_out
+    add edi, ecx
+    mov esi, {AB_SEP:#x}
+ab_sep:
+    lodsb
+    stosb
+    test al, al
+    jnz ab_sep
+    dec edi
+ab_cat:
+    mov esi, dword ptr [ebp*4 + {AB_TAB:#x}]
+ab_cp:
+    lodsb
+    stosb
+    test al, al
+    jnz ab_cp
+ab_out:
+    popad
+    jmp {armrow:#x}
+''')
 # eax = x, edx = y, ebp = jugador, ecx = operación -> eax = cuántos ejércitos vivos del jugador en la casilla pasan los
 # filtros. Operación: 0x200 solo embarcados, 0x400 solo con byte de enlace == cl, 0x800 escribe cl en el byte de
 # enlace, 0x100 borra el destino. Preserva el resto (salvo edx).
@@ -2650,6 +2720,10 @@ crl_orig:
 # es P, A quedó vacía y P es la otra mitad (apunta de vuelta a A), todo lo propio de P pasa a A: resta el costo del
 # paso a sus movimientos (sin bajar de 0), borra sus destinos, y el enlace queda entre N y A. Si no, el grupo se
 # desenlaza (salió del transporte una parte, o desembarcó). Ocupación de A y P con 0x49d450; mapa con 0x4a2170.
+# Anota en crface[jugador] la casilla A (x, y) y la dirección del paso P -> A, para dibujar esa mitad mirando hacia
+# donde avanzó (crdraw). Direcciones del juego (0x49cbf1..0x49ccfb): índice (dx + 1) + 3*(dy + 1).
+CR_FTAB = place_data('cr_ftab', bytes([7, 0, 1, 6, 4, 2, 5, 4, 3]))
+CRFACE = place_data('crface', b'\xff\x7f' * 32)    # 8 x (x, y, dirección, -); x = 0x7fff: nada anotado
 crfollow = place('crfollow', f'''
     add esp, 0x14
     pushad
@@ -2775,6 +2849,18 @@ cf_mvnext:
     jmp cf_mv
 cf_mvend:
     mov eax, [esp]
+    sub eax, [esp + 8]
+    mov edx, [esp + 4]
+    sub edx, [esp + 0xc]
+    lea edx, [edx + edx*2 + 4]
+    add edx, eax
+    mov al, byte ptr [edx + {CR_FTAB:#x}]
+    mov byte ptr [ebp*8 + {CRFACE + 4:#x}], al
+    mov eax, [esp]
+    mov word ptr [ebp*8 + {CRFACE:#x}], ax
+    mov eax, [esp + 4]
+    mov word ptr [ebp*8 + {CRFACE + 2:#x}], ax
+    mov eax, [esp]
     mov edx, [esp + 4]
     lea ecx, [edi + 0x880]
     call {crscan:#x}
@@ -2841,6 +2927,119 @@ crdef = place('crdef', f'''
 cd_out:
     popad
     jmp 0x464c51
+''')
+# Transporte doble: dibujo. Reemplaza "call 0x4dd530" en 0x459d0d de 0x459790 (ejército quieto de una celda de la vista:
+# un solo cuadro por tipo, sin dirección; esi = celda, ebp = vista, columna y fila en [esp+0x14]/[esp+0x16] del
+# llamador, origen de la vista en [ebp+0x28]/[ebp+0x2a]; dueño en [esi+4] & 0xf, como lo carga 0x457909). Si la casilla es la mitad quieta de un transporte doble
+# cuya otra mitad es el grupo activo del dueño (estructura de sprite ebp + 0x2c*p, armada por 0x457cd0), la dibuja como
+# 0x459e4f dibuja ese grupo: su hoja animada [+0x60], columna de la dirección (dir*0x31 + 0x81) y el mismo cuadro.
+# Dirección: la anotada por crfollow si es esta casilla; si no, la del grupo [+0x50]. Sin animaciones ([0x560758]) o
+# con la imagen 0xa4 queda el dibujo original.
+crdraw = place('crdraw', f'''
+    cmp dword ptr [esp + 4], 0xa4
+    je cw_go
+    cmp byte ptr [0x560758], 0
+    jne cw_go
+    pushad
+    sub esp, 0x10
+    movzx ebx, word ptr [esi + 4]
+    and ebx, 0xf
+    cmp ebx, 8
+    jae cw_out
+    imul ecx, ebx, 0x4f0
+    cmp word ptr [ecx + 0x56eaa8], 0
+    jle cw_out
+    test byte ptr [ecx + 0x56eaaa], 8
+    jz cw_out
+    movsx eax, word ptr [ecx + 0x56ea90]
+    test eax, eax
+    jle cw_out
+    imul eax, eax, 0x1c
+    movsx edx, word ptr [eax + 0x54fe52]
+    mov [esp + 8], edx
+    movsx edx, word ptr [eax + 0x54fe54]
+    mov [esp + 0xc], edx
+    movsx eax, word ptr [esp + 0x68]
+    movsx edx, word ptr [ebp + 0x28]
+    add eax, edx
+    mov [esp], eax
+    movsx eax, word ptr [esp + 0x6a]
+    movsx edx, word ptr [ebp + 0x2a]
+    add eax, edx
+    mov [esp + 4], eax
+    mov eax, [esp + 8]
+    sub eax, [esp]
+    inc eax
+    cmp eax, 2
+    ja cw_out
+    mov edx, [esp + 0xc]
+    sub edx, [esp + 4]
+    inc edx
+    cmp edx, 2
+    ja cw_out
+    lea eax, [eax + edx*4]
+    cmp eax, 5
+    je cw_out
+    imul edi, ebx, 0x2c
+    add edi, ebp
+    cmp byte ptr [edi + 0x44], 0
+    je cw_out
+    cmp byte ptr [edi + 0x59], 0
+    jne cw_out
+    cmp byte ptr [edi + 0x5b], 0
+    jne cw_out
+    push edi
+    mov esi, [esp + 4]
+    mov edi, [esp + 8]
+    call {crpart:#x}
+    pop edi
+    test eax, eax
+    jz cw_out
+    cmp ecx, [esp + 8]
+    jne cw_out
+    cmp edx, [esp + 0xc]
+    jne cw_out
+    movzx eax, word ptr [edi + 0x50]
+    movsx ecx, word ptr [ebx*8 + {CRFACE:#x}]
+    cmp ecx, [esp]
+    jne cw_dir
+    movsx ecx, word ptr [ebx*8 + {CRFACE + 2:#x}]
+    cmp ecx, [esp + 4]
+    jne cw_dir
+    movzx eax, byte ptr [ebx*8 + {CRFACE + 4:#x}]
+cw_dir:
+    and eax, 7
+    imul eax, eax, 0x31
+    add eax, 0x81
+    mov [esp + 0x38], eax
+    cmp byte ptr [ebx + 0x4fe110], 0
+    jne cw_mov
+    cmp word ptr [0x560b20], bx
+    jne cw_mov
+    mov eax, 0x94
+    test byte ptr [ebp + 0x3c], 4
+    jz cw_fr
+    mov eax, 0xc5
+    jmp cw_fr
+cw_mov:
+    movsx eax, word ptr [edi + 0x4e]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    and eax, 3
+    xor eax, edx
+    sub eax, edx
+    imul eax, eax, 0x31
+    inc eax
+cw_fr:
+    mov [esp + 0x3c], eax
+    mov eax, [edi + 0x60]
+    mov [esp + 0x34], eax
+cw_out:
+    add esp, 0x10
+    popad
+cw_go:
+    jmp 0x4dd530
 ''')
 
 # ---------------------------------------------------------------- Puentes: derribar y reconstruir
@@ -3485,6 +3684,101 @@ brp_out:
     pop ebx
     ret
 ''')
+# Restos del puente derribado: en el mapa se dibuja la cabecera de cada pieza del lado de la costa, para que se vea
+# dónde reconstruirlo. La vista copia la casilla a su celda en 0x4583b0: estructura en bits 10-12 de la palabra 0 y,
+# si hay estructura, [+8] en [celda+0xe]; el dibujo (0x459a9f) pone el camino con estructura 1 (clase 4): hoja
+# 0x21 + ([+0xe] & 0xf), pieza ([+0xe] >> 5) & 0x1f = fila*8 + columna de 48x48. Un puente derribado (estructura 0)
+# lleva ahora [+8] en [celda+0xe] con el bit 0x8000 (el de derribado); en el resto de las celdas sin estructura ese
+# bit se borra, porque [celda+0xe] queda de lo que mostraba antes la celda.
+BR_STUB = 18
+br_stubtab = bytearray(32 * 8)                          # por pieza, hasta 2 rectángulos (dx, dy, ancho, alto)
+for piece, rects in {1 * 8 + 6: [(0, 0, BR_STUB, 48)],                         # horizontal, mitad izquierda
+                     1 * 8 + 7: [(48 - BR_STUB, 0, BR_STUB, 48)],              # horizontal, mitad derecha
+                     2 * 8 + 7: [(0, 0, 48, BR_STUB)],                         # vertical, mitad de arriba
+                     2 * 8 + 6: [(0, 48 - BR_STUB, 48, BR_STUB)],              # vertical, mitad de abajo
+                     3 * 8 + 4: [(0, 0, BR_STUB, 48), (48 - BR_STUB, 0, BR_STUB, 48)],   # de una casilla
+                     3 * 8 + 5: [(0, 0, 48, BR_STUB), (0, 48 - BR_STUB, 48, BR_STUB)]}.items():
+    for k, r in enumerate(rects):
+        struct.pack_into('<bbBB', br_stubtab, piece * 8 + k * 4, *r)
+br_stubtab = place_data('br_stubtab', bytes(br_stubtab))
+# Copia a la celda (reemplaza 0x45846d..0x45847f; ecx = casilla, edi = celda, bp = palabra 0 nueva).
+br_vfill = place('br_vfill', f'''
+    mov word ptr [edi], bp
+    test bp, 0x1c00
+    jz bvf_none
+    mov ax, word ptr [ecx + 8]
+    mov word ptr [edi + 0xe], ax
+    jmp 0x45847f
+bvf_none:
+    and word ptr [edi + 0xe], 0x7fff
+    test byte ptr [ecx + 9], 0x80
+    jz 0x45847f
+    mov eax, ecx
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_RAZED}
+    jne 0x45847f
+    mov ax, word ptr [ecx + 8]
+    mov word ptr [edi + 0xe], ax
+    jmp 0x45847f
+''')
+# Dibujo (reemplaza 0x459a9f..0x459aaa; esi = celda, edi = x en pantalla, [esp+0x1c] = y). Camino: sigue el del juego.
+br_vdraw = place('br_vdraw', f'''
+    mov ax, word ptr [esi]
+    and ah, 0x1c
+    cmp ah, 4
+    je 0x459aaa
+    test ah, ah
+    jnz 0x459af5
+    movzx ecx, word ptr [esi + 0xe]
+    test ch, 0x80
+    jz 0x459af5
+    pushad
+    mov ebx, ecx
+    shr ecx, 5
+    and ecx, 0x1f
+    lea ebp, [ecx*8 + {br_stubtab:#x}]
+    xor esi, esi
+bvd_loop:
+    movzx eax, byte ptr [ebp + esi*4 + 2]
+    test eax, eax
+    jz bvd_next
+    movsx ecx, byte ptr [ebp + esi*4 + 1]
+    add ecx, dword ptr [esp + 0x3c]
+    push ecx
+    movsx ecx, byte ptr [ebp + esi*4]
+    add ecx, edi
+    push ecx
+    push 0x27
+    movzx ecx, byte ptr [ebp + esi*4 + 3]
+    push ecx
+    push eax
+    mov eax, ebx
+    shr eax, 8
+    and eax, 3
+    imul eax, eax, 0x30
+    movsx ecx, byte ptr [ebp + esi*4 + 1]
+    add eax, ecx
+    push eax
+    mov eax, ebx
+    shr eax, 5
+    and eax, 7
+    imul eax, eax, 0x30
+    movsx ecx, byte ptr [ebp + esi*4]
+    add eax, ecx
+    push eax
+    mov eax, ebx
+    and eax, 0xf
+    add eax, 0x21
+    push eax
+    call 0x4dd530
+    add esp, 0x20
+bvd_next:
+    inc esi
+    cmp esi, 2
+    jb bvd_loop
+    popad
+    jmp 0x459af5
+''')
 
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
@@ -3545,7 +3839,7 @@ assert rel(0x4416fa, 4) == bytes.fromhex('66250e00')
 patch(0x4416ef, bytes.fromhex('3be8751a668b8760fe5400'), asm(f'jmp {fogarmy:#x}', 0x4416ef))
 patch(0x4def81, bytes.fromhex('034c0a046a4f'), asm(f'jmp {gname:#x}', 0x4def81))
 assert rel(0x4a2c24, 8) == asm('call 0x4dd120; add esp, 0xc', 0x4a2c24)
-patch(0x4a2c24, rel(0x4a2c24, 8), asm(f'jmp {armrow:#x}', 0x4a2c24))
+patch(0x4a2c24, rel(0x4a2c24, 8), asm(f'jmp {armab:#x}', 0x4a2c24))
 patch(0x45a049, asm('call 0x45aa80', 0x45a049), asm(f'call {fldraw:#x}', 0x45a049))
 patch(0x4a2cb6, asm('call 0x4dd260', 0x4a2cb6), asm(f'call {altitle:#x}', 0x4a2cb6))
 assert rel(0x457200, 2) == asm('je 0x457214', 0x457200)
@@ -3577,6 +3871,7 @@ patch(0x49cdc7, bytes.fromhex('83c414') + asm('mov cx, word ptr [esi + 6]', 0x49
 assert rel(0x464c3d, 0x464c51 - 0x464c3d) == asm('lea eax, [esp + 0x30]; push eax; push edi; push esi; call 0x4411b0; '
                                                  'mov word ptr [esp + 0x1e], ax; add esp, 0xc', 0x464c3d)
 patch(0x464c3d, rel(0x464c3d, 0x464c51 - 0x464c3d), asm(f'jmp {crdef:#x}', 0x464c3d))
+patch(0x459d0d, asm('call 0x4dd530', 0x459d0d), asm(f'call {crdraw:#x}', 0x459d0d))
 # Puentes: derribar y reconstruir (ver br_* arriba).
 for va in (0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))
@@ -3598,6 +3893,9 @@ patch(0x4b64f0, rel(0x4b64f0, 0x4b650c - 0x4b64f0), asm(f'jmp {br_rebtxt:#x}', 0
 assert rel(0x4b650c, 1) == b'\x50'
 patch(0x4b65e5, bytes.fromhex('668b3510955600'), asm(f'jmp {br_cost:#x}', 0x4b65e5))
 patch(0x4b6610, b'\x56' + asm('call 0x4a2170', 0x4b6611), asm(f'jmp {br_rebapply:#x}', 0x4b6610))
+patch(0x45846d, bytes.fromhex('66f7c5001c66892f7408668b41086689470e'),
+      asm(f'jmp {br_vfill:#x}', 0x45846d))
+patch(0x459a9f, bytes.fromhex('668b0680e41c80fc04754b'), asm(f'jmp {br_vdraw:#x}', 0x459a9f))
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,

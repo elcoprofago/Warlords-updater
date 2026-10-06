@@ -1,5 +1,6 @@
 # Prueba de juguete del transporte doble ("Carrier") sobre el exe parcheado, en unicorn: formar (crlink, 0x49d05d),
-# seguir (crfollow, 0x49cdc7), defensa conjunta (crdef, 0x464c3d) y "Landing" anulado en una mitad (landchk).
+# seguir (crfollow, 0x49cdc7, con la dirección anotada en crface), defensa conjunta (crdef, 0x464c3d), "Landing"
+# anulado en una mitad (landchk) y dibujo de la popa con la hoja animada del grupo (crdraw, 0x459d0d).
 # Uso: python prueba_carrier.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Corre el código real del juego salvo 0x485e30, 0x49c960 y 0x49d450, que se reemplazan por un ret que anota la
 # llamada. Cada caso lleva controles que no se tienen que tocar: un ejército propio lejos y uno ajeno al lado.
@@ -19,6 +20,10 @@ def first_call(va):
     for ins in cs.disasm(img[va - BASE:va - BASE + 0x100], va):
         if ins.mnemonic == 'call': return int(ins.op_str, 16)
 LANDCHK = first_call(jmp_target(0x4a5c6a))   # livexp -> landchk
+CRDRAW = next(cs.disasm(img[0x459d0d - BASE:0x459d0d - BASE + 5], 0x459d0d)); assert CRDRAW.mnemonic == 'call'
+CRDRAW = int(CRDRAW.op_str, 16)
+CRFACE = [int(i.op_str.split('ebx*8 + ')[1].split(']')[0], 16) for i in cs.disasm(img[CRDRAW - BASE:CRDRAW - BASE + 0x200], CRDRAW)
+          if 'ebx*8 + ' in i.op_str][0]
 SENT = 0x1ff000
 P = 1
 REG = ('EAX', 'EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP')
@@ -124,13 +129,13 @@ for nombre, kw in [('codigo 3', dict(code=3)), ('codigo 7', dict(code=7)), ('sin
 # ---------------------------------------------------------------- seguir (crfollow)
 # Proa: grupo que estaba en A = (10,10) y ya está en N. Popa en P = (11,10), apuntando a A.
 def seguir(N=(9, 10), cost=2, bonos=('Carrier',), gemb=True, popa_link=None, queda=False, sin_enlace=False,
-           popa_moves=10, muerto=False):
+           popa_moves=10, muerto=False, pd=(1, 0)):
     w = Mundo(bonos)
     Ax, Ay = 10, 10
-    G = [w.army(*N, link=0 if sin_enlace else 0x80 | enc(1, 0)) for _ in range(5)]
-    Pp = [w.army(11, 10, link=0x80 | enc(-1, 0) if popa_link is None else popa_link, moves=popa_moves, dest=(30, 30))
-          for _ in range(6)]
-    dead = w.army(11, 10, link=0x80 | enc(-1, 0), alive=False) if muerto else None
+    G = [w.army(*N, link=0 if sin_enlace else 0x80 | enc(*pd)) for _ in range(5)]
+    Pp = [w.army(10 + pd[0], 10 + pd[1], link=0x80 | enc(-pd[0], -pd[1]) if popa_link is None else popa_link,
+                 moves=popa_moves, dest=(30, 30)) for _ in range(6)]
+    dead = w.army(10 + pd[0], 10 + pd[1], link=0x80 | enc(-pd[0], -pd[1]), alive=False) if muerto else None
     resto = w.army(10, 10, link=0x80 | enc(1, 0)) if queda else None
     lejos = w.army(40, 40); ajeno = w.army(12, 10, owner=2)
     w.group(G, emb=gemb)
@@ -144,21 +149,34 @@ def seguir(N=(9, 10), cost=2, bonos=('Carrier',), gemb=True, popa_link=None, que
                and all(out[k] == regs[k] for k in ('EAX', 'EBX', 'EDX', 'ESI', 'EDI', 'EBP'))
                and (out['ECX'] & ~0xffff) == (0x22 & ~0xffff))
     ctl = w.get(lejos) == dict(x=40, y=40, dest=(-1, -1), moves=10, link=0) and w.get(ajeno)['x'] == 12
-    if dead: ctl = ctl and w.get(dead)['x'] == 11
+    if dead: ctl = ctl and w.get(dead)['x'] == 10 + pd[0]
     return w, G, Pp, resto, ctl and ok_regs
 
-def siguio(w, G, Pp, N, moves):
+FTAB = [7, 0, 1, 6, 4, 2, 5, 4, 3]     # (dx+1) + 3*(dy+1) -> dirección de la hoja animada (0 = norte, 2 = este...)
+def face(w, p=P):
+    x, y, d = struct.unpack('<hhB', w.mu.mem_read(CRFACE + p * 8, 5))
+    return x, y, d
+def siguio(w, G, Pp, N, moves, pd=(1, 0)):
     en = enc(N[0] - 10, N[1] - 10)
     return (all(w.get(i) == dict(x=10, y=10, dest=(-1, -1), moves=moves, link=0x80 | en) for i in Pp)
             and all(w.get(i)['link'] == 0x80 | (10 - en) for i in G)
-            and w.llamadas == [(0x49d450, (10, 10)), (0x49d450, (11, 10))] and w.mu.mem_read(0x4fe5f8, 1)[0] == 0)
-def no_siguio(w, G, Pp, grupo_link=0):
-    return (all(w.get(i)['x'] == 11 and w.get(i)['moves'] == 10 and w.get(i)['dest'] == (30, 30) for i in Pp)
-            and all(w.get(i)['link'] == grupo_link for i in G) and w.llamadas == [] and w.mu.mem_read(0x4fe5f8, 1)[0] == 1)
+            and w.llamadas == [(0x49d450, (10, 10)), (0x49d450, (10 + pd[0], 10 + pd[1]))]
+            and w.mu.mem_read(0x4fe5f8, 1)[0] == 0
+            and face(w) == (10, 10, FTAB[(1 - pd[0]) + 3 * (1 - pd[1])])
+            and all(face(w, q)[0] == 0x7fff for q in range(8) if q != P))
+def no_siguio(w, G, Pp, grupo_link=0, pd=(1, 0)):
+    return (all(w.get(i)['x'] == 10 + pd[0] and w.get(i)['moves'] == 10 and w.get(i)['dest'] == (30, 30) for i in Pp)
+            and all(w.get(i)['link'] == grupo_link for i in G) and w.llamadas == [] and w.mu.mem_read(0x4fe5f8, 1)[0] == 1
+            and all(face(w, q)[0] == 0x7fff for q in range(8)))
 
-w, G, Pp, _, ok = seguir(); check('sigue: proa al oeste', ok and siguio(w, G, Pp, (9, 10), 8), [w.get(i) for i in G + Pp] + [w.llamadas])
+w, G, Pp, _, ok = seguir(); check('sigue: proa al oeste (popa mira al oeste)', ok and siguio(w, G, Pp, (9, 10), 8), [w.get(i) for i in G + Pp] + [w.llamadas, face(w)])
 w, G, Pp, _, ok = seguir(N=(9, 9)); check('sigue: proa en diagonal', ok and siguio(w, G, Pp, (9, 9), 8))
 w, G, Pp, _, ok = seguir(N=(10, 11)); check('sigue: proa al sur (de costado)', ok and siguio(w, G, Pp, (10, 11), 8))
+for pd, nombre in [((0, 1), 'norte'), ((-1, 1), 'noreste'), ((-1, 0), 'este'), ((-1, -1), 'sureste'), ((0, -1), 'sur'),
+                   ((1, -1), 'suroeste'), ((1, 1), 'noroeste')]:
+    N = (10 - pd[0], 10 - pd[1])
+    w, G, Pp, _, ok = seguir(N=N, pd=pd)
+    check(f'sigue: popa avanza al {nombre}', ok and siguio(w, G, Pp, N, 8, pd), (face(w), w.llamadas, [w.get(i) for i in Pp]))
 w, G, Pp, _, ok = seguir(cost=3, popa_moves=1); check('sigue: movimientos de la popa no bajan de 0', ok and siguio(w, G, Pp, (9, 10), 0))
 w, G, Pp, _, ok = seguir(muerto=True); check('sigue: un muerto en P no se mueve', ok and siguio(w, G, Pp, (9, 10), 8))
 w, G, Pp, resto, ok = seguir(queda=True)
@@ -213,5 +231,57 @@ for nombre, kw, esp_ in [('barco suelto', dict(link=False), 'SI'), ('mitad enlaz
                          ('no embarcado', dict(link=False, emb=False), 'NO')]:
     r, ok = landing(**kw)
     check(f'Landing: {nombre} -> {esp_}', ok and r == esp_, (r, ok))
+
+# ---------------------------------------------------------------- dibujo de la popa (crdraw, 0x459d0d)
+# Proa = grupo activo del jugador P en L = (10,10); popa quieta en F, celda (col, fila) de la vista con origen (5,5).
+# crdraw recibe los argumentos de 0x4dd530 (imagen, srcX, srcY, 48, 48, 0x27, x, y) y tiene que llegar a 0x4dd530 con
+# los mismos registros y la misma pila; solo cambian imagen, srcX y srcY, y solo si la celda es la popa del grupo activo.
+VISTA, CELDA, HOJA = 0x120000, 0x130000, 0x1234
+def dibujo(F=(11, 10), dueno=P, imagen=None, sin_anim=False, activo=True, s59=0, s5b=0, gemb=True, enlazada=True,
+           bonos=('Carrier',), dir_grupo=2, mov=7, cara=None, turno=0, fijo=0, cuadro=0, L=(10, 10)):
+    w = Mundo(bonos)
+    G = [w.army(*L, link=0x80 | enc(F[0] - L[0], F[1] - L[1])) for _ in range(4)]
+    Q = [w.army(*F, owner=dueno, link=(0x80 | enc(L[0] - F[0], L[1] - F[1])) if enlazada else 0) for _ in range(3)]
+    w.group(G, emb=gemb)
+    mu = w.mu
+    mu.mem_write(VISTA, bytes(0x2c * 8 + 0x80))
+    mu.mem_write(VISTA + 0x28, struct.pack('<hh', 5, 5)); mu.mem_write(VISTA + 0x3c, struct.pack('<h', cuadro))
+    S = VISTA + 0x2c * P
+    mu.mem_write(S + 0x44, bytes([1 if activo else 0]))
+    mu.mem_write(S + 0x4e, struct.pack('<hh', mov, dir_grupo))
+    mu.mem_write(S + 0x59, bytes([s59])); mu.mem_write(S + 0x5b, bytes([s5b]))
+    mu.mem_write(S + 0x60, struct.pack('<I', HOJA))
+    # celda: +2 = hay ejército | tipo 15 (barco) | ranura 16 en los bits 5-9; +4 = dueño en los bits 0-3 (0x457909)
+    mu.mem_write(CELDA, bytes(0x1c)); mu.mem_write(CELDA + 2, struct.pack('<HH', 0x4000 | 15 | (16 << 5), 0x7e0 | dueno))
+    mu.mem_write(0x560758, bytes([1 if sin_anim else 0])); mu.mem_write(0x560b20, struct.pack('<h', turno))
+    mu.mem_write(0x4fe110 + P, bytes([fijo]))
+    if cara: mu.mem_write(CRFACE + P * 8, struct.pack('<hhB', *cara))
+    args = [imagen if imagen is not None else 0x2f + dueno, 3 * 48, 1 * 48, 0x30, 0x30, 0x27, 333, 444]
+    marco = bytearray(0x40); marco[0x14:0x18] = struct.pack('<hh', F[0] - 5, F[1] - 5)
+    regs = dict(EAX=0x11, EBX=0x1234, ECX=0x22, EDX=0x33, ESI=CELDA, EDI=0x55, EBP=VISTA)
+    # w.run pone la pila desde esp; la dirección de vuelta es la primera palabra
+    at, out, esp = w.run(CRDRAW, 0x4dd530, regs, stack=struct.pack('<9I', SENT, *args) + bytes(marco))
+    got = list(struct.unpack('<8i', w.mu.mem_read(esp + 4, 32)))
+    ok = (at == 0x4dd530 and out['ESP'] == esp and all(out[k] == regs[k] for k in REG)
+          and bytes(w.mu.mem_read(esp + 0x24, 0x40)) == bytes(marco))
+    return got, args, ok
+
+def anim(dir_, fr): return [HOJA, dir_ * 0x31 + 0x81, fr, 0x30, 0x30, 0x27, 333, 444]
+got, args, ok = dibujo(); check('dibujo: popa al este, dirección del grupo', ok and got == anim(2, 7 % 4 * 0x31 + 1), got)
+got, args, ok = dibujo(cara=(11, 10, 6)); check('dibujo: dirección anotada al seguir', ok and got == anim(6, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(cara=(12, 10, 6)); check('dibujo: dirección anotada de otra casilla -> la del grupo', ok and got == anim(2, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(F=(9, 11), dir_grupo=5); check('dibujo: popa en diagonal', ok and got == anim(5, 3 * 0x31 + 1), got)
+got, args, ok = dibujo(mov=-5); check('dibujo: cuadro con resto negativo, como el original', ok and got == anim(2, -1 * 0x31 + 1), got)
+got, args, ok = dibujo(turno=P); check('dibujo: turno propio quieto -> cuadro 0x94', ok and got == anim(2, 0x94), got)
+got, args, ok = dibujo(turno=P, cuadro=5); check('dibujo: turno propio quieto, parpadeo -> 0xc5', ok and got == anim(2, 0xc5), got)
+got, args, ok = dibujo(turno=P, fijo=1); check('dibujo: turno propio en marcha -> cuadro de marcha', ok and got == anim(2, 3 * 0x31 + 1), got)
+for nombre, kw in [('imagen 0xa4', dict(imagen=0xa4)), ('sin animaciones', dict(sin_anim=True)),
+                   ('grupo fuera de la vista', dict(activo=False)), ('sprite con [+0x59]', dict(s59=1)),
+                   ('sprite con [+0x5b]', dict(s5b=1)), ('grupo no embarcado', dict(gemb=False)),
+                   ('popa no enlazada', dict(enlazada=False)), ('sin Carrier', dict(bonos=('Landing',))),
+                   ('celda de otro jugador', dict(dueno=2)), ('popa a 2 casillas', dict(F=(12, 10))),
+                   ('celda del propio grupo', dict(F=(10, 10)))]:
+    got, args, ok = dibujo(**kw)
+    check(f'dibujo sin cambios: {nombre}', ok and got == args, (got, args, ok))
 
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)
