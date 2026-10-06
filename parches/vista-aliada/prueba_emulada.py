@@ -1,6 +1,6 @@
 # Prueba del código parcheado real (emulado) sobre el estado de una partida guardada.
 # Uso: python prueba_emulada.py <DarklordAV.exe> <partida.SAV> <dirección hex de la rutina "turn">
-#   ej.: python prueba_emulada.py dist\vista-aliada\DarklordAV.exe C:\Warlords3\SAVES\hide01.SAV 6b0090
+#   ej.: python prueba_emulada.py dist\vista-aliada\DarklordAV.exe C:\Warlords3\SAVES\hide01.SAV 6b0190
 #   (la dirección la imprime build.py en la línea "caves"; requiere pefile y unicorn)
 import pefile, struct, sys
 from unicorn import *

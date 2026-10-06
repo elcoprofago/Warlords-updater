@@ -1,6 +1,7 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
 # TERRAIN\SUBTYPE\landing.STT y carrier.STT.
 # Tope de 5 en el stack de un barco con bono de movimiento "Landing" (LANDCAP).
+# Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad).
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -2412,12 +2413,655 @@ lc_pass:
     jmp 0x49e4ae
 ''')
 
+# ---------------------------------------------------------------- Puentes: derribar y reconstruir
+# Un puente es una casilla de clase agua sin edificio (palabra 0 & 0x4000) con estructura 1 ([+3] & 7); en los mapas
+# vienen de a 2 casillas unidas por un lado (102 de 102 en las partidas). Derribado: estructura 0 y bit 0x80 de [+9]
+# (nadie más lo usa: el byte +8/+9 solo se lee enmascarado a 0xff, en 0x412ac5). Los demás bits de +8/+9 se dejan:
+# reconstruir solo vuelve a poner la estructura 1. Con estructura 0 la casilla es agua: el grafo de pasos (0x4a4f90)
+# la deja navegable para los barcos y cortada para los de tierra.
+# El juego arrasa y reconstruye "sitios" por índice (word) en todo el recorrido: menú, diálogo, red (0x18d/0x1cf y
+# 0x18e/0x1c9) y aplicación. Un puente viaja por ese mismo camino con el código BR_CODE + (y << 7) + x (la grilla
+# 0x582158 es x*160 + y en 0x5000 bytes: x < 128, y < 160; el máximo 0x6fff sigue positivo para los "jl" del juego, y
+# los sitios son muchos menos que 0x2000).
+# Arrasar un puente: la opción de arrasar sitios ([0x53c393] & 6 >= 2), el líder en una casilla vecina (no encima) y
+# ningún ejército ajeno sobre el puente: si lo hay, el diálogo avisa que primero hay que atacarlo (el combate normal
+# del juego). Los ejércitos propios que quedan encima caen al agua como en el desbande (0x485610, con su aviso);
+# 0x43c240 deja fuera a los que vuelan y a los embarcados. Reconstruir cuesta lo de fundar una ciudad ([0x56950e]),
+# con el descuento del jugador como el de los sitios (0x4b65e0), y exige el puente vacío (aviso 0x72).
+BR_CODE = 0x2000
+BR_KIND_INTACT, BR_KIND_RAZED = 1, 2
+br_xy = place_data('br_xy', bytes(4 * 8))               # componente: (x | y << 16) por casilla, hasta 8
+br_d8 = place_data('br_d8', struct.pack('<8h8h', -1, 0, 1, -1, 1, -1, 0, 1, -1, -1, -1, 0, 0, 1, 1, 1))
+br_d4 = place_data('br_d4', struct.pack('<4h4h', 0, -1, 1, 0, -1, 0, 0, 1))
+str_the_bridge = place_data('str_the_bridge', cstr_('the bridge'))
+str_The_bridge = place_data('str_The_bridge', cstr_('The bridge'))
+str_br_enemy1 = place_data('str_br_enemy1', cstr_('Enemies hold the bridge!'))
+str_br_enemy2 = place_data('str_br_enemy2', cstr_('Attack them first.'))
+# eax = x, edx = y -> eax = casilla, o 0 si cae fuera del mapa. Preserva el resto.
+br_tile = place('br_tile', '''
+    test eax, eax
+    jl brt_no
+    test edx, edx
+    jl brt_no
+    push ecx
+    movsx ecx, word ptr [0x503e00]
+    cmp eax, ecx
+    jge brt_nopop
+    movsx ecx, word ptr [0x503e02]
+    cmp edx, ecx
+    jge brt_nopop
+    push edx
+    lea edx, [edx + edx*4]
+    add edx, edx
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    lea eax, [eax + eax*4]
+    lea eax, [edx + eax*2 + 0x503e58]
+    pop edx
+    pop ecx
+    ret
+brt_nopop:
+    pop ecx
+brt_no:
+    xor eax, eax
+    ret
+''')
+# eax = casilla -> eax = 1 puente entero, 2 puente derribado, 0 otra cosa. Preserva el resto.
+br_kind = place('br_kind', '''
+    push ecx
+    push edx
+    mov edx, eax
+    movzx ecx, word ptr [edx]
+    test ch, 0x40
+    jnz brk_no
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    jne brk_no
+    mov cl, byte ptr [edx + 3]
+    and cl, 7
+    cmp cl, 1
+    je brk_intact
+    test cl, cl
+    jnz brk_no
+    test byte ptr [edx + 9], 0x80
+    jz brk_no
+    mov eax, 2
+    jmp brk_out
+brk_intact:
+    mov eax, 1
+    jmp brk_out
+brk_no:
+    xor eax, eax
+brk_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# br_find(x, y, tipo) cdecl -> eax = código de la primera casilla vecina (8 direcciones) de ese tipo, o -1.
+# Para arrasar (tipo 1), -1 también si el propio (x, y) es un puente entero: no se derriba el puente que se pisa.
+br_find = place('br_find', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    movsx esi, word ptr [esp + 0x14]
+    movsx edi, word ptr [esp + 0x18]
+    mov ebp, dword ptr [esp + 0x1c]
+    cmp ebp, {BR_KIND_INTACT}
+    jne brf_scan
+    mov eax, esi
+    mov edx, edi
+    call {br_tile:#x}
+    test eax, eax
+    jz brf_none
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_INTACT}
+    je brf_none
+brf_scan:
+    xor ebx, ebx
+brf_loop:
+    movsx eax, word ptr [ebx*2 + {br_d8:#x}]
+    add eax, esi
+    movsx edx, word ptr [ebx*2 + {br_d8 + 16:#x}]
+    add edx, edi
+    push eax
+    call {br_tile:#x}
+    test eax, eax
+    jz brf_next
+    call {br_kind:#x}
+    cmp eax, ebp
+    jne brf_next
+    pop eax
+    shl edx, 7
+    lea eax, [eax + edx + {BR_CODE:#x}]
+    jmp brf_out
+brf_next:
+    pop eax
+    inc ebx
+    cmp ebx, 8
+    jb brf_loop
+brf_none:
+    or eax, -1
+brf_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# br_comp(código, tipo) cdecl -> eax = casillas del puente (unidas por un lado, del mismo tipo, hasta 8) en br_xy;
+# 0 si el código no es de un puente de ese tipo.
+br_comp = place('br_comp', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    movsx eax, word ptr [esp + 0x14]
+    sub eax, {BR_CODE:#x}
+    jl brc_zero
+    mov edx, eax
+    shr edx, 7
+    and eax, 0x7f
+    mov word ptr [{br_xy:#x}], ax
+    mov word ptr [{br_xy + 2:#x}], dx
+    call {br_tile:#x}
+    test eax, eax
+    jz brc_zero
+    call {br_kind:#x}
+    cmp eax, dword ptr [esp + 0x18]
+    jne brc_zero
+    mov ebp, 1
+    xor esi, esi
+brc_outer:
+    xor ebx, ebx
+brc_dir:
+    movsx eax, word ptr [esi*4 + {br_xy:#x}]
+    movsx ecx, word ptr [ebx*2 + {br_d4:#x}]
+    add eax, ecx
+    movsx edx, word ptr [esi*4 + {br_xy + 2:#x}]
+    movsx ecx, word ptr [ebx*2 + {br_d4 + 8:#x}]
+    add edx, ecx
+    mov edi, eax
+    call {br_tile:#x}
+    test eax, eax
+    jz brc_next
+    call {br_kind:#x}
+    cmp eax, dword ptr [esp + 0x18]
+    jne brc_next
+    shl edx, 16
+    or edx, edi
+    xor ecx, ecx
+brc_dup:
+    cmp edx, dword ptr [ecx*4 + {br_xy:#x}]
+    je brc_next
+    inc ecx
+    cmp ecx, ebp
+    jb brc_dup
+    cmp ebp, 8
+    jae brc_next
+    mov dword ptr [ebp*4 + {br_xy:#x}], edx
+    inc ebp
+brc_next:
+    inc ebx
+    cmp ebx, 4
+    jb brc_dir
+    inc esi
+    cmp esi, ebp
+    jb brc_outer
+    mov eax, ebp
+    jmp brc_out
+brc_zero:
+    xor eax, eax
+brc_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# br_armies(n, jugador) cdecl, sobre las n casillas de br_xy -> eax = ejércitos vivos de otro dueño, edx = todos.
+br_armies = place('br_armies', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    xor esi, esi
+    xor edi, edi
+    xor ebx, ebx
+bra_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp ebx, eax
+    jge bra_end
+    imul eax, ebx, 0x1c
+    test byte ptr [eax + 0x54fe63], 0x40
+    jz bra_next
+    mov edx, dword ptr [eax + 0x54fe52]
+    mov ecx, dword ptr [esp + 0x14]
+bra_j:
+    dec ecx
+    js bra_next
+    cmp edx, dword ptr [ecx*4 + {br_xy:#x}]
+    jne bra_j
+    inc edi
+    movzx edx, word ptr [eax + 0x54fe5e]
+    and edx, 0x1e0
+    shr edx, 5
+    movsx ecx, word ptr [esp + 0x18]
+    cmp edx, ecx
+    je bra_next
+    inc esi
+bra_next:
+    inc ebx
+    jmp bra_loop
+bra_end:
+    mov eax, esi
+    mov edx, edi
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# br_drown(n, jugador) cdecl: los ejércitos del jugador sobre las n casillas de br_xy que pueden ahogarse (0x43c240)
+# caen al agua con 0x485610(jugador, ejército, 1, 0, 1, 0), que ahoga a todos los de esa casilla y da el aviso.
+br_drown = place('br_drown', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    xor ebx, ebx
+brd_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp ebx, eax
+    jge brd_end
+    imul esi, ebx, 0x1c
+    test byte ptr [esi + 0x54fe63], 0x40
+    jz brd_next
+    movzx eax, word ptr [esi + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    movsx ecx, word ptr [esp + 0x18]
+    cmp eax, ecx
+    jne brd_next
+    mov edx, dword ptr [esi + 0x54fe52]
+    mov ecx, dword ptr [esp + 0x14]
+brd_j:
+    dec ecx
+    js brd_next
+    cmp edx, dword ptr [ecx*4 + {br_xy:#x}]
+    jne brd_j
+    movsx eax, word ptr [esp + 0x18]
+    push ebx
+    push eax
+    call 0x43c240
+    add esp, 8
+    test al, al
+    jz brd_next
+    movsx eax, word ptr [esp + 0x18]
+    push 0
+    push 1
+    push 0
+    push 1
+    push ebx
+    push eax
+    call 0x485610
+    add esp, 0x18
+brd_next:
+    inc ebx
+    jmp brd_loop
+brd_end:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# Búsquedas del menú y las teclas: en lugar de 0x440b30(x, y) (sitio en la casilla del líder). Si no hay sitio,
+# el puente vecino. Arrasar: 0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1. Reconstruir: 0x42053f, 0x41caab.
+br_razelk = place('br_razelk', f'''
+    mov eax, dword ptr [esp + 8]
+    push eax
+    mov eax, dword ptr [esp + 8]
+    push eax
+    call 0x440b30
+    add esp, 8
+    test ax, ax
+    jge brz_out
+    mov al, byte ptr [0x53c393]
+    and al, 6
+    cmp al, 2
+    jb brz_none
+    push {BR_KIND_INTACT}
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    call {br_find:#x}
+    add esp, 0xc
+    ret
+brz_none:
+    or eax, -1
+brz_out:
+    ret
+''')
+br_rebuildlk = place('br_rebuildlk', f'''
+    mov eax, dword ptr [esp + 8]
+    push eax
+    mov eax, dword ptr [esp + 8]
+    push eax
+    call 0x440b30
+    add esp, 8
+    test ax, ax
+    jge brb_out
+    push {BR_KIND_RAZED}
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    call {br_find:#x}
+    add esp, 0xc
+brb_out:
+    ret
+''')
+# Habilitación del menú (salidas de 0x4b0660, esi = búfer, bl = no es su turno, bp = líder). Raze (+8) y Build (+0xc)
+# se encienden también con un puente vecino entero / derribado.
+br_menu = place('br_menu', f'''
+    test bl, bl
+    jnz brm_out
+    test bp, bp
+    jz brm_out
+    movsx eax, bp
+    imul eax, eax, 0x1c
+    movsx edi, word ptr [eax + 0x54fe52]
+    movsx ebp, word ptr [eax + 0x54fe54]
+    cmp byte ptr [esi + 8], 0
+    jne brm_reb
+    mov al, byte ptr [0x53c393]
+    and al, 6
+    cmp al, 2
+    jb brm_reb
+    push {BR_KIND_INTACT}
+    push ebp
+    push edi
+    call {br_find:#x}
+    add esp, 0xc
+    test ax, ax
+    jl brm_reb
+    mov byte ptr [esi + 8], 1
+brm_reb:
+    cmp byte ptr [esi + 0xc], 0
+    jne brm_out
+    push {BR_KIND_RAZED}
+    push ebp
+    push edi
+    call {br_find:#x}
+    add esp, 0xc
+    test ax, ax
+    jl brm_out
+    mov byte ptr [esi + 0xc], 1
+brm_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    add esp, 0x14
+    ret
+''')
+# Diálogo de arrasar (0x4951b0, modo 1 = sitio): el nombre en "Are you sure you want to raze %s?" (0x495530,
+# eax = índice) y el botón (0x495288): para un puente, si hay ejércitos ajenos encima se avisa; si no, se manda la
+# orden 0x4b9550(código, jugador) sin la animación del sitio (0x461a60).
+br_razetxt = place('br_razetxt', f'''
+    cmp eax, {BR_CODE:#x}
+    jl brt2_site
+    push {str_the_bridge:#x}
+    jmp 0x495541
+brt2_site:
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    lea eax, [ecx + ecx*4]
+    add eax, 0x55acba
+    push eax
+    jmp 0x495541
+''')
+br_razebtn = place('br_razebtn', f'''
+    movsx eax, word ptr [0x572778]
+    cmp eax, {BR_CODE:#x}
+    jge brb2_bridge
+    push eax
+    call 0x4955d0
+    jmp 0x495294
+brb2_bridge:
+    push {BR_KIND_INTACT}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz brb2_done
+    movsx ecx, word ptr [0x537ce8]
+    push ecx
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test eax, eax
+    jnz brb2_enemy
+    movsx eax, word ptr [0x537ce8]
+    push eax
+    movsx eax, word ptr [0x572778]
+    push eax
+    call 0x4b9550
+    add esp, 8
+    jmp brb2_done
+brb2_enemy:
+    push 0x19
+    push {str_br_enemy1:#x}
+    call 0x4c2790
+    add esp, 8
+    push 0x1e
+    push {str_br_enemy2:#x}
+    call 0x4c2790
+    add esp, 8
+brb2_done:
+    push eax
+    jmp 0x495294
+''')
+# Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
+# comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
+# refresca la vista y da el aviso "Razed!" / "The bridge is in ruins!" del original al jugador humano que arrasó.
+# Sin historia (0x4a0400 / 0x49f900 son de sitios). 0x4d5f3a invalida el grafo de pasos (0x4a4f20) y sale.
+br_razeapply = place('br_razeapply', f'''
+    cmp word ptr [esp + 4], {BR_CODE:#x}
+    jge bra2_bridge
+    sub esp, 0x50
+    push esi
+    push edi
+    jmp 0x4d5e35
+bra2_bridge:
+    sub esp, 0x50
+    push esi
+    push edi
+    call 0x4a2170
+    push ebx
+    push ebp
+    movsx ebx, word ptr [esp + 0x64]
+    movsx ebp, word ptr [esp + 0x68]
+    push {BR_KIND_INTACT}
+    push ebx
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz bra2_quit
+    mov esi, eax
+    push ebp
+    push esi
+    call {br_armies:#x}
+    add esp, 8
+    test eax, eax
+    jnz bra2_quit
+    xor edi, edi
+bra2_tile:
+    movzx eax, word ptr [edi*4 + {br_xy:#x}]
+    movzx edx, word ptr [edi*4 + {br_xy + 2:#x}]
+    call {br_tile:#x}
+    and byte ptr [eax + 3], 0xf8
+    or byte ptr [eax + 9], 0x80
+    inc edi
+    cmp edi, esi
+    jb bra2_tile
+    push ebp
+    push esi
+    call {br_drown:#x}
+    add esp, 8
+    mov ecx, 0x569588
+    call 0x456ee0
+    pop ebp
+    pop ebx
+    mov di, word ptr [esp + 0x60]
+    cmp word ptr [0x537ce8], di
+    jne 0x4d5f3a
+    movsx eax, di
+    mov ecx, eax
+    shl eax, 6
+    sub eax, ecx
+    cmp word ptr [eax*8 + 0x536c12], -1
+    jne 0x4d5f3a
+    mov esi, {str_The_bridge:#x}
+    jmp 0x4d5eda
+bra2_quit:
+    pop ebp
+    pop ebx
+    jmp 0x4d5f3a
+''')
+# Diálogo de reconstruir (0x4b6160(índice)): para un puente, derribado y vacío (si no, el aviso 0x72 "Cannot rebuild!
+# Other armies are here..."); el índice queda en [0x587e5c] como el de un sitio.
+br_rebdlg = place('br_rebdlg', f'''
+    mov ax, word ptr [esp + 4]
+    cmp ax, {BR_CODE:#x}
+    jge brd2_bridge
+    jmp 0x4b6165
+brd2_bridge:
+    movsx eax, ax
+    push {BR_KIND_RAZED}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz brd2_ret
+    push -1
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz brd2_busy
+    mov ax, word ptr [esp + 4]
+    mov word ptr [0x587e5c], ax
+    jmp 0x4b6180
+brd2_busy:
+    push 0x14
+    mov ecx, 0x589880
+    push 0
+    push 0x72
+    call 0x4def30
+    push eax
+    call 0x4c2790
+    add esp, 8
+brd2_ret:
+    ret
+''')
+# Dibujo del diálogo (0x4b64a0, evento 4): la imagen es la del tipo de sitio ([0x55ad4a + i*0x96]); un puente no
+# tiene, y su código leería fuera de la tabla.
+br_rebdraw = place('br_rebdraw', f'''
+    cmp dword ptr [esp + 4], 4
+    jne 0x4b64e3
+    cmp word ptr [0x587e5c], {BR_CODE:#x}
+    jge 0x4b64e3
+    jmp 0x4b64a7
+''')
+# Texto "Rebuilding %s" (0x4b64f0).
+br_rebtxt = place('br_rebtxt', f'''
+    movsx eax, word ptr [0x587e5c]
+    cmp eax, {BR_CODE:#x}
+    jl brx_site
+    mov eax, {str_the_bridge:#x}
+    jmp brx_go
+brx_site:
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    lea eax, [ecx + ecx*4]
+    add eax, 0x55acba
+brx_go:
+    mov ecx, 0x589880
+    jmp 0x4b650c
+''')
+# Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.
+br_cost = place('br_cost', f'''
+    mov si, word ptr [0x569510]
+    cmp word ptr [esp + 8], {BR_CODE:#x}
+    jl 0x4b65ec
+    mov si, word ptr [0x56950e]
+    jmp 0x4b65ec
+''')
+# Aplicación de reconstruir (0x4b6610(índice, costo, jugador), en todas las máquinas). Para un puente: vuelve a
+# comprobar que está derribado y vacío, cobra (0x43fd60(jugador, -costo)), lo repone y refresca grafo y vista.
+br_rebapply = place('br_rebapply', f'''
+    cmp word ptr [esp + 4], {BR_CODE:#x}
+    jge brp_bridge
+    push esi
+    call 0x4a2170
+    jmp 0x4b6616
+brp_bridge:
+    push ebx
+    push esi
+    push edi
+    call 0x4a2170
+    movsx eax, word ptr [esp + 0x10]
+    push {BR_KIND_RAZED}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz brp_out
+    mov esi, eax
+    push -1
+    push esi
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz brp_out
+    movsx eax, word ptr [esp + 0x14]
+    neg eax
+    push eax
+    movsx eax, word ptr [esp + 0x1c]
+    push eax
+    call 0x43fd60
+    add esp, 8
+    xor edi, edi
+brp_tile:
+    movzx eax, word ptr [edi*4 + {br_xy:#x}]
+    movzx edx, word ptr [edi*4 + {br_xy + 2:#x}]
+    call {br_tile:#x}
+    mov cl, byte ptr [eax + 3]
+    and cl, 0xf8
+    or cl, 1
+    mov byte ptr [eax + 3], cl
+    and byte ptr [eax + 9], 0x7f
+    inc edi
+    cmp edi, esi
+    jb brp_tile
+    call 0x4a4f20
+    mov ecx, 0x569588
+    call 0x456ee0
+brp_out:
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
 
 struct.pack_into('<8sIIIIIIHHI', exe, hdr, b'.avis\0\0\0', len(blob), new_va, raw_size, new_raw,
-                 0, 0, 0, 0, 0x60000020)
+                 0, 0, 0, 0, 0xE0000020)   # código + lectura + escritura (br_xy)
 struct.pack_into('<H', exe, fh + 2, nsec + 1)
 size_of_image = (new_va + len(blob) + SECT_ALIGN - 1) // SECT_ALIGN * SECT_ALIGN
 struct.pack_into('<I', exe, opt + 56, size_of_image)
@@ -2495,6 +3139,27 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
       asm('cmp word ptr [esp + 0x12], 0; jne 0x4a5147; mov word ptr [esp + 0x18], 1; xor bp, bp', 0x4a5135))
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
+# Puentes: derribar y reconstruir (ver br_* arriba).
+for va in (0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1):
+    patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))
+for va in (0x42053f, 0x41caab):
+    patch(va, asm('call 0x440b30', va), asm(f'call {br_rebuildlk:#x}', va))
+for va in (0x4b0a1c, 0x4b0a28):
+    patch(va, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {br_menu:#x}', va))
+assert rel(0x495540, 1) == b'\x50' and rel(0x495541, 2) == bytes.fromhex('6a00')
+patch(0x495530, rel(0x495530, 0x495541 - 0x495530), asm(f'jmp {br_razetxt:#x}', 0x495530))
+patch(0x495288, bytes.fromhex('66a178275700') + b'\x50' + asm('call 0x4955d0', 0x49528f),
+      asm(f'jmp {br_razebtn:#x}', 0x495288))
+patch(0x4d5e30, bytes.fromhex('83ec505657'), asm(f'jmp {br_razeapply:#x}', 0x4d5e30))
+assert rel(0x4d5eda, 5) == bytes.fromhex('b980985800') and rel(0x4d5f3a, 5) == asm('call 0x4a4f20', 0x4d5f3a)
+patch(0x4b6160, bytes.fromhex('668b442404'), asm(f'jmp {br_rebdlg:#x}', 0x4b6160))
+assert rel(0x4b6180, 2) == bytes.fromhex('6a00')
+patch(0x4b64a0, bytes.fromhex('837c240404'), asm(f'jmp {br_rebdraw:#x}', 0x4b64a0))
+assert rel(0x4b64a7, 4) == bytes.fromhex('8b44240c') and rel(0x4b64e3, 1) == b'\xc3'
+patch(0x4b64f0, rel(0x4b64f0, 0x4b650c - 0x4b64f0), asm(f'jmp {br_rebtxt:#x}', 0x4b64f0))
+assert rel(0x4b650c, 1) == b'\x50'
+patch(0x4b65e5, bytes.fromhex('668b3510955600'), asm(f'jmp {br_cost:#x}', 0x4b65e5))
+patch(0x4b6610, b'\x56' + asm('call 0x4a2170', 0x4b6611), asm(f'jmp {br_rebapply:#x}', 0x4b6610))
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
