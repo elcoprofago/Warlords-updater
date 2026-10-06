@@ -1,5 +1,6 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
 # TERRAIN\SUBTYPE\landing.STT y carrier.STT.
+# Tope de 5 en el stack de un barco con bono de movimiento "Landing" (LANDCAP).
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -8,6 +9,8 @@ import keystone, capstone
 SRC_EXE = r'C:\Warlords3\Darklord.exe'
 SRC_RES = r'C:\Warlords3\DATA\War3.RES'
 OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+if OUT_DIR.startswith('-'):
+    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto C:\\Warlords3)')
 OUT_EXE = os.path.join(OUT_DIR, 'DarklordAV.exe')
 OUT_RES = os.path.join(OUT_DIR, 'DATA', 'WAR3AV.RES')
 RES_NAME = b'DATA\\WAR3AV.RES'
@@ -2162,6 +2165,47 @@ portc = place('portc', '''
 # No toca los vuelos (otra rama) ni la tabla de enlaces.
 LANDING = b'landing'    # se compara sin distinguir mayúsculas
 landstr = place_data('landstr', LANDING + b'\0')
+# eax = jugador (0..7) -> eax = 1 si el barco de su bando tiene "Landing", 0 si no. Preserva el resto.
+boatland = place('boatland', f'''
+    push ecx
+    push esi
+    push edi
+    shl eax, 4
+    add eax, 15
+    imul esi, eax, 0xfc
+    add esi, {0x53c410 + 0xb2:#x}
+    mov edi, 4
+boatland_slot:
+    xor ecx, ecx
+boatland_ch:
+    mov al, byte ptr [esi + ecx]
+    cmp al, 0x41
+    jb boatland_nf
+    cmp al, 0x5a
+    ja boatland_nf
+    or al, 0x20
+boatland_nf:
+    cmp al, byte ptr [ecx + {landstr:#x}]
+    jne boatland_next
+    test al, al
+    jz boatland_yes
+    inc ecx
+    cmp ecx, 9
+    jb boatland_ch
+boatland_next:
+    add esi, 9
+    dec edi
+    jnz boatland_slot
+    xor eax, eax
+    jmp boatland_out
+boatland_yes:
+    mov eax, 1
+boatland_out:
+    pop edi
+    pop esi
+    pop ecx
+    ret
+''')
 landchk = place('landchk', f'''
     pushad
     movsx eax, word ptr [0x58715c]
@@ -2170,38 +2214,12 @@ landchk = place('landchk', f'''
     imul edx, eax, 0x4f0
     test byte ptr [edx + 0x56eaaa], 8
     jz landchk_no
-    shl eax, 4
-    add eax, 15
-    imul esi, eax, 0xfc
-    add esi, {0x53c410 + 0xb2:#x}
-    mov edi, 4
-landchk_slot:
-    xor ecx, ecx
-landchk_ch:
-    mov al, byte ptr [esi + ecx]
-    cmp al, 0x41
-    jb landchk_nf
-    cmp al, 0x5a
-    ja landchk_nf
-    or al, 0x20
-landchk_nf:
-    cmp al, byte ptr [ecx + {landstr:#x}]
-    jne landchk_next
-    test al, al
-    jz landchk_yes
-    inc ecx
-    cmp ecx, 9
-    jb landchk_ch
-landchk_next:
-    add esi, 9
-    dec edi
-    jnz landchk_slot
-landchk_no:
-    xor eax, eax
+    call {boatland:#x}
+    test eax, eax
     popad
     ret
-landchk_yes:
-    test esp, esp
+landchk_no:
+    xor eax, eax
     popad
     ret
 ''')
@@ -2317,6 +2335,83 @@ livback_end:
     jmp 0x4a6048
 ''')
 
+# Tope de stack en barco "Landing". El paso del movimiento (0x49e280) solo mira el tope del bando cuando la casilla de
+# destino ya tiene ejércitos propios (0x49e467); una casilla vacía no tiene control. Este se engancha en 0x49e4a7, por
+# donde pasa todo destino que el control original dejó pasar, y vale si el grupo no vuela (+0x1c != 2), el barco del
+# bando tiene "Landing" y el destino es agua pura con la misma cuenta del ejecutor (0x49db70): sin edificio (& 0x4000),
+# sin estructura 1 (puente) y clase 1, y no es punto de transbordo (0x4a6610). Cuenta grupo + ejércitos en la
+# casilla (0x4411b0) y solo cuando el stack embarcado crece: el grupo se embarca ahora (no embarcado y con alguien que
+# se embarca, 0x56eab0[i] == 0) o se suma a ejércitos propios en el agua. Un stack que ya navega con más de 5 (de antes
+# del parche) sigue moviéndose; solo no crece, como el tope de voladores. Si pasa de LANDCAP, devuelve 4 (stack lleno).
+LANDCAP = 5
+landcap = place('landcap', f'''
+    pushad
+    movsx esi, si
+    movsx edi, di
+    cmp word ptr [ebx + 0x56eaac], 2
+    je lc_pass
+    mov eax, ebp
+    call {boatland:#x}
+    test eax, eax
+    jz lc_pass
+    lea eax, [edi + edi*4]
+    add eax, eax
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    lea ecx, [esi + esi*4]
+    lea eax, [eax + ecx*2 + 0x503e58]
+    movzx ecx, word ptr [eax]
+    test ch, 0x40
+    jnz lc_pass
+    mov dl, byte ptr [eax + 3]
+    and dl, 7
+    cmp dl, 1
+    je lc_pass
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    jne lc_pass
+    push edi
+    push esi
+    call 0x4a6610
+    add esp, 8
+    test ax, ax
+    jnz lc_pass
+    push 0
+    push edi
+    push esi
+    call 0x4411b0
+    add esp, 12
+    movsx ecx, ax
+    movsx edx, word ptr [ebx + 0x56eaa8]
+    test byte ptr [ebx + 0x56eaaa], 8
+    jnz lc_emb
+    xor eax, eax
+lc_scan:
+    cmp eax, edx
+    jge lc_pass
+    cmp byte ptr [ebx + eax + 0x56eab0], 0
+    je lc_count
+    inc eax
+    jmp lc_scan
+lc_emb:
+    test ecx, ecx
+    jz lc_pass
+lc_count:
+    add ecx, edx
+    cmp ecx, {LANDCAP}
+    jle lc_pass
+    popad
+    mov word ptr [esp + 0x16], 4
+    jmp 0x49e4dd
+lc_pass:
+    popad
+    push edi
+    push esi
+    call 0x49e770
+    jmp 0x49e4ae
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -2385,6 +2480,8 @@ for va in (0x4a979e, 0x4ab7c5):
     patch(va, asm('push 0x4f90b4', va), asm(f'push {ver_str:#x}', va))
 patch(0x49e48b, rel(0x49e48b, 0x49e49a - 0x49e48b), asm(f'jmp {stepcap:#x}', 0x49e48b))
 assert rel(0x49e49a, 2) == bytes.fromhex('3bca')
+assert rel(0x49e4a7, 7) == bytes.fromhex('5756e8c2020000')
+patch(0x49e4a7, rel(0x49e4a7, 7), asm(f'jmp {landcap:#x}', 0x49e4a7))
 patch(0x4d340a, rel(0x4d340a, 0x4d341d - 0x4d340a), asm(f'jmp {gatecap:#x}', 0x4d340a))
 assert rel(0x4d341d, 2) == bytes.fromhex('3bca')
 assert rel(0x43b5b7, 2) == asm('jle 0x43b5bd', 0x43b5b7)
