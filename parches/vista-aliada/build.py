@@ -1,10 +1,11 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
-# TERRAIN\SUBTYPE\landing.STT y carrier.STT.
+# TERRAIN\SUBTYPE\landing.STT, carrier.STT y bridge.STT.
 # Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
 # (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
 # Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
 # Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad); el diálogo
 # de derribar muestra el retrato del ariete orco.
+# Combat Bonus "Bridge": el bono suma cuando la batalla es en un puente en pie (subtipo TERRAIN\SUBTYPE\bridge.STT).
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -4242,6 +4243,36 @@ bvd_next:
     jmp 0x459af5
 ''')
 
+# ---------------------------------------------------------------- Combat Bonus "Bridge"
+# El bono de combate de cada unidad (nombre +0xd6, valor +0xdf del registro) se compara en 0x467b4a..0x467d09 con la
+# casilla de la batalla (la del defensor, [esp+0x38]; vale para atacantes y defensores): "OPEN"/"FIELD", "CITY",
+# "WOODS"/"FOREST" o el nombre del terreno; si coincide, [esp+0x11] = 1 y el valor se suma a la fuerza. Se agrega
+# "BRIDGE" (sin distinguir mayúsculas): coincide si la casilla es un puente en pie, clase agua (di, palabra 0x535f0c
+# del tipo, ya cargada) con estructura 1 ([+3] & 7, la misma definición que el constructor de caminos en 0x4a5135).
+# Un puente derribado tiene estructura 0: no cuenta. El texto "+N ..." lo arma 0x46a6e0 con bridge.STT.
+bridgestr = place_data('bridgestr', b'BRIDGE\0')
+bridgecb = place('bridgecb', f'''
+    lea eax, [esp + 0x4c]
+    push {bridgestr:#x}
+    push eax
+    call dword ptr [0x5a9be0]
+    add esp, 8
+    test eax, eax
+    jnz bcb_other
+    mov edx, dword ptr [esp + 0x38]
+    mov al, byte ptr [edx + 3]
+    and al, 7
+    cmp al, 1
+    jne 0x467d0e
+    cmp di, 1
+    jne 0x467d0e
+    jmp 0x467d09
+bcb_other:
+    lea eax, [esp + 0x4c]
+    push 0x4fc808
+    jmp 0x467bac
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -4361,6 +4392,7 @@ patch(0x4b6610, b'\x56' + asm('call 0x4a2170', 0x4b6611), asm(f'jmp {br_rebapply
 patch(0x45846d, bytes.fromhex('66f7c5001c66892f7408668b41086689470e'),
       asm(f'jmp {br_vfill:#x}', 0x45846d))
 patch(0x459a9f, bytes.fromhex('668b0680e41c80fc04754b'), asm(f'jmp {br_vdraw:#x}', 0x459a9f))
+patch(0x467ba3, asm('lea eax, [esp + 0x4c]; push 0x4fc808', 0x467ba3), asm(f'jmp {bridgecb:#x}', 0x467ba3))
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
@@ -4506,7 +4538,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'))}
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):
