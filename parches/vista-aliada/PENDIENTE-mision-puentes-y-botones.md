@@ -114,10 +114,15 @@ puntaje, nivel y recompensa como las demás.
 **Hecho el 7/10/2026 (vista-aliada 1.0.14.0, Votación 1.1.0, Sorteo 1.1.0)**
 
 En el juego (`build.py`, cuevas `tl_*`; prueba `prueba_botones.py`, emulada, con controles):
-- **Votación:** línea nueva "Voting" en el menú de partida (diálogo 35), debajo de "Chat Mode"; las demás líneas se
-  corren 16 px. Solo el anfitrión (máquina 0) la tiene activa; en las otras PC sale gris y no hace nada.
-- **Sorteo:** botón moneda "Draw Lots" (id 97, copia del botón Chat id 80) en la pantalla de preparación (diálogo 7),
-  arriba de Chat, en (6, 430). Deshabilitado fuera del anfitrión.
+- **Votación:** línea nueva "Votacion" en el menú de partida (diálogo 35), debajo de "Chat Mode"; las demás líneas se
+  corren 16 px. Solo el anfitrión (máquina 0, también en partida de un jugador) la tiene activa; en las otras PC sale
+  gris y no hace nada. 1.0.15.0: el menú al abrirse (0x4bce20) no habilitaba la zona (0x4dcec0(0x1a, 0|2)) y por eso
+  no se resaltaba ni respondía al clic (`tl_menuinit`).
+- **Sorteo:** botón "Draw Lots" (id 97, copia del botón Chat id 80) en la pantalla de preparación (diálogo 7),
+  arriba de Chat, en (6, 430). Deshabilitado fuera del anfitrión. 1.0.15.0: en vez de la moneda de BUTT_STD lleva el
+  ícono del programa Sorteo (`sorteo_icono.png`, 16×16) sobre el marco de la moneda: hoja nueva
+  `SETS\Fantasy\sorteo.pcx` (20×80, 4 cuadros: normal, apretado, deshabilitado, puntero encima; paleta de BUTT_STD),
+  archivo 166 de la tabla de archivos del RES.
 - Al apretarlos, el anfitrión manda por red el paquete 0x2a0 (abrir; dato = 0 votación, 1 sorteo) con 0x4dd3b0, que
   también vuelve a la propia máquina. Cada PC, al recibirlo (gancho en el receptor 0x4b6a22, solo si lo manda la
   máquina 0), abre `Herramientas\votacion.exe` / `sorteo.exe`: el anfitrión con `--operador`; las demás con

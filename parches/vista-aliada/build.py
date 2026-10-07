@@ -1,5 +1,6 @@
-# Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
-# TERRAIN\SUBTYPE\landing.STT, carrier.STT, bridge.STT y cabotage.STT.
+# Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), los subtipos de terreno
+# TERRAIN\SUBTYPE\landing.STT, carrier.STT, bridge.STT y cabotage.STT, y el dibujo del botón de Sorteo
+# SETS\Fantasy\sorteo.pcx.
 # Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
 # (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
 # Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
@@ -9,8 +10,8 @@
 # Cabotaje: el barco de un bando con el bono de movimiento "Cabotage" no se aleja más de 2 casillas de la costa
 # (salvo para acercarse); cruza ríos y lagos angostos.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
-# Botones de Votación ("Voting" en el menú de partida) y Sorteo (moneda en la preparación): el anfitrión abre
-# Herramientasotacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
+# Botones de Votación ("Votacion" en el menú de partida) y Sorteo (ícono del programa en la preparación): el
+# anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
 import keystone, capstone
@@ -4843,8 +4844,8 @@ bcb_other:
 ''')
 
 # ---------------------------------------------------------------- Botones de Votación y Sorteo
-# El anfitrión (máquina 0) abre las herramientas: Votación desde el menú de partida (línea nueva "Voting", diálogo 35)
-# y Sorteo desde la pantalla de preparación (moneda junto a Chat, diálogo 7). La orden viaja por red (TL_OPEN) y cada
+# El anfitrión (máquina 0) abre las herramientas: Votación desde el menú de partida (línea nueva "Votacion", diálogo
+# 35) y Sorteo desde la pantalla de preparación (botón con su ícono junto a Chat, diálogo 7). La orden viaja por red (TL_OPEN) y cada
 # PC abre su propia copia: el anfitrión como operador, los demás como espectadores con sus bandos marcados. El estado
 # va y viene por archivos en Herramientas\ y por red (TL_STATE), fuera de la simulación: no puede desincronizar turnos.
 #   operador:    <tool>.op   (lo escribe el programa del anfitrión) -> se renombra a .env, se lee y se manda.
@@ -4853,10 +4854,11 @@ bcb_other:
 TOOLS = ('votacion', 'sorteo')
 TL_OPEN, TL_STATE = 0x2a0, 0x2a1   # carga: herramienta (dword) | herramienta (dword) + texto con NUL (hasta 256)
 VOTE_TXT, VOTE_HOT, COIN = 0x19, 0x1a, 97
+SORTEO_FILE = RAM_FILE + 1   # hoja SETS\Fantasy\sorteo.pcx con el dibujo del botón de Sorteo
 GETTICK, CREATEPROC, CLOSEH, MOVEF, DELF = 0x5a97f8, 0x5a97d0, 0x5a97d8, 0x5a97e4, 0x5a97c0
 CREATEF, READF, WRITEF, CREATETH, MSGBOX, STRLEN = 0x5a9810, 0x5a9814, 0x5a9818, 0x5a97ec, 0x5a9c30, 0x5a9b98
 SIDE, SIDE_ON, SIDE_HUMAN, SIDE_MACHINE = 0x1f8, 0x536b30, 0x536c12, 0x536b33
-tl_voting = place_data('tl_voting', cstr_('Voting'))
+tl_voting = place_data('tl_voting', cstr_('Votacion'))
 tl_caption = place_data('tl_caption', cstr_(GAME))
 tl_vars = place_data('tl_vars', bytes(16))   # +0 tick, +4 ocupado, +8 abrir[2], +0xc estado[2]
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = tl_vars, tl_vars + 4, tl_vars + 8, tl_vars + 0xc
@@ -5108,7 +5110,26 @@ ti_done:
     jmp 0x4dea45
 ''')
 
-# Menú de partida (0x4bd180, fin en 0x4bd512): texto y color de "Voting". esi = control bajo el puntero;
+# Menú de partida, al abrirse (0x4bce20, que habilita o deshabilita cada línea con 0x4dcec0): la zona de "Votacion"
+# también. Sin esto el control queda como sin mostrar y la búsqueda de 0x4d95d0 no lo encuentra: ni se resalta ni
+# responde al clic. Habilitada en el anfitrión, deshabilitada en las demás PC.
+tl_menuinit = place('tl_menuinit', f'''
+    call 0x4dd3a0
+    xor ecx, ecx
+    test ax, ax
+    jz tmi_set
+    mov ecx, 2
+tmi_set:
+    push ecx
+    push {VOTE_HOT:#x}
+    call 0x4dcec0
+    add esp, 8
+    push ebx
+    mov ecx, 0x5032f8
+    jmp 0x4bce26
+''')
+
+# Menú de partida (0x4bd180, fin en 0x4bd512): texto y color de "Votacion". esi = control bajo el puntero;
 # [esp + 0xc] = escribir los textos. Gris (0x56) fuera del anfitrión.
 tl_menu = place('tl_menu', f'''
     cmp dword ptr [esp + 0xc], 0
@@ -5312,6 +5333,7 @@ patch(0x436178, bytes.fromhex('0fbfc766bd01008d048003c08d0c40668b9489b6ac55008d0
 patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9b66893e5f668b89b8ac55005e66890a5bc3'),
       asm(f'jmp {qb_ailoc2:#x}', 0x436442))
 # Botones de Votación y Sorteo (tl_*)
+patch(0x4bce20, asm('push ebx; mov ecx, 0x5032f8', 0x4bce20), asm(f'jmp {tl_menuinit:#x}', 0x4bce20))
 patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))
 assert rel(0x4bd51c, 3) == bytes.fromhex('5e5bc3') and rel(0x4bd520, 4) == bytes.fromhex('8b442404')
 patch(0x4bd524, asm('sub eax, 0xb; cmp eax, 0xd; ja 0x4bd533', 0x4bd524), asm(f'jmp {tl_disp:#x}', 0x4bd524))
@@ -5409,7 +5431,7 @@ y = 130 + 21 * len(col2)
 struct.pack_into('<I', lbl2, 0xc, y); struct.pack_into('<I', ind2, 0xc, y - 2)
 new_list[115] = [lbl, ind, lbl2, ind2]
 
-# Diálogo 35 (menú de partida): línea nueva "Voting" (texto VOTE_TXT, zona VOTE_HOT) debajo de Chat Mode. Las 13
+# Diálogo 35 (menú de partida): línea nueva "Votacion" (texto VOTE_TXT, zona VOTE_HOT) debajo de Chat Mode. Las 13
 # líneas pasan a 16 píxeles entre sí (de 46 a 238; el marco deja libre de 40 a 262); cada zona de clic, 4 píxeles
 # por encima de su texto y de 16 de alto, conserva su x y su ancho.
 r35 = records(res, 35)
@@ -5431,15 +5453,15 @@ for k, (ti, hi) in enumerate(MENU):
     struct.pack_into('<I', buf, o + 0x1c, 16)
 new_list[35] = [vtxt, vhot]
 
-# Diálogo 7 (preparación): moneda COIN clonada de Chat (id 80, butt_std en (436,80)), arriba de él; su dibujo está
-# en (436,0) de la misma hoja, con las filas de resaltado y deshabilitado debajo, como Chat.
+# Diálogo 7 (preparación): botón COIN clonado de Chat (id 80, butt_std en (436,80)), arriba de él; su dibujo es el
+# ícono de Sorteo, en (0,0) de la hoja SORTEO_FILE (más abajo).
 r7 = records(res, 7)
 assert max(r7) == COIN - 1
 p, t = r7[80]; assert t == 1
 coin = bytearray(res[p:p + 4 + SZ[1]])
 assert struct.unpack_from('<11I', coin, 0) == (1, 80, 6, 453, 1, 1, 0x79, 436, 80, 20, 20)
 struct.pack_into('<IIII', coin, 4, COIN, 6, 430, 1)
-struct.pack_into('<I', coin, 0x20, 0)
+struct.pack_into('<III', coin, 0x18, SORTEO_FILE, 0, 0)
 setstr(coin, 0x30, 16, 'Draw Lots')
 setstr(coin, 0x40, 64, 'Draw lots for the starting order')
 new_list[7] = [coin]
@@ -5494,6 +5516,53 @@ setstr(ram, 4, 32, 'orcs_ram')
 table_add(res, 4, RAM_IMG, struct.pack('<8i', RAM_IMG, RAM_FILE, 0, 0, 0, 0, 128, 160))   # la 4 va después de la 2
 table_add(res, 2, RAM_FILE, bytes(ram))
 
+# Hoja SORTEO_FILE = SETS\Fantasy\sorteo.pcx, con los campos de butt_std (0x79; el 16 es la carpeta del set): el
+# dibujo del botón de Sorteo. Un botón de butt_std usa cuatro cuadros de 20x20, uno debajo del otro: normal,
+# apretado, deshabilitado y con el puntero encima (los de la moneda de (436,0) de BUTT_STD.PCX: relieve hacia afuera,
+# hacia adentro con aro naranja, cara en negro, hacia afuera con aro naranja). Cada cuadro conserva el marco de la
+# moneda y lleva en el centro (16x16) el ícono del programa Sorteo (sorteo_icono.png, de su assets\icono.ico): con
+# un borde naranja (71) en vez del aro, y oscurecido en el deshabilitado. Los colores salen de la paleta de
+# BUTT_STD.PCX (la misma de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
+from PIL import Image
+SRC_BUTT = r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX'
+butt = Image.open(SRC_BUTT)
+assert butt.mode == 'P' and butt.size == (472, 224)
+pal = butt.getpalette()[:768]
+assert Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getpalette()[:768] == pal
+usables = sorted((set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())) - {11})
+def cercano(rgb, _memo={}):
+    if rgb not in _memo:
+        _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+    return _memo[rgb]
+icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sorteo_icono.png')).convert('RGBA')
+assert icono.size == (16, 16)
+oscuro = Image.merge('RGBA', [b.point(lambda v: v * 3 // 10) for b in icono.split()[:3]] + [icono.split()[3]])
+hoja = Image.new('P', (20, 80))
+hoja.putpalette(butt.getpalette())
+for fila, (ic, aro) in enumerate(((icono, False), (icono, True), (oscuro, False), (icono, True))):
+    cuadro = butt.crop((436, 20 * fila, 456, 20 * fila + 20))
+    rgba = cuadro.convert('RGBA')
+    rgba.alpha_composite(ic, (2, 2))
+    for y in range(20):
+        for x in range(20):
+            dentro = 2 <= x < 18 and 2 <= y < 18
+            if not dentro:
+                v = cuadro.getpixel((x, y))
+            elif aro and (x in (2, 17) or y in (2, 17)):
+                v = 71
+            else:
+                v = cercano(rgba.getpixel((x, y))[:3])
+            hoja.putpixel((x, 20 * fila + y), v)
+assert butt.getpixel((436 + 8, 20 + 3)) == 71   # el aro naranja de la moneda apretada
+import io
+pcx = io.BytesIO(); hoja.save(pcx, 'PCX'); SORTEO_PCX = pcx.getvalue()
+o2, _ = table(res, 2)
+butt_std = bytearray(res[o2 + 20 + 0x79 * 60:o2 + 20 + 0x7a * 60])
+assert butt_std[4:13] == b'butt_std\0' and struct.unpack_from('<6I', butt_std, 36) == (16, 1, 0, 0, 0, 0)
+struct.pack_into('<I', butt_std, 0, SORTEO_FILE)
+setstr(butt_std, 4, 32, 'sorteo')
+table_add(res, 2, SORTEO_FILE, bytes(butt_std))
+
 # ---------------------------------------------------------------- subtipos de terreno "landing" y "carrier"
 # Para que war3ed_ssg los ofrezca en las listas de Move Bonus: arma esas listas con FindFirst sobre
 # TERRAIN\SUBTYPE\*.STT (0x428d60). El juego solo abre un .STT por nombre (0x46a6f0), para el texto de un Combat
@@ -5506,20 +5575,22 @@ def stt(nombre, largo):
     assert len(b) == 0x29
     return b
 STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'))}
+NUEVOS = dict(STTS)
+NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):
     assert os.path.abspath(path).lower() not in (os.path.abspath(SRC_EXE).lower(), os.path.abspath(SRC_RES).lower())
-for rel_, data in STTS.items():   # un .STT distinto ya presente lo hizo alguien con el editor: no se pisa
+for rel_, data in NUEVOS.items():   # uno distinto ya presente lo hizo otro (un .STT, con el editor): no se pisa
     path = os.path.join(OUT_DIR, rel_)
     if os.path.exists(path) and open(path, 'rb').read() != data:
         sys.exit(f'{path} ya existe con otro contenido; no lo piso. Renombralo o borralo y volve a armar.')
 os.makedirs(os.path.dirname(OUT_RES), exist_ok=True)
 open(OUT_EXE, 'wb').write(exe)
 open(OUT_RES, 'wb').write(res)
-for rel_, data in STTS.items():
+for rel_, data in NUEVOS.items():
     path = os.path.join(OUT_DIR, rel_)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, 'wb').write(data)
 print('caves', {k: hex(CAVE + sum(len(caves[j]) for j in list(caves)[:list(caves).index(k)])) for k in caves})
-print('exe', OUT_EXE, len(exe), 'res', OUT_RES, len(res), 'stt', ', '.join(STTS))
+print('exe', OUT_EXE, len(exe), 'res', OUT_RES, len(res), 'nuevos', ', '.join(NUEVOS))

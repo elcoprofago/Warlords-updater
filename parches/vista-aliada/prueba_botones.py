@@ -18,10 +18,10 @@ STACK, RET, STUBS, PKT = 0x1f0000, 0x100, 0x300000, 0x150000
 MACHINE = 0x5899fc
 VOTE_TXT, VOTE_HOT, COIN = 0x19, 0x1a, 97
 
-# Datos de tl_*: "Voting\0" + nombre del juego + variables (place_data no alinea).
+# Datos de tl_*: "Votacion\0" + nombre del juego + variables (place_data no alinea).
 GAME = b'Warlords III Era de Alianzas\0'
-k = img.index(b'Voting\0' + GAME)
-TL_VARS = BASE + k + 7 + len(GAME)
+k = img.index(b'Votacion\0' + GAME)
+TL_VARS = BASE + k + 9 + len(GAME)
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = TL_VARS, TL_VARS + 4, TL_VARS + 8, TL_VARS + 0xc
 TL_BUF = TL_VARS + 16 + 4 + 4 + 260
 ERR = [BASE + img.index(f'No se pudo abrir Herramientas\\{n}.exe\0'.encode()) for n in ('votacion', 'sorteo')]
@@ -84,13 +84,28 @@ def menu(flag, hover, machine=0):
     return out
 
 # Chat Mode (texto 2) sale gris (0x56) sin red, como en el original; resaltado (0xf) con el puntero encima.
-print('-- menú de partida: texto y color de "Voting"')
-ver('anfitrión, puntero sobre Voting', menu(1, VOTE_HOT),
-    [('color', 2, 0x56), ('texto', VOTE_TXT, 'Voting'), ('color', VOTE_TXT, 0xf), ('refresco',)])
+print('-- menú de partida: texto y color de "Votacion"')
+ver('anfitrión, puntero sobre Votacion', menu(1, VOTE_HOT),
+    [('color', 2, 0x56), ('texto', VOTE_TXT, 'Votacion'), ('color', VOTE_TXT, 0xf), ('refresco',)])
 ver('anfitrión, sin texto (mover el puntero)', menu(0, VOTE_HOT), [('color', 2, 0x56), ('color', VOTE_TXT, 0xf), ('refresco',)])
 ver('control: puntero sobre Chat Mode', menu(0, 0xc), [('color', 2, 0xf), ('color', VOTE_TXT, 0x5c), ('refresco',)])
-ver('control: otra máquina, puntero sobre Voting', menu(0, VOTE_HOT, 3),
+ver('control: otra máquina, puntero sobre Votacion', menu(0, VOTE_HOT, 3),
     [('color', 2, 0x56), ('color', VOTE_TXT, 0x56), ('refresco',)])
+
+# Al abrirse (0x4bce20) el menú habilita (0) o deshabilita (2) cada línea; sin esto la zona de Votacion no responde.
+def menu_init(machine, partida):
+    mu = maquina(machine); out = []
+    def p(mu, a): return None
+    p.eax = partida
+    interceptar(mu, 0x421310, 0, p, out)
+    interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('estado', a[0], a[1]) if a[0] in (VOTE_HOT, 0xb) else None, out)
+    correr(mu, 0x4bce20, [])
+    return out
+print('-- menú de partida: al abrirse')
+for partida in (0, 1):
+    ver(f'anfitrión (0x421310 -> {partida}): Votacion habilitada', menu_init(0, partida),
+        [('estado', VOTE_HOT, 0), ('estado', 0xb, 0)])
+ver('otra máquina: Votacion deshabilitada', menu_init(3, 1), [('estado', VOTE_HOT, 2), ('estado', 0xb, 0)])
 
 def despacho(item, machine=0):
     mu = maquina(machine); out = []
@@ -100,8 +115,8 @@ def despacho(item, machine=0):
     correr(mu, 0x4bd520, [item])
     return out
 print('-- menú de partida: clic')
-ver('anfitrión, Voting', despacho(VOTE_HOT), [('cerrar',), ('red', 0x2a0, struct.pack('<I', 0))])
-ver('control: otra máquina, Voting', despacho(VOTE_HOT, 1), [('cerrar',)])
+ver('anfitrión, Votacion', despacho(VOTE_HOT), [('cerrar',), ('red', 0x2a0, struct.pack('<I', 0))])
+ver('control: otra máquina, Votacion', despacho(VOTE_HOT, 1), [('cerrar',)])
 ver('control: Chat Mode', despacho(0xc), [('cerrar',), ('chat',)])
 ver('control: control desconocido', despacho(0x30), [('cerrar',)])
 
@@ -290,11 +305,27 @@ n35, o35 = recs(NUEVO, 35), recs(ORIG, 35)
 ver('menú: 26 registros (24 + 2)', (len(n35), len(o35)), (26, 24))
 ys = sorted(struct.unpack_from('<I', r, 0xc)[0] for i, r in n35.items() if r[0] == 0x13)
 ver('menú: textos cada 16 píxeles', ys, list(range(46, 239, 16)))
-ver('menú: Voting debajo de Chat Mode', [struct.unpack_from('<I', n35[i], 0xc)[0] for i in (2, VOTE_TXT, 0x15)], [62, 78, 94])
-ver('menú: zona de Voting', struct.unpack_from('<6I', n35[VOTE_HOT], 8), (26, 74, 1, 0, 138, 16))
+ver('menú: Votacion debajo de Chat Mode', [struct.unpack_from('<I', n35[i], 0xc)[0] for i in (2, VOTE_TXT, 0x15)], [62, 78, 94])
+ver('menú: zona de Votacion', struct.unpack_from('<6I', n35[VOTE_HOT], 8), (26, 74, 1, 0, 138, 16))
 ver('control: zona de Help conserva x y ancho', struct.unpack_from('<6I', n35[0xb], 8), (28, 42, 1, 0, 136, 16))
 n7, o7 = recs(NUEVO, 7), recs(ORIG, 7)
-ver('preparación: moneda', struct.unpack_from('<11I', n7[COIN], 0), (1, COIN, 6, 430, 1, 1, 0x79, 436, 0, 20, 20))
+ver('preparación: moneda', struct.unpack_from('<11I', n7[COIN], 0), (1, COIN, 6, 430, 1, 1, 166, 0, 0, 20, 20))
+def archivos(path):
+    d = open(path, 'rb').read(); o = 8
+    while True:
+        h = struct.unpack_from('<5I', d, o)
+        if h[0] == 2 and h[1] == 0: break
+        o += 20 + h[4]
+    return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
+fn, fo = archivos(NUEVO), archivos(ORIG)
+ver('archivos: dos más (165 y 166)', (len(fn), len(fo)), (167, 165))
+ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0], fn[166][4:11], struct.unpack_from('<6I', fn[166], 36)),
+    (166, b'sorteo\0', (16, 1, 0, 0, 0, 0)))
+ver('control: archivos originales intactos', fn[:165] == fo, True)
+from PIL import Image
+hoja = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sorteo.pcx'))
+ver('sorteo.pcx: 4 cuadros de 20x20, misma paleta que BUTT_STD', (hoja.mode, hoja.size, hoja.getpalette()[:768]),
+    ('P', (20, 80), Image.open(r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
 ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 2)
