@@ -57,7 +57,7 @@ puntaje, nivel y recompensa como las demás.
 **Los programas**
 - Votación: `F:\source\repos\Votacion` (PyQt5). Local, una máquina, 8 paneles de jugador sí/no.
   `config.ini [Pantalla] preferida`. Ejecutable `dist\votacion.exe` (PyInstaller, 62,9 MB).
-- Sorteo: `F:\source\repos\Sorteo` (PyQt5). `dist\sorteo.exe` y `dist\sorteo\sorteo.exe` + assets.
+- Sorteo: `F:\source\repos\Sorteo` (tkinter + PIL, no PyQt5). `dist\sorteo.exe` y `dist\sorteo\sorteo.exe` + assets.
   `abrir.vbs` → `exe.bat` → `pythonw sorteo.py`.
 - Ninguno de los dos es repo git.
 
@@ -188,4 +188,4 @@ Lo primero a averiguar en la sesión que toque B/C:
   archivo (control).
 - Ojo para lanzarlo desde el juego: Sorteo carga cursores e ícono con rutas relativas al directorio actual
   (`@assets/flecha.cur`, `assets/icono.ico`); hay que lanzarlo con el directorio de trabajo en su carpeta (o pasar
-  esas rutas a `resource_path`). `dist\sorteo.spec` genera además `dist\sorteo\sorteo.exe`.
+  esas rutas a `resource_path`). `sorteo.spec` genera además `dist\sorteo\sorteo.exe`.
