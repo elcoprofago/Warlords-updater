@@ -1,11 +1,13 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), y los subtipos de terreno
-# TERRAIN\SUBTYPE\landing.STT, carrier.STT y bridge.STT.
+# TERRAIN\SUBTYPE\landing.STT, carrier.STT, bridge.STT y cabotage.STT.
 # Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
 # (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
 # Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
 # Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad); el diálogo
 # de derribar muestra el retrato del ariete orco.
 # Combat Bonus "Bridge": el bono suma cuando la batalla es en un puente en pie (subtipo TERRAIN\SUBTYPE\bridge.STT).
+# Cabotaje: el barco de un bando con el bono de movimiento "Cabotage" no se aleja más de 2 casillas de la costa
+# (salvo para acercarse); cruza ríos y lagos angostos.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
@@ -2236,14 +2238,21 @@ boatland = place('boatland', boatbon_src('boatland', landstr))
 CARRIER = b'carrier'
 carrstr = place_data('carrstr', CARRIER + b'\0')
 boatcarr = place('boatcarr', boatbon_src('boatcarr', carrstr))
+CABOTAGE = b'cabotage'
+cabstr = place_data('cabstr', CABOTAGE + b'\0')
+boatcab = place('boatcab', boatbon_src('boatcab', cabstr))   # ver Cabotaje, más abajo
 
 # Army List: el renglón de habilidades de una unidad (texto en [esp+8] al llegar a 0x4a2c24, búfer de 0x50 bytes del
-# marco de 0x4a2560) nombra también los bonos de movimiento "Landing" y "Carrier" de su registro: reemplazan "No Special
-# Abilities" (palabra de habilidades +0xe6 en 0) o se agregan con ", " si entran en el búfer. Después sigue armrow.
+# marco de 0x4a2560) nombra también los bonos de movimiento "Landing", "Carrier" y "Cabotage" de su registro: reemplazan
+# "No Special Abilities" (palabra de habilidades +0xe6 en 0) o se agregan con ", " si entran en el búfer. Después sigue armrow.
 recbon = place('recbon', boatbon_src('recbon', None, rec=True))
-AB_TXT = [place_data(f'ab_txt{k}', cstr_(s)) for k, s in enumerate(('Landing', 'Carrier', 'Landing, Carrier'), 1)]
+AB_NAMES = ('Landing', 'Carrier', 'Cabotage')   # bits 0, 1 y 2 del índice en AB_TAB
+AB_TXT = [place_data(f'ab_txt{k}', cstr_(', '.join(n for b, n in enumerate(AB_NAMES) if k >> b & 1))) for k in range(1, 8)]
 AB_TAB = place_data('ab_tab', b''.join(a.to_bytes(4, 'little') for a in [0] + AB_TXT))
 AB_SEP = place_data('ab_sep', cstr_(', '))
+# Largo máximo del texto previo para que entren ', ' + AB_TXT[k] y el 0 final (por índice, para no cortar de más).
+AB_LIM = place_data('ab_lim', bytes([0] + [0x50 - 1 - len(', ' + ', '.join(n for b, n in enumerate(AB_NAMES) if k >> b & 1))
+                                        for k in range(1, 8)]))
 armab = place('armab', f'''
     pushad
     mov eax, dword ptr [esp + 0xa0]
@@ -2265,6 +2274,10 @@ armab = place('armab', f'''
     mov edx, {carrstr:#x}
     call {recbon:#x}
     lea ebp, [ebp + eax*2]
+    mov eax, ebx
+    mov edx, {cabstr:#x}
+    call {recbon:#x}
+    lea ebp, [ebp + eax*4]
     test ebp, ebp
     jz ab_out
     mov edi, dword ptr [esp + 0x28]
@@ -2282,7 +2295,8 @@ ab_len:
     jb ab_len
     jmp ab_out
 ab_lend:
-    cmp ecx, {0x50 - 1 - len(', Landing, Carrier')}
+    movzx eax, byte ptr [ebp + {AB_LIM:#x}]
+    cmp ecx, eax
     ja ab_out
     add edi, ecx
     mov esi, {AB_SEP:#x}
@@ -2647,6 +2661,214 @@ mtnchk_ok:
     test esp, esp
     ret
 ''')
+# ---------------------------------------------------------------- Cabotaje (bono de movimiento "Cabotage")
+# El barco de un bando (ranura 15) con "Cabotage" navega pegado a la costa: no entra en una casilla de agua pura
+# (medio 0x80) a más de CAB_N casillas de tierra, salvo que se acerque a la costa (para que un barco que ya está mar
+# adentro pueda volver). Alcanza para cruzar ríos y lagos angostos. La distancia a tierra (en pasos, también en
+# diagonal) de cada casilla se calcula en CABD cada vez que se arma el grafo de caminos (0x4a4f90, el único que
+# escribe la tabla de medios 0x582158), en dos pasadas: hacia adelante mirando (x-1, y-1), (x-1, y), (x-1, y+1) y
+# (x, y-1); hacia atrás, los opuestos. Tierra (medio con 0x40, puertos incluidos) = 0. El buscador (expansión y
+# rastreo de vuelta, los mismos ganchos que Landing) quita los enlaces hacia esas casillas; vale para cualquier grupo
+# del bando que no vuele, embarcado o no, porque uno a pie solo pisa agua subiendo al barco en un puerto.
+CAB_N = 2
+CABD = place_data('cabd', bytes(0x80 * 0xa0))
+# Fin de 0x4a4f90 (reemplaza su único epílogo, 0x4a5328).
+cabgraph = place('cabgraph', f'''
+    pushad
+    xor ecx, ecx
+cabg_init:
+    xor eax, eax
+    test byte ptr [ecx + 0x582158], 0x40
+    jnz cabg_land
+    mov al, 254
+cabg_land:
+    mov byte ptr [ecx + {CABD:#x}], al
+    inc ecx
+    cmp ecx, {0x80 * 0xa0:#x}
+    jb cabg_init
+    movsx ebp, word ptr [0x503e00]
+    movsx esi, word ptr [0x503e02]
+    xor ecx, ecx
+cabg_1x:
+    cmp ecx, ebp
+    jge cabg_1end
+    imul ebx, ecx, 0xa0
+    xor edi, edi
+cabg_1y:
+    cmp edi, esi
+    jge cabg_1nx
+    movzx eax, byte ptr [ebx + {CABD:#x}]
+    test eax, eax
+    jz cabg_1st
+    test ecx, ecx
+    jz cabg_1a
+    movzx edx, byte ptr [ebx + {CABD + (-0xa0):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_1r1
+    mov eax, edx
+cabg_1r1:
+    test edi, edi
+    jz cabg_1b
+    movzx edx, byte ptr [ebx + {CABD + (-0xa1):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_1r2
+    mov eax, edx
+cabg_1r2:
+cabg_1b:
+    lea edx, [edi + 1]
+    cmp edx, esi
+    jge cabg_1a
+    movzx edx, byte ptr [ebx + {CABD + (-0x9f):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_1r3
+    mov eax, edx
+cabg_1r3:
+cabg_1a:
+    test edi, edi
+    jz cabg_1st
+    movzx edx, byte ptr [ebx + {CABD + (-0x1):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_1r4
+    mov eax, edx
+cabg_1r4:
+cabg_1st:
+    mov byte ptr [ebx + {CABD:#x}], al
+    inc ebx
+    inc edi
+    jmp cabg_1y
+cabg_1nx:
+    inc ecx
+    jmp cabg_1x
+cabg_1end:
+    lea ecx, [ebp - 1]
+cabg_2x:
+    test ecx, ecx
+    jl cabg_2end
+    imul ebx, ecx, 0xa0
+    lea edi, [esi - 1]
+    add ebx, edi
+cabg_2y:
+    test edi, edi
+    jl cabg_2nx
+    movzx eax, byte ptr [ebx + {CABD:#x}]
+    test eax, eax
+    jz cabg_2st
+    lea edx, [ecx + 1]
+    cmp edx, ebp
+    jge cabg_2a
+    movzx edx, byte ptr [ebx + {CABD + (+0xa0):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_2r1
+    mov eax, edx
+cabg_2r1:
+    lea edx, [edi + 1]
+    cmp edx, esi
+    jge cabg_2b
+    movzx edx, byte ptr [ebx + {CABD + (+0xa1):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_2r2
+    mov eax, edx
+cabg_2r2:
+cabg_2b:
+    test edi, edi
+    jz cabg_2a
+    movzx edx, byte ptr [ebx + {CABD + (+0x9f):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_2r3
+    mov eax, edx
+cabg_2r3:
+cabg_2a:
+    lea edx, [edi + 1]
+    cmp edx, esi
+    jge cabg_2st
+    movzx edx, byte ptr [ebx + {CABD + (+0x1):#x}]
+    inc edx
+    cmp edx, eax
+    jae cabg_2r4
+    mov eax, edx
+cabg_2r4:
+cabg_2st:
+    mov byte ptr [ebx + {CABD:#x}], al
+    dec ebx
+    dec edi
+    jmp cabg_2y
+cabg_2nx:
+    dec ecx
+    jmp cabg_2x
+cabg_2end:
+    popad
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    add esp, 0x14
+    ret
+''')
+# Filtro de enlaces: eax = índice del grafo (x*0xa0 + y) de la casilla, cl = sus direcciones (bits de 0x4fe678; la
+# vecina k es (x + [0x4fe658 + 2k], y + [0x4fe640 + 2k])). cabfwd: la casilla es el origen (expansión); cabbwd: es el
+# destino y las vecinas los orígenes (rastreo de vuelta). Quita las direcciones prohibidas; preserva el resto.
+# Entra después de pushad, con ebp = 0 (cabfwd) o 1 (cabbwd).
+cabfilt = place('cabfilt', f'''
+    mov esi, eax
+    mov bl, cl
+    cmp word ptr [0x5878b0], 0
+    jne cabf_out
+    movsx eax, word ptr [0x58715c]
+    cmp eax, 8
+    jae cabf_out
+    call {boatcab:#x}
+    test eax, eax
+    jz cabf_out
+    xor edi, edi
+cabf_loop:
+    test byte ptr [edi + 0x4fe678], bl
+    jz cabf_next
+    movsx eax, word ptr [edi*2 + 0x4fe658]
+    imul eax, eax, 0xa0
+    movsx edx, word ptr [edi*2 + 0x4fe640]
+    add eax, edx
+    add eax, esi
+    mov edx, esi
+    test ebp, ebp
+    jnz cabf_dir
+    xchg eax, edx
+cabf_dir:
+    cmp byte ptr [edx + 0x582158], 0x80
+    jne cabf_next
+    mov cl, byte ptr [edx + {CABD:#x}]
+    cmp cl, {CAB_N}
+    jbe cabf_next
+    cmp cl, byte ptr [eax + {CABD:#x}]
+    jb cabf_next
+    mov al, byte ptr [edi + 0x4fe678]
+    not al
+    and bl, al
+cabf_next:
+    inc edi
+    cmp edi, 8
+    jb cabf_loop
+    mov byte ptr [esp + 0x18], bl
+cabf_out:
+    popad
+    ret
+''')
+cabfwd = place('cabfwd', f'''
+    pushad
+    xor ebp, ebp
+    jmp {cabfilt:#x}
+''')
+cabbwd = place('cabbwd', f'''
+    pushad
+    mov ebp, 1
+    jmp {cabfilt:#x}
+''')
 livexp = place('livexp', f'''
     shl eax, 5
     movsx ecx, word ptr [esp + 0x1c]
@@ -2665,8 +2887,8 @@ livexp = place('livexp', f'''
 livexp_loop:
     test byte ptr [esi + 0x4fe678], bl
     jz livexp_next
-    movsx ebp, word ptr [esi*2 + 0x4fe640]
-    movsx edi, word ptr [esi*2 + 0x4fe658]
+    movsx ebp, word ptr [esi*2 + 0x4fe658]
+    movsx edi, word ptr [esi*2 + 0x4fe640]
     imul edx, ebp, 0xa0
     add edx, edi
     add edx, eax
@@ -2691,6 +2913,7 @@ livexp_next:
     pop esi
     pop ebx
 livexp_end:
+    call {cabfwd:#x}
     jmp 0x4a5c79
 ''')
 livback = place('livback', f'''
@@ -2718,9 +2941,9 @@ livback = place('livback', f'''
 livback_loop:
     test byte ptr [edi + 0x4fe678], bl
     jz livback_next
-    movsx eax, word ptr [edi*2 + 0x4fe640]
+    movsx eax, word ptr [edi*2 + 0x4fe658]
     imul eax, eax, 0xa0
-    movsx edx, word ptr [edi*2 + 0x4fe658]
+    movsx edx, word ptr [edi*2 + 0x4fe640]
     add eax, edx
     cmp byte ptr [esi + eax + 0x582158], 0x80
     jne livback_next
@@ -2732,6 +2955,10 @@ livback_next:
     pop eax
     pop ebx
 livback_end:
+    push eax
+    mov eax, esi
+    call {cabbwd:#x}
+    pop eax
     jmp 0x4a6048
 ''')
 
@@ -4358,6 +4585,7 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
       asm('cmp word ptr [esp + 0x12], 0; jne 0x4a5147; mov word ptr [esp + 0x18], 1; xor bp, bp', 0x4a5135))
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
+patch(0x4a5328, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {cabgraph:#x}', 0x4a5328))
 # Convoy (ver crlink, crfollow, crdef, crdraw).
 assert rel(0x49d062, 2) == bytes.fromhex('6a05')
 patch(0x49d05d, asm('movsx ax, byte ptr [esi + 2]', 0x49d05d), asm(f'jmp {crlink:#x}', 0x49d05d))
@@ -4534,11 +4762,11 @@ table_add(res, 2, RAM_FILE, bytes(ram))
 # corto (7) y el resto como water.STT. El dword de 32 en 0 hace de terminador del nombre corto, que ocupa los 7
 # bytes (igual que lthills.STT); el editor tampoco lo respeta (escribe hasta 8 caracteres ahí).
 def stt(nombre, largo):
-    b = nombre.encode().ljust(9, b'\0') + largo.encode().ljust(16, b'\0') + nombre.encode().ljust(7, b'\0')
+    b = nombre.encode().ljust(9, b'\0') + largo.encode().ljust(16, b'\0') + nombre.encode()[:7].ljust(7, b'\0')
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'))}
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):

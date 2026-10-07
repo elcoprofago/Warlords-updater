@@ -55,6 +55,13 @@ casos = [
     (dict(bonos=('Landing',), texto='Flying', habil=1), 'Flying, Landing'),
     (dict(bonos=('Landing', 'Carrier'), texto='A' * 61, habil=1), 'A' * 61 + ', Landing, Carrier'),
     (dict(bonos=('Landing', 'Carrier'), texto=LARGO, habil=1), LARGO),                       # control: no entra
+    (dict(bonos=('cabotage',), texto=NOSPEC), 'Cabotage'),
+    (dict(bonos=('Cabotage', 'Carrier', 'Landing'), texto=NOSPEC), 'Landing, Carrier, Cabotage'),
+    (dict(bonos=('Cabotage', 'Landing'), texto='A' * 60, habil=1), 'A' * 60 + ', Landing, Cabotage'),
+    (dict(bonos=('Cabotage', 'Landing'), texto='A' * 61, habil=1), 'A' * 61),               # control: no entra
+    (dict(bonos=('Cabotage', 'Carrier', 'Landing'), texto='A' * 51, habil=1), 'A' * 51 + ', Landing, Carrier, Cabotage'),
+    (dict(bonos=('Cabotage', 'Carrier', 'Landing'), texto='A' * 52, habil=1), 'A' * 52),     # control: no entra
+    (dict(bonos=('Cabotages',), texto=NOSPEC), NOSPEC),                                         # control: nombre parecido
     (dict(bonos=('Hills', 'Ice'), texto=NOSPEC), NOSPEC),                                       # control: sin bonos
     (dict(bonos=('Landings',), texto=NOSPEC), NOSPEC),                                          # control: nombre parecido
     (dict(bonos=('Landing',), texto=NOSPEC, slot=16), NOSPEC),                                  # control: no es unidad
