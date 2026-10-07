@@ -208,14 +208,15 @@ for nombre, eax, esperado in [('texto raze: puente', BC(5, 5), THE_BRIDGE), ('te
     top = struct.unpack('<I', b.mu.mem_read(b.r('ESP'), 4))[0]
     check(nombre, end == 0x495541 and top == esperado and b.r('ESP') == b.esp0 - 4, f'top={top:#x}')
 
-# ---- botón del diálogo de arrasar (0x495288 -> 0x495294)
+# ---- botón del diálogo de arrasar (0x495288 -> 0x495294): un puente va por 0x4955d0 con su código canónico
 for nombre, code, armies, esperado in [
-        ('botón: puente vacío manda la orden', BC(5, 5), [(4, 5, UI, True)], [('order', BC(5, 5), UI)]),
-        ('botón: propio encima también',       BC(5, 5), [(5, 5, UI, True)], [('order', BC(5, 5), UI)]),
+        ('botón: puente vacío manda la orden', BC(5, 5), [(4, 5, UI, True)], [('siteraze', BC(5, 5))]),
+        ('botón: otra casilla -> código canónico', BC(6, 5), [(4, 5, UI, True)], [('siteraze', BC(5, 5))]),
+        ('botón: propio encima también',       BC(5, 5), [(5, 5, UI, True)], [('siteraze', BC(5, 5))]),
         ('botón: enemigo encima -> atacar',    BC(5, 5), [(6, 5, 3, True)],
          [('msg', 'Enemies hold the bridge!', 0x19), ('msg', 'Attack them first.', 0x1e)]),
-        ('botón: enemigo muerto no cuenta',    BC(5, 5), [(6, 5, 3, False)], [('order', BC(5, 5), UI)]),
-        ('botón: enemigo al lado no cuenta',   BC(5, 5), [(7, 5, 3, True)], [('order', BC(5, 5), UI)]),
+        ('botón: enemigo muerto no cuenta',    BC(5, 5), [(6, 5, 3, False)], [('siteraze', BC(5, 5))]),
+        ('botón: enemigo al lado no cuenta',   BC(5, 5), [(7, 5, 3, True)], [('siteraze', BC(5, 5))]),
         ('botón: sitio 4 (control)',           4, [], [('siteraze', 4)])]:
     b = Bench(armies=armies)
     b.mu.mem_write(0x572778, struct.pack('<h', code))

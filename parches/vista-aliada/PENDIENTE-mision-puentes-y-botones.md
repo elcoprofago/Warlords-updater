@@ -50,6 +50,29 @@ puntaje, nivel y recompensa como las demás.
 - Razear el puente objetivo → cumplida. Controles: razear otro puente, o razearlo otro héroe → no cumplida.
 - Guardar y cargar con la misión activa.
 
+**Hecho el 7/10/2026 (vista-aliada 1.0.13.0)** — cuevas `qb_*` y `br_canon` / `br_city` en `build.py`; prueba
+`prueba_misionpuente.py` (41 casos, contra el Darklord.exe original donde corresponde).
+- Es el tipo 10 del original ("Destroying an Enemy Site") con objetivo = código canónico del puente
+  (0x2000 + y·128 + x de su casilla menor) en lugar del índice de un sitio. Los códigos de puente no chocan con
+  índices de sitio, y todo lo que lee el tipo 10 se revisó.
+- Generador 0x45ec40: en dificultad Average (la única que tiene el tipo 10 en el original) suma a los sitios los
+  puentes enteros con la misma distancia al héroe (3Q+14 .. 4Q+34) y el mismo filtro de dueño (0x461080). La ciudad
+  dueña de un puente sale de `br_city`, copia de la regla de 0x440f60 para un sitio (la viva más cercana, primero
+  las de la misma región); comprobado igual a la original en 400 mapas al azar. Sin ciudad viva, es de nadie.
+- Cumplida: el botón de arrasar puente ahora pasa por 0x4955d0, como un sitio, que avisa a la misión
+  (0x461a60, evento 6) antes de mandar la orden por la red. Premio, puntaje y nivel: los del original.
+- Fracasada: si el puente objetivo deja de estar entero antes (lo derriba otro), igual que un sitio arrasado.
+  Si ya estaba cumplida, sigue cumplida.
+- Guardar y cargar: la misión activa vive en 0x55edc4 + jugador·16, dentro del bloque que guarda el SAV.
+- Sin puentes que ofrecer (o jugador de la computadora), el generador da exactamente lo mismo que el original.
+
+**Diferencias con el plan**
+- Los textos ("Destroying a Bridge", "%s must destroy the bridge near %s." y "%s must destroy a bridge.") van como
+  cadenas del exe, igual que los demás textos de puentes, no en WAR3AV.RES.
+- La IA no recibe misiones de puente: el generador solo las ofrece a jugadores humanos, porque la IA no sabe
+  derribar puentes (parte D). Si un jugador humano pasa a ser de la computadora con una misión de puente activa,
+  la IA lee bien el lugar del objetivo (0x436178 y 0x436442), pero no lo derriba.
+
 ---
 
 ## B. Botones para abrir Votación y Sorteo como ventanas superpuestas

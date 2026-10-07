@@ -4110,9 +4110,127 @@ brm_out:
     add esp, 0x14
     ret
 ''')
+# br_canon(código) cdecl -> eax = código canónico del puente entero que incluye esa casilla (el menor de sus
+# casillas), o -1 si no es un puente entero. Una misión guarda este código: se derriba desde cualquier punta.
+br_canon = place('br_canon', f'''
+    push {BR_KIND_INTACT}
+    push dword ptr [esp + 8]
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz brn_none
+    push ebx
+    mov ecx, eax
+    or eax, -1
+brn_loop:
+    movzx edx, word ptr [ecx*4 + {br_xy - 2:#x}]
+    shl edx, 7
+    movzx ebx, word ptr [ecx*4 + {br_xy - 4:#x}]
+    add edx, ebx
+    cmp edx, eax
+    jae brn_next
+    mov eax, edx
+brn_next:
+    dec ecx
+    jnz brn_loop
+    add eax, {BR_CODE:#x}
+    pop ebx
+    ret
+brn_none:
+    or eax, -1
+    ret
+''')
+# br_city(código) cdecl -> eax = la ciudad dueña del puente con la misma regla que 0x440f60 para un sitio: la viva
+# más cercana (distancia de rey; en empate, la primera) de la misma región que la casilla (byte +2), si hay; si no,
+# la viva más cercana de todas; -1 si no queda ninguna viva. Da el dueño del puente al elegir la misión y el nombre
+# del lugar en su texto.
+br_city = place('br_city', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 0x14
+    movsx eax, word ptr [esp + 0x28]
+    sub eax, {BR_CODE:#x}
+    mov esi, eax
+    and esi, 0x7f
+    shr eax, 7
+    mov edi, eax
+    mov cl, byte ptr [0x503e06]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    movzx eax, byte ptr [eax + edx*2 + 0x503e5a]
+    mov dword ptr [esp], eax
+    mov dword ptr [esp + 4], 0x3e8
+    mov dword ptr [esp + 8], -1
+    mov dword ptr [esp + 0xc], 0x3e8
+    mov dword ptr [esp + 0x10], -1
+    xor ebp, ebp
+brcy_loop:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebp, eax
+    jge brcy_out
+    imul ebx, ebp, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je brcy_next
+    movsx eax, word ptr [ebx + 0x537e2e]
+    sub eax, edi
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    movsx eax, word ptr [ebx + 0x537e2c]
+    sub eax, esi
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp ecx, eax
+    jge brcy_d
+    mov ecx, eax
+brcy_d:
+    cmp dword ptr [esp + 4], ecx
+    jle brcy_reg
+    mov dword ptr [esp + 4], ecx
+    mov dword ptr [esp + 8], ebp
+brcy_reg:
+    push ecx
+    mov cl, byte ptr [0x503e06]
+    movsx eax, word ptr [ebx + 0x537e2e]
+    lea eax, [eax + eax*4]
+    add eax, eax
+    shl eax, cl
+    movsx edx, word ptr [ebx + 0x537e2c]
+    lea edx, [edx + edx*4]
+    movzx eax, byte ptr [eax + edx*2 + 0x503e5a]
+    pop ecx
+    cmp eax, dword ptr [esp]
+    jne brcy_next
+    cmp dword ptr [esp + 0xc], ecx
+    jle brcy_next
+    mov dword ptr [esp + 0xc], ecx
+    mov dword ptr [esp + 0x10], ebp
+brcy_next:
+    inc ebp
+    jmp brcy_loop
+brcy_out:
+    mov eax, dword ptr [esp + 0x10]
+    test eax, eax
+    jge brcy_ret
+    mov eax, dword ptr [esp + 8]
+brcy_ret:
+    add esp, 0x14
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
 # Diálogo de arrasar (0x4951b0, modo 1 = sitio): el nombre en "Are you sure you want to raze %s?" (0x495530,
-# eax = índice) y el botón (0x495288): para un puente, si hay ejércitos ajenos encima se avisa; si no, se manda la
-# orden 0x4b9550(código, jugador) sin la animación del sitio (0x461a60).
+# eax = índice) y el botón (0x495288): para un puente, si hay ejércitos ajenos encima se avisa; si no, va por el
+# mismo 0x4955d0 que un sitio, con el código canónico: avisa la destrucción a la misión del héroe (0x461a60, evento 6)
+# y manda la orden 0x4b9550(código, jugador).
 br_razetxt = place('br_razetxt', f'''
     cmp eax, {BR_CODE:#x}
     jl brt2_site
@@ -4161,12 +4279,12 @@ brb2_bridge:
     add esp, 8
     test eax, eax
     jnz brb2_enemy
-    movsx eax, word ptr [0x537ce8]
-    push eax
     movsx eax, word ptr [0x572778]
     push eax
-    call 0x4b9550
-    add esp, 8
+    call {br_canon:#x}
+    mov dword ptr [esp], eax
+    call 0x4955d0
+    add esp, 4
     jmp brb2_done
 brb2_enemy:
     push 0x19
@@ -4247,6 +4365,228 @@ bra2_quit:
     pop ebp
     pop ebx
     jmp 0x4d5f3a
+''')
+# ---------------------------------------------------------------- Misión de héroe "derribar un puente"
+# Es el tipo 10 ("Destroying an Enemy Site") con objetivo = código canónico del puente (br_canon) en vez del índice
+# de un sitio. La misión activa vive en 0x55edc4 + jugador*16 (+2 héroe, +4 tipo, +6 objetivo), dentro del bloque
+# que guarda el SAV. Recorrido:
+# - Generador 0x45ec40, dificultad Average (la única con el tipo 10): después de juntar los sitios candidatos
+#   ([esp+0x34], di de ellos), qb_gen suma los puentes enteros con la misma distancia de rey al héroe
+#   (3Q+14 .. 4Q+34, Q = [0x56950a]) y dueño enemigo o nadie: la ciudad dueña sale de br_city (la misma regla
+#   que 0x440f60 para un sitio) y se filtra con el mismo 0x461080; si no queda ciudad viva, es de nadie. Solo para jugadores humanos: la IA no sabe derribar puentes todavía.
+# - Cumplida: el botón de arrasar puente pasa por 0x4955d0 (br_razebtn), que llama a 0x461a60(6, ejército
+#   seleccionado, 0, 0, código): el original compara el objetivo con el código y premia igual que un sitio.
+# - Fracasada: el chequeo de cada turno (0x461a60 evento 0) mira si el sitio está arrasado (0x461c80); para un
+#   puente, si ya no está entero (qb_fail).
+# - Textos: el nombre del tipo (0x461130 -> 0x461336) y el objetivo (0x461400 -> 0x461876).
+# - La IA lee el lugar del objetivo en 0x435fd0 (0x436178) y 0x436390 (0x436442): para un puente, su casilla, para
+#   no leer la tabla de sitios fuera de rango si un jugador humano pasa a ser de la computadora.
+str_qb_name = place_data('str_qb_name', cstr_('Destroying a Bridge'))
+str_qb_obj = place_data('str_qb_obj', cstr_('%s must destroy the bridge near %s.'))
+str_qb_obj0 = place_data('str_qb_obj0', cstr_('%s must destroy a bridge.'))
+QB_MAXCAND = 0x100                                       # la lista [esp+0x34] del generador llega a [esp+0x233]
+qb_gen = place('qb_gen', f'''
+    movsx eax, word ptr [0x537ce8]
+    imul eax, eax, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    jne qbg_done
+    push ebx
+    push esi
+    push ebp
+    xor esi, esi
+qbg_y:
+    movsx eax, word ptr [0x503e02]
+    cmp esi, eax
+    jge qbg_end
+    xor ebx, ebx
+qbg_x:
+    movsx eax, word ptr [0x503e00]
+    cmp ebx, eax
+    jge qbg_nexty
+    mov eax, ebx
+    mov edx, esi
+    call {br_tile:#x}
+    test eax, eax
+    jz qbg_next
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_INTACT}
+    jne qbg_next
+    mov ebp, esi
+    shl ebp, 7
+    lea ebp, [ebp + ebx + {BR_CODE:#x}]
+    push ebp
+    call {br_canon:#x}
+    add esp, 4
+    cmp eax, ebp
+    jne qbg_next
+    movsx eax, word ptr [esp + 0x26]
+    sub eax, ebx
+    jge qbg_p1
+    neg eax
+qbg_p1:
+    mov ecx, eax
+    movsx eax, word ptr [esp + 0x24]
+    sub eax, esi
+    jge qbg_p2
+    neg eax
+qbg_p2:
+    cmp ecx, eax
+    jge qbg_d
+    mov ecx, eax
+qbg_d:
+    movsx edx, word ptr [0x56950a]
+    lea eax, [edx + edx*2 + 0xe]
+    cmp eax, ecx
+    jg qbg_next
+    lea eax, [edx*4 + 0x22]
+    cmp eax, ecx
+    jl qbg_next
+    push ebp
+    call {br_city:#x}
+    add esp, 4
+    test eax, eax
+    jl qbg_add
+    imul eax, eax, 0xde
+    movzx eax, byte ptr [eax + 0x537ed1]
+    push eax
+    call 0x461080
+    add esp, 4
+    test al, al
+    jz qbg_next
+qbg_add:
+    movsx eax, di
+    cmp eax, {QB_MAXCAND}
+    jge qbg_next
+    inc edi
+    mov word ptr [esp + eax*2 + 0x40], bp
+qbg_next:
+    inc ebx
+    jmp qbg_x
+qbg_nexty:
+    inc esi
+    jmp qbg_y
+qbg_end:
+    pop ebp
+    pop esi
+    pop ebx
+qbg_done:
+    test di, di
+    jle 0x460fa0
+    jmp 0x460e04
+''')
+qb_name = place('qb_name', f'''
+    mov eax, dword ptr [esp + 0x10]
+    cmp word ptr [eax + 6], {BR_CODE:#x}
+    jge qbn_bridge
+    push ecx
+    push 0x42
+    mov ecx, 0x589880
+    call 0x4def30
+    jmp 0x461343
+qbn_bridge:
+    mov eax, {str_qb_name:#x}
+    jmp 0x461343
+''')
+qb_text = place('qb_text', f'''
+    movsx eax, word ptr [edi + 6]
+    cmp eax, {BR_CODE:#x}
+    jge qbt_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    lea eax, [ecx + ecx*4]
+    jmp 0x461885
+qbt_bridge:
+    push eax
+    call {br_city:#x}
+    add esp, 4
+    mov ecx, {str_qb_obj0:#x}
+    test eax, eax
+    jl qbt_go
+    imul eax, eax, 0xde
+    add eax, 0x537e30
+    mov ecx, {str_qb_obj:#x}
+qbt_go:
+    push eax
+    movsx eax, word ptr [edi + 2]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe62]
+    and eax, 0x3f00
+    shr eax, 8
+    imul eax, eax, 0xb8
+    add eax, 0x556bb4
+    push eax
+    push ecx
+    push ebx
+    call dword ptr [0x5a9bec]
+    add esp, 0x10
+    jmp 0x4618d3
+''')
+qb_fail = place('qb_fail', f'''
+    movsx eax, word ptr [esi + 6]
+    cmp eax, {BR_CODE:#x}
+    jge qbf_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea edx, [eax + eax*2]
+    cmp byte ptr [edx + edx*4 + 0x55ad4b], 0
+    je 0x461ca3
+    jmp 0x461c96
+qbf_bridge:
+    push ecx
+    push {BR_KIND_INTACT}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    pop ecx
+    test eax, eax
+    jnz 0x461ca3
+    jmp 0x461c96
+''')
+qb_ailoc1 = place('qb_ailoc1', f'''
+    movsx eax, di
+    mov bp, 1
+    cmp eax, {BR_CODE:#x}
+    jge qba1_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    mov dx, word ptr [ecx + ecx*4 + 0x55acb6]
+    lea eax, [ecx + ecx*4]
+    mov ax, word ptr [eax + 0x55acb8]
+    jmp 0x436199
+qba1_bridge:
+    sub eax, {BR_CODE:#x}
+    mov edx, eax
+    and edx, 0x7f
+    shr eax, 7
+    jmp 0x436199
+''')
+qb_ailoc2 = place('qb_ailoc2', f'''
+    mov word ptr [ebx], cx
+    movsx ecx, cx
+    cmp ecx, {BR_CODE:#x}
+    jge qba2_bridge
+    lea ecx, [ecx + ecx*4]
+    add ecx, ecx
+    lea ebx, [ecx + ecx*2]
+    mov di, word ptr [ebx + ebx*4 + 0x55acb6]
+    lea ecx, [ebx + ebx*4]
+    mov word ptr [esi], di
+    mov cx, word ptr [ecx + 0x55acb8]
+    jmp qba2_out
+qba2_bridge:
+    sub ecx, {BR_CODE:#x}
+    mov edi, ecx
+    and edi, 0x7f
+    mov word ptr [esi], di
+    shr ecx, 7
+qba2_out:
+    pop edi
+    pop esi
+    mov word ptr [edx], cx
+    pop ebx
+    ret
 ''')
 # Diálogo de reconstruir (0x4b6160(índice)): para un puente, derribado y vacío (si no, el aviso 0x72 "Cannot rebuild!
 # Other armies are here..."); el índice queda en [0x587e5c] como el de un sitio.
@@ -4621,6 +4961,15 @@ patch(0x45846d, bytes.fromhex('66f7c5001c66892f7408668b41086689470e'),
       asm(f'jmp {br_vfill:#x}', 0x45846d))
 patch(0x459a9f, bytes.fromhex('668b0680e41c80fc04754b'), asm(f'jmp {br_vdraw:#x}', 0x459a9f))
 patch(0x467ba3, asm('lea eax, [esp + 0x4c]; push 0x4fc808', 0x467ba3), asm(f'jmp {bridgecb:#x}', 0x467ba3))
+# Misión "derribar un puente" (qb_*)
+patch(0x460dfb, bytes.fromhex('6685ff0f8e9c010000'), asm(f'jmp {qb_gen:#x}', 0x460dfb))
+patch(0x461336, bytes.fromhex('516a42b980985800e8eddb0700'), asm(f'jmp {qb_name:#x}', 0x461336))
+patch(0x461876, bytes.fromhex('0fbf47068d048003c08d0c408d0489'), asm(f'jmp {qb_text:#x}', 0x461876))
+patch(0x461c80, bytes.fromhex('0fbf46068d048003c08d144080bc924bad550000740d'), asm(f'jmp {qb_fail:#x}', 0x461c80))
+patch(0x436178, bytes.fromhex('0fbfc766bd01008d048003c08d0c40668b9489b6ac55008d0489668b80b8ac5500'),
+      asm(f'jmp {qb_ailoc1:#x}', 0x436178))
+patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9b66893e5f668b89b8ac55005e66890a5bc3'),
+      asm(f'jmp {qb_ailoc2:#x}', 0x436442))
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
