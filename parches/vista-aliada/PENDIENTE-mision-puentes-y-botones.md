@@ -124,7 +124,9 @@ En el juego (`build.py`, cuevas `tl_*`; prueba `prueba_botones.py`, emulada, con
   `SETS\Fantasy\sorteo.pcx` (20×80, 4 cuadros: normal, apretado, deshabilitado, puntero encima; paleta de BUTT_STD),
   archivo 166 de la tabla de archivos del RES. 1.0.16.0: a pedido del usuario ("muy pequeño, al menos el triple"),
   64×60 con el ícono de 64 px entero y fondo transparente (índice 11), abajo a la derecha en (567, 409), junto al
-  murciélago: al lado de Chat no entra. Los estados van apilados cada `alto` píxeles, como los botones 32×33 de
+  murciélago. En la esquina de antes (6, 430) no entra: entre el borde y el panel del 4º jugador hay ~30 px, y a 64
+  taparía el marco y el retrato (control 4 en (48, 409)). Chat (80) aparece ahí debajo solo en red (0x46f321:
+  `0x4dd390() > 1`). El usuario eligió dejarlo grande junto al murciélago. Los estados van apilados cada `alto` píxeles, como los botones 32×33 de
   BUTT_STD.
 - Al apretarlos, el anfitrión manda por red el paquete 0x2a0 (abrir; dato = 0 votación, 1 sorteo) con 0x4dd3b0, que
   también vuelve a la propia máquina. Cada PC, al recibirlo (gancho en el receptor 0x4b6a22, solo si lo manda la
