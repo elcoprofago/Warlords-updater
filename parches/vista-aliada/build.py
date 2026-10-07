@@ -9,6 +9,8 @@
 # Cabotaje: el barco de un bando con el bono de movimiento "Cabotage" no se aleja más de 2 casillas de la costa
 # (salvo para acercarse); cruza ríos y lagos angostos.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
+# Botones de Votación ("Voting" en el menú de partida) y Sorteo (moneda en la preparación): el anfitrión abre
+# Herramientasotacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
 import keystone, capstone
@@ -4840,6 +4842,345 @@ bcb_other:
     jmp 0x467bac
 ''')
 
+# ---------------------------------------------------------------- Botones de Votación y Sorteo
+# El anfitrión (máquina 0) abre las herramientas: Votación desde el menú de partida (línea nueva "Voting", diálogo 35)
+# y Sorteo desde la pantalla de preparación (moneda junto a Chat, diálogo 7). La orden viaja por red (TL_OPEN) y cada
+# PC abre su propia copia: el anfitrión como operador, los demás como espectadores con sus bandos marcados. El estado
+# va y viene por archivos en Herramientas\ y por red (TL_STATE), fuera de la simulación: no puede desincronizar turnos.
+#   operador:    <tool>.op   (lo escribe el programa del anfitrión) -> se renombra a .env, se lee y se manda.
+#   espectador:  <tool>.ver  (lo escribe el juego al recibir TL_STATE; se arma en .vtmp y se renombra).
+# Un Warlords sin el parche descarta los dos tipos (el despachador de 0x4b69e0 ignora los mayores que 0x209).
+TOOLS = ('votacion', 'sorteo')
+TL_OPEN, TL_STATE = 0x2a0, 0x2a1   # carga: herramienta (dword) | herramienta (dword) + texto con NUL (hasta 256)
+VOTE_TXT, VOTE_HOT, COIN = 0x19, 0x1a, 97
+GETTICK, CREATEPROC, CLOSEH, MOVEF, DELF = 0x5a97f8, 0x5a97d0, 0x5a97d8, 0x5a97e4, 0x5a97c0
+CREATEF, READF, WRITEF, CREATETH, MSGBOX, STRLEN = 0x5a9810, 0x5a9814, 0x5a9818, 0x5a97ec, 0x5a9c30, 0x5a9b98
+SIDE, SIDE_ON, SIDE_HUMAN, SIDE_MACHINE = 0x1f8, 0x536b30, 0x536c12, 0x536b33
+tl_voting = place_data('tl_voting', cstr_('Voting'))
+tl_caption = place_data('tl_caption', cstr_(GAME))
+tl_vars = place_data('tl_vars', bytes(16))   # +0 tick, +4 ocupado, +8 abrir[2], +0xc estado[2]
+TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = tl_vars, tl_vars + 4, tl_vars + 8, tl_vars + 0xc
+tl_n = place_data('tl_n', bytes(4))
+tl_openpkt = place_data('tl_openpkt', bytes(4))
+tl_pkt = place_data('tl_pkt', bytes(4 + 256))
+tl_buf = place_data('tl_buf', bytes(256 * len(TOOLS)))   # último estado recibido, por herramienta
+tl_si = place_data('tl_si', struct.pack('<I', 68) + bytes(64))   # STARTUPINFOA
+tl_pi = place_data('tl_pi', bytes(16))                           # PROCESS_INFORMATION
+tl_path = {}
+for t, n in enumerate(TOOLS):
+    for ext in ('ver', 'vtmp', 'op', 'env'):
+        tl_path[t, ext] = place_data(f'tl_{n}_{ext}', cstr_(f'Herramientas\\{n}.{ext}'))
+    tl_path[t, 'exe'] = place_data(f'tl_{n}_exe', cstr_(f'Herramientas\\{n}.exe'))
+    tl_path[t, 'op_cmd'] = place_data(f'tl_{n}_opcmd', cstr_(f'"Herramientas\\{n}.exe" --operador'))
+    sp = cstr_(f'"Herramientas\\{n}.exe" --espectador 00000000')
+    tl_path[t, 'sp_cmd'] = place_data(f'tl_{n}_spcmd', sp)
+    tl_path[t, 'mask'] = tl_path[t, 'sp_cmd'] + len(sp) - 9   # carácter s: '1' si el bando s es humano de esta PC
+    tl_path[t, 'err'] = place_data(f'tl_{n}_err', cstr_(f'No se pudo abrir Herramientas\\{n}.exe'))
+
+# Aviso sin bloquear el juego (un MessageBox modal en el bucle principal frenaría la red): en un hilo aparte.
+tl_warn = place('tl_warn', f'''
+    mov eax, dword ptr [esp + 4]
+    push 0x41030
+    push {tl_caption:#x}
+    push eax
+    push 0
+    call dword ptr [{MSGBOX:#x}]
+    xor eax, eax
+    ret 4
+''')
+
+# Mandar la orden de abrir (arg: herramienta). Solo el anfitrión; la copia local llega por el eco de 0x4dd3b0.
+tl_sendopen = place('tl_sendopen', f'''
+    call 0x4dd3a0
+    test ax, ax
+    jnz tso_end
+    mov eax, dword ptr [esp + 4]
+    mov dword ptr [{tl_openpkt:#x}], eax
+    push 4
+    push {tl_openpkt:#x}
+    push {TL_OPEN:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+tso_end:
+    ret
+''')
+
+# Recepción (reemplaza "ja 0x4b85bb" en 0x4b6a22; eax = tipo + 8, esi = paquete). Solo vale lo que manda la máquina 0.
+tl_recv = place('tl_recv', f'''
+    cmp eax, {TL_OPEN + 8:#x}
+    je tr_open
+    cmp eax, {TL_STATE + 8:#x}
+    jne 0x4b85bb
+    cmp word ptr [esi + 6], 0
+    jne 0x4b85bb
+    mov eax, dword ptr [esi + 0xc]
+    cmp eax, {len(TOOLS)}
+    jae 0x4b85bb
+    mov byte ptr [eax + {TL_PEND_STATE:#x}], 1
+    shl eax, 8
+    lea edi, [eax + {tl_buf:#x}]
+    xor edx, edx
+tr_copy:
+    mov al, byte ptr [esi + edx + 0x10]
+    mov byte ptr [edi + edx], al
+    test al, al
+    jz 0x4b85bb
+    inc edx
+    cmp edx, 255
+    jb tr_copy
+    mov byte ptr [edi + edx], 0
+    jmp 0x4b85bb
+tr_open:
+    cmp word ptr [esi + 6], 0
+    jne 0x4b85bb
+    mov eax, dword ptr [esi + 0xc]
+    cmp eax, {len(TOOLS)}
+    jae 0x4b85bb
+    mov byte ptr [eax + {TL_PEND_OPEN:#x}], 1
+    jmp 0x4b85bb
+''')
+
+def tl_tool(t):
+    p = lambda k: f'{tl_path[t, k]:#x}'
+    return f'''
+    cmp byte ptr [{TL_PEND_OPEN + t:#x}], 0
+    je to{t}_end
+    mov byte ptr [{TL_PEND_OPEN + t:#x}], 0
+    push {p('ver')}
+    call dword ptr [{DELF:#x}]
+    call 0x4dd3a0
+    movzx ebx, ax
+    mov esi, {p('op_cmd')}
+    test ebx, ebx
+    jz to{t}_run
+    mov esi, {p('sp_cmd')}
+    xor ecx, ecx
+to{t}_mask:
+    imul edx, ecx, {SIDE:#x}
+    mov al, 0x30
+    cmp byte ptr [edx + {SIDE_ON:#x}], 0
+    je to{t}_put
+    cmp word ptr [edx + {SIDE_HUMAN:#x}], -1
+    jne to{t}_put
+    movzx edi, byte ptr [edx + {SIDE_MACHINE:#x}]
+    cmp edi, ebx
+    jne to{t}_put
+    mov al, 0x31
+to{t}_put:
+    mov byte ptr [ecx + {p('mask')}], al
+    inc ecx
+    cmp ecx, 8
+    jb to{t}_mask
+to{t}_run:
+    push {tl_pi:#x}
+    push {tl_si:#x}
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push esi
+    push {p('exe')}
+    call dword ptr [{CREATEPROC:#x}]
+    test eax, eax
+    jz to{t}_fail
+    push dword ptr [{tl_pi:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    push dword ptr [{tl_pi + 4:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    jmp to{t}_end
+to{t}_fail:
+    push 0
+    push 0
+    push {p('err')}
+    push {tl_warn:#x}
+    push 0
+    push 0
+    call dword ptr [{CREATETH:#x}]
+    test eax, eax
+    jz to{t}_end
+    push eax
+    call dword ptr [{CLOSEH:#x}]
+to{t}_end:
+
+    call 0x4dd3a0
+    test ax, ax
+    jnz tf{t}_end
+    push {p('env')}
+    call dword ptr [{DELF:#x}]
+    push {p('env')}
+    push {p('op')}
+    call dword ptr [{MOVEF:#x}]
+    test eax, eax
+    jz tf{t}_end
+    push 0
+    push 0
+    push 3
+    push 0
+    push 1
+    push 0x80000000
+    push {p('env')}
+    call dword ptr [{CREATEF:#x}]
+    cmp eax, -1
+    je tf{t}_del
+    mov esi, eax
+    mov dword ptr [{tl_n:#x}], 0
+    push 0
+    push {tl_n:#x}
+    push 255
+    push {tl_pkt + 4:#x}
+    push esi
+    call dword ptr [{READF:#x}]
+    push esi
+    call dword ptr [{CLOSEH:#x}]
+    mov eax, dword ptr [{tl_n:#x}]
+    cmp eax, 255
+    jbe tf{t}_len
+    mov eax, 255
+tf{t}_len:
+    mov byte ptr [eax + {tl_pkt + 4:#x}], 0
+    mov dword ptr [{tl_pkt:#x}], {t}
+    push 260
+    push {tl_pkt:#x}
+    push {TL_STATE:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+tf{t}_del:
+    push {p('env')}
+    call dword ptr [{DELF:#x}]
+tf{t}_end:
+
+    cmp byte ptr [{TL_PEND_STATE + t:#x}], 0
+    je ts{t}_end
+    push 0
+    push 0x80
+    push 2
+    push 0
+    push 0
+    push 0x40000000
+    push {p('vtmp')}
+    call dword ptr [{CREATEF:#x}]
+    cmp eax, -1
+    je ts{t}_end
+    mov esi, eax
+    push {tl_buf + 256 * t:#x}
+    call dword ptr [{STRLEN:#x}]
+    add esp, 4
+    push 0
+    push {tl_n:#x}
+    push eax
+    push {tl_buf + 256 * t:#x}
+    push esi
+    call dword ptr [{WRITEF:#x}]
+    push esi
+    call dword ptr [{CLOSEH:#x}]
+    push {p('ver')}
+    call dword ptr [{DELF:#x}]
+    push {p('ver')}
+    push {p('vtmp')}
+    call dword ptr [{MOVEF:#x}]
+    test eax, eax
+    jz ts{t}_end
+    mov byte ptr [{TL_PEND_STATE + t:#x}], 0
+ts{t}_end:
+'''
+
+# Cada ~250 ms, en la función ociosa 0x4dea40 (la llaman el bucle principal y los bucles de los diálogos): abrir lo
+# pedido, mandar el estado del operador (anfitrión) y dejar el recibido para el espectador. Si el .ver está abierto
+# por el programa y no se puede reemplazar, se reintenta en la vuelta siguiente.
+tl_idle = place('tl_idle', f'''
+    pushad
+    cmp byte ptr [{TL_BUSY:#x}], 0
+    jne ti_done
+    call dword ptr [{GETTICK:#x}]
+    mov edx, eax
+    sub eax, dword ptr [{TL_TICK:#x}]
+    cmp eax, 250
+    jb ti_done
+    mov dword ptr [{TL_TICK:#x}], edx
+    mov byte ptr [{TL_BUSY:#x}], 1
+    {''.join(tl_tool(t) for t in range(len(TOOLS)))}
+    mov byte ptr [{TL_BUSY:#x}], 0
+ti_done:
+    popad
+    mov ecx, 0x5a6f50
+    jmp 0x4dea45
+''')
+
+# Menú de partida (0x4bd180, fin en 0x4bd512): texto y color de "Voting". esi = control bajo el puntero;
+# [esp + 0xc] = escribir los textos. Gris (0x56) fuera del anfitrión.
+tl_menu = place('tl_menu', f'''
+    cmp dword ptr [esp + 0xc], 0
+    je tm_col
+    push {tl_voting:#x}
+    push {VOTE_TXT:#x}
+    call 0x4dd240
+    add esp, 8
+tm_col:
+    push 0
+    push 0
+    call 0x4dd3a0
+    mov ecx, 0x56
+    test ax, ax
+    jnz tm_set
+    mov ecx, 0x5c
+    cmp esi, {VOTE_HOT:#x}
+    jne tm_set
+    mov ecx, 0xf
+tm_set:
+    push ecx
+    push {VOTE_TXT:#x}
+    call 0x4dd2b0
+    add esp, 0x10
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    jmp 0x4bd51c
+''')
+
+# Despachador del menú (0x4bd520, eax = control).
+tl_disp = place('tl_disp', f'''
+    cmp eax, {VOTE_HOT:#x}
+    je td_vote
+    sub eax, 0xb
+    cmp eax, 0xd
+    ja 0x4bd533
+    jmp 0x4bd52c
+td_vote:
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    push 0
+    call {tl_sendopen:#x}
+    add esp, 4
+    ret
+''')
+
+# Pantalla de preparación (diálogo 7): la moneda se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
+# clic (ebp = control; los mayores que 96 caen en "ja 0x46ed83") manda abrir el Sorteo.
+tl_setinit = place('tl_setinit', f'''
+    call 0x4dd3a0
+    xor ecx, ecx
+    test ax, ax
+    jz tsi_show
+    mov ecx, 2
+tsi_show:
+    push ecx
+    push {COIN}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    jmp 0x46f34b
+''')
+tl_setclick = place('tl_setclick', f'''
+    cmp ebp, {COIN}
+    jne 0x46ed83
+    push 1
+    call {tl_sendopen:#x}
+    add esp, 4
+    jmp 0x46ed83
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -4970,6 +5311,20 @@ patch(0x436178, bytes.fromhex('0fbfc766bd01008d048003c08d0c40668b9489b6ac55008d0
       asm(f'jmp {qb_ailoc1:#x}', 0x436178))
 patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9b66893e5f668b89b8ac55005e66890a5bc3'),
       asm(f'jmp {qb_ailoc2:#x}', 0x436442))
+# Botones de Votación y Sorteo (tl_*)
+patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))
+assert rel(0x4bd51c, 3) == bytes.fromhex('5e5bc3') and rel(0x4bd520, 4) == bytes.fromhex('8b442404')
+patch(0x4bd524, asm('sub eax, 0xb; cmp eax, 0xd; ja 0x4bd533', 0x4bd524), asm(f'jmp {tl_disp:#x}', 0x4bd524))
+patch(0x46f341, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x46f341), asm(f'jmp {tl_setinit:#x}', 0x46f341))
+assert rel(0x46f34b, 4) == bytes.fromhex('5d5f5e5b')
+assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
+patch(0x46e892, asm('ja 0x46ed83', 0x46e892), asm(f'ja {tl_setclick:#x}', 0x46e892))
+assert rel(0x46ed83, 7) == bytes.fromhex('6633c05d5f5e5b')
+assert rel(0x4b6a16, 12) == bytes.fromhex('0fbf460483c0083d11020000')
+patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tl_recv:#x}', 0x4b6a22))
+assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
+patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
+assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
@@ -5054,7 +5409,42 @@ y = 130 + 21 * len(col2)
 struct.pack_into('<I', lbl2, 0xc, y); struct.pack_into('<I', ind2, 0xc, y - 2)
 new_list[115] = [lbl, ind, lbl2, ind2]
 
-for did in (115, 9):   # el 115 está después del 9: tocarlo primero no corre el offset del 9
+# Diálogo 35 (menú de partida): línea nueva "Voting" (texto VOTE_TXT, zona VOTE_HOT) debajo de Chat Mode. Las 13
+# líneas pasan a 16 píxeles entre sí (de 46 a 238; el marco deja libre de 40 a 262); cada zona de clic, 4 píxeles
+# por encima de su texto y de 16 de alto, conserva su x y su ancho.
+r35 = records(res, 35)
+MENU = [(1, 0xb), (2, 0xc), ('new', 'new'), (0x15, 0x16), (3, 0xd), (4, 0xe), (5, 0xf), (6, 0x10), (7, 0x11),
+        (8, 0x12), (9, 0x13), (0x17, 0x18), (10, 0x14)]
+assert sorted(i for pair in MENU if pair[0] != 'new' for i in pair) == sorted(r35)
+p, t = r35[2]; assert t == 0x13
+vtxt = bytearray(res[p:p + 4 + SZ[0x13]])
+struct.pack_into('<I', vtxt, 4, VOTE_TXT)
+p, t = r35[0xc]; assert t == 3
+vhot = bytearray(res[p:p + 4 + SZ[3]])
+struct.pack_into('<I', vhot, 4, VOTE_HOT)
+for k, (ti, hi) in enumerate(MENU):
+    y = 46 + 16 * k
+    buf, o = (vtxt, 0) if ti == 'new' else (res, r35[ti][0])
+    struct.pack_into('<I', buf, o + 0xc, y)
+    buf, o = (vhot, 0) if hi == 'new' else (res, r35[hi][0])
+    struct.pack_into('<I', buf, o + 0xc, y - 4)
+    struct.pack_into('<I', buf, o + 0x1c, 16)
+new_list[35] = [vtxt, vhot]
+
+# Diálogo 7 (preparación): moneda COIN clonada de Chat (id 80, butt_std en (436,80)), arriba de él; su dibujo está
+# en (436,0) de la misma hoja, con las filas de resaltado y deshabilitado debajo, como Chat.
+r7 = records(res, 7)
+assert max(r7) == COIN - 1
+p, t = r7[80]; assert t == 1
+coin = bytearray(res[p:p + 4 + SZ[1]])
+assert struct.unpack_from('<11I', coin, 0) == (1, 80, 6, 453, 1, 1, 0x79, 436, 80, 20, 20)
+struct.pack_into('<IIII', coin, 4, COIN, 6, 430, 1)
+struct.pack_into('<I', coin, 0x20, 0)
+setstr(coin, 0x30, 16, 'Draw Lots')
+setstr(coin, 0x40, 64, 'Draw lots for the starting order')
+new_list[7] = [coin]
+
+for did in (115, 35, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
     append(res, did, b''.join(new_list[did]))
 
 # Nombre del juego en los textos de los diálogos (ayudas de botón: +0x40, 64 bytes; texto tipo 0x12: +0x2c, se

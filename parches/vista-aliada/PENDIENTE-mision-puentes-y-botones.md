@@ -82,7 +82,7 @@ puntaje, nivel y recompensa como las demás.
   `config.ini [Pantalla] preferida`. Ejecutable `dist\votacion.exe` (PyInstaller, 62,9 MB).
 - Sorteo: `F:\source\repos\Sorteo` (tkinter + PIL, no PyQt5). `dist\sorteo.exe` y `dist\sorteo\sorteo.exe` + assets.
   `abrir.vbs` → `exe.bat` → `pythonw sorteo.py`.
-- Ninguno de los dos es repo git.
+- Los dos son repos git desde el 7/10/2026 (ver "Hecho el 7/10/2026: versión en el título", al final).
 
 **Lo que ya se sabe del juego**
 - Corre en ventana gracias a GOG dxcfg/ddraw.dll (`C:\Warlords3\dxcfg.ini`, presentation=windowed), así que otra
@@ -110,6 +110,40 @@ puntaje, nivel y recompensa como las demás.
   abrir otra.
 - Que la ventana quede encima del juego (topmost): desde el lanzador con SetWindowPos o desde el propio programa
   (Qt `WindowStaysOnTopHint`). Se decide al probar con el juego en ventana.
+
+**Hecho el 7/10/2026 (vista-aliada 1.0.14.0, Votación 1.1.0, Sorteo 1.1.0)**
+
+En el juego (`build.py`, cuevas `tl_*`; prueba `prueba_botones.py`, emulada, con controles):
+- **Votación:** línea nueva "Voting" en el menú de partida (diálogo 35), debajo de "Chat Mode"; las demás líneas se
+  corren 16 px. Solo el anfitrión (máquina 0) la tiene activa; en las otras PC sale gris y no hace nada.
+- **Sorteo:** botón moneda "Draw Lots" (id 97, copia del botón Chat id 80) en la pantalla de preparación (diálogo 7),
+  arriba de Chat, en (6, 430). Deshabilitado fuera del anfitrión.
+- Al apretarlos, el anfitrión manda por red el paquete 0x2a0 (abrir; dato = 0 votación, 1 sorteo) con 0x4dd3b0, que
+  también vuelve a la propia máquina. Cada PC, al recibirlo (gancho en el receptor 0x4b6a22, solo si lo manda la
+  máquina 0), abre `Herramientas\votacion.exe` / `sorteo.exe`: el anfitrión con `--operador`; las demás con
+  `--espectador <8 cifras>`, en 1 los bandos activos, humanos y de esa PC. Si no está el programa, un cartel
+  "No se pudo abrir Herramientas\...".
+- Estado: cada 250 ms (gancho en la función ociosa 0x4dea40) el anfitrión mueve `Herramientas\<prog>.op` a `.env`, lo
+  lee (hasta 255 bytes) y lo manda como paquete 0x2a1; cada PC lo escribe en `Herramientas\<prog>.ver` (vía `.vtmp` y
+  mover, para no dejarlo a medias). Un exe sin el parche ignora los tipos mayores que 0x209.
+- No toca la simulación: no cambia nada del estado de la partida, solo archivos de `Herramientas\`.
+
+En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzándolos desde otra carpeta):
+- Votación: `VOT <sesión> <libre|auto|cerrado> <n.º votación automática> <n.º reset> <8 votos s/n/->`.
+- Sorteo: `SOR <sesión> <libre|sorteando|resultado|cerrado> <evento> <número 1-8 o - de cada bando>`.
+- Operador: escribe `.op` en cada cambio y cada 3 s; al cerrar escribe "cerrado". Espectador: lee `.ver` cada 300 ms,
+  copia votos/números, reloj y tambores; botones sin clic (salvo el de monitor en Votación); sus bandos con marco
+  dorado; se cierra con el "cerrado" de su sesión. Ventanas encima de todo, una sola por PC (mutex; si ya está
+  abierta, se la trae al frente). Sin argumentos, funcionan como antes.
+- Sorteo: cursores e ícono ahora se buscan junto al programa (`resource_path`), no en la carpeta actual.
+
+**Lo que falta de B**
+1. **Instalar los programas en `C:\Warlords3\Herramientas\`** de cada PC: entrada en `parches.txt` del actualizador.
+   Los repos Votacion y Sorteo no tienen remoto ni releases todavía; hace falta uno para publicar los exe.
+   Hasta entonces, el botón muestra el cartel "No se pudo abrir...".
+2. **Prueba real en red** (dos PC con DarklordAV.exe): no se pudo hacer acá. Lo emulado y probado: menú, botón,
+   paquetes, archivos, y los dos programas con archivos simulados. Sin probar: el viaje real por la red y que la
+   ventana quede encima del juego en ventana (GOG dxcfg).
 
 ---
 
