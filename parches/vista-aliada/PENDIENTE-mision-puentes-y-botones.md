@@ -128,9 +128,41 @@ no las usa.
 
 ---
 
-## Datos que hacen falta del usuario
+## Respuestas del usuario (7/10/2026) y decisión técnica
 
-1. Votación: ¿la maneja una sola persona en su PC (los 8 paneles en una pantalla), o cada jugador vota desde la suya?
-   Hoy el programa es local, de una sola máquina.
-2. ¿Quién puede apretar el botón de votación y pausar la partida: cualquier jugador, o solo el anfitrión?
-3. ¿Los programas van en todas las PC (por el actualizador, 50–60 MB cada uno) o solo en la de quien los maneja?
+Respuestas (resumidas):
+1. Votación: todos ven la ventana; cada PC tiene el programa en una subcarpeta de Warlords. La opera uno solo; lo
+   importante es que cada jugador vea si su voto quedó cargado por sí o por no.
+2. Cualquier jugador puede pedir votación y pausa. Si eso puede desestabilizar la partida, el jugador solo anuncia el
+   pedido y la activa el anfitrión.
+3. Los programas van en todas las PC por el actualizador. Para él, **el mayor riesgo es que se desincronice la partida
+   y se pierdan turnos**; el cómo queda a mi criterio (compartir pantalla por GameRanger, o que cada PC abra su copia a
+   pedido del anfitrión vía Warlords).
+
+Decisión:
+- **Cada PC abre su propia copia, a pedido del anfitrión.** Compartir pantalla por GameRanger depende de un tercero
+  que el parche no controla ni puede verificar.
+- **Una sola autoridad: el anfitrión.** Cualquier jugador aprieta "Pedir votación"; eso solo le avisa al anfitrión
+  ("X pide votación"). El anfitrión abre la votación y la pausa. Nunca dos máquinas cambian el estado a la vez.
+- **Nada de lo nuevo viaja como estado de partida.** Los pedidos, la apertura y el estado de los votos viajan por un
+  canal que no forma parte de la simulación (el chat o los mensajes entre jugadores del propio juego, a confirmar),
+  así no hay nada que pueda desincronizar turnos. La pausa, por el mecanismo que el juego ya tenga para cambiar el
+  límite de tiempo en partida, si existe (ver C): ese camino ya viene sincronizado por el original.
+- Si el juego no tiene un canal de mensajes en partida que sirva, se reconsidera antes de tocar el protocolo de red,
+  y se le explica al usuario.
+
+Cambios en los programas (no son repos git; se los versiona primero):
+- Votación: un modo **operador** (el del anfitrión, el actual) que publica el estado de los 8 paneles, y un modo
+  **espectador** (los demás) que lo muestra de solo lectura, con el voto de cada uno resaltado.
+- Sorteo: igual, el anfitrión sortea y los demás ven el resultado en vivo.
+- El exe parcheado hace de puente: lee el estado que escribe el programa del anfitrión, lo manda por el canal de
+  mensajes, y en cada PC lo deja donde lo lee su copia en modo espectador.
+
+Distribución: entrada nueva en `parches.txt` que instala ambos en una subcarpeta de `C:\Warlords3`
+(p. ej. `Herramientas\`), con config.ini por PC.
+
+Lo primero a averiguar en la sesión que toque B/C:
+1. ¿Hay chat o mensajes entre jugadores en partida y en la pantalla previa? Formato, largo máximo, si el anfitrión
+   los reenvía.
+2. ¿El límite de tiempo se puede cambiar en partida, y quién lo cambia?
+3. ¿Dónde se ve "quién es el anfitrión" en el exe?
