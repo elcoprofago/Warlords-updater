@@ -166,3 +166,26 @@ Lo primero a averiguar en la sesión que toque B/C:
    los reenvía.
 2. ¿El límite de tiempo se puede cambiar en partida, y quién lo cambia?
 3. ¿Dónde se ve "quién es el anfitrión" en el exe?
+
+## Segunda ronda de respuestas (7/10/2026)
+
+- El juego tiene chat en partida ("rudimentario y básico, pero existe"): es el canal candidato.
+- La orden de abrir votación o sorteo sale del Warlords del anfitrión hacia los demás. Los jugadores hablan por audio
+  (WhatsApp, Discord) durante la partida, así que **el pedido de votación no hace falta implementarlo**: no hay botón
+  "Pedir votación". El problema real es que hasta ahora solo veía el sorteo o la votación quien corría el programa.
+- Para los no anfitriones, modo solo lectura (ven, no ejecutan). Hay permiso pleno para modificar ambos programas.
+- La integración con el actualizador, más adelante.
+
+## Hecho el 7/10/2026: versión en el título
+
+- Votacion y Sorteo son repos git desde hoy (solo locales, sin remoto todavía; hará falta uno con releases para
+  distribuirlos por el actualizador). `VERSION = "1.0.0"` en `votacion.py` / `sorteo.py`; el título muestra
+  "Sistema de Votación v1.0.0" y "Sorteo v1.0.0" (verificado leyendo el título de la ventana del exe compilado).
+- `compilar.ps1` en cada repo: Votación con `py -3.14` (PyQt5 5.15.11 instalado ahí), Sorteo con `py -3.10`.
+  Chequea el código de salida y que el exe se haya regenerado.
+- `hooks/pre-commit` (core.hooksPath hooks): bloquea cambios en el .py, `assets/` o el .spec sin subir VERSION; recuerda
+  correr `compilar.ps1`. Probado en caliente en un clon: bloquea .py y asset sin VERSION, pasa con VERSION y con otro
+  archivo (control).
+- Ojo para lanzarlo desde el juego: Sorteo carga cursores e ícono con rutas relativas al directorio actual
+  (`@assets/flecha.cur`, `assets/icono.ico`); hay que lanzarlo con el directorio de trabajo en su carpeta (o pasar
+  esas rutas a `resource_path`). `dist\sorteo.spec` genera además `dist\sorteo\sorteo.exe`.
