@@ -194,7 +194,37 @@ juego, pero creo que la partida no queda pausada"*.
 3. Prueba sugerida al usuario: límite de 1 minuto, abrir la Votación más de un minuto y cerrarla; el turno tiene que
    seguir con el tiempo que le quedaba. Control: sin votación vence al minuto, como siempre.
 
+**Confirmado por el usuario en partida real (7/10/2026, 1.0.17.0):** con límite de 1 minuto el turno vence a tiempo
+sin votación (control), y con la votación abierta la partida queda en pausa; el cartel se ve bien. Falta la red real
+con dos PC (punto 2).
+
 ---
+
+## E. Idea: resultado de la votación en el "Events Report" (sin empezar)
+
+Pedido del usuario (7/10/2026), como pregunta: que el reporte de eventos del juego diga, por ejemplo,
+"Resultados votacion: 5 por el SI, 3 por el NO". Medido en el código (Darklord.exe original):
+
+- **Reporte:** menú de reportes (textos Sagetext grupo 0x166; armado en 0x4b4d20), "Events Report" = opción 0x17.
+  Lo abre 0x4b3980: lee HISTORY.DAT (0x499450) a un búfer [0x587e44], página = ronda [0x587e40] (ronda actual =
+  [0x5032f8+0x30], 0x420a80). Dibuja 0x4b3ec0; cada línea la escribe 0x4b4110 con un `switch` por tipo de evento
+  (tipos 0..0x12, tabla 0x4b4798; textos Sagetext 0xb3..0xc5: "%s captures %s", "War declared with %s", "Alliance
+  formed with %s"...). Muestra a lo sumo 11 líneas por ronda.
+- **Eventos de la ronda en curso:** tabla 0x572788, 8 jugadores x 2 ranuras x 28 bytes. Alta: 0x498910(prioridad,
+  jugador, tipo, nombre, ...) — por jugador quedan las 2 de mayor prioridad. Registro: prioridad(2) jugador(2)
+  tipo(2) nombre(16) y tres words. 19 llamadores.
+- **Al cambiar de ronda** (0x4212b0, desde 0x4c07a9) 0x4989d0 agrega a HISTORY.DAT un bloque: cabecera 0x48 B
+  (datos por jugador), dueños de ciudades ([0x537e2a] bytes) y los registros con prioridad > 0; luego 0x4988d0
+  vacía la tabla. La partida guardada lo carga en 0x439c2b -> 0x498c40.
+- **El dato ya llega:** Votacion publica el "cerrado" con los votos finales (`VOT <sesión> cerrado a r <8 marcas
+  s/n/->`) y el parche ya lo recibe en todas las PC (pz_state). El "cerrado" de emergencia (`VOT - cerrado ...`,
+  sin programa en el anfitrión) no trae votos y habría que ignorarlo.
+- **Camino posible:** al recibir el "cerrado" con votos, agregar un registro propio (tipo nuevo 0x13 con los
+  conteos SI/NO en los words) que no ocupe las ranuras de los jugadores (por ejemplo, sumado al bloque al escribir
+  HISTORY.DAT, o una tabla aparte), y extender el `switch` de 0x4b4110 para dibujarlo con su texto.
+- **Riesgo de desincronizar:** ninguno sobre el juego: el reporte es solo lectura, nada lo usa para decidir. Lo
+  peor es que, si el "cerrado" llega justo en el cambio de ronda, una PC lo anote en una ronda y otra en la
+  siguiente (con la pausa activa eso es improbable).
 
 ## D. Diferido: programar la IA (otra sesión)
 
