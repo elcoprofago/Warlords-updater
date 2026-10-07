@@ -4855,6 +4855,7 @@ TOOLS = ('votacion', 'sorteo')
 TL_OPEN, TL_STATE = 0x2a0, 0x2a1   # carga: herramienta (dword) | herramienta (dword) + texto con NUL (hasta 256)
 VOTE_TXT, VOTE_HOT, COIN = 0x19, 0x1a, 97
 SORTEO_FILE = RAM_FILE + 1   # hoja SETS\Fantasy\sorteo.pcx con el dibujo del botón de Sorteo
+SORTEO_X, SORTEO_Y, SORTEO_W, SORTEO_H = 567, 409, 64, 60   # abajo a la derecha, en el cielo junto al murciélago
 GETTICK, CREATEPROC, CLOSEH, MOVEF, DELF = 0x5a97f8, 0x5a97d0, 0x5a97d8, 0x5a97e4, 0x5a97c0
 CREATEF, READF, WRITEF, CREATETH, MSGBOX, STRLEN = 0x5a9810, 0x5a9814, 0x5a9818, 0x5a97ec, 0x5a9c30, 0x5a9b98
 SIDE, SIDE_ON, SIDE_HUMAN, SIDE_MACHINE = 0x1f8, 0x536b30, 0x536c12, 0x536b33
@@ -5176,7 +5177,7 @@ td_vote:
     ret
 ''')
 
-# Pantalla de preparación (diálogo 7): la moneda se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
+# Pantalla de preparación (diálogo 7): el botón de Sorteo se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
 # clic (ebp = control; los mayores que 96 caen en "ja 0x46ed83") manda abrir el Sorteo.
 tl_setinit = place('tl_setinit', f'''
     call 0x4dd3a0
@@ -5453,15 +5454,15 @@ for k, (ti, hi) in enumerate(MENU):
     struct.pack_into('<I', buf, o + 0x1c, 16)
 new_list[35] = [vtxt, vhot]
 
-# Diálogo 7 (preparación): botón COIN clonado de Chat (id 80, butt_std en (436,80)), arriba de él; su dibujo es el
-# ícono de Sorteo, en (0,0) de la hoja SORTEO_FILE (más abajo).
+# Diálogo 7 (preparación): botón COIN clonado de Chat (id 80, butt_std en (436,80)), en SORTEO_X/Y y de
+# SORTEO_W x SORTEO_H; su dibujo es el ícono de Sorteo, en (0,0) de la hoja SORTEO_FILE (más abajo).
 r7 = records(res, 7)
 assert max(r7) == COIN - 1
 p, t = r7[80]; assert t == 1
 coin = bytearray(res[p:p + 4 + SZ[1]])
 assert struct.unpack_from('<11I', coin, 0) == (1, 80, 6, 453, 1, 1, 0x79, 436, 80, 20, 20)
-struct.pack_into('<IIII', coin, 4, COIN, 6, 430, 1)
-struct.pack_into('<III', coin, 0x18, SORTEO_FILE, 0, 0)
+struct.pack_into('<IIII', coin, 4, COIN, SORTEO_X, SORTEO_Y, 1)
+struct.pack_into('<5I', coin, 0x18, SORTEO_FILE, 0, 0, SORTEO_W, SORTEO_H)
 setstr(coin, 0x30, 16, 'Draw Lots')
 setstr(coin, 0x40, 64, 'Draw lots for the starting order')
 new_list[7] = [coin]
@@ -5517,43 +5518,42 @@ table_add(res, 4, RAM_IMG, struct.pack('<8i', RAM_IMG, RAM_FILE, 0, 0, 0, 0, 128
 table_add(res, 2, RAM_FILE, bytes(ram))
 
 # Hoja SORTEO_FILE = SETS\Fantasy\sorteo.pcx, con los campos de butt_std (0x79; el 16 es la carpeta del set): el
-# dibujo del botón de Sorteo. Un botón de butt_std usa cuatro cuadros de 20x20, uno debajo del otro: normal,
-# apretado, deshabilitado y con el puntero encima (los de la moneda de (436,0) de BUTT_STD.PCX: relieve hacia afuera,
-# hacia adentro con aro naranja, cara en negro, hacia afuera con aro naranja). Cada cuadro conserva el marco de la
-# moneda y lleva en el centro (16x16) el ícono del programa Sorteo (sorteo_icono.png, de su assets\icono.ico): con
-# un borde naranja (71) en vez del aro, y oscurecido en el deshabilitado. Los colores salen de la paleta de
-# BUTT_STD.PCX (la misma de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
+# dibujo del botón de Sorteo, de SORTEO_W x SORTEO_H. Un botón usa cuatro cuadros de su tamaño, uno debajo del otro:
+# normal, apretado, deshabilitado y con el puntero encima (así están también los de 32x33 de BUTT_STD.PCX). El índice
+# 11 (magenta) es transparente: el fondo de esos botones. Cada cuadro lleva el ícono del programa Sorteo
+# (sorteo_icono.png: el de 64x64 de su assets\icono.ico, recortado a lo dibujado) a 1 píxel del borde: apretado,
+# corrido un píxel abajo a la derecha y con contorno naranja (71, el aro de los botones apretados de BUTT_STD); con el
+# puntero encima, con el contorno; deshabilitado, oscurecido. Los colores salen de la paleta de BUTT_STD.PCX (la misma
+# de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
 from PIL import Image
 SRC_BUTT = r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX'
 butt = Image.open(SRC_BUTT)
 assert butt.mode == 'P' and butt.size == (472, 224)
 pal = butt.getpalette()[:768]
 assert Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getpalette()[:768] == pal
+assert butt.getpixel((272, 0)) == 11 and pal[33:36] == [255, 0, 255]   # fondo transparente de los botones 32x33
+assert butt.getpixel((436 + 8, 20 + 3)) == 71                          # el aro naranja de la moneda apretada
 usables = sorted((set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())) - {11})
 def cercano(rgb, _memo={}):
     if rgb not in _memo:
         _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _memo[rgb]
 icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sorteo_icono.png')).convert('RGBA')
-assert icono.size == (16, 16)
-oscuro = Image.merge('RGBA', [b.point(lambda v: v * 3 // 10) for b in icono.split()[:3]] + [icono.split()[3]])
-hoja = Image.new('P', (20, 80))
+assert icono.size == (SORTEO_W - 2, SORTEO_H - 2)
+hoja = Image.new('P', (SORTEO_W, 4 * SORTEO_H), 11)
 hoja.putpalette(butt.getpalette())
-for fila, (ic, aro) in enumerate(((icono, False), (icono, True), (oscuro, False), (icono, True))):
-    cuadro = butt.crop((436, 20 * fila, 456, 20 * fila + 20))
-    rgba = cuadro.convert('RGBA')
-    rgba.alpha_composite(ic, (2, 2))
-    for y in range(20):
-        for x in range(20):
-            dentro = 2 <= x < 18 and 2 <= y < 18
-            if not dentro:
-                v = cuadro.getpixel((x, y))
-            elif aro and (x in (2, 17) or y in (2, 17)):
-                v = 71
-            else:
-                v = cercano(rgba.getpixel((x, y))[:3])
-            hoja.putpixel((x, 20 * fila + y), v)
-assert butt.getpixel((436 + 8, 20 + 3)) == 71   # el aro naranja de la moneda apretada
+for fila, (dx, oscuro, aro) in enumerate(((1, False, False), (2, False, True), (1, True, False), (1, False, True))):
+    y0 = fila * SORTEO_H
+    lleno = set()
+    for y in range(icono.height):
+        for x in range(icono.width):
+            r, g, b_, a_ = icono.getpixel((x, y))
+            if a_ < 128 or not (0 <= x + dx < SORTEO_W and 0 <= y + dx < SORTEO_H): continue
+            if oscuro: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
+            hoja.putpixel((x + dx, y0 + y + dx), cercano((r, g, b_))); lleno.add((x + dx, y + dx))
+    if aro:
+        for x, y in {(x + i, y + j) for x, y in lleno for i in (-1, 0, 1) for j in (-1, 0, 1)} - lleno:
+            if 0 <= x < SORTEO_W and 0 <= y < SORTEO_H: hoja.putpixel((x, y0 + y), 71)
 import io
 pcx = io.BytesIO(); hoja.save(pcx, 'PCX'); SORTEO_PCX = pcx.getvalue()
 o2, _ = table(res, 2)
@@ -5581,7 +5581,9 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):
     assert os.path.abspath(path).lower() not in (os.path.abspath(SRC_EXE).lower(), os.path.abspath(SRC_RES).lower())
-for rel_, data in NUEVOS.items():   # uno distinto ya presente lo hizo otro (un .STT, con el editor): no se pisa
+# Un .STT distinto ya presente lo hizo otro (con el editor): no se pisa. sorteo.pcx es del parche, como el exe y el
+# RES: se reescribe.
+for rel_, data in STTS.items():
     path = os.path.join(OUT_DIR, rel_)
     if os.path.exists(path) and open(path, 'rb').read() != data:
         sys.exit(f'{path} ya existe con otro contenido; no lo piso. Renombralo o borralo y volve a armar.')

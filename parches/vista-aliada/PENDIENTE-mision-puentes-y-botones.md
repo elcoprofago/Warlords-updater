@@ -122,7 +122,10 @@ En el juego (`build.py`, cuevas `tl_*`; prueba `prueba_botones.py`, emulada, con
   arriba de Chat, en (6, 430). Deshabilitado fuera del anfitrión. 1.0.15.0: en vez de la moneda de BUTT_STD lleva el
   ícono del programa Sorteo (`sorteo_icono.png`, 16×16) sobre el marco de la moneda: hoja nueva
   `SETS\Fantasy\sorteo.pcx` (20×80, 4 cuadros: normal, apretado, deshabilitado, puntero encima; paleta de BUTT_STD),
-  archivo 166 de la tabla de archivos del RES.
+  archivo 166 de la tabla de archivos del RES. 1.0.16.0: a pedido del usuario ("muy pequeño, al menos el triple"),
+  64×60 con el ícono de 64 px entero y fondo transparente (índice 11), abajo a la derecha en (567, 409), junto al
+  murciélago: al lado de Chat no entra. Los estados van apilados cada `alto` píxeles, como los botones 32×33 de
+  BUTT_STD.
 - Al apretarlos, el anfitrión manda por red el paquete 0x2a0 (abrir; dato = 0 votación, 1 sorteo) con 0x4dd3b0, que
   también vuelve a la propia máquina. Cada PC, al recibirlo (gancho en el receptor 0x4b6a22, solo si lo manda la
   máquina 0), abre `Herramientas\votacion.exe` / `sorteo.exe`: el anfitrión con `--operador`; las demás con
@@ -153,6 +156,13 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
 ---
 
 ## C. Pausa mientras se vota
+
+**Estado al 7/10/2026 (vista-aliada 1.0.16.0):** sin empezar. El usuario probó "Votacion" en partida de un jugador:
+*"arranca y se ve bien sobre la pantalla del juego, pero creo que la partida no queda pausada"*. Es lo esperado: nada
+de C está hecho. Antes de programar, medir qué sigue corriendo con la votación abierta, en un jugador y en red: reloj
+del turno, turnos de la IA, clics sobre el mapa. Con eso, decidir qué significa "pausada" (detener el reloj, bloquear
+órdenes o las dos cosas). Retomar con: *"Seguimos con PENDIENTE-mision-puentes-y-botones.md, parte C: pausa mientras
+se vota"*.
 
 **Lo que ya se sabe**
 - El límite de tiempo por turno existe en multijugador. Textos en Sagetext: "You may change your time limit...",

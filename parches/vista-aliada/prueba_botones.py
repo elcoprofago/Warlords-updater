@@ -309,7 +309,12 @@ ver('menú: Votacion debajo de Chat Mode', [struct.unpack_from('<I', n35[i], 0xc
 ver('menú: zona de Votacion', struct.unpack_from('<6I', n35[VOTE_HOT], 8), (26, 74, 1, 0, 138, 16))
 ver('control: zona de Help conserva x y ancho', struct.unpack_from('<6I', n35[0xb], 8), (28, 42, 1, 0, 136, 16))
 n7, o7 = recs(NUEVO, 7), recs(ORIG, 7)
-ver('preparación: moneda', struct.unpack_from('<11I', n7[COIN], 0), (1, COIN, 6, 430, 1, 1, 166, 0, 0, 20, 20))
+ver('preparación: botón de Sorteo', struct.unpack_from('<11I', n7[COIN], 0), (1, COIN, 567, 409, 1, 1, 166, 0, 0, 64, 60))
+def rect(r): x, y = struct.unpack_from('<II', r, 8); w, h = struct.unpack_from('<II', r, 0x24); return x, y, x + w, y + h
+x0, y0, x1, y1 = rect(n7[COIN])
+ver('preparación: Sorteo dentro de la pantalla y sin tapar otro botón', (x1 <= 640 and y1 <= 480,
+    [i for i, r in n7.items() if r[0] == 1 and i != COIN and not (rect(r)[2] <= x0 or x1 <= rect(r)[0] or rect(r)[3] <= y0 or y1 <= rect(r)[1])]),
+    (True, []))
 def archivos(path):
     d = open(path, 'rb').read(); o = 8
     while True:
@@ -324,8 +329,10 @@ ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0
 ver('control: archivos originales intactos', fn[:165] == fo, True)
 from PIL import Image
 hoja = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sorteo.pcx'))
-ver('sorteo.pcx: 4 cuadros de 20x20, misma paleta que BUTT_STD', (hoja.mode, hoja.size, hoja.getpalette()[:768]),
-    ('P', (20, 80), Image.open(r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
+ver('sorteo.pcx: esquinas transparentes (11), centro dibujado', [hoja.getpixel((x, 60 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 59), (32, 30))],
+    [True, True, False] * 4)
+ver('sorteo.pcx: 4 cuadros de 64x60, misma paleta que BUTT_STD', (hoja.mode, hoja.size, hoja.getpalette()[:768]),
+    ('P', (64, 240), Image.open(r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
 ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 2)
