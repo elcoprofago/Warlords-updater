@@ -157,30 +157,40 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
 
 ## C. Pausa mientras se vota
 
-**Estado al 7/10/2026 (vista-aliada 1.0.16.0):** sin empezar. El usuario probó "Votacion" en partida de un jugador:
-*"arranca y se ve bien sobre la pantalla del juego, pero creo que la partida no queda pausada"*. Es lo esperado: nada
-de C está hecho. Antes de programar, medir qué sigue corriendo con la votación abierta, en un jugador y en red: reloj
-del turno, turnos de la IA, clics sobre el mapa. Con eso, decidir qué significa "pausada" (detener el reloj, bloquear
-órdenes o las dos cosas). Retomar con: *"Seguimos con PENDIENTE-mision-puentes-y-botones.md, parte C: pausa mientras
-se vota"*.
+**Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la
+prueba real (ver abajo). Origen: el usuario probó "Votacion" en un jugador: *"arranca y se ve bien sobre la pantalla del
+juego, pero creo que la partida no queda pausada"*.
 
-**Lo que ya se sabe**
-- El límite de tiempo por turno existe en multijugador. Textos en Sagetext: "You may change your time limit...",
-  "No Limit", "30 sec's", "1 min", "%d min's", "%d minutes have elapsed!".
+**Lo medido en el código del juego (no en una partida real)**
+- La cuenta regresiva del turno la lleva **cada PC por su cuenta**, con su propio reloj: vencimiento en `[0x4ff7a8]`
+  (se fija al empezar el turno en 0x4c0f70 = ahora + límite·30 s; `[0x53c38f] >> 3` = límite en medios minutos).
+  Al vencer, la PC del jugador de turno manda el fin de turno (0x4c0fe0 en el bucle principal; 0x4c10c0 / 0x4c1250
+  dentro de los diálogos, con 20 s de gracia en `[0x5885cc]`). El anfitrión no manda el reloj.
+- El límite se puede cambiar en partida (diálogo 0x46b640), pero toca opciones de la partida: no se usó.
+- Partida por minutos: fin en `[0x5032f8+0x4c]` (-1 si no hay), también con el reloj de cada PC.
+- Teclado y mouse llegan solo por mensajes de Windows (no hay DirectInput ni GetAsyncKeyState); el juego tiene 6
+  bucles que llaman a DispatchMessageA.
+- Los turnos de la IA no tienen reloj: siguen corriendo durante la pausa.
 
-**Lo que falta averiguar**
-1. Dónde corre la cuenta regresiva del turno y si cada máquina la lleva por su cuenta o la manda el anfitrión.
-2. Qué comando de red existe para cambiar el límite o avisar a los demás (el texto "You may change your time limit..."
-   sugiere que se puede cambiar en partida).
+**Qué hace "pausada" (las dos cosas: reloj y órdenes)**
+- La orden de abrir la Votación (TL_OPEN 0, que ya llegaba a todas las PC) pausa; el estado que manda el anfitrión
+  cada 3 s (TL_STATE) la mantiene, y "cerrado" la levanta. Si el estado deja de llegar 60 s (programa colgado o
+  matado), cada PC se reanuda sola. Si el anfitrión no tiene el programa, manda "cerrado" enseguida.
+- En pausa, cada PC corre hacia adelante el vencimiento del turno, la gracia y el fin de la partida por minutos:
+  el reloj en pantalla queda quieto.
+- En pausa, el despacho de mensajes descarta teclas y botones del mouse (el movimiento pasa). No se deshabilita la
+  ventana: al cerrarse la Votación, Windows no le devolvería el foco.
+- Aviso en pantalla "Votacion en curso: partida en pausa" (renglón de mensajes del juego, 0x4c2790) mientras dure.
+- Sorteo no pausa (se usa antes de la partida). Un estado sin orden de abrir (un .op viejo) no pausa, y al abrir se
+  borran .op y .env viejos.
+- Nada de esto viaja como estado de partida ni se guarda: no puede desincronizar turnos.
 
-**Plan**
-- Al abrir Votación, detener la cuenta del turno (o sumarle el tiempo que esté abierta) en **todas** las máquinas.
-  Al cerrarla, se reanuda.
-- Si el reloj lo lleva cada máquina, hace falta un mensaje de red ("pausa / reanudar"). Si lo manda el anfitrión,
-  alcanza con pausarlo ahí.
-- Mientras dura la pausa, mostrar un cartel "Votación en curso" a todos, para que nadie crea que el juego se colgó.
-- Prueba: dos instancias en red local (o emulación del manejador de red) con límite de 1 minuto. Abrir la votación
-  más de un minuto: el turno no vence. Control: sin votación, el turno vence igual que en el original.
+**Sin verificar (no se puede desde acá)**
+1. Partida real: que el aviso se vea donde se dibujan los mensajes del juego, y que con la Votación encima no quede
+   ningún clic que pase al juego.
+2. Red real con dos PC: que todas pausen y reanuden juntas (la diferencia es la demora de red, décimas de segundo).
+3. Prueba sugerida al usuario: límite de 1 minuto, abrir la Votación más de un minuto y cerrarla; el turno tiene que
+   seguir con el tiempo que le quedaba. Control: sin votación vence al minuto, como siempre.
 
 ---
 

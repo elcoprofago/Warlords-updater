@@ -4880,6 +4880,197 @@ for t, n in enumerate(TOOLS):
     tl_path[t, 'mask'] = tl_path[t, 'sp_cmd'] + len(sp) - 9   # carácter s: '1' si el bando s es humano de esta PC
     tl_path[t, 'err'] = place_data(f'tl_{n}_err', cstr_(f'No se pudo abrir Herramientas\\{n}.exe'))
 
+# ---- Pausa mientras se vota (pz_*). Cada PC lleva su propia cuenta regresiva del turno (vence en [0x4ff7a8], con el
+# timeGetTime de esa PC; al vencer, la PC del jugador de turno manda el fin de turno), así que la pausa se arma en cada
+# PC con lo que ya viaja por red: la orden de abrir la Votación (TL_OPEN 0) pausa, y el estado que manda el anfitrión
+# (TL_STATE 0, "VOT <sesión> <fase> ...") la mantiene hasta que dice "cerrado". Si el estado deja de llegar 60 s (el
+# programa se colgó o se mató), se reanuda sola. Nada de esto se guarda ni viaja como estado de la partida.
+# En pausa: se corren hacia adelante el vencimiento del turno, el de los 20 s de gracia ([0x5885cc]) y el fin de la
+# partida por minutos ([0x5032f8+0x4c], -1 si no hay); el despacho de mensajes descarta teclas y botones del mouse
+# (no se deshabilita la ventana: al cerrarse la Votación, Windows no le devolvería el foco a una ventana deshabilitada);
+# y se mantiene un aviso en pantalla con 0x4c2790 (4 renglones de 64 bytes en 0x5885e8, vencimiento en 0x5885d8).
+PZ_TEXT = 'Votacion en curso: partida en pausa'
+PZ_WATCH = 60000
+TURN_END, GRACE_END, GAMECLK, MSG_TXT, MSG_END = 0x4ff7a8, 0x5885cc, 0x5032f8, 0x5885e8, 0x5885d8
+DISPATCH = 0x5a9c5c   # DispatchMessageA
+pz_text = place_data('pz_text', cstr_(PZ_TEXT))
+pz_vars = place_data('pz_vars', bytes(12))   # +0 en pausa, +1 votación abierta, +4 último tick, +8 último estado
+PZ_ON, PZ_ARM, PZ_LAST, PZ_SEEN = pz_vars, pz_vars + 1, pz_vars + 4, pz_vars + 8
+pz_closepkt_data = struct.pack('<I', 0) + cstr_('VOT - cerrado 0 0 --------')
+pz_closepkt = place_data('pz_closepkt', pz_closepkt_data)
+
+# Correr los vencimientos lo que pasó desde la última vez (se llama a cada vuelta de la función ociosa y al entrar a los
+# controles del reloj 0x4c0fe0, 0x4c10c0 y 0x4c1250). Conserva todos los registros.
+pz_tick = place('pz_tick', f'''
+    pushad
+    call dword ptr [{GETTICK:#x}]
+    mov edx, eax
+    xchg edx, dword ptr [{PZ_LAST:#x}]
+    cmp byte ptr [{PZ_ON:#x}], 0
+    je pk_end
+    sub eax, edx
+    add dword ptr [{TURN_END:#x}], eax
+    add dword ptr [{GRACE_END:#x}], eax
+    cmp dword ptr [{GAMECLK + 0x4c:#x}], -1
+    je pk_end
+    cmp dword ptr [{GAMECLK + 0x50:#x}], -1
+    je pk_end
+    add dword ptr [{GAMECLK + 0x4c:#x}], eax
+pk_end:
+    popad
+    ret
+''')
+
+# Llegó la orden de abrir la Votación.
+pz_open = place('pz_open', f'''
+    pushad
+    call dword ptr [{GETTICK:#x}]
+    mov dword ptr [{PZ_SEEN:#x}], eax
+    mov byte ptr [{PZ_ARM:#x}], 1
+    cmp byte ptr [{PZ_ON:#x}], 0
+    jne po_end
+    mov dword ptr [{PZ_LAST:#x}], eax
+    mov byte ptr [{PZ_ON:#x}], 1
+po_end:
+    popad
+    ret
+''')
+
+# Llegó un estado de la Votación (edi = texto). Solo cuenta después de una orden de abrir: un .op viejo que quedó de
+# otra partida no pausa.
+pz_state = place('pz_state', f'''
+    pushad
+    cmp byte ptr [{PZ_ARM:#x}], 0
+    je pst_end
+    cmp dword ptr [edi], 0x20544f56
+    jne pst_end
+    call dword ptr [{GETTICK:#x}]
+    mov dword ptr [{PZ_SEEN:#x}], eax
+    lea esi, [edi + 4]
+pst_skip:
+    mov cl, byte ptr [esi]
+    test cl, cl
+    jz pst_end
+    inc esi
+    cmp cl, 0x20
+    jne pst_skip
+    cmp dword ptr [esi], 0x72726563
+    jne pst_on
+    cmp dword ptr [esi + 4], 0x206f6461
+    jne pst_on
+    mov byte ptr [{PZ_ARM:#x}], 0
+    mov byte ptr [{PZ_ON:#x}], 0
+    jmp pst_end
+pst_on:
+    cmp byte ptr [{PZ_ON:#x}], 0
+    jne pst_end
+    mov dword ptr [{PZ_LAST:#x}], eax
+    mov byte ptr [{PZ_ON:#x}], 1
+pst_end:
+    popad
+    ret
+''')
+
+# Renglón del aviso en pantalla: eax = 0..3, o -1 si no está.
+pz_find = place('pz_find', f'''
+    push ecx
+    push esi
+    push edi
+    xor ecx, ecx
+pf_slot:
+    mov esi, ecx
+    shl esi, 6
+    add esi, {MSG_TXT:#x}
+    mov edi, {pz_text:#x}
+pf_cmp:
+    mov al, byte ptr [esi]
+    cmp al, byte ptr [edi]
+    jne pf_next
+    test al, al
+    jz pf_found
+    inc esi
+    inc edi
+    jmp pf_cmp
+pf_next:
+    inc ecx
+    cmp ecx, 4
+    jb pf_slot
+    or ecx, -1
+pf_found:
+    mov eax, ecx
+    pop edi
+    pop esi
+    pop ecx
+    ret
+''')
+
+# Cada ~250 ms (desde tl_idle): vigilancia de los 60 s y el aviso (se pone si no está, se le estira el vencimiento si
+# está; al reanudar se lo deja vencer ya).
+PZ_SLOW = f'''
+    cmp byte ptr [{PZ_ON:#x}], 0
+    je pw_off
+    call dword ptr [{GETTICK:#x}]
+    mov ebx, eax
+    sub eax, dword ptr [{PZ_SEEN:#x}]
+    cmp eax, {PZ_WATCH}
+    jb pw_show
+    mov byte ptr [{PZ_ON:#x}], 0
+    jmp pw_off
+pw_show:
+    call {pz_find:#x}
+    test eax, eax
+    js pw_post
+    add ebx, 5000
+    mov dword ptr [eax * 4 + {MSG_END:#x}], ebx
+    jmp pw_end
+pw_post:
+    push 50
+    push {pz_text:#x}
+    call 0x4c2790
+    add esp, 8
+    jmp pw_end
+pw_off:
+    call {pz_find:#x}
+    test eax, eax
+    js pw_end
+    mov ebx, eax
+    call dword ptr [{GETTICK:#x}]
+    mov dword ptr [ebx * 4 + {MSG_END:#x}], eax
+pw_end:
+'''
+
+# DispatchMessageA de los 6 bucles de mensajes del juego: en pausa no pasan teclas (0x100..0x109) ni botones y rueda
+# del mouse (0x201..0x20e). El movimiento del mouse sí.
+pz_disp = place('pz_disp', f'''
+    cmp byte ptr [{PZ_ON:#x}], 0
+    je pd_pass
+    mov eax, dword ptr [esp + 4]
+    mov eax, dword ptr [eax + 4]
+    cmp eax, 0x100
+    jb pd_pass
+    cmp eax, 0x109
+    jbe pd_drop
+    cmp eax, 0x201
+    jb pd_pass
+    cmp eax, 0x20e
+    ja pd_pass
+pd_drop:
+    xor eax, eax
+    ret 4
+pd_pass:
+    jmp dword ptr [{DISPATCH:#x}]
+''')
+pz_dptr = place_data('pz_dptr', struct.pack('<I', pz_disp))
+
+# Entradas de los controles del reloj del turno: primero correr los vencimientos.
+pz_chk = {va: place(f'pz_chk_{va:x}', f'''
+    call {pz_tick:#x}
+    {insn}
+    jmp {va + 7:#x}
+''') for va, insn in ((0x4c0fe0, 'test byte ptr [0x53c38f], 0xf8'),
+                      (0x4c10c0, 'cmp byte ptr [0x4ff7a0], 0'),
+                      (0x4c1250, 'cmp byte ptr [0x4ff7a0], 0'))}
+
 # Aviso sin bloquear el juego (un MessageBox modal en el bucle principal frenaría la red): en un hilo aparte.
 tl_warn = place('tl_warn', f'''
     mov eax, dword ptr [esp + 4]
@@ -4927,11 +5118,15 @@ tr_copy:
     mov al, byte ptr [esi + edx + 0x10]
     mov byte ptr [edi + edx], al
     test al, al
-    jz 0x4b85bb
+    jz tr_done
     inc edx
     cmp edx, 255
     jb tr_copy
     mov byte ptr [edi + edx], 0
+tr_done:
+    cmp edi, {tl_buf:#x}
+    jne 0x4b85bb
+    call {pz_state:#x}
     jmp 0x4b85bb
 tr_open:
     cmp word ptr [esi + 6], 0
@@ -4940,16 +5135,32 @@ tr_open:
     cmp eax, {len(TOOLS)}
     jae 0x4b85bb
     mov byte ptr [eax + {TL_PEND_OPEN:#x}], 1
+    test eax, eax
+    jnz 0x4b85bb
+    call {pz_open:#x}
     jmp 0x4b85bb
 ''')
 
 def tl_tool(t):
     p = lambda k: f'{tl_path[t, k]:#x}'
+    fail_close = '' if t else f'''
+    test ebx, ebx
+    jnz to{t}_noclose
+    push {len(pz_closepkt_data)}
+    push {pz_closepkt:#x}
+    push {TL_STATE:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+to{t}_noclose:'''
     return f'''
     cmp byte ptr [{TL_PEND_OPEN + t:#x}], 0
     je to{t}_end
     mov byte ptr [{TL_PEND_OPEN + t:#x}], 0
     push {p('ver')}
+    call dword ptr [{DELF:#x}]
+    push {p('op')}
+    call dword ptr [{DELF:#x}]
+    push {p('env')}
     call dword ptr [{DELF:#x}]
     call 0x4dd3a0
     movzx ebx, ax
@@ -4994,6 +5205,7 @@ to{t}_run:
     call dword ptr [{CLOSEH:#x}]
     jmp to{t}_end
 to{t}_fail:
+    {fail_close}
     push 0
     push 0
     push {p('err')}
@@ -5094,6 +5306,7 @@ ts{t}_end:
 # por el programa y no se puede reemplazar, se reintenta en la vuelta siguiente.
 tl_idle = place('tl_idle', f'''
     pushad
+    call {pz_tick:#x}
     cmp byte ptr [{TL_BUSY:#x}], 0
     jne ti_done
     call dword ptr [{GETTICK:#x}]
@@ -5104,6 +5317,7 @@ tl_idle = place('tl_idle', f'''
     mov dword ptr [{TL_TICK:#x}], edx
     mov byte ptr [{TL_BUSY:#x}], 1
     {''.join(tl_tool(t) for t in range(len(TOOLS)))}
+    {PZ_SLOW}
     mov byte ptr [{TL_BUSY:#x}], 0
 ti_done:
     popad
@@ -5348,6 +5562,14 @@ patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tl_recv:#x}', 0x4b6a22))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
 patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
 assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')
+# Pausa mientras se vota (pz_*)
+for va, op in ((0x417652, 'ff15'), (0x417847, 'ff15'), (0x4790c9, '8b1d'), (0x4de957, '8b3d'), (0x4dea0c, 'ff15'),
+               (0x4e5db8, '8b1d')):
+    patch(va, bytes.fromhex(op) + struct.pack('<I', DISPATCH), bytes.fromhex(op) + struct.pack('<I', pz_dptr))
+patch(0x4c0fe0, bytes.fromhex('f6058fc35300f8'), asm(f'jmp {pz_chk[0x4c0fe0]:#x}', 0x4c0fe0))
+patch(0x4c10c0, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c10c0]:#x}', 0x4c10c0))
+patch(0x4c1250, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c1250]:#x}', 0x4c1250))
+assert rel(0x4c2790, 7) == bytes.fromhex('5333c05633d257') and rel(0x4e33c0, 2) == bytes.fromhex('ff25')
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,

@@ -253,13 +253,18 @@ w, red, po, ps, _ = ociosa(0, {H + 'votacion.op': b'v1 auto 1 0 s-------', H + '
 ver('anfitrión abre Votación como operador', [x for x in w.log if x[0] == 'proceso'],
     [('proceso', H + 'votacion.exe', f'"{H}votacion.exe" --operador', 0)])
 ver('  y cierra los handles del proceso', [x for x in w.log if x[0] == 'cerrar'], [('cerrar', 0x501), ('cerrar', 0x502)])
-ver('  y manda su estado', red, [('red', 0x2a1, struct.pack('<I', 0) + b'v1 auto 1 0 s-------', 260)])
+ver('  y no manda el .op viejo (lo borra antes de lanzar)', red, [])
 ver('  sin dejar .op, .env ni .ver viejo', sorted(w.fs), [])
 ver('  pedidos limpios', (po, ps), ([0, 0], [0, 0]))
+w, red, po, ps, _ = ociosa(0, {H + 'votacion.op': b'v1 auto 1 0 s-------'})
+ver('anfitrión con Votación abierta: manda su estado', red, [('red', 0x2a1, struct.pack('<I', 0) + b'v1 auto 1 0 s-------', 260)])
+ver('  sin dejar .op ni .env', sorted(w.fs), [])
 lados = [(1, (1, 1, 2)), (3, (1, 1, 1)), (5, (1, 0, 2)), (6, (0, 1, 2)), (7, (1, 1, 2))]
 w, red, po, ps, _ = ociosa(2, {H + 'sorteo.op': b'no es mio'}, abrir=(0, 1), lados=lados)
 ver('espectador abre Sorteo con sus bandos (1 y 7)', [x for x in w.log if x[0] == 'proceso'],
     [('proceso', H + 'sorteo.exe', f'"{H}sorteo.exe" --espectador 01000001', 0)])
+ver('  sin mandar nada', red, [])
+w, red, po, ps, _ = ociosa(2, {H + 'sorteo.op': b'no es mio'})
 ver('control: el espectador no manda ni toca .op', (red, sorted(w.fs)), ([], [H + 'sorteo.op']))
 w, red, po, ps, _ = ociosa(1, {H + 'votacion.ver': b'viejo'}, estado=(1, 0), bufs=('v1 libre 0 1 sn------', ''))
 ver('espectador recibe estado: .ver nuevo', (w.fs, ps), ({H + 'votacion.ver': b'v1 libre 0 1 sn------'}, [0, 0]))
