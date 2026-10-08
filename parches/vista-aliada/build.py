@@ -961,7 +961,7 @@ VERSION = '1.0.3'
 def cstr_(s): return s.encode('latin1') + b'\0'
 TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0, 0, GAME, 'Warlords III'),                       # título del About
-    (1, 0, 'Era de Alianzas', 'Darklords Rising'),       # subtítulo del menú principal (control 19)
+    (1, 0, '', 'Darklords Rising'),       # subtítulo del menú principal (control 19): va la imagen titulo.pcx
     (0x147, 3, GAME + '?', 'Warlords III - Darklords Rising?'),
     (0x148, 3, GAME + '?', 'Warlords III - Darklords Rising?'),
     (0x14c, 1, GAME + ' will now exit!', 'Warlords III - Darklords Rising will now exit!'),
@@ -5077,7 +5077,7 @@ pz_chk = {va: place(f'pz_chk_{va:x}', f'''
 # el tamaño en +0 y la cantidad de renglones en +0x44, las ciudades y los renglones) y vacía la tabla con 0x4988d0; el
 # informe (0x499450) arma las rondas pasadas desde HISTORY.DAT y la actual desde la tabla.
 # Como en las partidas en red están los 8 bandos activos, no hay renglones libres en esa tabla: los resultados van en
-# una aparte (vt_tab, hasta VT_MAX por ronda), con tipo 0x13 (nuevo), jugador 8, SI en +0x16 y NO en +0x18. Se
+# una aparte (vt_tab, hasta VT_MAX por ronda), con tipo 0x13 (nuevo), jugador = el bando que abrió la Votación (o 8, sin escudo), SI en +0x16 y NO en +0x18. Se
 # escriben en HISTORY.DAT antes que los sucesos de la ronda (el informe muestra 11 renglones por ronda), se suman a la
 # ronda en curso del informe y se guardan al final del .SAV ('VOTA', cantidad, tabla; el ejecutable original ignora lo
 # que sobra después del final y un .SAV viejo carga la tabla vacía).
@@ -5085,12 +5085,37 @@ pz_chk = {va: place(f'pz_chk_{va:x}', f'''
 # cuando el programa se cierra ("cerrado"). Si el programa muere sin cerrar, o el cierre es el de emergencia (sesión
 # "-"), no se anota nada.
 VT_MAX = 8
-VT_TYPE, VT_PLAYER = 0x13, 8
+VT_TYPE, VT_NOBODY = 0x13, 8
 vt_save = place_data('vt_save', b'VOTA' + bytes(4 + VT_MAX * 0x1c))   # tal cual se escribe al final del .SAV
 VT_N, VT_TAB = vt_save + 4, vt_save + 8
 vt_vars = place_data('vt_vars', bytes(0x20))   # +0 pendiente, +4 reinicios, +8 SI, +0xa NO, +0xc 'VOTA' leído, +0x10 sesión
 VT_HAVE, VT_RES, VT_SI, VT_NO, VT_MAGIC, VT_SES = (vt_vars + o for o in (0, 4, 8, 0xa, 0xc, 0x10))
 vt_fmt = place_data('vt_fmt', cstr_('Resultados votacion: %d por el SI, %d por el NO'))
+vt_owner = place_data('vt_owner', struct.pack('<I', VT_NOBODY))   # el bando que abrió la Votación en curso
+
+# Llegó la orden de abrir la Votación: la abre el anfitrión (máquina 0), así que el bando que la pidió es el primero
+# humano de la máquina 0 (cada PC lo calcula igual: los bandos son los mismos en todas). Ninguno: VT_NOBODY. Conserva
+# todos los registros.
+vt_open = place('vt_open', f'''
+    pushad
+    xor ecx, ecx
+vo_loop:
+    imul edx, ecx, {SIDE:#x}
+    cmp byte ptr [edx + {SIDE_ON:#x}], 0
+    je vo_next
+    cmp word ptr [edx + {SIDE_HUMAN:#x}], -1
+    jne vo_next
+    cmp byte ptr [edx + {SIDE_MACHINE:#x}], 0
+    je vo_set
+vo_next:
+    inc ecx
+    cmp ecx, 8
+    jb vo_loop
+vo_set:
+    mov dword ptr [{vt_owner:#x}], ecx
+    popad
+    ret
+''')
 
 # Anotar el resultado pendiente, si lo hay. Conserva todos los registros.
 vt_commit = place('vt_commit', f'''
@@ -5109,7 +5134,8 @@ vt_commit = place('vt_commit', f'''
     mov ecx, 7
     rep stosd
     mov word ptr [ebx], {VT_TYPE:#x}
-    mov word ptr [ebx + 2], {VT_PLAYER}
+    mov ax, word ptr [{vt_owner:#x}]
+    mov word ptr [ebx + 2], ax
     mov ax, word ptr [{VT_SI:#x}]
     mov word ptr [ebx + 0x16], ax
     mov ax, word ptr [{VT_NO:#x}]
@@ -5293,7 +5319,8 @@ vr_end:
     jmp 0x499641
 ''')
 
-# Renglón del informe, 0x4b4110 (ebx = suceso, di = x, esi = y, texto en esp+0xc): el de la votación va sin escudo.
+# Renglón del informe, 0x4b4110 (ebx = suceso, di = x, esi = y, texto en esp+0xc): el de la votación lleva el escudo
+# del bando que la abrió, como los demás sucesos (0x4dd080(0x69 + bando, x, y)); sin bando (VT_NOBODY), solo el texto.
 vt_line = place('vt_line', f'''
     cmp word ptr [ebx], {VT_TYPE:#x}
     je vl_vote
@@ -5302,6 +5329,17 @@ vt_line = place('vt_line', f'''
     push eax
     jmp 0x4b4147
 vl_vote:
+    movsx eax, word ptr [ebx + 2]
+    cmp eax, 8
+    jae vl_text
+    add eax, 0x69
+    movsx ecx, di
+    push esi
+    push ecx
+    push eax
+    call 0x4dd080
+    add esp, 0xc
+vl_text:
     movsx eax, word ptr [ebx + 0x18]
     push eax
     movsx eax, word ptr [ebx + 0x16]
@@ -5425,6 +5463,7 @@ tr_open:
     mov byte ptr [eax + {TL_PEND_OPEN:#x}], 1
     test eax, eax
     jnz 0x4b85bb
+    call {vt_open:#x}
     call {pz_open:#x}
     jmp 0x4b85bb
 ''')
@@ -6088,6 +6127,56 @@ struct.pack_into('<I', butt_std, 0, SORTEO_FILE)
 setstr(butt_std, 4, 32, 'sorteo')
 table_add(res, 2, SORTEO_FILE, bytes(butt_std))
 
+# Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco) va pintada en el fondo, en
+# lugar del texto del control 19 (que queda vacío). El fondo es el archivo 1 (picts\startup, 640x480, por la pantalla
+# 1 de la tabla tipo 5) o, a 800x600 y 1024x768, el 138 o el 139 (0x4aab9a), con el diálogo corrido (80,60) o
+# (192,144); el marco es el mismo en los tres, en esa posición. Las tres copias nuevas (picts\startav*) llevan el
+# título centrado sobre el marco (x 322 del diálogo) y arriba (y 5), donde iba el texto, de 56 de alto (el marco
+# empieza en y 67). La transparencia sale del dorado: alfa = (R - B) / 170 (el dorado lleno tiene R - B >= 170; el
+# blanco y la sombra gris, 0), y el color, despejado de la mezcla con blanco; se mezcla con el fondo y se lleva al
+# color más cercano entre los que ya usan los tres fondos (comparten paleta).
+TITULO = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'titulo.pcx')).convert('RGB')
+TIT_H, TIT_X, TIT_Y = 56, 322, 5
+STARTUP = [(1, 'startup', 'startav', (0, 0)), (138, 'startup1', 'startav1', (80, 60)), (139, 'startup2', 'startav2', (192, 144))]
+fondos = {n: Image.open(os.path.join(r'C:\Warlords3\PICTS', n + '.pcx')) for _, n, _, _ in STARTUP}
+st_pal = fondos['startup'].getpalette()[:768]
+assert all(f.mode == 'P' and f.getpalette()[:768] == st_pal for f in fondos.values())
+def st_difs(n, ox, oy):   # píxeles del marco de 640 que difieren en el fondo n corrido (ox,oy)
+    return sum(x != y for x, y in zip(fondos['startup'].crop((175, 67, 469, 467)).tobytes(), fondos[n].crop((ox + 175, oy + 67, ox + 469, oy + 467)).tobytes()))
+for _, n, _, (ox, oy) in STARTUP[1:]:   # el marco, en el mismo lugar del diálogo en los tres (no idéntico: ~8% difiere)
+    assert st_difs(n, ox, oy) * 4 < min(st_difs(n, ox + dx, oy + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+st_usables = sorted(set().union(*(set(f.get_flattened_data()) for f in fondos.values())))
+_st_memo = {}
+def st_cercano(rgb):
+    if rgb not in _st_memo:
+        _st_memo[rgb] = min(st_usables, key=lambda i: sum((st_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+    return _st_memo[rgb]
+tit = TITULO.crop(TITULO.point(lambda v: 255 - v).getbbox())
+tit_a = Image.new('RGBA', tit.size)
+for y in range(tit.height):
+    for x in range(tit.width):
+        r, g, b_ = tit.getpixel((x, y))
+        a_ = max(0, min(255, round((r - b_) * 255 / 170)))
+        if a_: tit_a.putpixel((x, y), tuple(max(0, min(255, round((v - (255 - a_)) * 255 / a_))) for v in (r, g, b_)) + (a_,))
+tit_a = tit_a.resize((round(tit_a.width * TIT_H / tit_a.height), TIT_H), Image.LANCZOS)
+assert TIT_Y + TIT_H < 67
+NUEVOS_TIT = {}
+o2, _ = table(res, 2)
+for fid, viejo, nuevo, (ox, oy) in STARTUP:
+    p = o2 + 20 + fid * 60
+    assert struct.unpack_from('<I', res, p)[0] == fid and res[p + 4:p + 36].split(b'\0')[0] == b'picts\\' + viejo.encode()
+    setstr(res, p + 4, 32, 'picts\\' + nuevo)
+    f = fondos[viejo].copy(); rgb = f.convert('RGB')
+    x0, y0 = ox + TIT_X - tit_a.width // 2, oy + TIT_Y
+    for y in range(tit_a.height):
+        for x in range(tit_a.width):
+            r, g, b_, a_ = tit_a.getpixel((x, y))
+            if a_:
+                fr = rgb.getpixel((x0 + x, y0 + y))
+                f.putpixel((x0 + x, y0 + y), st_cercano(tuple(round((v * a_ + w * (255 - a_)) / 255) for v, w in zip((r, g, b_), fr))))
+    pcx = io.BytesIO(); f.save(pcx, 'PCX')
+    NUEVOS_TIT[os.path.join('PICTS', nuevo + '.pcx')] = pcx.getvalue()
+
 # ---------------------------------------------------------------- subtipos de terreno "landing" y "carrier"
 # Para que war3ed_ssg los ofrezca en las listas de Move Bonus: arma esas listas con FindFirst sobre
 # TERRAIN\SUBTYPE\*.STT (0x428d60). El juego solo abre un .STT por nombre (0x46a6f0), para el texto de un Combat
@@ -6102,6 +6191,7 @@ def stt(nombre, largo):
 STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'))}
 NUEVOS = dict(STTS)
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
+NUEVOS.update(NUEVOS_TIT)
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):

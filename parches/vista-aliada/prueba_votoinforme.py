@@ -14,6 +14,7 @@ from unicorn.x86_const import *
 DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
 STACK, RET, STUBS, PKT, HEAP, FRAME = 0x1f0000, 0x100, 0x300000, 0x150000, 0x2000000, 0x1e0000
 TABLE, NCITIES, SIDES, SPRINTF, OPTS = 0x572788, 0x537e2a, 0x536b30, 0x5a9bec, 0x4fae68
+SIDE = 0x1f8   # bando i: activo en SIDES + SIDE*i, máquina en +3, humano (-1) en +0xe2
 FONT_TXT = b'Recibe algo en %s\0'
 
 def cargar(nombre):
@@ -165,6 +166,13 @@ class Juego:
     def votos(self):
         n = struct.unpack('<i', self.mu.mem_read(VT_N, 4))[0]
         return [struct.unpack('<hh', self.mu.mem_read(VT_TAB + 0x1c * i + 0x16, 4)) for i in range(n)]
+    def duenos(self):
+        n = struct.unpack('<i', self.mu.mem_read(VT_N, 4))[0]
+        return [struct.unpack('<h', self.mu.mem_read(VT_TAB + 0x1c * i + 2, 2))[0] for i in range(n)]
+    def bando(self, i, activo=1, humano=True, maquina=0):
+        self.mu.mem_write(SIDES + SIDE * i, bytes([activo]))
+        self.mu.mem_write(SIDES + SIDE * i + 0xe2, struct.pack('<h', -1 if humano else 0))
+        self.mu.mem_write(SIDES + SIDE * i + 3, bytes([maquina]))
 
 def votacion(g, ses, *estados, cerrar=True):
     """Una sesión de la Votación: la orden de abrir, los estados (fase, reinicios, marcas) y, si cerrar, el cierre."""
@@ -211,9 +219,15 @@ ver('  ronda 4 en curso, sin votaciones', [len(r) for _, r in inf], [2, 4, 3, 0]
 
 print('-- el renglón')
 av, orig = Juego(), Juego(ORIG)
-ver('votación: el texto, sin escudo, donde va el texto de los demás', av.renglon(VOTO(5, 3)),
+ver('votación de un bando: su escudo y el texto, igual que un suceso común de ese bando', [
+    av.renglon(rec(0x13, p, 0, b'', (5, 3, 0))) == orig.renglon(rec(0, p, 0, b'Nombre'))[:1] + [('texto', 120, 200, 'Resultados votacion: 5 por el SI, 3 por el NO')]
+    for p in range(8)], [True] * 8)
+ver('  (el escudo del bando 5)', av.renglon(rec(0x13, 5, 0, b'', (5, 3, 0)))[0], ('escudo', 0x69 + 5, 100, 200))
+ver('votación sin bando (8, de un .SAV de 1.0.18.0): el texto, sin escudo, donde va el texto de los demás', av.renglon(VOTO(5, 3)),
     [('texto', 120, 200, 'Resultados votacion: 5 por el SI, 3 por el NO')])
 ver('  con 0 y 8', av.renglon(VOTO(0, 8))[0][3], 'Resultados votacion: 0 por el SI, 8 por el NO')
+ver('control: bando fuera de rango (-1, 9): sin escudo', [[d[0] for d in av.renglon(rec(0x13, p, 0, b'', (1, 1, 0)))] for p in (-1, 9)],
+    [['texto'], ['texto']])
 r = rec(0, 3, 0, b'Nombre')
 ver('control: un suceso común se dibuja igual que en el original', av.renglon(r), orig.renglon(r))
 ver('  (escudo del jugador 3 y texto)', [d[0] for d in av.renglon(r)], ['escudo', 'texto'])
@@ -254,6 +268,25 @@ ver(f'tope de {VT_MAX} por ronda', len(caso(*[lambda g, i=i: votacion(g, f's{i}'
                                                for i in range(11)])), VT_MAX)
 ver('control: la pausa sigue funcionando (el cierre la levanta)', (lambda g: (votacion(g, 's1', ('libre', 0, 's-------')),
     g.mu.mem_read(PZ_ARM - 1, 2) == b'\0\0')[1])(Juego()), True)
+
+print('-- de quién es la votación (el escudo)')
+def dueno(*bandos):
+    g = Juego()
+    for b in bandos: g.bando(*b)
+    votacion(g, 's1', ('libre', 0, 's-------'))
+    return g.duenos()
+ver('el primer bando humano de la PC anfitriona (máquina 0)', dueno((0, 1, True, 1), (1, 1, False, 0), (2, 1, True, 0), (5, 1, True, 0)), [2])
+ver('  el bando 0, si es el humano de la anfitriona', dueno((0, 1, True, 0), (3, 1, True, 0)), [0])
+ver('  el bando 7', dueno((7, 1, True, 0)), [7])
+ver('control: ningún humano en la anfitriona: sin bando (8)', dueno((0, 1, True, 1), (1, 1, False, 0), (4, 1, True, 2)), [8])
+ver('control: un humano de la anfitriona que no juega no cuenta', dueno((1, 0, True, 0), (6, 1, True, 0)), [6])
+g = Juego(); g.bando(2, 1, True, 0)
+g.abrir(); g.bando(2, 1, True, 1); g.bando(4, 1, True, 0)   # cambia después de abrir
+g.estado('VOT s1 libre 0 0 s-------'); g.estado('VOT s1 libre 1 1 --------')
+g.estado('VOT s1 libre 1 1 n-------'); g.estado('VOT s1 cerrado 0 1 n-------')
+votacion(g, 's2', ('libre', 0, 'nn------'))
+ver('se fija al abrir: el reinicio y el cierre llevan el de la apertura; la sesión siguiente, el nuevo', g.duenos(), [2, 2, 4])
+
 g = Juego(); votacion(g, 's1', ('libre', 0, 's-------')); g.correr(0x4988d0)
 ver('partida nueva (0x4988d0): la tabla queda vacía', g.votos(), [])
 

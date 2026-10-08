@@ -226,10 +226,10 @@ ejemplo, "Resultados votacion: 5 por el SI, 3 por el NO".
   descarta lo pendiente; si cambió el número de reinicios, anota lo pendiente; guarda los conteos de s y n si hay
   al menos un voto; con "cerrado", anota. O sea: cada votación con votos se anota cuando se reinicia o cuando se
   cierra el programa. El cierre de emergencia (sesión "-") y un programa muerto sin cerrar no anotan nada.
-- Anotar = un renglón tipo 0x13, jugador 8, SI en +0x16, NO en +0x18, en `vt_tab` (hasta 8 por ronda).
+- Anotar = un renglón tipo 0x13, jugador 8 (desde 1.0.19.0, el bando que la abrió; ver abajo), SI en +0x16, NO en +0x18, en `vt_tab` (hasta 8 por ronda).
 - Al terminar la ronda, esos renglones se escriben en HISTORY.DAT **antes** que los sucesos de la ronda (para que
   entren en los 11 renglones), con el tamaño y la cantidad de la cabecera corregidos; el informe los suma también a
-  la ronda en curso. El renglón se dibuja sin escudo, donde va el texto de los demás.
+  la ronda en curso. El renglón se dibujaba sin escudo, donde va el texto de los demás (con escudo desde 1.0.19.0).
 - La tabla de la ronda en curso se guarda al final del .SAV ('VOTA', cantidad, tabla) y se carga si está; un .SAV
   viejo o roto la carga vacía.
 - Sin votaciones, HISTORY.DAT y el informe quedan idénticos byte a byte a los del original (probado).
@@ -240,9 +240,37 @@ ejemplo, "Resultados votacion: 5 por el SI, 3 por el NO".
 - Si una votación se cierra justo en el cambio de ronda, una PC puede anotarla en una ronda y otra en la siguiente.
 - HISTORY.DAT con renglones 0x13 abierto con el Darklord.exe original: ese renglón sale solo como un escudo.
 
+**Verificado por el usuario en partida (7/10/2026, 1.0.18.0):** el renglón sale bien ("Resultados votacion: 4 por
+el SI, 4 por el NO"). Observó que el texto parecía corrido a la derecha respecto de los demás. En realidad está en
+la misma x que el texto de los demás: lo que faltaba era el escudo a su izquierda.
+
+**1.0.19.0: el escudo de quien abrió la votación.** Solo el anfitrión abre la Votación (tl_sendopen chequea
+0x4dd3a0) y la orden (TL_OPEN) no dice qué bando la abrió. Por eso el dueño es el primer bando activo, humano
+(word +0xe2 == -1) y de la máquina 0 (byte +3) al recibir la orden de abrir (`vt_open`, desde tr_open). Todas las PC
+ven la misma tabla de bandos, así que todas calculan el mismo. Queda fijo en `vt_owner` para los reinicios y el
+cierre de esa sesión. vt_commit lo pone en +2. vt_line dibuja el escudo 0x69+jugador como un suceso común, y para un
+jugador fuera de 0..7 no dibuja escudo; es el caso de los renglones con jugador 8 de los .SAV de 1.0.18.0, y de una
+anfitriona sin humanos. Probado en `prueba_votoinforme.py`: el escudo es idéntico al de un suceso común del mismo
+bando en el original, con controles (otra máquina, IA, bando inactivo, cambio después de abrir).
+
 **Sin verificar (no se puede desde acá)**
-1. Que el texto entre en el ancho del reporte (no se puede ver la pantalla en la emulación).
-2. Partida real: votar en una ronda, pasar de ronda, abrir el Events Report y mirar esa ronda (y la ronda en curso).
+1. Partida real con 1.0.19.0: que el renglón de la votación lleve el escudo del anfitrión.
+
+## F. Título del menú principal como imagen (1.0.19.0)
+
+Pedido del usuario (7/10/2026): reemplazar el texto del parche en la primera pantalla por `titulo.pcx` (lo dejó
+en `DarkCompare\assets\`; se incorporó a `parches\vista-aliada\titulo.pcx`).
+
+- El texto era el control 19 del diálogo 1 (Sagetext (1,0), fuente 6). Ahora queda vacío (TEXTS en build.py).
+- La imagen va pintada en los fondos. Hay tres según la resolución: archivo 1 `picts\startup` (640x480), 138
+  `startup1` (800x600) y 139 `startup2` (1024x768), con el diálogo corrido (0,0), (80,60) y (192,144). En WAR3AV.RES
+  esos registros pasan a `picts\startav`, `startav1` y `startav2`, archivos nuevos que build.py arma desde los
+  originales; no se toca ningún archivo original.
+- Va centrada en x 322 del diálogo, arriba (y 5), con 56 de alto. La transparencia sale del dorado sobre blanco,
+  y el color se lleva a la paleta compartida de los tres fondos.
+- Medido: los tres fondos solo cambian en el recuadro del título (x 129..515, y 5..59 del diálogo). El marco está
+  en la misma posición en los tres, pero sus píxeles no son idénticos (~8% difiere): el control es de alineación.
+- Sin verificar: verlo en el juego en las tres resoluciones.
 
 ## D. Diferido: programar la IA (otra sesión)
 

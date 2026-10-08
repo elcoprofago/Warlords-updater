@@ -331,7 +331,11 @@ fn, fo = archivos(NUEVO), archivos(ORIG)
 ver('archivos: dos más (165 y 166)', (len(fn), len(fo)), (167, 165))
 ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0], fn[166][4:11], struct.unpack_from('<6I', fn[166], 36)),
     (166, b'sorteo\0', (16, 1, 0, 0, 0, 0)))
-ver('control: archivos originales intactos', fn[:165] == fo, True)
+TITULO = {1: b'startav', 138: b'startav1', 139: b'startav2'}   # fondos del menú con el título (1.0.19.0)
+ver('control: archivos originales intactos (salvo el nombre de los 3 fondos del menú)',
+    [i for i in range(165) if fn[i] != fo[i]] == list(TITULO)
+    and all(fn[i][:4] + fn[i][36:] == fo[i][:4] + fo[i][36:] for i in TITULO), True)
+ver('  esos 3, a picts\\startav*', [fn[i][4:36].split(b'\0')[0] for i in TITULO], [b'picts\\' + n for n in TITULO.values()])
 from PIL import Image
 hoja = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sorteo.pcx'))
 ver('sorteo.pcx: esquinas transparentes (11), centro dibujado', [hoja.getpixel((x, 60 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 59), (32, 30))],
