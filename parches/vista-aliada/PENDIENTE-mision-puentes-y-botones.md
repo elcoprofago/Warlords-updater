@@ -309,7 +309,7 @@ terreno) o políticas (estado diplomático).
 
 Orden de trabajo:
 1. que los héroes de la IA tomen y cumplan misiones de puente — **hecho, 1.0.21.0**;
-2. que la IA razee puentes por criterio estratégico;
+2. que la IA razee puentes por criterio estratégico — **hecho, 1.0.23.0**;
 3. que reconstruya puentes y use Landing, Carrier y Cabotage activamente.
 
 Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear por su cuenta o reconstruir
@@ -327,16 +327,20 @@ puentes, convoyes) no las usa.
   que miré. La lógica existe y es la que hay que descifrar y extender a los puentes:
   - **Arrasar una ciudad recién tomada: 0x41f4b0(ciudad, bandera)**, llamada en 0x4c5296 al capturar (línea de
     depuración "Attack City ... Raze [%d]"; ahí raze = [esp+0x1e] sale de la misión si la hay, y si no de
-    0x41f4b0; 0x4b9510(ciudad, jugador, ...) la aplica). Decodificada leyendo el código, sin emular todavía:
+    0x41f4b0; 0x4b9510(ciudad, jugador, ...) la aplica). **Confirmada emulándola (8/10/2026)**; lo que sigue ya
+    tiene las correcciones de esa emulación:
     - r = 0x4deb20(1, 20, 0). Si [0x53c393] & 6 == 0 (opción de arrasar apagada) → no.
     - c = byte [0x561ef9 + p·0x49a], p = [0x4fb0ec]: **temperamento arrasador** del jugador, 0..4. Lo inicia
       0x472568; 0x41f410 lo pone en 1 con 1 en 20 si todos los vivos tienen 0; 0x41e290 también lo usa (30 vs 15).
-    - bandera = (word [ejército líder + 0x1a] & 0x3c00) >> 10, líder = [0x56ea92 + p·0x4f0]. **Significado sin
-      resolver.** Si c == 0 y bandera == 0 → no.
-    - si = (c == 0 ? −2 : 0); +1 si hay bandera y la ciudad no era neutral (dueño byte [0x537ed1 + ciudad·0x76]
-      != 8); +1 si su valor 0x4d5bd0(ciudad) < 150 (producción de sus 4 ranuras / 3).
+    - bandera = (word [0x54fe6c + líder·0x1c] & 0x3c00) >> 10, líder = [0x56ea92 + p·0x4f0]: el **grupo de IA**
+      al que pertenece el líder (0 = ninguno, es decir, la ciudad no la tomó un grupo con plan). Si c == 0 y
+      bandera == 0 → no.
+    - si = (c == 0 ? −2 : 0); +1 si hay bandera y la ciudad no era neutral (dueño byte [0x537ed1 + ciudad·0xde]
+      != 8; el registro de ciudad mide 0xde, no 0x76); +1 si su valor 0x4d5bd0(ciudad) < 150 (producción de sus 4
+      ranuras / 3).
     - Vecinas: las 12 de [0x564ea6 + (ciudad·12 + i)·14] (0x50 = ninguna), distancia en el byte +4; solo vivas a
-      distancia 1..30, peso 2 si está a menos de 15, si no 1. propias += peso si son mías; enemigas += peso si el
+      distancia 1..30, peso 2 si está a menos de 15, si no 1. **Bug del original:** la distancia se lee de la fila
+      de la vecina, no de la de la ciudad tomada (la emulación lo confirma); no se tocó. propias += peso si son mías; enemigas += peso si el
       dueño no es neutral y 0x49c1c0(dueño) dice hostil. si = si − propias + enemigas.
     - +1 si tengo más de 5 ciudades, +1 más si más de 15.
     - Si c es 1..3 y r == 1 → c + 1. Si r ≥ 19 → no. **Arrasa si c + si ≥ 5.**
@@ -364,13 +368,41 @@ la misión). Con ejércitos ajenos encima ataca con 0x40e400 y no derriba; con p
 `prueba_iapuente.py` (29 casos; los sitios comparados con el original). Falta verlo en partida: que el evaluador
 0x41e8a0 elija perseguir la misión depende de 0x4a65d0 en la casilla del puente, que no se emuló.
 
-**Próximo paso (2):** que la IA derribe puentes por criterio partiendo de la lógica que el juego ya tiene, no de
-un evaluador inventado. Primero terminar de descifrar 0x41f4b0: qué es la bandera del líder (bits 10..13 de +0x1a),
-cómo se inicia el temperamento (0x472568) y qué hace 0x41e290 con él; confirmarlo emulando 0x41f4b0 contra casos
-armados. Después, llevar esa misma cuenta a los puentes: temperamento, cercanía de lo propio y de lo hostil
-(0x49c1c0), y azar del mismo tamaño. Falta decidir el momento, porque un puente no "se toma" como una ciudad: un
-candidato es cuando un ejército de la IA queda en la cabecera de un puente, y ahí reutilizar ai_brq como la meta 6
-reutiliza 0x40d450.
+**Paso 2 hecho (1.0.23.0): la IA derriba puentes por la misma cuenta que 0x41f4b0.**
+- Momento: al terminar de mover una pila de la IA, en 0x4c4d3a (final de 0x4c4a10(x, y, bandera), justo antes de
+  la orden 0x146 de fin de pila). Ahí entra ai_brraze. Tiene que ser antes: 0x146 (0x4b9020 → 0x4dd3b0 → 0x4df3c0
+  → 0x4dfa10) se aplica en el acto por 0x4df400 y vacía la pila (0x485c70 pone 0x56ea90/92 en 0). Así la orden de
+  derribar (0x18d) sale por la red antes que la de fin de pila, en el mismo orden en todas las máquinas.
+- Condiciones (todas): turno de la IA ([0x4fb0ec] == [0x537ce8]), jugador no humano, opción de arrasar encendida
+  ([0x53c393] & 6), pila con líder vivo; bandera (grupo del líder) o temperamento distintos de 0, como el original;
+  el líder parado en la cabecera de un puente intacto (br_find); ningún ejército, ni propio, sobre el puente; el
+  destino de la pila no está a 1 casilla del puente (lo va a cruzar o es una misión) ni el puente queda "adelante"
+  (alguna casilla del puente más cerca del destino que la pila, distancia de rey); la ciudad dueña del puente
+  (br_city) no es propia ni de alguien no hostil (aliado o en paz): si es neutral vale, sin el +1 de bandera.
+- Cuenta, igual que 0x41f4b0 pero desde la casilla canónica del puente: si = (c == 0 ? −2 : 0) + 1 (el puente no
+  produce: equivale a valor < 150); +1 si hay bandera y la ciudad dueña no es neutral; las 12 ciudades vivas más
+  cercanas a distancia 1..30 (0x4974a0), peso 2 si < 15, propias restan, hostiles suman; +1 con más de 5 ciudades
+  propias, +1 más con más de 15; r = 0x4deb20(1, 20, 0), y c + 1 si c es 1..3 y r == 1; r ≥ 19 → no; **derriba si
+  c + si ≥ 5**. El azar se pide solo cuando el puente ya pasó todas las condiciones, como en el original.
+- Derriba con 0x4955d0(código) y pausa 0x4275b0(2000) para que se vea.
+- Prueba: `prueba_iarazea.py` (62 controles: ~45 casos armados, 3000 al azar contra un modelo en Python, las
+  rutinas reales 0x4974a0 y 0x49c1c0 emuladas). **Falta verlo en partida.**
+
+Defectos encontrados y corregidos en el mismo paso:
+- **ai_brq leía el líder tarde.** Al llegar a la cabecera, el derribo de la misión pasaba por 0x4955d0, que lee el
+  líder de [0x56ea92] recién ahí; si la pila ya se había vaciado por 0x146 la misión podía no acreditarse. Ahora
+  guarda el líder al entrar (ai_brlead), como el original en [esp+0x12], y llama 0x461a60(6, líder, 0, 0, código, 1)
+  y 0x4b9550(código, jugador) como el camino de Raze Site. `prueba_iapuente.py` tiene el caso de pila vaciada.
+- **0x435d53 (evaluador de costo de misiones, "Raze Site") con código de puente leía fuera de la imagen** en
+  1.0.21.0 y 1.0.22.0: buscaba el sitio en 0x55acb6 + código·150 (registro de sitio de 150 bytes), unos 0x6b6704;
+  podía colgar el juego o leer basura cuando la IA evaluaba una misión de puente. qb_ailoc3 ahora saca x, y del
+  código del puente.
+
+Lo que queda como en el original: con temperamento 0 la IA no acepta misiones de arrasar, tampoco de puente
+("Not Accepted"). Quest City sigue con su bug (ver arriba).
+
+**Próximo paso (3):** que la IA reconstruya puentes y use Landing, Carrier y Cabotage. Igual que en el paso 2,
+empezar por la lógica que el juego ya tiene: la meta 9 (reconstruir, 0x40dbf0) y cómo la IA elige embarcar.
 
 Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
 votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que

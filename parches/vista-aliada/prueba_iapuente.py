@@ -47,7 +47,7 @@ def tile_va(x, y): return ((y * 10) << SHIFT) + x * 10 + 0x503e58
 
 class Bench:
     def __init__(self, exe=AV, hero=(19, 10), armies=(), tiles={}, roads=(), razed=False, target=PC, move=None,
-                 attack=lambda *a: 1, alive=1, real_attack=False):
+                 attack=lambda *a: 1, alive=1, real_attack=False, clear=False):
         base, img, size = exe
         mu = self.mu = Uc(UC_ARCH_X86, UC_MODE_32)
         mu.mem_map(base, size); mu.mem_write(base, img[:size])
@@ -82,7 +82,7 @@ class Bench:
         mu.mem_write(PLAN, bytes(0x20)); mu.mem_write(PLAN + 0xc, struct.pack('<h', HERO))
         mu.mem_write(0x5020d4, struct.pack('<I', PLAN)); mu.mem_write(0x5020d0, struct.pack('<h', 0))
         mu.mem_write(0x55edc4 + AI * 16, struct.pack('<BBhhhhhhh', 1, 0, HERO, 10, target, 0, 0, 0, 1))
-        self.move = move; self.attack = attack; self.calls = []
+        self.move = move; self.attack = attack; self.calls = []; self.clear = clear
         self.stubs = {va: k for va, k in STUBS.items() if not (real_attack and k == 'atacar')}
         for va in self.stubs: mu.mem_write(va, b'\xc3')
         mu.mem_write(STUB, b'\xc3'); mu.mem_write(0x5a9bec, struct.pack('<I', STUB))   # sprintf
@@ -112,6 +112,7 @@ class Bench:
             k = self.stubs[addr]
             if k == 'mover':
                 self.calls.append((k, s(0), s(1)))
+                if self.clear: uc.mem_write(0x56ea90 + AI * 0x4f0, bytes(4))   # la orden 0x146 vacía la pila
                 r = self.move(s(0), s(1)) if self.move else (s(0), s(1))
                 if r is None: ret = 0
                 else: self.setpos(r); ret = 1
@@ -181,6 +182,9 @@ check('lejos: elige (19,9) y va hacia ella; no llega, no derriba', g['ok'] and g
 g = go(hero=(5, 10))
 check('lejos: llega en el mismo turno y lo derriba', g['ok'] and g['ax'] == 1 and moved(g) == [(19, 9)]
       and ('atacar', 19, 9, 19, 9) in g['calls'] and razed(g) == [('orden', PC, AI)] and g['st'] == 1, g)
+g = go(hero=(5, 10), clear=True)
+check('lejos: llega, la pila queda vacía al terminar de mover y la misión se cumple igual (líder guardado)',
+      g['ok'] and g['ax'] == 1 and razed(g) == [('orden', PC, AI)] and g['st'] == 1, g)
 g = go(hero=(5, 10), move=lambda x, y: None)
 check('lejos: el héroe muere en el camino, no ataca ni derriba', g['ok'] and g['ax'] == 0 and
       not any(c[0] in ('atacar', 'orden') for c in g['calls']), g)
@@ -236,7 +240,8 @@ for nombre, kw in [('sitio, parado encima, modo 10', dict(hero=SITE)),
                    ('sitio, lejos y llega', dict(hero=(5, 5))),
                    ('sitio, lejos y no llega', dict(hero=(5, 5), move=lambda x, y: (10, 10))),
                    ('sitio, muere en el camino', dict(hero=(5, 5), move=lambda x, y: None)),
-                   ('sitio, modo 0', dict(hero=SITE, mode=0))]:
+                   ('sitio, modo 0', dict(hero=SITE, mode=0)),
+                   ('sitio, llega y la pila queda vacía', dict(hero=(5, 5), clear=True))]:
     a, o = go(target=0, **kw), go(target=0, exe=ORIG, **kw)
     check(f'igual al original: {nombre}', a['ok'] and o['ok'] and a == o, f'{a} {o}')
 

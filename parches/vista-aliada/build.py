@@ -4723,6 +4723,10 @@ aibn_bridge:
 ''')
 # ai_brq(código, modo): 0x40d450 para un puente. Devuelve ax = 1 hecho, 0 todavía no (como el original).
 # Locales: [esp] x, [esp+4] y de la cabecera, [esp+8] su distancia, [esp+0xc] casillas*8; edi = registro del grupo.
+# El líder de la pila se guarda al entrar (ai_brlead), como el original en [esp+0x12]: al terminar de mover, 0x4c4a10
+# manda la orden 0x146 (0x4b9020), que se aplica en el acto (0x4df400) y vacía la pila (0x485c70 pone 0x56ea90/92 en 0);
+# por eso el derribo no pasa por 0x4955d0, que lee el líder recién ahí.
+ai_brlead = place_data('ai_brlead', bytes(4))
 ai_brq = place('ai_brq', f'''
     cmp word ptr [esp + 4], {BR_CODE:#x}
     jge aib_bridge
@@ -4730,6 +4734,10 @@ ai_brq = place('ai_brq', f'''
     mov eax, dword ptr [0x5020d4]
     jmp 0x40d458
 aib_bridge:
+    movsx eax, word ptr [0x537ce8]
+    imul eax, eax, 0x4f0
+    movsx eax, word ptr [eax + 0x56ea92]
+    mov dword ptr [{ai_brlead:#x}], eax
     push ebx
     push esi
     push edi
@@ -4872,10 +4880,21 @@ aib_here:
     jnz aib_held
     test edx, edx
     jnz aib_ret0
-    movsx eax, word ptr [esp + 0x24]
+    push 1
+    movsx eax, word ptr [esp + 0x28]
     push eax
-    call 0x4955d0
-    add esp, 4
+    push 0
+    push 0
+    push dword ptr [{ai_brlead:#x}]
+    push 6
+    call 0x461a60
+    add esp, 0x18
+    movsx eax, word ptr [0x537ce8]
+    push eax
+    movsx eax, word ptr [esp + 0x28]
+    push eax
+    call 0x4b9550
+    add esp, 8
 aib_done:
     push 0x7d0
     call 0x4275b0
@@ -4921,6 +4940,296 @@ aib_out:
     pop edi
     pop esi
     pop ebx
+    ret
+''')
+# qb_ailoc3: el caso "Raze Site" del evaluador de misiones de la IA (0x4358e0, tabla 0x435f94, caso 0x435d53) leía
+# x/y de la tabla de sitios con el código del puente; deja dx = x, ax = y de la casilla del código.
+qb_ailoc3 = place('qb_ailoc3', f'''
+    movsx eax, word ptr [esp + edi + 0x2e]
+    mov word ptr [esp + 0x20], 0xffff
+    cmp eax, {BR_CODE:#x}
+    jge qba3_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    mov dx, word ptr [ecx + ecx*4 + 0x55acb6]
+    lea eax, [ecx + ecx*4]
+    mov ax, word ptr [eax + 0x55acb8]
+    jmp 0x435d79
+qba3_bridge:
+    sub eax, {BR_CODE:#x}
+    mov edx, eax
+    and edx, 0x7f
+    shr eax, 7
+    jmp 0x435d79
+''')
+# br_kd: eax = distancia de rey entre (eax, edx) y (esi, ebp). Preserva todo salvo eax y edx.
+br_kd = place('br_kd', '''
+    push ecx
+    mov ecx, edx
+    sub eax, esi
+    cdq
+    xor eax, edx
+    sub eax, edx
+    xchg eax, ecx
+    sub eax, ebp
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge brkd_out
+    mov eax, ecx
+brkd_out:
+    pop ecx
+    ret
+''')
+# ai_brraze: la IA derriba un puente por criterio propio, con la misma cuenta con que arrasa una ciudad (0x41f4b0).
+# Corre al final de cada movimiento de una pila de la IA (0x4c4a10, en 0x4c4d3a: antes de la orden 0x146 que vacía la
+# pila), si el líder quedó junto a un puente entero (br_find). Descarta el puente si:
+# - la ciudad dueña (br_city) es propia o de un jugador no hostil (0x49c1c0 = 0); las neutrales no lo descartan;
+# - hay cualquier ejército encima (no se ahoga a nadie);
+# - el destino del movimiento (argumentos de 0x4c4a10) está a 1 casilla o menos del puente (va hacia él: la misión
+#   de ai_brq o cruzarlo) o el puente le queda más cerca al destino que la pila (está por delante en el camino).
+# Cuenta de 0x41f4b0, con el puente en lugar de la ciudad:
+#   c = temperamento [0x561ef9 + p*0x49a]; flag = grupo de la IA del líder ([+0x1a] & 0x3c00) >> 10.
+#   c = 0 y flag = 0: no. s = -2 si c = 0. +1 si flag y la ciudad dueña no es neutral. +1 siempre (un puente no
+#   produce: valor < 150). Las 12 ciudades vivas más cercanas (0x4974a0 desde la casilla del código), a distancia
+#   1..30, pesan 2 si están a menos de 15 y 1 si no: las propias restan, las hostiles (0x49c1c0) suman. +1 si tiene
+#   más de 5 ciudades, +1 más si más de 15. Azar r = 0x4deb20(1, 20): r >= 19, no. Derriba si c + s >= 5.
+#   El original sube el temperamento con r = 1; acá no (es la decisión de arrasar ciudades la que lo hace).
+# El derribo es el de la misión: 0x4955d0(código) (evento 6 con el líder y la orden de red 0x18d) y la pausa 0x4275b0.
+# Locales: [esp + 4*i] distancia a la ciudad i (hasta 80), después ABZ_*.
+ABZ_CODE, ABZ_BX, ABZ_BY, ABZ_S, ABZ_P, ABZ_FLAG, ABZ_C, ABZ_N, ABZ_SD, ABZ_NC, ABZ_RND = (
+    0x140 + 4 * i for i in range(11))
+ABZ_LOC = 0x140 + 4 * 11
+ABZ_X, ABZ_Y = ABZ_LOC + 0x20 + 4 + 0x38, ABZ_LOC + 0x20 + 4 + 0x3c
+ai_brraze = place('ai_brraze', f'''
+    pushad
+    sub esp, {ABZ_LOC:#x}
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp bx, word ptr [0x537ce8]
+    jne abz_out
+    mov dword ptr [esp + {ABZ_P:#x}], ebx
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je abz_out
+    test byte ptr [0x53c393], 6
+    jz abz_out
+    imul esi, ebx, 0x4f0
+    cmp word ptr [esi + 0x56ea90], 0
+    je abz_out
+    movsx edi, word ptr [esi + 0x56ea92]
+    imul edi, edi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz abz_out
+    movzx eax, word ptr [edi + 0x54fe6c]
+    and eax, 0x3c00
+    shr eax, 10
+    mov dword ptr [esp + {ABZ_FLAG:#x}], eax
+    imul ecx, ebx, 0x49a
+    movzx ecx, byte ptr [ecx + 0x561ef9]
+    mov dword ptr [esp + {ABZ_C:#x}], ecx
+    or eax, ecx
+    jz abz_out
+    push {BR_KIND_INTACT}
+    movsx eax, word ptr [edi + 0x54fe54]
+    push eax
+    movsx eax, word ptr [edi + 0x54fe52]
+    push eax
+    call {br_find:#x}
+    add esp, 0xc
+    test eax, eax
+    jl abz_out
+    push eax
+    call {br_canon:#x}
+    add esp, 4
+    test eax, eax
+    jl abz_out
+    mov dword ptr [esp + {ABZ_CODE:#x}], eax
+    sub eax, {BR_CODE:#x}
+    mov edx, eax
+    and edx, 0x7f
+    mov dword ptr [esp + {ABZ_BX:#x}], edx
+    shr eax, 7
+    mov dword ptr [esp + {ABZ_BY:#x}], eax
+    push {BR_KIND_INTACT}
+    push dword ptr [esp + {ABZ_CODE + 4:#x}]
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz abz_out
+    mov dword ptr [esp + {ABZ_N:#x}], eax
+    push ebx
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz abz_out
+    movsx esi, word ptr [esp + {ABZ_X:#x}]
+    movsx ebp, word ptr [esp + {ABZ_Y:#x}]
+    movsx eax, word ptr [edi + 0x54fe52]
+    movsx edx, word ptr [edi + 0x54fe54]
+    call {br_kd:#x}
+    mov dword ptr [esp + {ABZ_SD:#x}], eax
+    mov ecx, dword ptr [esp + {ABZ_N:#x}]
+abz_tile:
+    dec ecx
+    js abz_owner
+    movsx eax, word ptr [ecx*4 + {br_xy:#x}]
+    movsx edx, word ptr [ecx*4 + {br_xy + 2:#x}]
+    call {br_kd:#x}
+    cmp eax, 1
+    jle abz_out
+    cmp eax, dword ptr [esp + {ABZ_SD:#x}]
+    jl abz_out
+    jmp abz_tile
+abz_owner:
+    xor eax, eax
+    cmp dword ptr [esp + {ABZ_C:#x}], 0
+    jne abz_s0
+    mov eax, -2
+abz_s0:
+    inc eax
+    mov dword ptr [esp + {ABZ_S:#x}], eax
+    push dword ptr [esp + {ABZ_CODE:#x}]
+    call {br_city:#x}
+    add esp, 4
+    test eax, eax
+    jl abz_near
+    imul eax, eax, 0xde
+    movzx eax, byte ptr [eax + 0x537ed1]
+    cmp eax, 8
+    je abz_near
+    push eax
+    call 0x49c1c0
+    add esp, 4
+    test ax, ax
+    jz abz_out
+    cmp dword ptr [esp + {ABZ_FLAG:#x}], 0
+    je abz_near
+    inc dword ptr [esp + {ABZ_S:#x}]
+abz_near:
+    xor ebp, ebp
+abz_dist:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebp, eax
+    jge abz_distend
+    cmp ebp, 80
+    jge abz_distend
+    mov dword ptr [esp + ebp*4], 0x7fffffff
+    imul ebx, ebp, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je abz_distnext
+    movsx eax, word ptr [ebx + 0x537e2e]
+    push eax
+    movsx eax, word ptr [ebx + 0x537e2c]
+    push eax
+    push dword ptr [esp + {ABZ_BY + 8:#x}]
+    push dword ptr [esp + {ABZ_BX + 12:#x}]
+    call 0x4974a0
+    add esp, 0x10
+    movsx eax, ax
+    mov dword ptr [esp + ebp*4], eax
+abz_distnext:
+    inc ebp
+    jmp abz_dist
+abz_distend:
+    mov dword ptr [esp + {ABZ_NC:#x}], ebp
+    mov dword ptr [esp + {ABZ_RND:#x}], 12
+abz_sel:
+    or esi, -1
+    mov edi, 0x7fffffff
+    xor ebp, ebp
+abz_sell:
+    cmp ebp, dword ptr [esp + {ABZ_NC:#x}]
+    jge abz_selend
+    mov eax, dword ptr [esp + ebp*4]
+    cmp eax, edi
+    jge abz_selnext
+    mov edi, eax
+    mov esi, ebp
+abz_selnext:
+    inc ebp
+    jmp abz_sell
+abz_selend:
+    test esi, esi
+    jl abz_count
+    mov dword ptr [esp + esi*4], 0x7fffffff
+    test edi, edi
+    jz abz_next
+    cmp edi, 30
+    jg abz_next
+    mov ecx, 1
+    cmp edi, 15
+    jge abz_w
+    mov ecx, 2
+abz_w:
+    imul ebx, esi, 0xde
+    movzx eax, byte ptr [ebx + 0x537ed1]
+    cmp eax, dword ptr [esp + {ABZ_P:#x}]
+    jne abz_foreign
+    sub dword ptr [esp + {ABZ_S:#x}], ecx
+    jmp abz_next
+abz_foreign:
+    cmp eax, 8
+    je abz_next
+    push ecx
+    push eax
+    call 0x49c1c0
+    add esp, 4
+    pop ecx
+    test ax, ax
+    jz abz_next
+    add dword ptr [esp + {ABZ_S:#x}], ecx
+abz_next:
+    dec dword ptr [esp + {ABZ_RND:#x}]
+    jnz abz_sel
+abz_count:
+    xor ecx, ecx
+    xor ebp, ebp
+abz_cl:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebp, eax
+    jge abz_cend
+    imul ebx, ebp, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je abz_cnext
+    movzx eax, byte ptr [ebx + 0x537ed1]
+    cmp eax, dword ptr [esp + {ABZ_P:#x}]
+    jne abz_cnext
+    inc ecx
+abz_cnext:
+    inc ebp
+    jmp abz_cl
+abz_cend:
+    cmp ecx, 5
+    jle abz_rand
+    inc dword ptr [esp + {ABZ_S:#x}]
+    cmp ecx, 15
+    jle abz_rand
+    inc dword ptr [esp + {ABZ_S:#x}]
+abz_rand:
+    push 0
+    push 20
+    push 1
+    call 0x4deb20
+    add esp, 0xc
+    cmp ax, 19
+    jge abz_out
+    mov eax, dword ptr [esp + {ABZ_C:#x}]
+    add eax, dword ptr [esp + {ABZ_S:#x}]
+    cmp eax, 5
+    jl abz_out
+    push dword ptr [esp + {ABZ_CODE:#x}]
+    call 0x4955d0
+    add esp, 4
+    push 0x7d0
+    call 0x4275b0
+    add esp, 4
+abz_out:
+    add esp, {ABZ_LOC:#x}
+    popad
+    movsx eax, word ptr [0x4fb0ec]
     ret
 ''')
 # Diálogo de reconstruir (0x4b6160(índice)): para un puente, derribado y vacío (si no, el aviso 0x72 "Cannot rebuild!
@@ -6211,6 +6520,10 @@ patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9
       asm(f'jmp {qb_ailoc2:#x}', 0x436442))
 patch(0x40d963, bytes.fromhex('0fbf4424128d048003c08d0c408d048905baac5500'), asm(f'jmp {ai_brname:#x}', 0x40d963))
 patch(0x40d450, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brq:#x}', 0x40d450))
+assert rel(0x435d79, 7) == asm('mov cx, word ptr [0x4fb0ec]', 0x435d79)
+patch(0x435d53, rel(0x435d53, 0x435d79 - 0x435d53), asm(f'jmp {qb_ailoc3:#x}', 0x435d53))
+assert rel(0x4c4d41, 2) == bytes.fromhex('8bc8')   # mov ecx, eax
+patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_brraze:#x}', 0x4c4d3a))
 # Botones de Votación y Sorteo (tl_*)
 patch(0x4bce20, asm('push ebx; mov ecx, 0x5032f8', 0x4bce20), asm(f'jmp {tl_menuinit:#x}', 0x4bce20))
 patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))
