@@ -68,8 +68,29 @@ puntaje, nivel y recompensa como las demás.
   los jugadores de la computadora (parte D, paso 1).
 
 **Diferencias con el plan**
-- Los textos ("Destroying a Bridge", "%s must destroy the bridge near %s." y "%s must destroy a bridge.") van como
-  cadenas del exe, igual que los demás textos de puentes, no en WAR3AV.RES.
+- Los textos ("Destroying a Bridge", "%s must destroy %s, near %s." y "%s must destroy %s.") van como cadenas del
+  exe, igual que los demás textos de puentes, no en WAR3AV.RES.
+
+**Nombres propios de los puentes (1.0.22.0)**
+- Hasta 1.0.21.0 la misión decía "the bridge near Zardoria". Ya se cumplía solo con ese puente (derribar otro no
+  cuenta; está probado), pero el puente no tenía nombre, y eso no es la mecánica del juego: una misión nombra el
+  sitio o la ciudad. Pedido del usuario (8/10/2026): que los puentes tengan nombre como los demás sitios.
+- `br_name(código, mayúscula)` arma el nombre con el generador del juego, 0x4374a0, el mismo de las ciudades y
+  ruinas del mapa al azar, y con la gramática nueva `DATA\BRIDNAME.TXT`. Sus sílabas son las de
+  `RANDOM\Grass\cityname.txt`, con " Bridge", " Crossing" o " Span" al final: "Holthor Bridge", "Zendoria Crossing".
+- La semilla sale de la casilla menor del puente. El mismo puente, entero o derribado, da el mismo nombre desde
+  cualquier casilla, en cualquier momento y en todas las máquinas. El azar de la partida ([0x500bf4], [0x500bf8]) se
+  guarda y se repone. Límite conocido: el nombre depende solo de la posición, así que dos mapas con un puente en el
+  mismo lugar le dan el mismo nombre.
+- Se usa en los cinco lugares que decían "the bridge":
+  - misión: "Hero must destroy Holthor Bridge, near Zardoria.";
+  - diálogo de arrasar;
+  - aviso "… is in ruins!";
+  - "Rebuilding …";
+  - registro de la IA.
+- Sin el archivo, o con una gramática rota, vuelve a "the bridge" / "The bridge".
+- Prueba: `prueba_nombrepuente.py`. Corre el generador, el azar y la lectura de archivos reales del juego; solo
+  simula las llamadas a Windows. 21 casos. Falta verlo en partida.
 - Hasta 1.0.20.0 la IA no recibía misiones de puente. Lo anotado acá entonces ("si un jugador humano pasa a ser de
   la computadora con una misión de puente activa, la IA lee bien el lugar pero no lo derriba") era incompleto: el
   camino de la IA (0x40d963 y 0x40d450) además leía la tabla de sitios con el código del puente como índice, fuera
@@ -299,10 +320,34 @@ puentes, convoyes) no las usa.
   (o de 0x41cb10). Tabla 0x40d02c: 1 formar en ciudad 0x40db40; 2 ruina 0x40d050; 3 ciudad neutral 0x40d9f0(t,3);
   4 objeto 0x40d5b0; 5 héroe 0x40dd00; 6 misión 0x40d6d0; 7 ciudad enemiga 0x40d9f0(t,7); 8 sitio 0x40d450(t,0);
   9 reconstruir 0x40dbf0.
-- **La IA original solo arrasa sitios por misión.** 0x40d450(sitio, modo) va al sitio (0x4973f0 destino, 0x40d2b0
-  mover, 0x40e400 atacar al que lo ocupa) y arrasa solo con modo 10, que únicamente le pasa la meta 6 (misión tipo
-  10, por 0x40d963). La meta 8 (evaluador de sitios 0x41d2c0) llama con modo 0: solo los visita. O sea, 0x40d565
-  no es una decisión estratégica: el paso 2 no tiene en qué apoyarse y es lógica nueva (decidir cuándo conviene).
+- **Corrección (8/10/2026): la IA original sí arrasa por criterio propio.** Lo anotado acá antes ("solo arrasa
+  sitios por misión; el paso 2 es lógica nueva") era falso, y contradecía lo que el usuario ya había dicho arriba
+  por haberlo visto jugar: la computadora arrasa por conveniencia, no solo por misiones, y aprovecha descuidos
+  (una ciudad vacía) aun de quien no es su enemigo. El error fue tomar por ausente lo que no estaba en los caminos
+  que miré. La lógica existe y es la que hay que descifrar y extender a los puentes:
+  - **Arrasar una ciudad recién tomada: 0x41f4b0(ciudad, bandera)**, llamada en 0x4c5296 al capturar (línea de
+    depuración "Attack City ... Raze [%d]"; ahí raze = [esp+0x1e] sale de la misión si la hay, y si no de
+    0x41f4b0; 0x4b9510(ciudad, jugador, ...) la aplica). Decodificada leyendo el código, sin emular todavía:
+    - r = 0x4deb20(1, 20, 0). Si [0x53c393] & 6 == 0 (opción de arrasar apagada) → no.
+    - c = byte [0x561ef9 + p·0x49a], p = [0x4fb0ec]: **temperamento arrasador** del jugador, 0..4. Lo inicia
+      0x472568; 0x41f410 lo pone en 1 con 1 en 20 si todos los vivos tienen 0; 0x41e290 también lo usa (30 vs 15).
+    - bandera = (word [ejército líder + 0x1a] & 0x3c00) >> 10, líder = [0x56ea92 + p·0x4f0]. **Significado sin
+      resolver.** Si c == 0 y bandera == 0 → no.
+    - si = (c == 0 ? −2 : 0); +1 si hay bandera y la ciudad no era neutral (dueño byte [0x537ed1 + ciudad·0x76]
+      != 8); +1 si su valor 0x4d5bd0(ciudad) < 150 (producción de sus 4 ranuras / 3).
+    - Vecinas: las 12 de [0x564ea6 + (ciudad·12 + i)·14] (0x50 = ninguna), distancia en el byte +4; solo vivas a
+      distancia 1..30, peso 2 si está a menos de 15, si no 1. propias += peso si son mías; enemigas += peso si el
+      dueño no es neutral y 0x49c1c0(dueño) dice hostil. si = si − propias + enemigas.
+    - +1 si tengo más de 5 ciudades, +1 más si más de 15.
+    - Si c es 1..3 y r == 1 → c + 1. Si r ≥ 19 → no. **Arrasa si c + si ≥ 5.**
+    - En criollo: arrasa la ciudad que no le rinde, rodeada de enemigos y lejos de lo propio, con más ganas si ya
+      es grande y según su temperamento, con algo de azar.
+  - Sitios: el único camino encontrado de la IA a la orden de arrasar sitio (0x4b9550) es el de la misión
+    (0x40d450 modo 10, por 0x40d963; la meta 8, evaluador de sitios 0x41d2c0, llama con modo 0 y solo visita).
+    Los otros llamadores son el truco "Burn baby burn" (0x456431) y la red (0x4b7f02). Si el usuario ve a la IA
+    arrasar sitios sin misión, hay otro camino que todavía no encontré: no darlo por inexistente.
+  - Las cadenas "Raze Site/Raze Cy/Occupy Cy Cost" de 0x435b..0x435e son del evaluador de costo de misiones, no de
+    la estrategia.
 - Estado de trabajo de la IA: [0x5020d4] = plan del grupo (+6 meta, +8 objetivo, +0xc grupo); [0x5020d0] =
   ranura; [0x4fb0ec] = jugador de la IA. Registro de depuración: sprintf [0x5a9bec] a 0x564d90 + 0x427520.
 - 0x4974a0 (distancia) es euclídea truncada: la diagonal vale 1. 0x40e400(sx,sy,x,y): a distancia 1 ataca al que
@@ -312,16 +357,20 @@ puentes, convoyes) no las usa.
 - "Quest City" ([0x561efe + jugador*0x49a]): bug del original, guarda el byte bajo del objetivo de cualquier misión
   (también de sitio) como si fuera una ciudad. Con un puente pasa lo mismo que con un sitio; no se tocó.
 
-**Paso 1 hecho (1.0.21.0).** qb_gen ya no se limita a humanos. ai_brname (0x40d963) escribe "the bridge" en el
-registro de la IA. ai_brq (0x40d450, código ≥ 0x2000): elige la cabecera más cercana (vecina de una casilla del
+**Paso 1 hecho (1.0.21.0).** qb_gen ya no se limita a humanos. ai_brname (0x40d963) escribe el nombre del puente
+en el registro de la IA (desde 1.0.22.0; antes "the bridge"). ai_brq (0x40d450, código ≥ 0x2000): elige la cabecera más cercana (vecina de una casilla del
 puente; no puente, no agua, no montaña sin camino), va como a un sitio y, parado ahí, derriba con 0x4955d0 (cumple
 la misión). Con ejércitos ajenos encima ataca con 0x40e400 y no derriba; con propios encima espera. Prueba:
 `prueba_iapuente.py` (29 casos; los sitios comparados con el original). Falta verlo en partida: que el evaluador
 0x41e8a0 elija perseguir la misión depende de 0x4a65d0 en la casilla del puente, que no se emuló.
 
-**Próximo paso (2):** decidir dónde enganchar el "derribar por criterio": un evaluador nuevo de metas (junto a
-0x41eda0) que puntúe puentes según los criterios del usuario, y que reutilice ai_brq como la meta 6 reutiliza
-0x40d450.
+**Próximo paso (2):** que la IA derribe puentes por criterio partiendo de la lógica que el juego ya tiene, no de
+un evaluador inventado. Primero terminar de descifrar 0x41f4b0: qué es la bandera del líder (bits 10..13 de +0x1a),
+cómo se inicia el temperamento (0x472568) y qué hace 0x41e290 con él; confirmarlo emulando 0x41f4b0 contra casos
+armados. Después, llevar esa misma cuenta a los puentes: temperamento, cercanía de lo propio y de lo hostil
+(0x49c1c0), y azar del mismo tamaño. Falta decidir el momento, porque un puente no "se toma" como una ciudad: un
+candidato es cuando un ejército de la IA queda en la cabecera de un puente, y ahí reutilizar ai_brq como la meta 6
+reutiliza 0x40d450.
 
 Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
 votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que

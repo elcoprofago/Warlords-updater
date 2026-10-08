@@ -3744,6 +3744,9 @@ br_d8 = place_data('br_d8', struct.pack('<8h8h', -1, 0, 1, -1, 1, -1, 0, 1, -1, 
 br_d4 = place_data('br_d4', struct.pack('<4h4h', 0, -1, 1, 0, -1, 0, 0, 1))
 str_the_bridge = place_data('str_the_bridge', cstr_('the bridge'))
 str_The_bridge = place_data('str_The_bridge', cstr_('The bridge'))
+br_namebuf = place_data('br_namebuf', bytes(0x140))
+br_namecode = place_data('br_namecode', struct.pack('<i', -1))
+str_brname_file = place_data('str_brname_file', cstr_('DATA\\BRIDNAME.TXT'))
 str_br_enemy1 = place_data('str_br_enemy1', cstr_('Enemies hold the bridge!'))
 str_br_enemy2 = place_data('str_br_enemy2', cstr_('Attack them first.'))
 # eax = x, edx = y -> eax = casilla, o 0 si cae fuera del mapa. Preserva el resto.
@@ -4230,6 +4233,95 @@ brcy_ret:
     pop ebx
     ret
 ''')
+# br_name(código, mayúscula) cdecl -> eax = el nombre propio del puente que incluye esa casilla, entero o derribado
+# ("Belgor Bridge"). Lo arma el generador de nombres del juego (0x4374a0, el de las ciudades y ruinas del mapa al
+# azar) con la gramática DATA\BRIDNAME.TXT y una semilla fija sacada de la casilla menor del puente: el mismo
+# puente da el mismo nombre desde cualquier casilla, en cualquier momento y en todas las máquinas. El estado del
+# azar ([0x500bf4], [0x500bf8]) se guarda y se repone, así la partida sigue igual que sin nombres. Sin el archivo,
+# o si no es un puente: "the bridge" / "The bridge" (mayúscula != 0). Preserva todos los registros salvo eax y
+# también br_xy. El último nombre queda en br_namebuf (br_namecode = su casilla), para no releer el archivo.
+br_name = place('br_name', f'''
+    push ecx
+    push edx
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 0x20
+    mov esi, {br_xy:#x}
+    mov edi, esp
+    mov ecx, 8
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    movsx ebx, word ptr [esp + 0x3c]
+    push {BR_KIND_INTACT}
+    push ebx
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jnz brnm_have
+    push {BR_KIND_RAZED}
+    push ebx
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz brnm_fallback
+brnm_have:
+    mov ecx, eax
+    or ebx, -1
+brnm_min:
+    movzx edx, word ptr [ecx*4 + {br_xy - 2:#x}]
+    shl edx, 7
+    movzx eax, word ptr [ecx*4 + {br_xy - 4:#x}]
+    add edx, eax
+    cmp edx, ebx
+    jae brnm_next
+    mov ebx, edx
+brnm_next:
+    dec ecx
+    jnz brnm_min
+    cmp ebx, dword ptr [{br_namecode:#x}]
+    je brnm_buf
+    mov dword ptr [{br_namecode:#x}], -1
+    imul eax, ebx, 0x2f1d
+    xor eax, 0x5a5a
+    and eax, 0xffff
+    push dword ptr [0x500bf4]
+    push dword ptr [0x500bf8]
+    mov dword ptr [0x500bf4], eax
+    mov dword ptr [0x500bf8], 0
+    push {br_namebuf:#x}
+    push {str_brname_file:#x}
+    call 0x4374a0
+    add esp, 8
+    pop dword ptr [0x500bf8]
+    pop dword ptr [0x500bf4]
+    test eax, eax
+    jz brnm_fallback
+    cmp byte ptr [{br_namebuf:#x}], 0
+    je brnm_fallback
+    mov dword ptr [{br_namecode:#x}], ebx
+brnm_buf:
+    mov eax, {br_namebuf:#x}
+    jmp brnm_out
+brnm_fallback:
+    mov eax, {str_the_bridge:#x}
+    cmp dword ptr [esp + 0x40], 0
+    je brnm_out
+    mov eax, {str_The_bridge:#x}
+brnm_out:
+    mov esi, esp
+    mov edi, {br_xy:#x}
+    mov ecx, 8
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    add esp, 0x20
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    pop edx
+    pop ecx
+    ret
+''')
 # Diálogo de arrasar (0x4951b0, modo 1 = sitio): el nombre en "Are you sure you want to raze %s?" (0x495530,
 # eax = índice) y el botón (0x495288): para un puente, si hay ejércitos ajenos encima se avisa; si no, va por el
 # mismo 0x4955d0 que un sitio, con el código canónico: avisa la destrucción a la misión del héroe (0x461a60, evento 6)
@@ -4237,7 +4329,11 @@ brcy_ret:
 br_razetxt = place('br_razetxt', f'''
     cmp eax, {BR_CODE:#x}
     jl brt2_site
-    push {str_the_bridge:#x}
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    push eax
     jmp 0x495541
 brt2_site:
     lea eax, [eax + eax*4]
@@ -4304,7 +4400,7 @@ brb2_done:
 ''')
 # Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
 # comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
-# refresca la vista y da el aviso "Razed!" / "The bridge is in ruins!" del original al jugador humano que arrasó.
+# refresca la vista y da el aviso "Razed!" / "<nombre> is in ruins!" del original al jugador humano que arrasó.
 # Sin historia (0x4a0400 / 0x49f900 son de sitios). 0x4d5f3a invalida el grafo de pasos (0x4a4f20) y sale.
 br_razeapply = place('br_razeapply', f'''
     cmp word ptr [esp + 4], {BR_CODE:#x}
@@ -4362,7 +4458,12 @@ bra2_tile:
     sub eax, ecx
     cmp word ptr [eax*8 + 0x536c12], -1
     jne 0x4d5f3a
-    mov esi, {str_The_bridge:#x}
+    movsx eax, word ptr [esp + 0x5c]
+    push 1
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    mov esi, eax
     jmp 0x4d5eda
 bra2_quit:
     pop ebp
@@ -4386,15 +4487,15 @@ bra2_quit:
 # - La IA lee el lugar del objetivo en 0x435fd0 (0x436178) y 0x436390 (0x436442): para un puente, su casilla, para
 #   no leer la tabla de sitios fuera de rango.
 # - La IA la cumple: su meta 6 (misión, 0x40d6d0) manda el tipo 10 a 0x40d963, que escribe en el registro de la IA el
-#   nombre del sitio (ai_brname: "the bridge") y llama a 0x40d450(objetivo, 10), el "ir al sitio y arrasarlo".
+#   nombre del sitio (ai_brname: el del puente, br_name) y llama a 0x40d450(objetivo, 10), el "ir al sitio y arrasarlo".
 #   Para un puente, ai_brq: elige la cabecera más cercana al héroe (distancia de rey; una casilla vecina de una del
 #   puente que no sea puente, ni agua, ni montaña sin camino), va hacia ella como 0x40d450 va al sitio (0x4973f0,
 #   0x40d2b0, 0x40e400) y, parado ahí, lo derriba con el mismo 0x4955d0 del botón (evento 6 de la misión + orden
 #   0x4b9550). Con ejércitos ajenos sobre el puente no lo derriba: ataca como 0x40e400 ataca al que ocupa un sitio;
 #   con ejércitos propios encima espera, para no ahogarlos.
 str_qb_name = place_data('str_qb_name', cstr_('Destroying a Bridge'))
-str_qb_obj = place_data('str_qb_obj', cstr_('%s must destroy the bridge near %s.'))
-str_qb_obj0 = place_data('str_qb_obj0', cstr_('%s must destroy a bridge.'))
+str_qb_obj = place_data('str_qb_obj', cstr_('%s must destroy %s, near %s.'))
+str_qb_obj0 = place_data('str_qb_obj0', cstr_('%s must destroy %s.'))
 QB_MAXCAND = 0x100                                       # la lista [esp+0x34] del generador llega a [esp+0x233]
 qb_gen = place('qb_gen', f'''
     push ebx
@@ -4503,6 +4604,13 @@ qb_text = place('qb_text', f'''
     lea eax, [ecx + ecx*4]
     jmp 0x461885
 qbt_bridge:
+    push esi
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    mov esi, eax
+    movsx eax, word ptr [edi + 6]
     push eax
     call {br_city:#x}
     add esp, 4
@@ -4514,6 +4622,7 @@ qbt_bridge:
     mov ecx, {str_qb_obj:#x}
 qbt_go:
     push eax
+    push esi
     movsx eax, word ptr [edi + 2]
     imul eax, eax, 0x1c
     movzx eax, word ptr [eax + 0x54fe62]
@@ -4525,7 +4634,8 @@ qbt_go:
     push ecx
     push ebx
     call dword ptr [0x5a9bec]
-    add esp, 0x10
+    add esp, 0x14
+    pop esi
     jmp 0x4618d3
 ''')
 qb_fail = place('qb_fail', f'''
@@ -4605,7 +4715,10 @@ ai_brname = place('ai_brname', f'''
     add eax, 0x55acba
     jmp 0x40d978
 aibn_bridge:
-    mov eax, {str_the_bridge:#x}
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
     jmp 0x40d978
 ''')
 # ai_brq(código, modo): 0x40d450 para un puente. Devuelve ax = 1 hecho, 0 todavía no (como el original).
@@ -4860,7 +4973,10 @@ br_rebtxt = place('br_rebtxt', f'''
     movsx eax, word ptr [0x587e5c]
     cmp eax, {BR_CODE:#x}
     jl brx_site
-    mov eax, {str_the_bridge:#x}
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
     jmp brx_go
 brx_site:
     lea eax, [eax + eax*4]
@@ -6432,7 +6548,108 @@ def stt(nombre, largo):
     assert len(b) == 0x29
     return b
 STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'))}
+# DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
+# lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
+# 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
+BRIDNAME = """[RULES]
+
+40 [SYL1] [SYL2] [TITLE]
+75 [SYL1] [SYL3] [TITLE]
+100 [SYL1] [SYL3] [SYL2] [TITLE]
+
+[TITLE]
+ Bridge
+ Bridge
+ Bridge
+ Bridge
+ Bridge
+ Crossing
+ Span
+
+[SYL1]
+Aern
+Gal
+Fer
+Bel
+Mel
+Bal
+Xal
+Xaj
+Zan
+Zar
+Zhul
+Yor
+Nar
+Gon
+Trel
+Grul
+Pret
+Ban
+Mor
+Tan
+Ten
+Tul
+Gol
+Ghul
+Dar
+Dran
+Drak
+Dral
+Del
+Drel
+Dul
+Drul
+Dhul
+Dhol
+Eral
+Elan
+Hrul
+Han
+Hol
+Hop
+Jus
+Kil
+Khaz
+Khur
+Zen
+
+[SYL2]
+ton
+rak
+rik
+thas
+thor
+gor
+dros
+heim
+dor
+doria
+kith
+kin
+ing
+gon
+tor
+torin
+berg
+ville
+side
+shand
+lay
+dalf
+
+[SYL3]
+an
+a
+or
+o
+in
+il
+al
+onga
+orcha
+""".replace('\n', '\r\n').encode('ascii')
 NUEVOS = dict(STTS)
+NUEVOS[os.path.join('DATA', 'BRIDNAME.TXT')] = BRIDNAME
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 NUEVOS.update(NUEVOS_TIT)
 

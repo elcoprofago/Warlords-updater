@@ -24,7 +24,9 @@ P = [(20, 10), (21, 10)]; PC = BC(20, 10)
 SITE = (30, 30)
 STUB = 0x100000; STACK = 0x200000; END = 0x1fff00; PLAN = 0x101600; FMT = 0x101200; LOG = 0x101700
 STUBS = {0x40d2b0: 'mover', 0x40e400: 'atacar', 0x4b9550: 'orden', 0x40d230: 'grupo', 0x4275b0: 'pausa',
-         0x4973f0: 'destino', 0x427520: 'log', 0x4621d0: 'premio', 0x4def30: 'texto', 0x4deb20: 'azar'}
+         0x4973f0: 'destino', 0x427520: 'log', 0x4621d0: 'premio', 0x4def30: 'texto', 0x4deb20: 'azar',
+         0x4374a0: 'nombre'}
+BRIDGE_NAME = 'Belgor Bridge'             # lo que da el stub del generador de nombres (br_name)
 
 FTOL = STUB + 0x100
 FTOL_CODE = bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm('''
@@ -119,6 +121,7 @@ class Bench:
             elif k == 'destino': self.calls.append((k, s(0), s(1), s(2), s(3)))
             elif k in ('grupo', 'pausa', 'premio'): self.calls.append(k)
             elif k == 'texto': ret = FMT
+            elif k == 'nombre': uc.mem_write(self.arg(1), BRIDGE_NAME.encode() + b'\0'); ret = self.arg(1)
             uc.reg_write(UC_X86_REG_EAX, ret)
         elif addr == STUB:
             fmt = self.cstr(a := self.arg(1))
@@ -245,8 +248,8 @@ def site963(target, exe=AV):
     end = b.run(0x40d963, frame=frame, regs=dict(ESI=STUB, EDI=10), stops=(0x40d450,))
     return end, b.sarg(0), b.sarg(1), [c for c in b.calls if c[0] == 'sprintf']
 r = site963(PC)
-check('0x40d963 con puente: registra "the bridge" y llama a 0x40d450(código, 10)',
-      r[0] == 0x40d450 and r[1:3] == (PC, 10) and r[3] == [('sprintf', '*******Goto Site the bridge *******')], r)
+check('0x40d963 con puente: registra su nombre y llama a 0x40d450(código, 10)',
+      r[0] == 0x40d450 and r[1:3] == (PC, 10) and r[3] == [('sprintf', f'*******Goto Site {BRIDGE_NAME} *******')], r)
 a, o = site963(0), site963(0, ORIG)
 check('0x40d963 con sitio: igual al original', a == o and a[0] == 0x40d450 and 'SitioA' in a[3][0][1], f'{a} {o}')
 

@@ -28,6 +28,7 @@ UI, ENEMY, PEACE = 1, 3, 4
 HERO = 1                                  # ejército 1 = el héroe de UI; 2 = otro héroe de UI
 BC = lambda x, y: 0x2000 + (y << 7) + x
 STUB = 0x100000; STACK = 0x200000; END = 0x1fff00; OUT = 0x101000; USED = 0x101100; FMT = 0x101200
+GEN_NAME = 'Belgor Bridge'                # lo que da el stub del generador de nombres (None: falla, sin archivo)
 BRIDGES = {'B1': ((20, 5), (21, 5)), 'B5': ((25, 30), (26, 30)), 'B3': ((10, 8), (11, 8)), 'B2': ((5, 45), (5, 46)),
            'B4': ((30, 20), (31, 20)), 'B7': ((30, 10), (31, 10)), 'B6': ((15, 25), (16, 25))}
 RAZED = {'B6'}
@@ -86,7 +87,7 @@ class Bench:
         mu.mem_write(0x556bb4 + 4 * 0xb8, b'Heroe Dos\0')
         self.picks = list(picks); self.rand = []; self.calls = []
         mu.mem_write(0x4dd390, bytes.fromhex('31c0c3'))         # partida de un solo equipo: xor eax, eax
-        for va, n in {0x4621d0: 0, 0x4def30: 8}.items():
+        for va, n in {0x4621d0: 0, 0x4def30: 8, 0x4374a0: 0}.items():
             mu.mem_write(va, b'\xc2' + struct.pack('<H', n) if n else b'\xc3')
         mu.mem_write(0x4deb20, b'\xc3')
         mu.mem_write(STUB, b'\xc3'); mu.mem_write(0x5a9bec, struct.pack('<I', STUB))   # sprintf
@@ -123,9 +124,11 @@ class Bench:
             self.calls.append(('text', a(0))); uc.reg_write(UC_X86_REG_EAX, FMT)
         elif addr == 0x4621d0:
             self.calls.append('premio')
+        elif addr == 0x4374a0:                                      # generador de nombres (br_name)
+            uc.mem_write(a(1), (GEN_NAME or '').encode() + b'\0'); uc.reg_write(UC_X86_REG_EAX, a(1) if GEN_NAME else 0)
         elif addr == STUB:
             fmt = self.cstr(a(1))
-            out = fmt % (self.cstr(a(2)), self.cstr(a(3))) if fmt.count('%s') == 2 else fmt % self.cstr(a(2))
+            out = fmt % tuple(self.cstr(a(2 + i)) for i in range(fmt.count('%s')))
             uc.mem_write(a(0), out.encode('latin1') + b'\0'); self.calls.append(('sprintf', out))
 
     def run(self, start, args=(), regs=None, stops=()):
@@ -171,8 +174,8 @@ _cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 def _jmp(va):
     i = next(_cs.disasm(AV[1][va - AV[0]:va - AV[0] + 8], va)); assert i.mnemonic == 'jmp'; return int(i.op_str, 16)
 QB_TEXT = _jmp(0x461876)
-BR_CITY = next(int(i.op_str, 16) for i in _cs.disasm(AV[1][QB_TEXT - AV[0]:QB_TEXT - AV[0] + 0x40], QB_TEXT)
-               if i.mnemonic == 'call')
+BR_NAME, BR_CITY = [int(i.op_str, 16) for i in _cs.disasm(AV[1][QB_TEXT - AV[0]:QB_TEXT - AV[0] + 0x60], QB_TEXT)
+                    if i.mnemonic == 'call'][:2]                # qb_text llama primero a br_name y después a br_city
 rnd = random.Random(1234)
 ba, bo = Bench(cities=NOCITY), Bench(exe=ORIG, cities=NOCITY, sites=[((0, 0), 'P')])
 bad = []; kinds = set()
@@ -276,12 +279,18 @@ def text(fn, tgt, exe=AV, cities=CITIES):
     b = with_quest(tgt, sites=SITES, exe=exe, cities=cities)
     end = b.run(fn, (0x55edc4 + UI * 16, BUF))
     return end == END and b.saved_ok(), b.cstr(BUF), b.calls
-for nombre, fn, tgt, kw, esperado in [
-        ('nombre: puente', 0x461130, B['B5'], {}, 'Destroying a Bridge'),
-        ('objetivo: puente cerca de una ciudad', 0x461400, B['B5'], {}, f'{HERO_NAME} must destroy the bridge near Enemiga.'),
-        ('objetivo: puente sin ciudades', 0x461400, B['B5'], dict(cities=NOCITY), f'{HERO_NAME} must destroy a bridge.')]:
+for nombre, fn, tgt, kw, gen, esperado in [
+        ('nombre: puente', 0x461130, B['B5'], {}, 'Belgor Bridge', 'Destroying a Bridge'),
+        ('objetivo: puente cerca de una ciudad', 0x461400, B['B5'], {}, 'Belgor Bridge',
+         f'{HERO_NAME} must destroy Belgor Bridge, near Enemiga.'),
+        ('objetivo: puente sin ciudades', 0x461400, B['B5'], dict(cities=NOCITY), 'Belgor Bridge',
+         f'{HERO_NAME} must destroy Belgor Bridge.'),
+        ('objetivo: sin archivo de nombres', 0x461400, B['B5'], {}, None,
+         f'{HERO_NAME} must destroy the bridge, near Enemiga.')]:
+    GEN_NAME = gen
     ok, s, _ = text(fn, tgt, **kw)
     check(nombre, ok and s == esperado, repr(s))
+GEN_NAME = 'Belgor Bridge'
 for nombre, fn in [('nombre: sitio igual al original', 0x461130), ('objetivo: sitio igual al original', 0x461400)]:
     a, o = text(fn, 0), text(fn, 0, exe=ORIG)
     check(nombre, a == o and a[0] and a[1], f'{a} {o}')

@@ -14,6 +14,11 @@ SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 def cstr_va(s):
     return BASE + img.index(s.encode('latin1') + b'\0')
 THE_BRIDGE, THE_BRIDGE_U = cstr_va('the bridge'), cstr_va('The bridge')
+# El generador de nombres del juego (0x4374a0) es un stub que escribe un nombre hecho con la semilla que recibe en
+# [0x500bf4]; la semilla sale de la casilla menor del puente (br_name).
+def bridge_name(x, y):
+    return f'Name{((x + (y << 7)) * 0x2f1d ^ 0x5a5a) & 0xffff:04x} Bridge'
+NAME55, NAME129 = bridge_name(5, 5), bridge_name(12, 8)
 ENEMY1, ENEMY2 = cstr_va('Enemies hold the bridge!'), cstr_va('Attack them first.')
 def call_target(va):
     assert img[va - BASE] == 0xe8
@@ -63,7 +68,7 @@ class Bench:
         self.stub_at = {}
         stubs = {0x4a2170: 0, 0x456ee0: 0, 0x4a4f20: 0, 0x43fd60: 0, 0x485610: 0, 0x43c240: 0, 0x4c2790: 0,
                  0x4b9550: 0, 0x4955d0: 0, 0x4d82a0: 0, 0x4d7f60: 0, 0x4a0400: 0, 0x49f900: 0, 0x43ff80: 0,
-                 0x4def30: 8, 0x440b30: 0}
+                 0x4def30: 8, 0x440b30: 0, 0x4374a0: 0}
         for va, n in stubs.items():
             mu.mem_write(va, b'\xc2' + struct.pack('<H', n) if n else b'\xc3')
         self.site = -1
@@ -109,6 +114,11 @@ class Bench:
             name = bytes(uc.mem_read(a(2), 64)).split(b'\0')[0].decode('latin1')
             out = (fmt % name).encode('latin1') + b'\0'
             uc.mem_write(a(0), out); self.calls.append(('sprintf', fmt % name))
+        elif addr == 0x4374a0:
+            seed, reseed = struct.unpack('<II', uc.mem_read(0x500bf4, 8))
+            fname = bytes(uc.mem_read(a(0), 64)).split(b'\0')[0].decode('latin1')
+            uc.mem_write(a(1), f'Name{seed:04x} Bridge'.encode() + b'\0'); uc.reg_write(UC_X86_REG_EAX, a(1))
+            self.calls.append(('names', fname, reseed))
         elif addr == 0x4b9550:
             self.calls.append(('order', a(0) & 0xffff, a(1) & 0xffff))
         elif addr == 0x4955d0:
@@ -202,11 +212,19 @@ for nombre, start, leader, bl, opt, prep, esp8, espc in [
           f'buf={got.hex()} regs_ok={ok_regs}')
 
 # ---- texto del diálogo de arrasar (0x495530)
-for nombre, eax, esperado in [('texto raze: puente', BC(5, 5), THE_BRIDGE), ('texto raze: sitio 2 (control)', 2, SITE_NAME(2))]:
+def cstr_at(b, va): return bytes(b.mu.mem_read(va, 64)).split(b'\0')[0].decode('latin1')
+GEN = ('names', 'DATA\\BRIDNAME.TXT', 0)
+for nombre, eax, esperado, calls in [('texto raze: puente', BC(5, 5), NAME55, [GEN]),
+                                     ('texto raze: otra punta, mismo nombre', BC(6, 5), NAME55, [GEN]),
+                                     ('texto raze: el vertical', BC(12, 9), NAME129, [GEN]),
+                                     ('texto raze: sitio 2 (control)', 2, None, [])]:
     b = Bench()
+    b.mu.mem_write(0x500bf4, struct.pack('<II', 0x1234, 1))
     end = b.run(0x495530, (0x495541,), regs=dict(EAX=eax), stack_words=[0] * 4)
     top = struct.unpack('<I', b.mu.mem_read(b.r('ESP'), 4))[0]
-    check(nombre, end == 0x495541 and top == esperado and b.r('ESP') == b.esp0 - 4, f'top={top:#x}')
+    got = cstr_at(b, top) if esperado else top
+    check(nombre, end == 0x495541 and got == (esperado or SITE_NAME(2)) and b.r('ESP') == b.esp0 - 4 and b.calls == calls
+          and struct.unpack('<II', b.mu.mem_read(0x500bf4, 8)) == (0x1234, 1), f'got={got} calls={b.calls}')
 
 # ---- botón del diálogo de arrasar (0x495288 -> 0x495294): un puente va por 0x4955d0 con su código canónico
 for nombre, code, armies, esperado in [
@@ -229,8 +247,8 @@ def intact(b, *xy): return all(b.tile(x, y) == (1, 0x05) for x, y in xy)
 for nombre, code, player, armies, fliers, cond in [
         ('arrasar: puente vacío, humano', BC(5, 5), UI, [(4, 5, UI, True)], (),
          lambda b: razed(b, (5, 5), (6, 5)) and intact(b, (12, 8), (12, 9)) and b.calls == [
-             'view', ('text', 0x8d), ('sprintf', 'The bridge is in ruins!'), ('text', 0x8c),
-             ('msg', '%s is in ruins!', 0x19), ('msg', 'The bridge is in ruins!', 0x23), 'graph']),
+             'view', GEN, ('text', 0x8d), ('sprintf', f'{NAME55} is in ruins!'), ('text', 0x8c),
+             ('msg', '%s is in ruins!', 0x19), ('msg', f'{NAME55} is in ruins!', 0x23), 'graph']),
         ('arrasar: desde la otra punta', BC(6, 5), UI, [], (), lambda b: razed(b, (5, 5), (6, 5))),
         ('arrasar: el vertical', BC(12, 9), UI, [], (), lambda b: razed(b, (12, 8), (12, 9)) and intact(b, (5, 5), (6, 5))),
         ('arrasar: propio encima cae al agua', BC(5, 5), UI, [(4, 5, UI, True), (6, 5, UI, True)], (),
@@ -283,10 +301,14 @@ for nombre, sel, ev, esperado in [('dibujo: puente no dibuja', BC(5, 5), 4, 0x4b
     check(nombre, end == esperado and b.r('ESP') == b.esp0)
 
 # ---- texto "Rebuilding %s" (0x4b64f0)
-for nombre, sel, esperado in [('texto build: puente', BC(5, 5), THE_BRIDGE), ('texto build: sitio 5 (control)', 5, SITE_NAME(5))]:
-    b = Bench(); b.mu.mem_write(0x587e5c, struct.pack('<h', sel))
+for nombre, sel, ext, esperado in [('texto build: puente', BC(5, 5), raze_ext, NAME55),
+                                   ('texto build: el derribado tiene el mismo nombre', BC(6, 5), raze_ext, NAME55),
+                                   ('texto build: sitio 5 (control)', 5, None, None)]:
+    b = Bench(extra=ext); b.mu.mem_write(0x587e5c, struct.pack('<h', sel))
     end = b.run(0x4b64f0, (0x4b650c,), stack_words=[0] * 4)
-    check(nombre, end == 0x4b650c and b.r('EAX') == esperado and b.r('ECX') == 0x589880 and b.r('ESP') == b.esp0)
+    got = cstr_at(b, b.r('EAX')) if esperado else b.r('EAX')
+    check(nombre, end == 0x4b650c and got == (esperado or SITE_NAME(5)) and b.r('ECX') == 0x589880
+          and b.r('ESP') == b.esp0, f'got={got}')
 
 # ---- costo (0x4b65e0 -> si en 0x4b65ec)
 for nombre, code, esperado in [('costo: puente = fundar ciudad', BC(5, 5), 1000), ('costo: sitio = reconstruir sitio', 2, 300)]:
