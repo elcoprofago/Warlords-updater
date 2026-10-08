@@ -291,6 +291,18 @@ Para después:
 Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear o reconstruir puentes, convoyes)
 no las usa.
 
+**Estado al 7/10/2026 (vista-aliada 1.0.20.0): es lo que sigue.** Las partes A, B, C, E y F están hechas y
+publicadas; el usuario confirmó en partida el escudo de la votación (1.0.19.0) y el título de imagen (1.0.20.0).
+Nada de la IA está empezado: el primer paso es leer cómo decide hoy razear un sitio (0x40d565) y cómo planifica
+movimientos y misiones de héroe (0x436178 y 0x436442 leen el lugar del objetivo), antes de proponer el orden.
+También queda la pausa durante los turnos de la IA (ver C: sus turnos no se paran).
+
+## G. Para otro momento: el actualizador
+
+Pedido del usuario (7/10/2026), sin fecha: revisar el actualizador del juego y adaptarlo a todo lo que cambió en el
+parche y en los dos programas complementarios (Votacion y Sorteo). Hoy los dos programas no tienen remoto ni
+releases, así que el actualizador no los puede instalar (ver B).
+
 ---
 
 ## Respuestas del usuario (7/10/2026) y decisión técnica
