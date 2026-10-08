@@ -271,6 +271,11 @@ en `DarkCompare\assets\`; se incorporó a `parches\vista-aliada\titulo.pcx`).
 - Medido: los tres fondos solo cambian en el recuadro del título (x 129..515, y 5..59 del diálogo). El marco está
   en la misma posición en los tres, pero sus píxeles no son idénticos (~8% difiere): el control es de alineación.
 - Sin verificar: verlo en el juego en las tres resoluciones.
+- Usuario (7/10/2026): el título de 1.0.19.0 "quedó muy bien" y el escudo de la votación se ve mejor. Pidió la
+  imagen nueva `DarkCompare\assets\Imagen2.pcx` (537x91, degradé vertical de amarillo pálido a naranja, sin
+  sombra), que reemplaza a `titulo.pcx` en el repo (1.0.20.0). Con ese degradé, la transparencia anterior
+  ((R - B) / 170) dejaba casi transparentes los brillos de arriba. Ahora usa el color lleno de cada fila: ver
+  build.py. Va a 60 de alto desde y 3 (360 de ancho; recuadro cambiado x 142..501, y 3..62 del diálogo).
 
 ## D. Diferido: programar la IA (otra sesión)
 

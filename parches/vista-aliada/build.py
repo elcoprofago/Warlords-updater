@@ -6089,7 +6089,7 @@ table_add(res, 2, RAM_FILE, bytes(ram))
 # corrido un píxel abajo a la derecha y con contorno naranja (71, el aro de los botones apretados de BUTT_STD); con el
 # puntero encima, con el contorno; deshabilitado, oscurecido. Los colores salen de la paleta de BUTT_STD.PCX (la misma
 # de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
-from PIL import Image
+from PIL import Image, ImageFilter
 SRC_BUTT = r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX'
 butt = Image.open(SRC_BUTT)
 assert butt.mode == 'P' and butt.size == (472, 224)
@@ -6131,12 +6131,14 @@ table_add(res, 2, SORTEO_FILE, bytes(butt_std))
 # lugar del texto del control 19 (que queda vacío). El fondo es el archivo 1 (picts\startup, 640x480, por la pantalla
 # 1 de la tabla tipo 5) o, a 800x600 y 1024x768, el 138 o el 139 (0x4aab9a), con el diálogo corrido (80,60) o
 # (192,144); el marco es el mismo en los tres, en esa posición. Las tres copias nuevas (picts\startav*) llevan el
-# título centrado sobre el marco (x 322 del diálogo) y arriba (y 5), donde iba el texto, de 56 de alto (el marco
-# empieza en y 67). La transparencia sale del dorado: alfa = (R - B) / 170 (el dorado lleno tiene R - B >= 170; el
-# blanco y la sombra gris, 0), y el color, despejado de la mezcla con blanco; se mezcla con el fondo y se lleva al
-# color más cercano entre los que ya usan los tres fondos (comparten paleta).
+# título centrado sobre el marco (x 322 del diálogo) y arriba (y 3), donde iba el texto, de 60 de alto (el marco
+# empieza en y 67). El dorado es un degradé vertical (amarillo pálido arriba, naranja abajo) sobre blanco (254): el
+# color lleno de cada fila es la mediana del interior de las letras (erosionado 5x5), interpolada entre filas; la
+# transparencia de un píxel es cuánto avanza de blanco hacia ese color, y su color, despejado de la mezcla con
+# blanco. Se mezcla con el fondo y se lleva al color más cercano entre los que ya usan los tres fondos (comparten
+# paleta).
 TITULO = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'titulo.pcx')).convert('RGB')
-TIT_H, TIT_X, TIT_Y = 56, 322, 5
+TIT_H, TIT_X, TIT_Y, TIT_W = 60, 322, 3, (254, 254, 254)
 STARTUP = [(1, 'startup', 'startav', (0, 0)), (138, 'startup1', 'startav1', (80, 60)), (139, 'startup2', 'startav2', (192, 144))]
 fondos = {n: Image.open(os.path.join(r'C:\Warlords3\PICTS', n + '.pcx')) for _, n, _, _ in STARTUP}
 st_pal = fondos['startup'].getpalette()[:768]
@@ -6151,13 +6153,33 @@ def st_cercano(rgb):
     if rgb not in _st_memo:
         _st_memo[rgb] = min(st_usables, key=lambda i: sum((st_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _st_memo[rgb]
-tit = TITULO.crop(TITULO.point(lambda v: 255 - v).getbbox())
+tit = TITULO
+assert all(tit.getpixel(p) == TIT_W for p in ((0, 0), (tit.width - 1, 0), (0, tit.height - 1), (tit.width - 1, tit.height - 1)))
+tit_tinta = Image.new('L', tit.size)
+tit_tinta.putdata([255 if min(c) < 230 else 0 for c in tit.get_flattened_data()])
+tit_int = tit_tinta.filter(ImageFilter.MinFilter(5))
+tit_fila = {}
+for y in range(tit.height):
+    cs = [tit.getpixel((x, y)) for x in range(tit.width) if tit_int.getpixel((x, y))]
+    if len(cs) >= 3: tit_fila[y] = tuple(sorted(c[k] for c in cs)[len(cs) // 2] for k in range(3))
+tit_ys = sorted(tit_fila)
+assert len(tit_ys) > tit.height // 2
+def tit_color(y):
+    if y <= tit_ys[0]: return tit_fila[tit_ys[0]]
+    if y >= tit_ys[-1]: return tit_fila[tit_ys[-1]]
+    a_, b_ = max(k for k in tit_ys if k <= y), min(k for k in tit_ys if k >= y)
+    t = (y - a_) / (b_ - a_) if b_ > a_ else 0
+    return tuple(tit_fila[a_][k] + (tit_fila[b_][k] - tit_fila[a_][k]) * t for k in range(3))
 tit_a = Image.new('RGBA', tit.size)
 for y in range(tit.height):
+    d = [TIT_W[k] - v for k, v in enumerate(tit_color(y))]; dd = sum(v * v for v in d)
     for x in range(tit.width):
-        r, g, b_ = tit.getpixel((x, y))
-        a_ = max(0, min(255, round((r - b_) * 255 / 170)))
-        if a_: tit_a.putpixel((x, y), tuple(max(0, min(255, round((v - (255 - a_)) * 255 / a_))) for v in (r, g, b_)) + (a_,))
+        p_ = tit.getpixel((x, y))
+        a_ = max(0.0, min(1.0, sum((TIT_W[k] - p_[k]) * d[k] for k in range(3)) / dd))
+        if a_ < 0.03: continue
+        c_ = p_ if a_ > 0.97 else tuple(max(0, min(255, round((p_[k] - (1 - a_) * TIT_W[k]) / a_))) for k in range(3))
+        tit_a.putpixel((x, y), c_ + (round(a_ * 255),))
+tit_a = tit_a.crop(tit_a.getbbox())
 tit_a = tit_a.resize((round(tit_a.width * TIT_H / tit_a.height), TIT_H), Image.LANCZOS)
 assert TIT_Y + TIT_H < 67
 NUEVOS_TIT = {}
