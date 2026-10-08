@@ -200,31 +200,49 @@ con dos PC (punto 2).
 
 ---
 
-## E. Idea: resultado de la votación en el "Events Report" (sin empezar)
+## E. Resultado de la votación en el "Events Report"
 
-Pedido del usuario (7/10/2026), como pregunta: que el reporte de eventos del juego diga, por ejemplo,
-"Resultados votacion: 5 por el SI, 3 por el NO". Medido en el código (Darklord.exe original):
+**Estado al 7/10/2026 (vista-aliada 1.0.18.0):** hecho y probado en emulación (`prueba_votoinforme.py`, 0 MAL).
+Falta verlo en una partida real (ver abajo). Pedido del usuario (7/10/2026): que el reporte de eventos diga, por
+ejemplo, "Resultados votacion: 5 por el SI, 3 por el NO".
 
-- **Reporte:** menú de reportes (textos Sagetext grupo 0x166; armado en 0x4b4d20), "Events Report" = opción 0x17.
-  Lo abre 0x4b3980: lee HISTORY.DAT (0x499450) a un búfer [0x587e44], página = ronda [0x587e40] (ronda actual =
-  [0x5032f8+0x30], 0x420a80). Dibuja 0x4b3ec0; cada línea la escribe 0x4b4110 con un `switch` por tipo de evento
-  (tipos 0..0x12, tabla 0x4b4798; textos Sagetext 0xb3..0xc5: "%s captures %s", "War declared with %s", "Alliance
-  formed with %s"...). Muestra a lo sumo 11 líneas por ronda.
-- **Eventos de la ronda en curso:** tabla 0x572788, 8 jugadores x 2 ranuras x 28 bytes. Alta: 0x498910(prioridad,
-  jugador, tipo, nombre, ...) — por jugador quedan las 2 de mayor prioridad. Registro: prioridad(2) jugador(2)
-  tipo(2) nombre(16) y tres words. 19 llamadores.
-- **Al cambiar de ronda** (0x4212b0, desde 0x4c07a9) 0x4989d0 agrega a HISTORY.DAT un bloque: cabecera 0x48 B
-  (datos por jugador), dueños de ciudades ([0x537e2a] bytes) y los registros con prioridad > 0; luego 0x4988d0
-  vacía la tabla. La partida guardada lo carga en 0x439c2b -> 0x498c40.
-- **El dato ya llega:** Votacion publica el "cerrado" con los votos finales (`VOT <sesión> cerrado a r <8 marcas
-  s/n/->`) y el parche ya lo recibe en todas las PC (pz_state). El "cerrado" de emergencia (`VOT - cerrado ...`,
-  sin programa en el anfitrión) no trae votos y habría que ignorarlo.
-- **Camino posible:** al recibir el "cerrado" con votos, agregar un registro propio (tipo nuevo 0x13 con los
-  conteos SI/NO en los words) que no ocupe las ranuras de los jugadores (por ejemplo, sumado al bloque al escribir
-  HISTORY.DAT, o una tabla aparte), y extender el `switch` de 0x4b4110 para dibujarlo con su texto.
-- **Riesgo de desincronizar:** ninguno sobre el juego: el reporte es solo lectura, nada lo usa para decidir. Lo
-  peor es que, si el "cerrado" llega justo en el cambio de ronda, una PC lo anote en una ronda y otra en la
-  siguiente (con la pausa activa eso es improbable).
+**Lo medido en el código (Darklord.exe original)**
+- Registro de suceso, 0x1c bytes: +0 tipo (que es también la prioridad), +2 jugador, +4 parámetro, +6 nombre[16],
+  +0x16/+0x18/+0x1a tres words. (La nota anterior decía "prioridad, jugador, tipo": el tipo y la prioridad son el
+  mismo campo.) Alta: 0x498910(tipo, jugador, parámetro, nombre, w1, w2, w3); quedan los 2 de mayor tipo por jugador.
+- Ronda en curso: tabla 0x572788 (8 jugadores x 2). En las partidas en red guardadas están los 8 bandos activos: no
+  hay ranuras libres, por eso las votaciones van en una tabla aparte.
+- Fin de ronda 0x4989d0: agrega a HISTORY.DAT cabecera 0x48 (+0 tamaño del bloque, +0x44 cantidad de renglones),
+  dueños de ciudades y renglones; después 0x4988d0 vacía la tabla (también al empezar partida, desde 0x42de63).
+- Informe 0x499450: rondas pasadas desde HISTORY.DAT (por tamaño y cantidad de cada cabecera) y la actual desde la
+  tabla. Lo usan el Events Report (0x4b39d8) y otro reporte (0x46b799) que solo cuenta el tipo 0xe del jugador.
+- Dibujo 0x4b3ec0: hasta 11 renglones por ronda, en el orden del búfer; nada en la ronda 1. Renglón 0x4b4110:
+  escudo del jugador y `switch` por tipo (0..0x12); con un tipo mayor el original solo dibuja el escudo.
+- .SAV: 0x439a00 guarda (HISTORY.DAT y la tabla en 0x498c40) y termina con 0x18 bytes de 0x4fae68; 0x439e..
+  carga y tolera que falte el final. El original ignora lo que sobre después.
+
+**Qué hace**
+- Al recibir un estado de la Votación (antes de pz_state, solo con la orden de abrir dada): si cambió la sesión,
+  descarta lo pendiente; si cambió el número de reinicios, anota lo pendiente; guarda los conteos de s y n si hay
+  al menos un voto; con "cerrado", anota. O sea: cada votación con votos se anota cuando se reinicia o cuando se
+  cierra el programa. El cierre de emergencia (sesión "-") y un programa muerto sin cerrar no anotan nada.
+- Anotar = un renglón tipo 0x13, jugador 8, SI en +0x16, NO en +0x18, en `vt_tab` (hasta 8 por ronda).
+- Al terminar la ronda, esos renglones se escriben en HISTORY.DAT **antes** que los sucesos de la ronda (para que
+  entren en los 11 renglones), con el tamaño y la cantidad de la cabecera corregidos; el informe los suma también a
+  la ronda en curso. El renglón se dibuja sin escudo, donde va el texto de los demás.
+- La tabla de la ronda en curso se guarda al final del .SAV ('VOTA', cantidad, tabla) y se carga si está; un .SAV
+  viejo o roto la carga vacía.
+- Sin votaciones, HISTORY.DAT y el informe quedan idénticos byte a byte a los del original (probado).
+
+**Límites aceptados**
+- La ronda 1 no se muestra nunca (así es el juego).
+- Con muchos sucesos, las votaciones (que van primero) pueden dejar afuera sucesos de la ronda: se ven 11 renglones.
+- Si una votación se cierra justo en el cambio de ronda, una PC puede anotarla en una ronda y otra en la siguiente.
+- HISTORY.DAT con renglones 0x13 abierto con el Darklord.exe original: ese renglón sale solo como un escudo.
+
+**Sin verificar (no se puede desde acá)**
+1. Que el texto entre en el ancho del reporte (no se puede ver la pantalla en la emulación).
+2. Partida real: votar en una ronda, pasar de ronda, abrir el Events Report y mirar esa ronda (y la ronda en curso).
 
 ## D. Diferido: programar la IA (otra sesión)
 

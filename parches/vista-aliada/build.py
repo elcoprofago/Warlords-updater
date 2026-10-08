@@ -5071,6 +5071,293 @@ pz_chk = {va: place(f'pz_chk_{va:x}', f'''
                       (0x4c10c0, 'cmp byte ptr [0x4ff7a0], 0'),
                       (0x4c1250, 'cmp byte ptr [0x4ff7a0], 0'))}
 
+# ---- Resultado de la votación en el Events Report (vt_*). Los sucesos de la ronda en curso viven en 0x572788 (8
+# jugadores x 2 renglones de 0x1c: +0 tipo, que es también la prioridad, +2 jugador, +4 parámetro, +6 nombre[16],
+# +0x16/+0x18/+0x1a tres words). Al terminar la ronda, 0x4989d0 agrega un bloque a HISTORY.DAT (cabecera de 0x48 con
+# el tamaño en +0 y la cantidad de renglones en +0x44, las ciudades y los renglones) y vacía la tabla con 0x4988d0; el
+# informe (0x499450) arma las rondas pasadas desde HISTORY.DAT y la actual desde la tabla.
+# Como en las partidas en red están los 8 bandos activos, no hay renglones libres en esa tabla: los resultados van en
+# una aparte (vt_tab, hasta VT_MAX por ronda), con tipo 0x13 (nuevo), jugador 8, SI en +0x16 y NO en +0x18. Se
+# escriben en HISTORY.DAT antes que los sucesos de la ronda (el informe muestra 11 renglones por ronda), se suman a la
+# ronda en curso del informe y se guardan al final del .SAV ('VOTA', cantidad, tabla; el ejecutable original ignora lo
+# que sobra después del final y un .SAV viejo carga la tabla vacía).
+# Cuándo se anota una votación (con al menos un voto): cuando se reinicia (cambia el número de reinicios del estado) o
+# cuando el programa se cierra ("cerrado"). Si el programa muere sin cerrar, o el cierre es el de emergencia (sesión
+# "-"), no se anota nada.
+VT_MAX = 8
+VT_TYPE, VT_PLAYER = 0x13, 8
+vt_save = place_data('vt_save', b'VOTA' + bytes(4 + VT_MAX * 0x1c))   # tal cual se escribe al final del .SAV
+VT_N, VT_TAB = vt_save + 4, vt_save + 8
+vt_vars = place_data('vt_vars', bytes(0x20))   # +0 pendiente, +4 reinicios, +8 SI, +0xa NO, +0xc 'VOTA' leído, +0x10 sesión
+VT_HAVE, VT_RES, VT_SI, VT_NO, VT_MAGIC, VT_SES = (vt_vars + o for o in (0, 4, 8, 0xa, 0xc, 0x10))
+vt_fmt = place_data('vt_fmt', cstr_('Resultados votacion: %d por el SI, %d por el NO'))
+
+# Anotar el resultado pendiente, si lo hay. Conserva todos los registros.
+vt_commit = place('vt_commit', f'''
+    pushad
+    cmp byte ptr [{VT_HAVE:#x}], 0
+    je vc_end
+    mov byte ptr [{VT_HAVE:#x}], 0
+    mov eax, dword ptr [{VT_N:#x}]
+    cmp eax, {VT_MAX}
+    jae vc_end
+    inc dword ptr [{VT_N:#x}]
+    imul edi, eax, 0x1c
+    add edi, {VT_TAB:#x}
+    mov ebx, edi
+    xor eax, eax
+    mov ecx, 7
+    rep stosd
+    mov word ptr [ebx], {VT_TYPE:#x}
+    mov word ptr [ebx + 2], {VT_PLAYER}
+    mov ax, word ptr [{VT_SI:#x}]
+    mov word ptr [ebx + 0x16], ax
+    mov ax, word ptr [{VT_NO:#x}]
+    mov word ptr [ebx + 0x18], ax
+vc_end:
+    popad
+    ret
+''')
+
+# Llegó un estado de la Votación (edi = texto "VOT <sesión> <fase> <automáticas> <reinicios> <8 marcas s/n/->").
+# Se llama antes que pz_state, que en "cerrado" baja la orden de abrir.
+VT_SKIP = lambda l: f'''
+{l}:
+    mov al, byte ptr [esi]
+    test al, al
+    jz vs_end
+    inc esi
+    cmp al, 0x20
+    jne {l}
+'''
+vt_state = place('vt_state', f'''
+    pushad
+    cmp byte ptr [{PZ_ARM:#x}], 0
+    je vs_end
+    cmp dword ptr [edi], 0x20544f56
+    jne vs_end
+    lea esi, [edi + 4]
+    mov ebx, {VT_SES:#x}
+    xor ecx, ecx
+    xor edx, edx
+vs_ses:
+    mov al, byte ptr [esi]
+    test al, al
+    jz vs_end
+    inc esi
+    cmp al, 0x20
+    je vs_sesend
+    cmp edx, 15
+    jae vs_ses
+    cmp al, byte ptr [ebx + edx]
+    je vs_seseq
+    mov byte ptr [ebx + edx], al
+    mov cl, 1
+vs_seseq:
+    inc edx
+    jmp vs_ses
+vs_sesend:
+    cmp byte ptr [ebx + edx], 0
+    je vs_ses0
+    mov byte ptr [ebx + edx], 0
+    mov cl, 1
+vs_ses0:
+    test cl, cl
+    jz vs_phase
+    mov byte ptr [{VT_HAVE:#x}], 0
+vs_phase:
+    xor ebp, ebp
+    cmp dword ptr [esi], 0x72726563
+    jne vs_ph1
+    cmp dword ptr [esi + 4], 0x206f6461
+    jne vs_ph1
+    inc ebp
+{VT_SKIP('vs_ph1')}
+{VT_SKIP('vs_auto')}
+    xor edx, edx
+vs_num:
+    movzx eax, byte ptr [esi]
+    test eax, eax
+    jz vs_end
+    inc esi
+    cmp al, 0x20
+    je vs_numend
+    sub eax, 0x30
+    imul edx, edx, 10
+    add edx, eax
+    jmp vs_num
+vs_numend:
+    cmp edx, dword ptr [{VT_RES:#x}]
+    je vs_marks
+    mov dword ptr [{VT_RES:#x}], edx
+    call {vt_commit:#x}
+vs_marks:
+    xor ecx, ecx
+    xor edx, edx
+vs_mk:
+    mov al, byte ptr [esi]
+    inc esi
+    cmp al, 0x73
+    jne vs_mkn
+    inc ecx
+    jmp vs_mk
+vs_mkn:
+    cmp al, 0x6e
+    jne vs_mkx
+    inc edx
+    jmp vs_mk
+vs_mkx:
+    cmp al, 0x2d
+    je vs_mk
+    mov eax, ecx
+    or eax, edx
+    jz vs_close
+    mov word ptr [{VT_SI:#x}], cx
+    mov word ptr [{VT_NO:#x}], dx
+    mov byte ptr [{VT_HAVE:#x}], 1
+vs_close:
+    test ebp, ebp
+    jz vs_end
+    call {vt_commit:#x}
+vs_end:
+    popad
+    ret
+''')
+
+# Vaciado de la tabla de sucesos (0x4988d0: partida nueva y fin de ronda): también la de votaciones.
+vt_clear = place('vt_clear', f'''
+    mov dword ptr [{VT_N:#x}], 0
+    push ebx
+    push esi
+    xor si, si
+    jmp 0x4988d5
+''')
+
+# Fin de ronda, 0x4989d0 (bx = renglones de la ronda): la cabecera cuenta también las votaciones...
+vt_wcount = place('vt_wcount', f'''
+    add bx, word ptr [{VT_N:#x}]
+    mov ax, bx
+    push 0
+    mov word ptr [ebp - 0x14], bx
+    jmp 0x498b4a
+''')
+
+# ... que se escriben antes que los sucesos.
+vt_wrecs = place('vt_wrecs', f'''
+    movsx eax, word ptr [{VT_N:#x}]
+    test eax, eax
+    jz vw_rest
+    imul eax, eax, 0x1c
+    push eax
+    push {VT_TAB:#x}
+    lea ecx, [ebp - 0x1b8]
+    call 0x4dfd70
+vw_rest:
+    movsx eax, bx
+    movsx ecx, word ptr [{VT_N:#x}]
+    sub eax, ecx
+    imul eax, eax, 0x1c
+    lea ecx, [ebp - 0x378]
+    push eax
+    push ecx
+    lea ecx, [ebp - 0x1b8]
+    call 0x4dfd70
+    jmp 0x498c0d
+''')
+
+# Informe, 0x499450: la ronda en curso mide también las votaciones (si = renglones de la tabla de sucesos)...
+vt_rsize = place('vt_rsize', f'''
+    add si, word ptr [{VT_N:#x}]
+    imul si, si, 0x1c
+    add si, 6
+    jmp 0x499542
+''')
+
+# ... y las lleva primero (ebx = destino, edx = cantidad de la ronda, [ebp-0x14] = su tamaño).
+vt_rfill = place('vt_rfill', f'''
+    add ebx, 6
+    movsx ecx, word ptr [{VT_N:#x}]
+    test ecx, ecx
+    jz vr_end
+    add word ptr [edx], cx
+    imul eax, ecx, 0x1c
+    mov esi, dword ptr [ebp - 0x14]
+    add word ptr [esi], ax
+    imul ecx, ecx, 7
+    mov esi, {VT_TAB:#x}
+    mov edi, ebx
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    mov ebx, edi
+vr_end:
+    mov word ptr [ebp - 0xe], 0
+    jmp 0x499641
+''')
+
+# Renglón del informe, 0x4b4110 (ebx = suceso, di = x, esi = y, texto en esp+0xc): el de la votación va sin escudo.
+vt_line = place('vt_line', f'''
+    cmp word ptr [ebx], {VT_TYPE:#x}
+    je vl_vote
+    movsx eax, di
+    push esi
+    push eax
+    jmp 0x4b4147
+vl_vote:
+    movsx eax, word ptr [ebx + 0x18]
+    push eax
+    movsx eax, word ptr [ebx + 0x16]
+    push eax
+    push {vt_fmt:#x}
+    lea eax, [esp + 0x18]
+    push eax
+    call dword ptr [0x5a9bec]
+    add esp, 0x10
+    movsx eax, di
+    add eax, 0x14
+    lea ecx, [esp + 0xc]
+    push ecx
+    push esi
+    push eax
+    call 0x4dd120
+    add esp, 0xc
+    jmp 0x4b41a0
+''')
+
+# Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
+vt_savef = place('vt_savef', f'''
+    push ecx
+    push {len(b'VOTA') + 4 + VT_MAX * 0x1c}
+    push {vt_save:#x}
+    call 0x4dfd70
+    pop ecx
+    jmp 0x4dfdc0
+''')
+
+# Al cargar (0x439e..), después de lo último que lee el original: la tabla, si está.
+vt_loadf = place('vt_loadf', f'''
+    mov dword ptr [{VT_N:#x}], 0
+    push 4
+    push {VT_MAGIC:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 4
+    jne vl_end
+    cmp dword ptr [{VT_MAGIC:#x}], 0x41544f56
+    jne vl_end
+    push {4 + VT_MAX * 0x1c}
+    push {VT_N:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, {4 + VT_MAX * 0x1c}
+    jne vl_bad
+    cmp dword ptr [{VT_N:#x}], {VT_MAX}
+    jbe vl_end
+vl_bad:
+    mov dword ptr [{VT_N:#x}], 0
+vl_end:
+    push 0x564d08
+    jmp 0x43a010
+''')
+
 # Aviso sin bloquear el juego (un MessageBox modal en el bucle principal frenaría la red): en un hilo aparte.
 tl_warn = place('tl_warn', f'''
     mov eax, dword ptr [esp + 4]
@@ -5126,6 +5413,7 @@ tr_copy:
 tr_done:
     cmp edi, {tl_buf:#x}
     jne 0x4b85bb
+    call {vt_state:#x}
     call {pz_state:#x}
     jmp 0x4b85bb
 tr_open:
@@ -5570,6 +5858,21 @@ patch(0x4c0fe0, bytes.fromhex('f6058fc35300f8'), asm(f'jmp {pz_chk[0x4c0fe0]:#x}
 patch(0x4c10c0, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c10c0]:#x}', 0x4c10c0))
 patch(0x4c1250, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c1250]:#x}', 0x4c1250))
 assert rel(0x4c2790, 7) == bytes.fromhex('5333c05633d257') and rel(0x4e33c0, 2) == bytes.fromhex('ff25')
+# Resultado de la votación en el Events Report (vt_*)
+patch(0x4988d0, bytes.fromhex('53566633f6'), asm(f'jmp {vt_clear:#x}', 0x4988d0))
+patch(0x498b41, bytes.fromhex('668bc36a0066895dec'), asm(f'jmp {vt_wcount:#x}', 0x498b41))
+patch(0x498bed, bytes.fromhex('0fbfc38bc8c1e0032bc18d8d88fcffffc1e00250518d8d48feffff') + asm('call 0x4dfd70', 0x498c08),
+      asm(f'jmp {vt_wrecs:#x}', 0x498bed))
+assert rel(0x498c0d, 0x10) == asm('lea ecx, [ebp - 0x1b8]; call 0x4dfdc0; call 0x4988d0', 0x498c0d)
+patch(0x49953a, asm('imul si, si, 0x1c; add si, 6', 0x49953a), asm(f'jmp {vt_rsize:#x}', 0x49953a))
+patch(0x499638, asm('add ebx, 6; mov word ptr [ebp - 0xe], 0', 0x499638), asm(f'jmp {vt_rfill:#x}', 0x499638))
+patch(0x4b4142, asm('movsx eax, di; push esi; push eax', 0x4b4142), asm(f'jmp {vt_line:#x}', 0x4b4142))
+assert rel(0x4b415e, 9) == asm('cmp eax, 0x12; ja 0x4b4790', 0x4b415e) and rel(0x4b41a0, 7) == bytes.fromhex('5f5e5b83c474c3')
+assert rel(0x439c84, 6) == asm('lea ecx, [ebp - 0x12c]', 0x439c84)
+patch(0x439c8a, asm('call 0x4dfdc0', 0x439c8a), asm(f'call {vt_savef:#x}', 0x439c8a))
+assert rel(0x439fdc, 6) == asm('lea ecx, [ebp - 0x120]', 0x439fdc)
+patch(0x43a00b, asm('push 0x564d08', 0x43a00b), asm(f'jmp {vt_loadf:#x}', 0x43a00b))
+assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
