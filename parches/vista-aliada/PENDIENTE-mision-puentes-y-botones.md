@@ -379,6 +379,8 @@ la misión). Con ejércitos ajenos encima ataca con 0x40e400 y no derriba; con p
   destino de la pila no está a 1 casilla del puente (lo va a cruzar o es una misión) ni el puente queda "adelante"
   (alguna casilla del puente más cerca del destino que la pila, distancia de rey); la ciudad dueña del puente
   (br_city) no es propia ni de alguien no hostil (aliado o en paz): si es neutral vale, sin el +1 de bandera.
+  No derribar puentes de aliados lo aprobó el usuario (8/10/2026). El comportamiento de la IA con todos estos
+  agregados lo va a comprobar él a lo largo de sucesivas partidas.
 - Cuenta, igual que 0x41f4b0 pero desde la casilla canónica del puente: si = (c == 0 ? −2 : 0) + 1 (el puente no
   produce: equivale a valor < 150); +1 si hay bandera y la ciudad dueña no es neutral; las 12 ciudades vivas más
   cercanas a distancia 1..30 (0x4974a0), peso 2 si < 15, propias restan, hostiles suman; +1 con más de 5 ciudades
