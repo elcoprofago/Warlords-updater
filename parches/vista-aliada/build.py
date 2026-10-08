@@ -2166,12 +2166,15 @@ portc = place('portc', '''
 # su tipo de arma de la ranura 15 (registro 0x53c410 + (p*16 + 15)*0xfc, el .ARM tal cual). El ejecutor del paso
 # (0x49db70) y el costo del camino (0x4a61e0) ya desembarcan en cualquier paso de agua pura a tierra; lo único que lo
 # impide es el grafo de enlaces, que solo une agua y tierra en los puntos de transbordo (puertos).
-# Si el grupo del jugador que pide el camino ([0x58715c]) está embarcado y el barco de su bando tiene "Landing" en
-# alguno de sus 4 bonos de movimiento (+0xb2 + k*9, 9 B c/u; el cargador 0x42f1b0 ignora los textos que no conoce y
-# el editor los escribe en sus listas desplegables editables), el buscador (0x4a5c40, expansión, y su rastreo de
-# vuelta en 0x4a600e) suma a los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los de una
-# casilla con tierra las direcciones hacia agua pura, salvo que el líder esté en un convoy (crconv): esos
-# atracan solo en puertos. Nunca hacia tierra intransitable: clase de terreno 4
+# Si el barco del bando del jugador que pide el camino ([0x58715c]) tiene "Landing" en alguno de sus 4 bonos de
+# movimiento (+0xb2 + k*9, 9 B c/u; el cargador 0x42f1b0 ignora los textos que no conoce y el editor los escribe en
+# sus listas desplegables editables), el buscador (0x4a5c40, expansión, y su rastreo de vuelta en 0x4a600e) suma a
+# los enlaces de una casilla de agua pura las direcciones hacia tierra, y a los de una casilla con tierra las
+# direcciones hacia agua pura, salvo que el líder esté en un convoy (crconv): esos atracan solo en puertos.
+# Vale también para un grupo que todavía está en tierra (1.0.25.0; antes solo embarcado): el camino sube al barco en
+# un puerto, como siempre (no hay enlace nuevo de tierra a agua), y baja en cualquier costa. Así la IA, cuyo mapa de
+# distancias (0x497750 -> 0x4a53b0) y cuyos caminos usan este mismo buscador, planea desembarcos en playa desde
+# tierra; el humano recibe las mismas rutas al ordenar un movimiento. Nunca hacia tierra intransitable: clase de terreno 4
 # (montaña; 0x535f0c + tipo*0x58) sin camino ni puente (flags & 0x30), la misma regla del constructor (0x4a52c3).
 # No toca los vuelos (otra rama) ni la tabla de enlaces.
 LANDING = b'landing'    # se compara sin distinguir mayúsculas
@@ -2617,8 +2620,6 @@ landchk = place('landchk', f'''
     cmp eax, 8
     jae landchk_no
     imul edx, eax, 0x4f0
-    test byte ptr [edx + 0x56eaaa], 8
-    jz landchk_no
     call {boatland:#x}
     test eax, eax
     jz landchk_no
@@ -2974,9 +2975,12 @@ livback_end:
 # se embarca, 0x56eab0[i] == 0) o se suma a ejércitos propios en el agua. Un stack que ya navega con más de 5 (de antes
 # del parche) sigue moviéndose; solo no crece, como el tope de voladores. Si pasa del tope, devuelve 4 (stack lleno):
 # LANDCAP con "Landing" solo, LANDCAP_LC si el barco tiene también "Carrier" (con "Carrier" solo rige el del bando).
+# Al bloquear deja en lchit 1 si el grupo se embarcaba (estaba en tierra) o 2 si se sumaba a barcos propios en el agua;
+# nadie más lo escribe salvo ai_move, que lo pone en 0 antes de mover: así distingue este 4 del tope del bando.
 LANDCAP = 5
 LANDCAP_LC = 6
 assert LANDCAP_LC == LANDCAP + 1     # el código suma boatcarr (0 o 1) a LANDCAP
+lchit = place_data('lchit', bytes(4))
 landcap = place('landcap', f'''
     pushad
     movsx esi, si
@@ -3037,6 +3041,12 @@ lc_count:
     add eax, {LANDCAP}
     cmp ecx, eax
     jle lc_pass
+    mov al, 1
+    test byte ptr [ebx + 0x56eaaa], 8
+    jz lc_hit
+    inc eax
+lc_hit:
+    mov byte ptr [{lchit:#x}], al
     popad
     mov word ptr [esp + 0x16], 4
     jmp 0x49e4dd
@@ -5271,6 +5281,350 @@ abz_out:
     movsx eax, word ptr [0x4fb0ec]
     ret
 ''')
+# ---- La IA usa los barcos con "Landing" y "Carrier" (1.0.25.0).
+# El juego ya planea con ellos: su mapa de distancias (0x497750 -> 0x4a53b0) y sus caminos (0x485e30) usan el buscador
+# con los enlaces de Landing (landchk, también desde tierra) y de Cabotage (cabfilt), porque los dos miran el jugador
+# del camino [0x58715c]. Faltan dos cosas que el juego no sabe hacer:
+# - Partir el grupo cuando no entra en el barco. Con "Landing" el stack embarcado tiene tope LANDCAP (landcap) y el
+#   paso que embarca de más devuelve "stack lleno": el movimiento termina con el código 5 (0x49d05d -> 0x49c960(p, 5))
+#   y la IA original no hace nada con él (0x4c4d84, caso 5), así que el grupo quedaría en el muelle todos los turnos.
+# - Formar convoyes: la orden explícita de mover un stack embarcado a la casilla de otro propio cuando la suma no entra
+#   (crlink), que la IA nunca da.
+# ai_move reemplaza el call 0x49c4b0 de 0x4c4a10 (en 0x4c4bce, ya dada la orden de destino 0x4b91e0(p, x, y)), solo
+# para bandos de la computadora (0x536c12 != -1):
+# 1. ai_conv: si el grupo navega con "Carrier", no está en un convoy y en una casilla vecina de agua pura hay ejércitos
+#    propios embarcados que van a menos de 2 casillas del mismo destino y la suma no entra en un stack, ordena ir a esa
+#    casilla (crlink los enlaza, o no pasa nada si el convoy pasaría de 3 casillas) y vuelve a dar la orden de destino.
+#    Con "Landing" solo si hay un puerto (0xc0 en 0x582158) a 2 casillas o menos del destino: un convoy atraca solo en
+#    puertos.
+# 2. Mueve (0x49c4b0). Si termina en 5 y landcap dejó lchit = 1 (el grupo se embarcaba desde tierra), se queda con el
+#    líder y los primeros del grupo hasta el tope (LANDCAP + "Carrier", y uno menos en cada reintento, por si el barco
+#    ya tenía gente), suelta al resto (ai_free; si son 2 o más, forman una pila nueva de la IA con 0x40f1a0, como hace
+#    0x40d380 al reagrupar), rearma el grupo (0x497240), copia la lista nueva en la del marco de 0x4c4a10 (la usa el
+#    caso 2, 0x4c4da0), vuelve a dar la orden de destino y reintenta.
+# Devuelve el código del último movimiento, como 0x49c4b0.
+# ai_free: eax = ejército, ebx = jugador. Lo saca de las pilas de la IA del jugador (0x561f00 + p*0x49a, 10 de 0x40,
+# activas con +0 & 1, lista de 8 en +0xc; nunca la entrada 0, el líder) y lo deja libre como los que junta 0x40e020:
+# sin bits de pila (& 0xc3ff en +0x1a), tarea +0x15 = 0 y sin destino; lo sincroniza con 0x497860. Preserva todo.
+ai_free = place('ai_free', '''
+    pushad
+    mov edi, eax
+    imul esi, ebx, 0x49a
+    add esi, 0x561f00
+    mov ecx, 10
+af_rec:
+    test byte ptr [esi], 1
+    jz af_rnext
+    mov edx, 1
+af_ent:
+    cmp word ptr [esi + edx*2 + 0xc], di
+    jne af_enext
+    mov word ptr [esi + edx*2 + 0xc], 0
+af_enext:
+    inc edx
+    cmp edx, 8
+    jb af_ent
+af_rnext:
+    add esi, 0x40
+    dec ecx
+    jnz af_rec
+    imul eax, edi, 0x1c
+    and word ptr [eax + 0x54fe6c], 0xc3ff
+    mov byte ptr [eax + 0x54fe67], 0
+    mov dword ptr [eax + 0x54fe56], -1
+    push edi
+    call 0x497860
+    add esp, 4
+    popad
+    ret
+''')
+# eax = x, edx = y -> eax = medio de la casilla (0x582158 + x*0xa0 + y) & 0xc0: 0x80 agua, 0x40 tierra, 0xc0
+# transbordo; 0 fuera del mapa. Preserva el resto.
+aimed = place('aimed', '''
+    test eax, eax
+    js aim_out
+    test edx, edx
+    js aim_out
+    cmp ax, word ptr [0x503e00]
+    jge aim_out
+    cmp dx, word ptr [0x503e02]
+    jge aim_out
+    imul eax, eax, 0xa0
+    movzx eax, byte ptr [eax + edx + 0x582158]
+    and eax, 0xc0
+    ret
+aim_out:
+    xor eax, eax
+    ret
+''')
+# ai_conv: ebx = jugador, esi = x, edi = y (destino del grupo). Preserva todo. Locales: CV_*.
+CV_X, CV_Y, CV_LX, CV_LY, CV_NEED, CV_K, CV_NX, CV_NY = (4 * i for i in range(8))
+CV_LOC = 4 * 8
+ai_conv = place('ai_conv', f'''
+    pushad
+    sub esp, {CV_LOC:#x}
+    mov dword ptr [esp + {CV_X:#x}], esi
+    mov dword ptr [esp + {CV_Y:#x}], edi
+    mov eax, ebx
+    call {boatcarr:#x}
+    test eax, eax
+    jz cv_out
+    imul ebp, ebx, 0x4f0
+    test byte ptr [ebp + 0x56eaaa], 8
+    jz cv_out
+    cmp word ptr [ebp + 0x56eaac], 2
+    je cv_out
+    movsx eax, word ptr [ebp + 0x56ea90]
+    test eax, eax
+    jz cv_out
+    imul eax, eax, 0x1c
+    movsx esi, word ptr [eax + 0x54fe52]
+    movsx edi, word ptr [eax + 0x54fe54]
+    mov dword ptr [esp + {CV_LX:#x}], esi
+    mov dword ptr [esp + {CV_LY:#x}], edi
+    call {crconv:#x}
+    test eax, eax
+    jnz cv_out
+    imul eax, ebx, 0x1f8
+    movsx ecx, word ptr [eax + 0x536c08]
+    mov eax, ebx
+    call {boatland:#x}
+    test eax, eax
+    jz cv_need
+    cmp ecx, {LANDCAP + 1}
+    jle cv_port
+    mov ecx, {LANDCAP + 1}
+cv_port:
+    mov esi, -2
+cv_px:
+    mov edi, -2
+cv_py:
+    mov eax, dword ptr [esp + {CV_X:#x}]
+    add eax, esi
+    mov edx, dword ptr [esp + {CV_Y:#x}]
+    add edx, edi
+    call {aimed:#x}
+    cmp eax, 0xc0
+    je cv_need
+    inc edi
+    cmp edi, 2
+    jle cv_py
+    inc esi
+    cmp esi, 2
+    jle cv_px
+    jmp cv_out
+cv_need:
+    movsx eax, word ptr [ebp + 0x56eaa8]
+    sub ecx, eax
+    mov dword ptr [esp + {CV_NEED:#x}], ecx
+    mov dword ptr [esp + {CV_K:#x}], 0
+cv_nb:
+    mov eax, dword ptr [esp + {CV_K:#x}]
+    movsx edx, word ptr [eax*2 + 0x4fe640]
+    add edx, dword ptr [esp + {CV_LY:#x}]
+    movsx eax, word ptr [eax*2 + 0x4fe658]
+    add eax, dword ptr [esp + {CV_LX:#x}]
+    mov dword ptr [esp + {CV_NX:#x}], eax
+    mov dword ptr [esp + {CV_NY:#x}], edx
+    call {aimed:#x}
+    cmp eax, 0x80
+    jne cv_nbnext
+    mov esi, 1
+cv_ar:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge cv_nbnext
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz cv_arnext
+    test byte ptr [edi + 0x54fe64], 8
+    jz cv_arnext
+    movzx eax, word ptr [edi + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne cv_arnext
+    movsx eax, word ptr [edi + 0x54fe52]
+    cmp eax, dword ptr [esp + {CV_NX:#x}]
+    jne cv_arnext
+    movsx eax, word ptr [edi + 0x54fe54]
+    cmp eax, dword ptr [esp + {CV_NY:#x}]
+    jne cv_arnext
+    movsx eax, word ptr [edi + 0x54fe56]
+    test eax, eax
+    js cv_arnext
+    movsx edx, word ptr [edi + 0x54fe58]
+    test edx, edx
+    js cv_arnext
+    sub eax, dword ptr [esp + {CV_X:#x}]
+    sub edx, dword ptr [esp + {CV_Y:#x}]
+    call {crcheb:#x}
+    cmp eax, 2
+    jle cv_found
+cv_arnext:
+    inc esi
+    jmp cv_ar
+cv_found:
+    push 0
+    push dword ptr [esp + {CV_NY + 4:#x}]
+    push dword ptr [esp + {CV_NX + 8:#x}]
+    call 0x4411b0
+    add esp, 0xc
+    movsx eax, ax
+    cmp eax, dword ptr [esp + {CV_NEED:#x}]
+    jle cv_nbnext
+    push dword ptr [esp + {CV_NY:#x}]
+    push dword ptr [esp + {CV_NX + 4:#x}]
+    push ebx
+    call 0x4b91e0
+    add esp, 0xc
+    push ebx
+    call 0x49c4b0
+    add esp, 4
+    push dword ptr [esp + {CV_Y:#x}]
+    push dword ptr [esp + {CV_X + 4:#x}]
+    push ebx
+    call 0x4b91e0
+    add esp, 0xc
+    jmp cv_out
+cv_nbnext:
+    inc dword ptr [esp + {CV_K:#x}]
+    cmp dword ptr [esp + {CV_K:#x}], 8
+    jb cv_nb
+cv_out:
+    add esp, {CV_LOC:#x}
+    popad
+    ret
+''')
+# ai_move(p) cdecl, en lugar de 0x49c4b0(p) en 0x4c4bce. Al entrar: si = x, di = y (destino), la lista del marco de
+# 0x4c4a10 en [esp + 0x2c]. Locales: AM_*; AM_KEEP y AM_DROP, listas de 8 palabras.
+AM_P, AM_X, AM_Y, AM_ALLOW, AM_CODE, AM_N = (4 * i for i in range(6))
+AM_KEEP, AM_DROP = 0x18, 0x28
+AM_LOC = 0x38
+AM_ARG, AM_EAX, AM_FRAME = AM_LOC + 0x24, AM_LOC + 0x1c, AM_LOC + 0x20 + 0x2c
+ai_move = place('ai_move', f'''
+    pushad
+    sub esp, {AM_LOC:#x}
+    movsx ebx, word ptr [esp + {AM_ARG:#x}]
+    cmp ebx, 8
+    jae am_orig
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je am_orig
+    mov dword ptr [esp + {AM_P:#x}], ebx
+    movsx esi, si
+    movsx edi, di
+    mov dword ptr [esp + {AM_X:#x}], esi
+    mov dword ptr [esp + {AM_Y:#x}], edi
+    call {ai_conv:#x}
+    mov dword ptr [esp + {AM_ALLOW:#x}], 0
+am_try:
+    mov byte ptr [{lchit:#x}], 0
+    push dword ptr [esp + {AM_P:#x}]
+    call 0x49c4b0
+    add esp, 4
+    movsx eax, ax
+    mov dword ptr [esp + {AM_CODE:#x}], eax
+    cmp eax, 5
+    jne am_done
+    cmp byte ptr [{lchit:#x}], 1
+    jne am_done
+    mov ebx, dword ptr [esp + {AM_P:#x}]
+    imul ebp, ebx, 0x4f0
+    movsx ecx, word ptr [ebp + 0x56eaa8]
+    mov eax, dword ptr [esp + {AM_ALLOW:#x}]
+    test eax, eax
+    jnz am_dec
+    mov eax, ebx
+    call {boatcarr:#x}
+    add eax, {LANDCAP}
+    jmp am_clamp
+am_dec:
+    dec eax
+am_clamp:
+    dec ecx
+    cmp eax, ecx
+    jle am_c1
+    mov eax, ecx
+am_c1:
+    test eax, eax
+    jle am_done
+    mov dword ptr [esp + {AM_ALLOW:#x}], eax
+    xor eax, eax
+    mov ecx, 8
+am_zero:
+    mov dword ptr [esp + ecx*4 + {AM_KEEP - 4:#x}], eax
+    loop am_zero
+    mov ax, word ptr [ebp + 0x56ea90]
+    mov word ptr [esp + {AM_KEEP:#x}], ax
+    mov edx, 1
+    xor ecx, ecx
+    xor esi, esi
+am_split:
+    movsx eax, word ptr [ebp + esi*2 + 0x56ea94]
+    test eax, eax
+    jz am_snext
+    cmp ax, word ptr [esp + {AM_KEEP:#x}]
+    je am_snext
+    cmp edx, dword ptr [esp + {AM_ALLOW:#x}]
+    jge am_drop
+    mov word ptr [esp + edx*2 + {AM_KEEP:#x}], ax
+    inc edx
+    jmp am_snext
+am_drop:
+    mov word ptr [esp + ecx*2 + {AM_DROP:#x}], ax
+    inc ecx
+am_snext:
+    inc esi
+    cmp esi, 8
+    jb am_split
+    test ecx, ecx
+    jz am_done
+    mov dword ptr [esp + {AM_N:#x}], ecx
+    xor esi, esi
+am_free:
+    movsx eax, word ptr [esp + esi*2 + {AM_DROP:#x}]
+    call {ai_free:#x}
+    inc esi
+    cmp esi, dword ptr [esp + {AM_N:#x}]
+    jb am_free
+    cmp dword ptr [esp + {AM_N:#x}], 2
+    jb am_group
+    lea eax, [esp + {AM_DROP:#x}]
+    push eax
+    movsx eax, word ptr [esp + {AM_DROP + 4:#x}]
+    push eax
+    call 0x40f1a0
+    add esp, 8
+am_group:
+    lea eax, [esp + {AM_KEEP:#x}]
+    push eax
+    call 0x497240
+    add esp, 4
+    xor ecx, ecx
+am_frame:
+    mov eax, dword ptr [esp + ecx*4 + {AM_KEEP:#x}]
+    mov dword ptr [esp + ecx*4 + {AM_FRAME:#x}], eax
+    inc ecx
+    cmp ecx, 4
+    jb am_frame
+    push dword ptr [esp + {AM_Y:#x}]
+    push dword ptr [esp + {AM_X + 4:#x}]
+    push dword ptr [esp + {AM_P + 8:#x}]
+    call 0x4b91e0
+    add esp, 0xc
+    jmp am_try
+am_done:
+    mov eax, dword ptr [esp + {AM_CODE:#x}]
+    mov dword ptr [esp + {AM_EAX:#x}], eax
+    add esp, {AM_LOC:#x}
+    popad
+    ret
+am_orig:
+    add esp, {AM_LOC:#x}
+    popad
+    jmp 0x49c4b0
+''')
 # ---- La IA reconstruye puentes: la meta 9 del juego (reconstruir una ciudad muerta), con el código del puente.
 # br_head(n, x, y) cdecl, sobre las n casillas de br_xy: la cabecera del puente más a mano desde (x, y) para el jugador
 # [0x4fb0ec]. Cabecera = casilla vecina (8 direcciones) que no es puente ni agua, ni montaña sin camino si las
@@ -7023,6 +7377,7 @@ assert rel(0x435d79, 7) == asm('mov cx, word ptr [0x4fb0ec]', 0x435d79)
 patch(0x435d53, rel(0x435d53, 0x435d79 - 0x435d53), asm(f'jmp {qb_ailoc3:#x}', 0x435d53))
 assert rel(0x4c4d41, 2) == bytes.fromhex('8bc8')   # mov ecx, eax
 patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_brraze:#x}', 0x4c4d3a))
+patch(0x4c4bce, asm('call 0x49c4b0', 0x4c4bce), asm(f'call {ai_move:#x}', 0x4c4bce))
 # La IA reconstruye puentes (meta 9: ai_brrebev, ai_brreb, ai_brname9*)
 patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm(f'jmp {ai_brrebev:#x}', 0x41e4eb))
 patch(0x40dbf0, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brreb:#x}', 0x40dbf0))

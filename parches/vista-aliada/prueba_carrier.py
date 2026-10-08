@@ -228,7 +228,9 @@ for nombre, kw, esp_ in [('barco suelto', dict(link=False), 'SI'), ('mitad enlaz
                          ('bit suelto (la otra mitad se fue)', dict(back=False), 'SI'),
                          ('bit con barco sin Carrier', dict(bonos=('Landing',)), 'SI'),
                          ('sin Landing', dict(link=False, bonos=('Carrier',)), 'NO'),
-                         ('no embarcado', dict(link=False, emb=False), 'NO')]:
+                         # desde 1.0.25.0 vale también a pie: subir en un puerto y bajar en una playa en el mismo camino
+                         ('no embarcado', dict(link=False, emb=False), 'SI'),
+                         ('no embarcado, sin Landing', dict(link=False, emb=False, bonos=('Carrier',)), 'NO')]:
     r, ok = landing(**kw)
     check(f'Landing: {nombre} -> {esp_}', ok and r == esp_, (r, ok))
 

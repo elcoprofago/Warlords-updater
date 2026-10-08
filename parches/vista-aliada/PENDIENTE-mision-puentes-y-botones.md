@@ -310,7 +310,8 @@ terreno) o políticas (estado diplomático).
 Orden de trabajo:
 1. que los héroes de la IA tomen y cumplan misiones de puente — **hecho, 1.0.21.0**;
 2. que la IA razee puentes por criterio estratégico — **hecho, 1.0.23.0**;
-3. que reconstruya puentes (**3a, hecho, 1.0.24.0**) y use Landing, Carrier y Cabotage activamente (3b).
+3. que reconstruya puentes (**3a, hecho, 1.0.24.0**) y use Landing, Carrier y Cabotage activamente (**3b, hecho,
+   1.0.25.0**).
 
 Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear por su cuenta o reconstruir
 puentes, convoyes) no las usa.
@@ -356,8 +357,9 @@ puentes, convoyes) no las usa.
   ranura; [0x4fb0ec] = jugador de la IA. Registro de depuración: sprintf [0x5a9bec] a 0x564d90 + 0x427520.
 - 0x4974a0 (distancia) es euclídea truncada: la diagonal vale 1. 0x40e400(sx,sy,x,y): a distancia 1 ataca al que
   ocupa (x,y) solo si es humano (o [0x560e52] == 5), declarando la guerra; sin nadie, o propio, devuelve 0.
-- 0x4a65d0(jugador,x,y): distancia en el mapa por jugador [0x587168+p*4][x*160+y], 0 = sin camino; lo llena
-  0x4a6920(ranura). La usa el evaluador de misiones 0x41e8a0 (por 0x435fd0) para decidir si la persigue.
+- 0x4a65d0(jugador,x,y): distancia en el mapa por jugador [0x587168+p*4][x*160+y], 0 = sin camino. **Corrección
+  (8/10/2026):** no lo llena 0x4a6920 (eso es el Hiring Department) sino 0x497750(máximo) → 0x4a53b0(p, x, y,
+  máximo, banderas, modo) → 0x4a5450, desde el líder del grupo de [0x4fb0ec]. La usa el evaluador de misiones 0x41e8a0 (por 0x435fd0) para decidir si la persigue.
 - "Quest City" ([0x561efe + jugador*0x49a]): bug del original, guarda el byte bajo del objetivo de cualquier misión
   (también de sitio) como si fuera una ciudad. Con un puente pasa lo mismo que con un sitio; no se tocó.
 
@@ -431,10 +433,41 @@ muertas, con el código del puente como objetivo.
   (llega, no llega, llega muerto, ocupado, oro justo) y con ciudad igual al original hasta 0x40dbf8. **Falta verlo en
   partida.**
 
-**Próximo paso (3b):** que la IA use Landing, Carrier y Cabotage. Empezar por la lógica que el juego ya tiene:
-cómo la IA elige embarcar, y si su mapa de caminos (0x4a65d0 / [0x587168], lo llena 0x4a6920; el mismo buscador
-de ~0x4a5800 donde están los ganchos de Landing y Cabotage) ya respeta esos bonos. Los convoyes de Carrier
-necesitan la orden explícita de formarlos, que la IA nunca da.
+**Paso 3b hecho (1.0.25.0): la IA usa los barcos con "Landing" y "Carrier".**
+- Lo que el juego ya hacía: el mapa de distancias de la IA (0x497750 → 0x4a53b0) y sus caminos (0x485e30) pasan por
+  el mismo buscador que los de un humano, con los enlaces de Landing (landchk) y de Cabotage (cabfilt), porque los
+  dos miran el jugador del camino [0x58715c]. Es decir: **Cabotage y Landing ya los planeaba la IA**; lo comprobé
+  comparando el mapa con y sin el bono. Cabotage no necesitó nada más.
+- Corregido en landchk: Landing solo valía con el grupo ya embarcado. Desde tierra (subir en un puerto y bajar en
+  una playa en el mismo camino) no había enlace. Ahora sí, **también para los humanos**. Con "Landing", desde un
+  puerto se alcanzan playas que antes no, y el resto de la tierra queda más barato.
+- Hallazgo: un movimiento que embarca de más (tope de Landing: 5, o 6 con Carrier; landcap) termina con el
+  **código 5** (0x49d05d → 0x49c960(p, 5)), no con el 4. La IA original no hace nada con el 5 (0x4c4d84, caso 5),
+  así que el grupo se habría quedado en el muelle todos los turnos.
+- ai_move (reemplaza el call 0x49c4b0 de 0x4c4a10 en 0x4c4bce; solo bandos de la computadora):
+  - si el movimiento termina en 5 y landcap marcó que el grupo se embarcaba desde tierra (lchit = 1), se queda con
+    el líder y los primeros hasta el tope, uno menos en cada reintento por si el barco ya tenía gente;
+  - suelta al resto con ai_free (fuera de las pilas de la IA, sin tarea ni destino); si son 2 o más forman una pila
+    nueva con 0x40f1a0, como hace 0x40d380 al reagrupar;
+  - rearma el grupo (0x497240), copia la lista nueva en la del marco de 0x4c4a10, vuelve a dar el destino y
+    reintenta.
+- ai_conv (antes de mover): si el grupo navega con "Carrier", no está en un convoy, y en una casilla vecina de agua
+  pura hay embarcados propios que van a 2 casillas o menos del mismo destino y la suma no entra en un stack, ordena
+  ir a esa casilla (crlink forma el convoy) y repone el destino. Con "Landing" + "Carrier", solo si hay un puerto a
+  2 casillas o menos del destino, porque un convoy atraca solo en puertos.
+- Prueba: `prueba_iabarcos.py ANTERIOR.exe` (79 controles). ANTERIOR es el exe de 1.0.24.0: el original no sirve de
+  referencia porque los puentes solo de tierra ya cambian el mapa.
+  - Mapa de la IA en 9 inicios: sin bono, o con el bono en otro bando, igual al anterior; con Landing nada se
+    encarece ni se pierde.
+  - 18 caminos a playas: todos con pasos válidos y todos distintos del anterior.
+  - ai_move con stubs: partir 5, 4 y 3; tope 6 con Carrier; nunca alcanza; controles humano, lchit 2, código 1 o 4,
+    grupo de 1.
+  - ai_conv: tres casos que ordenan y nueve controles.
+  `prueba_landcap.py` ahora comprueba también lchit; `prueba_carrier.py` espera Landing a pie (y su control sin el
+  bono). Regresiones `prueba_cabotaje`, `prueba_carrier`, `prueba_landcap` y `prueba_iarazea`: TODO OK.
+- **Falta verlo en partida.** Nada de esto se probó jugando. Límites conocidos:
+  - si el barco nunca alcanza, el líder queda solo en el muelle hasta el turno siguiente;
+  - qué hace después el planificador con los que bajan (libres o en pila nueva) no se emuló.
 
 Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
 votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que

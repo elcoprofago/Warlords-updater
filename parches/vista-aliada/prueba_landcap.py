@@ -1,13 +1,20 @@
 # Prueba de juguete del tope "Landing" (landcap) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_landcap.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Stubs: 0x4411b0 (ejércitos en la casilla) y 0x49e770; termina en 0x49e4ae (pasa) o 0x49e4dd con código 4 (bloquea).
-import sys, struct, pefile
+# Al bloquear, lchit (dirección leída de landcap) tiene que quedar en 1 si el grupo se embarcaba y en 2 si estaba
+# embarcado; al pasar, sin tocar.
+import sys, re, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
 pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
+
+cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+LC = int(next(cs.disasm(img[0x49e4a7 - BASE:0x49e4a7 - BASE + 5], 0x49e4a7)).op_str, 16)
+LCHIT = next(int(re.search(r'\[(0x[0-9a-f]+)\]', i.op_str).group(1), 16)
+             for i in cs.disasm(img[LC - BASE:LC - BASE + 0x100], LC) if i.op_str.endswith('], al'))
 
 P = 1; GRP = P * 0x4f0; X, Y = 5, 6; SHIFT = 8
 WATER, LAND = 3, 2
@@ -34,6 +41,7 @@ def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building
                  + (b'CARRIER\0\0' if carrier else b'\0' * 9))
     esp = 0x108000
     mu.mem_write(esp, b'\0' * 0x40)
+    mu.mem_write(LCHIT, b'\xaa')
     regs = dict(EAX=0x11111111, ECX=0x22222222, EDX=0x33333333, EBX=GRP, ESP=esp, EBP=P,
                 ESI=0xabcd0000 | X, EDI=0xdcba0000 | Y)
     for k, v in regs.items(): mu.reg_write(globals()['UC_X86_REG_' + k], v)
@@ -47,7 +55,10 @@ def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building
     after = {k: mu.reg_read(globals()['UC_X86_REG_' + k]) for k in ('EBX', 'EBP', 'ESI', 'EDI')}
     exp_esp = esp - 8 if end.get('at') == 0x49e4ae else esp   # pasa: push edi/esi pendientes (add esp,8 en 0x49e4ae)
     ok_regs = after == {k: regs[k] for k in after} and mu.reg_read(UC_X86_REG_ESP) == exp_esp
-    return ('BLOQ' if end.get('at') == 0x49e4dd and code == 4 else 'PASA' if end.get('at') == 0x49e4ae else 'RARO'), ok_regs
+    r = 'BLOQ' if end.get('at') == 0x49e4dd and code == 4 else 'PASA' if end.get('at') == 0x49e4ae else 'RARO'
+    hit = mu.mem_read(LCHIT, 1)[0]
+    ok_hit = hit == ((2 if embarked else 1) if r == 'BLOQ' else 0xaa)
+    return r, ok_regs and ok_hit
 
 casos = [
     ('6 embarcan, landing',              dict(count=6, occ=0), 'BLOQ'),
@@ -79,5 +90,5 @@ for nombre, kw, esperado in casos:
     r, regs_ok = run(**kw)
     estado = 'OK ' if r == esperado and regs_ok else 'MAL'
     mal += estado == 'MAL'
-    print(f'{estado} {nombre:32} {r} (esperado {esperado}) regs={"ok" if regs_ok else "ALTERADOS"}')
+    print(f'{estado} {nombre:32} {r} (esperado {esperado}) regs y lchit={"ok" if regs_ok else "MAL"}')
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)
