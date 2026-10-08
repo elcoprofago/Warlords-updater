@@ -310,7 +310,7 @@ terreno) o políticas (estado diplomático).
 Orden de trabajo:
 1. que los héroes de la IA tomen y cumplan misiones de puente — **hecho, 1.0.21.0**;
 2. que la IA razee puentes por criterio estratégico — **hecho, 1.0.23.0**;
-3. que reconstruya puentes y use Landing, Carrier y Cabotage activamente.
+3. que reconstruya puentes (**3a, hecho, 1.0.24.0**) y use Landing, Carrier y Cabotage activamente (3b).
 
 Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear por su cuenta o reconstruir
 puentes, convoyes) no las usa.
@@ -403,8 +403,38 @@ Defectos encontrados y corregidos en el mismo paso:
 Lo que queda como en el original: con temperamento 0 la IA no acepta misiones de arrasar, tampoco de puente
 ("Not Accepted"). Quest City sigue con su bug (ver arriba).
 
-**Próximo paso (3):** que la IA reconstruya puentes y use Landing, Carrier y Cabotage. Igual que en el paso 2,
-empezar por la lógica que el juego ya tiene: la meta 9 (reconstruir, 0x40dbf0) y cómo la IA elige embarcar.
+**Paso 3a hecho (1.0.24.0): la IA reconstruye puentes con la meta 9 del juego**, la de reconstruir ciudades
+muertas, con el código del puente como objetivo.
+- Lo que ya hacía el original con una ciudad: el evaluador 0x41e290 (llamado en 0x41ce18 con la x, y de la pila)
+  recorre las ciudades muertas legales (0x41e580) con camino (0x4a65d0 ≠ 0, ese es el costo), sin enemigo más cerca
+  que el límite (0x497a90 ≥ 15 con temperamento 0, si no 30); valor = max(0, 50 − costo) + 2·(0x41d640 + 0x41ec20)
+  + 0x4deb20(1, 6); guarda el mejor en [0x5032e6] índice, [0x5032e8] costo, [0x5032ea] = 1. El selector 0x41f2c5
+  le da valor 1 (+4 si costo ≤ 10, +2 más si ≤ 20) y la elige como meta 9 si gana; 0x40dbf0 va a la ciudad
+  (0x4973f0(5, ...), 0x40d2b0) y la reconstruye (0x4b9c60, orden 0x177).
+- ai_brrebev (en 0x41e4eb, al final del recorrido de ciudades, con su mismo marco): cada puente derribado, una vez
+  desde su casilla menor, compite con la misma cuenta. Condiciones: vacío (br_armies), oro ≥ costo de reconstruir
+  (0x4b65e0, el de br_cost), cabecera con camino (br_head: la vecina más barata en 0x4a65d0; la casilla de la pila
+  cuenta 1), enemigo no más cerca que el límite (desde el puente), **no lo derribaría** (ai_brs con bandera, el
+  peor caso: c + s < 5; si la ciudad dueña es propia o no hostil, nunca lo derriba y vale), y **hay algo que ganar
+  cruzándolo**: 0x41d640 + 0x41ec20 > 0 en el puente (criterio mío: una ciudad muerta vale por sí misma, un puente
+  solo por lo que abre). Si el mejor es un puente, va a la tabla con su código.
+- ai_brs es la cuenta de ai_brraze sacada a una función (sin el azar), compartida por las dos: así la IA no repone
+  lo que derribaría ni derriba lo que acaba de reponer. `prueba_iarazea.py` sigue dando lo mismo.
+- ai_brreb (en 0x40dbf0, solo con código ≥ 0x2000): va a la cabecera (0x4973f0(7, 0, x, y) y 0x40d2b0, como
+  ai_brq) y, si el líder llegó vivo, vuelve a mirar derribado, vacío y oro, y lo repone con la orden de red de un
+  humano 0x4b9ce0(código, costo, jugador) (0x18e, que aplica br_rebapply en todas las máquinas y cobra); pausa
+  0x4275b0(2000) y fin de pila 0x40d230. Si no llegó, queda la meta 9 en el plan, como el original.
+- ai_brname9 (0x40ce24) y ai_brname9s (0x41f30c): los textos "Ctd - Rebuild %s" y "Evaluate rebuild %s" leían el
+  nombre en la tabla de ciudades con el código del puente (fuera de la tabla); ahora dan el nombre del puente.
+- Prueba: `prueba_iareconstruye.py` (75 controles): el evaluador 0x41e290 entero contra un modelo en Python (~45
+  casos armados, 600 al azar), 60 casos sin puentes derribados iguales al original, la meta 9 con sus caminos
+  (llega, no llega, llega muerto, ocupado, oro justo) y con ciudad igual al original hasta 0x40dbf8. **Falta verlo en
+  partida.**
+
+**Próximo paso (3b):** que la IA use Landing, Carrier y Cabotage. Empezar por la lógica que el juego ya tiene:
+cómo la IA elige embarcar, y si su mapa de caminos (0x4a65d0 / [0x587168], lo llena 0x4a6920; el mismo buscador
+de ~0x4a5800 donde están los ganchos de Landing y Cabotage) ya respeta esos bonos. Los convoyes de Carrier
+necesitan la orden explícita de formarlos, que la IA nunca da.
 
 Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
 votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que

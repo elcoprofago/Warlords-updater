@@ -4998,10 +4998,173 @@ brkd_out:
 #   más de 5 ciudades, +1 más si más de 15. Azar r = 0x4deb20(1, 20): r >= 19, no. Derriba si c + s >= 5.
 #   El original sube el temperamento con r = 1; acá no (es la decisión de arrasar ciudades la que lo hace).
 # El derribo es el de la misión: 0x4955d0(código) (evento 6 con el líder y la orden de red 0x18d) y la pausa 0x4275b0.
-# Locales: [esp + 4*i] distancia a la ciudad i (hasta 80), después ABZ_*.
-ABZ_CODE, ABZ_BX, ABZ_BY, ABZ_S, ABZ_P, ABZ_FLAG, ABZ_C, ABZ_N, ABZ_SD, ABZ_NC, ABZ_RND = (
-    0x140 + 4 * i for i in range(11))
-ABZ_LOC = 0x140 + 4 * 11
+# La cuenta (salvo el azar) es ai_brs, que comparte con la reconstrucción (ai_brrebev): no se repone lo que se derribaría.
+# ai_brs(código, jugador, flag) cdecl -> eax = c + s, o 0x80000000 si la ciudad dueña lo descarta (nunca lo derriba).
+# Locales: [esp + 4*i] distancia a la ciudad i (hasta 80), después BS_*.
+BS_S, BS_NC, BS_RND, BS_P, BS_BX, BS_BY, BS_C, BS_FLAG = (0x140 + 4 * i for i in range(8))
+BS_LOC = 0x140 + 4 * 8
+BS_ARG = BS_LOC + 0x14
+ai_brs = place('ai_brs', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, {BS_LOC:#x}
+    movsx ebx, word ptr [esp + {BS_ARG + 4:#x}]
+    mov dword ptr [esp + {BS_P:#x}], ebx
+    mov eax, dword ptr [esp + {BS_ARG + 8:#x}]
+    mov dword ptr [esp + {BS_FLAG:#x}], eax
+    imul ecx, ebx, 0x49a
+    movzx ecx, byte ptr [ecx + 0x561ef9]
+    mov dword ptr [esp + {BS_C:#x}], ecx
+    movsx eax, word ptr [esp + {BS_ARG:#x}]
+    sub eax, {BR_CODE:#x}
+    mov edx, eax
+    and edx, 0x7f
+    mov dword ptr [esp + {BS_BX:#x}], edx
+    shr eax, 7
+    mov dword ptr [esp + {BS_BY:#x}], eax
+    xor eax, eax
+    cmp dword ptr [esp + {BS_C:#x}], 0
+    jne bs_s0
+    mov eax, -2
+bs_s0:
+    inc eax
+    mov dword ptr [esp + {BS_S:#x}], eax
+    push dword ptr [esp + {BS_ARG:#x}]
+    call {br_city:#x}
+    add esp, 4
+    test eax, eax
+    jl bs_near
+    imul eax, eax, 0xde
+    movzx eax, byte ptr [eax + 0x537ed1]
+    cmp eax, 8
+    je bs_near
+    push eax
+    call 0x49c1c0
+    add esp, 4
+    test ax, ax
+    jz bs_never
+    cmp dword ptr [esp + {BS_FLAG:#x}], 0
+    je bs_near
+    inc dword ptr [esp + {BS_S:#x}]
+bs_near:
+    xor ebp, ebp
+bs_dist:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebp, eax
+    jge bs_distend
+    cmp ebp, 80
+    jge bs_distend
+    mov dword ptr [esp + ebp*4], 0x7fffffff
+    imul ebx, ebp, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je bs_distnext
+    movsx eax, word ptr [ebx + 0x537e2e]
+    push eax
+    movsx eax, word ptr [ebx + 0x537e2c]
+    push eax
+    push dword ptr [esp + {BS_BY + 8:#x}]
+    push dword ptr [esp + {BS_BX + 12:#x}]
+    call 0x4974a0
+    add esp, 0x10
+    movsx eax, ax
+    mov dword ptr [esp + ebp*4], eax
+bs_distnext:
+    inc ebp
+    jmp bs_dist
+bs_distend:
+    mov dword ptr [esp + {BS_NC:#x}], ebp
+    mov dword ptr [esp + {BS_RND:#x}], 12
+bs_sel:
+    or esi, -1
+    mov edi, 0x7fffffff
+    xor ebp, ebp
+bs_sell:
+    cmp ebp, dword ptr [esp + {BS_NC:#x}]
+    jge bs_selend
+    mov eax, dword ptr [esp + ebp*4]
+    cmp eax, edi
+    jge bs_selnext
+    mov edi, eax
+    mov esi, ebp
+bs_selnext:
+    inc ebp
+    jmp bs_sell
+bs_selend:
+    test esi, esi
+    jl bs_count
+    mov dword ptr [esp + esi*4], 0x7fffffff
+    test edi, edi
+    jz bs_next
+    cmp edi, 30
+    jg bs_next
+    mov ecx, 1
+    cmp edi, 15
+    jge bs_w
+    mov ecx, 2
+bs_w:
+    imul ebx, esi, 0xde
+    movzx eax, byte ptr [ebx + 0x537ed1]
+    cmp eax, dword ptr [esp + {BS_P:#x}]
+    jne bs_foreign
+    sub dword ptr [esp + {BS_S:#x}], ecx
+    jmp bs_next
+bs_foreign:
+    cmp eax, 8
+    je bs_next
+    push ecx
+    push eax
+    call 0x49c1c0
+    add esp, 4
+    pop ecx
+    test ax, ax
+    jz bs_next
+    add dword ptr [esp + {BS_S:#x}], ecx
+bs_next:
+    dec dword ptr [esp + {BS_RND:#x}]
+    jnz bs_sel
+bs_count:
+    xor ecx, ecx
+    xor ebp, ebp
+bs_cl:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebp, eax
+    jge bs_cend
+    imul ebx, ebp, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je bs_cnext
+    movzx eax, byte ptr [ebx + 0x537ed1]
+    cmp eax, dword ptr [esp + {BS_P:#x}]
+    jne bs_cnext
+    inc ecx
+bs_cnext:
+    inc ebp
+    jmp bs_cl
+bs_cend:
+    cmp ecx, 5
+    jle bs_sum
+    inc dword ptr [esp + {BS_S:#x}]
+    cmp ecx, 15
+    jle bs_sum
+    inc dword ptr [esp + {BS_S:#x}]
+bs_sum:
+    mov eax, dword ptr [esp + {BS_C:#x}]
+    add eax, dword ptr [esp + {BS_S:#x}]
+    jmp bs_out
+bs_never:
+    mov eax, 0x80000000
+bs_out:
+    add esp, {BS_LOC:#x}
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# Locales de ai_brraze: ABZ_*.
+ABZ_CODE, ABZ_S, ABZ_P, ABZ_FLAG, ABZ_C, ABZ_N, ABZ_SD = (4 * i for i in range(7))
+ABZ_LOC = 4 * 7
 ABZ_X, ABZ_Y = ABZ_LOC + 0x20 + 4 + 0x38, ABZ_LOC + 0x20 + 4 + 0x3c
 ai_brraze = place('ai_brraze', f'''
     pushad
@@ -5046,12 +5209,6 @@ ai_brraze = place('ai_brraze', f'''
     test eax, eax
     jl abz_out
     mov dword ptr [esp + {ABZ_CODE:#x}], eax
-    sub eax, {BR_CODE:#x}
-    mov edx, eax
-    and edx, 0x7f
-    mov dword ptr [esp + {ABZ_BX:#x}], edx
-    shr eax, 7
-    mov dword ptr [esp + {ABZ_BY:#x}], eax
     push {BR_KIND_INTACT}
     push dword ptr [esp + {ABZ_CODE + 4:#x}]
     call {br_comp:#x}
@@ -5084,131 +5241,14 @@ abz_tile:
     jl abz_out
     jmp abz_tile
 abz_owner:
-    xor eax, eax
-    cmp dword ptr [esp + {ABZ_C:#x}], 0
-    jne abz_s0
-    mov eax, -2
-abz_s0:
-    inc eax
+    push dword ptr [esp + {ABZ_FLAG:#x}]
+    push dword ptr [esp + {ABZ_P + 4:#x}]
+    push dword ptr [esp + {ABZ_CODE + 8:#x}]
+    call {ai_brs:#x}
+    add esp, 0xc
+    cmp eax, 0x80000000
+    je abz_out
     mov dword ptr [esp + {ABZ_S:#x}], eax
-    push dword ptr [esp + {ABZ_CODE:#x}]
-    call {br_city:#x}
-    add esp, 4
-    test eax, eax
-    jl abz_near
-    imul eax, eax, 0xde
-    movzx eax, byte ptr [eax + 0x537ed1]
-    cmp eax, 8
-    je abz_near
-    push eax
-    call 0x49c1c0
-    add esp, 4
-    test ax, ax
-    jz abz_out
-    cmp dword ptr [esp + {ABZ_FLAG:#x}], 0
-    je abz_near
-    inc dword ptr [esp + {ABZ_S:#x}]
-abz_near:
-    xor ebp, ebp
-abz_dist:
-    movsx eax, word ptr [0x537e2a]
-    cmp ebp, eax
-    jge abz_distend
-    cmp ebp, 80
-    jge abz_distend
-    mov dword ptr [esp + ebp*4], 0x7fffffff
-    imul ebx, ebp, 0xde
-    cmp byte ptr [ebx + 0x537ed0], 0
-    je abz_distnext
-    movsx eax, word ptr [ebx + 0x537e2e]
-    push eax
-    movsx eax, word ptr [ebx + 0x537e2c]
-    push eax
-    push dword ptr [esp + {ABZ_BY + 8:#x}]
-    push dword ptr [esp + {ABZ_BX + 12:#x}]
-    call 0x4974a0
-    add esp, 0x10
-    movsx eax, ax
-    mov dword ptr [esp + ebp*4], eax
-abz_distnext:
-    inc ebp
-    jmp abz_dist
-abz_distend:
-    mov dword ptr [esp + {ABZ_NC:#x}], ebp
-    mov dword ptr [esp + {ABZ_RND:#x}], 12
-abz_sel:
-    or esi, -1
-    mov edi, 0x7fffffff
-    xor ebp, ebp
-abz_sell:
-    cmp ebp, dword ptr [esp + {ABZ_NC:#x}]
-    jge abz_selend
-    mov eax, dword ptr [esp + ebp*4]
-    cmp eax, edi
-    jge abz_selnext
-    mov edi, eax
-    mov esi, ebp
-abz_selnext:
-    inc ebp
-    jmp abz_sell
-abz_selend:
-    test esi, esi
-    jl abz_count
-    mov dword ptr [esp + esi*4], 0x7fffffff
-    test edi, edi
-    jz abz_next
-    cmp edi, 30
-    jg abz_next
-    mov ecx, 1
-    cmp edi, 15
-    jge abz_w
-    mov ecx, 2
-abz_w:
-    imul ebx, esi, 0xde
-    movzx eax, byte ptr [ebx + 0x537ed1]
-    cmp eax, dword ptr [esp + {ABZ_P:#x}]
-    jne abz_foreign
-    sub dword ptr [esp + {ABZ_S:#x}], ecx
-    jmp abz_next
-abz_foreign:
-    cmp eax, 8
-    je abz_next
-    push ecx
-    push eax
-    call 0x49c1c0
-    add esp, 4
-    pop ecx
-    test ax, ax
-    jz abz_next
-    add dword ptr [esp + {ABZ_S:#x}], ecx
-abz_next:
-    dec dword ptr [esp + {ABZ_RND:#x}]
-    jnz abz_sel
-abz_count:
-    xor ecx, ecx
-    xor ebp, ebp
-abz_cl:
-    movsx eax, word ptr [0x537e2a]
-    cmp ebp, eax
-    jge abz_cend
-    imul ebx, ebp, 0xde
-    cmp byte ptr [ebx + 0x537ed0], 0
-    je abz_cnext
-    movzx eax, byte ptr [ebx + 0x537ed1]
-    cmp eax, dword ptr [esp + {ABZ_P:#x}]
-    jne abz_cnext
-    inc ecx
-abz_cnext:
-    inc ebp
-    jmp abz_cl
-abz_cend:
-    cmp ecx, 5
-    jle abz_rand
-    inc dword ptr [esp + {ABZ_S:#x}]
-    cmp ecx, 15
-    jle abz_rand
-    inc dword ptr [esp + {ABZ_S:#x}]
-abz_rand:
     push 0
     push 20
     push 1
@@ -5216,8 +5256,7 @@ abz_rand:
     add esp, 0xc
     cmp ax, 19
     jge abz_out
-    mov eax, dword ptr [esp + {ABZ_C:#x}]
-    add eax, dword ptr [esp + {ABZ_S:#x}]
+    mov eax, dword ptr [esp + {ABZ_S:#x}]
     cmp eax, 5
     jl abz_out
     push dword ptr [esp + {ABZ_CODE:#x}]
@@ -5231,6 +5270,466 @@ abz_out:
     popad
     movsx eax, word ptr [0x4fb0ec]
     ret
+''')
+# ---- La IA reconstruye puentes: la meta 9 del juego (reconstruir una ciudad muerta), con el código del puente.
+# br_head(n, x, y) cdecl, sobre las n casillas de br_xy: la cabecera del puente más a mano desde (x, y) para el jugador
+# [0x4fb0ec]. Cabecera = casilla vecina (8 direcciones) que no es puente ni agua, ni montaña sin camino si las
+# montañas no se pisan (lo mismo que ai_brq). eax = 0 si es (x, y); si no, su costo en el mapa de caminos de la IA
+# (0x4a65d0, el que usa 0x41e290 para las ciudades) si lo tiene, o 0x10000 + distancia de rey si no; 0x7fffffff si
+# no hay cabecera. La elegida queda en br_hxy (x | y << 16).
+br_hxy = place_data('br_hxy', bytes(4))
+br_head = place('br_head', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov edi, 0x7fffffff
+    xor esi, esi
+brh_loop:
+    mov ecx, esi
+    shr ecx, 3
+    cmp ecx, dword ptr [esp + 0x14]
+    jae brh_end
+    mov edx, esi
+    and edx, 7
+    movsx eax, word ptr [ecx*4 + {br_xy:#x}]
+    movsx ebx, word ptr [edx*2 + {br_d8:#x}]
+    add ebx, eax
+    movsx ebp, word ptr [ecx*4 + {br_xy + 2:#x}]
+    movsx eax, word ptr [edx*2 + {br_d8 + 16:#x}]
+    add ebp, eax
+    mov eax, ebx
+    mov edx, ebp
+    call {br_tile:#x}
+    test eax, eax
+    jz brh_next
+    mov ecx, eax
+    call {br_kind:#x}
+    test eax, eax
+    jnz brh_next
+    movzx eax, word ptr [ecx]
+    and eax, 0x1f
+    imul eax, eax, 0x58
+    movsx eax, word ptr [eax + 0x535f0c]
+    cmp eax, 1
+    je brh_next
+    cmp eax, 4
+    jne brh_cost
+    cmp byte ptr [0x4fe688], 0
+    jne brh_cost
+    imul eax, ebx, 0xa0
+    add eax, ebp
+    test byte ptr [eax + 0x57d158], 0x30
+    jz brh_next
+brh_cost:
+    xor eax, eax
+    cmp ebx, dword ptr [esp + 0x18]
+    jne brh_path
+    cmp ebp, dword ptr [esp + 0x1c]
+    je brh_key
+brh_path:
+    push ebp
+    push ebx
+    movsx eax, word ptr [0x4fb0ec]
+    push eax
+    call 0x4a65d0
+    add esp, 0xc
+    test eax, eax
+    jnz brh_key
+    mov eax, ebx
+    sub eax, dword ptr [esp + 0x18]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    mov eax, ebp
+    sub eax, dword ptr [esp + 0x1c]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge brh_kd
+    mov eax, ecx
+brh_kd:
+    add eax, 0x10000
+brh_key:
+    cmp eax, edi
+    jge brh_next
+    mov edi, eax
+    shl ebp, 16
+    movzx ebx, bx
+    or ebp, ebx
+    mov dword ptr [{br_hxy:#x}], ebp
+brh_next:
+    inc esi
+    jmp brh_loop
+brh_end:
+    mov eax, edi
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# ai_brrebev: candidatos de puente para la meta 9, al final del evaluador de ciudades muertas (0x41e290, en 0x41e4eb,
+# con su marco: [+0x12] límite, [+0x14] mejor valor, [+0x18] su costo, [+0x1c] su ciudad; x, y de la pila en
+# [+0x2c], [+0x30]). Recorre los puentes derribados (cada uno una vez, desde su casilla menor) con la misma cuenta que
+# las ciudades:
+# - vacío (br_armies; reponerlo lo exige) y el oro alcanza para el costo de reconstruirlo (0x4b65e0, como br_cost);
+# - cabecera alcanzable (br_head con costo de camino; la casilla de la pila cuenta 1): ese es el costo;
+# - ningún ejército hostil visible más cerca que el límite (0x497a90 desde el puente; 15 si temperamento 0, si no 30);
+# - no lo derribaría (ai_brs con flag 1, el peor caso: c + s < 5), para no ir y venir;
+# - hay algo que ganar cruzándolo: 0x41d640 + 0x41ec20 (ruinas sin explorar y ciudades neutrales cerca, el paso
+#   hacia el objetivo) > 0. Una ciudad muerta vale por sí misma; un puente, solo por lo que abre.
+# Valor = max(0, 50 - costo) + 2 * oportunidades + 0x4deb20(1, 6), como el de una ciudad. Si el mejor es un puente,
+# se guarda con su código en la tabla de candidatos ([0x5032e6]) y se salta el final del original, que lo nombraría
+# como ciudad.
+EV_X, EV_Y, EV_N, EV_D, EV_SX, EV_SY, EV_P, EV_DI, EV_V, EV_E = (4 * i for i in range(10))
+EV_LOC = 4 * 10
+EVF = EV_LOC + 0x20
+ai_brrebev = place('ai_brrebev', f'''
+    pushad
+    sub esp, {EV_LOC:#x}
+    movsx eax, word ptr [0x4fb0ec]
+    mov dword ptr [esp + {EV_P:#x}], eax
+    movsx eax, word ptr [esp + {EVF + 0x2c:#x}]
+    mov dword ptr [esp + {EV_SX:#x}], eax
+    movsx eax, word ptr [esp + {EVF + 0x30:#x}]
+    mov dword ptr [esp + {EV_SY:#x}], eax
+    mov dword ptr [esp + {EV_Y:#x}], 0
+rbe_row:
+    movsx eax, word ptr [0x503e02]
+    cmp dword ptr [esp + {EV_Y:#x}], eax
+    jge rbe_end
+    cmp dword ptr [esp + {EV_Y:#x}], 160
+    jge rbe_end
+    mov dword ptr [esp + {EV_X:#x}], 0
+rbe_col:
+    movsx eax, word ptr [0x503e00]
+    cmp dword ptr [esp + {EV_X:#x}], eax
+    jge rbe_rownext
+    cmp dword ptr [esp + {EV_X:#x}], 128
+    jge rbe_rownext
+    mov eax, dword ptr [esp + {EV_X:#x}]
+    mov edx, dword ptr [esp + {EV_Y:#x}]
+    call {br_tile:#x}
+    test eax, eax
+    jz rbe_next
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_RAZED}
+    jne rbe_next
+    mov ebx, dword ptr [esp + {EV_Y:#x}]
+    shl ebx, 7
+    add ebx, dword ptr [esp + {EV_X:#x}]
+    push {BR_KIND_RAZED}
+    lea eax, [ebx + {BR_CODE:#x}]
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz rbe_next
+    mov dword ptr [esp + {EV_N:#x}], eax
+    mov ecx, eax
+rbe_canon:
+    dec ecx
+    js rbe_free
+    movsx eax, word ptr [ecx*4 + {br_xy + 2:#x}]
+    shl eax, 7
+    movsx edx, word ptr [ecx*4 + {br_xy:#x}]
+    add eax, edx
+    cmp eax, ebx
+    jl rbe_next
+    jmp rbe_canon
+rbe_free:
+    push -1
+    push dword ptr [esp + {EV_N + 4:#x}]
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz rbe_next
+    push dword ptr [esp + {EV_P:#x}]
+    lea eax, [ebx + {BR_CODE:#x}]
+    push eax
+    call 0x4b65e0
+    add esp, 8
+    movsx eax, ax
+    imul ecx, dword ptr [esp + {EV_P:#x}], 0x1f8
+    cmp eax, dword ptr [ecx + 0x536c14]
+    jg rbe_next
+    push dword ptr [esp + {EV_SY:#x}]
+    push dword ptr [esp + {EV_SX + 4:#x}]
+    push dword ptr [esp + {EV_N + 8:#x}]
+    call {br_head:#x}
+    add esp, 0xc
+    cmp eax, 0x10000
+    jge rbe_next
+    test eax, eax
+    jnz rbe_d
+    inc eax
+rbe_d:
+    mov dword ptr [esp + {EV_D:#x}], eax
+    push 0
+    push dword ptr [esp + {EV_Y + 4:#x}]
+    push dword ptr [esp + {EV_X + 8:#x}]
+    call 0x497a90
+    add esp, 0xc
+    movsx eax, ax
+    mov dword ptr [esp + {EV_E:#x}], eax
+    movsx ecx, word ptr [esp + {EVF + 0x12:#x}]
+    cmp ecx, eax
+    jg rbe_next
+    push 1
+    push dword ptr [esp + {EV_P + 4:#x}]
+    lea eax, [ebx + {BR_CODE:#x}]
+    push eax
+    call {ai_brs:#x}
+    add esp, 0xc
+    cmp eax, 5
+    jge rbe_next
+    push dword ptr [esp + {EV_Y:#x}]
+    push dword ptr [esp + {EV_X + 4:#x}]
+    call 0x41d640
+    add esp, 8
+    movsx esi, ax
+    push dword ptr [esp + {EV_Y:#x}]
+    push dword ptr [esp + {EV_X + 4:#x}]
+    call 0x41ec20
+    add esp, 8
+    movsx eax, ax
+    add esi, eax
+    test esi, esi
+    jle rbe_next
+    mov dword ptr [esp + {EV_DI:#x}], esi
+    mov edi, 50
+    sub edi, dword ptr [esp + {EV_D:#x}]
+    jg rbe_pos
+    xor edi, edi
+rbe_pos:
+    lea edi, [edi + esi*2]
+    push 0
+    push 6
+    push 1
+    call 0x4deb20
+    add esp, 0xc
+    movsx eax, ax
+    add edi, eax
+    mov dword ptr [esp + {EV_V:#x}], edi
+    push 0
+    lea eax, [ebx + {BR_CODE:#x}]
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    push eax
+    push dword ptr [esp + {EV_E + 4:#x}]
+    push dword ptr [esp + {EV_DI + 8:#x}]
+    push dword ptr [esp + {EV_D + 0xc:#x}]
+    push dword ptr [esp + {EV_V + 0x10:#x}]
+    push 0x4f9edc
+    push 0x564d90
+    call dword ptr [0x5a9bec]
+    add esp, 0x1c
+    mov ax, word ptr [0x564e48]
+    mov cx, ax
+    inc ax
+    mov word ptr [0x564e48], ax
+    push 0x564d90
+    push ecx
+    call 0x427520
+    add esp, 8
+    mov eax, dword ptr [esp + {EV_V:#x}]
+    cmp ax, word ptr [esp + {EVF + 0x14:#x}]
+    jle rbe_next
+    mov word ptr [esp + {EVF + 0x14:#x}], ax
+    mov eax, dword ptr [esp + {EV_D:#x}]
+    mov word ptr [esp + {EVF + 0x18:#x}], ax
+    lea eax, [ebx + {BR_CODE:#x}]
+    mov word ptr [esp + {EVF + 0x1c:#x}], ax
+rbe_next:
+    inc dword ptr [esp + {EV_X:#x}]
+    jmp rbe_col
+rbe_rownext:
+    inc dword ptr [esp + {EV_Y:#x}]
+    jmp rbe_row
+rbe_end:
+    movsx eax, word ptr [esp + {EVF + 0x1c:#x}]
+    cmp eax, {BR_CODE:#x}
+    jl rbe_city
+    mov word ptr [0x5032e6], ax
+    mov cx, word ptr [esp + {EVF + 0x18:#x}]
+    mov word ptr [0x5032e8], cx
+    mov word ptr [0x5032ea], 1
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    push eax
+    movsx ecx, word ptr [esp + {EVF + 0x18 + 4:#x}]
+    push ecx
+    push 1
+    push 0x4f9e7c
+    push 0x564d90
+    call dword ptr [0x5a9bec]
+    add esp, 0x14
+    mov ax, word ptr [0x564e48]
+    mov cx, ax
+    inc ax
+    mov word ptr [0x564e48], ax
+    push 0x564d90
+    push ecx
+    call 0x427520
+    add esp, 8
+    add esp, {EV_LOC:#x}
+    popad
+    jmp 0x41e563
+rbe_city:
+    add esp, {EV_LOC:#x}
+    popad
+    cmp word ptr [esp + 0x1c], -1
+    je 0x41e563
+    jmp 0x41e4f3
+''')
+# ai_brreb: la meta 9 (0x40dbf0(índice)) para un puente. Como la del original con una ciudad: va a la cabecera
+# (br_head; 0x4973f0(7, 0, x, y) y 0x40d2b0(x, y), como ai_brq) y, si el líder llega vivo, lo repone con la orden de
+# red de un humano (0x4b9ce0(código, costo, jugador) = 0x18e, que aplica br_rebapply en todas las máquinas), después
+# de volver a mirar que siga derribado, vacío y que el oro alcance. Pausa 0x4275b0 y fin de la pila (0x40d230), como
+# el original. Devuelve 0 siempre, como el original.
+ai_brreb = place('ai_brreb', f'''
+    cmp word ptr [esp + 4], {BR_CODE:#x}
+    jge arb_bridge
+    sub esp, 4
+    mov eax, dword ptr [0x5020d4]
+    jmp 0x40dbf8
+arb_bridge:
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov eax, dword ptr [0x5020d4]
+    movsx edi, word ptr [eax + 0xc]
+    imul edi, edi, 0x1c
+    movsx eax, word ptr [esp + 0x14]
+    push {BR_KIND_RAZED}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz arb_ret0
+    movsx ecx, word ptr [edi + 0x54fe54]
+    push ecx
+    movsx ecx, word ptr [edi + 0x54fe52]
+    push ecx
+    push eax
+    call {br_head:#x}
+    add esp, 0xc
+    cmp eax, 0x7fffffff
+    je arb_ret0
+    test eax, eax
+    jz arb_here
+    movsx esi, word ptr [{br_hxy:#x}]
+    movsx ebx, word ptr [{br_hxy + 2:#x}]
+    push ebx
+    push esi
+    push 0
+    push 7
+    call 0x4973f0
+    add esp, 0x10
+    mov eax, dword ptr [0x5020d4]
+    mov word ptr [eax + 6], 9
+    mov word ptr [eax + 8], 0
+    push ebx
+    push esi
+    call 0x40d2b0
+    add esp, 8
+    test ax, ax
+    jz arb_ret0
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz arb_ret0
+    cmp word ptr [edi + 0x54fe52], si
+    jne arb_ret0
+    cmp word ptr [edi + 0x54fe54], bx
+    jne arb_ret0
+arb_here:
+    movsx eax, word ptr [esp + 0x14]
+    push {BR_KIND_RAZED}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz arb_ret0
+    push -1
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz arb_ret0
+    movsx ebx, word ptr [0x4fb0ec]
+    push ebx
+    movsx eax, word ptr [esp + 0x18]
+    push eax
+    call 0x4b65e0
+    add esp, 8
+    movsx esi, ax
+    imul eax, ebx, 0x1f8
+    cmp esi, dword ptr [eax + 0x536c14]
+    jg arb_ret0
+    push ebx
+    push esi
+    movsx eax, word ptr [esp + 0x1c]
+    push eax
+    call 0x4b9ce0
+    add esp, 0xc
+    push 0x7d0
+    call 0x4275b0
+    add esp, 4
+    mov eax, dword ptr [0x5020d4]
+    xor ecx, ecx
+    mov word ptr [eax + 6], cx
+    mov word ptr [eax + 8], cx
+    call 0x40d230
+arb_ret0:
+    xor eax, eax
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# Nombres en los textos de depuración de la meta 9 (se arman también sin depurar): "Ctd - Rebuild %s" (0x40ce24) y
+# "Evaluate rebuild %s" (0x41f30c) leían el nombre de la tabla de ciudades con el código del puente.
+ai_brname9 = place('ai_brname9', f'''
+    movsx eax, word ptr [esp + 0x1e]
+    cmp eax, {BR_CODE:#x}
+    jge aib9_bridge
+    lea edx, [eax + eax*8]
+    lea eax, [eax + edx*4]
+    lea ecx, [eax + eax*2]
+    lea edx, [ecx*2 + 0x537e30]
+    jmp 0x40ce39
+aib9_bridge:
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    mov edx, eax
+    jmp 0x40ce39
+''')
+ai_brname9s = place('ai_brname9s', f'''
+    mov si, word ptr [0x5032e6]
+    movsx eax, si
+    cmp eax, {BR_CODE:#x}
+    jge aib9s_bridge
+    lea edx, [eax + eax*8]
+    lea eax, [eax + edx*4]
+    lea ecx, [eax + eax*2]
+    lea edx, [ecx*2 + 0x537e30]
+    jmp 0x41f326
+aib9s_bridge:
+    push 0
+    push eax
+    call {br_name:#x}
+    add esp, 8
+    mov edx, eax
+    jmp 0x41f326
 ''')
 # Diálogo de reconstruir (0x4b6160(índice)): para un puente, derribado y vacío (si no, el aviso 0x72 "Cannot rebuild!
 # Other armies are here..."); el índice queda en [0x587e5c] como el de un sitio.
@@ -6524,6 +7023,15 @@ assert rel(0x435d79, 7) == asm('mov cx, word ptr [0x4fb0ec]', 0x435d79)
 patch(0x435d53, rel(0x435d53, 0x435d79 - 0x435d53), asm(f'jmp {qb_ailoc3:#x}', 0x435d53))
 assert rel(0x4c4d41, 2) == bytes.fromhex('8bc8')   # mov ecx, eax
 patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_brraze:#x}', 0x4c4d3a))
+# La IA reconstruye puentes (meta 9: ai_brrebev, ai_brreb, ai_brname9*)
+patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm(f'jmp {ai_brrebev:#x}', 0x41e4eb))
+patch(0x40dbf0, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brreb:#x}', 0x40dbf0))
+patch(0x40ce24, asm('movsx eax, word ptr [esp + 0x1e]; lea edx, [eax + eax*8]; lea eax, [eax + edx*4];'
+                    'lea ecx, [eax + eax*2]; lea edx, [ecx*2 + 0x537e30]', 0x40ce24),
+      asm(f'jmp {ai_brname9:#x}', 0x40ce24))
+patch(0x41f30c, asm('mov si, word ptr [0x5032e6]; movsx eax, si; lea edx, [eax + eax*8]; lea eax, [eax + edx*4];'
+                    'lea ecx, [eax + eax*2]; lea edx, [ecx*2 + 0x537e30]', 0x41f30c),
+      asm(f'jmp {ai_brname9s:#x}', 0x41f30c))
 # Botones de Votación y Sorteo (tl_*)
 patch(0x4bce20, asm('push ebx; mov ecx, 0x5032f8', 0x4bce20), asm(f'jmp {tl_menuinit:#x}', 0x4bce20))
 patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))
