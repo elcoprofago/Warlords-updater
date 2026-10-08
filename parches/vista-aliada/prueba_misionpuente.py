@@ -1,7 +1,7 @@
 # Prueba de juguete de la misión de héroe "derribar un puente" sobre el exe parcheado, en unicorn.
 # Uso: python prueba_misionpuente.py [DarklordAV.exe] [Darklord.exe]
 #      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
-# Mapa de 64x64 de tierra; el héroe del jugador 1 (humano) está en (5,5). Con Q = 0 la distancia de rey válida para
+# Mapa de 64x64 de tierra; el héroe del jugador 1 (humano, o de la computadora: recibe lo mismo) está en (5,5). Con Q = 0 la distancia de rey válida para
 # el objetivo es 14..34. Puentes (código canónico = la casilla de menor y*128+x):
 #   B5 (25,30)-(26,30) dist 25, dueña C1 enemiga                                   -> candidato
 #   B1 (20,5)-(21,5)   dist 15, la más cercana C3 está arrasada: dueña C2, en paz    -> no
@@ -211,7 +211,9 @@ for nombre, kw, esperado in [
         ('gen: solo ciudades arrasadas = sin dueño', dict(cities=[(xy, o, False, n) for xy, o, _, n in CITIES]),
          [B['B1'], B['B7'], B['B4'], B['B5']]),
         ('gen: misma región manda sobre la distancia', dict(regions={(20, 5): 7, (27, 32): 7}), [B['B1']]),
-        ('gen: Q = 3 corre la distancia a 23..46', dict(q=3), [B['B5'], B['B2']])]:
+        ('gen: Q = 3 corre la distancia a 23..46', dict(q=3), [B['B5'], B['B2']]),
+        ('gen: jugador de la computadora, lo mismo', dict(human=False), [B['B5']]),
+        ('gen: computadora con sitio, el sitio va primero', dict(human=False, sites=SITES), [0, B['B5']])]:
     g = gen(**kw)
     check(nombre, g['end'] == END and g['saved'] and g['cand'] == esperado, f"cand={g['cand']} end={g['end']}")
 g = gen(pick=2, war=(ENEMY, PEACE))
@@ -222,8 +224,7 @@ check('gen: elegido B5 -> misión tipo 10 con su código', g['al'] == 1 and qtyp
 for nombre, kw in [
         ('igual al original: sin puentes, con sitios', dict(bridges={}, sites=SITES)),
         ('igual al original: sin puentes ni sitios (cae a otro tipo)', dict(bridges={})),
-        ('igual al original: jugador de la computadora, con puentes', dict(human=False, sites=SITES)),
-        ('igual al original: computadora, con puentes y sin sitios', dict(human=False)),
+        ('igual al original: computadora, sin puentes, con sitios', dict(human=False, bridges={}, sites=SITES)),
         ('igual al original: puentes todos fuera de distancia', dict(bridges={k: BRIDGES[k] for k in ('B2', 'B3')}, sites=SITES))]:
     a, o = gen(**kw), gen(exe=ORIG, **kw)
     check(nombre, a['end'] == o['end'] == END and (a['al'], a['out'], a['rand']) == (o['al'], o['out'], o['rand'])

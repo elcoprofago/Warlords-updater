@@ -4376,23 +4376,27 @@ bra2_quit:
 # - Generador 0x45ec40, dificultad Average (la única con el tipo 10): después de juntar los sitios candidatos
 #   ([esp+0x34], di de ellos), qb_gen suma los puentes enteros con la misma distancia de rey al héroe
 #   (3Q+14 .. 4Q+34, Q = [0x56950a]) y dueño enemigo o nadie: la ciudad dueña sale de br_city (la misma regla
-#   que 0x440f60 para un sitio) y se filtra con el mismo 0x461080; si no queda ciudad viva, es de nadie. Solo para jugadores humanos: la IA no sabe derribar puentes todavía.
+#   que 0x440f60 para un sitio) y se filtra con el mismo 0x461080; si no queda ciudad viva, es de nadie. Vale
+#   para todos los jugadores: la IA también los toma (ai_brq).
 # - Cumplida: el botón de arrasar puente pasa por 0x4955d0 (br_razebtn), que llama a 0x461a60(6, ejército
 #   seleccionado, 0, 0, código): el original compara el objetivo con el código y premia igual que un sitio.
 # - Fracasada: el chequeo de cada turno (0x461a60 evento 0) mira si el sitio está arrasado (0x461c80); para un
 #   puente, si ya no está entero (qb_fail).
 # - Textos: el nombre del tipo (0x461130 -> 0x461336) y el objetivo (0x461400 -> 0x461876).
 # - La IA lee el lugar del objetivo en 0x435fd0 (0x436178) y 0x436390 (0x436442): para un puente, su casilla, para
-#   no leer la tabla de sitios fuera de rango si un jugador humano pasa a ser de la computadora.
+#   no leer la tabla de sitios fuera de rango.
+# - La IA la cumple: su meta 6 (misión, 0x40d6d0) manda el tipo 10 a 0x40d963, que escribe en el registro de la IA el
+#   nombre del sitio (ai_brname: "the bridge") y llama a 0x40d450(objetivo, 10), el "ir al sitio y arrasarlo".
+#   Para un puente, ai_brq: elige la cabecera más cercana al héroe (distancia de rey; una casilla vecina de una del
+#   puente que no sea puente, ni agua, ni montaña sin camino), va hacia ella como 0x40d450 va al sitio (0x4973f0,
+#   0x40d2b0, 0x40e400) y, parado ahí, lo derriba con el mismo 0x4955d0 del botón (evento 6 de la misión + orden
+#   0x4b9550). Con ejércitos ajenos sobre el puente no lo derriba: ataca como 0x40e400 ataca al que ocupa un sitio;
+#   con ejércitos propios encima espera, para no ahogarlos.
 str_qb_name = place_data('str_qb_name', cstr_('Destroying a Bridge'))
 str_qb_obj = place_data('str_qb_obj', cstr_('%s must destroy the bridge near %s.'))
 str_qb_obj0 = place_data('str_qb_obj0', cstr_('%s must destroy a bridge.'))
 QB_MAXCAND = 0x100                                       # la lista [esp+0x34] del generador llega a [esp+0x233]
 qb_gen = place('qb_gen', f'''
-    movsx eax, word ptr [0x537ce8]
-    imul eax, eax, 0x1f8
-    cmp word ptr [eax + 0x536c12], -1
-    jne qbg_done
     push ebx
     push esi
     push ebp
@@ -4472,7 +4476,6 @@ qbg_end:
     pop ebp
     pop esi
     pop ebx
-qbg_done:
     test di, di
     jle 0x460fa0
     jmp 0x460e04
@@ -4588,6 +4591,222 @@ qba2_out:
     pop edi
     pop esi
     mov word ptr [edx], cx
+    pop ebx
+    ret
+''')
+ai_brname = place('ai_brname', f'''
+    movsx eax, word ptr [esp + 0x12]
+    cmp eax, {BR_CODE:#x}
+    jge aibn_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    lea eax, [ecx + ecx*4]
+    add eax, 0x55acba
+    jmp 0x40d978
+aibn_bridge:
+    mov eax, {str_the_bridge:#x}
+    jmp 0x40d978
+''')
+# ai_brq(código, modo): 0x40d450 para un puente. Devuelve ax = 1 hecho, 0 todavía no (como el original).
+# Locales: [esp] x, [esp+4] y de la cabecera, [esp+8] su distancia, [esp+0xc] casillas*8; edi = registro del grupo.
+ai_brq = place('ai_brq', f'''
+    cmp word ptr [esp + 4], {BR_CODE:#x}
+    jge aib_bridge
+    sub esp, 4
+    mov eax, dword ptr [0x5020d4]
+    jmp 0x40d458
+aib_bridge:
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 0x10
+    mov eax, dword ptr [0x5020d4]
+    movsx edi, word ptr [eax + 0xc]
+    imul edi, edi, 0x1c
+    push {BR_KIND_INTACT}
+    push dword ptr [esp + 0x28]
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz aib_ret0
+    shl eax, 3
+    mov dword ptr [esp + 0xc], eax
+    mov dword ptr [esp + 8], 0x3e8
+    movsx ebx, word ptr [edi + 0x54fe52]
+    movsx ebp, word ptr [edi + 0x54fe54]
+    xor esi, esi
+aib_cand:
+    mov ecx, esi
+    shr ecx, 3
+    mov edx, esi
+    and edx, 7
+    movsx eax, word ptr [edx*2 + {br_d8:#x}]
+    push eax
+    movsx eax, word ptr [edx*2 + {br_d8 + 16:#x}]
+    movsx edx, word ptr [ecx*4 + {br_xy + 2:#x}]
+    add edx, eax
+    pop eax
+    movsx ecx, word ptr [ecx*4 + {br_xy:#x}]
+    add eax, ecx
+    push eax
+    push edx
+    call {br_tile:#x}
+    test eax, eax
+    jz aib_skip
+    mov ecx, eax
+    call {br_kind:#x}
+    test eax, eax
+    jnz aib_skip
+    movzx eax, word ptr [ecx]
+    and eax, 0x1f
+    imul eax, eax, 0x58
+    movsx eax, word ptr [eax + 0x535f0c]
+    cmp eax, 1
+    je aib_skip
+    cmp eax, 4
+    jne aib_dist
+    cmp byte ptr [0x4fe688], 0
+    jne aib_dist
+    imul eax, dword ptr [esp + 4], 0xa0
+    add eax, dword ptr [esp]
+    test byte ptr [eax + 0x57d158], 0x30
+    jz aib_skip
+aib_dist:
+    mov eax, dword ptr [esp + 4]
+    sub eax, ebx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    mov eax, dword ptr [esp]
+    sub eax, ebp
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp ecx, eax
+    jge aib_d
+    mov ecx, eax
+aib_d:
+    cmp ecx, dword ptr [esp + 0x10]
+    jge aib_skip
+    mov dword ptr [esp + 0x10], ecx
+    mov eax, dword ptr [esp + 4]
+    mov dword ptr [esp + 8], eax
+    mov eax, dword ptr [esp]
+    mov dword ptr [esp + 0xc], eax
+aib_skip:
+    add esp, 8
+    inc esi
+    cmp esi, dword ptr [esp + 0xc]
+    jb aib_cand
+    mov ecx, dword ptr [esp + 8]
+    cmp ecx, 0x3e8
+    je aib_ret0
+    test ecx, ecx
+    jz aib_here
+    push dword ptr [esp + 4]
+    push dword ptr [esp + 4]
+    push 0
+    push 7
+    call 0x4973f0
+    add esp, 0x10
+    mov eax, dword ptr [0x5020d4]
+    mov word ptr [eax + 6], 8
+    mov cx, word ptr [esp + 0x24]
+    mov word ptr [eax + 8], cx
+    push dword ptr [esp + 4]
+    push dword ptr [esp + 4]
+    call 0x40d2b0
+    add esp, 8
+    test ax, ax
+    jz aib_ret0
+    test byte ptr [edi + 0x54fe61], 0x7f
+    jz aib_ret0
+    push dword ptr [esp + 4]
+    push dword ptr [esp + 4]
+    movsx eax, word ptr [edi + 0x54fe54]
+    push eax
+    movsx eax, word ptr [edi + 0x54fe52]
+    push eax
+    call 0x40e400
+    add esp, 0x10
+    test ax, ax
+    jz aib_ret0
+    mov ax, word ptr [edi + 0x54fe52]
+    cmp ax, word ptr [esp]
+    jne aib_ret0
+    mov ax, word ptr [edi + 0x54fe54]
+    cmp ax, word ptr [esp + 4]
+    jne aib_ret0
+aib_here:
+    cmp word ptr [esp + 0x28], 10
+    jne aib_done
+    push {BR_KIND_INTACT}
+    push dword ptr [esp + 0x28]
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz aib_ret0
+    mov esi, eax
+    movsx ecx, word ptr [0x537ce8]
+    push ecx
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test eax, eax
+    jnz aib_held
+    test edx, edx
+    jnz aib_ret0
+    movsx eax, word ptr [esp + 0x24]
+    push eax
+    call 0x4955d0
+    add esp, 4
+aib_done:
+    push 0x7d0
+    call 0x4275b0
+    add esp, 4
+    mov eax, dword ptr [0x5020d4]
+    xor ecx, ecx
+    mov word ptr [eax + 6], cx
+    mov word ptr [eax + 8], cx
+    call 0x40d230
+    mov ax, 1
+    jmp aib_out
+aib_held:
+    movsx ebx, word ptr [edi + 0x54fe52]
+    movsx ebp, word ptr [edi + 0x54fe54]
+aib_hl:
+    dec esi
+    js aib_ret0
+    movsx eax, word ptr [esi*4 + {br_xy:#x}]
+    movsx edx, word ptr [esi*4 + {br_xy + 2:#x}]
+    mov ecx, eax
+    sub ecx, ebx
+    inc ecx
+    cmp ecx, 2
+    ja aib_hl
+    mov ecx, edx
+    sub ecx, ebp
+    inc ecx
+    cmp ecx, 2
+    ja aib_hl
+    push edx
+    push eax
+    push ebp
+    push ebx
+    call 0x40e400
+    add esp, 0x10
+    test ax, ax
+    jz aib_hl
+aib_ret0:
+    xor eax, eax
+aib_out:
+    add esp, 0x10
+    pop ebp
+    pop edi
+    pop esi
     pop ebx
     ret
 ''')
@@ -5874,6 +6093,8 @@ patch(0x436178, bytes.fromhex('0fbfc766bd01008d048003c08d0c40668b9489b6ac55008d0
       asm(f'jmp {qb_ailoc1:#x}', 0x436178))
 patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9b66893e5f668b89b8ac55005e66890a5bc3'),
       asm(f'jmp {qb_ailoc2:#x}', 0x436442))
+patch(0x40d963, bytes.fromhex('0fbf4424128d048003c08d0c408d048905baac5500'), asm(f'jmp {ai_brname:#x}', 0x40d963))
+patch(0x40d450, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brq:#x}', 0x40d450))
 # Botones de Votación y Sorteo (tl_*)
 patch(0x4bce20, asm('push ebx; mov ecx, 0x5032f8', 0x4bce20), asm(f'jmp {tl_menuinit:#x}', 0x4bce20))
 patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))

@@ -64,14 +64,16 @@ puntaje, nivel y recompensa como las demás.
 - Fracasada: si el puente objetivo deja de estar entero antes (lo derriba otro), igual que un sitio arrasado.
   Si ya estaba cumplida, sigue cumplida.
 - Guardar y cargar: la misión activa vive en 0x55edc4 + jugador·16, dentro del bloque que guarda el SAV.
-- Sin puentes que ofrecer (o jugador de la computadora), el generador da exactamente lo mismo que el original.
+- Sin puentes que ofrecer, el generador da exactamente lo mismo que el original. Desde 1.0.21.0 vale también para
+  los jugadores de la computadora (parte D, paso 1).
 
 **Diferencias con el plan**
 - Los textos ("Destroying a Bridge", "%s must destroy the bridge near %s." y "%s must destroy a bridge.") van como
   cadenas del exe, igual que los demás textos de puentes, no en WAR3AV.RES.
-- La IA no recibe misiones de puente: el generador solo las ofrece a jugadores humanos, porque la IA no sabe
-  derribar puentes (parte D). Si un jugador humano pasa a ser de la computadora con una misión de puente activa,
-  la IA lee bien el lugar del objetivo (0x436178 y 0x436442), pero no lo derriba.
+- Hasta 1.0.20.0 la IA no recibía misiones de puente. Lo anotado acá entonces ("si un jugador humano pasa a ser de
+  la computadora con una misión de puente activa, la IA lee bien el lugar pero no lo derriba") era incompleto: el
+  camino de la IA (0x40d963 y 0x40d450) además leía la tabla de sitios con el código del puente como índice, fuera
+  de rango. Quedó resuelto en la parte D, paso 1.
 
 ---
 
@@ -278,24 +280,49 @@ en `DarkCompare\assets\`; se incorporó a `parches\vista-aliada\titulo.pcx`).
   ((R - B) / 170) dejaba casi transparentes los brillos de arriba. Ahora usa el color lleno de cada fila: ver
   build.py. Va a 60 de alto desde y 3 (360 de ancho; recuadro cambiado x 142..501, y 3..62 del diálogo).
 
-## D. Diferido: programar la IA (otra sesión)
+## D. Programar la IA
 
 Criterios que da el usuario por lo que ve jugar a la IA: razea sitios o ciudades (a) porque una misión del héroe se
 lo pide y (b) por razones militares (cercanía o lejanía del enemigo, su debilidad o fortaleza, recursos de la zona,
 terreno) o políticas (estado diplomático).
 
-Para después:
-- que los héroes de la IA tomen y cumplan misiones de puente;
-- que la IA razee puentes por criterio estratégico (punto de partida: la decisión de razear sitio en 0x40d565);
-- que reconstruya puentes y use Landing, Carrier y Cabotage activamente.
+Orden de trabajo:
+1. que los héroes de la IA tomen y cumplan misiones de puente — **hecho, 1.0.21.0**;
+2. que la IA razee puentes por criterio estratégico;
+3. que reconstruya puentes y use Landing, Carrier y Cabotage activamente.
 
-Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear o reconstruir puentes, convoyes)
-no las usa.
+Los efectos pasivos de esos bonos ya valen para la IA. Las acciones nuevas (razear por su cuenta o reconstruir
+puentes, convoyes) no las usa.
 
-**Estado al 7/10/2026 (vista-aliada 1.0.20.0): es lo que sigue.** Las partes A, B, C, E y F están hechas y
-publicadas; el usuario confirmó en partida el escudo de la votación (1.0.19.0) y el título de imagen (1.0.20.0).
-Nada de la IA está empezado: el primer paso es leer cómo decide hoy razear un sitio (0x40d565) y cómo planifica
-movimientos y misiones de héroe (0x436178 y 0x436442 leen el lugar del objetivo), antes de proponer el orden.
+**Lo averiguado de la IA (7/10/2026)**
+- Despachador de metas del grupo (~0x40cc3f): meta = código/1000, objetivo = código%1000; la meta sale de 0x41eda0
+  (o de 0x41cb10). Tabla 0x40d02c: 1 formar en ciudad 0x40db40; 2 ruina 0x40d050; 3 ciudad neutral 0x40d9f0(t,3);
+  4 objeto 0x40d5b0; 5 héroe 0x40dd00; 6 misión 0x40d6d0; 7 ciudad enemiga 0x40d9f0(t,7); 8 sitio 0x40d450(t,0);
+  9 reconstruir 0x40dbf0.
+- **La IA original solo arrasa sitios por misión.** 0x40d450(sitio, modo) va al sitio (0x4973f0 destino, 0x40d2b0
+  mover, 0x40e400 atacar al que lo ocupa) y arrasa solo con modo 10, que únicamente le pasa la meta 6 (misión tipo
+  10, por 0x40d963). La meta 8 (evaluador de sitios 0x41d2c0) llama con modo 0: solo los visita. O sea, 0x40d565
+  no es una decisión estratégica: el paso 2 no tiene en qué apoyarse y es lógica nueva (decidir cuándo conviene).
+- Estado de trabajo de la IA: [0x5020d4] = plan del grupo (+6 meta, +8 objetivo, +0xc grupo); [0x5020d0] =
+  ranura; [0x4fb0ec] = jugador de la IA. Registro de depuración: sprintf [0x5a9bec] a 0x564d90 + 0x427520.
+- 0x4974a0 (distancia) es euclídea truncada: la diagonal vale 1. 0x40e400(sx,sy,x,y): a distancia 1 ataca al que
+  ocupa (x,y) solo si es humano (o [0x560e52] == 5), declarando la guerra; sin nadie, o propio, devuelve 0.
+- 0x4a65d0(jugador,x,y): distancia en el mapa por jugador [0x587168+p*4][x*160+y], 0 = sin camino; lo llena
+  0x4a6920(ranura). La usa el evaluador de misiones 0x41e8a0 (por 0x435fd0) para decidir si la persigue.
+- "Quest City" ([0x561efe + jugador*0x49a]): bug del original, guarda el byte bajo del objetivo de cualquier misión
+  (también de sitio) como si fuera una ciudad. Con un puente pasa lo mismo que con un sitio; no se tocó.
+
+**Paso 1 hecho (1.0.21.0).** qb_gen ya no se limita a humanos. ai_brname (0x40d963) escribe "the bridge" en el
+registro de la IA. ai_brq (0x40d450, código ≥ 0x2000): elige la cabecera más cercana (vecina de una casilla del
+puente; no puente, no agua, no montaña sin camino), va como a un sitio y, parado ahí, derriba con 0x4955d0 (cumple
+la misión). Con ejércitos ajenos encima ataca con 0x40e400 y no derriba; con propios encima espera. Prueba:
+`prueba_iapuente.py` (29 casos; los sitios comparados con el original). Falta verlo en partida: que el evaluador
+0x41e8a0 elija perseguir la misión depende de 0x4a65d0 en la casilla del puente, que no se emuló.
+
+**Próximo paso (2):** decidir dónde enganchar el "derribar por criterio": un evaluador nuevo de metas (junto a
+0x41eda0) que puntúe puentes según los criterios del usuario, y que reutilice ai_brq como la meta 6 reutiliza
+0x40d450.
+
 Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
 votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que
 establece la votación, no prevé pausar los movimientos del sistema.
