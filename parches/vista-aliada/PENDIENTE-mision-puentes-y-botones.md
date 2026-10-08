@@ -172,7 +172,8 @@ juego, pero creo que la partida no queda pausada"*.
 - Partida por minutos: fin en `[0x5032f8+0x4c]` (-1 si no hay), también con el reloj de cada PC.
 - Teclado y mouse llegan solo por mensajes de Windows (no hay DirectInput ni GetAsyncKeyState); el juego tiene 6
   bucles que llaman a DispatchMessageA.
-- Los turnos de la IA no tienen reloj: siguen corriendo durante la pausa.
+- Los turnos de la IA no tienen reloj: siguen corriendo durante la pausa. Así queda: no hace falta pausarlos
+  (usuario, 7/10/2026; ver D).
 
 **Qué hace "pausada" (las dos cosas: reloj y órdenes)**
 - La orden de abrir la Votación (TL_OPEN 0, que ya llegaba a todas las PC) pausa; el estado que manda el anfitrión
@@ -295,7 +296,9 @@ no las usa.
 publicadas; el usuario confirmó en partida el escudo de la votación (1.0.19.0) y el título de imagen (1.0.20.0).
 Nada de la IA está empezado: el primer paso es leer cómo decide hoy razear un sitio (0x40d565) y cómo planifica
 movimientos y misiones de héroe (0x436178 y 0x436442 leen el lugar del objetivo), antes de proponer el orden.
-También queda la pausa durante los turnos de la IA (ver C: sus turnos no se paran).
+Pausar los turnos de la IA **no se hace** (decisión del usuario, 7/10/2026): durante esos turnos nadie propone una
+votación, porque todos miran lo que hace el sistema. Además, el Reglamento del Ranking del Clan, que es el que
+establece la votación, no prevé pausar los movimientos del sistema.
 
 ## G. Para otro momento: el actualizador
 
