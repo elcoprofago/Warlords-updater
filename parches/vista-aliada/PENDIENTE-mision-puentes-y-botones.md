@@ -171,9 +171,8 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
 - Sorteo: cursores e ícono ahora se buscan junto al programa (`resource_path`), no en la carpeta actual.
 
 **Lo que falta de B**
-1. **Instalar los programas en `C:\Warlords3\Herramientas\`** de cada PC: entrada en `parches.txt` del actualizador.
-   Los repos Votacion y Sorteo no tienen remoto ni releases todavía; hace falta uno para publicar los exe.
-   Hasta entonces, el botón muestra el cartel "No se pudo abrir...".
+1. ~~Instalar los programas en `C:\Warlords3\Herramientas\` de cada PC~~ — **hecho el 8/10/2026**: parche
+   `herramientas` del actualizador (ver G).
 2. **Prueba real en red** (dos PC con DarklordAV.exe): no se pudo hacer acá. Lo emulado y probado: menú, botón,
    paquetes, archivos, y los dos programas con archivos simulados. Sin probar: el viaje real por la red y que la
    ventana quede encima del juego en ventana (GOG dxcfg).
@@ -478,6 +477,34 @@ establece la votación, no prevé pausar los movimientos del sistema.
 Pedido del usuario (7/10/2026), sin fecha: revisar el actualizador del juego y adaptarlo a todo lo que cambió en el
 parche y en los dos programas complementarios (Votacion y Sorteo). Hoy los dos programas no tienen remoto ni
 releases, así que el actualizador no los puede instalar (ver B).
+
+**Hecho el 8/10/2026 (herramientas 1.0.0.0, actualizador sin cambios).** Revisión del actualizador:
+- vista-aliada ya viajaba completo: el PARCHES.txt publicado estaba en 1.0.25.0 con sus 11 archivos, y
+  publicar-parche.ps1 exige que build.py genere exactamente esa lista.
+- Lo que faltaba era Votación y Sorteo. Van como parche nuevo, `herramientas` (`parches/herramientas/build.py`):
+  instala `Herramientas\votacion.exe` y `Herramientas\sorteo.exe` por la misma opción 8 (PARCHES), desde la misma
+  release Actualizador. Los repos Votacion y Sorteo siguen sin remoto, y no hace falta: se publica el exe, no el
+  código.
+- build.py no compila. Copia `dist\<programa>.exe` de los repos hermanos y se niega en estos casos (prueba
+  `prueba_herramientas.py`, con repos de juguete y controles):
+  - si la VERSION del programa no es la fijada en PROGRAMAS: así, una versión nueva obliga a tocar build.py, y el
+    hook obliga a subir la versión del parche;
+  - si el repo del programa tiene cambios sin commitear;
+  - si el exe es anterior al último commit del programa.
+- `votacion.ini` no va en el zip: la pantalla elegida en cada PC no se pisa (sin el archivo, el programa usa la
+  principal).
+- Probado con el Actualizador.bat real contra una carpeta de juego de prueba (W3_JUEGO, W3_PARCHES_URL local):
+  - instala los dos exe idénticos a los compilados y marca "instalado";
+  - control: `votacion.ini` intacto y vista-aliada sigue "instalado";
+  - con sorteo.exe abierto (bloqueado) dice "No se pudo descomprimir", el error de Windows dice que el archivo está
+    en uso, no lo marca instalado y se puede reintentar.
+- Votacion y Sorteo: su hooks\pre-commit ahora también recuerda (sin bloquear) que a los jugadores les llega por
+  actualizador-warlords. Probado en caliente en clones.
+- El .bat no cambió: la opción 8 lee cualquier línea nueva de PARCHES.txt, así que no hubo que recompilar el
+  actualizador.
+
+Con esto queda resuelto el punto 1 de "Lo que falta de B". Sigue pendiente la prueba real en red con dos PC
+(punto 2).
 
 ---
 

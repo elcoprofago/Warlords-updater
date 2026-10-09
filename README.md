@@ -24,6 +24,18 @@ elegir en el menú qué actualizar.
 3. Commitear y `git push`.
 4. `.\tools\publicar-parche.ps1 <ID>`: lo empaqueta y lo sube a la release Actualizador.
 
+**Publicar Votación o Sorteo** (parche `herramientas`: `C:\Warlords3\Herramientas\`, de donde los abren los
+botones de vista-aliada)
+
+1. En el repo del programa (`..\Votacion` o `..\Sorteo`): subir su VERSION, commitear y correr `compilar.ps1`.
+2. Poner esa versión en `PROGRAMAS` de `parches/herramientas/build.py` y subir la versión de `herramientas` en
+   `parches/parches.txt`.
+3. Commitear, `git push` y `.\tools\publicar-parche.ps1 herramientas`.
+
+`build.py` no compila: copia los exe y se niega si la versión no coincide, si el repo del programa tiene cambios sin
+commitear o si el exe es anterior a su último commit. `votacion.ini` no se publica (la pantalla de cada PC no se
+pisa).
+
 Para publicar un parche no hace falta recompilar el actualizador. Cada script explica al principio
 qué controla y por qué puede negarse.
 
