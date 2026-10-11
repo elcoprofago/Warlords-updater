@@ -13,9 +13,24 @@ elegir en el menú qué actualizar.
 
 **Cambiar el actualizador**
 
-1. Editar `source/Actualizador.bat` y subir la versión en `source/banner.txt`.
+Es un programa C# (.NET Framework 4.8, WinForms, con aspecto de terminal) en `source/Actualizador/`. Las
+direcciones de los paquetes del juego están en `source/*_url.txt` (línea 1 principal, línea 2 alternativa) y van
+embebidas en el exe, igual que la fuente JetBrains Mono (licencia OFL).
+
+1. Editar `source/` y subir la versión en `source/Actualizador/Actualizador.csproj` (`Version`, `FileVersion` y
+   `AssemblyVersion`, las tres iguales).
 2. Commitear y `git push`.
-3. `.\tools\compilar-actualizador.ps1 -Publicar`: compila el exe, lo prueba y lo sube a la release Ejecutable.
+3. `.\tools\compilar-actualizador.ps1 -Publicar`: compila el exe (`dotnet build`, SDK del Windows 10), lo prueba y
+   lo sube a la release Ejecutable.
+
+Para probarlo sin tocar `C:\Warlords3` ni el escritorio: `W3_JUEGO` (carpeta del juego), `W3_ESCRITORIO` (dónde
+crea los accesos directos), `W3_PARCHES_URL` (otro `PARCHES.txt`, puede ser un archivo local), `W3_ENTRADA`
+(respuestas separadas por `|`; al acabarse cierra), `W3_TRANSCRIPCION` (guarda el texto de la pantalla) y
+`W3_CAPTURA` (una captura PNG cada vez que espera una respuesta).
+
+`DarkValidator.zip` (opción 7), `PGS-VISOR.zip` (8) y `COMPLEMENTOS.zip` (10) son assets de la release Actualizador
+armados a mano; las tres opciones descomprimen en `C:\Warlords3\HERRAMIENTAS` y no pisan los `.ini` que ya estén
+(la configuración de cada PC).
 
 **Publicar un parche**
 

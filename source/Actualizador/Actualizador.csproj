@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 viene con Windows 10 y 11: el jugador no instala nada. Sale un solo exe. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Actualizador</RootNamespace>
+    <AssemblyName>Actualizador</AssemblyName>
+    <!-- La version del actualizador: tools\compilar-actualizador.ps1 la lee de aca. -->
+    <Version>1.0.1.0</Version>
+    <FileVersion>1.0.1.0</FileVersion>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <Product>Actualizador de Warlords III</Product>
+    <AssemblyTitle>Actualizador de Warlords III - Darklords Rising</AssemblyTitle>
+    <Copyright>elcoprofago@gmail.com 2026</Copyright>
+    <ApplicationIcon>..\..\tools\actualizador.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>es</SatelliteResourceLanguages>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- La fuente va dentro del exe: no depende de que este instalada en la PC del jugador. -->
+    <EmbeddedResource Include="fuentes\*.ttf" LogicalName="%(Filename)%(Extension)" />
+    <!-- Las direcciones de los paquetes del juego (linea 1 principal, linea 2 alternativa). -->
+    <EmbeddedResource Include="..\*_url.txt" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

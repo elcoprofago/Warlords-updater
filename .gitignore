@@ -8,3 +8,5 @@ source/descargas/
 # Salida de los scripts de build y publicación.
 dist/
 __pycache__/
+source/Actualizador/bin/
+source/Actualizador/obj/
