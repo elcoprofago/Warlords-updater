@@ -5,8 +5,9 @@
 #    en el mismo commit. El actualizador decide "hay version nueva" por ese numero; si el codigo
 #    cambia y el numero no, los jugadores que ya lo tienen nunca ven la actualizacion.
 #    No cuentan los *.md ni los prueba*.py (no cambian lo que se publica).
-# 2) RECUERDA (no bloquea): un cambio en source/ no le llega a nadie hasta recompilar el exe con
-#    con tools/compilar-actualizador.ps1 y publicarlo; git no puede verificar ese paso.
+# 2) RECUERDA (no bloquea): un cambio en source/ o en tools/configurar-firewall.ps1 (va embebido en
+#    el exe) no le llega a nadie hasta recompilar el exe con tools/compilar-actualizador.ps1 y
+#    publicarlo; git no puede verificar ese paso.
 
 version_de() {  # stdin: parches.txt; $1: ID
     tr -d '\r' | grep -v '^#' | awk -F'|' -v id="$1" '$1 == id { print $2 }'
@@ -30,9 +31,10 @@ for id in $ids; do
     fi
 done
 
-if printf '%s\n' "$staged" | grep -q '^source/'; then
+if printf '%s\n' "$staged" | grep -q -e '^source/' -e '^tools/configurar-firewall\.ps1$'; then
     cat >&2 <<'EOF'
-pre-commit (recordatorio): cambiaste source/. Para que llegue a los jugadores:
+pre-commit (recordatorio): cambiaste source/ o tools/configurar-firewall.ps1 (va dentro del exe).
+  Para que llegue a los jugadores:
   1. subir Version, FileVersion y AssemblyVersion en source/Actualizador/Actualizador.csproj,
   2. git push y despues .\tools\compilar-actualizador.ps1 -Publicar
      (compila, prueba y sube el exe a la release "Ejecutable" de GitHub).

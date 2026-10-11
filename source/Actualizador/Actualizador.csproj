@@ -8,9 +8,9 @@
     <RootNamespace>Actualizador</RootNamespace>
     <AssemblyName>Actualizador</AssemblyName>
     <!-- La version del actualizador: tools\compilar-actualizador.ps1 la lee de aca. -->
-    <Version>1.0.1.0</Version>
-    <FileVersion>1.0.1.0</FileVersion>
-    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <Version>1.0.2.0</Version>
+    <FileVersion>1.0.2.0</FileVersion>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
     <Product>Actualizador de Warlords III</Product>
     <AssemblyTitle>Actualizador de Warlords III - Darklords Rising</AssemblyTitle>
     <Copyright>elcoprofago@gmail.com 2026</Copyright>
@@ -34,6 +34,8 @@
     <EmbeddedResource Include="fuentes\*.ttf" LogicalName="%(Filename)%(Extension)" />
     <!-- Las direcciones de los paquetes del juego (linea 1 principal, linea 2 alternativa). -->
     <EmbeddedResource Include="..\*_url.txt" LogicalName="%(Filename)%(Extension)" />
+    <!-- Opcion 12: el script que configura Radmin VPN y el firewall (se corre desde una copia temporal). -->
+    <EmbeddedResource Include="..\..\tools\configurar-firewall.ps1" LogicalName="configurar-firewall.ps1" />
   </ItemGroup>
 
 </Project>

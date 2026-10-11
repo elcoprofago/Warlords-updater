@@ -59,10 +59,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 12).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 13).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 12.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 13.");
                     await Pausa();
                     continue;
                 }
@@ -89,7 +89,8 @@ namespace Actualizador
                         case "9": await Parches(); pausa = false; break;
                         case "10": await Herramienta("COMPLEMENTOS", "COMPLEMENTOS.zip"); pausa = true; break;
                         case "11": await AccesosDirectos(); pausa = false; break;
-                        case "12":
+                        case "12": await ConfigurarRadmin(); pausa = true; break;
+                        case "13":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -151,7 +152,8 @@ namespace Actualizador
             Opcion(9, "PARCHES", "→ " + juego);
             Opcion(10, "COMPLEMENTOS", dHerr);
             Opcion(11, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
-            Opcion(12, "SALIR", "", Paleta.Tenue);
+            Opcion(12, "CONFIGURAR RADMIN-VPN", "→ instalarlo, firewall y red privada");
+            Opcion(13, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -426,6 +428,74 @@ namespace Actualizador
                 Marshal.FinalReleaseComObject(shell);
             }
             if (!File.Exists(lnk)) throw new IOException("Windows no lo guardó");
+        }
+
+        // ================================================================== Radmin VPN
+
+        /// <summary>
+        /// Opcion 12: corre configurar-firewall.ps1 (embebido en el exe) en una ventana de PowerShell como
+        /// administrador. El script ofrece instalar Radmin VPN si falta, deja las reglas del firewall y pasa la
+        /// red Radmin VPN a Privada; con -Pausa espera ENTER, asi el jugador lee el resultado antes de que se
+        /// cierre. W3_FIREWALL_SIMULAR (pruebas): lo corre con -Simular, sin pedir permisos ni pausa.
+        /// </summary>
+        async Task ConfigurarRadmin()
+        {
+            bool simular = Environment.GetEnvironmentVariable("W3_FIREWALL_SIMULAR") != null;
+            t.EscribirLinea();
+            Encabezado("CONFIGURAR RADMIN-VPN", "");
+            t.EscribirLinea("  │  1. Si Radmin VPN no está instalado, ofrece bajarlo de su página oficial e instalarlo.", Paleta.Texto);
+            t.EscribirLinea("  │  2. Habilita en el firewall de Windows el juego, DirectPlay y las herramientas,", Paleta.Texto);
+            t.EscribirLinea("  │     solo en redes privadas.", Paleta.Texto);
+            t.EscribirLinea("  │  3. Pasa la red de Radmin VPN a Privada, para que el juego reciba conexiones por ahí.", Paleta.Texto);
+            t.EscribirLinea("  │", Paleta.Tenue);
+            t.EscribirLinea("  │  Conviene tener Radmin VPN abierto y unido a la red de la partida.", Paleta.Tenue);
+            Cierre();
+            t.EscribirLinea();
+
+            string script = Path.Combine(temporal, "configurar-firewall.ps1");
+            try
+            {
+                using (var s = typeof(Actualizador).Assembly.GetManifestResourceStream("configurar-firewall.ps1"))
+                using (var f = File.Create(script))
+                    s.CopyTo(f);
+            }
+            catch (Exception ex)
+            {
+                Error("No se pudo preparar el script: " + ex.Message);
+                return;
+            }
+
+            var argumentos = $"-NoProfile -ExecutionPolicy Bypass -File \"{script}\" -Juego \"{juego}\"" + (simular ? " -Simular" : " -Pausa");
+            var inicio = new ProcessStartInfo("powershell.exe", argumentos) { UseShellExecute = true };
+            if (!simular) inicio.Verb = "runas";
+            Info("Se abre una ventana de PowerShell" + (simular ? "" : " que pide permiso de administrador") + ".");
+            int codigo;
+            using (var act = new Actividad(t, "Configurando en la ventana de PowerShell (léela y ciérrala con ENTER)..."))
+            {
+                try
+                {
+                    using (var p = Process.Start(inicio))
+                    {
+                        await Task.Run(() => p.WaitForExit());
+                        codigo = p.ExitCode;
+                    }
+                }
+                catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+                {
+                    act.Terminar();
+                    Aviso("Se canceló el pedido de permiso de administrador: no se cambió nada.");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    act.Terminar();
+                    Error("No se pudo abrir PowerShell: " + ex.Message);
+                    return;
+                }
+                finally { Borrar(script); }
+            }
+            if (codigo == 0) Ok("Radmin VPN y el firewall quedaron configurados.");
+            else Aviso("La configuración terminó con avisos: revisa lo que dijo la ventana y vuelve a correr esta opción.");
         }
 
         // ================================================================== descargar y descomprimir
