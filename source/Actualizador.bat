@@ -90,9 +90,11 @@ color 0C
 echo 6) *** ACTUALIZAR TODO EL JUEGO ***
 color 0A
 echo 7) NUEVA VERSION DEL VALIDATOR
-echo 8) PARCHES
+echo 8) PGS-VISOR
+echo 9) PARCHES
+echo 10) COMPLEMENTOS
 color 0C
-echo 9) SALIR
+echo 11) SALIR
 color 07
 set /p choices="Opciones: "
 
@@ -119,8 +121,10 @@ for %%c in (%choices%) do (
     if "%%c"=="4" call :UPDATE ESCEN "%DATOS%escen_url.txt"
     if "%%c"=="5" call :UPDATE ITEMS "%DATOS%items_url.txt"
     if "%%c"=="7" goto :VALIDATOR
-    if "%%c"=="8" goto :PARCHES
-    if "%%c"=="9" goto :EXIT
+    if "%%c"=="8" goto :VISOR
+    if "%%c"=="9" goto :PARCHES
+    if "%%c"=="10" goto :COMPLEMENTOS
+    if "%%c"=="11" goto :EXIT
 )
 
 pause
@@ -289,6 +293,59 @@ color 0A
 echo VALIDATOR actualizado !!
 pause
 goto MENU
+
+
+REM ============================================================
+REM ============ PGS-VISOR y COMPLEMENTOS ======================
+REM ============================================================
+REM Los dos bajan un zip de la release "Actualizador" y lo descomprimen en %JUEGO%\HERRAMIENTAS,
+REM que es el unico alojamiento de DarkCompare, DarklordsValidator, EditorPGS, votacion y sorteo.
+REM PGS-VISOR.zip (solo el visor EditorPGS) trae los archivos en la raiz: se extrae en HERRAMIENTAS.
+REM COMPLEMENTOS.zip trae la carpeta HERRAMIENTAS\ en la raiz: se extrae en %JUEGO% para que quede
+REM tambien en HERRAMIENTAS. No existe ninguna carpeta "COMPLEMENTOS" en el juego: es solo el
+REM nombre de la opcion 10 del menu.
+
+:VISOR
+call :DESCARGAR_A PGS-VISOR "https://github.com/elcoprofago/Warlords-updater/releases/download/Actualizador/PGS-VISOR.zip" "%JUEGO%\HERRAMIENTAS"
+goto MENU
+
+:COMPLEMENTOS
+call :DESCARGAR_A COMPLEMENTOS "https://github.com/elcoprofago/Warlords-updater/releases/download/Actualizador/COMPLEMENTOS.zip" "%JUEGO%"
+goto MENU
+
+REM Descarga un zip de la release y lo descomprime.
+REM %1 nombre (del zip temporal y de los mensajes), %2 URL, %3 carpeta destino
+:DESCARGAR_A
+set "nombre=%~1"
+set "url=%~2"
+set "destino=%~3"
+set "zipfile=%DOWNLOADS%\W3Updater\%~1.zip"
+
+color 0B
+echo --------------------------------
+echo Descargando %nombre%...
+echo Verificando conexion...
+ping -n 1 github.com >nul || (color 0C & echo ERROR: Sin conexion & pause & goto :eof)
+
+if exist "%zipfile%" del /f /q "%zipfile%"
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%url%' -OutFile '%zipfile%'" 2>nul
+if not exist "%zipfile%" (
+    color 0C
+    echo ERROR: No se pudo descargar %nombre%.
+    echo Falta el archivo %nombre%.zip en la release Actualizador?
+    pause
+    goto :eof
+)
+
+if not exist "%destino%" mkdir "%destino%"
+echo Descomprimiendo en %destino%...
+powershell -NoProfile -Command "Expand-Archive -Force -LiteralPath '%zipfile%' -DestinationPath '%destino%'"
+del /f /q "%zipfile%"
+
+color 0A
+echo %nombre% actualizado !!
+pause
+goto :eof
 
 
 REM ============================================================

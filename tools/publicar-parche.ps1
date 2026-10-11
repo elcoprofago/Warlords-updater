@@ -1,5 +1,5 @@
 <#
-Publica un parche en la release "Actualizador" de GitHub, de donde lo baja la opcion 8 (PARCHES)
+Publica un parche en la release "Actualizador" de GitHub, de donde lo baja la opcion 9 (PARCHES)
 del actualizador.
 
   .\tools\publicar-parche.ps1 vista-aliada           # publica

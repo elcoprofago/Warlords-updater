@@ -1,4 +1,4 @@
-# Parches que ofrece la opcion 8 (PARCHES) del actualizador. Una linea por parche:
+# Parches que ofrece la opcion 9 (PARCHES) del actualizador. Una linea por parche:
 #   ID|VERSION|ARCHIVOS|DESCRIPCION
 # ID           carpeta parches\<ID>\ (con build.py) y nombre del zip publicado: PARCHE-<ID>-v<VERSION>.zip
 # VERSION      cuatro numeros. Se sube en el mismo commit que cambie parches\<ID>\ (lo exige hooks\pre-commit)
