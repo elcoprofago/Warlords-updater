@@ -107,6 +107,36 @@ if (-not $esAdmin -and -not $Simular) {
 if ($Simular) { Write-Host 'SIMULACION: no se cambia nada.' -ForegroundColor Cyan }
 $fallos = 0
 
+# ---------------------------------------------------------------- quien hace de firewall
+# Las reglas de este script son del Firewall de Windows: si esta apagado (a mano, o porque otro antivirus
+# con firewall propio lo reemplazo), se crean igual pero no se aplican, y el que decide es el otro
+# firewall. Radmin VPN lo muestra como "El firewall de Windows esta desactivado" en Excepciones del firewall.
+# Este script no enciende el Firewall de Windows: con otro firewall instalado lo correcto es cargar las
+# excepciones en ese otro, y apagarlo o encenderlo es decision de cada jugador.
+Titulo 'Firewall'
+$servicio = Get-Service -Name MpsSvc -ErrorAction SilentlyContinue
+$apagados = @(Get-NetFirewallProfile -ErrorAction SilentlyContinue | Where-Object { [string]$_.Enabled -ne 'True' } | ForEach-Object { [string]$_.Name })
+$otros = @(Get-CimInstance -Namespace root/SecurityCenter2 -ClassName FirewallProduct -ErrorAction SilentlyContinue |
+    ForEach-Object { $_.displayName } | Where-Object { $_ } | Sort-Object -Unique)
+$windowsApagado = (-not $servicio) -or [string]$servicio.Status -ne 'Running' -or ($apagados -contains 'Private')
+if ($otros) { Aviso "hay otro firewall instalado: $($otros -join ', ')." }
+if (-not $servicio -or [string]$servicio.Status -ne 'Running') { Aviso 'el servicio del Firewall de Windows (MpsSvc) no esta corriendo.' }
+if ($apagados) { Aviso "el Firewall de Windows esta desactivado en: $($apagados -join ', ')." }
+if (-not $windowsApagado -and -not $otros) { Write-Host '  Firewall de Windows activo (nadie mas hace de firewall).' -ForegroundColor Green }
+if ($windowsApagado) {
+    if ($otros) {
+        Aviso "las reglas que crea este script NO se van a aplicar: el que manda es $($otros -join ', ')."
+        Write-Host "  En $($otros -join ', ') hay que permitir (red privada o confiable): Darklord.exe y DarklordAV.exe"
+        Write-Host "  de $Juego, $([Environment]::GetFolderPath('SystemX86'))\dplaysvr.exe, la red de Radmin VPN y,"
+        Write-Host '  si se usan, los programas de HERRAMIENTAS.'
+    }
+    else {
+        Aviso 'con el Firewall de Windows apagado y sin otro firewall, nada en esta PC bloquea el juego:'
+        Write-Host '  si igual no conecta, la causa esta en otro lado (Radmin VPN sin unirse a la red, o la otra PC).'
+    }
+    $fallos++
+}
+
 # ---------------------------------------------------------------- Radmin VPN instalado
 Titulo 'Radmin VPN'
 $radminDir = CarpetaRadmin
