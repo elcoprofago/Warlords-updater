@@ -569,3 +569,14 @@ Lo primero a averiguar en la sesión que toque B/C:
 - Ojo para lanzarlo desde el juego: Sorteo carga cursores e ícono con rutas relativas al directorio actual
   (`@assets/flecha.cur`, `assets/icono.ico`); hay que lanzarlo con el directorio de trabajo en su carpeta (o pasar
   esas rutas a `resource_path`). `sorteo.spec` genera además `dist\sorteo\sorteo.exe`.
+
+## Hecho el 11/10/2026: botón del Comparador en Edit Side (vista-aliada 1.0.26.0)
+
+- Botón 75 en el diálogo 86 (Edit Side), arriba a la izquierda (40,40), 64x64, hoja `SETS\Fantasy\darkcomp.pcx`
+  (archivo 167 de la tabla tipo 2, sacado de `strella.ico` -> `comparador_icono.png`).
+- Clic: `CreateProcessA("Herramientas\DarkCompare.exe" --juego)`; si falla, aviso "No se pudo abrir
+  Herramientas\DarkCompare.exe" en un hilo (como Sorteo). Probado en emulación (`prueba_botones.py`, con controles)
+  y lanzando el proceso real desde C:\Warlords3.
+- DarkCompare 1.0.0.5 (`--juego`): ARMY del juego, no toca config.ini, ventanas encima del juego y en su pantalla,
+  una sola instancia (un segundo clic la trae al frente). Va en COMPLEMENTOS.zip (opción 10 del actualizador).
+- DarkCompare no tiene exportación (el "Exportar a CSV" es de DarklordsValidator): no abre el Explorador.

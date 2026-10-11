@@ -12,6 +12,8 @@
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Botones de Votación ("Votacion" en el menú de partida) y Sorteo (ícono del programa en la preparación): el
 # anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
+# Botón del Comparador (ícono de DarkCompare en Edit Side): cada PC abre su Herramientas\DarkCompare.exe; su dibujo es
+# SETS\Fantasy\darkcomp.pcx.
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
 import keystone, capstone
@@ -7241,6 +7243,67 @@ tl_setclick = place('tl_setclick', f'''
     jmp 0x46ed83
 ''')
 
+# ---------------------------------------------------------------- Botón del Comparador (dc_*)
+# En Edit Side (diálogo 86: el emergente 81, que abre 0x44d320) un botón con el ícono de DarkCompare, arriba a la
+# izquierda junto a "Armies", abre Herramientas\DarkCompare.exe con --juego (lee el ARMY\ de la carpeta del juego, que
+# es la actual, y queda encima de la ventana del juego). Es local: cada PC abre su propia copia, sin red, en cualquier
+# máquina; si ya está abierto, el propio programa trae su ventana al frente. Si no está, el aviso de las herramientas.
+DC_BTN = 75                  # Edit Side tiene los controles 1 a 74
+DC_FILE = SORTEO_FILE + 1    # hoja SETS\Fantasy\darkcomp.pcx con el dibujo del botón
+DC_X, DC_Y, DC_W, DC_H = 40, 40, 64, 64   # entre el marco y "REGULARS" (y 107), a la izquierda de "Armies"
+dc_exe = place_data('dc_exe', cstr_('Herramientas\\DarkCompare.exe'))
+dc_cmd = place_data('dc_cmd', cstr_('"Herramientas\\DarkCompare.exe" --juego'))
+dc_err = place_data('dc_err', cstr_('No se pudo abrir Herramientas\\DarkCompare.exe'))
+
+# Alta de Edit Side (0x44dc00, fin en 0x44dd53): los controles nacen ocultos; mostrar el botón, habilitado.
+dc_init = place('dc_init', f'''
+    push 0
+    push {DC_BTN}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    jmp 0x44dd5d
+''')
+
+# Clic en Edit Side (0x44d3a0; evento 3 en 0x44d3e7, edx = control; los que no están entre 2 y 73 caen en
+# "ja 0x44db1c", que devuelve 0 y deja el diálogo abierto).
+dc_click = place('dc_click', f'''
+    cmp edx, {DC_BTN}
+    jne 0x44db1c
+    push {tl_pi:#x}
+    push {tl_si:#x}
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push {dc_cmd:#x}
+    push {dc_exe:#x}
+    call dword ptr [{CREATEPROC:#x}]
+    test eax, eax
+    jz dc_fail
+    push dword ptr [{tl_pi:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    push dword ptr [{tl_pi + 4:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    jmp 0x44db1c
+dc_fail:
+    push 0
+    push 0
+    push {dc_err:#x}
+    push {tl_warn:#x}
+    push 0
+    push 0
+    call dword ptr [{CREATETH:#x}]
+    test eax, eax
+    jz 0x44db1c
+    push eax
+    call dword ptr [{CLOSEH:#x}]
+    jmp 0x44db1c
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -7402,6 +7465,13 @@ patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tl_recv:#x}', 0x4b6a22))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
 patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
 assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')
+# Botón del Comparador en Edit Side (dc_*)
+patch(0x44dd53, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x44dd53), asm(f'jmp {dc_init:#x}', 0x44dd53))
+assert rel(0x44dd5d, 2) == bytes.fromhex('5ec3')
+assert rel(0x44d3e7, 9) == bytes.fromhex('8b56048d42fe83f847')
+patch(0x44d3f0, asm('ja 0x44db1c', 0x44d3f0), asm(f'ja {dc_click:#x}', 0x44d3f0))
+assert rel(0x44db1c, 3) == bytes.fromhex('6633c0')
+assert rel(0x44d357, 7) == bytes.fromhex('6a51') + asm('call 0x4d7980', 0x44d359)
 # Pausa mientras se vota (pz_*)
 for va, op in ((0x417652, 'ff15'), (0x417847, 'ff15'), (0x4790c9, '8b1d'), (0x4de957, '8b3d'), (0x4dea0c, 'ff15'),
                (0x4e5db8, '8b1d')):
@@ -7544,7 +7614,19 @@ setstr(coin, 0x30, 16, 'Draw Lots')
 setstr(coin, 0x40, 64, 'Draw lots for the starting order')
 new_list[7] = [coin]
 
-for did in (115, 35, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
+# Diálogo 86 (Edit Side): botón DC_BTN, otra copia de Chat del diálogo 7, en DC_X/Y y de DC_W x DC_H; su dibujo es el
+# ícono de DarkCompare, en (0,0) de la hoja DC_FILE (más abajo).
+r86 = records(res, 86)
+assert sorted(r86) == list(range(1, DC_BTN))
+p, t = r7[80]
+dcb = bytearray(res[p:p + 4 + SZ[1]])
+struct.pack_into('<IIII', dcb, 4, DC_BTN, DC_X, DC_Y, 1)
+struct.pack_into('<5I', dcb, 0x18, DC_FILE, 0, 0, DC_W, DC_H)
+setstr(dcb, 0x30, 16, 'Compare')
+setstr(dcb, 0x40, 64, 'Compare army units (DarkCompare)')
+new_list[86] = [dcb]
+
+for did in (115, 86, 35, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
     append(res, did, b''.join(new_list[did]))
 
 # Nombre del juego en los textos de los diálogos (ayudas de botón: +0x40, 64 bytes; texto tipo 0x12: +0x2c, se
@@ -7615,30 +7697,42 @@ def cercano(rgb, _memo={}):
     if rgb not in _memo:
         _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _memo[rgb]
-icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sorteo_icono.png')).convert('RGBA')
-assert icono.size == (SORTEO_W - 2, SORTEO_H - 2)
-hoja = Image.new('P', (SORTEO_W, 4 * SORTEO_H), 11)
-hoja.putpalette(butt.getpalette())
-for fila, (dx, oscuro, aro) in enumerate(((1, False, False), (2, False, True), (1, True, False), (1, False, True))):
-    y0 = fila * SORTEO_H
-    lleno = set()
-    for y in range(icono.height):
-        for x in range(icono.width):
-            r, g, b_, a_ = icono.getpixel((x, y))
-            if a_ < 128 or not (0 <= x + dx < SORTEO_W and 0 <= y + dx < SORTEO_H): continue
-            if oscuro: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
-            hoja.putpixel((x + dx, y0 + y + dx), cercano((r, g, b_))); lleno.add((x + dx, y + dx))
-    if aro:
-        for x, y in {(x + i, y + j) for x, y in lleno for i in (-1, 0, 1) for j in (-1, 0, 1)} - lleno:
-            if 0 <= x < SORTEO_W and 0 <= y < SORTEO_H: hoja.putpixel((x, y0 + y), 71)
 import io
-pcx = io.BytesIO(); hoja.save(pcx, 'PCX'); SORTEO_PCX = pcx.getvalue()
+def hoja_boton(archivo, W, H):
+    icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGBA')
+    assert icono.size == (W - 2, H - 2)
+    hoja = Image.new('P', (W, 4 * H), 11)
+    hoja.putpalette(butt.getpalette())
+    for fila, (dx, oscuro, aro) in enumerate(((1, False, False), (2, False, True), (1, True, False), (1, False, True))):
+        y0 = fila * H
+        lleno = set()
+        for y in range(icono.height):
+            for x in range(icono.width):
+                r, g, b_, a_ = icono.getpixel((x, y))
+                if a_ < 128 or not (0 <= x + dx < W and 0 <= y + dx < H): continue
+                if oscuro: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
+                hoja.putpixel((x + dx, y0 + y + dx), cercano((r, g, b_))); lleno.add((x + dx, y + dx))
+        if aro:
+            for x, y in {(x + i, y + j) for x, y in lleno for i in (-1, 0, 1) for j in (-1, 0, 1)} - lleno:
+                if 0 <= x < W and 0 <= y < H: hoja.putpixel((x, y0 + y), 71)
+    pcx = io.BytesIO(); hoja.save(pcx, 'PCX')
+    return pcx.getvalue()
+SORTEO_PCX = hoja_boton('sorteo_icono.png', SORTEO_W, SORTEO_H)
 o2, _ = table(res, 2)
 butt_std = bytearray(res[o2 + 20 + 0x79 * 60:o2 + 20 + 0x7a * 60])
 assert butt_std[4:13] == b'butt_std\0' and struct.unpack_from('<6I', butt_std, 36) == (16, 1, 0, 0, 0, 0)
 struct.pack_into('<I', butt_std, 0, SORTEO_FILE)
 setstr(butt_std, 4, 32, 'sorteo')
 table_add(res, 2, SORTEO_FILE, bytes(butt_std))
+
+# Hoja DC_FILE = SETS\Fantasy\darkcomp.pcx: el botón del Comparador en Edit Side, igual que el de Sorteo, con el ícono
+# de DarkCompare (comparador_icono.png: el de 256x256 de su assets\strella.ico, reducido a 62x62). Edit Side (fondo
+# DLG_BIG.PCX) tiene la misma paleta que BUTT_STD.
+assert Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768] == pal
+DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H)
+struct.pack_into('<I', butt_std, 0, DC_FILE)
+setstr(butt_std, 4, 32, 'darkcomp')
+table_add(res, 2, DC_FILE, bytes(butt_std))
 
 # Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco) va pintada en el fondo, en
 # lugar del texto del control 19 (que queda vacío). El fondo es el archivo 1 (picts\startup, 640x480, por la pantalla
@@ -7827,6 +7921,7 @@ orcha
 NUEVOS = dict(STTS)
 NUEVOS[os.path.join('DATA', 'BRIDNAME.TXT')] = BRIDNAME
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
+NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS.update(NUEVOS_TIT)
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)

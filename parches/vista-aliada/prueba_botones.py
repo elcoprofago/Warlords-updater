@@ -1,11 +1,14 @@
-# Prueba de juguete de los botones de Votación y Sorteo (tl_* de build.py) sobre el exe y el RES parcheados, en unicorn.
+# Prueba de juguete de los botones de Votación, Sorteo y Comparador (tl_* y dc_* de build.py) sobre el exe y el RES
+# parcheados, en unicorn.
 # Uso: python prueba_botones.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
 # Menú: corre el armado del menú de partida (0x4bd180) y su despachador (0x4bd520) con las llamadas de dibujo, cierre
 # y red interceptadas. Preparación: el final de la inicialización (0x46f341) y el clic (0x46e889). Red: la recepción
 # (0x4b6a16) con paquetes armados a mano. Ociosa: 0x4dea40 con las funciones de Windows simuladas sobre un sistema de
-# archivos de mentira (un dict). RES: los registros nuevos de los diálogos 35 y 7.
+# archivos de mentira (un dict). Edit Side: el final de su inicialización (0x44dd53) y el clic (0x44d3e7). RES: los
+# registros nuevos de los diálogos 35, 7 y 86.
 # Controles: Chat Mode y otro ítem del menú, otro control de la preparación, otra máquina, otro remitente, otro tipo de
-# paquete, herramienta fuera de rango, el reloj sin cumplir, .ver trabado y el RES original sin los registros.
+# paquete, herramienta fuera de rango, el reloj sin cumplir, .ver trabado, otros controles de Edit Side y el RES
+# original sin los registros.
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -25,6 +28,8 @@ TL_VARS = BASE + k + 9 + len(GAME)
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = TL_VARS, TL_VARS + 4, TL_VARS + 8, TL_VARS + 0xc
 TL_BUF = TL_VARS + 16 + 4 + 4 + 260
 ERR = [BASE + img.index(f'No se pudo abrir Herramientas\\{n}.exe\0'.encode()) for n in ('votacion', 'sorteo')]
+DC_ERR = BASE + img.index(b'No se pudo abrir Herramientas\\DarkCompare.exe\0')
+DC_BTN, DC_FILE = 75, 167
 
 def maquina(machine=0):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
@@ -290,6 +295,30 @@ def reloj_corto():
     return w.log, out, list(mu.mem_read(TL_PEND_OPEN, 2))
 ver('control: a los 100 ms no hace nada', reloj_corto(), ([], [], [1, 1]))
 
+# ---------------------------------------------------------------- Edit Side (Comparador)
+def es_init():
+    mu = maquina(2); out = []
+    interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('mostrar', a[0], a[1]), out)
+    interceptar(mu, 0x4d7f60, 0, lambda mu, a: ('refresco', hex(mu.reg_read(UC_X86_REG_ECX))), out)
+    correr(mu, 0x44dd53, [], hasta=0x44dd5d, count=50)
+    return out
+def es_clic(cid, **kw):
+    mu = maquina(2); w = Windows(mu, {}, 0, **kw)
+    mu.mem_write(PKT, struct.pack('<II', 3, cid)); mu.reg_write(UC_X86_REG_ESI, PKT)
+    correr(mu, 0x44d3e7, [], hasta=0x44db1c, count=100)
+    return w.log
+print('-- Edit Side (cualquier máquina)')
+ver('al abrirse: Comparador visible', es_init(), [('mostrar', DC_BTN, 0), ('refresco', '0x588bd0')])
+ver('clic en el Comparador: lo abre y cierra los handles', es_clic(DC_BTN),
+    [('proceso', H + 'DarkCompare.exe', f'"{H}DarkCompare.exe" --juego', 0), ('cerrar', 0x501), ('cerrar', 0x502)])
+log = es_clic(DC_BTN, proceso_ok=False)
+ver('sin el programa: aviso en un hilo, que se cierra', [(x[0], x[2]) if x[0] == 'hilo' else x for x in log[1:]],
+    [('hilo', DC_ERR), ('cerrar', 0x601)])
+ver('control: control 80 (fuera de la tabla) no abre nada', es_clic(80), [])
+mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 3)); mu.reg_write(UC_X86_REG_ESI, PKT)
+mu.emu_start(0x44d3e7, 0, count=4)
+ver('control: control 3 sigue a su tabla', hex(mu.reg_read(UC_X86_REG_EIP)), hex(0x44d3f6))
+
 # ---------------------------------------------------------------- RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
       0xb: 0x64, 0xc: 0x64, 0xd: 0x3c, 0xe: 0x30, 0x11: 0x14, 0x12: 0x68, 0x13: 0x28, 0x14: 0x2c, 0x15: 0xac}
@@ -328,7 +357,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: dos más (165 y 166)', (len(fn), len(fo)), (167, 165))
+ver('archivos: tres más (165, 166 y 167)', (len(fn), len(fo)), (168, 165))
 ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0], fn[166][4:11], struct.unpack_from('<6I', fn[166], 36)),
     (166, b'sorteo\0', (16, 1, 0, 0, 0, 0)))
 TITULO = {1: b'startav', 138: b'startav1', 139: b'startav2'}   # fondos del menú con el título (1.0.19.0)
@@ -342,6 +371,21 @@ ver('sorteo.pcx: esquinas transparentes (11), centro dibujado', [hoja.getpixel((
     [True, True, False] * 4)
 ver('sorteo.pcx: 4 cuadros de 64x60, misma paleta que BUTT_STD', (hoja.mode, hoja.size, hoja.getpalette()[:768]),
     ('P', (64, 240), Image.open(r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
+ver('archivo 167: darkcomp en SETS\\Fantasy', (struct.unpack_from('<I', fn[DC_FILE])[0], fn[DC_FILE][4:13],
+    struct.unpack_from('<6I', fn[DC_FILE], 36)), (DC_FILE, b'darkcomp\0', (16, 1, 0, 0, 0, 0)))
+n86, o86 = recs(NUEVO, 86), recs(ORIG, 86)
+ver('Edit Side: un registro más, el 75', (len(n86), len(o86), sorted(set(n86) - set(o86))), (75, 74, [DC_BTN]))
+ver('Edit Side: botón del Comparador', struct.unpack_from('<11I', n86[DC_BTN], 0), (1, DC_BTN, 40, 40, 1, 1, DC_FILE, 0, 0, 64, 64))
+x0, y0, x1, y1 = rect(n86[DC_BTN])
+ver('Edit Side: dentro del diálogo (620x460) y sin tapar otro botón', (x1 <= 620 and y1 <= 460,
+    [i for i, r in n86.items() if r[0] == 1 and i != DC_BTN and not (rect(r)[2] <= x0 or x1 <= rect(r)[0] or rect(r)[3] <= y0 or y1 <= rect(r)[1])]),
+    (True, []))
+ver('control: registros originales de Edit Side intactos', all(n86[i] == o86[i] for i in o86), True)
+dc = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'darkcomp.pcx'))
+ver('darkcomp.pcx: esquinas transparentes (11), centro dibujado',
+    [dc.getpixel((x, 64 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 63), (32, 32))], [True, True, False] * 4)
+ver('darkcomp.pcx: 4 cuadros de 64x64, paleta de DLG_BIG (fondo de Edit Side)', (dc.mode, dc.size, dc.getpalette()[:768]),
+    ('P', (64, 256), Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
 ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 2)
