@@ -44,8 +44,9 @@ Hoy lo arma el usuario a mano desde su `C:\Warlords3` y lo sube a la release `Ac
 `Warlords-updater`; la opción 6 solo lo baja y lo descomprime. Decidido: un script
 `tools\publicar-full.ps1` que lo arme desde `C:\Warlords3`, publique y verifique bajando de nuevo, como
 `publicar-parche.ps1`. Tiene que dejar afuera lo que «nunca se pisa» de la lista de arriba: así lo personal
-del que lo arma no llega a nadie. `PGS`, `Saves`, `SCENARIO` y `CAMPAIGN` sí van, para que una
-instalación desde cero tenga los de fábrica; la opción 6 decide en cada PC qué pisa. Antes de reemplazar el
+del que lo arma no llega a nadie. `Saves` tampoco va (son las partidas de prueba de quien lo arma). De
+`PGS` y `SCENARIO` van solo los archivos que ya trae el zip actual (los de fábrica que eligió el usuario), no
+los bandos ni escenarios propios de su PC; `CAMPAIGN` va entera. La opción 6 decide en cada PC qué pisa. Antes de reemplazar el
 zip actual, comparar su lista contra la del zip nuevo: lo que tenga el actual y no el nuevo se le muestra al
 usuario antes de publicar, porque ese zip es su criterio de qué es esencial.
 
