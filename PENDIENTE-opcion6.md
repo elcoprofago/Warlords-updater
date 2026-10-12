@@ -35,8 +35,19 @@ sacó la lista: hacerlo primero (enumerar antes de iterar) para saber qué de lo
   `SHIELD`, `FLAGS`, `PICTS`, `FX`, `RANDOM`, `SETS`, `CPGS`, el resto de `DATA`, `Darklord.exe`, `.dll` y
   datos de la raíz.
 
-**Sin decidir:** `SCENARIO` (mezcla escenarios de fábrica con propios; el usuario no lo mencionó). Propuesta:
-copiar solo los que falten, sin pisar los existentes. Confirmarlo con el usuario.
+**Se copia solo lo que falta, sin pisar lo existente:**
+- `SCENARIO`: mezcla escenarios de fábrica con propios (propuesta aceptada por el usuario, 12/10/2026).
+
+## Quién arma `Warlords3_FULL.zip`
+
+Hoy lo arma el usuario a mano desde su `C:\Warlords3` y lo sube a la release `Actualizador` de
+`Warlords-updater`; la opción 6 solo lo baja y lo descomprime. Decidido: un script
+`tools\publicar-full.ps1` que lo arme desde `C:\Warlords3`, publique y verifique bajando de nuevo, como
+`publicar-parche.ps1`. Tiene que dejar afuera lo que «nunca se pisa» de la lista de arriba: así lo personal
+del que lo arma no llega a nadie. `PGS`, `Saves`, `SCENARIO` y `CAMPAIGN` sí van, para que una
+instalación desde cero tenga los de fábrica; la opción 6 decide en cada PC qué pisa. Antes de reemplazar el
+zip actual, comparar su lista contra la del zip nuevo: lo que tenga el actual y no el nuevo se le muestra al
+usuario antes de publicar, porque ese zip es su criterio de qué es esencial.
 
 ## Cómo
 
