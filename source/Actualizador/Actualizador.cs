@@ -59,10 +59,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 13).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 14).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 13.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 14.");
                     await Pausa();
                     continue;
                 }
@@ -90,7 +90,8 @@ namespace Actualizador
                         case "10": await Herramienta("COMPLEMENTOS", "COMPLEMENTOS.zip"); pausa = true; break;
                         case "11": await AccesosDirectos(); pausa = false; break;
                         case "12": await ConfigurarRadmin(); pausa = true; break;
-                        case "13":
+                        case "13": await JugarEnRed(); pausa = true; break;
+                        case "14":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -153,7 +154,8 @@ namespace Actualizador
             Opcion(10, "COMPLEMENTOS", dHerr);
             Opcion(11, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
             Opcion(12, "CONFIGURAR RADMIN-VPN", "→ instalarlo, firewall y red privada");
-            Opcion(13, "SALIR", "", Paleta.Tenue);
+            Opcion(13, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
+            Opcion(14, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -210,6 +212,42 @@ namespace Actualizador
             if (conservados == null) return;
             foreach (var c in conservados) Info($"Se conservó tu {c} (la configuración de esta PC no se pisa).");
             Ok($"{nombre} actualizado en {herramientas}");
+        }
+
+        /// <summary>
+        /// Opcion 13: Puente Warlords (repo puente-warlords). Deja el cliente en HERRAMIENTAS\PuenteWarlords, o lo
+        /// actualiza si PuenteWarlords.txt de la release dice una version mas nueva, y lo abre. Como 7, 8 y 10:
+        /// no pisa los .ini (puente.ini guarda el nombre y la clave del jugador).
+        /// </summary>
+        async Task JugarEnRed()
+        {
+            Titulo("JUGAR EN RED");
+            var exe = Path.Combine(herramientas, "PuenteWarlords", "PuenteWarlords.exe");
+            var instalada = File.Exists(exe) ? FileVersionInfo.GetVersionInfo(exe).FileVersion : null;
+            var lista = Path.Combine(temporal, "PuenteWarlords.txt");
+            string publicada = null;
+            if (await Bajar(new[] { Release + "PuenteWarlords.txt" }, lista, sinCache: true, mostrarArchivo: "versión publicada"))
+            {
+                publicada = File.ReadAllText(lista).Trim();
+                Borrar(lista);
+            }
+            bool bajar = publicada != null && (instalada == null
+                || !System.Version.TryParse(instalada, out var vi) || !System.Version.TryParse(publicada, out var vp) || vp > vi);
+            if (bajar)
+            {
+                var archivo = Path.Combine(temporal, "PuenteWarlords.zip");
+                if (!await Bajar(new[] { Release + "PuenteWarlords.zip" }, archivo)) return;
+                var conservados = await Descomprimir(archivo, herramientas, null,
+                    dest => string.Equals(Path.GetExtension(dest), ".ini", StringComparison.OrdinalIgnoreCase));
+                Borrar(archivo);
+                if (conservados == null) return;
+                Ok($"Puente Warlords v{publicada} en {Path.GetDirectoryName(exe)}");
+            }
+            else if (instalada == null) return;   // no se pudo bajar y no hay ninguno
+            else if (publicada == null) Aviso($"No se pudo ver si hay versión nueva; se abre la que tienes (v{instalada}).");
+            else Info($"Tienes la última versión (v{instalada}).");
+            Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = true });
+            Ok("Se abrió Puente Warlords.");
         }
 
         // ------------------------------------------------------------------ 9 PARCHES
