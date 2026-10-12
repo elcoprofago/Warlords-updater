@@ -12,7 +12,7 @@ Decidido con el usuario el 12/10/2026 (sesión de puente-warlords).
 `Randscen` y `SCENARIO\_BACK` (respaldos de quien lo armó). No trae `PGS`, `Saves` ni `PARCHES`.
 
 **Criterio de los `.ini`:** «todos los `.ini`» se aplicó a todos salvo los de `CAMPAIGN`, `Ereg` y `edpicts`,
-que son contenido del juego (`Rules*.ini`) y se reemplazan. Los de `SCENARIO` quedan cubiertos por «solo lo que falta».
+que son contenido del juego (`Rules*.ini`) y se reemplazan (confirmado por el usuario, 12/10/2026). Los de `SCENARIO` quedan cubiertos por «solo lo que falta».
 
 ## Hoy
 
