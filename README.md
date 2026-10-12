@@ -32,16 +32,10 @@ crea los accesos directos), `W3_PARCHES_URL` (otro `PARCHES.txt`, puede ser un a
 armados a mano; las tres opciones descomprimen en `C:\Warlords3\HERRAMIENTAS` y no pisan los `.ini` que ya estén
 (la configuración de cada PC).
 
-La opción 13 (JUGAR EN RED) deja Puente Warlords en `C:\Warlords3\HERRAMIENTAS\PuenteWarlords` y lo abre. Baja
+La opción 12 (JUGAR EN RED) deja Puente Warlords en `C:\Warlords3\HERRAMIENTAS\PuenteWarlords` y lo abre. Baja
 `PuenteWarlords.txt` (la versión publicada) y, si es más nueva que la del exe instalado o no hay exe, baja
 `PuenteWarlords.zip`; los dos assets de la release Actualizador los publica `tools\publicar.ps1` del repo
 puente-warlords. Tampoco pisa los `.ini`.
-
-La opción 12 (CONFIGURAR RADMIN-VPN) corre `tools/configurar-firewall.ps1`, que va embebido en el exe: un cambio
-en ese script no llega a los jugadores hasta recompilar y publicar el actualizador (el hook lo recuerda). El script
-también se puede correr solo; al principio explica qué hace (instalar Radmin VPN si falta, reglas del firewall, red
-Radmin VPN en Privada) y sus opciones (`-Simular`, `-DejarRedComoEsta`, `-Pausa`). Con `W3_FIREWALL_SIMULAR` el
-actualizador lo corre con `-Simular`, sin pedir permisos.
 
 **Publicar un parche**
 
