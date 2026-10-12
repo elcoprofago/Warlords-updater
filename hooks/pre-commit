@@ -8,6 +8,9 @@
 # 2) RECUERDA (no bloquea): un cambio en source/ no le llega a nadie hasta recompilar
 #    el exe con tools/compilar-actualizador.ps1 y
 #    publicarlo; git no puede verificar ese paso.
+# 3) BLOQUEA: cambiar lo que la opcion 6 no pisa (NoPisar, RaizPropia, DataPropia en
+#    source/Actualizador/Actualizador.cs) sin cambiar tools/publicar-full.ps1 en el mismo commit:
+#    lo que no se pisa en ninguna PC tampoco tiene que salir en el zip de quien lo arma.
 
 version_de() {  # stdin: parches.txt; $1: ID
     tr -d '\r' | grep -v '^#' | awk -F'|' -v id="$1" '$1 == id { print $2 }'
@@ -39,6 +42,17 @@ pre-commit (recordatorio): cambiaste source/ (va dentro del exe).
   2. git push y despues .\tools\compilar-actualizador.ps1 -Publicar
      (compila, prueba y sube el exe a la release "Ejecutable" de GitHub).
 EOF
+fi
+
+bloque_nopisar() {  # stdin: Actualizador.cs; desde RaizPropia hasta el final de NoPisar
+    tr -d '\r' | sed -n '/HashSet<string> RaizPropia/,/EnCarpeta(rel, "CAMPAIGN"/p'
+}
+if [ "$(git show HEAD:source/Actualizador/Actualizador.cs 2>/dev/null | bloque_nopisar)" != \
+     "$(git show :source/Actualizador/Actualizador.cs 2>/dev/null | bloque_nopisar)" ] &&
+   ! printf '%s\n' "$staged" | grep -q -x 'tools/publicar-full.ps1'; then
+    echo "pre-commit: cambia lo que la opcion 6 no pisa (NoPisar en Actualizador.cs) y tools/publicar-full.ps1 no." >&2
+    echo "            Actualiza Incluir en publicar-full.ps1 en este mismo commit." >&2
+    fallo=1
 fi
 
 exit $fallo

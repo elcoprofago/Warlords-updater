@@ -3,8 +3,12 @@
 Decidido con el usuario el 12/10/2026 (sesión de puente-warlords).
 
 **Estado:** la parte de la opción 6 está hecha en el Actualizador 1.0.7.0 (`TodoElJuego` y `NoPisar` en
-`Actualizador.cs`), probada en carpeta de juguete con `W3_JUEGO` + `W3_FULL_ZIP`. **Falta:** `tools\publicar-full.ps1`
-(sección «Quién arma»).
+`Actualizador.cs`), probada en carpeta de juguete con `W3_JUEGO` + `W3_FULL_ZIP`. `tools\publicar-full.ps1`
+hecho y probado con `-Prueba` (12/10/2026): zip nuevo de 6207 archivos (322 MB) contra 6398 del publicado;
+los 191 que deja afuera son todos de la lista «nunca se pisa» (raíz, `DATA`, `.ini`, `.TMP`, `.lnk`,
+`Netsaves`, `GOG`, `HERRAMIENTAS`, `Randscen`, `SCENARIO\_BACK`); no agrega nada. `hooks\pre-commit` bloquea
+cambiar `NoPisar` sin cambiar el script. **Falta:** que el usuario vea esa lista y se publique
+(`.	ools\publicar-full.ps1`, pregunta S/N antes de subir).
 
 **Lo que trae el zip actual** (6550 entradas, listado leyendo solo el índice del zip por HTTP): trae
 `HISTORY.DAT`, `AREA.DAT`, `STRAT_*.BMP`, los 8 de `DATA` de la lista, `Netsaves`, `Email`, `HERRAMIENTAS`,
