@@ -1,6 +1,18 @@
 # Pendiente: la opción 6 (ACTUALIZAR TODO EL JUEGO) no debe pisar lo propio de cada PC
 
-Decidido con el usuario el 12/10/2026 (sesión de puente-warlords). Todavía no está implementado.
+Decidido con el usuario el 12/10/2026 (sesión de puente-warlords).
+
+**Estado:** la parte de la opción 6 está hecha en el Actualizador 1.0.7.0 (`TodoElJuego` y `NoPisar` en
+`Actualizador.cs`), probada en carpeta de juguete con `W3_JUEGO` + `W3_FULL_ZIP`. **Falta:** `tools\publicar-full.ps1`
+(sección «Quién arma»).
+
+**Lo que trae el zip actual** (6550 entradas, listado leyendo solo el índice del zip por HTTP): trae
+`HISTORY.DAT`, `AREA.DAT`, `STRAT_*.BMP`, los 8 de `DATA` de la lista, `Netsaves`, `Email`, `HERRAMIENTAS`,
+`GOG`, `__support`, `keys.w3`, `DarklordAV.exe`, `unins000.*`, `update_log.txt`, un `.lnk`, dos `.TMP`,
+`Randscen` y `SCENARIO\_BACK` (respaldos de quien lo armó). No trae `PGS`, `Saves` ni `PARCHES`.
+
+**Criterio de los `.ini`:** «todos los `.ini`» se aplicó a todos salvo los de `CAMPAIGN`, `Ereg` y `edpicts`,
+que son contenido del juego (`Rules*.ini`) y se reemplazan. Los de `SCENARIO` quedan cubiertos por «solo lo que falta».
 
 ## Hoy
 

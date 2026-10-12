@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -21,6 +21,7 @@ namespace Actualizador
     ///   W3_JUEGO        carpeta del juego en lugar de C:\Warlords3 (pruebas)
     ///   W3_PARCHES_URL  lista de parches en lugar de la publicada (pruebas; puede ser un archivo local)
     ///   W3_ESCRITORIO   carpeta de los accesos directos en lugar del Escritorio (pruebas)
+    ///   W3_FULL_ZIP     zip local en lugar de bajar Warlords3_FULL.zip en la opcion 6 (pruebas)
     /// </summary>
     sealed class Actualizador
     {
@@ -31,7 +32,7 @@ namespace Actualizador
         static readonly HttpClient http = CrearHttp();
 
         readonly Terminal t;
-        readonly string juego, herramientas, temporal, escritorio, parchesUrl;
+        readonly string juego, herramientas, temporal, escritorio, parchesUrl, fullZip;
 
         public Actualizador(Terminal terminal)
         {
@@ -42,6 +43,7 @@ namespace Actualizador
             escritorio = Environment.GetEnvironmentVariable("W3_ESCRITORIO")
                          ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             parchesUrl = Environment.GetEnvironmentVariable("W3_PARCHES_URL") ?? Release + "PARCHES.txt";
+            fullZip = Environment.GetEnvironmentVariable("W3_FULL_ZIP");
         }
 
         // ================================================================== menu
@@ -170,26 +172,90 @@ namespace Actualizador
             if (ok) Ok(nombre + " actualizado correctamente.");
         }
 
-        /// <summary>Opcion 6: el juego completo.</summary>
+        /// <summary>
+        /// Opcion 6: el juego completo (Warlords3_FULL.zip) sobre la carpeta del juego. Reemplaza el contenido del
+        /// juego, pero no pisa lo propio de cada PC (ver <see cref="NoPisar"/>), copia de SCENARIO solo lo que
+        /// falta y pregunta antes de pisar partidas de Saves. Lo que no viene en el zip no se toca.
+        /// </summary>
         async Task TodoElJuego()
         {
             Titulo("ACTUALIZAR TODO EL JUEGO");
             t.EscribirLinea();
             t.EscribirLinea(new Tramo("  ", Paleta.Texto),
-                new Tramo($"  Esto reemplazará completamente el contenido de la carpeta {juego}  ", Color.White, true, Paleta.FondoAviso));
+                new Tramo($"  Se reemplazarán los archivos del juego en {juego}  ", Color.White, true, Paleta.FondoAviso));
+            Info("No se pisan: tus bandos (PGS), escenarios propios, partidas, opciones del juego, parches,");
+            Info("herramientas ni la configuración de esta PC. De SCENARIO solo se agrega lo que falta.");
             t.EscribirLinea();
-            t.Escribir(new Tramo("  ¿Confirmas la operación? ", Paleta.Amarillo, true), new Tramo("(S/N): ", Paleta.Tenue));
-            var r = (await t.LeerLinea(Paleta.Texto)).Trim().ToUpperInvariant();
-            if (r != "S" && r != "SI" && r != "SÍ" && r != "Y" && r != "YES")
+            if (!await SiNo("¿Confirmas la operación? "))
             {
                 Aviso("Operación cancelada.");
                 return;
             }
-            var archivo = Path.Combine(temporal, "Warlords3_FULL.zip");
-            if (!await Bajar(LeerUrls("fullupdate_url.txt"), archivo)) return;
-            bool ok = await Descomprimir(archivo, juego) != null;
-            Borrar(archivo);
-            if (ok) Ok("JUEGO COMPLETO ACTUALIZADO.");
+            var archivo = fullZip ?? Path.Combine(temporal, "Warlords3_FULL.zip");
+            if (fullZip == null && !await Bajar(LeerUrls("fullupdate_url.txt"), archivo)) return;
+
+            bool pisarSaves = true;
+            int saves = PartidasQuePisaria(archivo);
+            if (saves > 0)
+                pisarSaves = await SiNo($"El paquete trae {saves} partida(s) de Saves que ya tienes. ¿Las reemplazo? ");
+
+            var conservados = await Descomprimir(archivo, juego, null, dest =>
+            {
+                var rel = dest.Substring(Path.GetFullPath(juego).TrimEnd('\\').Length + 1);
+                return NoPisar(rel) || (!pisarSaves && EnCarpeta(rel, "Saves"));
+            });
+            if (fullZip == null) Borrar(archivo);
+            if (conservados == null) return;
+            foreach (var g in conservados.GroupBy(r => r.Contains('\\') ? r.Substring(0, r.IndexOf('\\')) : "(raíz)",
+                         StringComparer.OrdinalIgnoreCase).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+                Info($"Se conservaron {g.Count()} archivo(s) tuyos en {g.Key}.");
+            Ok("JUEGO COMPLETO ACTUALIZADO.");
+        }
+
+        async Task<bool> SiNo(string pregunta)
+        {
+            t.Escribir(new Tramo("  " + pregunta, Paleta.Amarillo, true), new Tramo("(S/N): ", Paleta.Tenue));
+            var r = (await t.LeerLinea(Paleta.Texto)).Trim().ToUpperInvariant();
+            return r == "S" || r == "SI" || r == "SÍ" || r == "Y" || r == "YES";
+        }
+
+        int PartidasQuePisaria(string zip)
+        {
+            try
+            {
+                using (var z = ZipFile.OpenRead(zip))
+                    return z.Entries.Count(e => e.Name.Length > 0 && EnCarpeta(e.FullName.Replace('/', '\\'), "Saves")
+                                                && File.Exists(Path.Combine(juego, e.FullName.Replace('/', '\\'))));
+            }
+            catch (Exception) { return 0; }   // zip roto: lo informa Descomprimir
+        }
+
+        static bool EnCarpeta(string rel, params string[] carpetas) =>
+            carpetas.Any(c => rel.StartsWith(c + "\\", StringComparison.OrdinalIgnoreCase));
+
+        static readonly HashSet<string> RaizPropia = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "HISTORY.DAT", "AREA.DAT", "STRAT_L.BMP", "STRAT_S.BMP", "keys.w3", "update_log.txt", "DarklordAV.exe" };
+        static readonly HashSet<string> DataPropia = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "PREF.DAT", "OPTIONS.DAT", "OPT101.DAT", "OPTIONS.NET", "OPT101.NET", "NETSTAT.TXT", "VECTOR.TXT", "VMOVEALL.TXT" };
+
+        /// <summary>
+        /// Opcion 6: lo que, si ya existe en esta PC, no se pisa (PENDIENTE-opcion6.md). <paramref name="rel"/> es
+        /// relativo a la carpeta del juego. Los .ini de CAMPAIGN, Ereg y edpicts son contenido del juego (Rules*.ini):
+        /// esos se reemplazan; los demas .ini son configuracion de la PC.
+        /// </summary>
+        static bool NoPisar(string rel)
+        {
+            if (EnCarpeta(rel, "PGS", "Randscen", "Netsaves", "Email", "HERRAMIENTAS", "GOG", "__support", "PARCHES", "SCENARIO"))
+                return true;
+            string nombre = Path.GetFileName(rel), ext = Path.GetExtension(rel);
+            bool enRaiz = rel.IndexOf('\\') < 0;
+            if (enRaiz && (RaizPropia.Contains(nombre) || nombre.StartsWith("unins000.", StringComparison.OrdinalIgnoreCase)))
+                return true;
+            if (string.Equals(Path.GetDirectoryName(rel), "DATA", StringComparison.OrdinalIgnoreCase) && DataPropia.Contains(nombre))
+                return true;
+            if (ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase) || ext.Equals(".tmp", StringComparison.OrdinalIgnoreCase))
+                return true;
+            return ext.Equals(".ini", StringComparison.OrdinalIgnoreCase) && !EnCarpeta(rel, "CAMPAIGN", "Ereg", "edpicts");
         }
 
         /// <summary>
