@@ -370,6 +370,7 @@ namespace Actualizador
             new Programa { Exe = "EditorPGS.exe", Nombre = "PGS-Visor", Descripcion = "Visor de bandos (.PGS)", Opcion = 8 },
             new Programa { Exe = "votacion.exe", Nombre = "Votación", Descripcion = "Votación de la partida", Opcion = 10 },
             new Programa { Exe = "sorteo.exe", Nombre = "Sorteo", Descripcion = "Sorteo de bandos", Opcion = 10 },
+            new Programa { Exe = @"PuenteWarlords\PuenteWarlords.exe", Nombre = "Puente Warlords", Descripcion = "Jugar en red", Opcion = 12 },
         };
 
         async Task AccesosDirectos()
@@ -418,7 +419,7 @@ namespace Actualizador
 
                 t.EscribirLinea();
                 if (elegidos.Count == 0)
-                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8 o 10.");
+                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8, 10 o 12.");
                 foreach (var p in elegidos)
                 {
                     var exe = Path.Combine(herramientas, p.Exe);
