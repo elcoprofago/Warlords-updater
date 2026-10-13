@@ -12,7 +12,11 @@ Lo que valga para single player vale para multi player (la IA es la misma).
 - Se puede ejecutar código real del juego sobre el estado de un .SAV con unicorn (prueba_emulada.py, prueba_ia*.py).
 - PC: Ryzen 5 5600G, 47 GB RAM, RTX 5050. El límite es la cantidad de partidas, no el cálculo.
 - Según el usuario: no se pueden correr partidas simultáneas en la misma PC; un turno humano dura 5 a 10 minutos.
-  Está averiguando si se puede jugar una partida con todos los bandos en IA (pendiente en TAREAS.md si hace falta).
+  Confirmado por el usuario (13/10/2026): Darklord.exe original juega una partida con los 8 bandos en IA; sigue
+  corriendo minimizado, con turnos indefinidos; hay una interrupción ("Interrupt Game" en DATA\War3.RES) que pausa
+  y permite pasar cualquier bando a humano para revisar la partida. La tecla no está confirmada: en el exe, la
+  rutina de espera 0x417470 corta con Escape (evento 5, tecla 0x1b, si [0x50269c] & 1) o con un clic (eventos
+  0xb/0x13/0x14, si [0x50269c] & 2), pero no se verificó que sea esa la interrupción. Prueba en TAREAS.md.
 - Grabar sin intervención humana: lo resuelve el propio parche (el exe escribe su registro y, si hace falta,
   un .SAV por turno con nombre fijo). No depende del diálogo de grabar.
 - El exe ya lee la personalidad de cada jugador de PGS\<nombre>.PGS (build.py, ~línea 1566).
