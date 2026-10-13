@@ -47,14 +47,21 @@ Lo que valga para single player vale para multi player (la IA es la misma).
 6. Parámetros en DATA\IA.INI leídos al arrancar. Sin archivo, comportamiento original idéntico (control).
 7. Memoria entre partidas: archivo por mapa/escenario con lo aprendido (ciudades clave, pasos y puentes disputados,
    dónde perdió ejércitos). La IA lo lee al empezar y lo actualiza al terminar.
-8. Ajuste por resultados: torneos IA contra IA en mapas chicos, misma semilla, una partida por vez; un optimizador
+8. Tanda automática (idea del usuario): un programa auxiliar juega N partidas seguidas sin nadie delante.
+   Por cada una: arranca el juego, abre una partida nueva con todos los bandos en IA (el parche la inicia sola
+   leyendo un archivo de configuración: mapa, semilla, PGS de cada bando, IA.INI a usar; o, si no se puede, el
+   auxiliar recorre los menús), la deja correr hasta que haya ganador o hasta un tope de turnos, cierra el juego y
+   pasa a la siguiente. Los registros de cada partida van a una base (SQLite, ia\datos.db): partida, parámetros,
+   resultado y la línea de cada turno y bando. Si el juego se cuelga, el auxiliar lo detecta por tiempo, lo cierra,
+   anota la partida como fallida y sigue.
+9. Ajuste por resultados: torneos IA contra IA en mapas chicos, misma semilla, una partida por vez; un optimizador
    propone valores de IA.INI y se queda con lo que gana más. Victoria = criterio final; ciudades/pérdidas = señales.
-9. Análisis de partidas humanas (Claude, fuera del juego): patrones de los ganadores convertidos en reglas nuevas.
+10. Análisis de partidas humanas (Claude, fuera del juego): patrones de los ganadores convertidos en reglas nuevas.
 
 ## Descartado
 - Entrenamiento tipo AlphaZero (millones de partidas): el juego no da ese volumen.
 - Modelo de lenguaje decidiendo dentro de la partida: el exe no puede consultarlo y la demora sería inaceptable.
-- Copiar jugadas humanas por imitación directa: hay pocas partidas; se usan para análisis (etapa 9).
+- Copiar jugadas humanas por imitación directa: hay pocas partidas; se usan para análisis (etapa 10).
 - Partidas simultáneas en la misma PC.
 
 ## Próximo paso
