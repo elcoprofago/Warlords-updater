@@ -1,6 +1,6 @@
 # Entrenamiento de la IA de los bandos — plan
 
-Estado al 13/10/2026: plan cerrado en líneas generales, nada implementado. Falta la entrevista del spec.
+Estado al 13/10/2026: entrevista hecha; spec de la primera versión en specs\ia-destrezas-v1.md. Nada implementado.
 
 ## Objetivo (pedido del usuario)
 Que la IA resuelva mejor los problemas y recuerde estrategias, no solo que reciba más recursos.
@@ -19,7 +19,9 @@ Lo que valga para single player vale para multi player (la IA es la misma).
   0xb/0x13/0x14, si [0x50269c] & 2), pero no se verificó que sea esa la interrupción. Prueba en TAREAS.md.
 - Grabar sin intervención humana: lo resuelve el propio parche (el exe escribe su registro y, si hace falta,
   un .SAV por turno con nombre fijo). No depende del diálogo de grabar.
-- El exe ya lee la personalidad de cada jugador de PGS\<nombre>.PGS (build.py, ~línea 1566).
+- Corrección (usuario, 13/10/2026): los .PGS definen el bando (regulares, aliados, orden, oro, stack, maná, héroes,
+  barcos), no la personalidad. Los puntos de personalidad los reparte la propia IA al arrancar ("AI Chooses
+  Personalities"); el anfitrión solo fija el límite. Cómo los elige es desconocido.
 
 ## Material del clan (aportado por el usuario)
 - Puntos de personalidad (PGS), con costo: Strong/Very Strong/Herculean (fuerza +1/+2/+3: 1/3/5), Fast/Very Fast/
@@ -69,5 +71,5 @@ Lo que valga para single player vale para multi player (la IA es la misma).
 - Partidas simultáneas en la misma PC.
 
 ## Próximo paso
-Entrevista del spec (transcribir matriz de fases y perfiles; fijar alcance de la primera versión), luego etapa 1.
-Frase para retomar: "Seguimos con ia\PENDIENTE-entrenamiento-ia.md: entrevista del spec".
+Implementar specs\ia-destrezas-v1.md empezando por la base de pruebas (IA original/de prueba por color, registro,
+tanda automática, cálculo de VPs). Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
