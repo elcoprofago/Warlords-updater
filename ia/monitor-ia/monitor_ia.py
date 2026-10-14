@@ -1,7 +1,7 @@
 # Monitor de IA: panel de control de las tandas de ia\tanda.py (ia\PENDIENTE-monitor-ia.md).
 # Corre la tanda en un hilo propio (reemplaza tanda.bat y monitor.bat) y muestra en vivo la partida en curso, leyendo
 # ia\datos.db y los CSV que escribe DarklordAV.exe. Se empaqueta con build.py como ia\Monitor-IA.exe.
-import contextlib, ctypes, io, json, os, queue, sys, threading, time, winsound
+import ctypes, io, json, os, queue, subprocess, sys, threading, time, winsound
 import tkinter as tk
 from tkinter import messagebox, ttk
 from types import SimpleNamespace
@@ -13,6 +13,12 @@ ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
 AVISO_MIN = 5              # a partir de acá se avisa de un posible cuelgue
 IAS = {0: 'original', 1: 'prueba'}
+
+
+def juego_abierto():
+    r = subprocess.run(['tasklist', '/FI', f'IMAGENAME eq {tanda.EXE}', '/NH'], capture_output=True, text=True,
+                       creationflags=subprocess.CREATE_NO_WINDOW)
+    return tanda.EXE.lower() in r.stdout.lower()
 
 
 class Salida(io.TextIOBase):
@@ -34,6 +40,7 @@ class Monitor(tk.Tk):
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
         self.tid = None
+        self.externa = False   # tanda arrancada fuera del panel (python ia	anda.py): solo se mira
         self.armar()
         self.refrescar()
 
@@ -158,14 +165,15 @@ class Monitor(tk.Tk):
             self.mostrar()
         except Exception as e:   # el juego puede estar escribiendo los CSV justo ahora
             self.v_partida.set(f'(no se pudo leer el estado: {e})')
-        corre = self.corriendo()
+        corre = self.corriendo() or self.externa
         for b in (self.b_nueva, self.b_seguir):
             b.state(['disabled'] if corre else ['!disabled'])
-        self.b_cortar.state(['!disabled'] if corre else ['disabled'])
+        self.b_cortar.state(['!disabled'] if self.corriendo() else ['disabled'])
         self.after(2000, self.refrescar)
 
     def mostrar(self):
         import sqlite3
+        self.externa = False
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); return
         db = sqlite3.connect(tanda.DB)
@@ -179,7 +187,9 @@ class Monitor(tk.Tk):
         validas = [p for p in parts if p[5] != 'cortada']
         en_curso = next((p for p in reversed(parts) if p[5] == 'jugando'), None)
         hechas = [p for p in validas if p[5] != 'jugando']
-        estado = 'terminada' if term else 'corriendo' if self.corriendo() else 'detenida'
+        self.externa = bool(en_curso) and not self.corriendo() and juego_abierto()
+        estado = ('terminada' if term else 'corriendo' if self.corriendo() else
+                  'corriendo fuera del Monitor' if self.externa else 'detenida')
         txt = f'Tanda {tid} ({estado}) — desde {inicio} — {len(hechas)} de {total} partidas terminadas'
         if en_curso:
             txt += f' — jugando la {en_curso[0] + 1}.ª'
@@ -222,7 +232,8 @@ class Monitor(tk.Tk):
             self.tabla.insert('', 'end', tags=('prueba',) if u['ia'] == 1 else (), values=(
                 c, IAS.get(u['ia'], u['ia']), 'vivo' if vivo else 'eliminado',
                 tanda.pv_calc(u['ciudades'], u['heroes'], u['oro']) if vivo else 0,
-                u['ciudades'], u['oro'], u['ejercitos'], u['heroes']))
+                # de un eliminado, IA.CSV guarda lo que tenía en su último turno vivo: no vale mostrarlo
+                *((u['ciudades'], u['oro'], u['ejercitos'], u['heroes']) if vivo else ('—',) * 4)))
 
 
 if __name__ == '__main__':
