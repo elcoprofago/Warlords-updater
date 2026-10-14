@@ -272,7 +272,7 @@ def jugar(db, tid, n, p, a):
     t0 = ultimo_cambio = time.time(); tam = -1; estado = None
     while estado is None:
         time.sleep(5)
-        llevar_al_monitor(proc.pid, mon)
+        llevar_al_monitor(proc.pid, monitor_configurado())   # el Monitor de IA puede cambiarlo en marcha
         silenciar(proc.pid, CONTROL['silenciar'])
         if CORTAR.is_set():
             estado = 'cortada'; break

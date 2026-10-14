@@ -189,7 +189,7 @@ class Monitor(tk.Tk):
         c = configparser.ConfigParser(); c['Pantalla'] = {'preferida': self.mons[i][0]}
         with open(tanda.CONFIG, 'w') as f:
             c.write(f)
-        print(f'Monitor del juego: {self.mons[i][0]} (vale desde la próxima vuelta de la espera).')
+        print(f'Monitor del juego: {self.mons[i][0]} (el juego se pasa en unos segundos).')
 
     # ---- tanda ----
     def corriendo(self):
