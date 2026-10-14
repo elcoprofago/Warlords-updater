@@ -9,13 +9,15 @@
 import os, sqlite3, sys
 from collections import defaultdict
 
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datos.db')
+DB = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)),
+                  'datos.db')
 IAS = {0: 'original', 1: 'prueba', 2: 'valor inválido (original)'}
 
 
-def main():
+def main(tid=None):
     db = sqlite3.connect(DB)
-    tid = int(sys.argv[1]) if len(sys.argv) > 1 else db.execute('select max(id) from tanda').fetchone()[0]
+    if tid is None:
+        tid = int(sys.argv[1]) if len(sys.argv) > 1 else db.execute('select max(id) from tanda').fetchone()[0]
     if tid is None:
         sys.exit('No hay tandas en la base.')
     parts = db.execute('select id, n, guardada, asignacion, estado, turnos from partida where tanda=? order by n',

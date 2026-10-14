@@ -37,6 +37,18 @@ Propuesto por Claude y aceptado en general (falta elegir qué entra en la primer
 - Límites conocidos: el juego toma el foco un instante al arrancar cada partida; el mouse no funciona en el
   monitor secundario (no hace falta).
 
+## Primera versión (14/10/2026)
+`ia\Monitor-IA.exe` (fuente `ia\monitor-ia\monitor_ia.py`, se compila con `python ia\monitor-iauild.py`; el exe
+no se versiona). Reemplazó a tanda.bat, monitor.bat y aviso.py (borrados). Probado abriéndolo sobre la tanda 4 a
+medias: muestra tanda, partida en curso, tabla por color y batallas. Falta la prueba con una tanda real (TAREAS.md).
+- Tanda: partidas, guardadas, Nueva tanda / Retomar / Cortar; fecha de inicio, cuántas van y fin estimado.
+- Controles: sonido del juego (tanda.CONTROL), alarma al terminar (con botón de prueba), monitor del juego.
+- Partida en curso: mapa, turno, colores con IA de prueba, batallas ganadas/perdidas por IA atacante, aviso de
+  posible cuelgue a los 5 min sin turnos, tabla por color (PV calculados con pv_calc).
+- Bitácora con lo que imprime tanda.py y el informe al final. Mantiene la PC despierta mientras corre.
+- tanda.py: una partida cortada (o que quedó "jugando" al cerrar la ventana) se guarda como "cortada" y se vuelve
+  a jugar al retomar.
+
 ## Próximo paso
-Elegir la tecnología (Python con interfaz y empaquetado a .exe es lo natural, porque reutiliza tanda.py) y
-armar una primera versión con lo pedido por el usuario más la partida en curso y la tabla en vivo.
+Según lo que diga la prueba del usuario. Quedan de la lista propuesta: pausar, partidas terminadas con duración en
+pantalla (hoy solo las últimas 5 cuando no hay partida en curso), informe tras cada partida (hoy al final).

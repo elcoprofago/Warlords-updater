@@ -14,7 +14,7 @@
 #   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor
 #   python ia\tanda.py seguir            (retoma la última tanda sin terminar)
 #   python ia\informe.py [tanda]          (informe de la tanda)
-import argparse, configparser, csv, ctypes, json, os, sqlite3, subprocess, sys, time
+import argparse, configparser, csv, ctypes, json, os, sqlite3, subprocess, sys, threading, time
 from ctypes import wintypes
 
 JUEGO = r'C:\Warlords3'
@@ -22,8 +22,14 @@ EXE = 'DarklordAV.exe'
 DATA = os.path.join(JUEGO, 'DATA')
 INI = os.path.join(DATA, 'IA.INI')
 CSV_T, CSV_B, CSV_F = (os.path.join(DATA, n) for n in ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV'))
-DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datos.db')
-CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tanda.ini')
+# Empaquetado en Monitor-IA.exe (ia\monitor-ia), el exe queda en ia\: la base y la configuración van junto a él.
+BASE = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
+DB = os.path.join(BASE, 'datos.db')
+CONFIG = os.path.join(BASE, 'tanda.ini')
+
+# Controles del Monitor de IA: sonido del juego y corte de la tanda en curso.
+CONTROL = {'silenciar': True}
+CORTAR = threading.Event()
 
 # Colores con la IA de prueba en la primera partida de cada par; la segunda usa el complemento.
 PATRONES = [(1, 3, 5, 7), (0, 1, 2, 3), (0, 1, 4, 5), (0, 3, 5, 6)]
@@ -195,14 +201,14 @@ def llevar_al_monitor(pid, m):
         user32.SetWindowPos(h, None, x + (an - w) // 2, y + (al - hh) // 2, 0, 0, 0x0001 | 0x0004 | 0x0010)
 
 
-def silenciar(pid):
-    """Silencia el sonido del juego (solo su sesión de audio, no el resto de la PC). La sesión aparece recién
+def silenciar(pid, mudo=True):
+    """Silencia (o devuelve) el sonido del juego (solo su sesión de audio, no el resto de la PC). La sesión aparece recién
     cuando el juego empieza a sonar, por eso se llama en cada vuelta. Requiere pycaw (pip install pycaw)."""
     try:
         from pycaw.pycaw import AudioUtilities
         for s in AudioUtilities.GetAllSessions():
-            if s.ProcessId == pid and not s.SimpleAudioVolume.GetMute():
-                s.SimpleAudioVolume.SetMute(1, None)
+            if s.ProcessId == pid and bool(s.SimpleAudioVolume.GetMute()) != mudo:
+                s.SimpleAudioVolume.SetMute(int(mudo), None)
     except Exception as e:
         if not getattr(silenciar, 'avisado', False):
             silenciar.avisado = True
@@ -267,7 +273,9 @@ def jugar(db, tid, n, p, a):
     while estado is None:
         time.sleep(5)
         llevar_al_monitor(proc.pid, mon)
-        silenciar(proc.pid)
+        silenciar(proc.pid, CONTROL['silenciar'])
+        if CORTAR.is_set():
+            estado = 'cortada'; break
         if os.path.exists(CSV_F) and os.path.getsize(CSV_F) > 0:
             time.sleep(3); estado = 'ok'; break
         s = os.path.getsize(CSV_T) if os.path.exists(CSV_T) else 0
@@ -287,9 +295,13 @@ def jugar(db, tid, n, p, a):
 
 def correr(db, tid, a):
     pl = json.loads(db.execute('select plan from tanda where id=?', (tid,)).fetchone()[0])
-    hechas = db.execute('select count(*) from partida where tanda=?', (tid,)).fetchone()[0]
+    # Una partida cortada a mano queda registrada, pero al retomar se vuelve a jugar.
+    hechas = db.execute("select count(*) from partida where tanda=? and estado!='cortada'", (tid,)).fetchone()[0]
     try:
         for n in range(hechas, len(pl)):
+            if CORTAR.is_set():
+                print(f'[{ahora()}] Tanda {tid} cortada. Se retoma con "Retomar".', flush=True)
+                return
             jugar(db, tid, n, pl[n], a)
         db.execute('update tanda set terminada=1 where id=?', (tid,)); db.commit()
         print(f'Tanda {tid} terminada. Informe: python ia\\informe.py {tid}')
@@ -309,7 +321,17 @@ def main():
         return elegir_monitor()
     if not monitor_preferido() and len(monitores()) > 1:
         elegir_monitor()
-    db = sqlite3.connect(DB); db.executescript(ESQUEMA)
+    db, tid = preparar(a)
+    correr(db, tid, a)
+
+
+def preparar(a):
+    """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
+    db = sqlite3.connect(DB, check_same_thread=False); db.executescript(ESQUEMA)
+    # Partida que quedó "jugando" porque se cerró la ventana de la tanda: sus registros son suyos y se retoma.
+    for (pid,) in db.execute("select id from partida where estado='jugando'").fetchall():
+        importar(db, pid, 'cortada')
+        print(f'Partida {pid} había quedado a medias: guardada como "cortada", se vuelve a jugar al retomar.')
     if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F)):   # registros de una partida a mano: no se pierden
         pid = db.execute('insert into partida (guardada, inicio, estado) values (?,?,?)',
                          ('(a mano)', ahora(), 'suelta')).lastrowid
@@ -328,7 +350,7 @@ def main():
         if not r:
             sys.exit('No hay tandas sin terminar.')
         tid = r[0]
-    correr(db, tid, a)
+    return db, tid
 
 
 if __name__ == '__main__':

@@ -74,3 +74,14 @@ Resultado: los dos funcionan perfectamente abiertos a mano.
 3. Fijate de vez en cuando que el juego siga avanzando en ese monitor aunque estés usando otra ventana.
 4. Al terminar, anotá acá si las partidas dicen **ok** y si en algún momento el juego se quedó quieto o te molestó.
 Resultado:
+
+## IA: probar el Monitor de IA (14/10/2026)
+Reemplaza a tanda.bat y monitor.bat.
+1. Hacé doble clic en **F:\sourceeposctualizador-warlords\ia\Monitor-IA.exe**.
+2. Arriba aparece la tanda 4, que quedó a medias. Apretá **Retomar**: tiene que seguir con la partida 2.
+   (Para una tanda nueva: poné la cantidad de partidas y apretá **Nueva tanda**.)
+3. Mirá que la tabla de colores se vaya actualizando con los turnos y que el juego no suene.
+   Probá destildar "Sonido del juego desactivado": el juego tiene que sonar a los pocos segundos.
+4. Al terminar tiene que sonar la alarma y aparecer el informe abajo.
+Anotá acá qué funcionó, qué no, y qué te gustaría cambiar o agregar.
+Resultado:
