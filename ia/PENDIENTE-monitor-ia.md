@@ -61,7 +61,7 @@ de datos.db las tandas 2 y 3 (pruebas abandonadas) con sus partidas.
 ## Parche de cada tanda (14/10/2026)
 El panel Tanda muestra con qué parche juega la tanda mostrada (vista-aliada y huella del exe) y con cuál jugaron
 todas, agrupadas de corrido. tanda.py lo registra al crear la tanda y se niega a retomar con otro exe.
-Falta recompilar Monitor-IA.exe: estaba abierto jugando la tanda 5. Se recompila solo cuando se cierre.
+Recompilado el 14/10/2026 a las 16:15, después de la tanda 5; título verificado abriéndolo.
 
 ## Pedido para después de las pruebas (14/10/2026): chances por posición, en PDF
 Botón "Exportar" en el Monitor: un PDF por mapa con una grilla por posición (color de arranque): partidas jugadas,
