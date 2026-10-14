@@ -216,3 +216,6 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   colores, 3 mapas. Tandas 21 a 40: un solo mapa y un solo bando, para estudiar las posiciones (Scarpart, hecho por
   el usuario, tiene posiciones muy malas y muy buenas). Después, modalidades (Crusade, norte contra sur), cada una
   en su tanda y con todo lo demás igual.
+  Etapa "medir bandos PGS" (después de la 40): objetivo propio, saber qué .PGS ganan más y cuáles menos, valga o no
+  para mejorar la IA. Varios .PGS distintos rotando por todas las posiciones de un mismo mapa, la misma IA en todos
+  los colores. Antes hay que registrar en datos.db qué .PGS jugó cada color (ia\PENDIENTE-monitor-ia.md).
