@@ -7673,6 +7673,30 @@ im_out:
 # una línea por bando: turno, orden, puesto, color, ia, PV, ciudades, oro.
 IA_FCSV = place_data('ia_fcsv', cstr_(r'.\DATA\IA_FIN.CSV'))
 IA_FFMT = place_data('ia_ffmt', cstr_('%d,%d,%d,%d,%d,%d,%d,%d\n'))
+# Tandas: con todos los bandos en Computadora el juego no deja guardar, así que la partida de la tanda se guarda con un
+# bando en Humano. Si se cargó por [Tanda] (ia_tname no vacío), al elegir el bando del turno (0x42237a, después de
+# contar los humanos en [esp+0x18]) todo bando humano pasa a Computadora (+0xe2 = 2, como el diálogo, 0x40a5df) y la
+# cuenta queda en 0.
+ia_compu = place('ia_compu', f'''
+    cmp byte ptr [{IA_TNAME:#x}], 0
+    je ic_back
+    push eax
+    mov eax, 0x536c12
+ic_loop:
+    cmp word ptr [eax], -1
+    jne ic_next
+    mov word ptr [eax], 2
+ic_next:
+    add eax, 0x1f8
+    cmp eax, 0x536c12 + 8*0x1f8
+    jb ic_loop
+    pop eax
+    mov word ptr [esp + 0x18], 0
+ic_back:
+    mov word ptr [0x537ce8], di
+    jmp 0x422381
+''')
+
 ia_fin = place('ia_fin', f'''
     cmp byte ptr [{IA_ON:#x}], 0
     je if_back
@@ -7761,6 +7785,7 @@ patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x44
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
+patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))

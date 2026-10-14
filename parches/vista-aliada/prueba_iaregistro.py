@@ -1,15 +1,15 @@
 # Prueba emulada del registro de la IA (ia_turn / ia_snap): ejecuta el código parcheado real sobre el estado de
 # partidas guardadas, con fopen/fclose/fprintf/GetPrivateProfileStringA/_stricmp simulados, y compara cada línea con
 # un conteo independiente hecho en Python sobre el mismo .SAV.
-# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <partida.SAV> [...]
+# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <ia_compu hex> <partida.SAV> [...]
 #   (las direcciones las imprime build.py en la línea "caves"; requiere pefile y unicorn)
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 EXE, IA_TURN, TURN, IA_BAT = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
-IA_FIN, IA_MENU = int(sys.argv[5], 16), int(sys.argv[6], 16)
-SAVS = sys.argv[7:]
+IA_FIN, IA_MENU, IA_COMPU = int(sys.argv[5], 16), int(sys.argv[6], 16), int(sys.argv[7], 16)
+SAVS = sys.argv[8:]
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, '_stricmp': 0x5a9be0, 'GetPrivateProfileStringA': 0x5a97e8}
 STUB = 0xdeac0000
@@ -212,4 +212,23 @@ for sav in SAVS[:1]:
     check(o == exp and ok_ and c[0] == 'fopen(.\\DATA\\IA_FIN.CSV,a)', f'IA_FIN: {o[:2]}... = esperado; sigue igual que el original')
     o, exp, c, ok_ = fin(sav, None)
     check(o == [] and c == [] and ok_, 'sin IA.INI: no abre ni escribe nada')
+def compu(tanda):
+    """ia_compu: con tanda, los bandos en Humano (-1) pasan a Computadora (2); sin tanda no cambia nada."""
+    mu = Uc(UC_ARCH_X86, UC_MODE_32)
+    mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img); mu.mem_map(STK, 0x100000)
+    ctl = [2, -1, 2, 0, -1, 2, 2, -1]; tname = img.find(b'Tanda\0Partida\0') + 0x400000 + 14
+    for p, v in enumerate(ctl): mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', v))
+    mu.mem_write(0x536c12 + 8 * 0x1f8, struct.pack('<h', -1))   # control: el registro 8 no se toca
+    mu.mem_write(tname, b'Tanda_X\0' if tanda else b'\0')
+    sp = STK + 0x80000; mu.mem_write(sp + 0x18, struct.pack('<H', 3))
+    mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EDI, 5); mu.reg_write(UC_X86_REG_EAX, 0x1234)
+    mu.emu_start(IA_COMPU, 0x422381, count=10_000)
+    got = [struct.unpack('<h', mu.mem_read(0x536c12 + p * 0x1f8, 2))[0] for p in range(9)]
+    cnt = struct.unpack('<H', mu.mem_read(sp + 0x18, 2))[0]
+    exp = ([2, 2, 2, 0, 2, 2, 2, 2] if tanda else ctl) + [-1]
+    return got == exp and cnt == (0 if tanda else 3) and mu.reg_read(UC_X86_REG_EAX) == 0x1234 and         mu.reg_read(UC_X86_REG_ESP) == sp and struct.unpack('<H', mu.mem_read(0x537ce8, 2))[0] == 5, got
+
+print('bandos humanos de la partida de la tanda')
+r, g = compu(True); check(r, f'con tanda: humanos -> computadora {g[:8]}')
+r, g = compu(False); check(r, f'sin tanda: sin cambios {g[:8]}')
 print('RESULTADO:', 'TODO OK' if ok else 'HAY FALLAS')

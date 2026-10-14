@@ -127,4 +127,6 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
 - Falta: las 3 partidas guardadas y la primera tanda en vivo (TAREAS.md).
 - Después de eso vienen las destrezas.
 - Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la primera tanda)".
-
+- 1.0.30.0, ia_compu en 0x42237a. Según el usuario, con todos los bandos en Computadora la interrupción no deja guardar,
+  así que las partidas de la tanda se guardan con un bando en Humano. Si la partida se cargó por [Tanda], al elegir
+  cada turno los bandos con +0xe2 = -1 pasan a 2, igual que el diálogo en 0x40a5df. Probado emulado; falta en vivo.

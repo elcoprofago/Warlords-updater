@@ -32,9 +32,10 @@ Para cada escenario (Scarpart, Hexagon y TomeLand):
    - los 8 bandos en Computadora, sin alianzas;
    - los bandos (.PGS) que te parezcan los mejores del clan, 2000 puntos;
    - fin de la partida por turnos con puntos de victoria, por ejemplo **30 turnos**.
-2. Apenas empiece, interrumpila con **Tab + clic** y guardala con este nombre exacto:
+2. Apenas empiece, pasá un bando a Humano y guardá la partida con este nombre exacto:
    **Tanda_Scarpart**, **Tanda_Hexagon** o **Tanda_TomeLand**, según el escenario.
-3. Si desde la interrupción no se puede guardar, anotalo acá y no sigas con este punto.
+   Después ya podés salir sin volver ese bando a Computadora: al cargar la partida en una tanda, el juego pasa
+   solo a Computadora los bandos que estén en Humano.
 Resultado:
 
 ## IA: primera tanda de prueba (después del punto anterior)
@@ -42,6 +43,7 @@ Resultado:
    **F:\source\repos\actualizador-warlords\ia\tanda.bat**.
 2. El programa abre el juego, que carga solo cada partida y la juega hasta el final. Son 3 partidas seguidas.
    No toques la PC mientras corre: la ventana negra va mostrando el avance.
+   Fijate en el primer turno: el bando que guardaste en Humano tiene que jugar solo.
 3. Al terminar, la ventana muestra un informe. Anotá acá si las 3 partidas dicen **ok** y cuántos minutos tardó
    cada una. Si alguna dice otra cosa, anotá cuál y qué se veía en pantalla en ese momento.
 Resultado:
