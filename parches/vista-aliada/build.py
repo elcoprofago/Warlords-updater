@@ -7643,6 +7643,8 @@ ib_out:
 # Tandas (ia\tanda.py): con [Tanda] Partida=<nombre> en DATA\IA.INI, al mostrarse el menú principal por primera vez
 # (llamada 0x452c3b a 0x4aab10, la del arranque; la de después del Game Over, 0x482322, no) se pide cargar
 # SAVES\<nombre>.SAV con 0x4b9c10(nombre, 0), lo mismo que hace el diálogo Load Game (0x42c696).
+# Antes abre la pantalla de un jugador (0x443980, lo que hace el botón Single Player en 0x4aae18): la carga la atiende
+# esa pantalla; desde el menú principal el pedido quedaba esperando a que se apretara el botón.
 IA_TSEC = place_data('ia_tsec', cstr_('Tanda'))
 IA_TKEY = place_data('ia_tkey', cstr_('Partida'))
 IA_TNAME = place_data('ia_tname', bytes(64))
@@ -7658,6 +7660,7 @@ ia_menu = place('ia_menu', f'''
     call dword ptr [{GETPROF:#x}]
     test eax, eax
     jz im_out
+    call 0x443980
     push 0
     push {IA_TNAME:#x}
     call 0x4b9c10

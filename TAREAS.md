@@ -27,16 +27,16 @@ Resultado: existe (60 batallas en 15 turnos; partida terminada, captura del Game
 
 ## IA: preparar las 3 partidas para las tandas (13/10/2026)
 Hace falta una partida guardada por escenario, en el turno 1, con los 8 bandos manejados por la computadora.
-Para cada escenario (Scarpart, The Borderlands y Kor; Hexagon y TomeLand no tienen lugar para 8 bandos):
+Para cada escenario (Scarpart, Hexagon y TomeLand):
 1. Abrí **DarklordAV.exe** y empezá una partida nueva en ese escenario:
    - los 8 bandos en Computadora, sin alianzas;
    - los bandos (.PGS) que te parezcan los mejores del clan, 2000 puntos;
    - fin de la partida por turnos con puntos de victoria, por ejemplo **30 turnos**.
 2. Apenas empiece, pasá un bando a Humano y guardá la partida con este nombre exacto:
-   **Tanda_Scarpart**, **Tanda_Borderlands** o **Tanda_Kor**, según el escenario.
+   **Tanda_Scarpart**, **Tanda_Hexagon** o **Tanda_TomeLand**, según el escenario.
    Después ya podés salir sin volver ese bando a Computadora: al cargar la partida en una tanda, el juego pasa
    solo a Computadora los bandos que estén en Humano.
-Resultado: hecho (los maspas Hexagon y Tomeland no tienen casillas para 8 jugadores, asi que se reemplazaron por "The Boderlands" y "Kor")
+Resultado: hecho (los mapas Hexagon y Tomeland no tienen casillas para 8 jugadores, asi que se reemplazaron por "The Boderlands" y "Kor")
 
 ## IA: primera tanda de prueba (después del punto anterior)
 1. Con las 3 partidas guardadas, hacé doble clic en
@@ -46,5 +46,12 @@ Resultado: hecho (los maspas Hexagon y Tomeland no tienen casillas para 8 jugado
    Fijate en el primer turno: el bando que guardaste en Humano tiene que jugar solo.
 3. Al terminar, la ventana muestra un informe. Anotá acá si las 3 partidas dicen **ok** y cuántos minutos tardó
    cada una. Si alguna dice otra cosa, anotá cuál y qué se veía en pantalla en ese momento.
+Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
+  (Claude: según la ventana, 26,0, 27,1 y 22,8 minutos. Cada partida hubo que arrancarla con el botón "Single Player";
+  se corrigió en la versión 1.0.31.0, ver el punto siguiente.)
+
+## IA: tanda sin tocar nada (14/10/2026)
+1. Hacé doble clic en **F:\sourceeposctualizador-warlords\ia	anda.bat** y no toques nada.
+2. Cada partida tiene que empezar sola, sin apretar "Single Player".
 Resultado:
 

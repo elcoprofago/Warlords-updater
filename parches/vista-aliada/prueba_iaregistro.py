@@ -190,12 +190,13 @@ def menu(ini):
     def arg(i): return struct.unpack('<I', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4 + 4 * i, 4))[0]
     def h(mu, addr, size, _):
         if addr == 0x4aab10: seen.append('menu'); mu.reg_write(UC_X86_REG_EAX, 0x77); ret_(mu)
+        elif addr == 0x443980: seen.append('un jugador'); ret_(mu)
         elif addr == 0x4b9c10: seen.append(('cargar', cstr(mu, arg(0)), arg(1))); mu.reg_write(UC_X86_REG_EAX, 0x55); ret_(mu)
         elif STUB <= addr < STUB + 0x1000 and names[(addr - STUB) // 16] == 'GetPrivateProfileStringA':
             sec, key, buf = cstr(mu, arg(0)), cstr(mu, arg(1)), arg(3)
             v = (ini or {}).get((sec, key), '') ; mu.mem_write(buf, v.encode('latin1') + b'\0')
             seen.append(('ini', sec, key, cstr(mu, arg(5)))); mu.reg_write(UC_X86_REG_EAX, len(v)); ret_(mu, 6)
-    for a in (0x4aab10, 0x4b9c10): mu.hook_add(UC_HOOK_CODE, h, begin=a, end=a)
+    for a in (0x4aab10, 0x443980, 0x4b9c10): mu.hook_add(UC_HOOK_CODE, h, begin=a, end=a)
     mu.hook_add(UC_HOOK_CODE, h, begin=STUB, end=STUB + 0xfff)
     sp = STK + 0x80000 - 64; mu.mem_write(sp, struct.pack('<I', 0xdead0000)); mu.reg_write(UC_X86_REG_ESP, sp)
     mu.reg_write(UC_X86_REG_EBX, 0x4444); mu.emu_start(IA_MENU, 0xdead0000, count=100_000)
@@ -203,7 +204,7 @@ def menu(ini):
 
 print('menú principal')
 s, p_ = menu({('Tanda', 'Partida'): 'Tanda_Scarpart'})
-check(s == ['menu', ('ini', 'Tanda', 'Partida', '.\\DATA\\IA.INI'), ('cargar', 'Tanda_Scarpart', 0)] and p_, f'con [Tanda] Partida: {s[-1]}')
+check(s == ['menu', ('ini', 'Tanda', 'Partida', '.\\DATA\\IA.INI'), 'un jugador', ('cargar', 'Tanda_Scarpart', 0)] and p_, f'con [Tanda] Partida: {s[-1]}')
 s, p_ = menu(None)
 check(s == ['menu', ('ini', 'Tanda', 'Partida', '.\\DATA\\IA.INI')] and p_, 'sin la clave: solo el menú, no carga nada')
 for sav in SAVS[:1]:

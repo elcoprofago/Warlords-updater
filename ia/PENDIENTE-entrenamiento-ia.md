@@ -130,3 +130,24 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
 - 1.0.30.0, ia_compu en 0x42237a. Según el usuario, con todos los bandos en Computadora la interrupción no deja guardar,
   así que las partidas de la tanda se guardan con un bando en Humano. Si la partida se cargó por [Tanda], al elegir
   cada turno los bandos con +0xe2 = -1 pasan a 2, igual que el diálogo en 0x40a5df. Probado emulado; falta en vivo.
+
+### 14/10/2026: primera tanda (tanda 1 en ia/datos.db)
+- Partidas: Scarpart OPOPOPOP, Scarpart POPOPOPO y Borderlands OPOPOPOP. Las 3 terminaron ok, 30 turnos cada una,
+  de 23 a 27 minutos.
+- Las partidas guardadas son Tanda_Scarpart, Tanda_Borderlands y Tanda_Kor. Hexagon y TomeLand no admiten 8 bandos.
+- Funcionó en vivo:
+  - carga por [Tanda];
+  - bandos guardados en Humano pasados a Computadora;
+  - podio en IA_FIN.CSV;
+  - importación e informe.
+- Problema: cada partida esperaba al botón Single Player. La carga la atiende la pantalla de un jugador. Corregido
+  en 1.0.31.0: ia_menu llama a 0x443980, lo mismo que hace el botón, antes de pedir la carga. Falta probarlo en vivo
+  (TAREAS.md).
+- La IA de prueba todavía es igual a la original. Las diferencias del informe (PV 9,8 contra 7,9) son ruido de
+  colores y mapas: sirven de medida de cuánto varía el resultado sin ningún cambio. Con 3 partidas no dicen nada
+  todavía.
+- Pedido del usuario: antes de tandas largas (20 partidas), elegir el monitor donde se abre el juego, con la misma
+  lógica de "Votacion". Va en una sesión aparte.
+  - Frase para retomar: "Seguimos con ia/PENDIENTE-entrenamiento-ia.md: elegir monitor para el juego".
+  - Después de eso: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la tanda sin tocar nada)".
+
