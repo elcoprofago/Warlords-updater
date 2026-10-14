@@ -18,9 +18,9 @@ Resultado: tecla tab + clic izq. o der.
    No hace falta abrirlo: lo reviso yo.
 Resultado: existe
 
-## IA: probar el registro de batallas (13/10/2026)
+## [RESUELTA] IA: probar el registro de batallas (13/10/2026)
 1. Abrí **DarklordAV.exe** y empezá una partida con los 8 bandos manejados por la computadora.
 2. Dejala correr hasta que veas que hubo peleas (unos 8 a 10 turnos suele alcanzar) y cerrá el juego.
 3. Fijate si existe el archivo C:\Warlords3\DATA\IA_BAT.CSV. Anotá acá: "Existe" o "No existe".
    No hace falta abrirlo: lo reviso yo.
-Resultado:
+Resultado: existe (60 batallas en 15 turnos; partida terminada, captura del Game Over compartida)
