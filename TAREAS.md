@@ -68,7 +68,6 @@ Resultado: los dos funcionan perfectamente abiertos a mano.
 
 ## IA: tanda en segundo plano (14/10/2026)
 1. Si tenés el juego abierto, cerralo.
-2. Hacé doble clic en **F:\source
 2. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y seguí usando la PC normalmente.
    Al empezar cada partida el juego puede aparecer un instante adelante; en unos segundos se pasa solo al monitor
    elegido con monitor.bat.
