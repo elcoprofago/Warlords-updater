@@ -77,3 +77,8 @@ Qué bandos ganan más y cuáles menos. Necesita una etapa propia, opuesta a las
 rotando por las posiciones (cada bando pasa por cada posición) en un mismo mapa, con la misma IA en todos los colores
 para que la diferencia sea del bando. Hoy datos.db no registra qué .PGS jugó cada color: hay que sumarlo
 (leerlo del .SAV o anotarlo al lanzar la tanda) antes de esa etapa.
+
+## Destino de los PDF (14/10/2026)
+Se publican en la página del Clan, en una sección de estadísticas, uno por criterio de medición (posiciones por
+mapa, bandos PGS, ...). Los lee gente que no vio las pruebas: cada PDF tiene que explicarse solo, con cómo se midió
+(etapa, tandas, bando, parche, IA), cuántas partidas sostienen cada número y la fecha.
