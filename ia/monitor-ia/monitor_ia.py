@@ -74,6 +74,7 @@ class Monitor(tk.Tk):
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
         self.tid = None
+        self.retomable = False
         self.externa = False   # tanda arrancada fuera del panel (python ia	anda.py): solo se mira
         self.armar()
         self.refrescar()
@@ -121,7 +122,7 @@ class Monitor(tk.Tk):
         cb.grid(row=1, column=1, sticky='w', **pad)
 
         p = ttk.LabelFrame(self, text='Partida en curso'); p.pack(fill='x', **pad)
-        self.info = tk.Text(p, height=4, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
+        self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
                             padx=8, pady=6, cursor='arrow')
         for tag, kw in (('titulo', dict(font=('Segoe UI', 13, 'bold'), foreground='#123c7a')),
                         ('b', dict(font=('Segoe UI', 10, 'bold'))),
@@ -256,8 +257,8 @@ class Monitor(tk.Tk):
         except Exception as e:   # el juego puede estar escribiendo los CSV justo ahora
             self.escribir((f'(no se pudo leer el estado: {e})', 'gris'))
         corre = self.corriendo() or self.externa
-        for b in (self.b_nueva, self.b_seguir):
-            b.state(['disabled'] if corre else ['!disabled'])
+        self.b_nueva.state(['disabled'] if corre else ['!disabled'])
+        self.b_seguir.state(['disabled'] if corre or not self.retomable else ['!disabled'])
         self.b_cortar.state(['!disabled'] if self.corriendo() else ['disabled'])
         self.medidores[0].poner(psutil.cpu_percent())
         self.medidores[1].poner(psutil.virtual_memory().percent)
@@ -273,10 +274,17 @@ class Monitor(tk.Tk):
     def mostrar(self):
         import sqlite3
         self.externa = False
+        self.retomable = False
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); return
         db = sqlite3.connect(tanda.DB)
-        t = db.execute('select id, inicio, plan, terminada from tanda order by id desc limit 1').fetchone()
+        # La tanda que se está jugando; si no hay ninguna, la que corrió este panel; si no, la última.
+        r = db.execute("select tanda from partida where estado='jugando' and tanda is not null "
+                       "order by id desc").fetchone()
+        ult = db.execute('select terminada from tanda order by id desc').fetchone()
+        self.retomable = bool(ult) and not ult[0]   # tanda.preparar solo retoma la última
+        tid = r[0] if r else self.tid or db.execute('select max(id) from tanda').fetchone()[0]
+        t = db.execute('select id, inicio, plan, terminada from tanda where id=?', (tid,)).fetchone()
         if not t:
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); return
         tid, inicio, plan, term = t

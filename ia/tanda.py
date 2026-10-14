@@ -346,9 +346,10 @@ def preparar(a):
                          (ahora(), json.dumps(plan(a.partidas, gs)))).lastrowid
         db.commit()
     else:
-        r = db.execute('select id from tanda where terminada=0 order by id desc').fetchone()
-        if not r:
-            sys.exit('No hay tandas sin terminar.')
+        # Solo la última tanda: una vieja abandonada (por ejemplo, de pruebas) no se retoma por sorpresa.
+        r = db.execute('select id, terminada from tanda order by id desc').fetchone()
+        if not r or r[1]:
+            sys.exit('La última tanda ya terminó: no hay nada que retomar.')
         tid = r[0]
     return db, tid
 
