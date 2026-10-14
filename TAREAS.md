@@ -51,7 +51,9 @@ Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
   se corrigió en la versión 1.0.31.0, ver el punto siguiente.)
 
 ## IA: tanda sin tocar nada (14/10/2026)
-1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y no toques nada.
-2. Cada partida tiene que empezar sola, sin apretar "Single Player".
+1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\monitor.bat**, escribí el número del monitor donde
+   querés ver el juego y Enter. Queda guardado; para cambiarlo, se vuelve a abrir monitor.bat.
+2. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y no toques nada.
+3. Cada partida tiene que empezar sola, sin apretar "Single Player", y verse en el monitor que elegiste.
 Resultado:
 

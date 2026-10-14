@@ -151,3 +151,16 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
   - Frase para retomar: "Seguimos con ia/PENDIENTE-entrenamiento-ia.md: elegir monitor para el juego".
   - Después de eso: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la tanda sin tocar nada)".
 
+### 14/10/2026: monitor del juego (hecho)
+- `python ia\tanda.py monitor` (o `ia\monitor.bat`) lista los monitores y guarda el elegido por nombre en
+  `ia\tanda.ini` (no versionado), como Votación. Si ya no está conectado, se usa el principal. Si no hay ninguno
+  guardado y hay más de un monitor, `nueva`/`seguir` lo preguntan al empezar.
+- El juego corre en ventana (dxcfg): tanda.py la lleva al monitor elegido y le da su tamaño. Lo comprueba cada 5 s
+  porque el juego cambia de ventana (lanzador 600x400, después la de juego del tamaño del monitor donde arrancó).
+  Probado en vivo en los monitores de 1024x768 y 1366x768: la partida se ve completa, escalada.
+- Hallado al probar: la entrada sola a "Single Player" de vista-aliada 1.0.31.0 (ia_menu -> 0x443980) NO funciona
+  en vivo: con [Tanda] el lanzador quedó 90 s quieto, con la ventana movida o sin mover. tanda.py ahora aprieta el
+  botón (WM_COMMAND id 1001 al lanzador) y así entra y carga la partida (probado con Tanda_Kor). El llamado de
+  ia_menu queda sin efecto; revisarlo o quitarlo cuando se toque el parche.
+- Siguiente: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la tanda sin tocar nada)".
+
