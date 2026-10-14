@@ -167,6 +167,25 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
 - Hallado al probar: la entrada sola a "Single Player" de vista-aliada 1.0.31.0 (ia_menu -> 0x443980) NO funciona
   en vivo: con [Tanda] el lanzador quedó 90 s quieto, con la ventana movida o sin mover. tanda.py ahora aprieta el
   botón (WM_COMMAND id 1001 al lanzador) y así entra y carga la partida (probado con Tanda_Kor). El llamado de
-  ia_menu queda sin efecto; revisarlo o quitarlo cuando se toque el parche.
+  ia_menu queda sin efecto; revisarlo o quitarlo cuando se toque el parche. (Después se vio que la ventana blanca y
+  el lanzador quieto podían venir del aviso de poco espacio en disco, ver abajo.)
 - Siguiente: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la tanda sin tocar nada)".
+
+### 14/10/2026: tanda en segundo plano y en el monitor secundario (vista-aliada 1.0.32.0)
+Pedido del usuario: que las partidas corran solas en un monitor secundario, en segundo plano, mientras usa la PC.
+Probado en vivo con Tanda_Scarpart: la ventana estaba en DISPLAY6 y el Bloc de notas tenía el foco. IA.CSV creció
+durante 60 s seguidos y la captura mostró la partida en el turno 5.
+- Ventana blanca al arrancar: la causaba el WM_COMMAND al botón Single Player. tanda.py ahora le manda
+  WM_LBUTTONDOWN/UP al botón (PostMessage), sin foco ni mouse.
+- "You are low on disk space": el juego calcula el espacio libre en 32 bits (0x4e0770) y con decenas de GB libres se
+  desborda. Según lo que haya libre, avisaba al arrancar y esperaba un clic: el juego no se veía y la tanda no
+  cargaba nada. El parche lo deja en 2 GB si GetDiskFreeSpaceA respondió.
+- Turno del bando Humano al cargar (Scarpart y Kor): ia_compu solo actúa al elegir el bando siguiente. ia_tload, en
+  OnIdle (0x4ecf10), una sola vez con [Tanda]: si el bando del turno está en Humano, llama a 0x4c0ca0, el fin de
+  turno del jugador (0x485c00 + 0x4c0690). Ese bando pierde su jugada del turno 1; los demás turnos los juega la IA.
+  No sirvió 0x4221a0(0): vuelve a empezar el mismo turno y queda en modo humano. 0x4212b0 es el que pasa al bando
+  siguiente.
+- Sin foco: ia_bg (0x4ed415) saltea la pausa de WA_INACTIVE con [Tanda].
+- Queda: al arrancar cada partida, el juego toma el foco un instante, hasta que tanda.py lo lleva al monitor. El
+  mouse en el monitor secundario sigue sin andar (ddraw), pero para la tanda no hace falta.
 

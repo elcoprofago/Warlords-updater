@@ -7700,6 +7700,45 @@ ic_back:
     jmp 0x422381
 ''')
 
+# Tandas en segundo plano: al perder el foco (CWnd::OnActivate, 0x4ed400, nState = WA_INACTIVE) el juego se pausa
+# ([obj+0x13d] = 1 vía 0x4de090) hasta recuperarlo, así que una tanda se detenía apenas el usuario usaba otra ventana.
+# Si la partida se cargó por [Tanda] (ia_tname no vacío) se saltea esa rama y el juego sigue jugando sin foco.
+ia_bg = place('ia_bg', f'''
+    test esi, esi
+    jne 0x4ed477
+    cmp byte ptr [{IA_TNAME:#x}], 0
+    jne 0x4ed477
+    cmp byte ptr [0x501280], 0
+    jmp 0x4ed420
+''')
+
+# Tandas: la partida guardada queda en el turno del bando que se pasó a Humano para poder guardarla, y al cargarla el
+# juego espera a ese humano (ia_compu recién actúa al elegir el bando siguiente). En el ciclo de espera (OnIdle,
+# 0x4ecf10, después del tick 0x4dea40), una sola vez y si se cargó por [Tanda]: si el bando del turno ([0x537ce8]) está
+# en Humano, todos los humanos pasan a Computadora y se termina el turno como lo hace el botón (0x415d84: 0x4d7d70 sobre
+# 0x588bd0 y 0x4221a0(0)).
+IA_TDONE = place_data('ia_tdone', bytes(1))
+ia_tload = place('ia_tload', f'''
+    call 0x4dea40
+    cmp byte ptr [{IA_TNAME:#x}], 0
+    je it_out
+    cmp byte ptr [{IA_TDONE:#x}], 0
+    jne it_out
+    pushad
+    movsx eax, word ptr [0x537ce8]
+    cmp eax, 8
+    jae it_pop
+    imul eax, eax, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    jne it_pop
+    mov byte ptr [{IA_TDONE:#x}], 1
+    call 0x4c0ca0
+it_pop:
+    popad
+it_out:
+    ret
+''')
+
 ia_fin = place('ia_fin', f'''
     cmp byte ptr [{IA_ON:#x}], 0
     je if_back
@@ -7789,6 +7828,13 @@ patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
+patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
+patch(0x4ed415, asm('test esi, esi; jne 0x4ed477; cmp byte ptr [0x501280], 0', 0x4ed415), asm(f'jmp {ia_bg:#x}', 0x4ed415))
+# Espacio libre (0x4e0770): sectores por clúster × bytes por sector × clústeres libres en 32 bits; con discos de
+# decenas de GB el producto se desborda y, según lo libre que haya, el juego avisa "You are low on disk space" al
+# arrancar y espera un clic (una tanda quedaba ahí, sin ventana del juego). Si GetDiskFreeSpaceA respondió, informa
+# 2 GB, lo máximo que entra.
+patch(0x4e0799, rel(0x4e0799, 14), asm('mov esi, 0x7fffffff', 0x4e0799) + bytes([0x90]) * 9)
 patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
