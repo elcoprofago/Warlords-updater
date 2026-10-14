@@ -14,7 +14,8 @@
 #   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor
 #   python ia\tanda.py seguir            (retoma la última tanda sin terminar)
 #   python ia\informe.py [tanda]          (informe de la tanda)
-import argparse, csv, json, os, sqlite3, subprocess, sys, time
+import argparse, configparser, csv, ctypes, json, os, sqlite3, subprocess, sys, time
+from ctypes import wintypes
 
 JUEGO = r'C:\Warlords3'
 EXE = 'DarklordAV.exe'
@@ -22,6 +23,7 @@ DATA = os.path.join(JUEGO, 'DATA')
 INI = os.path.join(DATA, 'IA.INI')
 CSV_T, CSV_B, CSV_F = (os.path.join(DATA, n) for n in ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV'))
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datos.db')
+CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tanda.ini')
 
 # Colores con la IA de prueba en la primera partida de cada par; la segunda usa el complemento.
 PATRONES = [(1, 3, 5, 7), (0, 1, 2, 3), (0, 1, 4, 5), (0, 3, 5, 6)]
@@ -108,6 +110,101 @@ def importar(db, pid, estado):
     return turnos
 
 
+# Monitor del juego: misma lógica que Votación (lista de monitores, el elegido se guarda por nombre, y si ya no está
+# conectado se usa el principal). El juego corre en ventana (GOG dxcfg, presentation=windowed), así que se centra su
+# ventana en ese monitor; se vuelve a comprobar en cada vuelta de la espera por si el juego la recrea.
+user32 = ctypes.windll.user32
+user32.SetProcessDPIAware()
+
+
+class _MonInfo(ctypes.Structure):
+    _fields_ = [('cbSize', wintypes.DWORD), ('rcMonitor', wintypes.RECT), ('rcWork', wintypes.RECT),
+                ('dwFlags', wintypes.DWORD), ('szDevice', wintypes.WCHAR * 32)]
+
+
+def monitores():
+    """[(nombre, x, y, ancho, alto, principal)], el principal primero."""
+    out = []
+
+    def cb(h, dc, r, l):
+        m = _MonInfo(); m.cbSize = ctypes.sizeof(_MonInfo); user32.GetMonitorInfoW(h, ctypes.byref(m))
+        r = m.rcMonitor
+        out.append((m.szDevice, r.left, r.top, r.right - r.left, r.bottom - r.top, bool(m.dwFlags & 1)))
+        return True
+    proto = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HMONITOR, wintypes.HDC, ctypes.POINTER(wintypes.RECT),
+                               wintypes.LPARAM)
+    user32.EnumDisplayMonitors(None, None, proto(cb), 0)
+    return sorted(out, key=lambda m: not m[5])
+
+
+def monitor_preferido():
+    c = configparser.ConfigParser(); c.read(CONFIG)
+    return c.get('Pantalla', 'preferida', fallback=None)
+
+
+def elegir_monitor():
+    ms = monitores()
+    pref = monitor_preferido()
+    print('Monitores:')
+    for i, (nombre, x, y, an, al, princ) in enumerate(ms):
+        marca = ' <- elegido' if nombre == pref else ''
+        print(f'  {i + 1}. {nombre} ({an}x{al} @ {x},{y}){" principal" if princ else ""}{marca}')
+    while True:
+        r = input(f'Número del monitor para el juego (1-{len(ms)}): ').strip()
+        if r.isdigit() and 1 <= int(r) <= len(ms):
+            break
+    c = configparser.ConfigParser(); c['Pantalla'] = {'preferida': ms[int(r) - 1][0]}
+    with open(CONFIG, 'w') as f:
+        c.write(f)
+    print(f'Guardado: el juego se abre en {ms[int(r) - 1][0]}.')
+
+
+def monitor_configurado():
+    ms = monitores()
+    pref = monitor_preferido()
+    return next((m for m in ms if m[0] == pref), ms[0])
+
+
+def ventana_del_juego(pid):
+    """La ventana visible más grande del proceso del juego, o None."""
+    hallada = []
+
+    def cb(h, l):
+        p = wintypes.DWORD(); user32.GetWindowThreadProcessId(h, ctypes.byref(p))
+        if p.value == pid and user32.IsWindowVisible(h):
+            r = wintypes.RECT(); user32.GetWindowRect(h, ctypes.byref(r))
+            hallada.append(((r.right - r.left) * (r.bottom - r.top), h, r))
+        return True
+    user32.EnumWindows(ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)(cb), 0)
+    return max(hallada, key=lambda v: v[0])[1:] if hallada else None
+
+
+def llevar_al_monitor(pid, m):
+    v = ventana_del_juego(pid)
+    if not v:
+        return
+    h, r = v
+    _, x, y, an, al, _ = m
+    cx, cy = (r.left + r.right) // 2, (r.top + r.bottom) // 2
+    if x <= cx < x + an and y <= cy < y + al and r.right - r.left <= an and r.bottom - r.top <= al:
+        return
+    w, hh = r.right - r.left, r.bottom - r.top
+    if w > an or hh > al:   # la ventana de juego toma el tamaño del monitor donde arrancó: se le da el del elegido
+        user32.SetWindowPos(h, None, x, y, an, al, 0x0004 | 0x0010)   # SWP_NOZORDER | SWP_NOACTIVATE
+    else:
+        user32.SetWindowPos(h, None, x + (an - w) // 2, y + (al - hh) // 2, 0, 0, 0x0001 | 0x0004 | 0x0010)
+
+
+def apretar_un_jugador(pid):
+    """Aprieta "Single Player" en el lanzador del juego (botón 1001), si está a la vista. El parche ia_menu de
+    vista-aliada 1.0.31.0 debía hacerlo solo y en vivo no lo hace (14/10/2026: 90 s quieto en el lanzador)."""
+    v = ventana_del_juego(pid)
+    if v and user32.GetDlgItem(v[0], 1001):
+        user32.PostMessageW(v[0], 0x0111, 1001, user32.GetDlgItem(v[0], 1001))   # WM_COMMAND, BN_CLICKED
+        return True
+    return False
+
+
 def escribir_ini(prueba, guardada):
     with open(INI, 'w', newline='\r\n') as f:
         f.write('[IA]\n')
@@ -140,9 +237,17 @@ def jugar(db, tid, n, p, a):
     escribir_ini(set(p['prueba']), p['guardada'])
     cerrar_juego()
     proc = subprocess.Popen([os.path.join(JUEGO, EXE)], cwd=JUEGO)
+    mon = monitor_configurado()
+    for _ in range(30):   # la ventana tarda en aparecer: hasta 15 s
+        time.sleep(0.5)
+        if ventana_del_juego(proc.pid):
+            break
+    apretar_un_jugador(proc.pid)
+    llevar_al_monitor(proc.pid, mon)
     t0 = ultimo_cambio = time.time(); tam = -1; estado = None
     while estado is None:
         time.sleep(5)
+        llevar_al_monitor(proc.pid, mon)
         if os.path.exists(CSV_F) and os.path.getsize(CSV_F) > 0:
             time.sleep(3); estado = 'ok'; break
         s = os.path.getsize(CSV_T) if os.path.exists(CSV_T) else 0
@@ -174,12 +279,16 @@ def correr(db, tid, a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('accion', choices=['nueva', 'seguir'])
+    ap.add_argument('accion', choices=['nueva', 'seguir', 'monitor'])
     ap.add_argument('--partidas', type=int, default=6)
     ap.add_argument('--guardadas', default='Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor')
     ap.add_argument('--tope-turnos', type=int, default=0, help='0 = hasta el Game Over del escenario')
     ap.add_argument('--cuelgue', type=float, default=10, help='minutos sin turnos nuevos = colgada')
     a = ap.parse_args()
+    if a.accion == 'monitor':
+        return elegir_monitor()
+    if not monitor_preferido() and len(monitores()) > 1:
+        elegir_monitor()
     db = sqlite3.connect(DB); db.executescript(ESQUEMA)
     if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F)):   # registros de una partida a mano: no se pierden
         pid = db.execute('insert into partida (guardada, inicio, estado) values (?,?,?)',

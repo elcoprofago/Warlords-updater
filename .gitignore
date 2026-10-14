@@ -11,3 +11,4 @@ __pycache__/
 source/Actualizador/bin/
 source/Actualizador/obj/
 /ia/datos.db
+/ia/tanda.ini
