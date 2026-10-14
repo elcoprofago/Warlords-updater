@@ -102,6 +102,9 @@ function Incluir($rel) {
         if ($ext -eq '.zip') { return $false }
     }
     if ((Split-Path -Parent $rel) -eq 'DATA' -and $dataPropia -contains $nombre) { return $false }
+    # Registros de las pruebas de IA (ia\): DarklordAV.exe los escribe solo si existe DATA\IA.INI, que ya queda
+    # afuera por ser .ini. En las PC de los jugadores no existen, asi que NoPisar no necesita nombrarlos.
+    if ((Split-Path -Parent $rel) -eq 'DATA' -and $nombre -like 'IA*.CSV') { return $false }
     if ($ext -eq '.lnk' -or $ext -eq '.tmp') { return $false }
     if ($ext -eq '.ini' -and -not (EnCarpeta $rel 'CAMPAIGN', 'Ereg', 'edpicts')) { return $false }
     $true
