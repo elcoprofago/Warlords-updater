@@ -189,3 +189,13 @@ durante 60 s seguidos y la captura mostró la partida en el turno 5.
 - Queda: al arrancar cada partida, el juego toma el foco un instante, hasta que tanda.py lo lleva al monitor. El
   mouse en el monitor secundario sigue sin andar (ddraw), pero para la tanda no hace falta.
 
+
+### 14/10/2026: observaciones del usuario (partidas en Scarpart)
+- Rojo, con su bando personalizado (barco landcraft.arm), usa bien el bono `landing`: el héroe desembarcó en
+  costas sueltas en los primeros turnos, posiblemente por una misión.
+- Ninguna IA derribó un puente todavía, ni por misión ni para perjudicar. ai_brraze (build.py, "la IA derriba un
+  puente por criterio propio") exige c + s >= 5 y puentes de ciudades hostiles sin ejércitos encima; puede que casi
+  nunca se cumpla. Nada lo registra hoy: sumar un contador de derribos (por misión y por criterio propio) al
+  registro por turno antes de evaluarlo.
+- Scarpart: naranja muere siempre y celeste suele ganar, con cualquier IA. Esos colores casi no informan en las
+  comparaciones; medir por color y mapa qué colores tienen resultado fijo y darles menos peso.
