@@ -28,20 +28,20 @@ def juego_abierto():
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'assets')
 
 
-class Medidor(ttk.Frame):
+class Medidor:
     TAM = 52
 
-    def __init__(self, padre, nombre):
-        super().__init__(padre)
-        self.nombre = nombre
+    def __init__(self, mon, padre, nombre):
+        self.mon, self.nombre = mon, nombre
         marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
         self.imgs = []
         for i in range(1, 10):
             c = Image.open(os.path.join(ASSETS, f'circle_{i:02}.png')).convert('RGBA')
             c.alpha_composite(marco.resize(c.size))
-            self.imgs.append(ImageTk.PhotoImage(c.resize((self.TAM, self.TAM), Image.LANCZOS)))
-        self.l_img = ttk.Label(self, image=self.imgs[0]); self.l_img.pack()
-        self.l_txt = ttk.Label(self, font=('Segoe UI', 8, 'bold'), width=9, anchor='center'); self.l_txt.pack()
+            self.imgs.append(c.resize((self.TAM, self.TAM), Image.LANCZOS))
+        self.caja = mon.caja(padre)
+        self.l_img = mon.icono(self.caja, self.imgs[0]); self.l_img.pack()
+        self.l_txt = mon.rotulo(self.caja, text=f'{nombre} 0%', font=('Segoe UI', 8, 'bold')); self.l_txt.pack()
 
     def poner(self, pct):
         if pct < 30:
@@ -51,7 +51,7 @@ class Medidor(ttk.Frame):
         else:
             banda, pos = 2, (pct - 70) / 30
         i = banda * 3 + min(2, max(0, round(pos * 2)))
-        self.l_img['image'] = self.imgs[i]
+        self.mon.iconos[self.l_img] = self.imgs[i]; self.mon.pintar_icono(self.l_img)
         self.l_txt['text'] = f'{self.nombre} {pct:.0f}%'
 
 
@@ -94,45 +94,76 @@ class Monitor(tk.Tk):
         self.refrescar()
 
     # ---- interfaz ----
+    # Los paneles son tk (no ttk) para poder mostrar la textura: cada caja y cada rótulo lleva de imagen el recorte
+    # del mosaico que cae en su lugar de la ventana, así se ve continua detrás de todo (repintar).
+    def caja(self, padre, titulo=None, borde=False):
+        f = tk.Frame(padre, bd=0, highlightthickness=1 if borde else 0, highlightbackground='#8a8a8a')
+        fondo = tk.Label(f, bd=0, highlightthickness=0); fondo.place(x=0, y=0, relwidth=1, relheight=1)
+        self.cajas.append((f, fondo))
+        if titulo:
+            self.rotulo(f, text=titulo, font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=6, pady=(3, 0))
+        return f
+
+    def rotulo(self, padre, **kw):
+        kw.setdefault('font', ('Segoe UI', 10))
+        l = tk.Label(padre, bd=0, highlightthickness=0, padx=0, pady=0, compound='center', **kw)
+        self.rotulos.append(l)
+        return l
+
+    def icono(self, padre, img, **kw):
+        l = tk.Label(padre, bd=0, highlightthickness=0, padx=0, pady=0, **kw)
+        self.iconos[l] = img
+        return l
+
+    def check(self, padre, texto, var, command=None):
+        f = self.caja(padre)
+        c = tk.Checkbutton(f, variable=var, command=command, bd=0, highlightthickness=0, padx=0, pady=0)
+        c.pack(side='left'); self.checks.append(c)
+        r = self.rotulo(f, text=' ' + texto, cursor='hand2'); r.pack(side='left')
+        r.bind('<Button-1>', lambda e: c.invoke())
+        return f
+
     def armar(self):
         pad = dict(padx=8, pady=4)
+        self.cajas, self.rotulos, self.iconos, self.checks, self.fotos = [], [], {}, [], {}
+        self.mosaico, self.base, self.tinta = None, '#f0f0f0', '#000000'
         self.fondo = tk.Label(self, bd=0); self.fondo.place(x=0, y=0, relwidth=1, relheight=1)
-        arriba = tk.Frame(self, bd=0); arriba.pack(fill='x'); self.arriba = arriba
-        tarjeta = ttk.Frame(arriba, padding=4); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
-        semaforos = ttk.Frame(tarjeta); semaforos.pack()
-        self.medidores = [Medidor(semaforos, 'CPU'), Medidor(semaforos, 'RAM')]
+        arriba = self.caja(self); arriba.pack(fill='x')
+        tarjeta = self.caja(arriba, borde=True); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
+        semaforos = self.caja(tarjeta); semaforos.pack(padx=4, pady=(4, 0))
+        self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
-            m.pack(side='left', padx=2)
+            m.caja.pack(side='left', padx=2)
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
-        self.img_rueda = ImageTk.PhotoImage(rueda)
-        b = ttk.Label(tarjeta, image=self.img_rueda, cursor='hand2'); b.pack(anchor='e', pady=(4, 0))
+        b = self.icono(tarjeta, rueda, cursor='hand2'); b.pack(anchor='e', padx=4, pady=4)
         b.bind('<Button-1>', lambda e: self.configurar())
-        f = ttk.LabelFrame(arriba, text='Tanda'); f.pack(side='left', fill='x', expand=True, **pad)
+        f = self.caja(arriba, 'Tanda', borde=True); f.pack(side='left', fill='x', expand=True, **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar()
-        ttk.Label(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8)
-        ttk.Label(f, textvariable=self.v_tanda2, font=('Segoe UI', 10)).pack(anchor='w', padx=8)
-        fila = ttk.Frame(f); fila.pack(anchor='w', **pad)
-        ttk.Label(fila, text='Partidas:').pack(side='left')
+        self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
+        self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
+        fila = self.caja(f); fila.pack(anchor='w', **pad)
+        self.rotulo(fila, text='Partidas: ').pack(side='left')
         self.v_partidas = tk.IntVar(value=6)
         ttk.Spinbox(fila, from_=1, to=500, width=5, textvariable=self.v_partidas).pack(side='left', padx=(4, 16))
-        ttk.Label(fila, text='Guardadas:').pack(side='left')
+        self.rotulo(fila, text='Guardadas: ').pack(side='left')
         self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
         self.b_guardadas.pack(side='left', padx=4); self.rotular_guardadas()
-        fila = ttk.Frame(f); fila.pack(anchor='w', **pad)
+        fila = self.caja(f); fila.pack(anchor='w', **pad)
         self.b_nueva = ttk.Button(fila, text='Nueva tanda', command=lambda: self.arrancar('nueva'))
         self.b_seguir = ttk.Button(fila, text='Retomar', command=lambda: self.arrancar('seguir'))
         self.b_cortar = ttk.Button(fila, text='Cortar', command=self.cortar)
         for b in (self.b_nueva, self.b_seguir, self.b_cortar):
             b.pack(side='left', padx=(0, 8))
 
-        c = ttk.LabelFrame(self, text='Controles'); c.pack(fill='x', **pad)
+        c = self.caja(self, 'Controles', borde=True); c.pack(fill='x', **pad)
+        c = self.caja(c); c.pack(anchor='w')
         self.v_mudo = tk.BooleanVar(value=True)
-        ttk.Checkbutton(c, text='Sonido del juego desactivado', variable=self.v_mudo,
-                        command=lambda: tanda.CONTROL.update(silenciar=self.v_mudo.get())).grid(row=0, column=0, **pad)
+        self.check(c, 'Sonido del juego desactivado', self.v_mudo,
+                   lambda: tanda.CONTROL.update(silenciar=self.v_mudo.get())).grid(row=0, column=0, sticky='w', **pad)
         self.v_alarma = tk.BooleanVar(value=True)
-        ttk.Checkbutton(c, text='Alarma al terminar la tanda', variable=self.v_alarma).grid(row=0, column=1, **pad)
-        ttk.Label(c, text='Monitor del juego:').grid(row=1, column=0, sticky='w', **pad)
+        self.check(c, 'Alarma al terminar la tanda', self.v_alarma).grid(row=0, column=1, sticky='w', **pad)
+        self.rotulo(c, text='Monitor del juego:').grid(row=1, column=0, sticky='w', **pad)
         self.mons = tanda.monitores()
         nombres = [f'{m[0]} ({m[3]}x{m[4]}){" principal" if m[5] else ""}' for m in self.mons]
         self.v_mon = tk.StringVar()
@@ -142,7 +173,7 @@ class Monitor(tk.Tk):
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
         cb.grid(row=1, column=1, sticky='w', **pad)
 
-        p = ttk.LabelFrame(self, text='Partida en curso'); p.pack(fill='x', **pad)
+        p = self.caja(self, 'Partida en curso', borde=True); p.pack(fill='x', **pad)
         self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
                             padx=8, pady=6, cursor='arrow')
         for tag, kw in (('titulo', dict(font=('Segoe UI', 13, 'bold'), foreground='#123c7a')),
@@ -165,11 +196,15 @@ class Monitor(tk.Tk):
         self.tabla.tag_configure('eliminado', background='#eeeeee', foreground='#999999')
         self.tabla.pack(fill='x', **pad)
 
-        b = ttk.LabelFrame(self, text='Bitácora e informe'); b.pack(fill='both', expand=True, **pad)
-        self.log = tk.Text(b, height=12, font=('Consolas', 9), wrap='none')
-        sb = ttk.Scrollbar(b, command=self.log.yview); self.log['yscrollcommand'] = sb.set
+        b = self.caja(self, 'Bitácora e informe', borde=True); b.pack(fill='both', expand=True, **pad)
+        tf = tk.Frame(b); tf.pack(fill='both', expand=True, padx=8, pady=(4, 8))
+        self.log = tk.Text(tf, height=12, font=('Consolas', 9), wrap='none')
+        sb = ttk.Scrollbar(tf, command=self.log.yview); self.log['yscrollcommand'] = sb.set
         sb.pack(side='right', fill='y'); self.log.pack(fill='both', expand=True)
         self.protocol('WM_DELETE_WINDOW', self.salir)
+        # Todo widget de la ventana principal lleva '.' en sus bindtags: cualquier cambio de tamaño o lugar repinta.
+        self.pendiente = False
+        self.bind('<Configure>', lambda e: self.programar_repintado())
 
     def disponibles(self):
         d = os.path.join(tanda.JUEGO, 'SAVES')
@@ -214,25 +249,62 @@ class Monitor(tk.Tk):
     def aplicar_fondo(self):
         c = leer_config('Fondo')
         tipo, color, ruta = c.get('tipo', 'color'), c.get('color', '#f0f0f0'), c.get('textura', '')
-        st = ttk.Style(self)
         if tipo == 'textura' and os.path.exists(ruta):
-            # La textura se ve en el fondo de la ventana; los paneles quedan como tarjetas grises encima.
             t = Image.open(ruta).convert('RGB')
-            mosaico = Image.new('RGB', (2600, 1600))
-            for x in range(0, 2600, t.width):
-                for y in range(0, 1600, t.height):
-                    mosaico.paste(t, (x, y))
-            self.img_fondo = ImageTk.PhotoImage(mosaico)
-            self.fondo.configure(image=self.img_fondo, bg='#f0f0f0'); self.arriba.configure(bg='')
-            self.arriba.pack_configure(padx=6, pady=6)
-            color = '#f0f0f0'
+            self.mosaico = Image.new('RGB', (3840, 2160))
+            for x in range(0, 3840, t.width):
+                for y in range(0, 2160, t.height):
+                    self.mosaico.paste(t, (x, y))
+            rgb = t.resize((1, 1), Image.BOX).getpixel((0, 0))   # color medio de la textura
+            self.img_fondo = ImageTk.PhotoImage(self.mosaico)
+            self.fondo.configure(image=self.img_fondo)
         else:
-            self.img_fondo = None
-            self.fondo.configure(image='', bg=color); self.arriba.configure(bg=color)
-            self.arriba.pack_configure(padx=0, pady=0)
-        for estilo in ('TFrame', 'TLabel', 'TLabelframe', 'TLabelframe.Label', 'TCheckbutton'):
-            st.configure(estilo, background=color)
-        self.configure(bg=color)
+            self.mosaico = self.img_fondo = None
+            rgb = tuple(v // 257 for v in self.winfo_rgb(color))
+            self.fondo.configure(image='')
+        self.base = '#%02x%02x%02x' % rgb
+        # Letra negra sobre fondos claros, blanca sobre oscuros.
+        self.tinta = '#000000' if 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2] > 140 else '#ffffff'
+        self.configure(bg=self.base); self.fondo.configure(bg=self.base)
+        self.programar_repintado()
+
+    def programar_repintado(self):
+        if not self.pendiente:
+            self.pendiente = True
+            self.after(30, self.repintar)
+
+    def recorte(self, w, tam=None):
+        """El pedazo de mosaico que queda detrás del widget w (None si no hay textura o w no está a la vista)."""
+        if self.mosaico is None or not w.winfo_ismapped():
+            return None
+        x, y = w.winfo_rootx() - self.winfo_rootx(), w.winfo_rooty() - self.winfo_rooty()
+        ancho, alto = tam or (w.winfo_width(), w.winfo_height())
+        if ancho < 2 or alto < 2:
+            return None
+        return self.mosaico.crop((x, y, x + ancho, y + alto))
+
+    def foto(self, w, img):
+        self.fotos[w] = ImageTk.PhotoImage(img) if img is not None else ''
+        return self.fotos[w]
+
+    def pintar_icono(self, l):
+        img = self.iconos[l]
+        base = self.recorte(l, img.size)
+        base = base.convert('RGBA') if base is not None else Image.new('RGBA', img.size, self.base)
+        base.alpha_composite(img)
+        l.configure(image=self.foto(l, base), bg=self.base)
+
+    def repintar(self):
+        self.pendiente = False
+        for f, fondo in self.cajas:
+            f.configure(bg=self.base)
+            fondo.configure(image=self.foto(fondo, self.recorte(f)), bg=self.base)
+        for l in self.rotulos:
+            l.configure(image=self.foto(l, self.recorte(l)), bg=self.base, fg=self.tinta)
+        for c in self.checks:
+            c.configure(bg=self.base, activebackground=self.base)
+        for l in self.iconos:
+            self.pintar_icono(l)
 
     def configurar(self):
         from tkinter import colorchooser, filedialog
