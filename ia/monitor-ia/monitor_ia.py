@@ -48,19 +48,23 @@ class Monitor(tk.Tk):
     def armar(self):
         pad = dict(padx=8, pady=4)
         f = ttk.LabelFrame(self, text='Tanda'); f.pack(fill='x', **pad)
-        self.v_tanda = tk.StringVar(); ttk.Label(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')) \
-            .grid(row=0, column=0, columnspan=8, sticky='w', **pad)
-        ttk.Label(f, text='Partidas:').grid(row=1, column=0, sticky='e')
+        self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar()
+        ttk.Label(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8)
+        ttk.Label(f, textvariable=self.v_tanda2, font=('Segoe UI', 10)).pack(anchor='w', padx=8)
+        fila = ttk.Frame(f); fila.pack(anchor='w', **pad)
+        ttk.Label(fila, text='Partidas:').pack(side='left')
         self.v_partidas = tk.IntVar(value=6)
-        ttk.Spinbox(f, from_=1, to=200, width=5, textvariable=self.v_partidas).grid(row=1, column=1, sticky='w')
-        ttk.Label(f, text='Guardadas:').grid(row=1, column=2, sticky='e')
-        self.v_guardadas = tk.StringVar(value='Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor')
-        ttk.Entry(f, width=42, textvariable=self.v_guardadas).grid(row=1, column=3, sticky='w')
-        self.b_nueva = ttk.Button(f, text='Nueva tanda', command=lambda: self.arrancar('nueva'))
-        self.b_seguir = ttk.Button(f, text='Retomar', command=lambda: self.arrancar('seguir'))
-        self.b_cortar = ttk.Button(f, text='Cortar', command=self.cortar)
-        for k, b in enumerate((self.b_nueva, self.b_seguir, self.b_cortar)):
-            b.grid(row=1, column=4 + k, **pad)
+        ttk.Spinbox(fila, from_=1, to=500, width=5, textvariable=self.v_partidas).pack(side='left', padx=(4, 16))
+        ttk.Label(fila, text='Guardadas:').pack(side='left')
+        self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
+        self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
+        self.b_guardadas.pack(side='left', padx=4); self.rotular_guardadas()
+        fila = ttk.Frame(f); fila.pack(anchor='w', **pad)
+        self.b_nueva = ttk.Button(fila, text='Nueva tanda', command=lambda: self.arrancar('nueva'))
+        self.b_seguir = ttk.Button(fila, text='Retomar', command=lambda: self.arrancar('seguir'))
+        self.b_cortar = ttk.Button(fila, text='Cortar', command=self.cortar)
+        for b in (self.b_nueva, self.b_seguir, self.b_cortar):
+            b.pack(side='left', padx=(0, 8))
 
         c = ttk.LabelFrame(self, text='Controles'); c.pack(fill='x', **pad)
         self.v_mudo = tk.BooleanVar(value=True)
@@ -79,14 +83,26 @@ class Monitor(tk.Tk):
         cb.grid(row=0, column=4, **pad)
 
         p = ttk.LabelFrame(self, text='Partida en curso'); p.pack(fill='x', **pad)
-        self.v_partida = tk.StringVar(); ttk.Label(p, textvariable=self.v_partida, justify='left') \
-            .pack(anchor='w', **pad)
-        self.l_cuelgue = ttk.Label(p, foreground='#b00000'); self.l_cuelgue.pack(anchor='w', padx=8)
+        self.info = tk.Text(p, height=4, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
+                            padx=8, pady=6, cursor='arrow')
+        for tag, kw in (('titulo', dict(font=('Segoe UI', 13, 'bold'), foreground='#123c7a')),
+                        ('b', dict(font=('Segoe UI', 10, 'bold'))),
+                        ('prueba', dict(font=('Segoe UI', 10, 'bold'), foreground='#0b5ed7')),
+                        ('original', dict(font=('Segoe UI', 10, 'bold'), foreground='#b35c00')),
+                        ('gana', dict(font=('Segoe UI', 10, 'bold'), foreground='#1a7f37')),
+                        ('pierde', dict(font=('Segoe UI', 10, 'bold'), foreground='#c62828')),
+                        ('gris', dict(foreground='#666666'))):
+            self.info.tag_configure(tag, **kw)
+        self.info.pack(fill='x', **pad)
+        self.l_cuelgue = tk.Label(p, foreground='white', background='#c62828', font=('Segoe UI', 10, 'bold'))
         cols = ('color', 'ia', 'estado', 'pv', 'ciudades', 'oro', 'ejercitos', 'heroes')
         self.tabla = ttk.Treeview(p, columns=cols, show='headings', height=8)
         for k, t in zip(cols, ('Color', 'IA', 'Estado', 'PV', 'Ciudades', 'Oro', 'Ejércitos', 'Héroes')):
             self.tabla.heading(k, text=t); self.tabla.column(k, width=90, anchor='center')
-        self.tabla.tag_configure('prueba', background='#e4f0ff')
+        ttk.Style(self).configure('Treeview.Heading', font=('Segoe UI', 9, 'bold'))
+        self.tabla.tag_configure('prueba', background='#dbe9ff', foreground='#0b3d91')
+        self.tabla.tag_configure('original', background='#ffeedd', foreground='#7a3e00')
+        self.tabla.tag_configure('eliminado', background='#eeeeee', foreground='#999999')
         self.tabla.pack(fill='x', **pad)
 
         b = ttk.LabelFrame(self, text='Bitácora e informe'); b.pack(fill='both', expand=True, **pad)
@@ -94,6 +110,41 @@ class Monitor(tk.Tk):
         sb = ttk.Scrollbar(b, command=self.log.yview); self.log['yscrollcommand'] = sb.set
         sb.pack(side='right', fill='y'); self.log.pack(fill='both', expand=True)
         self.protocol('WM_DELETE_WINDOW', self.salir)
+
+    def disponibles(self):
+        d = os.path.join(tanda.JUEGO, 'SAVES')
+        if not os.path.isdir(d):
+            return []
+        return sorted(n[:-4] for n in os.listdir(d) if n.upper().startswith('TANDA_') and n.upper().endswith('.SAV'))
+
+    def rotular_guardadas(self):
+        n = len(self.guardadas)
+        txt = self.guardadas[0] if n == 1 else f'{n} partidas guardadas' if n else '(ninguna elegida)'
+        self.b_guardadas['text'] = txt + '  ▾'
+
+    def elegir_guardadas(self):
+        """Lista desplegable para marcar las Tanda_*.SAV de la carpeta del juego que entran en la tanda."""
+        todas = self.disponibles()
+        v = tk.Toplevel(self); v.title('Partidas guardadas'); v.transient(self); v.grab_set()
+        v.geometry(f'+{self.b_guardadas.winfo_rootx()}+{self.b_guardadas.winfo_rooty() + 30}')
+        ttk.Label(v, text=f'Marcá las partidas de la tanda ({len(todas)} disponibles):').pack(anchor='w', padx=8, pady=4)
+        lf = ttk.Frame(v); lf.pack(fill='both', expand=True, padx=8)
+        lb = tk.Listbox(lf, selectmode='multiple', height=min(15, max(5, len(todas))), width=40,
+                        activestyle='none', selectbackground='#0b5ed7', exportselection=False)
+        sb = ttk.Scrollbar(lf, command=lb.yview); lb['yscrollcommand'] = sb.set
+        sb.pack(side='right', fill='y'); lb.pack(side='left', fill='both', expand=True)
+        for i, g in enumerate(todas):
+            lb.insert('end', g.removeprefix('Tanda_'))
+            if g in self.guardadas:
+                lb.selection_set(i)
+        bf = ttk.Frame(v); bf.pack(fill='x', padx=8, pady=6)
+        ttk.Button(bf, text='Todas', command=lambda: lb.selection_set(0, 'end')).pack(side='left')
+        ttk.Button(bf, text='Ninguna', command=lambda: lb.selection_clear(0, 'end')).pack(side='left', padx=4)
+
+        def aceptar():
+            self.guardadas = [todas[i] for i in lb.curselection()]
+            self.rotular_guardadas(); v.destroy()
+        ttk.Button(bf, text='Aceptar', command=aceptar).pack(side='right')
 
     def guardar_monitor(self, i):
         import configparser
@@ -109,7 +160,9 @@ class Monitor(tk.Tk):
     def arrancar(self, accion):
         if self.corriendo():
             return
-        a = SimpleNamespace(accion=accion, partidas=self.v_partidas.get(), guardadas=self.v_guardadas.get(),
+        if accion == 'nueva' and not self.guardadas:
+            return messagebox.showwarning('Nueva tanda', 'Elegí al menos una partida guardada.')
+        a = SimpleNamespace(accion=accion, partidas=self.v_partidas.get(), guardadas=','.join(self.guardadas),
                             tope_turnos=0, cuelgue=CUELGUE_MIN)
         tanda.CORTAR.clear()
         tanda.CONTROL['silenciar'] = self.v_mudo.get()
@@ -163,22 +216,29 @@ class Monitor(tk.Tk):
         try:
             self.mostrar()
         except Exception as e:   # el juego puede estar escribiendo los CSV justo ahora
-            self.v_partida.set(f'(no se pudo leer el estado: {e})')
+            self.escribir((f'(no se pudo leer el estado: {e})', 'gris'))
         corre = self.corriendo() or self.externa
         for b in (self.b_nueva, self.b_seguir):
             b.state(['disabled'] if corre else ['!disabled'])
         self.b_cortar.state(['!disabled'] if self.corriendo() else ['disabled'])
         self.after(2000, self.refrescar)
 
+    def escribir(self, *partes):
+        """Reescribe el recuadro de la partida en curso: partes = (texto, estilo) o texto sin estilo."""
+        self.info.configure(state='normal'); self.info.delete('1.0', 'end')
+        for p in partes:
+            self.info.insert('end', *((p,) if isinstance(p, str) else p))
+        self.info.configure(state='disabled')
+
     def mostrar(self):
         import sqlite3
         self.externa = False
         if not os.path.exists(tanda.DB):
-            self.v_tanda.set('Sin tandas todavía.'); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); return
         db = sqlite3.connect(tanda.DB)
         t = db.execute('select id, inicio, plan, terminada from tanda order by id desc limit 1').fetchone()
         if not t:
-            self.v_tanda.set('Sin tandas todavía.'); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); return
         tid, inicio, plan, term = t
         total = len(json.loads(plan))
         parts = db.execute('select n, guardada, asignacion, inicio, fin, estado, turnos from partida where tanda=? '
@@ -189,7 +249,8 @@ class Monitor(tk.Tk):
         self.externa = bool(en_curso) and not self.corriendo() and juego_abierto()
         estado = ('terminada' if term else 'corriendo' if self.corriendo() else
                   'corriendo fuera del Monitor' if self.externa else 'detenida')
-        txt = f'Tanda {tid} ({estado}) — desde {inicio} — {len(hechas)} de {total} partidas terminadas'
+        self.v_tanda.set(f'Tanda {tid} ({estado}) — desde {inicio}')
+        txt = f'{len(hechas)} de {total} partidas terminadas'
         if en_curso:
             txt += f' — jugando la {en_curso[0] + 1}.ª'
         dur = [time.mktime(time.strptime(p[4], '%Y-%m-%d %H:%M:%S')) -
@@ -197,12 +258,12 @@ class Monitor(tk.Tk):
         if dur and not term:
             fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
-        self.v_tanda.set(txt)
+        self.v_tanda2.set(txt)
 
         if not en_curso:
-            self.v_partida.set('Ninguna partida en curso.' + ''.join(
-                f'\n  {p[0] + 1}. {p[1]}: {p[5]}, {p[6] or 0} turnos' for p in hechas[-5:]))
-            self.l_cuelgue['text'] = ''
+            self.escribir(('Ninguna partida en curso', 'titulo'), *(
+                f'\n  {p[0] + 1}. {p[1].removeprefix("Tanda_")}: {p[5]}, {p[6] or 0} turnos' for p in hechas[-5:]))
+            self.l_cuelgue.pack_forget()
             self.tabla.delete(*self.tabla.get_children())
             return
         n, guardada, asig, ini = en_curso[:4]
@@ -213,14 +274,22 @@ class Monitor(tk.Tk):
         res = {ia: [0, 0] for ia in (0, 1)}
         for r in bats:
             res.setdefault(r[7], [0, 0])[0 if r[6] == 1 else 1] += 1
-        bt = '   '.join(f'IA {IAS.get(ia, ia)}: {g} ganadas / {p} perdidas' for ia, (g, p) in res.items())
-        self.v_partida.set(f'Partida {n + 1}: {guardada.removeprefix("Tanda_")} — turno {turno} — empezó {ini[11:]}\n'
-                           f'Colores con la IA de prueba: {", ".join(map(str, prueba))}\n'
-                           f'Batallas atacando ({len(bats)}): {bt}')
+        bt = []
+        for ia, (g, p) in res.items():
+            bt += [('   IA ' + IAS.get(ia, str(ia)) + ': ', IAS.get(ia, 'b')), (f'{g} ganadas', 'gana'), ' / ',
+                   (f'{p} perdidas', 'pierde')]
+        self.escribir((f'Partida {n + 1} · {guardada.removeprefix("Tanda_")} · turno {turno}', 'titulo'),
+                      (f'     empezó {ini[11:]}\n', 'gris'),
+                      'Colores con la IA de prueba: ', (', '.join(map(str, prueba)) + '\n', 'prueba'),
+                      ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt)
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
-        self.l_cuelgue['text'] = (f'Sin turnos nuevos hace {quieto / 60:.0f} min: posible cuelgue '
-                                  f'(se corta sola a los {CUELGUE_MIN} min).') if quieto > AVISO_MIN * 60 else ''
+        if quieto > AVISO_MIN * 60:
+            self.l_cuelgue['text'] = (f'  Sin turnos nuevos hace {quieto / 60:.0f} min: posible cuelgue '
+                                      f'(se corta sola a los {CUELGUE_MIN} min).  ')
+            self.l_cuelgue.pack(anchor='w', padx=8, before=self.tabla)
+        else:
+            self.l_cuelgue.pack_forget()
         ultimo = {}
         for r in filas:
             ultimo[r[1]] = dict(zip(tanda.COL_T, r))
@@ -228,7 +297,7 @@ class Monitor(tk.Tk):
         for c in sorted(ultimo):
             u = ultimo[c]
             vivo = u['vivo'] and u['turno'] >= turno - 1
-            self.tabla.insert('', 'end', tags=('prueba',) if u['ia'] == 1 else (), values=(
+            self.tabla.insert('', 'end', tags=('eliminado' if not vivo else 'prueba' if u['ia'] == 1 else 'original',), values=(
                 c, IAS.get(u['ia'], u['ia']), 'vivo' if vivo else 'eliminado',
                 tanda.pv_calc(u['ciudades'], u['heroes'], u['oro']) if vivo else 0,
                 # de un eliminado, IA.CSV guarda lo que tenía en su último turno vivo: no vale mostrarlo
