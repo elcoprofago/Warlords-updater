@@ -1,7 +1,7 @@
 # Monitor de IA: panel de control de las tandas de ia\tanda.py (ia\PENDIENTE-monitor-ia.md).
 # Corre la tanda en un hilo propio (reemplaza tanda.bat y monitor.bat) y muestra en vivo la partida en curso, leyendo
 # ia\datos.db y los CSV que escribe DarklordAV.exe. Se empaqueta con build.py como ia\Monitor-IA.exe.
-import ctypes, io, json, os, queue, subprocess, sys, threading, time, winsound
+import configparser, ctypes, io, json, os, queue, subprocess, sys, threading, time, winsound
 import tkinter as tk
 import psutil
 from PIL import Image, ImageTk
@@ -55,6 +55,19 @@ class Medidor(ttk.Frame):
         self.l_txt['text'] = f'{self.nombre} {pct:.0f}%'
 
 
+def leer_config(seccion):
+    c = configparser.ConfigParser(); c.read(tanda.CONFIG)
+    return dict(c[seccion]) if c.has_section(seccion) else {}
+
+
+def guardar_config(seccion, **valores):
+    """Cambia una sección de tanda.ini sin tocar las demás (Pantalla la usa también tanda.py)."""
+    c = configparser.ConfigParser(); c.read(tanda.CONFIG)
+    c[seccion] = valores
+    with open(tanda.CONFIG, 'w') as f:
+        c.write(f)
+
+
 class Salida(io.TextIOBase):
     """Lo que tanda.py imprime va a la bitácora del panel."""
     def __init__(self, cola):
@@ -75,17 +88,25 @@ class Monitor(tk.Tk):
         self.hilo = None
         self.tid = None
         self.retomable = False
-        self.externa = False   # tanda arrancada fuera del panel (python ia	anda.py): solo se mira
+        self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
+        self.aplicar_fondo()
         self.refrescar()
 
     # ---- interfaz ----
     def armar(self):
         pad = dict(padx=8, pady=4)
-        arriba = ttk.Frame(self); arriba.pack(fill='x')
-        self.medidores = [Medidor(arriba, 'CPU'), Medidor(arriba, 'RAM')]
-        for m in reversed(self.medidores):
-            m.pack(side='right', anchor='n', padx=(0, 8), pady=(12, 0))
+        self.fondo = tk.Label(self, bd=0); self.fondo.place(x=0, y=0, relwidth=1, relheight=1)
+        arriba = tk.Frame(self, bd=0); arriba.pack(fill='x'); self.arriba = arriba
+        tarjeta = ttk.Frame(arriba, padding=4); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
+        semaforos = ttk.Frame(tarjeta); semaforos.pack()
+        self.medidores = [Medidor(semaforos, 'CPU'), Medidor(semaforos, 'RAM')]
+        for m in self.medidores:
+            m.pack(side='left', padx=2)
+        rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
+        self.img_rueda = ImageTk.PhotoImage(rueda)
+        b = ttk.Label(tarjeta, image=self.img_rueda, cursor='hand2'); b.pack(anchor='e', pady=(4, 0))
+        b.bind('<Button-1>', lambda e: self.configurar())
         f = ttk.LabelFrame(arriba, text='Tanda'); f.pack(side='left', fill='x', expand=True, **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar()
         ttk.Label(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8)
@@ -186,11 +207,72 @@ class Monitor(tk.Tk):
         ttk.Button(bf, text='Aceptar', command=aceptar).pack(side='right')
 
     def guardar_monitor(self, i):
-        import configparser
-        c = configparser.ConfigParser(); c['Pantalla'] = {'preferida': self.mons[i][0]}
-        with open(tanda.CONFIG, 'w') as f:
-            c.write(f)
+        guardar_config('Pantalla', preferida=self.mons[i][0])
         print(f'Monitor del juego: {self.mons[i][0]} (el juego se pasa en unos segundos).')
+
+    # ---- fondo (ruedita): color liso o textura en mosaico, como en USBagent; se guarda en tanda.ini ----
+    def aplicar_fondo(self):
+        c = leer_config('Fondo')
+        tipo, color, ruta = c.get('tipo', 'color'), c.get('color', '#f0f0f0'), c.get('textura', '')
+        st = ttk.Style(self)
+        if tipo == 'textura' and os.path.exists(ruta):
+            # La textura se ve en el fondo de la ventana; los paneles quedan como tarjetas grises encima.
+            t = Image.open(ruta).convert('RGB')
+            mosaico = Image.new('RGB', (2600, 1600))
+            for x in range(0, 2600, t.width):
+                for y in range(0, 1600, t.height):
+                    mosaico.paste(t, (x, y))
+            self.img_fondo = ImageTk.PhotoImage(mosaico)
+            self.fondo.configure(image=self.img_fondo, bg='#f0f0f0'); self.arriba.configure(bg='')
+            self.arriba.pack_configure(padx=6, pady=6)
+            color = '#f0f0f0'
+        else:
+            self.img_fondo = None
+            self.fondo.configure(image='', bg=color); self.arriba.configure(bg=color)
+            self.arriba.pack_configure(padx=0, pady=0)
+        for estilo in ('TFrame', 'TLabel', 'TLabelframe', 'TLabelframe.Label', 'TCheckbutton'):
+            st.configure(estilo, background=color)
+        self.configure(bg=color)
+
+    def configurar(self):
+        from tkinter import colorchooser, filedialog
+        c = leer_config('Fondo')
+        v = tk.Toplevel(self); v.title('Configuración'); v.transient(self); v.grab_set(); v.resizable(False, False)
+        v.geometry(f'+{self.winfo_rootx() + self.winfo_width() - 380}+{self.winfo_rooty() + 90}')
+        tipo = tk.StringVar(value=c.get('tipo', 'color'))
+        color = tk.StringVar(value=c.get('color', '#f0f0f0'))
+        ruta = tk.StringVar(value=c.get('textura', ''))
+        fr = tk.Frame(v, padx=12, pady=10); fr.pack(fill='both')
+        tk.Label(fr, text='Fondo de la ventana:', font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, columnspan=3,
+                                                                                    sticky='w')
+        tk.Radiobutton(fr, text='Color liso', variable=tipo, value='color').grid(row=1, column=0, sticky='w')
+        muestra = tk.Label(fr, width=4, bg=color.get(), relief='solid', bd=1)
+        muestra.grid(row=2, column=0, sticky='w', padx=(22, 0))
+
+        def elegir_color():
+            r = colorchooser.askcolor(color.get(), parent=v)[1]
+            if r:
+                color.set(r); muestra['bg'] = r; tipo.set('color')
+        tk.Button(fr, text='Elegir color...', command=elegir_color).grid(row=2, column=1, sticky='w', padx=6)
+        tk.Radiobutton(fr, text='Textura (imagen en mosaico)', variable=tipo, value='textura')             .grid(row=3, column=0, columnspan=3, sticky='w', pady=(8, 0))
+        tk.Entry(fr, textvariable=ruta, width=34, state='readonly').grid(row=4, column=0, columnspan=2, sticky='w',
+                                                                         padx=(22, 0))
+
+        def examinar():
+            r = filedialog.askopenfilename(parent=v, title='Imagen para la textura',
+                                           filetypes=[('Imágenes', '*.png *.jpg *.jpeg *.bmp *.gif')])
+            if r:
+                ruta.set(os.path.normpath(r)); tipo.set('textura')
+        tk.Button(fr, text='Examinar...', command=examinar).grid(row=4, column=2, padx=6)
+
+        def aceptar():
+            if tipo.get() == 'textura' and not os.path.exists(ruta.get()):
+                return messagebox.showwarning('Configuración', 'Elegí una imagen para la textura.', parent=v)
+            guardar_config('Fondo', tipo=tipo.get(), color=color.get(), textura=ruta.get())
+            self.aplicar_fondo(); v.destroy()
+        bf = tk.Frame(fr); bf.grid(row=5, column=0, columnspan=3, sticky='e', pady=(12, 0))
+        tk.Button(bf, text='Aceptar', width=10, command=aceptar).pack(side='left', padx=4)
+        tk.Button(bf, text='Cancelar', width=10, command=v.destroy).pack(side='left')
 
     # ---- tanda ----
     def corriendo(self):

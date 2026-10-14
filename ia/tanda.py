@@ -159,7 +159,7 @@ def elegir_monitor():
         r = input(f'Número del monitor para el juego (1-{len(ms)}): ').strip()
         if r.isdigit() and 1 <= int(r) <= len(ms):
             break
-    c = configparser.ConfigParser(); c['Pantalla'] = {'preferida': ms[int(r) - 1][0]}
+    c = configparser.ConfigParser(); c.read(CONFIG); c['Pantalla'] = {'preferida': ms[int(r) - 1][0]}
     with open(CONFIG, 'w') as f:
         c.write(f)
     print(f'Guardado: el juego se abre en {ms[int(r) - 1][0]}.')
