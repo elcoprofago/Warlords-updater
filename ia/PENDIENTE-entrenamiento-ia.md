@@ -93,3 +93,11 @@ mensajes son casi todos de gráficos; no sirve para la IA.
 4. Auxiliar de tandas (Python): arrancar el juego, iniciar partida (menús o parche), vigilar cuelgues, pasar
    DATA\IA.CSV a ia\datos.db, rotación de colores, informe.
 Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
+
+### 13/10/2026 (2)
+- Probado en vivo: el registro por turno funciona (IA.CSV, turnos 1-4). Interrumpir la partida: Tab + clic.
+- Registro de batallas hecho (vista-aliada 1.0.28.0): ia_bat reemplaza la llamada 0x469f54 -> 0x465c80 y agrega a
+  DATA\IA_BAT.CSV turno, atacante, defensor, x, y, ciudad, resultado, ia de cada uno, cantidades antes y vivos
+  después, y ranuras s0..s16 de cada lado. Probado emulado (prueba_iaregistro.py); falta la prueba en vivo (TAREAS).
+- Próximo: fin de partida (PV y podio, empates), después el programa de tandas.
+
