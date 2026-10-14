@@ -62,3 +62,10 @@ de datos.db las tandas 2 y 3 (pruebas abandonadas) con sus partidas.
 El panel Tanda muestra con qué parche juega la tanda mostrada (vista-aliada y huella del exe) y con cuál jugaron
 todas, agrupadas de corrido. tanda.py lo registra al crear la tanda y se niega a retomar con otro exe.
 Falta recompilar Monitor-IA.exe: estaba abierto jugando la tanda 5. Se recompila solo cuando se cierre.
+
+## Pedido para después de las pruebas (14/10/2026): chances por posición, en PDF
+Botón "Exportar" en el Monitor: un PDF por mapa con una grilla por posición (color de arranque): partidas jugadas,
+victorias, puesto promedio, PV promedio, turno promedio de eliminación y margen de error. Sale de las tablas
+resultado y partida de datos.db. Solo con partidas comparables: mismo bando en los 8 colores, mismo exe, y separando
+o compensando la IA de prueba y la original (en cada par de partidas una posición juega con cada una). La base
+principal son las tandas 21 a 40 (un solo mapa por tanda). Mostrar siempre cuántas partidas sostienen cada número.
