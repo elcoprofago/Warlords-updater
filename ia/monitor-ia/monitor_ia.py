@@ -104,6 +104,35 @@ class Monitor(tk.Tk):
             self.rotulo(f, text=titulo, font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=6, pady=(3, 0))
         return f
 
+    def panel(self, padre, titulo):
+        """Caja con título y flechita ▼/▶ para plegarla (como en GPUmon). Devuelve (recuadro, contenido)."""
+        caja = self.caja(padre, borde=True)
+        cab = self.caja(caja); cab.pack(fill='x', padx=6, pady=(3, 0))
+        self.rotulo(cab, text=titulo, font=('Segoe UI', 10, 'bold')).pack(side='left')
+        cuerpo = self.caja(caja)
+        flecha = tk.Button(cab, text='▼', font=('Segoe UI', 7), width=2, padx=0, pady=0, relief='solid', bd=1,
+                           cursor='hand2', takefocus=False, command=lambda: self.plegar(caja, cuerpo, flecha))
+        flecha.pack(side='left', padx=(6, 0)); self.flechas.append(flecha)
+        cuerpo.pack(fill='both', expand=True)
+        pie = self.caja(caja); pie.configure(height=3); pie.pack(fill='x')   # aire bajo el título plegado
+        cuerpo.pie = pie
+        return caja, cuerpo
+
+    def plegar(self, caja, cuerpo, flecha):
+        self.update_idletasks()
+        antes = self.winfo_reqheight()
+        plegar = bool(cuerpo.winfo_manager())
+        if plegar:
+            cuerpo.pack_forget()
+        else:
+            cuerpo.pack(fill='both', expand=True, before=cuerpo.pie)
+        flecha['text'] = '▶' if plegar else '▼'
+        if caja is self.p_bitacora:   # plegada, la bitácora deja de absorber el alto sobrante
+            caja.pack_configure(fill='x', expand=False) if plegar else caja.pack_configure(fill='both', expand=True)
+        self.update_idletasks()
+        alto = max(200, self.winfo_height() + self.winfo_reqheight() - antes)
+        self.geometry(f'{self.winfo_width()}x{alto}')
+
     def rotulo(self, padre, **kw):
         kw.setdefault('font', ('Segoe UI', 10))
         l = tk.Label(padre, bd=0, highlightthickness=0, padx=0, pady=0, compound='center', **kw)
@@ -125,7 +154,7 @@ class Monitor(tk.Tk):
 
     def armar(self):
         pad = dict(padx=8, pady=4)
-        self.cajas, self.rotulos, self.iconos, self.checks, self.fotos = [], [], {}, [], {}
+        self.cajas, self.rotulos, self.iconos, self.checks, self.fotos, self.flechas = [], [], {}, [], {}, []
         self.mosaico, self.base, self.tinta = None, '#f0f0f0', '#000000'
         self.fondo = tk.Label(self, bd=0); self.fondo.place(x=0, y=0, relwidth=1, relheight=1)
         arriba = self.caja(self); arriba.pack(fill='x')
@@ -137,7 +166,7 @@ class Monitor(tk.Tk):
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.pack(anchor='e', padx=4, pady=4)
         b.bind('<Button-1>', lambda e: self.configurar())
-        f = self.caja(arriba, 'Tanda', borde=True); f.pack(side='left', fill='x', expand=True, **pad)
+        caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar()
         self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
         self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
@@ -156,7 +185,7 @@ class Monitor(tk.Tk):
         for b in (self.b_nueva, self.b_seguir, self.b_cortar):
             b.pack(side='left', padx=(0, 8))
 
-        c = self.caja(self, 'Controles', borde=True); c.pack(fill='x', **pad)
+        caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
         self.v_mudo = tk.BooleanVar(value=True)
         self.check(c, 'Sonido del juego desactivado', self.v_mudo,
@@ -173,7 +202,7 @@ class Monitor(tk.Tk):
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
         cb.grid(row=1, column=1, sticky='w', **pad)
 
-        p = self.caja(self, 'Partida en curso', borde=True); p.pack(fill='x', **pad)
+        caja, p = self.panel(self, 'Partida en curso'); caja.pack(fill='x', **pad)
         self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
                             padx=8, pady=6, cursor='arrow')
         for tag, kw in (('titulo', dict(font=('Segoe UI', 13, 'bold'), foreground='#123c7a')),
@@ -196,7 +225,8 @@ class Monitor(tk.Tk):
         self.tabla.tag_configure('eliminado', background='#eeeeee', foreground='#999999')
         self.tabla.pack(fill='x', **pad)
 
-        b = self.caja(self, 'Bitácora e informe', borde=True); b.pack(fill='both', expand=True, **pad)
+        self.p_bitacora, b = self.panel(self, 'Bitácora e informe')
+        self.p_bitacora.pack(fill='both', expand=True, **pad)
         tf = tk.Frame(b); tf.pack(fill='both', expand=True, padx=8, pady=(4, 8))
         self.log = tk.Text(tf, height=12, font=('Consolas', 9), wrap='none')
         sb = ttk.Scrollbar(tf, command=self.log.yview); self.log['yscrollcommand'] = sb.set
@@ -301,8 +331,10 @@ class Monitor(tk.Tk):
             fondo.configure(image=self.foto(fondo, self.recorte(f)), bg=self.base)
         for l in self.rotulos:
             l.configure(image=self.foto(l, self.recorte(l)), bg=self.base, fg=self.tinta)
-        for c in self.checks:
+        for c in self.checks + self.flechas:
             c.configure(bg=self.base, activebackground=self.base)
+        for c in self.flechas:
+            c.configure(fg=self.tinta, activeforeground=self.tinta)
         for l in self.iconos:
             self.pintar_icono(l)
 
