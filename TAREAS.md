@@ -77,7 +77,8 @@ Resultado:
 
 ## IA: probar el Monitor de IA (14/10/2026)
 Reemplaza a tanda.bat y monitor.bat.
-1. Hacé doble clic en **F:\sourceeposctualizador-warlords\ia\Monitor-IA.exe**.
+1. Hacé doble clic en **F:\source
+eposctualizador-warlords\ia\Monitor-IA.exe**.
 2. Arriba aparece la tanda 4, que quedó a medias. Apretá **Retomar**: tiene que seguir con la partida 2.
    (Para una tanda nueva: poné la cantidad de partidas y apretá **Nueva tanda**.)
 3. Mirá que la tabla de colores se vaya actualizando con los turnos y que el juego no suene.
@@ -86,7 +87,7 @@ Reemplaza a tanda.bat y monitor.bat.
 Anotá acá qué funcionó, qué no, y qué te gustaría cambiar o agregar.
 Resultado:
 
-## IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
+## [RESUELTA] IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
 Las tandas no arman bandos: cargan las partidas guardadas Tanda_Scarpart, Tanda_Borderlands y Tanda_Kor tal
 como quedaron. Para que todos los colores jueguen con el mismo bando hay que volver a guardar esas 3 partidas.
 Para cada escenario (Scarpart, The Borderlands y Kor):
@@ -97,4 +98,4 @@ Para cada escenario (Scarpart, The Borderlands y Kor):
 2. Apenas empiece, pasá un bando a Humano y guardá la partida con el **mismo nombre de antes**
    (Tanda_Scarpart, Tanda_Borderlands o Tanda_Kor), aceptando reemplazar la anterior.
 3. Anotá acá qué .PGS usaste. Después la tanda se larga como siempre, con **ia\tanda.bat**.
-Resultado:
+Resultado: hecho (16:25 a 16:28). Verificado por Claude: los 8 colores tienen el mismo bando en las 3 partidas.

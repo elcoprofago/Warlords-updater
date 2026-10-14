@@ -213,9 +213,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Tanda 1 = 1.0.30.0, deducido de las fechas de los commits (1.0.30.0 a las 23:53 del 13/10, 1.0.31.0 a las 01:54
   del 14/10, tanda a las 00:22); su huella no se puede saber.
 - Cronograma acordado con el usuario (14/10/2026): tandas 6 a 20, todos contra todos, mismo bando en los 8
-  colores, 3 mapas. Tandas 21 a 40: un solo mapa y un solo bando, para estudiar las posiciones (Scarpart, hecho por
+  colores, 3 mapas. Tandas 21 a 40: un solo mapa (las 20 tandas en el mismo, decidido por el usuario) y un solo bando, para estudiar las posiciones (Scarpart, hecho por
   el usuario, tiene posiciones muy malas y muy buenas). Después, modalidades (Crusade, norte contra sur), cada una
   en su tanda y con todo lo demás igual.
   Etapa "medir bandos PGS" (después de la 40): objetivo propio, saber qué .PGS ganan más y cuáles menos, valga o no
   para mejorar la IA. Varios .PGS distintos rotando por todas las posiciones de un mismo mapa, la misma IA en todos
   los colores. Antes hay que registrar en datos.db qué .PGS jugó cada color (ia\PENDIENTE-monitor-ia.md).
+- Bandos verificados dentro de los .SAV (14/10/2026, 16:25-16:28, rehechas por el usuario): Tanda_Scarpart,
+  Tanda_Borderlands y Tanda_Kor tienen las mismas 16 unidades en los 8 colores. Control: ABN_000_29.SAV da
+  "distintos". tanda.py lo anota solo en tanda.bandos desde la versión que sigue a Monitor-IA.exe de las 16:15; si la
+  tanda 6 se larga con ese exe, su columna bandos se carga a mano con lo verificado acá.

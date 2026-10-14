@@ -42,7 +42,7 @@ COL_F = ['turno', 'orden', 'puesto', 'color', 'ia', 'pv', 'ciudades', 'oro']
 
 ESQUEMA = f'''
 create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0,
-    parche text, exe text);
+    parche text, exe text, bandos text);
 create table if not exists partida (id integer primary key, tanda integer, n integer, guardada text,
     asignacion text, inicio text, fin text, estado text, turnos integer);
 create table if not exists turno (partida integer, {', '.join(c + ' integer' for c in COL_T)});
@@ -68,6 +68,22 @@ def parche_actual():
             if l.startswith('vista-aliada|'):
                 ver = l.split('|')[1]
     return ver, exe
+
+
+# Bandos de cada color en el .SAV: 8 jugadores x 16 unidades de 0xfc bytes, el mismo registro que el exe tiene en
+# 0x53c410; en los .SAV de 8 bandos empieza en 0x383f5 (hallado en las Tanda_*.SAV, contrastado con otras guardadas).
+SAV_BANDOS, UNIDAD = 0x383f5, 0xfc
+
+
+def bandos(guardada):
+    """'común' si los 8 colores tienen las mismas 16 unidades, 'distintos' si no, '?' si el bloque no se reconoce."""
+    with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
+        d = f.read()
+    r = 16 * UNIDAD
+    colores = [d[SAV_BANDOS + c * r:SAV_BANDOS + (c + 1) * r] for c in range(8)]
+    if len(colores[7]) < r or not all(c[:1].isalpha() for c in colores):
+        return '?'
+    return 'común' if all(c == colores[0] for c in colores) else 'distintos'
 
 
 def ahora():
@@ -348,7 +364,7 @@ def preparar(a):
     """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
     db = sqlite3.connect(DB, check_same_thread=False); db.executescript(ESQUEMA)
     cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
-    for c in ('parche', 'exe'):   # bases anteriores al registro del parche
+    for c in ('parche', 'exe', 'bandos'):   # bases anteriores al registro del parche y de los bandos
         if c not in cols:
             db.execute(f'alter table tanda add column {c} text')
     ver, exe = parche_actual()
@@ -366,8 +382,10 @@ def preparar(a):
         faltan = [g for g in gs if not os.path.exists(os.path.join(JUEGO, 'SAVES', g + '.SAV'))]
         if faltan:
             sys.exit(f'No existen en {JUEGO}\\SAVES: {", ".join(g + ".SAV" for g in faltan)}')
-        tid = db.execute('insert into tanda (inicio, plan, parche, exe) values (?,?,?,?)',
-                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe)).lastrowid
+        bs = {g: bandos(g) for g in gs}
+        print('Bandos: ' + ', '.join(f'{g.removeprefix("Tanda_")} {b}' for g, b in bs.items()), flush=True)
+        tid = db.execute('insert into tanda (inicio, plan, parche, exe, bandos) values (?,?,?,?,?)',
+                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe, json.dumps(bs))).lastrowid
         db.commit()
     else:
         # Solo la última tanda: una vieja abandonada (por ejemplo, de pruebas) no se retoma por sorpresa.
