@@ -158,6 +158,12 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
 - El juego corre en ventana (dxcfg): tanda.py la lleva al monitor elegido y le da su tamaño. Lo comprueba cada 5 s
   porque el juego cambia de ventana (lanzador 600x400, después la de juego del tamaño del monitor donde arrancó).
   Probado en vivo en los monitores de 1024x768 y 1366x768: la partida se ve completa, escalada.
+  **Pero el mouse no funciona ahí** (lo vio el usuario; medido 14/10/2026 con SetCursorPos y captura): el juego toma
+  la posición del mouse relativa al monitor PRINCIPAL, sin importar dónde esté la ventana (con o sin cambiarle el
+  tamaño). En un monitor a la izquierda el cursor queda pegado al borde izquierdo. Es del ddraw.dll de GOG; mover la
+  ventana no sirve. Vías: que el monitor elegido pase a ser el principal mientras dura la tanda, o cambiar el ddraw.
+- Tanda_Kor no juega sola: carga en el turno de un bando Humano y queda esperando (3 min sin turnos, medido sin
+  tocar la PC). Scarpart sí (turnos desde el primer minuto). Kor no se usó en la tanda 1.
 - Hallado al probar: la entrada sola a "Single Player" de vista-aliada 1.0.31.0 (ia_menu -> 0x443980) NO funciona
   en vivo: con [Tanda] el lanzador quedó 90 s quieto, con la ventana movida o sin mover. tanda.py ahora aprieta el
   botón (WM_COMMAND id 1001 al lanzador) y así entra y carga la partida (probado con Tanda_Kor). El llamado de
