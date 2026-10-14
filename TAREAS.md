@@ -53,21 +53,6 @@ Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
 ## IA: tanda sin tocar nada (14/10/2026)
 1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\monitor.bat**, escribí el número del monitor donde
    querés ver el juego y Enter. Queda guardado; para cambiarlo, se vuelve a abrir monitor.bat.
-2. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y no toques nada.
-3. Cada partida tiene que empezar sola, sin apretar "Single Player", y verse en el monitor que elegiste.
-Resultado:
-
-## [RESUELTA] IA: ¿el juego se ve al abrirlo a mano? (14/10/2026)
-Desde las 2:50 de hoy, cuando lo abro yo, el juego queda en una ventana totalmente blanca, incluso el
-Darklord.exe original. Necesito saber si a vos te pasa lo mismo:
-1. Abrí el juego con el acceso directo de siempre (Darklord.exe original) y apretá "Single Player".
-2. Anotá acá si se ve el menú del juego o si la ventana queda blanca.
-3. Hacé lo mismo con **DarklordAV.exe** y anotá lo mismo.
-Resultado: los dos funcionan perfectamente abiertos a mano.
-  (Claude: la ventana blanca la causaba la forma en que tanda.py apretaba "Single Player"; ya se corrigió.)
-
-## IA: tanda en segundo plano (14/10/2026)
-1. Si tenés el juego abierto, cerralo.
 2. Hacé doble clic en **F:\sourceeposctualizador-warlords\ia	anda.bat** y seguí usando la PC normalmente.
    Al empezar cada partida el juego puede aparecer un instante adelante; en unos segundos se pasa solo al monitor
    elegido con monitor.bat.
