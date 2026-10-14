@@ -3,6 +3,8 @@
 # ia\datos.db y los CSV que escribe DarklordAV.exe. Se empaqueta con build.py como ia\Monitor-IA.exe.
 import ctypes, io, json, os, queue, subprocess, sys, threading, time, winsound
 import tkinter as tk
+import psutil
+from PIL import Image, ImageTk
 from tkinter import messagebox, ttk
 from types import SimpleNamespace
 
@@ -21,6 +23,38 @@ def juego_abierto():
     return tanda.EXE.lower() in r.stdout.lower()
 
 
+# Círculo de consumo (CPU o RAM de toda la PC), con las imágenes y los cortes de semáforo de USBagent
+# (tools/usbagent-hub/Controls/PerfCircle.xaml.cs): <30 % / 30-69 % / >=70 %, tres imágenes por franja.
+ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'assets')
+
+
+class Medidor(ttk.Frame):
+    TAM = 52
+
+    def __init__(self, padre, nombre):
+        super().__init__(padre)
+        self.nombre = nombre
+        marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
+        self.imgs = []
+        for i in range(1, 10):
+            c = Image.open(os.path.join(ASSETS, f'circle_{i:02}.png')).convert('RGBA')
+            c.alpha_composite(marco.resize(c.size))
+            self.imgs.append(ImageTk.PhotoImage(c.resize((self.TAM, self.TAM), Image.LANCZOS)))
+        self.l_img = ttk.Label(self, image=self.imgs[0]); self.l_img.pack()
+        self.l_txt = ttk.Label(self, font=('Segoe UI', 8, 'bold'), width=9, anchor='center'); self.l_txt.pack()
+
+    def poner(self, pct):
+        if pct < 30:
+            banda, pos = 0, pct / 30
+        elif pct < 70:
+            banda, pos = 1, (pct - 30) / 40
+        else:
+            banda, pos = 2, (pct - 70) / 30
+        i = banda * 3 + min(2, max(0, round(pos * 2)))
+        self.l_img['image'] = self.imgs[i]
+        self.l_txt['text'] = f'{self.nombre} {pct:.0f}%'
+
+
 class Salida(io.TextIOBase):
     """Lo que tanda.py imprime va a la bitácora del panel."""
     def __init__(self, cola):
@@ -35,7 +69,7 @@ class Monitor(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Monitor de IA')
-        self.geometry('900x720')
+        self.geometry('680x760')
         self.cola = queue.Queue()
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
@@ -47,7 +81,11 @@ class Monitor(tk.Tk):
     # ---- interfaz ----
     def armar(self):
         pad = dict(padx=8, pady=4)
-        f = ttk.LabelFrame(self, text='Tanda'); f.pack(fill='x', **pad)
+        arriba = ttk.Frame(self); arriba.pack(fill='x')
+        self.medidores = [Medidor(arriba, 'CPU'), Medidor(arriba, 'RAM')]
+        for m in reversed(self.medidores):
+            m.pack(side='right', anchor='n', padx=(0, 8), pady=(12, 0))
+        f = ttk.LabelFrame(arriba, text='Tanda'); f.pack(side='left', fill='x', expand=True, **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar()
         ttk.Label(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8)
         ttk.Label(f, textvariable=self.v_tanda2, font=('Segoe UI', 10)).pack(anchor='w', padx=8)
@@ -72,7 +110,7 @@ class Monitor(tk.Tk):
                         command=lambda: tanda.CONTROL.update(silenciar=self.v_mudo.get())).grid(row=0, column=0, **pad)
         self.v_alarma = tk.BooleanVar(value=True)
         ttk.Checkbutton(c, text='Alarma al terminar la tanda', variable=self.v_alarma).grid(row=0, column=1, **pad)
-        ttk.Label(c, text='Monitor del juego:').grid(row=0, column=3, sticky='e')
+        ttk.Label(c, text='Monitor del juego:').grid(row=1, column=0, sticky='w', **pad)
         self.mons = tanda.monitores()
         nombres = [f'{m[0]} ({m[3]}x{m[4]}){" principal" if m[5] else ""}' for m in self.mons]
         self.v_mon = tk.StringVar()
@@ -80,7 +118,7 @@ class Monitor(tk.Tk):
         pref = tanda.monitor_configurado()[0]
         cb.current(next((i for i, m in enumerate(self.mons) if m[0] == pref), 0))
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
-        cb.grid(row=0, column=4, **pad)
+        cb.grid(row=1, column=1, sticky='w', **pad)
 
         p = ttk.LabelFrame(self, text='Partida en curso'); p.pack(fill='x', **pad)
         self.info = tk.Text(p, height=4, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
@@ -98,7 +136,7 @@ class Monitor(tk.Tk):
         cols = ('color', 'ia', 'estado', 'pv', 'ciudades', 'oro', 'ejercitos', 'heroes')
         self.tabla = ttk.Treeview(p, columns=cols, show='headings', height=8)
         for k, t in zip(cols, ('Color', 'IA', 'Estado', 'PV', 'Ciudades', 'Oro', 'Ejércitos', 'Héroes')):
-            self.tabla.heading(k, text=t); self.tabla.column(k, width=90, anchor='center')
+            self.tabla.heading(k, text=t); self.tabla.column(k, width=76, anchor='center')
         ttk.Style(self).configure('Treeview.Heading', font=('Segoe UI', 9, 'bold'))
         self.tabla.tag_configure('prueba', background='#dbe9ff', foreground='#0b3d91')
         self.tabla.tag_configure('original', background='#ffeedd', foreground='#7a3e00')
@@ -221,6 +259,8 @@ class Monitor(tk.Tk):
         for b in (self.b_nueva, self.b_seguir):
             b.state(['disabled'] if corre else ['!disabled'])
         self.b_cortar.state(['!disabled'] if self.corriendo() else ['disabled'])
+        self.medidores[0].poner(psutil.cpu_percent())
+        self.medidores[1].poner(psutil.virtual_memory().percent)
         self.after(2000, self.refrescar)
 
     def escribir(self, *partes):
