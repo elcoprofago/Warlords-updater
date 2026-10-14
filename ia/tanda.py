@@ -195,6 +195,20 @@ def llevar_al_monitor(pid, m):
         user32.SetWindowPos(h, None, x + (an - w) // 2, y + (al - hh) // 2, 0, 0, 0x0001 | 0x0004 | 0x0010)
 
 
+def silenciar(pid):
+    """Silencia el sonido del juego (solo su sesión de audio, no el resto de la PC). La sesión aparece recién
+    cuando el juego empieza a sonar, por eso se llama en cada vuelta. Requiere pycaw (pip install pycaw)."""
+    try:
+        from pycaw.pycaw import AudioUtilities
+        for s in AudioUtilities.GetAllSessions():
+            if s.ProcessId == pid and not s.SimpleAudioVolume.GetMute():
+                s.SimpleAudioVolume.SetMute(1, None)
+    except Exception as e:
+        if not getattr(silenciar, 'avisado', False):
+            silenciar.avisado = True
+            print(f'  (no se pudo silenciar el juego: {e})', flush=True)
+
+
 def apretar_un_jugador(pid):
     """Aprieta "Single Player" en el lanzador del juego (botón 1001), si está a la vista. El parche ia_menu de
     vista-aliada 1.0.31.0 debía hacerlo solo y en vivo no lo hace (14/10/2026: 90 s quieto en el lanzador)."""
@@ -253,6 +267,7 @@ def jugar(db, tid, n, p, a):
     while estado is None:
         time.sleep(5)
         llevar_al_monitor(proc.pid, mon)
+        silenciar(proc.pid)
         if os.path.exists(CSV_F) and os.path.getsize(CSV_F) > 0:
             time.sleep(3); estado = 'ok'; break
         s = os.path.getsize(CSV_T) if os.path.exists(CSV_T) else 0
