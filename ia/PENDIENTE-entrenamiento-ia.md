@@ -101,3 +101,30 @@ Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
   después, y ranuras s0..s16 de cada lado. Probado emulado (prueba_iaregistro.py); falta la prueba en vivo (TAREAS).
 - Próximo: fin de partida (PV y podio, empates), después el programa de tandas.
 
+## Para investigar (pedido del usuario, 13/10/2026)
+- **Héroe vivo de nivel más alto**: registrarlo por bando (en IA.CSV y en el resultado final) y usarlo como
+  puntaje adicional del podio en una mejora del parche. Falta averiguar dónde guarda el juego el nivel del héroe
+  (registro del ejército 0x54fe50 + i*0x1c o una tabla de héroes aparte).
+
+### 13/10/2026 (3): tandas (vista-aliada 1.0.29.0)
+- Hecho:
+  - PV y podio documentados en ia/puntos-de-victoria.md.
+  - Partida en vivo: IA_BAT.CSV registró 60 batallas.
+- Parche:
+  - ia_menu: en 0x452c3b, el menú del arranque. Con [Tanda] Partida=<nombre> en IA.INI, carga SAVES\<nombre>.SAV
+    con 0x4b9c10, la misma rutina que usa el diálogo Load.
+  - ia_fin: en 0x482fd6, dentro del cartel Game Over. Escribe el podio en DATA\IA_FIN.CSV con estas columnas:
+    turno, orden, puesto (-1 = empate), color, ia, PV, ciudades, oro.
+  - Probado emulado con prueba_iaregistro.py, todo OK.
+  - Sin probar en vivo: que la carga desde el menú funcione, y si ia_fin se repite al redibujar. tanda.py se queda
+    con el primer bloque.
+- ia/tanda.py:
+  - plan con pares de asignaciones complementarias;
+  - vigila el cuelgue (sin turnos nuevos) y el tope de turnos;
+  - pasa los registros a ia/datos.db y borra los CSV;
+  - si quedaron registros de una partida jugada a mano, los guarda como partida "suelta".
+- ia/informe.py: informe de la tanda. Probados los dos con los registros reales de la partida del 13/10.
+- Falta: las 3 partidas guardadas y la primera tanda en vivo (TAREAS.md).
+- Después de eso vienen las destrezas.
+- Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas (resultado de la primera tanda)".
+

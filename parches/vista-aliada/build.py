@@ -7640,6 +7640,92 @@ ib_out:
 ''')
 
 
+# Tandas (ia\tanda.py): con [Tanda] Partida=<nombre> en DATA\IA.INI, al mostrarse el menú principal por primera vez
+# (llamada 0x452c3b a 0x4aab10, la del arranque; la de después del Game Over, 0x482322, no) se pide cargar
+# SAVES\<nombre>.SAV con 0x4b9c10(nombre, 0), lo mismo que hace el diálogo Load Game (0x42c696).
+IA_TSEC = place_data('ia_tsec', cstr_('Tanda'))
+IA_TKEY = place_data('ia_tkey', cstr_('Partida'))
+IA_TNAME = place_data('ia_tname', bytes(64))
+ia_menu = place('ia_menu', f'''
+    call 0x4aab10
+    pushad
+    push {IA_PATH:#x}
+    push 64
+    push {IA_TNAME:#x}
+    push {IA_EMPTY:#x}
+    push {IA_TKEY:#x}
+    push {IA_TSEC:#x}
+    call dword ptr [{GETPROF:#x}]
+    test eax, eax
+    jz im_out
+    push 0
+    push {IA_TNAME:#x}
+    call 0x4b9c10
+    add esp, 8
+im_out:
+    popad
+    ret
+''')
+
+# Game Over (0x482d77): en 0x482fd6 ya están el orden y los puestos. [ebp-0xe] cantidad de bandos en juego; por
+# puesto k: [ebp-0x24+2k] color, [ebp-0x5c+2k] puesto (-1 = empatado con el anterior), [ebp-0x3c+2k] PV,
+# [ebp-0x4c+2k] ciudades, [ebp-0x7c+4k] oro (ia/puntos-de-victoria.md). Con IA.INI (ia_on) agrega a DATA\IA_FIN.CSV
+# una línea por bando: turno, orden, puesto, color, ia, PV, ciudades, oro.
+IA_FCSV = place_data('ia_fcsv', cstr_(r'.\DATA\IA_FIN.CSV'))
+IA_FFMT = place_data('ia_ffmt', cstr_('%d,%d,%d,%d,%d,%d,%d,%d\n'))
+ia_fin = place('ia_fin', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je if_back
+    pushad
+    push {IA_A:#x}
+    push {IA_FCSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz if_out
+    mov edi, eax
+    xor ebx, ebx
+if_loop:
+    cmp bx, word ptr [ebp - 0xe]
+    jge if_close
+    push dword ptr [ebp + ebx*4 - 0x7c]
+    movsx eax, word ptr [ebp + ebx*2 - 0x4c]
+    push eax
+    movsx eax, word ptr [ebp + ebx*2 - 0x3c]
+    push eax
+    movsx ecx, word ptr [ebp + ebx*2 - 0x24]
+    xor eax, eax
+    cmp ecx, 8
+    jae if_md
+    movzx eax, byte ptr [ecx + {IA_MODE:#x}]
+if_md:
+    push eax
+    push ecx
+    movsx eax, word ptr [ebp + ebx*2 - 0x5c]
+    push eax
+    lea eax, [ebx + 1]
+    push eax
+    movsx eax, word ptr [0x503328]
+    push eax
+    push {IA_FFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x28
+    inc ebx
+    jmp if_loop
+if_close:
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+if_out:
+    popad
+if_back:
+    mov si, word ptr [ebp + 0xc]
+    push 1
+    jmp 0x482fdc
+''')
+
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -7674,6 +7760,8 @@ def rel(va, n):  # bytes originales
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
+patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
+patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))

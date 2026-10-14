@@ -1,13 +1,15 @@
 # Prueba emulada del registro de la IA (ia_turn / ia_snap): ejecuta el código parcheado real sobre el estado de
 # partidas guardadas, con fopen/fclose/fprintf/GetPrivateProfileStringA/_stricmp simulados, y compara cada línea con
 # un conteo independiente hecho en Python sobre el mismo .SAV.
-# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <partida.SAV> [...]
+# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <partida.SAV> [...]
 #   (las direcciones las imprime build.py en la línea "caves"; requiere pefile y unicorn)
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 EXE, IA_TURN, TURN, IA_BAT = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
+IA_FIN, IA_MENU = int(sys.argv[5], 16), int(sys.argv[6], 16)
+SAVS = sys.argv[7:]
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, '_stricmp': 0x5a9be0, 'GetPrivateProfileStringA': 0x5a97e8}
 STUB = 0xdeac0000
@@ -87,7 +89,7 @@ ok = True
 def check(c, msg):
     global ok; print('   ', 'OK   ' if c else 'FALLA', msg); ok &= c
 
-for sav in sys.argv[5:]:
+for sav in SAVS:
     m = load(sav); print(sav)
     o, c, pres = corrida(sav, None, 7, 3)
     check(o == [] and c == ['fopen(.\\DATA\\IA.INI,r)'] and pres, 'sin IA.INI: solo intenta abrirlo, no escribe nada, registros intactos')
@@ -139,7 +141,7 @@ def batalla(sav, atk, dfn, ini, res):
     return o, exp, seen == [(FICHA, RES)], pres
 
 STK = 0x10000000; STK_F = 0x10090000
-for sav in sys.argv[5:]:
+for sav in SAVS:
     print(sav, '(batallas)'); ini = {f'Color{k}': ('prueba' if k % 2 else 'original') for k in range(8)}
     for atk, dfn, res in ((1, 2, 1), (0, 3, 0), (3, 0, 1)):
         r = batalla(sav, atk, dfn, ini, res)
@@ -148,4 +150,66 @@ for sav in sys.argv[5:]:
         check(o == [exp] and llam and pres, f'{atk} ataca a {dfn}: {o[0][:13] if o else o} = esperado, combate llamado igual, registros intactos')
     r = batalla(sav, 0, 3, None, 1)
     if r: check(r[0] == [] and r[2] and r[3], 'sin IA.INI: no escribe y el combate se llama igual')
+# Game Over: marco sintético en 0x482fd6 (5 bandos, empate en el 1.º y en el 4.º) -> una línea por bando en IA_FIN.CSV.
+def fin(sav, ini):
+    sides = [(6, 1, 14, 12, 150), (0, -1, 14, 12, 135), (5, 3, 7, 6, 76), (4, 4, 5, 3, 164), (7, -1, 5, 4, 164)]
+    def run(mu, out, calls):
+        out.clear(); calls.clear(); ebp = STK + 0x90000; fr = bytearray(0x100); base = 0x80
+        struct.pack_into('<h', fr, base - 0xe, len(sides))
+        for k, (c, r, v, ci, g) in enumerate(sides):
+            struct.pack_into('<h', fr, base - 0x24 + 2 * k, c); struct.pack_into('<h', fr, base - 0x5c + 2 * k, r)
+            struct.pack_into('<h', fr, base - 0x3c + 2 * k, v); struct.pack_into('<h', fr, base - 0x4c + 2 * k, ci)
+            struct.pack_into('<i', fr, base - 0x7c + 4 * k, g)
+        struct.pack_into('<h', fr, base + 0xc, 0x1234)
+        mu.mem_write(ebp - base, bytes(fr)); mu.reg_write(UC_X86_REG_EBP, ebp)
+        sp = STK + 0x80000 - 64; mu.reg_write(UC_X86_REG_ESP, sp)
+        regs = {r: 0x33330000 + k for k, r in enumerate((UC_X86_REG_EBX, UC_X86_REG_EDI))}
+        for r, v in regs.items(): mu.reg_write(r, v)
+        mu.emu_start(IA_FIN, 0x482fdc, count=1_000_000)
+        pres = all(mu.reg_read(r) == v for r, v in regs.items()) and mu.reg_read(UC_X86_REG_EBP) == ebp
+        tail = (mu.reg_read(UC_X86_REG_ESI) & 0xffff == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp - 4
+                and struct.unpack('<I', mu.mem_read(sp - 4, 4))[0] == 1)
+        return out, calls, pres and tail
+    o, c, ok_ = corrida(sav, ini, 15, 0, run)
+    md = lambda p: (p % 2) if ini is not None else 0
+    exp = [[15, k + 1, r, col, md(col), v, ci, g] for k, (col, r, v, ci, g) in enumerate(sides)]
+    return o, exp, c, ok_
+
+# Menú principal del arranque: llama al menú original y, con [Tanda] Partida, pide cargar esa partida.
+def menu(ini):
+    mu = Uc(UC_ARCH_X86, UC_MODE_32)
+    mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
+    mu.mem_map(STK, 0x100000); mu.mem_map(STUB, 0x1000); mu.mem_map(0xdead0000, 0x1000)
+    names = list(IAT)
+    for k, n in enumerate(names):
+        mu.mem_write(IAT[n], struct.pack('<I', STUB + k * 16)); mu.mem_write(STUB + k * 16, b'\xc3')
+    seen = []
+    def ret_(mu, nargs_std=0):
+        esp = mu.reg_read(UC_X86_REG_ESP); r = struct.unpack('<I', mu.mem_read(esp, 4))[0]
+        mu.reg_write(UC_X86_REG_ESP, esp + 4 + nargs_std * 4); mu.reg_write(UC_X86_REG_EIP, r)
+    def arg(i): return struct.unpack('<I', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4 + 4 * i, 4))[0]
+    def h(mu, addr, size, _):
+        if addr == 0x4aab10: seen.append('menu'); mu.reg_write(UC_X86_REG_EAX, 0x77); ret_(mu)
+        elif addr == 0x4b9c10: seen.append(('cargar', cstr(mu, arg(0)), arg(1))); mu.reg_write(UC_X86_REG_EAX, 0x55); ret_(mu)
+        elif STUB <= addr < STUB + 0x1000 and names[(addr - STUB) // 16] == 'GetPrivateProfileStringA':
+            sec, key, buf = cstr(mu, arg(0)), cstr(mu, arg(1)), arg(3)
+            v = (ini or {}).get((sec, key), '') ; mu.mem_write(buf, v.encode('latin1') + b'\0')
+            seen.append(('ini', sec, key, cstr(mu, arg(5)))); mu.reg_write(UC_X86_REG_EAX, len(v)); ret_(mu, 6)
+    for a in (0x4aab10, 0x4b9c10): mu.hook_add(UC_HOOK_CODE, h, begin=a, end=a)
+    mu.hook_add(UC_HOOK_CODE, h, begin=STUB, end=STUB + 0xfff)
+    sp = STK + 0x80000 - 64; mu.mem_write(sp, struct.pack('<I', 0xdead0000)); mu.reg_write(UC_X86_REG_ESP, sp)
+    mu.reg_write(UC_X86_REG_EBX, 0x4444); mu.emu_start(IA_MENU, 0xdead0000, count=100_000)
+    return seen, mu.reg_read(UC_X86_REG_EAX) == 0x77 and mu.reg_read(UC_X86_REG_EBX) == 0x4444 and mu.reg_read(UC_X86_REG_ESP) == sp + 4
+
+print('menú principal')
+s, p_ = menu({('Tanda', 'Partida'): 'Tanda_Scarpart'})
+check(s == ['menu', ('ini', 'Tanda', 'Partida', '.\\DATA\\IA.INI'), ('cargar', 'Tanda_Scarpart', 0)] and p_, f'con [Tanda] Partida: {s[-1]}')
+s, p_ = menu(None)
+check(s == ['menu', ('ini', 'Tanda', 'Partida', '.\\DATA\\IA.INI')] and p_, 'sin la clave: solo el menú, no carga nada')
+for sav in SAVS[:1]:
+    print(sav, '(Game Over)'); ini = {f'Color{k}': ('prueba' if k % 2 else 'original') for k in range(8)}
+    o, exp, c, ok_ = fin(sav, ini)
+    check(o == exp and ok_ and c[0] == 'fopen(.\\DATA\\IA_FIN.CSV,a)', f'IA_FIN: {o[:2]}... = esperado; sigue igual que el original')
+    o, exp, c, ok_ = fin(sav, None)
+    check(o == [] and c == [] and ok_, 'sin IA.INI: no abre ni escribe nada')
 print('RESULTADO:', 'TODO OK' if ok else 'HAY FALLAS')

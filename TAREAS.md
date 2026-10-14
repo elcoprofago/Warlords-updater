@@ -24,3 +24,25 @@ Resultado: existe
 3. Fijate si existe el archivo C:\Warlords3\DATA\IA_BAT.CSV. Anotá acá: "Existe" o "No existe".
    No hace falta abrirlo: lo reviso yo.
 Resultado: existe (60 batallas en 15 turnos; partida terminada, captura del Game Over compartida)
+
+## IA: preparar las 3 partidas para las tandas (13/10/2026)
+Hace falta una partida guardada por escenario, en el turno 1, con los 8 bandos manejados por la computadora.
+Para cada escenario (Scarpart, Hexagon y TomeLand):
+1. Abrí **DarklordAV.exe** y empezá una partida nueva en ese escenario:
+   - los 8 bandos en Computadora, sin alianzas;
+   - los bandos (.PGS) que te parezcan los mejores del clan, 2000 puntos;
+   - fin de la partida por turnos con puntos de victoria, por ejemplo **30 turnos**.
+2. Apenas empiece, interrumpila con **Tab + clic** y guardala con este nombre exacto:
+   **Tanda_Scarpart**, **Tanda_Hexagon** o **Tanda_TomeLand**, según el escenario.
+3. Si desde la interrupción no se puede guardar, anotalo acá y no sigas con este punto.
+Resultado:
+
+## IA: primera tanda de prueba (después del punto anterior)
+1. Con las 3 partidas guardadas, hacé doble clic en
+   **F:\source\repos\actualizador-warlords\ia\tanda.bat**.
+2. El programa abre el juego, que carga solo cada partida y la juega hasta el final. Son 3 partidas seguidas.
+   No toques la PC mientras corre: la ventana negra va mostrando el avance.
+3. Al terminar, la ventana muestra un informe. Anotá acá si las 3 partidas dicen **ok** y cuántos minutos tardó
+   cada una. Si alguna dice otra cosa, anotá cuál y qué se veía en pantalla en ese momento.
+Resultado:
+

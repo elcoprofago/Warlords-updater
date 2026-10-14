@@ -10,3 +10,4 @@ dist/
 __pycache__/
 source/Actualizador/bin/
 source/Actualizador/obj/
+/ia/datos.db
