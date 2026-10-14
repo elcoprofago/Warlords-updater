@@ -198,9 +198,14 @@ def llevar_al_monitor(pid, m):
 def apretar_un_jugador(pid):
     """Aprieta "Single Player" en el lanzador del juego (botón 1001), si está a la vista. El parche ia_menu de
     vista-aliada 1.0.31.0 debía hacerlo solo y en vivo no lo hace (14/10/2026: 90 s quieto en el lanzador)."""
+    # Un WM_COMMAND directo deja la ventana del juego en blanco y sin jugar (14/10/2026): el botón tiene que recibir
+    # el clic. Se le manda apretar y soltar el botón izquierdo, sin mover el mouse del usuario ni quitarle el foco.
     v = ventana_del_juego(pid)
-    if v and user32.GetDlgItem(v[0], 1001):
-        user32.PostMessageW(v[0], 0x0111, 1001, user32.GetDlgItem(v[0], 1001))   # WM_COMMAND, BN_CLICKED
+    b = v and user32.GetDlgItem(v[0], 1001)
+    if b:
+        user32.PostMessageW(b, 0x0201, 1, 0x000a000a)   # WM_LBUTTONDOWN en (10, 10) del botón
+        time.sleep(0.1)
+        user32.PostMessageW(b, 0x0202, 0, 0x000a000a)   # WM_LBUTTONUP
         return True
     return False
 

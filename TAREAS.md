@@ -57,11 +57,12 @@ Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
 3. Cada partida tiene que empezar sola, sin apretar "Single Player", y verse en el monitor que elegiste.
 Resultado:
 
-## IA: ¿el juego se ve al abrirlo a mano? (14/10/2026)
+## [RESUELTA] IA: ¿el juego se ve al abrirlo a mano? (14/10/2026)
 Desde las 2:50 de hoy, cuando lo abro yo, el juego queda en una ventana totalmente blanca, incluso el
 Darklord.exe original. Necesito saber si a vos te pasa lo mismo:
 1. Abrí el juego con el acceso directo de siempre (Darklord.exe original) y apretá "Single Player".
 2. Anotá acá si se ve el menú del juego o si la ventana queda blanca.
 3. Hacé lo mismo con **DarklordAV.exe** y anotá lo mismo.
-Resultado:
+Resultado: los dos funcionan perfectamente abiertos a mano.
+  (Claude: la ventana blanca la causaba la forma en que tanda.py apretaba "Single Player"; ya se corrigió.)
 
