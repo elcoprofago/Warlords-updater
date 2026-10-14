@@ -206,3 +206,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Las tandas 1 a 5 de ia\datos.db se jugaron con bandos distintos por color. Se conservan, pero no se mezclan con
   las nuevas en un mismo informe: el nombre de la guardada es igual en ambas, lo que las separa es el número de
   tanda (o la fecha de inicio).
+- Cada tanda registra su parche en datos.db (tanda.parche = número de vista-aliada de parches\parches.txt,
+  tanda.exe = huella sha256 de DarklordAV.exe, 8 caracteres). Retomar una tanda con otro exe se niega. Una etapa
+  del cronograma se juega entera con el mismo exe; un cambio a la IA abre etapa nueva.
+- Cargado a mano: tandas 4 y 5 = 1.0.32.0, exe 9d706a67 (el exe instalado es del 14/10 11:27, antes de la tanda 4).
+  Tanda 1 = 1.0.30.0, deducido de las fechas de los commits (1.0.30.0 a las 23:53 del 13/10, 1.0.31.0 a las 01:54
+  del 14/10, tanda a las 00:22); su huella no se puede saber.
+- Cronograma acordado con el usuario (14/10/2026): tandas 6 a 20, todos contra todos, mismo bando en los 8
+  colores, 3 mapas. Tandas 21 a 40: un solo mapa y un solo bando, para estudiar las posiciones (Scarpart, hecho por
+  el usuario, tiene posiciones muy malas y muy buenas). Después, modalidades (Crusade, norte contra sur), cada una
+  en su tanda y con todo lo demás igual.

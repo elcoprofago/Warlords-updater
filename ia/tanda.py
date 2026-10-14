@@ -41,7 +41,8 @@ COL_B = (['turno', 'atacante', 'defensor', 'x', 'y', 'ciudad', 'resultado', 'ia_
 COL_F = ['turno', 'orden', 'puesto', 'color', 'ia', 'pv', 'ciudades', 'oro']
 
 ESQUEMA = f'''
-create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0);
+create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0,
+    parche text, exe text);
 create table if not exists partida (id integer primary key, tanda integer, n integer, guardada text,
     asignacion text, inicio text, fin text, estado text, turnos integer);
 create table if not exists turno (partida integer, {', '.join(c + ' integer' for c in COL_T)});
@@ -49,6 +50,24 @@ create table if not exists batalla (partida integer, {', '.join(c + ' integer' f
 create table if not exists resultado (partida integer, color integer, ia integer, orden integer, puesto integer,
     pv integer, ciudades integer, oro integer, eliminado_turno integer);
 '''
+
+
+# Versión del parche con que juega la IA de prueba. Una tanda se juega entera con el mismo DarklordAV.exe: el número
+# de vista-aliada sale de parches\parches.txt del repo (build.py instala sin tocar C:\Warlords3\PARCHES), y la huella
+# del exe distingue dos compilaciones con el mismo número.
+PARCHES_TXT = os.path.join(os.path.dirname(BASE), 'parches', 'parches.txt')
+
+
+def parche_actual():
+    import hashlib
+    with open(os.path.join(JUEGO, EXE), 'rb') as f:
+        exe = hashlib.sha256(f.read()).hexdigest()[:8]
+    ver = '?'
+    if os.path.exists(PARCHES_TXT):
+        for l in open(PARCHES_TXT, encoding='utf-8'):
+            if l.startswith('vista-aliada|'):
+                ver = l.split('|')[1]
+    return ver, exe
 
 
 def ahora():
@@ -328,6 +347,11 @@ def main():
 def preparar(a):
     """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
     db = sqlite3.connect(DB, check_same_thread=False); db.executescript(ESQUEMA)
+    cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
+    for c in ('parche', 'exe'):   # bases anteriores al registro del parche
+        if c not in cols:
+            db.execute(f'alter table tanda add column {c} text')
+    ver, exe = parche_actual()
     # Partida que quedó "jugando" porque se cerró la ventana de la tanda: sus registros son suyos y se retoma.
     for (pid,) in db.execute("select id from partida where estado='jugando'").fetchall():
         importar(db, pid, 'cortada')
@@ -342,14 +366,17 @@ def preparar(a):
         faltan = [g for g in gs if not os.path.exists(os.path.join(JUEGO, 'SAVES', g + '.SAV'))]
         if faltan:
             sys.exit(f'No existen en {JUEGO}\\SAVES: {", ".join(g + ".SAV" for g in faltan)}')
-        tid = db.execute('insert into tanda (inicio, plan) values (?,?)',
-                         (ahora(), json.dumps(plan(a.partidas, gs)))).lastrowid
+        tid = db.execute('insert into tanda (inicio, plan, parche, exe) values (?,?,?,?)',
+                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe)).lastrowid
         db.commit()
     else:
         # Solo la última tanda: una vieja abandonada (por ejemplo, de pruebas) no se retoma por sorpresa.
-        r = db.execute('select id, terminada from tanda order by id desc').fetchone()
+        r = db.execute('select id, terminada, parche, exe from tanda order by id desc').fetchone()
         if not r or r[1]:
             sys.exit('La última tanda ya terminó: no hay nada que retomar.')
+        if r[3] and r[3] != exe:
+            sys.exit(f'La tanda {r[0]} se empezó con vista-aliada {r[2]} (exe {r[3]}) y ahora está instalado {ver} '
+                     f'(exe {exe}): sus partidas no serían comparables. Empezá una tanda nueva.')
         tid = r[0]
     return db, tid
 

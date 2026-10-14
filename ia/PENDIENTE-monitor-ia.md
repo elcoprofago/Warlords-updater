@@ -57,3 +57,8 @@ pantalla (hoy solo las últimas 5 cuando no hay partida en curso), informe tras 
 Ventana angosta, círculos de CPU y RAM (imágenes de USBagent), ruedita de configuración con fondo liso o textura
 (sección [Fondo] de tanda.ini), Retomar solo la última tanda, el panel muestra la tanda que se juega. Se borraron
 de datos.db las tandas 2 y 3 (pruebas abandonadas) con sus partidas.
+
+## Parche de cada tanda (14/10/2026)
+El panel Tanda muestra con qué parche juega la tanda mostrada (vista-aliada y huella del exe) y con cuál jugaron
+todas, agrupadas de corrido. tanda.py lo registra al crear la tanda y se niega a retomar con otro exe.
+Falta recompilar Monitor-IA.exe: estaba abierto jugando la tanda 5. Se recompila solo cuando se cierre.
