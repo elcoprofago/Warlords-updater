@@ -11,7 +11,7 @@
 # prueba en la otra juegan con la original), así cada color ocupa cada IA la misma cantidad de veces en el total.
 #
 # Uso:
-#   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Hexagon,Tanda_TomeLand
+#   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor
 #   python ia\tanda.py seguir            (retoma la última tanda sin terminar)
 #   python ia\informe.py [tanda]          (informe de la tanda)
 import argparse, csv, json, os, sqlite3, subprocess, sys, time
@@ -176,7 +176,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('accion', choices=['nueva', 'seguir'])
     ap.add_argument('--partidas', type=int, default=6)
-    ap.add_argument('--guardadas', default='Tanda_Scarpart,Tanda_Hexagon,Tanda_TomeLand')
+    ap.add_argument('--guardadas', default='Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor')
     ap.add_argument('--tope-turnos', type=int, default=0, help='0 = hasta el Game Over del escenario')
     ap.add_argument('--cuelgue', type=float, default=10, help='minutos sin turnos nuevos = colgada')
     a = ap.parse_args()
