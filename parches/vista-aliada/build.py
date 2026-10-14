@@ -7329,6 +7329,7 @@ IA_MODE = place_data('ia_mode', bytes(8))
 IA_VAL = place_data('ia_val', bytes(16))
 IA_SNAP = place_data('ia_snapbuf', bytes(4 * 22))
 IA_N = 22
+IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa el registro de batallas)
 GETPROF = 0x5a97e8
 FOPEN, FCLOSE, FPRINTF, STRICMP = 0x5a9bdc, 0x5a9be4, 0x5a9bf4, 0x5a9be0
 
@@ -7400,6 +7401,7 @@ ia_turn = place('ia_turn', f'''
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae it_out
+    mov byte ptr [{IA_ON:#x}], 0
     push {IA_R:#x}
     push {IA_PATH:#x}
     call dword ptr [{FOPEN:#x}]
@@ -7409,6 +7411,7 @@ ia_turn = place('ia_turn', f'''
     push eax
     call dword ptr [{FCLOSE:#x}]
     add esp, 4
+    mov byte ptr [{IA_ON:#x}], 1
     xor esi, esi
 it_key:
     push {IA_PATH:#x}
@@ -7473,6 +7476,170 @@ it_out:
     jmp {turn:#x}
 ''')
 
+# Batallas: 0x469ed0 arma la ficha (0x464ac0), pelea (0x464ea0) y en 0x469f54 llama a 0x465c80(ficha, resultado),
+# que informa y aplica el resultado ([resultado] palabra: 1 = gana el atacante; 0x465cb9 elige al ganador así).
+# Ficha: +0 atacante, +1 dueño de la casilla atacada, +2 ciudad (-1 ninguna), +4/+6 x/y, +0xc/+0xd cantidad de
+# atacantes/defensores; atacantes en +0xe + i*0x24, defensores en +0x12e + i*0x24 (palabra +0 = ejército, < 1 vacío).
+# ia_bat la reemplaza en 0x469f54, solo con DATA\IA.INI (ia_on): cuenta la composición por ranura antes (s0..s15,
+# héroes en s16), llama a 0x465c80 y cuenta los sobrevivientes (ejército vivo y del mismo dueño), y agrega a
+# DATA\IA_BAT.CSV: turno, atacante, defensor, x, y, ciudad, resultado, ia del atacante, ia del defensor (-1 sin dueño),
+# atacantes, defensores, atacantes vivos, defensores vivos, A s0..s16, D s0..s16.
+IA_BCSV = place_data('ia_bcsv', cstr_(r'.\DATA\IA_BAT.CSV'))
+IA_BN = 13 + 2 * 17
+IA_BFMT = place_data('ia_bfmt', cstr_('%d' + ',%d' * (IA_BN - 1) + '\n'))
+IA_BBUF = place_data('ia_bbuf', bytes(4 * IA_BN))
+IA_BOWN = place_data('ia_bown', bytes(4 * 40))    # dueño de cada ejército de la ficha antes de pelear (-1 vacío)
+
+# ia_bside: esi = primera entrada, ecx = cantidad, edi = 17 contadores, ebp = su parte de IA_BOWN. Preserva todo.
+ia_bside = place('ia_bside', f'''
+    pushad
+bs_loop:
+    dec ecx
+    jl bs_out
+    imul edx, ecx, 0x24
+    mov dword ptr [ebp + ecx*4], -1
+    movsx eax, word ptr [esi + edx]
+    test eax, eax
+    jle bs_loop
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    shr edx, 5
+    and edx, 0xf
+    mov dword ptr [ebp + ecx*4], edx
+    and eax, 0x1f
+    cmp eax, 0x10
+    jbe bs_cnt
+    mov eax, 0x10
+bs_cnt:
+    inc dword ptr [edi + eax*4]
+    jmp bs_loop
+bs_out:
+    popad
+    ret
+''')
+
+# ia_balive: esi, ecx, ebp como ia_bside -> eax = cuántos siguen vivos con el mismo dueño. Preserva el resto.
+ia_balive = place('ia_balive', f'''
+    push ecx
+    push edx
+    push ebx
+    xor ebx, ebx
+ba_loop:
+    dec ecx
+    jl ba_out
+    imul edx, ecx, 0x24
+    movsx eax, word ptr [esi + edx]
+    test eax, eax
+    jle ba_loop
+    imul eax, eax, 0x1c
+    test byte ptr [eax + 0x54fe63], 0x40
+    jz ba_loop
+    movzx eax, word ptr [eax + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, dword ptr [ebp + ecx*4]
+    jne ba_loop
+    inc ebx
+    jmp ba_loop
+ba_out:
+    mov eax, ebx
+    pop ebx
+    pop edx
+    pop ecx
+    ret
+''')
+
+# ia_bat(ficha, resultado) cdecl, en lugar de 0x465c80 en 0x469f54.
+ia_bat = place('ia_bat', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je 0x465c80
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    mov edi, {IA_BBUF:#x}
+    xor eax, eax
+    mov ecx, {IA_BN}
+    rep stosd
+    mov edi, {IA_BBUF:#x}
+    movsx eax, word ptr [0x503328]
+    mov dword ptr [edi], eax
+    movsx eax, byte ptr [ebx]
+    mov dword ptr [edi + 4], eax
+    cmp eax, 8
+    jae ib_ma
+    movzx eax, byte ptr [eax + {IA_MODE:#x}]
+    mov dword ptr [edi + 28], eax
+ib_ma:
+    movsx eax, byte ptr [ebx + 1]
+    mov dword ptr [edi + 8], eax
+    mov dword ptr [edi + 32], -1
+    cmp eax, 8
+    jae ib_md
+    movzx eax, byte ptr [eax + {IA_MODE:#x}]
+    mov dword ptr [edi + 32], eax
+ib_md:
+    movsx eax, word ptr [ebx + 4]
+    mov dword ptr [edi + 12], eax
+    movsx eax, word ptr [ebx + 6]
+    mov dword ptr [edi + 16], eax
+    movsx eax, word ptr [ebx + 2]
+    mov dword ptr [edi + 20], eax
+    mov eax, dword ptr [esp + 0x28]
+    movsx eax, word ptr [eax]
+    mov dword ptr [edi + 24], eax
+    movsx ecx, byte ptr [ebx + 0xc]
+    mov dword ptr [edi + 36], ecx
+    lea esi, [ebx + 0xe]
+    mov ebp, {IA_BOWN:#x}
+    add edi, 52
+    call {ia_bside:#x}
+    movsx ecx, byte ptr [ebx + 0xd]
+    mov dword ptr [{IA_BBUF + 40:#x}], ecx
+    lea esi, [ebx + 0x12e]
+    mov ebp, {IA_BOWN + 32:#x}
+    add edi, 68
+    call {ia_bside:#x}
+    popad
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    call 0x465c80
+    add esp, 8
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    movsx ecx, byte ptr [ebx + 0xc]
+    lea esi, [ebx + 0xe]
+    mov ebp, {IA_BOWN:#x}
+    call {ia_balive:#x}
+    mov dword ptr [{IA_BBUF + 44:#x}], eax
+    movsx ecx, byte ptr [ebx + 0xd]
+    lea esi, [ebx + 0x12e]
+    mov ebp, {IA_BOWN + 32:#x}
+    call {ia_balive:#x}
+    mov dword ptr [{IA_BBUF + 48:#x}], eax
+    push {IA_A:#x}
+    push {IA_BCSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz ib_out
+    mov edi, eax
+    mov ecx, {IA_BN}
+ib_push:
+    push dword ptr [ecx*4 + {IA_BBUF - 4:#x}]
+    loop ib_push
+    push {IA_BFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, {4 * (IA_BN + 2):#x}
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+ib_out:
+    popad
+    ret
+''')
+
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -7506,6 +7673,7 @@ def rel(va, n):  # bytes originales
 
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
+patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))
