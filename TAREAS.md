@@ -51,7 +51,7 @@ Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
   se corrigió en la versión 1.0.31.0, ver el punto siguiente.)
 
 ## IA: tanda sin tocar nada (14/10/2026)
-1. Hacé doble clic en **F:\sourceeposctualizador-warlords\ia	anda.bat** y no toques nada.
+1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y no toques nada.
 2. Cada partida tiene que empezar sola, sin apretar "Single Player".
 Resultado:
 
