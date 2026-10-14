@@ -7304,6 +7304,175 @@ dc_fail:
     jmp 0x44db1c
 ''')
 
+# ---------------------------------------------------------------- IA: base de pruebas (specs\ia-destrezas-v1.md)
+# DATA\IA.INI, sección [IA], claves Color0..Color7 = original | prueba: qué IA maneja cada color. Sin el archivo el exe
+# no hace nada distinto (ni lee ni escribe). Con el archivo, al empezar el turno de cada bando (antes de 0x442470(p),
+# en 0x4223ad) se releen las claves a ia_mode (0 original, 1 prueba, 2 valor inválido: se juega con la original) y se
+# agrega a DATA\IA.CSV la línea turno, color, ia, vivo, control, oro, ciudades, ejércitos, héroes, s0..s15:
+#   turno = [0x5032f8 + 0x30] (0x420a80); vivo = +1 del registro del jugador (0x536b30 + p*0x1f8); control = +0xe2
+#   (-1 humano); oro = +0xe4; ciudades: dueño +0xa5 de cada ciudad (0x537e2c + i*0xde, [0x537e2a] ciudades);
+#   ejércitos vivos (+0x13 & 0x40) de 0x54fe50 + i*0x1c (1 <= i < [0x54fe50]) cuya palabra +0xe tiene dueño p en los
+#   bits 5-8; los bits 0-4 son la ranura del bando (0..15 se cuentan en s0..s15; 0x10 es héroe).
+# Las destrezas de la IA de prueba leen ia_mode[p] (todavía no hay ninguna: con "prueba" juega igual que la original).
+IA_SEC = place_data('ia_sec', cstr_('IA'))
+IA_PATH = place_data('ia_path', cstr_(r'.\DATA\IA.INI'))
+IA_CSV = place_data('ia_csv', cstr_(r'.\DATA\IA.CSV'))
+IA_R = place_data('ia_r', cstr_('r'))
+IA_A = place_data('ia_a', cstr_('a'))
+IA_EMPTY = place_data('ia_empty', cstr_(''))
+IA_ORIG = place_data('ia_orig', cstr_('original'))
+IA_PRUEBA = place_data('ia_prueba', cstr_('prueba'))
+IA_KEYS = [place_data(f'ia_key{c}', cstr_(f'Color{c}')) for c in range(8)]
+IA_KEYTAB = place_data('ia_keytab', b''.join(a.to_bytes(4, 'little') for a in IA_KEYS))
+IA_FMT = place_data('ia_fmt', cstr_('%d,%d,%d' + ',%d' * 22 + '\n'))
+IA_MODE = place_data('ia_mode', bytes(8))
+IA_VAL = place_data('ia_val', bytes(16))
+IA_SNAP = place_data('ia_snapbuf', bytes(4 * 22))
+IA_N = 22
+GETPROF = 0x5a97e8
+FOPEN, FCLOSE, FPRINTF, STRICMP = 0x5a9bdc, 0x5a9be4, 0x5a9bf4, 0x5a9be0
+
+# ia_snap(p, buf) cdecl: buf = 22 dwords (vivo, control, oro, ciudades, ejércitos, héroes, s0..s15). Preserva todo
+# menos eax.
+ia_snap = place('ia_snap', f'''
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    mov edi, dword ptr [esp + 0x28]
+    push edi
+    xor eax, eax
+    mov ecx, {IA_N}
+    rep stosd
+    pop edi
+    imul esi, ebx, 0x1f8
+    movzx eax, byte ptr [esi + 0x536b31]
+    mov dword ptr [edi], eax
+    movsx eax, word ptr [esi + 0x536c12]
+    mov dword ptr [edi + 4], eax
+    mov eax, dword ptr [esi + 0x536c14]
+    mov dword ptr [edi + 8], eax
+    movsx ecx, word ptr [0x537e2a]
+    mov esi, {CITIES + 0xa5:#x}
+is_city:
+    test ecx, ecx
+    jle is_arm0
+    movzx eax, byte ptr [esi]
+    cmp eax, ebx
+    jne is_cnext
+    inc dword ptr [edi + 12]
+is_cnext:
+    add esi, 0xde
+    dec ecx
+    jmp is_city
+is_arm0:
+    mov ecx, 1
+is_arm:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge is_out
+    imul esi, ecx, 0x1c
+    test byte ptr [esi + 0x54fe63], 0x40
+    jz is_anext
+    movzx eax, word ptr [esi + 0x54fe5e]
+    mov edx, eax
+    shr edx, 5
+    and edx, 0xf
+    cmp edx, ebx
+    jne is_anext
+    and eax, 0x1f
+    cmp eax, 0x10
+    jb is_slot
+    inc dword ptr [edi + 20]
+    jmp is_anext
+is_slot:
+    inc dword ptr [edi + 16]
+    inc dword ptr [edi + eax*4 + 24]
+is_anext:
+    inc ecx
+    jmp is_arm
+is_out:
+    popad
+    ret
+''')
+
+# ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
+ia_turn = place('ia_turn', f'''
+    pushad
+    movsx ebx, word ptr [esp + 0x24]
+    cmp ebx, 8
+    jae it_out
+    push {IA_R:#x}
+    push {IA_PATH:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz it_out
+    push eax
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+    xor esi, esi
+it_key:
+    push {IA_PATH:#x}
+    push 16
+    push {IA_VAL:#x}
+    push {IA_EMPTY:#x}
+    push dword ptr [esi*4 + {IA_KEYTAB:#x}]
+    push {IA_SEC:#x}
+    call dword ptr [{GETPROF:#x}]
+    mov dl, 0
+    test eax, eax
+    jz it_set
+    push {IA_ORIG:#x}
+    push {IA_VAL:#x}
+    call dword ptr [{STRICMP:#x}]
+    add esp, 8
+    mov dl, 0
+    test eax, eax
+    jz it_set
+    push {IA_PRUEBA:#x}
+    push {IA_VAL:#x}
+    call dword ptr [{STRICMP:#x}]
+    add esp, 8
+    mov dl, 1
+    test eax, eax
+    jz it_set
+    mov dl, 2
+it_set:
+    mov byte ptr [esi + {IA_MODE:#x}], dl
+    inc esi
+    cmp esi, 8
+    jb it_key
+    push {IA_SNAP:#x}
+    push ebx
+    call {ia_snap:#x}
+    add esp, 8
+    push {IA_A:#x}
+    push {IA_CSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz it_out
+    mov edi, eax
+    mov ecx, {IA_N}
+it_push:
+    push dword ptr [ecx*4 + {IA_SNAP - 4:#x}]
+    loop it_push
+    movzx eax, byte ptr [ebx + {IA_MODE:#x}]
+    push eax
+    push ebx
+    movsx eax, word ptr [0x503328]
+    push eax
+    push {IA_FMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, {4 * (IA_N + 5):#x}
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+it_out:
+    popad
+    jmp {turn:#x}
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -7336,7 +7505,7 @@ def rel(va, n):  # bytes originales
     o = va2off(va); return bytes(exe[o:o + n])
 
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
-patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {turn:#x}', 0x4223ad))
+patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))

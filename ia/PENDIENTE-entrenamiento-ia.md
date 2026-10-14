@@ -1,6 +1,6 @@
 # Entrenamiento de la IA de los bandos — plan
 
-Estado al 13/10/2026: entrevista hecha; spec de la primera versión en specs\ia-destrezas-v1.md. Nada implementado.
+Estado al 13/10/2026: spec en specs\ia-destrezas-v1.md; base de pruebas empezada (IA.INI y registro por turno).
 
 ## Objetivo (pedido del usuario)
 Que la IA resuelva mejor los problemas y recuerde estrategias, no solo que reciba más recursos.
@@ -70,6 +70,26 @@ Lo que valga para single player vale para multi player (la IA es la misma).
 - Copiar jugadas humanas por imitación directa: hay pocas partidas; se usan para análisis (etapa 10).
 - Partidas simultáneas en la misma PC.
 
+## Avance de la base de pruebas (13/10/2026)
+Hecho (build.py, bloque "IA: base de pruebas"; prueba_iaregistro.py, TODO OK en ABN_001-FIN, Aliados01 y hide01;
+prueba_emulada.py sigue OK):
+- DATA\IA.INI, [IA] Color0..Color7 = original | prueba. Sin el archivo el exe no lee ni escribe nada más.
+  Valor inválido = IA original con ia=2 en el registro. Se relee al empezar cada turno. Tabla ia_mode[8] para que
+  las destrezas sepan qué color es de prueba (todavía ninguna destreza: "prueba" juega igual que la original).
+- Al empezar el turno de cada bando (0x4223ad, antes de turn/0x442470) agrega a DATA\IA.CSV:
+  turno, color, ia, vivo, control (-1 humano), oro, ciudades, ejércitos, héroes, s0..s15 (por ranura del bando).
+Direcciones verificadas en el código del exe: jugador 0x536b30 + p*0x1f8 (+1 vivo, +0xe2 control, +0xe4 oro);
+ciudades 0x537e2c + i*0xde (dueño +0xa5, cantidad [0x537e2a]); ejércitos 0x54fe50 + i*0x1c (vivo +0x13 & 0x40,
+palabra +0xe: dueño bits 5-8, ranura bits 0-4, 0x10 héroe); jugador actual [0x537ce8].
+Sin verificar en una partida real: turno = [0x503328] (0x420a80 sobre 0x5032f8, el que imprime doComputerTurn) y
+que la carpeta de trabajo del juego sea C:\Warlords3 (las rutas son .\DATA\...).
+Hallazgo: el exe trae un registro de depuración apagado (0x4e4b90: nivel [0x501024], archivo 0x58d0a0), pero sus
+mensajes son casi todos de gráficos; no sirve para la IA.
+
 ## Próximo paso
-Implementar specs\ia-destrezas-v1.md empezando por la base de pruebas (IA original/de prueba por color, registro,
-tanda automática, cálculo de VPs). Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
+1. Probar en vivo: partida corta con IA.INI y ver DATA\IA.CSV (turno, una línea por bando y turno).
+2. Batallas en el registro (atacante, defensor, lugar, composición, resultado): ubicar la rutina de batalla.
+3. Fin de partida y cartel "Game Over" (VPs, podio): ubicarlo en el exe (req. 5).
+4. Auxiliar de tandas (Python): arrancar el juego, iniciar partida (menús o parche), vigilar cuelgues, pasar
+   DATA\IA.CSV a ia\datos.db, rotación de colores, informe.
+Frase para retomar: "Seguimos con specs\ia-destrezas-v1.md: base de pruebas".
