@@ -3,4 +3,5 @@ rem Tanda de prueba: 3 partidas IA contra IA (ver TAREAS.md). Cerrar esta ventan
 cd /d %~dp0..
 python ia\tanda.py nueva --partidas 3
 python ia\informe.py
+python iaviso.py
 pause
