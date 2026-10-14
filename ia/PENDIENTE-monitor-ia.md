@@ -52,3 +52,8 @@ medias: muestra tanda, partida en curso, tabla por color y batallas. Falta la pr
 ## Próximo paso
 Según lo que diga la prueba del usuario. Quedan de la lista propuesta: pausar, partidas terminadas con duración en
 pantalla (hoy solo las últimas 5 cuando no hay partida en curso), informe tras cada partida (hoy al final).
+
+## Exe sin recompilar (14/10/2026, 13:20)
+Los cambios del commit d521f37 (Retomar solo la última tanda; mostrar la tanda que se juega) están en el fuente,
+pero `Monitor-IA.exe` no se recompiló: el usuario lo tenía abierto corriendo la tanda 3, y cerrarlo la cortaba.
+Recompilar (`python ia\monitor-ia\build.py`) cuando no haya una tanda corriendo en el Monitor.
