@@ -69,3 +69,11 @@ victorias, puesto promedio, PV promedio, turno promedio de eliminación y margen
 resultado y partida de datos.db. Solo con partidas comparables: mismo bando en los 8 colores, mismo exe, y separando
 o compensando la IA de prueba y la original (en cada par de partidas una posición juega con cada una). La base
 principal son las tandas 21 a 40 (un solo mapa por tanda). Mostrar siempre cuántas partidas sostienen cada número.
+- Título de la ventana: "Banco de pruebas de la IA" (pedido del usuario, 14/10/2026). El exe sigue llamándose
+  Monitor-IA.exe para no romper accesos directos.
+
+## Pedido para después (14/10/2026): comparativa de bandos (.PGS) en el mismo PDF
+Qué bandos ganan más y cuáles menos. Necesita una etapa propia, opuesta a las de bando común: varios .PGS distintos,
+rotando por las posiciones (cada bando pasa por cada posición) en un mismo mapa, con la misma IA en todos los colores
+para que la diferencia sea del bando. Hoy datos.db no registra qué .PGS jugó cada color: hay que sumarlo
+(leerlo del .SAV o anotarlo al lanzar la tanda) antes de esa etapa.

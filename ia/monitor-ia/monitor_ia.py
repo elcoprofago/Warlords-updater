@@ -81,7 +81,7 @@ class Salida(io.TextIOBase):
 class Monitor(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('Monitor de IA')
+        self.title('Banco de pruebas de la IA')
         self.geometry('680x760')
         self.cola = queue.Queue()
         sys.stdout = sys.stderr = Salida(self.cola)
