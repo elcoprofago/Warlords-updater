@@ -9,3 +9,11 @@
 4. Si ninguna de las dos funcionó: minimizá el juego y volvé a abrirlo desde la barra de tareas (así lo
    hiciste la primera vez). Anotá si apareció la ventana.
 Resultado: ____________________
+
+## IA: probar el registro por turno (13/10/2026)
+1. Abrí **DarklordAV.exe** (no el original) y empezá una partida con los 8 bandos manejados por la computadora,
+   en cualquier escenario.
+2. Dejala correr unos 3 turnos completos (que todos los colores hayan jugado 3 veces) y cerrá el juego.
+3. Fijate si existe el archivo C:\Warlords3\DATA\IA.CSV. Anotá acá: "Existe" o "No existe".
+   No hace falta abrirlo: lo reviso yo.
+Resultado: ____________________
