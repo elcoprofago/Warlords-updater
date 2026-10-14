@@ -199,3 +199,10 @@ durante 60 s seguidos y la captura mostró la partida en el turno 5.
   registro por turno antes de evaluarlo.
 - Scarpart: naranja muere siempre y celeste suele ganar, con cualquier IA. Esos colores casi no informan en las
   comparaciones; medir por color y mapa qué colores tienen resultado fijo y darles menos peso.
+
+### 14/10/2026: bandos uniformes desde la próxima tanda
+Decisión del usuario: en las pruebas, los 8 colores juegan con el mismo .PGS, para que las diferencias vengan de
+las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los mismos nombres (TAREAS.md).
+- Las tandas 1 a 5 de ia\datos.db se jugaron con bandos distintos por color. Se conservan, pero no se mezclan con
+  las nuevas en un mismo informe: el nombre de la guardada es igual en ambas, lo que las separa es el número de
+  tanda (o la fecha de inicio).
