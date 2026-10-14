@@ -85,3 +85,16 @@ Reemplaza a tanda.bat y monitor.bat.
 4. Al terminar tiene que sonar la alarma y aparecer el informe abajo.
 Anotá acá qué funcionó, qué no, y qué te gustaría cambiar o agregar.
 Resultado:
+
+## IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
+Las tandas no arman bandos: cargan las partidas guardadas Tanda_Scarpart, Tanda_Borderlands y Tanda_Kor tal
+como quedaron. Para que todos los colores jueguen con el mismo bando hay que volver a guardar esas 3 partidas.
+Para cada escenario (Scarpart, The Borderlands y Kor):
+1. Abrí **DarklordAV.exe** y empezá una partida nueva en ese escenario, igual que la vez anterior:
+   - los 8 bandos en Computadora, sin alianzas;
+   - **el mismo .PGS cargado en los 8 colores** (el mismo archivo, no uno parecido);
+   - 2000 puntos y fin por turnos con puntos de victoria (30 turnos).
+2. Apenas empiece, pasá un bando a Humano y guardá la partida con el **mismo nombre de antes**
+   (Tanda_Scarpart, Tanda_Borderlands o Tanda_Kor), aceptando reemplazar la anterior.
+3. Anotá acá qué .PGS usaste. Después la tanda se larga como siempre, con **ia\tanda.bat**.
+Resultado:
