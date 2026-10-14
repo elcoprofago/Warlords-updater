@@ -68,7 +68,6 @@ class Monitor(tk.Tk):
                         command=lambda: tanda.CONTROL.update(silenciar=self.v_mudo.get())).grid(row=0, column=0, **pad)
         self.v_alarma = tk.BooleanVar(value=True)
         ttk.Checkbutton(c, text='Alarma al terminar la tanda', variable=self.v_alarma).grid(row=0, column=1, **pad)
-        ttk.Button(c, text='Probar alarma', command=self.alarma).grid(row=0, column=2, **pad)
         ttk.Label(c, text='Monitor del juego:').grid(row=0, column=3, sticky='e')
         self.mons = tanda.monitores()
         nombres = [f'{m[0]} ({m[3]}x{m[4]}){" principal" if m[5] else ""}' for m in self.mons]
