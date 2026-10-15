@@ -184,14 +184,15 @@ class Monitor(tk.Tk):
         for m in self.medidores:
             m.caja.pack(side='left', padx=8)
         # Botones cuadrados iluminados (como los de USBagent): encendido = se puede apretar ahora.
-        botonera = self.caja(tarjeta); botonera.pack(pady=(6, 0))
+        botonera = self.caja(tarjeta); botonera.pack(padx=4, pady=6)
         self.b_nueva = self.boton(botonera, 'nueva', lambda: self.arrancar('nueva'))
         self.b_seguir = self.boton(botonera, 'retomar', lambda: self.arrancar('seguir'))
         self.b_cortar = self.boton(botonera, 'cortar', self.cortar)
         for b in (self.b_nueva, self.b_seguir, self.b_cortar):
             b.pack(side='left', padx=2)
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
-        b = self.icono(tarjeta, rueda, cursor='hand2'); b.pack(anchor='e', padx=4, pady=4)
+        # En el ángulo superior derecho de la tarjeta, al costado de los círculos.
+        b = self.icono(tarjeta, rueda, cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
         b.bind('<Button-1>', lambda e: self.configurar())
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar()
