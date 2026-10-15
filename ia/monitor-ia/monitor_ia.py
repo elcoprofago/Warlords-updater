@@ -144,6 +144,26 @@ class Monitor(tk.Tk):
         self.iconos[l] = img
         return l
 
+    def boton(self, padre, nombre, accion, tam=64):
+        imgs = {e: Image.open(os.path.join(ASSETS, f'{nombre}_{e}.png')).convert('RGBA').resize((tam, tam), Image.LANCZOS)
+                for e in ('on', 'off')}
+        l = self.icono(padre, imgs['off'], cursor='hand2')
+        l.imgs, l.activo = imgs, False
+
+        def clic(e):
+            if l.activo:
+                accion()
+        l.bind('<Button-1>', clic)
+        return l
+
+    def encender(self, l, si):
+        """Enciende el botón cuadrado si se puede apretar ahora; apagado no responde al clic."""
+        if l.activo != si:
+            l.activo = si
+            self.iconos[l] = l.imgs['on' if si else 'off']
+            l['cursor'] = 'hand2' if si else 'arrow'
+            self.pintar_icono(l)
+
     def check(self, padre, texto, var, command=None):
         f = self.caja(padre)
         c = tk.Checkbutton(f, variable=var, command=command, bd=0, highlightthickness=0, padx=0, pady=0)
@@ -163,6 +183,11 @@ class Monitor(tk.Tk):
         self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
             m.caja.pack(side='left', padx=2)
+        # Botones cuadrados iluminados (como los de USBagent): encendido = se puede apretar ahora.
+        botonera = self.caja(tarjeta); botonera.pack(pady=(6, 0))
+        self.b_nueva = self.boton(botonera, 'nueva', lambda: self.arrancar('nueva'))
+        self.b_cortar = self.boton(botonera, 'cortar', self.cortar)
+        self.b_nueva.pack(side='left', padx=(0, 4)); self.b_cortar.pack(side='left')
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.pack(anchor='e', padx=4, pady=4)
         b.bind('<Button-1>', lambda e: self.configurar())
@@ -172,19 +197,16 @@ class Monitor(tk.Tk):
         self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
         self.rotulo(f, textvariable=self.v_parche).pack(anchor='w', padx=8, pady=(2, 0))
         fila = self.caja(f); fila.pack(anchor='w', **pad)
-        self.rotulo(fila, text='Partidas: ').pack(side='left')
+        self.rotulo(fila, text='Partidas:').grid(row=0, column=0, sticky='w')
         self.v_partidas = tk.IntVar(value=6)
-        ttk.Spinbox(fila, from_=1, to=500, width=5, textvariable=self.v_partidas).pack(side='left', padx=(4, 16))
-        self.rotulo(fila, text='Guardadas: ').pack(side='left')
+        ttk.Spinbox(fila, from_=1, to=500, width=5, textvariable=self.v_partidas).grid(row=0, column=1, sticky='w',
+                                                                                     padx=6, pady=2)
+        self.rotulo(fila, text='Guardadas:').grid(row=1, column=0, sticky='w')
         self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
-        self.b_guardadas.pack(side='left', padx=4); self.rotular_guardadas()
-        fila = self.caja(f); fila.pack(anchor='w', **pad)
-        self.b_nueva = ttk.Button(fila, text='Nueva tanda', command=lambda: self.arrancar('nueva'))
+        self.b_guardadas.grid(row=1, column=1, sticky='w', padx=6, pady=2); self.rotular_guardadas()
         self.b_seguir = ttk.Button(fila, text='Retomar', command=lambda: self.arrancar('seguir'))
-        self.b_cortar = ttk.Button(fila, text='Cortar', command=self.cortar)
-        for b in (self.b_nueva, self.b_seguir, self.b_cortar):
-            b.pack(side='left', padx=(0, 8))
+        self.b_seguir.grid(row=2, column=1, sticky='w', padx=6, pady=2)
 
         caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
@@ -444,9 +466,9 @@ class Monitor(tk.Tk):
         except Exception as e:   # el juego puede estar escribiendo los CSV justo ahora
             self.escribir((f'(no se pudo leer el estado: {e})', 'gris'))
         corre = self.corriendo() or self.externa
-        self.b_nueva.state(['disabled'] if corre else ['!disabled'])
+        self.encender(self.b_nueva, not corre)
         self.b_seguir.state(['disabled'] if corre or not self.retomable else ['!disabled'])
-        self.b_cortar.state(['!disabled'] if self.corriendo() else ['disabled'])
+        self.encender(self.b_cortar, self.corriendo())
         self.medidores[0].poner(psutil.cpu_percent())
         self.medidores[1].poner(psutil.virtual_memory().percent)
         self.after(2000, self.refrescar)
