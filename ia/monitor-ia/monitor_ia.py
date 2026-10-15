@@ -29,7 +29,7 @@ ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(_
 
 
 class Medidor:
-    TAM = 52
+    TAM = 26   # como la ruedita
 
     def __init__(self, mon, padre, nombre):
         self.mon, self.nombre = mon, nombre
@@ -41,7 +41,7 @@ class Medidor:
             self.imgs.append(c.resize((self.TAM, self.TAM), Image.LANCZOS))
         self.caja = mon.caja(padre)
         self.l_img = mon.icono(self.caja, self.imgs[0]); self.l_img.pack()
-        self.l_txt = mon.rotulo(self.caja, text=f'{nombre} 0%', font=('Segoe UI', 8, 'bold')); self.l_txt.pack()
+        self.l_txt = mon.rotulo(self.caja, text=f'{nombre} 0%', font=('Segoe UI', 7)); self.l_txt.pack()
 
     def poner(self, pct):
         if pct < 30:
@@ -88,6 +88,7 @@ class Monitor(tk.Tk):
         self.hilo = None
         self.tid = None
         self.retomable = False
+        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
         self.aplicar_fondo()
@@ -190,6 +191,10 @@ class Monitor(tk.Tk):
         self.b_cortar = self.boton(botonera, 'cortar', self.cortar)
         for b in (self.b_nueva, self.b_seguir, self.b_cortar):
             b.pack(side='left', padx=2)
+        # Progreso de la tanda y de la partida en curso, estilo terminal (fondo oscuro, barra con resto rayado).
+        self.barras = tk.Canvas(tarjeta, width=190, height=50, bg='#0d1512', highlightthickness=1,
+                                highlightbackground='#3f8f6a', bd=0)
+        self.barras.pack(padx=6, pady=(0, 6))
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
         # En el ángulo superior derecho de la tarjeta, al costado de los círculos.
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
@@ -469,9 +474,27 @@ class Monitor(tk.Tk):
         self.encender(self.b_nueva, not corre)
         self.encender(self.b_seguir, not corre and self.retomable)
         self.encender(self.b_cortar, self.corriendo())
+        self.dibujar_barras()
         self.medidores[0].poner(psutil.cpu_percent())
         self.medidores[1].poner(psutil.virtual_memory().percent)
         self.after(2000, self.refrescar)
+
+    def dibujar_barras(self):
+        c = self.barras; c.delete('all')
+        mono, verde, naranja, gris = ('Consolas', 8), '#6fd39a', '#f0a070', '#9aa7a1'
+        x0, x1 = 52, 136
+        for i, (rot, frac, txt, lista) in enumerate(self.progreso):
+            y = 9 + i * 18
+            c.create_text(4, y, text=rot, anchor='w', font=mono, fill='#d8e4de')
+            c.create_rectangle(x0, y - 5, x1, y + 5, fill='#1a2420', outline='')
+            for xx in range(x0, x1, 2):   # resto rayado, como en la imagen de referencia
+                for yy in range(y - 5 + (xx // 2) % 2, y + 5, 2):
+                    c.create_rectangle(xx, yy, xx + 1, yy + 1, fill='#4a5550', outline='')
+            if frac is not None:
+                xf = x0 + (x1 - x0) * max(0.0, min(1.0, frac))
+                c.create_rectangle(x0, y - 5, xf, y + 5, fill=verde if lista else naranja, outline='')
+            c.create_text(x1 + 4, y, text=txt, anchor='w', font=mono, fill=verde if lista else naranja)
+        c.create_text(4, 45, text='verde → hecha  naranja → en curso', anchor='w', font=('Consolas', 7), fill=gris)
 
     def escribir(self, *partes):
         """Reescribe el recuadro de la partida en curso: partes = (texto, estilo) o texto sin estilo."""
@@ -506,6 +529,7 @@ class Monitor(tk.Tk):
         import sqlite3
         self.externa = False
         self.retomable = False
+        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); return
         db = sqlite3.connect(tanda.DB)
@@ -538,6 +562,7 @@ class Monitor(tk.Tk):
             fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
+        self.progreso[0] = ('tanda', len(hechas) / total if total else 0, f'{len(hechas)}/{total}', bool(term))
         self.v_parche.set(self.parches(db, tid))
 
         if not en_curso:
@@ -550,6 +575,13 @@ class Monitor(tk.Tk):
         filas = tanda.leer(tanda.CSV_T, len(tanda.COL_T))
         bats = tanda.leer(tanda.CSV_B, len(tanda.COL_B))
         turno = max((r[0] for r in filas), default=0)
+        # Sin tope de turnos, el largo esperado sale del promedio de las partidas ya jugadas.
+        largos = [p[0] for p in db.execute("select turnos from partida where turnos>0 and estado!='cortada'")]
+        if largos:
+            esperado = sum(largos) / len(largos)
+            self.progreso[1] = ('partida', turno / esperado, f't{turno}/~{esperado:.0f}', False)
+        else:
+            self.progreso[1] = ('partida', None, f't{turno}', False)
         prueba = [c for c in range(8) if asig[c] == 'P']
         res = {ia: [0, 0] for ia in (0, 1)}
         for r in bats:
