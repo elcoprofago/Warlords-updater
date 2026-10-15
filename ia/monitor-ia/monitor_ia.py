@@ -82,7 +82,7 @@ class Monitor(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('Banco de pruebas de la IA')
-        self.geometry('680x760')
+        self.geometry('740x760')
         self.cola = queue.Queue()
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
@@ -144,7 +144,7 @@ class Monitor(tk.Tk):
         self.iconos[l] = img
         return l
 
-    def boton(self, padre, nombre, accion, tam=64):
+    def boton(self, padre, nombre, accion, tam=58):
         imgs = {e: Image.open(os.path.join(ASSETS, f'{nombre}_{e}.png')).convert('RGBA').resize((tam, tam), Image.LANCZOS)
                 for e in ('on', 'off')}
         l = self.icono(padre, imgs['off'], cursor='hand2')
@@ -186,8 +186,10 @@ class Monitor(tk.Tk):
         # Botones cuadrados iluminados (como los de USBagent): encendido = se puede apretar ahora.
         botonera = self.caja(tarjeta); botonera.pack(pady=(6, 0))
         self.b_nueva = self.boton(botonera, 'nueva', lambda: self.arrancar('nueva'))
+        self.b_seguir = self.boton(botonera, 'retomar', lambda: self.arrancar('seguir'))
         self.b_cortar = self.boton(botonera, 'cortar', self.cortar)
-        self.b_nueva.pack(side='left', padx=(0, 4)); self.b_cortar.pack(side='left')
+        for b in (self.b_nueva, self.b_seguir, self.b_cortar):
+            b.pack(side='left', padx=2)
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.pack(anchor='e', padx=4, pady=4)
         b.bind('<Button-1>', lambda e: self.configurar())
@@ -205,9 +207,6 @@ class Monitor(tk.Tk):
         self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
         self.b_guardadas.grid(row=1, column=1, sticky='w', padx=6, pady=2); self.rotular_guardadas()
-        self.b_seguir = ttk.Button(fila, text='Retomar', command=lambda: self.arrancar('seguir'))
-        self.b_seguir.grid(row=2, column=1, sticky='w', padx=6, pady=2)
-
         caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
         self.v_mudo = tk.BooleanVar(value=True)
@@ -467,7 +466,7 @@ class Monitor(tk.Tk):
             self.escribir((f'(no se pudo leer el estado: {e})', 'gris'))
         corre = self.corriendo() or self.externa
         self.encender(self.b_nueva, not corre)
-        self.b_seguir.state(['disabled'] if corre or not self.retomable else ['!disabled'])
+        self.encender(self.b_seguir, not corre and self.retomable)
         self.encender(self.b_cortar, self.corriendo())
         self.medidores[0].poner(psutil.cpu_percent())
         self.medidores[1].poner(psutil.virtual_memory().percent)

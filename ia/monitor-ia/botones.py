@@ -6,12 +6,25 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
-BOTONES = {'nueva': ('AM', ('NUEVA', 'TANDA')), 'cortar': ('red', ('CORTAR',))}
+# nombre: (imagen de base, líneas de texto, corrimiento de tono en grados: el naranja sale del ámbar)
+BOTONES = {'nueva': ('AM', ('NUEVA', 'TANDA'), 0), 'retomar': ('AM', ('RETOMAR',), -22),
+           'cortar': ('red', ('CORTAR',), 0)}
+
+
+def tono(img, grados):
+    if not grados:
+        return img
+    alfa = img.getchannel('A')
+    h, s, v = img.convert('RGB').convert('HSV').split()
+    h = h.point(lambda x: int(x + grados * 256 / 360) % 256)
+    img = Image.merge('HSV', (h, s, v)).convert('RGBA')
+    img.putalpha(alfa)
+    return img
 FUENTE = r'C:\Windows\Fonts\arialbd.ttf'
 
 
-def rehacer(origen, lineas):
-    img = Image.open(os.path.join(ASSETS, origen)).convert('RGBA')
+def rehacer(origen, lineas, grados=0):
+    img = tono(Image.open(os.path.join(ASSETS, origen)).convert('RGBA'), grados)
     a = np.asarray(img).astype(float)
     w, h = img.size
     # La cara iluminada del botón: el centro, lejos del marco.
@@ -58,7 +71,7 @@ def rehacer(origen, lineas):
 
 
 if __name__ == '__main__':
-    for nombre, (base, lineas) in BOTONES.items():
+    for nombre, (base, lineas, grados) in BOTONES.items():
         for estado in ('on', 'off'):
-            rehacer(f'{base}_{estado}.png', lineas).save(os.path.join(ASSETS, f'{nombre}_{estado}.png'))
+            rehacer(f'{base}_{estado}.png', lineas, grados).save(os.path.join(ASSETS, f'{nombre}_{estado}.png'))
             print(f'assets/{nombre}_{estado}.png')
