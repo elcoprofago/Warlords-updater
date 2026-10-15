@@ -132,6 +132,8 @@ class Monitor(tk.Tk):
             caja.pack_configure(fill='x', expand=False) if plegar else caja.pack_configure(fill='both', expand=True)
         self.update_idletasks()
         alto = max(200, self.winfo_height() + self.winfo_reqheight() - antes)
+        if plegar:   # si la ventana era más baja que lo pedido, restar la diferencia la achica de más y se solapan
+            alto = max(alto, self.winfo_reqheight())
         self.geometry(f'{self.winfo_width()}x{alto}')
 
     def rotulo(self, padre, **kw):
@@ -200,10 +202,14 @@ class Monitor(tk.Tk):
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
         b.bind('<Button-1>', lambda e: self.configurar())
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
-        self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar()
+        self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar(); self.v_todas = tk.StringVar()
         self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
         self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
-        self.rotulo(f, textvariable=self.v_parche).pack(anchor='w', padx=8, pady=(2, 0))
+        fp = self.caja(f); fp.pack(anchor='w', padx=8, pady=(2, 0))
+        for i, (txt, var) in enumerate((('Parche de esta tanda: ', self.v_parche), ('Todas las tandas: ', self.v_todas))):
+            self.rotulo(fp, text=txt).grid(row=i, column=0, sticky='nw')
+            self.rotulo(fp, textvariable=var, font=('Consolas', 9), justify='left', anchor='w',
+                        wraplength=330).grid(row=i, column=1, sticky='w')
         fila = self.caja(f); fila.pack(anchor='w', **pad)
         self.rotulo(fila, text='Partidas:').grid(row=0, column=0, sticky='w')
         self.v_partidas = tk.IntVar(value=6)
@@ -508,7 +514,7 @@ class Monitor(tk.Tk):
         """Con qué parche juega la tanda mostrada y con cuál jugaron todas, agrupadas de corrido."""
         cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
         if 'exe' not in cols:
-            return 'Parche: sin registrar'
+            return 'sin registrar', ''
         def rotulo(ver, exe):
             return f'vista-aliada {ver} (exe {exe})' if exe else (f'vista-aliada {ver}' if ver else 'sin registrar')
         filas = db.execute('select id, parche, exe from tanda order by id').fetchall()
@@ -519,11 +525,7 @@ class Monitor(tk.Tk):
                 grupos[-1][1] = i
             else:
                 grupos.append([i, i, (v, e)])
-        txt = f'Parche de esta tanda: {actual}'
-        if grupos:
-            txt += '\nTodas las tandas: ' + ' · '.join(
-                f'{a}{"–" + str(b) if b != a else ""}: {rotulo(*ve)}' for a, b, ve in grupos)
-        return txt
+        return actual, ' · '.join(f'{a}{"–" + str(b) if b != a else ""}: {rotulo(*ve)}' for a, b, ve in grupos)
 
     def mostrar(self):
         import sqlite3
@@ -531,7 +533,7 @@ class Monitor(tk.Tk):
         self.retomable = False
         self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
-            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         db = sqlite3.connect(tanda.DB)
         # La tanda que se está jugando; si no hay ninguna, la que corrió este panel; si no, la última.
         r = db.execute("select tanda from partida where estado='jugando' and tanda is not null "
@@ -541,7 +543,7 @@ class Monitor(tk.Tk):
         tid = r[0] if r else self.tid or db.execute('select max(id) from tanda').fetchone()[0]
         t = db.execute('select id, inicio, plan, terminada from tanda where id=?', (tid,)).fetchone()
         if not t:
-            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         tid, inicio, plan, term = t
         total = len(json.loads(plan))
         parts = db.execute('select n, guardada, asignacion, inicio, fin, estado, turnos from partida where tanda=? '
@@ -563,7 +565,7 @@ class Monitor(tk.Tk):
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
         self.progreso[0] = ('tanda', len(hechas) / total if total else 0, f'{len(hechas)}/{total}', bool(term))
-        self.v_parche.set(self.parches(db, tid))
+        actual, todas = self.parches(db, tid); self.v_parche.set(actual); self.v_todas.set(todas)
 
         if not en_curso:
             self.escribir(('Ninguna partida en curso', 'titulo'), *(
