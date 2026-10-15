@@ -182,7 +182,7 @@ class Monitor(tk.Tk):
         semaforos = self.caja(tarjeta); semaforos.pack(padx=4, pady=(4, 0))
         self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
-            m.caja.pack(side='left', padx=2)
+            m.caja.pack(side='left', padx=8)
         # Botones cuadrados iluminados (como los de USBagent): encendido = se puede apretar ahora.
         botonera = self.caja(tarjeta); botonera.pack(pady=(6, 0))
         self.b_nueva = self.boton(botonera, 'nueva', lambda: self.arrancar('nueva'))
