@@ -28,7 +28,10 @@ Mide cuánto se refugia y defiende en común la IA de hoy, antes de enseñarle n
    convoyes (vista-aliada 1.0.33.0). En el Monitor, la línea **Eventos** tiene que mostrar conteos (o "ninguno
    todavía").
 4. Con mi OK, seguí con más tandas iguales hasta **32 partidas** en total (16 por mapa).
-Resultado:
+Resultado: paso 1 hecho (16/10/2026). Guardadas como **Tanda_Scar_Alianzas** y **Tanda_Border_Alianzas** (no
+entran nombres más largos), las dos con blanco, amarillo, rojo y azul contra negro, verde, celeste y naranja.
+  (Claude: los bandos son iguales en los 8 colores. Las alianzas quedaron como propuestas mutuas, todavía no
+  vigentes: falta pasarlas a vigentes en el archivo antes del paso 2.)
 
 ## 2. IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
