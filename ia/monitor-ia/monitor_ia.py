@@ -68,6 +68,23 @@ def guardar_config(seccion, **valores):
         c.write(f)
 
 
+class Ayuda:
+    """Cartelito que aparece al pasar el mouse sobre un widget."""
+    def __init__(self, w, texto):
+        self.w, self.texto, self.v = w, texto, None
+        w.bind('<Enter>', self.mostrar, add='+'); w.bind('<Leave>', self.ocultar, add='+')
+
+    def mostrar(self, e):
+        self.v = tk.Toplevel(self.w); self.v.wm_overrideredirect(True)
+        self.v.geometry(f'+{e.x_root + 12}+{e.y_root + 14}')
+        tk.Label(self.v, text=self.texto, bg='#ffffe0', relief='solid', bd=1, font=('Segoe UI', 8),
+                 padx=4).pack()
+
+    def ocultar(self, e):
+        if self.v:
+            self.v.destroy(); self.v = None
+
+
 class Salida(io.TextIOBase):
     """Lo que tanda.py imprime va a la bitácora del panel."""
     def __init__(self, cola):
@@ -188,9 +205,10 @@ class Monitor(tk.Tk):
         fs = self.caja(semaforos); fs.pack(side='left', padx=(4, 8))
         self.suspender = leer_config('Suspension').get('activa') == 'si'
         self.imgs_susp = {e: Image.open(os.path.join(ASSETS, f'suspender_{e}.png')).convert('RGBA')
-                          .resize((17, 27), Image.LANCZOS) for e in ('on', 'off')}
+                          .resize((25, 39), Image.LANCZOS) for e in ('on', 'off')}
         self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
         self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
+        Ayuda(self.b_susp, 'modo sleep')
         self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
             m.caja.pack(side='left', padx=8)
