@@ -145,8 +145,7 @@ Resultado: (Claude: cumplida de hecho: las tandas 6 a 17, 96 partidas, corrieron
 
 ## 13. [RESUELTA] IA: probar el Monitor de IA (14/10/2026)
 Reemplaza a tanda.bat y monitor.bat.
-1. Hacé doble clic en **F:\source
-eposctualizador-warlords\ia\Monitor-IA.exe**.
+1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\Monitor-IA.exe**.
 2. Arriba aparece la tanda 4, que quedó a medias. Apretá **Retomar**: tiene que seguir con la partida 2.
    (Para una tanda nueva: poné la cantidad de partidas y apretá **Nueva tanda**.)
 3. Mirá que la tabla de colores se vaya actualizando con los turnos y que el juego no suene.
