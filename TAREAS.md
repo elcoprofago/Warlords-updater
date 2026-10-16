@@ -116,5 +116,8 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
    Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
 2. En el Banco de pruebas, **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
    (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
-3. Anotá abajo qué mapa quedó hecho. El cuadro del mapa lo armo yo.
+3. Anotá abajo qué mapa quedó hecho, y dónde arranca cada color (cuadrantes I a IX, como en Scarpart): con eso
+   completo la columna "Posición de arranque" del cuadro.
+4. El PDF para la página del Clan: en el Banco de pruebas 1.0.2 (botón Actualizar), **Exportar PDF de un mapa…**,
+   elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
 Resultado:
