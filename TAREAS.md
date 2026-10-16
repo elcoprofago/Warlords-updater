@@ -121,3 +121,16 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 4. El PDF para la página del Clan: en el Banco de pruebas 1.0.2 (botón Actualizar), **Exportar PDF de un mapa…**,
    elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
 Resultado:
+
+## Herramientas 1.0.0.1: probar en partida que el espectador no pueda volver al Warlords (16/10/2026)
+Votación 1.1.3 y Sorteo 1.1.2 ya están instalados en C:\Warlords3\Herramientas de esta PC. Hace falta otra PC
+con los mismos .exe (copiá votacion.exe y sorteo.exe de esa carpeta a la misma carpeta de la otra PC).
+1. Partida por Puente Warlords entre las dos PC. Desde la anfitriona, abrí la **Votación**.
+2. En la otra PC (espectador) la Votación tiene que aparecer adelante y seguir lo que se vota en la anfitriona.
+3. En el espectador intentá volver al juego: clic sobre el juego, Alt+Tab, tecla Windows. En menos de un
+   segundo la Votación tiene que volver adelante.
+4. Cerrá la Votación en la anfitriona: en el espectador se cierra sola y el juego tiene que seguir normal
+   (que no quede minimizado, en negro ni colgado).
+5. Repetí 1 a 4 con **Draw Lots** (Sorteo).
+Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo publico para todos los jugadores.
+Resultado:
