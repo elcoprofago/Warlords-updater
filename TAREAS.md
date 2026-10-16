@@ -87,7 +87,7 @@ eposctualizador-warlords\ia\Monitor-IA.exe**.
 Anotá acá qué funcionó, qué no, y qué te gustaría cambiar o agregar.
 Resultado:
 
-## [RESUELTA] IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
+## IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
 Las tandas no arman bandos: cargan las partidas guardadas Tanda_Scarpart, Tanda_Borderlands y Tanda_Kor tal
 como quedaron. Para que todos los colores jueguen con el mismo bando hay que volver a guardar esas 3 partidas.
 Para cada escenario (Scarpart, The Borderlands y Kor):
@@ -98,4 +98,20 @@ Para cada escenario (Scarpart, The Borderlands y Kor):
 2. Apenas empiece, pasá un bando a Humano y guardá la partida con el **mismo nombre de antes**
    (Tanda_Scarpart, Tanda_Borderlands o Tanda_Kor), aceptando reemplazar la anterior.
 3. Anotá acá qué .PGS usaste. Después la tanda se larga como siempre, con **ia\tanda.bat**.
-Resultado: hecho (16:25 a 16:28). Verificado por Claude: los 8 colores tienen el mismo bando en las 3 partidas.
+Resultado: nobre del bando: X-12.pgs
+
+## IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
+1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
+   (al pasar el mouse dice "modo sleep"). Un clic lo prende (luz roja encendida) y otro lo apaga. Queda
+   recordado para la próxima vez que abras el Monitor.
+2. Con el interruptor prendido, al terminar una tanda la bitácora avisa y la PC se suspende a los 30 segundos.
+   Si en esos 30 segundos lo apagás, se cancela. (Con la suspensión prendida no suena la alarma.)
+3. Probalo con una tanda corta (Partidas: 1) y anotá si la PC se suspendió.
+Resultado:
+
+## IA: etapa 2, posiciones en Scarpart (16/10/2026)
+Empieza cuando termine la tanda 17 (la que está corriendo). Son 20 tandas de 6 partidas, todas en Scarpart.
+1. En el Banco de pruebas, botón **Guardadas**: dejá marcada **solo Tanda_Scarpart** y aceptá.
+2. Partidas: **6**. Apretá **Nueva tanda**. Repetí esto en cada tanda hasta completar 20.
+3. No hace falta tocar la partida guardada: ya tiene el mismo bando en los 8 colores.
+Resultado:
