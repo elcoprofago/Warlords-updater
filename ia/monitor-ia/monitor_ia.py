@@ -235,6 +235,14 @@ class Monitor(tk.Tk):
         cb.current(next((i for i, m in enumerate(self.mons) if m[0] == pref), 0))
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
         cb.grid(row=1, column=1, sticky='w', **pad)
+        # Interruptor de suspensión (la ficha on/off de MovilCode): encendido, la PC se suspende al terminar la tanda.
+        fs = self.caja(c); fs.grid(row=0, column=2, rowspan=2, sticky='n', **pad)
+        self.suspender = leer_config('Suspension').get('activa') == 'si'
+        self.imgs_susp = {e: Image.open(os.path.join(ASSETS, f'suspender_{e}.png')).convert('RGBA')
+                          .resize((30, 44), Image.LANCZOS) for e in ('on', 'off')}
+        self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
+        self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
+        self.l_susp = self.rotulo(fs, font=('Segoe UI', 8)); self.l_susp.pack(); self.rotular_suspension()
 
         caja, p = self.panel(self, 'Partida en curso'); caja.pack(fill='x', **pad)
         self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
@@ -269,6 +277,15 @@ class Monitor(tk.Tk):
         # Todo widget de la ventana principal lleva '.' en sus bindtags: cualquier cambio de tamaño o lugar repinta.
         self.pendiente = False
         self.bind('<Configure>', lambda e: self.programar_repintado())
+
+    def alternar_suspension(self):
+        self.suspender = not self.suspender
+        guardar_config('Suspension', activa='si' if self.suspender else 'no')
+        self.iconos[self.b_susp] = self.imgs_susp['on' if self.suspender else 'off']
+        self.pintar_icono(self.b_susp); self.rotular_suspension()
+
+    def rotular_suspension(self):
+        self.l_susp['text'] = 'Suspender al terminar:\n' + ('ACTIVADO' if self.suspender else 'desactivado')
 
     def disponibles(self):
         d = os.path.join(tanda.JUEGO, 'SAVES')
@@ -437,7 +454,16 @@ class Monitor(tk.Tk):
             terminada = db.execute('select terminada from tanda where id=?', (self.tid,)).fetchone()[0]
             print()
             informe.main(self.tid)
-            if terminada and self.v_alarma.get():
+            if terminada and self.suspender:
+                print('Tanda terminada: la PC se suspende en 30 segundos (apagá el interruptor para evitarlo).')
+                for _ in range(30):
+                    time.sleep(1)
+                    if not self.suspender:
+                        print('Suspensión cancelada.'); break
+                else:
+                    ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+                    ctypes.windll.powrprof.SetSuspendState(False, False, False)
+            elif terminada and self.v_alarma.get():
                 self.alarma()
         except SystemExit as e:
             print(e)
