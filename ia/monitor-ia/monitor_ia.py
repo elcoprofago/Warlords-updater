@@ -717,7 +717,10 @@ class Monitor(tk.Tk):
             return
         n, guardada, asig, ini = en_curso[:4]
         filas = tanda.leer(tanda.CSV_T, len(tanda.COL_T))
-        bats = tanda.leer(tanda.CSV_B, len(tanda.COL_B))
+        bats = tanda.leer_batallas()
+        evs = {}
+        for r in tanda.leer(tanda.CSV_E, len(tanda.COL_E)):
+            evs[r[3]] = evs.get(r[3], 0) + 1
         turno = max((r[0] for r in filas), default=0)
         # Sin tope de turnos, el largo esperado sale del promedio de las partidas ya jugadas.
         largos = [p[0] for p in db.execute("select turnos from partida where turnos>0 and estado!='cortada'")]
@@ -737,7 +740,9 @@ class Monitor(tk.Tk):
         self.escribir((f'Partida {n + 1} · {guardada.removeprefix("Tanda_")} · turno {turno}', 'titulo'),
                       (f'     empezó {ini[11:]}\n', 'gris'),
                       'Colores con la IA de prueba: ', (', '.join(tanda.COLORES[c] for c in prueba) + '\n', 'prueba'),
-                      ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt)
+                      ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt,
+                      '\nEventos: ' +(', '.join(f'{tanda.EVENTOS.get(t, t)} {k}' for t, k in sorted(evs.items()))
+                                        or 'ninguno todavía'))
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
         if quieto > AVISO_MIN * 60:

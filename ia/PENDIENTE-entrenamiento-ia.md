@@ -292,3 +292,21 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   conteo por tanda en el Monitor. Solo anota, no cambia decisiones; probarlo en unicorn igual que prueba_iarazea.py.
 - Cambia el exe: va en el mismo exe que el registro de alianzas (etapa 3), instalado entre etapas, cuando el
   usuario cierre el grupo de mapas en curso. Así la etapa 2 sigue con un solo exe.
+
+### 16/10/2026: etapa 3, paso 1 hecho: registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0)
+- NO instalado: la etapa 2 sigue con 1.0.32.0. Se compila aparte (`python build.py <carpeta>`) y se instala entre
+  etapas, cuando el usuario cierre el grupo de mapas en curso. Solo anota (con DATA\IA.INI); no cambia decisiones.
+- DATA\IA_DIP.CSV (tabla `diplo`): por color y turno, `turno,color,opciones,d0..d7`. opciones: 1 ciudades
+  compartidas, 2 diplomacia, 4 Hidden Map, 8 vista aliada. dN: 0 aliados, 1 paz, 2 guerra con el color N.
+- DATA\IA_EVT.CSV (tabla `evento`): `turno,color,ia,tipo,x,y,n`. Tipos: 1 puente derribado por criterio propio
+  (ai_brraze, n = c+s), 2 convoy (ai_conv, x,y destino, n = ejército), 3 grupo partido al embarcar (ai_move, x,y
+  del líder, n = cuántos), 4 puente reconstruido (ai_brreb, n = costo), 5 refugio (pila en ciudad compartida de
+  otro color, n = ejércitos), 6 puente derribado por misión (ai_brq).
+- Refugio: se mide al empezar el turno del dueño de la pila (donde terminó el turno anterior). Entrar y salir de la
+  ciudad en el mismo turno no se anota.
+- IA_BAT.CSV: columna nueva al final `colores_d` (máscara de bits de los colores defensores). tanda.py acepta filas
+  viejas (sin la columna, queda NULL) y agrega la columna a datos.db si falta. El Monitor cuenta eventos por tipo.
+- Probado emulado (prueba_iaregistro.py, unicorn) con ABN_001-FIN, Aliados01, hide01 y Tanda_Scarpart: TODO OK.
+  Falta la prueba en vivo (TAREAS.md).
+- Próximo paso: etapa 3, paso 2 (tandas de control con alianzas fijas). Para retomar:
+  "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3 paso 2: tandas de control con alianzas fijas".

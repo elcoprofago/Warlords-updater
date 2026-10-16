@@ -1,7 +1,7 @@
 # Prueba emulada del registro de la IA (ia_turn / ia_snap): ejecuta el código parcheado real sobre el estado de
 # partidas guardadas, con fopen/fclose/fprintf/GetPrivateProfileStringA/_stricmp simulados, y compara cada línea con
 # un conteo independiente hecho en Python sobre el mismo .SAV.
-# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <ia_compu hex> <partida.SAV> [...]
+# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <ia_compu hex> <ia_evtb hex> <member hex> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
 #   (las direcciones las imprime build.py en la línea "caves"; requiere pefile y unicorn)
 import pefile, struct, sys
 from unicorn import *
@@ -9,7 +9,9 @@ from unicorn.x86_const import *
 
 EXE, IA_TURN, TURN, IA_BAT = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
 IA_FIN, IA_MENU, IA_COMPU = int(sys.argv[5], 16), int(sys.argv[6], 16), int(sys.argv[7], 16)
-SAVS = sys.argv[8:]
+IA_EVTB, MEMBER, IA_ON_VA, IA_MODE_VA = (int(a, 16) for a in sys.argv[8:12])
+SAVS = sys.argv[12:]
+EXTRA = []   # (archivo, valores) de IA_DIP.CSV e IA_EVT.CSV
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, '_stricmp': 0x5a9be0, 'GetPrivateProfileStringA': 0x5a97e8}
 STUB = 0xdeac0000
@@ -39,7 +41,7 @@ def cuenta(m, p):   # independiente del parche
     return [pr[1], struct.unpack_from('<h', pr, 0xe2)[0], struct.unpack_from('<i', pr, 0xe4)[0], ci,
             sum(slots[:16]), slots[16]] + slots[:16]
 
-def corrida(sav, ini, turno, p, bat=None):
+def corrida(sav, ini, turno, p, bat=None, pre=None):
     """ini: None = no hay IA.INI; si no, dict ColorN -> valor. Devuelve (líneas escritas, ia_mode, llamadas)."""
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
@@ -49,18 +51,21 @@ def corrida(sav, ini, turno, p, bat=None):
     names = list(IAT)
     for k, n in enumerate(names):
         mu.mem_write(IAT[n], struct.pack('<I', STUB + k * 16)); mu.mem_write(STUB + k * 16, b'\xc3')
-    out, calls = [], []
+    out, calls, files = [], [], {}
+    EXTRA.clear()
     def arg(i): return struct.unpack('<I', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4 + 4 * i, 4))[0]
     def hook(mu, addr, size, _):
         k = (addr - STUB) // 16; n = names[k]; calls.append(n); ret = 0
         if n == 'fopen':
             path, mode = cstr(mu, arg(0)), cstr(mu, arg(1))
             ret = 0 if (path.endswith('IA.INI') and ini is None) else 0x1000 + len(calls)
+            files[ret] = path.split(chr(92))[-1]
             calls[-1] += f'({path},{mode})'
         elif n == 'fprintf':
             fmt = cstr(mu, arg(1)); nargs = fmt.count('%d')
             vals = [struct.unpack('<i', struct.pack('<I', arg(2 + i)))[0] for i in range(nargs)]
-            out.append(vals)
+            if files.get(arg(0)) in ('IA_DIP.CSV', 'IA_EVT.CSV'): EXTRA.append((files[arg(0)], vals))
+            else: out.append(vals)
         elif n == '_stricmp':
             ret = 0 if cstr(mu, arg(0)).lower() == cstr(mu, arg(1)).lower() else 1
         elif n == 'GetPrivateProfileStringA':
@@ -73,6 +78,7 @@ def corrida(sav, ini, turno, p, bat=None):
             return
         mu.reg_write(UC_X86_REG_EAX, ret)
     mu.hook_add(UC_HOOK_CODE, hook, begin=STUB, end=STUB + 0xfff)
+    if pre: pre(mu)
     sp = STK + 0x80000 - 64
     mu.mem_write(sp, struct.pack('<II', 0xdead0000, p))
     regs = {r: 0x11110000 + k for k, r in enumerate((UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP))}
@@ -98,6 +104,10 @@ for sav in SAVS:
         o, c, pres = corrida(sav, ini, 12, p)
         exp = [12, p, p % 2] + cuenta(m, p)
         check(o == [exp] and pres, f'color {p}: {o[0][:9] if o else o}... = conteo propio')
+        dp = rd(m, 0x55ee4c + p * 56, 8); o3 = rd(m, 0x53c38c, 0x2a)
+        op = (o3[25] & 1) | (2 if o3[7] & 8 else 0) | (4 if o3[2] & 0x10 else 0) | (8 if o3[2] & 0x80 else 0)
+        check(EXTRA == [('IA_DIP.CSV', [12, p, op] + list(dp))],
+              f'color {p}: IA_DIP {EXTRA[0][1] if EXTRA else EXTRA} = diplomacia del .SAV, sin refugios (sin ciudades compartidas)')
     ini['Color5'] = 'pruebas'; ini.pop('Color6')
     o5, _, _ = corrida(sav, ini, 1, 5); o6, _, _ = corrida(sav, ini, 1, 6)
     check(o5[0][2] == 2 and o6[0][2] == 0, f'valor inválido -> ia 2 ({o5[0][2]}); clave ausente -> original ({o6[0][2]})')
@@ -137,7 +147,7 @@ def batalla(sav, atk, dfn, ini, res):
     for _, s in A: sa[s] += 1
     for _, s in D: sd[s] += 1
     md = lambda p: (p % 2) if ini is not None else 0
-    exp = [9, atk, dfn, 33, 44, -1, res, md(atk), md(dfn), len(A), len(D), len(A), len(D) - 1] + sa + sd
+    exp = [9, atk, dfn, 33, 44, -1, res, md(atk), md(dfn), len(A), len(D), len(A), len(D) - 1] + sa + sd + [1 << dfn]
     return o, exp, seen == [(FICHA, RES)], pres
 
 STK = 0x10000000; STK_F = 0x10090000
@@ -228,6 +238,69 @@ def compu(tanda):
     cnt = struct.unpack('<H', mu.mem_read(sp + 0x18, 2))[0]
     exp = ([2, 2, 2, 0, 2, 2, 2, 2] if tanda else ctl) + [-1]
     return got == exp and cnt == (0 if tanda else 3) and mu.reg_read(UC_X86_REG_EAX) == 0x1234 and         mu.reg_read(UC_X86_REG_ESP) == sp and struct.unpack('<H', mu.mem_read(0x537ce8, 2))[0] == 5, got
+
+# Refugio: member simulado (la ciudad k compartida con todos); un ejército de p se pone en la casilla (x+1, y+1) de k.
+def refugio(sav, p):
+    m = load(sav); nc = struct.unpack('<h', rd(m, 0x537e2a, 2))[0]; A = ejercitos(m, p)
+    k = next((k for k in range(nc) if rd(m, 0x537e2c + k * 0xde + 0xa5, 1)[0] not in (p, 255)), None)
+    if k is None or not A: return None
+    cx, cy = struct.unpack('<hh', rd(m, 0x537e2c + k * 0xde, 4))
+    def pre(mu):
+        mu.mem_write(0x54fe50 + A[0][0] * 0x1c + 2, struct.pack('<hh', cx + 1, cy + 1))
+        def mb(mu, addr, size, _):
+            esp = mu.reg_read(UC_X86_REG_ESP); i = struct.unpack('<I', mu.mem_read(esp + 4, 4))[0]
+            mu.reg_write(UC_X86_REG_EAX, 1 if i == k else 0)
+            mu.reg_write(UC_X86_REG_ESP, esp + 4); mu.reg_write(UC_X86_REG_EIP, struct.unpack('<I', mu.mem_read(esp, 4))[0])
+        mu.hook_add(UC_HOOK_CODE, mb, begin=MEMBER, end=MEMBER)
+    n = 0   # conteo propio, con el ejército movido
+    for i, _ in A:
+        x, y = (cx + 1, cy + 1) if i == A[0][0] else struct.unpack('<hh', rd(m, 0x54fe50 + i * 0x1c + 2, 4))
+        n += cx <= x <= cx + 1 and cy <= y <= cy + 1
+    ini = {f'Color{c}': 'prueba' for c in range(8)}
+    o, c, pres = corrida(sav, ini, 4, p, pre=pre)
+    return [e for e in EXTRA if e[0] == 'IA_EVT.CSV'], [('IA_EVT.CSV', [4, p, 1, 5, cx, cy, n])], pres
+
+for sav in SAVS:
+    print(sav, '(refugio)')
+    for p in (1, 4):
+        r = refugio(sav, p)
+        if r is None: print('    (sin ciudad ajena o sin ejércitos de', p, ')'); continue
+        check(r[0] == r[1] and r[2], f'color {p}: {r[0]} = esperado, registros intactos')
+
+# ia_evtb directo: código de puente 0x2000 + y*128 + x -> x, y; sin IA.INI (ia_on = 0) no escribe.
+def evtb(on):
+    mu = Uc(UC_ARCH_X86, UC_MODE_32)
+    mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
+    mu.mem_map(STK, 0x100000); mu.mem_map(STUB, 0x1000); mu.mem_map(0xdead0000, 0x1000)
+    mu.mem_write(0x503328, struct.pack('<h', 21))
+    out = []; names = list(IAT)
+    for kk, n in enumerate(names):
+        mu.mem_write(IAT[n], struct.pack('<I', STUB + kk * 16)); mu.mem_write(STUB + kk * 16, bytes([0xc3]))
+    def arg(i): return struct.unpack('<I', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4 + 4 * i, 4))[0]
+    def hook(mu, addr, size, _):
+        n = names[(addr - STUB) // 16]
+        if n == 'fopen': mu.reg_write(UC_X86_REG_EAX, 0x1234); out.append(cstr(mu, arg(0)))
+        elif n == 'fprintf': out.append([struct.unpack('<i', struct.pack('<I', arg(2 + i)))[0] for i in range(cstr(mu, arg(1)).count('%d'))])
+    mu.hook_add(UC_HOOK_CODE, hook, begin=STUB, end=STUB + 0xfff)
+    return mu, out
+
+def evtb_run(on, tipo, p, code, n, mode):
+    mu, out = evtb(on)
+    on_va, mode_va = IA_ON_VA, IA_MODE_VA
+    mu.mem_write(on_va, bytes([on])); mu.mem_write(mode_va + p, bytes([mode]))
+    sp = STK + 0x80000 - 64; mu.mem_write(sp, struct.pack('<IIIIi', 0xdead0000, tipo, p, code, n))
+    regs = {r: 0x33330000 + k for k, r in enumerate((UC_X86_REG_EAX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP))}
+    for r, v in regs.items(): mu.reg_write(r, v)
+    mu.reg_write(UC_X86_REG_ESP, sp); mu.emu_start(IA_EVTB, 0xdead0000, count=100_000)
+    return out, all(mu.reg_read(r) == v for r, v in regs.items()) and mu.reg_read(UC_X86_REG_ESP) == sp + 4
+
+print('eventos (ia_evtb)')
+o, pres = evtb_run(1, 6, 3, 0x2000 + 40 * 128 + 17, 0, 1)
+check(o == [r'.\DATA\IA_EVT.CSV', [21, 3, 1, 6, 17, 40, 0]] and pres, f'derribo por misión en (17, 40): {o}, registros intactos')
+o, pres = evtb_run(1, 1, 7, 0x2000 + 127 * 128 + 0, 6, 0)
+check(o == [r'.\DATA\IA_EVT.CSV', [21, 7, 0, 1, 0, 127, 6]] and pres, f'derribo propio en (0, 127), n = 6: {o}')
+o, pres = evtb_run(0, 1, 7, 0x2000 + 5, 6, 0)
+check(o == [] and pres, 'sin IA.INI: no abre ni escribe')
 
 print('bandos humanos de la partida de la tanda')
 r, g = compu(True); check(r, f'con tanda: humanos -> computadora {g[:8]}')

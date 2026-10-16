@@ -4738,6 +4738,76 @@ aibn_bridge:
 # El líder de la pila se guarda al entrar (ai_brlead), como el original en [esp+0x12]: al terminar de mover, 0x4c4a10
 # manda la orden 0x146 (0x4b9020), que se aplica en el acto (0x4df400) y vacía la pila (0x485c70 pone 0x56ea90/92 en 0);
 # por eso el derribo no pasa por 0x4955d0, que lee el líder recién ahí.
+# ---- IA: registro de eventos (ia\PENDIENTE-entrenamiento-ia.md, etapa 3). Solo con DATA\IA.INI (ia_on, ver "IA: base
+# de pruebas"): una línea por evento en DATA\IA_EVT.CSV: turno, color, ia, tipo, x, y, n. Solo anota, no decide nada.
+# Tipos: 1 puente derribado por criterio propio (ai_brraze; n = c + s), 2 convoy ordenado (ai_conv; x, y = casilla del
+# barco al que se suma, n = ese ejército), 3 grupo partido al embarcar (ai_move; x, y = líder, n = soltados),
+# 4 puente reconstruido (ai_brreb; n = costo), 5 refugio (ia_turn: al empezar el turno, pilas propias en una ciudad
+# compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
+IA_A = place_data('ia_a', cstr_('a'))
+IA_MODE = place_data('ia_mode', bytes(8))
+IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
+FOPEN, FCLOSE, FPRINTF, STRICMP = 0x5a9bdc, 0x5a9be4, 0x5a9bf4, 0x5a9be0
+IA_ECSV = place_data('ia_ecsv', cstr_(r'.\DATA\IA_EVT.CSV'))
+IA_EFMT = place_data('ia_efmt', cstr_('%d,%d,%d,%d,%d,%d,%d\n'))
+# ia_evt(tipo, p, x, y, n) cdecl. Preserva todo.
+ia_evt = place('ia_evt', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je ie_ret
+    pushad
+    push {IA_A:#x}
+    push {IA_ECSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz ie_out
+    mov edi, eax
+    mov ebx, dword ptr [esp + 0x28]
+    push dword ptr [esp + 0x34]
+    push dword ptr [esp + 0x34]
+    push dword ptr [esp + 0x34]
+    push dword ptr [esp + 0x30]
+    mov eax, -1
+    cmp ebx, 8
+    jae ie_md
+    movzx eax, byte ptr [ebx + {IA_MODE:#x}]
+ie_md:
+    push eax
+    push ebx
+    movsx eax, word ptr [0x503328]
+    push eax
+    push {IA_EFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x24
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+ie_out:
+    popad
+ie_ret:
+    ret
+''')
+# ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
+ia_evtb = place('ia_evtb', f'''
+    push eax
+    push edx
+    mov eax, dword ptr [esp + 0x14]
+    sub eax, {BR_CODE:#x}
+    mov edx, eax
+    shr edx, 7
+    and eax, 0x7f
+    push dword ptr [esp + 0x18]
+    push edx
+    push eax
+    push dword ptr [esp + 0x1c]
+    push dword ptr [esp + 0x1c]
+    call {ia_evt:#x}
+    add esp, 0x14
+    pop edx
+    pop eax
+    ret
+''')
 ai_brlead = place_data('ai_brlead', bytes(4))
 ai_brq = place('ai_brq', f'''
     cmp word ptr [esp + 4], {BR_CODE:#x}
@@ -4907,6 +4977,14 @@ aib_here:
     push eax
     call 0x4b9550
     add esp, 8
+    movsx eax, word ptr [0x537ce8]
+    push 0
+    movsx ecx, word ptr [esp + 0x28]
+    push ecx
+    push eax
+    push 6
+    call {ia_evtb:#x}
+    add esp, 0x10
 aib_done:
     push 0x7d0
     call 0x4275b0
@@ -5277,6 +5355,12 @@ abz_owner:
     push 0x7d0
     call 0x4275b0
     add esp, 4
+    push dword ptr [esp + {ABZ_S:#x}]
+    push dword ptr [esp + {ABZ_CODE + 4:#x}]
+    push dword ptr [esp + {ABZ_P + 8:#x}]
+    push 1
+    call {ia_evtb:#x}
+    add esp, 0x10
 abz_out:
     add esp, {ABZ_LOC:#x}
     popad
@@ -5488,6 +5572,13 @@ cv_found:
     push ebx
     call 0x4b91e0
     add esp, 0xc
+    push esi
+    push dword ptr [esp + {CV_NY + 4:#x}]
+    push dword ptr [esp + {CV_NX + 8:#x}]
+    push ebx
+    push 2
+    call {ia_evt:#x}
+    add esp, 0x14
     jmp cv_out
 cv_nbnext:
     inc dword ptr [esp + {CV_K:#x}]
@@ -5590,6 +5681,18 @@ am_free:
     inc esi
     cmp esi, dword ptr [esp + {AM_N:#x}]
     jb am_free
+    mov ecx, dword ptr [esp + {AM_N:#x}]
+    movsx eax, word ptr [esp + {AM_KEEP:#x}]
+    imul eax, eax, 0x1c
+    push ecx
+    movsx edx, word ptr [eax + 0x54fe54]
+    push edx
+    movsx edx, word ptr [eax + 0x54fe52]
+    push edx
+    push dword ptr [esp + {AM_P + 12:#x}]
+    push 3
+    call {ia_evt:#x}
+    add esp, 0x14
     cmp dword ptr [esp + {AM_N:#x}], 2
     jb am_group
     lea eax, [esp + {AM_DROP:#x}]
@@ -6034,6 +6137,13 @@ arb_here:
     push eax
     call 0x4b9ce0
     add esp, 0xc
+    push esi
+    movsx eax, word ptr [esp + 0x18]
+    push eax
+    push ebx
+    push 4
+    call {ia_evtb:#x}
+    add esp, 0x10
     push 0x7d0
     call 0x4275b0
     add esp, 4
@@ -7318,20 +7428,16 @@ IA_SEC = place_data('ia_sec', cstr_('IA'))
 IA_PATH = place_data('ia_path', cstr_(r'.\DATA\IA.INI'))
 IA_CSV = place_data('ia_csv', cstr_(r'.\DATA\IA.CSV'))
 IA_R = place_data('ia_r', cstr_('r'))
-IA_A = place_data('ia_a', cstr_('a'))
 IA_EMPTY = place_data('ia_empty', cstr_(''))
 IA_ORIG = place_data('ia_orig', cstr_('original'))
 IA_PRUEBA = place_data('ia_prueba', cstr_('prueba'))
 IA_KEYS = [place_data(f'ia_key{c}', cstr_(f'Color{c}')) for c in range(8)]
 IA_KEYTAB = place_data('ia_keytab', b''.join(a.to_bytes(4, 'little') for a in IA_KEYS))
 IA_FMT = place_data('ia_fmt', cstr_('%d,%d,%d' + ',%d' * 22 + '\n'))
-IA_MODE = place_data('ia_mode', bytes(8))
 IA_VAL = place_data('ia_val', bytes(16))
 IA_SNAP = place_data('ia_snapbuf', bytes(4 * 22))
 IA_N = 22
-IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa el registro de batallas)
 GETPROF = 0x5a97e8
-FOPEN, FCLOSE, FPRINTF, STRICMP = 0x5a9bdc, 0x5a9be4, 0x5a9bf4, 0x5a9be0
 
 # ia_snap(p, buf) cdecl: buf = 22 dwords (vivo, control, oro, ciudades, ejércitos, héroes, s0..s15). Preserva todo
 # menos eax.
@@ -7391,6 +7497,134 @@ is_anext:
     inc ecx
     jmp is_arm
 is_out:
+    popad
+    ret
+''')
+
+# Etapa 3 (alianzas): ia_dip(p) agrega a DATA\IA_DIP.CSV turno, color, opciones, d0..d7, con d = [DIPLO + p*56 + b]
+# (0 aliados, 1 paz, 2 guerra) y opciones = 1 ciudades compartidas (SHOPT) | 2 Diplomacy | 4 Hidden Map | 8 vista
+# aliada. Preserva todo.
+IA_DCSV = place_data('ia_dcsv', cstr_(r'.\DATA\IA_DIP.CSV'))
+IA_DFMT = place_data('ia_dfmt', cstr_('%d' + ',%d' * 10 + '\n'))
+ia_dip = place('ia_dip', f'''
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    cmp ebx, 8
+    jae id_out
+    push {IA_A:#x}
+    push {IA_DCSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz id_out
+    mov edi, eax
+    imul esi, ebx, 56
+    mov ecx, 8
+id_push:
+    movzx eax, byte ptr [esi + ecx + {DIPLO - 1:#x}]
+    push eax
+    loop id_push
+    xor eax, eax
+    test byte ptr [{SHOPT:#x}], 1
+    jz id_o1
+    or eax, 1
+id_o1:
+    test byte ptr [{DIPLO_OPT:#x}], 8
+    jz id_o2
+    or eax, 2
+id_o2:
+    test byte ptr [{OPT:#x}], 0x10
+    jz id_o3
+    or eax, 4
+id_o3:
+    test byte ptr [{OPT:#x}], 0x80
+    jz id_o4
+    or eax, 8
+id_o4:
+    push eax
+    push ebx
+    movsx eax, word ptr [0x503328]
+    push eax
+    push {IA_DFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x34
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+id_out:
+    popad
+    ret
+''')
+
+# ia_refug(p): al empezar el turno de p, por cada ciudad compartida de otro dueño (member) con ejércitos vivos de p en
+# sus 4 casillas, ia_evt(5, p, x, y, ejércitos). Es donde p terminó su turno anterior. Preserva todo.
+ia_refug = place('ia_refug', f'''
+    pushad
+    sub esp, 8
+    mov ebx, dword ptr [esp + 0x2c]
+    cmp ebx, 8
+    jae rf_out
+    xor esi, esi
+rf_city:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge rf_out
+    imul edi, esi, 0xde
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, ebx
+    je rf_next
+    push ebx
+    push esi
+    call {member:#x}
+    add esp, 8
+    test eax, eax
+    jz rf_next
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    mov dword ptr [esp], eax
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    mov dword ptr [esp + 4], eax
+    xor ebp, ebp
+    mov ecx, 1
+rf_arm:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge rf_cnt
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz rf_anext
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne rf_anext
+    movsx eax, word ptr [edx + 0x54fe52]
+    sub eax, dword ptr [esp]
+    cmp eax, 1
+    ja rf_anext
+    movsx eax, word ptr [edx + 0x54fe54]
+    sub eax, dword ptr [esp + 4]
+    cmp eax, 1
+    ja rf_anext
+    inc ebp
+rf_anext:
+    inc ecx
+    jmp rf_arm
+rf_cnt:
+    test ebp, ebp
+    jz rf_next
+    push ebp
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    push ebx
+    push 5
+    call {ia_evt:#x}
+    add esp, 0x14
+rf_next:
+    inc esi
+    jmp rf_city
+rf_out:
+    add esp, 8
     popad
     ret
 ''')
@@ -7471,6 +7705,10 @@ it_push:
     push edi
     call dword ptr [{FCLOSE:#x}]
     add esp, 4
+    push ebx
+    call {ia_dip:#x}
+    call {ia_refug:#x}
+    add esp, 4
 it_out:
     popad
     jmp {turn:#x}
@@ -7483,9 +7721,10 @@ it_out:
 # ia_bat la reemplaza en 0x469f54, solo con DATA\IA.INI (ia_on): cuenta la composición por ranura antes (s0..s15,
 # héroes en s16), llama a 0x465c80 y cuenta los sobrevivientes (ejército vivo y del mismo dueño), y agrega a
 # DATA\IA_BAT.CSV: turno, atacante, defensor, x, y, ciudad, resultado, ia del atacante, ia del defensor (-1 sin dueño),
-# atacantes, defensores, atacantes vivos, defensores vivos, A s0..s16, D s0..s16.
+# atacantes, defensores, atacantes vivos, defensores vivos, A s0..s16, D s0..s16, colores de los defensores (máscara:
+# bit c = había un ejército del color c entre los defensores; en una ciudad compartida pueden ser varios).
 IA_BCSV = place_data('ia_bcsv', cstr_(r'.\DATA\IA_BAT.CSV'))
-IA_BN = 13 + 2 * 17
+IA_BN = 13 + 2 * 17 + 1
 IA_BFMT = place_data('ia_bfmt', cstr_('%d' + ',%d' * (IA_BN - 1) + '\n'))
 IA_BBUF = place_data('ia_bbuf', bytes(4 * IA_BN))
 IA_BOWN = place_data('ia_bown', bytes(4 * 40))    # dueño de cada ejército de la ficha antes de pelear (-1 vacío)
@@ -7599,6 +7838,18 @@ ib_md:
     mov ebp, {IA_BOWN + 32:#x}
     add edi, 68
     call {ia_bside:#x}
+    movsx ecx, byte ptr [ebx + 0xd]
+    xor edx, edx
+ib_mk:
+    dec ecx
+    jl ib_mkd
+    mov eax, dword ptr [ecx*4 + {IA_BOWN + 32:#x}]
+    cmp eax, 8
+    jae ib_mk
+    bts edx, eax
+    jmp ib_mk
+ib_mkd:
+    mov dword ptr [{IA_BBUF + 4 * (IA_BN - 1):#x}], edx
     popad
     push dword ptr [esp + 8]
     push dword ptr [esp + 8]

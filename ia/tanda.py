@@ -22,6 +22,8 @@ EXE = 'DarklordAV.exe'
 DATA = os.path.join(JUEGO, 'DATA')
 INI = os.path.join(DATA, 'IA.INI')
 CSV_T, CSV_B, CSV_F = (os.path.join(DATA, n) for n in ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV'))
+# Etapa 3 (alianzas, vista-aliada 1.0.33.0): diplomacia por turno y eventos (puentes, convoyes, refugios).
+CSV_D, CSV_E = (os.path.join(DATA, n) for n in ('IA_DIP.CSV', 'IA_EVT.CSV'))
 # Empaquetado en Monitor-IA.exe (ia\monitor-ia), el exe queda en ia\: la base y la configuración van junto a él.
 BASE = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 DB = os.path.join(BASE, 'datos.db')
@@ -41,8 +43,14 @@ PATRONES = [(1, 3, 5, 7), (0, 1, 2, 3), (0, 1, 4, 5), (0, 3, 5, 6)]
 SLOTS = [f's{i}' for i in range(16)]
 COL_T = ['turno', 'color', 'ia', 'vivo', 'control', 'oro', 'ciudades', 'ejercitos', 'heroes'] + SLOTS
 COL_B = (['turno', 'atacante', 'defensor', 'x', 'y', 'ciudad', 'resultado', 'ia_a', 'ia_d', 'n_a', 'n_d',
-          'vivos_a', 'vivos_d'] + [f'a{i}' for i in range(17)] + [f'd{i}' for i in range(17)])
+          'vivos_a', 'vivos_d'] + [f'a{i}' for i in range(17)] + [f'd{i}' for i in range(17)] + ['colores_d'])
 COL_F = ['turno', 'orden', 'puesto', 'color', 'ia', 'pv', 'ciudades', 'oro']
+# opciones: 1 ciudades compartidas, 2 Diplomacy, 4 Hidden Map, 8 vista aliada; d0..d7: 0 aliados, 1 paz, 2 guerra.
+COL_D = ['turno', 'color', 'opciones'] + [f'd{i}' for i in range(8)]
+COL_E = ['turno', 'color', 'ia', 'tipo', 'x', 'y', 'n']
+# Tipos de evento (build.py, ia_evt).
+EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo partido al embarcar',
+           4: 'puente reconstruido', 5: 'refugio en ciudad aliada', 6: 'puente derribado (misión)'}
 
 ESQUEMA = f'''
 create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0,
@@ -51,6 +59,8 @@ create table if not exists partida (id integer primary key, tanda integer, n int
     asignacion text, inicio text, fin text, estado text, turnos integer);
 create table if not exists turno (partida integer, {', '.join(c + ' integer' for c in COL_T)});
 create table if not exists batalla (partida integer, {', '.join(c + ' integer' for c in COL_B)});
+create table if not exists diplo (partida integer, {', '.join(c + ' integer' for c in COL_D)});
+create table if not exists evento (partida integer, {', '.join(c + ' integer' for c in COL_E)});
 create table if not exists resultado (partida integer, color integer, ia integer, orden integer, puesto integer,
     pv integer, ciudades integer, oro integer, eliminado_turno integer);
 '''
@@ -101,6 +111,11 @@ def leer(ruta, n):
         return [[int(v) for v in r] for r in csv.reader(f) if len(r) == n]
 
 
+def leer_batallas():
+    """IA_BAT.CSV; el exe anterior a 1.0.33.0 no escribe colores_d (queda None)."""
+    return leer(CSV_B, len(COL_B)) + [r + [None] for r in leer(CSV_B, len(COL_B) - 1)]
+
+
 def pv_calc(ciudades, heroes, oro):
     """Fórmula del juego (ia/puntos-de-victoria.md), para partidas cortadas por el tope."""
     aj = oro if oro < 600 else 600 if oro <= 1000 else 600 + (oro - 1000) // 10
@@ -119,7 +134,10 @@ def puestos(filas, clave):
 
 def importar(db, pid, estado):
     """Pasa los tres CSV a la base, completa el resultado y los borra. Devuelve la cantidad de turnos."""
-    t, b, f = leer(CSV_T, len(COL_T)), leer(CSV_B, len(COL_B)), leer(CSV_F, len(COL_F))
+    t, f = leer(CSV_T, len(COL_T)), leer(CSV_F, len(COL_F))
+    b = leer_batallas()
+    db.executemany(f'insert into diplo values (?{", ?" * len(COL_D)})', [[pid] + r for r in leer(CSV_D, len(COL_D))])
+    db.executemany(f'insert into evento values (?{", ?" * len(COL_E)})', [[pid] + r for r in leer(CSV_E, len(COL_E))])
     # ia_fin corre cada vez que se dibuja el cartel: vale el primer bloque (orden 1, 2, ...).
     corte = next((k for k, r in enumerate(f) if k and r[1] == 1), len(f)); f = f[:corte]
     db.executemany(f'insert into turno values (?{", ?" * len(COL_T)})', [[pid] + r for r in t])
@@ -149,7 +167,7 @@ def importar(db, pid, estado):
             db.execute('insert into resultado values (?,?,?,null,null,0,0,0,?)', (pid, c, u['ia'], u['turno'] + 1))
     db.execute('update partida set fin=?, estado=?, turnos=? where id=?', (ahora(), estado, turnos, pid))
     db.commit()
-    for ruta in (CSV_T, CSV_B, CSV_F):
+    for ruta in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E):
         if os.path.exists(ruta):
             os.remove(ruta)
     return turnos
@@ -371,12 +389,14 @@ def preparar(a):
     for c in ('parche', 'exe', 'bandos'):   # bases anteriores al registro del parche y de los bandos
         if c not in cols:
             db.execute(f'alter table tanda add column {c} text')
+    if 'colores_d' not in [r[1] for r in db.execute('pragma table_info(batalla)')]:   # bases anteriores a 1.0.33.0
+        db.execute('alter table batalla add column colores_d integer')
     ver, exe = parche_actual()
     # Partida que quedó "jugando" porque se cerró la ventana de la tanda: sus registros son suyos y se retoma.
     for (pid,) in db.execute("select id from partida where estado='jugando'").fetchall():
         importar(db, pid, 'cortada')
         print(f'Partida {pid} había quedado a medias: guardada como "cortada", se vuelve a jugar al retomar.')
-    if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F)):   # registros de una partida a mano: no se pierden
+    if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E)):   # registros de una partida a mano: no se pierden
         pid = db.execute('insert into partida (guardada, inicio, estado) values (?,?,?)',
                          ('(a mano)', ahora(), 'suelta')).lastrowid
         importar(db, pid, 'suelta')
