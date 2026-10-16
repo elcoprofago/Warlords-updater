@@ -191,7 +191,6 @@ class Monitor(tk.Tk):
                           .resize((17, 27), Image.LANCZOS) for e in ('on', 'off')}
         self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
         self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
-        self.l_susp = self.rotulo(fs, font=('Segoe UI', 7)); self.l_susp.pack(); self.rotular_suspension()
         self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
             m.caja.pack(side='left', padx=8)
@@ -283,10 +282,7 @@ class Monitor(tk.Tk):
         self.suspender = not self.suspender
         guardar_config('Suspension', activa='si' if self.suspender else 'no')
         self.iconos[self.b_susp] = self.imgs_susp['on' if self.suspender else 'off']
-        self.pintar_icono(self.b_susp); self.rotular_suspension()
-
-    def rotular_suspension(self):
-        self.l_susp['text'] = 'Suspender ' + ('SÍ' if self.suspender else 'no')
+        self.pintar_icono(self.b_susp)
 
     def disponibles(self):
         d = os.path.join(tanda.JUEGO, 'SAVES')
