@@ -277,3 +277,18 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   4. Tandas A/B: un equipo de 4 con la IA de prueba contra uno de 4 con la original, alternando qué equipo tiene
      cada IA en pares complementarios (como la etapa 1). Mide refugios, defensas en común, ciudades compartidas
      perdidas, aliados vivos y equipo ganador, contra el control del paso 2.
+
+### 16/10/2026: verificar que la IA usa las mejoras del juego (puentes, convoy, Landing)
+- Pedido del usuario: comprobar en las tandas si la IA derriba puentes y forma convoyes. Visualmente no vio
+  ningún derribo ni convoy; sí un héroe desembarcando con landcraft.arm en Scarpart (rojo con bando x-12).
+- Las tres cosas están en el parche para TODA la computadora, original y de prueba (no dependen de ia_mode):
+  ai_brraze (derribo, build.py ~4998), ai_move/ai_conv (convoy y partir el grupo al embarcar, 1.0.25.0, ~5286).
+- Hoy no se pueden verificar desde datos.db: IA.CSV, IA_BAT.CSV e IA_FIN.CSV no anotan derribos ni convoyes.
+- Por qué pueden ser raros aunque anden: el derribo exige c + s >= 5 (temperamento + ciudades hostiles cercanas) y
+  un puente sin nadie encima que no esté en su camino; ai_conv solo cuando el grupo no entra en un barco y hay otro
+  barco propio con "Carrier" en la casilla vecina yendo al mismo destino.
+- Plan: DATA\IA_EVT.CSV (turno, color, ia, tipo, x, y), tipos: puente derribado (ai_brraze), convoy ordenado
+  (ai_conv), grupo partido al embarcar (ai_move), puente reconstruido (ai_brrebev). Tabla `evento` en datos.db y
+  conteo por tanda en el Monitor. Solo anota, no cambia decisiones; probarlo en unicorn igual que prueba_iarazea.py.
+- Cambia el exe: va en el mismo exe que el registro de alianzas (etapa 3), instalado entre etapas, cuando el
+  usuario cierre el grupo de mapas en curso. Así la etapa 2 sigue con un solo exe.
