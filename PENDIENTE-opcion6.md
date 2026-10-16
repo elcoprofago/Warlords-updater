@@ -30,7 +30,7 @@ sacó la lista: hacerlo primero (enumerar antes de iterar) para saber qué de lo
 - `PGS`: bandos personalizados (usuario).
 - `Randscen`: no se pisa, y además no se usa en red (usuario).
 - Lo que escribe el juego al jugar: `HISTORY.DAT`, `AREA.DAT`, `STRAT_L.BMP`, `STRAT_S.BMP` de la raíz; en
-  `DATA`: `PREF.DAT`, `OPTIONS.DAT`, `OPT101.DAT`, `OPTIONS.NET`, `OPT101.NET`, `NETSTAT.TXT`, `VECTOR.TXT`,
+  `DATA`: `PREF.DAT`, `COMBAT.DAT`, `OPTIONS.DAT`, `OPT101.DAT`, `OPTIONS.NET`, `OPT101.NET`, `NETSTAT.TXT`, `VECTOR.TXT`,
   `VMOVEALL.TXT`. También `Netsaves` y `Email`.
 - Lo propio de cada instalación: todos los `.ini`, `keys.w3`, `HERRAMIENTAS`, `GOG`, `__support`,
   `unins000.*`, `update_log.txt`, `.lnk` y `.TMP`.

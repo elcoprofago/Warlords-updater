@@ -236,7 +236,7 @@ namespace Actualizador
         static readonly HashSet<string> RaizPropia = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { "HISTORY.DAT", "AREA.DAT", "STRAT_L.BMP", "STRAT_S.BMP", "keys.w3", "update_log.txt", "DarklordAV.exe" };
         static readonly HashSet<string> DataPropia = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "PREF.DAT", "OPTIONS.DAT", "OPT101.DAT", "OPTIONS.NET", "OPT101.NET", "NETSTAT.TXT", "VECTOR.TXT", "VMOVEALL.TXT" };
+            { "PREF.DAT", "COMBAT.DAT", "OPTIONS.DAT", "OPT101.DAT", "OPTIONS.NET", "OPT101.NET", "NETSTAT.TXT", "VECTOR.TXT", "VMOVEALL.TXT" };
 
         /// <summary>
         /// Opcion 6: lo que, si ya existe en esta PC, no se pisa (PENDIENTE-opcion6.md). <paramref name="rel"/> es

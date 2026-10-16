@@ -121,17 +121,3 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 4. El PDF para la página del Clan: en el Banco de pruebas 1.0.2 (botón Actualizar), **Exportar PDF de un mapa…**,
    elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
 Resultado:
-
-## Actualizador: probar la opción 6, ACTUALIZAR TODO EL JUEGO (16/10/2026)
-Baja el Warlords3_FULL.zip nuevo (322 MB) y lo pone en C:\Warlords3 sin pisar lo tuyo: bandos (PGS),
-escenarios propios, partidas, opciones, parches, herramientas y los .ini de esta PC.
-1. Cerrá el juego si está abierto.
-2. Abrí el Actualizador de siempre. Si te ofrece actualizarse, aceptá: tiene que ser la versión 1.0.7.0 o
-   posterior. Si no estás seguro de cuál tenés, usá
-   **F:\source\repos\actualizador-warlords\Actualizador-v.1.0.7.0.exe**.
-3. Elegí la opción **6** y contestá **S** a «¿Confirmas la operación?». La descarga tarda unos minutos.
-4. Al final tiene que decir **JUEGO COMPLETO ACTUALIZADO**, y antes, varias líneas «Se conservaron N archivo(s)
-   tuyos en ...».
-5. Abrí el juego y fijate que arranque y que estén tus bandos y tus partidas.
-Anotá acá qué dijo al final y si el juego anduvo.
-Resultado:

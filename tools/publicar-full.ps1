@@ -84,7 +84,7 @@ Write-Host "Zip publicado: $($publicado.Count) archivos"
 # Tiene que coincidir con NoPisar (source\Actualizador\Actualizador.cs): lo que la opcion 6 no pisa en
 # ninguna PC tampoco sale de la PC de quien arma el zip (hooks\pre-commit exige cambiarlos juntos).
 $raizPropia = 'HISTORY.DAT', 'AREA.DAT', 'STRAT_L.BMP', 'STRAT_S.BMP', 'keys.w3', 'update_log.txt', 'DarklordAV.exe'
-$dataPropia = 'PREF.DAT', 'OPTIONS.DAT', 'OPT101.DAT', 'OPTIONS.NET', 'OPT101.NET', 'NETSTAT.TXT', 'VECTOR.TXT', 'VMOVEALL.TXT'
+$dataPropia = 'PREF.DAT', 'COMBAT.DAT', 'OPTIONS.DAT', 'OPT101.DAT', 'OPTIONS.NET', 'OPT101.NET', 'NETSTAT.TXT', 'VECTOR.TXT', 'VMOVEALL.TXT'
 function EnCarpeta($rel, [string[]]$carpetas) {
     foreach ($c in $carpetas) { if ($rel.StartsWith("$c\", [StringComparison]::OrdinalIgnoreCase)) { return $true } }
     $false
