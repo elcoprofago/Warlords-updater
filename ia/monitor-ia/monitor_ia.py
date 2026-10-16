@@ -1,7 +1,7 @@
 # Monitor de IA: panel de control de las tandas de ia\tanda.py (ia\PENDIENTE-monitor-ia.md).
 # Corre la tanda en un hilo propio (reemplaza tanda.bat y monitor.bat) y muestra en vivo la partida en curso, leyendo
 # ia\datos.db y los CSV que escribe DarklordAV.exe. Se empaqueta con build.py como ia\Monitor-IA.exe.
-import configparser, ctypes, io, json, os, queue, subprocess, sys, threading, time, winsound
+import configparser, ctypes, io, json, os, queue, subprocess, sys, threading, time, urllib.request, winsound
 import tkinter as tk
 import psutil
 from PIL import Image, ImageTk
@@ -11,6 +11,8 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
+VERSION = '1.0.0'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
 AVISO_MIN = 5              # a partir de acá se avisa de un posible cuelgue
@@ -68,6 +70,20 @@ def guardar_config(seccion, **valores):
         c.write(f)
 
 
+def version_tupla(v):
+    return tuple(int(x) for x in v.split('.'))
+
+
+def version_de(exe):
+    """La versión que trae adentro un Monitor-IA.exe (se la pregunta con --version; lo usa también publicar.py)."""
+    marca = exe + '.version'
+    subprocess.run([exe, '--version', marca], timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
+    with open(marca) as f:
+        v = f.read().strip()
+    os.remove(marca)
+    return v
+
+
 class Ayuda:
     """Cartelito que aparece al pasar el mouse sobre un widget."""
     def __init__(self, w, texto):
@@ -98,7 +114,7 @@ class Salida(io.TextIOBase):
 class Monitor(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('Banco de pruebas de la IA')
+        self.title(f'Banco de pruebas de la IA — Monitor {VERSION}')
         self.geometry('740x760')
         self.cola = queue.Queue()
         sys.stdout = sys.stderr = Salida(self.cola)
@@ -440,9 +456,55 @@ class Monitor(tk.Tk):
                 return messagebox.showwarning('Configuración', 'Elegí una imagen para la textura.', parent=v)
             guardar_config('Fondo', tipo=tipo.get(), color=color.get(), textura=ruta.get())
             self.aplicar_fondo(); v.destroy()
-        bf = tk.Frame(fr); bf.grid(row=5, column=0, columnspan=3, sticky='e', pady=(12, 0))
+        tk.Label(fr, text='Actualización:', font=('Segoe UI', 10, 'bold')).grid(row=5, column=0, columnspan=3,
+                                                                              sticky='w', pady=(12, 0))
+        tk.Label(fr, text=f'Versión instalada: {VERSION}').grid(row=6, column=0, columnspan=2, sticky='w')
+        tk.Button(fr, text='Buscar actualización', command=lambda: self.actualizar(v)).grid(row=6, column=2, padx=6)
+        bf = tk.Frame(fr); bf.grid(row=7, column=0, columnspan=3, sticky='e', pady=(12, 0))
         tk.Button(bf, text='Aceptar', width=10, command=aceptar).pack(side='left', padx=4)
         tk.Button(bf, text='Cancelar', width=10, command=v.destroy).pack(side='left')
+
+    # ---- actualización desde las releases de REPO ----
+    def actualizar(self, padre):
+        if not getattr(sys, 'frozen', False):
+            return messagebox.showinfo('Actualización', 'Corriendo desde el código: se actualiza con git.', parent=padre)
+        if self.corriendo():
+            return messagebox.showwarning('Actualización', 'Hay una tanda corriendo: actualizá cuando termine.',
+                                          parent=padre)
+        try:
+            with urllib.request.urlopen(f'https://api.github.com/repos/{REPO}/releases/latest', timeout=15) as r:
+                rel = json.load(r)
+        except Exception as e:
+            return messagebox.showerror('Actualización', f'No se pudo consultar GitHub:\n{e}', parent=padre)
+        etiqueta = rel['tag_name'].lstrip('v')
+        if version_tupla(etiqueta) <= version_tupla(VERSION):
+            return messagebox.showinfo('Actualización', f'Ya tenés la última versión ({VERSION}).', parent=padre)
+        exe = next((a for a in rel['assets'] if a['name'] == 'Monitor-IA.exe'), None)
+        if not exe:
+            return messagebox.showerror('Actualización', f'La release {etiqueta} no trae Monitor-IA.exe.', parent=padre)
+        if not messagebox.askyesno('Actualización', f'Hay una versión nueva: {etiqueta} (tenés {VERSION}).\n'
+                                   '¿Bajarla e instalarla? El Monitor se cierra y se vuelve a abrir.', parent=padre):
+            return
+        actual = sys.executable
+        nuevo = actual[:-4] + '.nuevo.exe'
+        try:
+            urllib.request.urlretrieve(exe['browser_download_url'], nuevo)
+            # La release tiene que ser lo que dice su etiqueta: se le pregunta la versión al .exe bajado.
+            interna = version_de(nuevo)
+            if interna != etiqueta:
+                raise RuntimeError(f'la release {etiqueta} trae adentro la versión {interna}')
+        except Exception as e:
+            if os.path.exists(nuevo):
+                os.remove(nuevo)
+            return messagebox.showerror('Actualización', f'No se instaló la actualización:\n{e}', parent=padre)
+        # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
+        bat, pid = actual[:-4] + '.actualizar.bat', os.getpid()
+        with open(bat, 'w', encoding='mbcs') as f:
+            f.write('@echo off\n:espera\n'
+                    f'tasklist /FI "PID eq {pid}" /NH | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto espera)\n'
+                    f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
+        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW)
+        self.destroy()
 
     # ---- tanda ----
     def corriendo(self):
@@ -660,4 +722,8 @@ class Monitor(tk.Tk):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[1] == '--version':
+        with open(sys.argv[2], 'w') as f:
+            f.write(VERSION)
+        sys.exit(0)
     Monitor().mainloop()
