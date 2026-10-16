@@ -3,8 +3,8 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 1** (tandas de control con alianzas), pasos 1 y 2.
-2. **Tarea 2** (Suspender al terminar), al largar esa misma primera tanda: se prueban juntas.
+1. **Tarea 1**, paso 2: la prueba de 1 partida (el paso 1 ya está hecho).
+2. **Tarea 2** (Suspender al terminar), al largar esa misma prueba: se prueban juntas.
 3. **Tarea 1**, pasos 3 y 4 (después de mi revisión).
 4. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
@@ -21,17 +21,18 @@ Mide cuánto se refugia y defiende en común la IA de hoy, antes de enseñarle n
    - **The Borderlands**: blanco, naranja, verde y negro contra amarillo, rojo, azul y celeste.
      Guardala como **Tanda_Borderlands_Alianzas**.
    Como siempre, pasá un bando a Humano antes de guardar.
-2. Actualizá el Monitor de IA (botón Actualizar, versión 1.0.3). En **Guardadas** esas dos aparecen con
-   "(alianzas)" y no vienen marcadas: marcá solo las dos. Partidas: **6**. **Nueva tanda**.
-   Al empezar, la bitácora dice en la línea "Alianzas" qué equipos leyó de cada guardada.
-3. Cuando termine esa primera tanda, avisame: reviso los registros nuevos de alianzas, refugios, puentes y
-   convoyes (vista-aliada 1.0.33.0). En el Monitor, la línea **Eventos** tiene que mostrar conteos (o "ninguno
-   todavía").
+2. Prueba de 1 partida (decidido 16/10/2026: las guardadas no se tocan; se ve si el juego vuelve vigentes las
+   alianzas propuestas). Actualizá el Monitor de IA (botón Actualizar, versión 1.0.3). En **Guardadas** apretá
+   **Ninguna** y marcá solo **Scar_Alianzas** (por ahora aparece sin la marca "(alianzas)", porque las alianzas
+   todavía son propuestas). Partidas: **1**. **Nueva tanda**.
+   Si querés probar también la tarea 2, prendé el interruptor de suspensión antes de apretar Nueva tanda.
+3. Cuando termine, avisame: reviso en el registro si las alianzas pasaron a vigentes y los registros nuevos
+   (refugios, puentes, convoyes). Si salió bien, sigue una tanda de **6** con las dos guardadas.
 4. Con mi OK, seguí con más tandas iguales hasta **32 partidas** en total (16 por mapa).
 Resultado: paso 1 hecho (16/10/2026). Guardadas como **Tanda_Scar_Alianzas** y **Tanda_Border_Alianzas** (no
 entran nombres más largos), las dos con blanco, amarillo, rojo y azul contra negro, verde, celeste y naranja.
   (Claude: los bandos son iguales en los 8 colores. Las alianzas quedaron como propuestas mutuas, todavía no
-  vigentes: falta pasarlas a vigentes en el archivo antes del paso 2.)
+  vigentes. Por pedido tuyo no se tocan: la prueba del paso 2 dice si el juego las vuelve vigentes.)
 
 ## 2. IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode

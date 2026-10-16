@@ -329,3 +329,9 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Medir en el control: eventos tipo 5 por color y turno, batallas en ciudad con colores_d de más de un bit, cambios de
   la matriz diplo durante la partida (si la IA rompe la alianza), equipo ganador.
 - Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3 paso 2: resultado de las tandas de control".
+- 16/10/2026: el usuario armó Tanda_Scar_Alianzas y Tanda_Border_Alianzas (nombres cortos por límite del diálogo),
+  las dos con equipos 0,1,3,5 | 2,4,6,7. El juego no tiene equipos al armar la partida: quedaron como PROPUESTAS
+  mutuas. Cada fila de DIPLO (56 bytes por color) tiene la tabla vigente en +0..7 y otra en +9..16 (en crusade01 y
+  Aliados03 son iguales; aquí la segunda trae 0 con los compañeros). tanda.alianzas lee la vigente, así que dice
+  "sin alianzas". El usuario decidió no tocar los archivos: prueba de 1 partida (Scar_Alianzas) para ver en
+  IA_DIP si el juego las vuelve vigentes. Si no, la vía es copiar +9..16 a +0..7 en el .SAV (pedirle permiso).
