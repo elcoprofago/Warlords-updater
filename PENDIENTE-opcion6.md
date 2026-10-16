@@ -7,7 +7,7 @@ Decidido con el usuario el 12/10/2026 (sesión de puente-warlords).
 hecho y probado con `-Prueba` (12/10/2026): zip nuevo de 6207 archivos (322 MB) contra 6398 del publicado;
 los 191 que deja afuera son todos de la lista «nunca se pisa» (raíz, `DATA`, `.ini`, `.TMP`, `.lnk`,
 `Netsaves`, `GOG`, `HERRAMIENTAS`, `Randscen`, `SCENARIO\_BACK`); no agrega nada. `hooks\pre-commit` bloquea
-cambiar `NoPisar` sin cambiar el script. **Publicado** el 12/10/2026 (SHA-256 `3BBDABE4…748D7`), verificado bajándolo de nuevo. Nada pendiente.
+cambiar `NoPisar` sin cambiar el script. **Publicado** el 12/10/2026 (SHA-256 `3BBDABE4…748D7`), verificado bajándolo de nuevo. Republicado el 16/10/2026 (6206 archivos, SHA-256 `D4C586EC…3875B2`) con `ARMYbarcaza.ARM` y `RoyalNav.ARM` editados por el usuario; `DATACOMBAT.DAT` pasó a «nunca se pisa» (lo graba el juego junto con `PREF.DAT`, Actualizador 1.0.8.0). Nada pendiente.
 
 **Lo que trae el zip actual** (6550 entradas, listado leyendo solo el índice del zip por HTTP): trae
 `HISTORY.DAT`, `AREA.DAT`, `STRAT_*.BMP`, los 8 de `DATA` de la lista, `Netsaves`, `Email`, `HERRAMIENTAS`,
