@@ -182,7 +182,16 @@ class Monitor(tk.Tk):
         self.fondo = tk.Label(self, bd=0); self.fondo.place(x=0, y=0, relwidth=1, relheight=1)
         arriba = self.caja(self); arriba.pack(fill='x')
         tarjeta = self.caja(arriba, borde=True); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
-        semaforos = self.caja(tarjeta); semaforos.pack(padx=4, pady=(4, 0))
+        semaforos = self.caja(tarjeta); semaforos.pack(padx=(4, 30), pady=(4, 0))   # aire para la ruedita
+        # Interruptor de suspensión (la ficha on/off translúcida de MovilCode), a la izquierda de los semáforos:
+        # encendido, la PC se suspende al terminar la tanda.
+        fs = self.caja(semaforos); fs.pack(side='left', padx=(4, 8))
+        self.suspender = leer_config('Suspension').get('activa') == 'si'
+        self.imgs_susp = {e: Image.open(os.path.join(ASSETS, f'suspender_{e}.png')).convert('RGBA')
+                          .resize((17, 27), Image.LANCZOS) for e in ('on', 'off')}
+        self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
+        self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
+        self.l_susp = self.rotulo(fs, font=('Segoe UI', 7)); self.l_susp.pack(); self.rotular_suspension()
         self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
         for m in self.medidores:
             m.caja.pack(side='left', padx=8)
@@ -235,14 +244,6 @@ class Monitor(tk.Tk):
         cb.current(next((i for i, m in enumerate(self.mons) if m[0] == pref), 0))
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
         cb.grid(row=1, column=1, sticky='w', **pad)
-        # Interruptor de suspensión (la ficha on/off de MovilCode): encendido, la PC se suspende al terminar la tanda.
-        fs = self.caja(c); fs.grid(row=0, column=2, rowspan=2, sticky='n', **pad)
-        self.suspender = leer_config('Suspension').get('activa') == 'si'
-        self.imgs_susp = {e: Image.open(os.path.join(ASSETS, f'suspender_{e}.png')).convert('RGBA')
-                          .resize((30, 44), Image.LANCZOS) for e in ('on', 'off')}
-        self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
-        self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
-        self.l_susp = self.rotulo(fs, font=('Segoe UI', 8)); self.l_susp.pack(); self.rotular_suspension()
 
         caja, p = self.panel(self, 'Partida en curso'); caja.pack(fill='x', **pad)
         self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
@@ -285,7 +286,7 @@ class Monitor(tk.Tk):
         self.pintar_icono(self.b_susp); self.rotular_suspension()
 
     def rotular_suspension(self):
-        self.l_susp['text'] = 'Suspender al terminar:\n' + ('ACTIVADO' if self.suspender else 'desactivado')
+        self.l_susp['text'] = 'Suspender ' + ('SÍ' if self.suspender else 'no')
 
     def disponibles(self):
         d = os.path.join(tanda.JUEGO, 'SAVES')
