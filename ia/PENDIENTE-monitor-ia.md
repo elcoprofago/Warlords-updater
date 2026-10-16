@@ -82,3 +82,7 @@ para que la diferencia sea del bando. Hoy datos.db no registra qué .PGS jugó c
 Se publican en la página del Clan, en una sección de estadísticas, uno por criterio de medición (posiciones por
 mapa, bandos PGS, ...). Los lee gente que no vio las pruebas: cada PDF tiene que explicarse solo, con cómo se midió
 (etapa, tandas, bando, parche, IA), cuántas partidas sostienen cada número y la fecha.
+
+## 1.0.1 (16/10/2026): colores por nombre
+La tabla de la partida en curso y la línea "Colores con la IA de prueba" muestran el nombre del color (blanco ...
+negro, tanda.COLORES) en vez del número. Se publica cuando se cierre el Monitor (estaba corriendo la tanda 17).

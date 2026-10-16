@@ -31,6 +31,10 @@ CONFIG = os.path.join(BASE, 'tanda.ini')
 CONTROL = {'silenciar': True}
 CORTAR = threading.Event()
 
+# Nombre de cada color: índice del registro de jugador, el mismo orden que sus estandartes en el .SAV (Bwhite ...
+# Bblack) y que "Scenario Sides" del editor (ia\PENDIENTE-entrenamiento-ia.md, 16/10/2026).
+COLORES = ['blanco', 'amarillo', 'naranja', 'rojo', 'verde', 'azul', 'celeste', 'negro']
+
 # Colores con la IA de prueba en la primera partida de cada par; la segunda usa el complemento.
 PATRONES = [(1, 3, 5, 7), (0, 1, 2, 3), (0, 1, 4, 5), (0, 3, 5, 6)]
 

@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.0'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.1'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -697,7 +697,7 @@ class Monitor(tk.Tk):
                    (f'{p} perdidas', 'pierde')]
         self.escribir((f'Partida {n + 1} · {guardada.removeprefix("Tanda_")} · turno {turno}', 'titulo'),
                       (f'     empezó {ini[11:]}\n', 'gris'),
-                      'Colores con la IA de prueba: ', (', '.join(map(str, prueba)) + '\n', 'prueba'),
+                      'Colores con la IA de prueba: ', (', '.join(tanda.COLORES[c] for c in prueba) + '\n', 'prueba'),
                       ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt)
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
@@ -715,7 +715,7 @@ class Monitor(tk.Tk):
             u = ultimo[c]
             vivo = u['vivo'] and u['turno'] >= turno - 1
             self.tabla.insert('', 'end', tags=('eliminado' if not vivo else 'prueba' if u['ia'] == 1 else 'original',), values=(
-                c, IAS.get(u['ia'], u['ia']), 'vivo' if vivo else 'eliminado',
+                tanda.COLORES[c] if 0 <= c < 8 else c, IAS.get(u['ia'], u['ia']), 'vivo' if vivo else 'eliminado',
                 tanda.pv_calc(u['ciudades'], u['heroes'], u['oro']) if vivo else 0,
                 # de un eliminado, IA.CSV guarda lo que tenía en su último turno vivo: no vale mostrarlo
                 *((u['ciudades'], u['oro'], u['ejercitos'], u['heroes']) if vivo else ('—',) * 4)))
