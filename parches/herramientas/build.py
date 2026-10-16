@@ -15,8 +15,8 @@ from datetime import datetime
 
 # programa: (repo, fuente con VERSION, version que se publica, lo que cuenta como "el programa" en git)
 PROGRAMAS = {
-    'votacion': ('Votacion', 'votacion.py', '1.1.2', ['votacion.py', 'assets', 'votacion.spec']),
-    'sorteo': ('Sorteo', 'sorteo.py', '1.1.1', ['sorteo.py', 'assets', 'sorteo.spec']),
+    'votacion': ('Votacion', 'votacion.py', '1.1.3', ['votacion.py', 'assets', 'votacion.spec']),
+    'sorteo': ('Sorteo', 'sorteo.py', '1.1.2', ['sorteo.py', 'assets', 'sorteo.spec']),
 }
 
 OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
