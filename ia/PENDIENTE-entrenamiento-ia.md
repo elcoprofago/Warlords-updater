@@ -246,3 +246,12 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   de War3Ed.RES: 0 blanco, 1 amarillo, 2 naranja, 3 rojo, 4 verde, 5 azul, 6 celeste, 7 negro.
 - Scarpart, negro (7): con su bando propio murió en las 6 partidas de las tandas 1, 4 y 5; con el bando común gana
   el 47 %. Según el usuario, su bando propio tiene voladores y el común no, y en Scarpart eso decide.
+
+### 16/10/2026: cambio de plan del usuario, rating de posiciones por mapa
+- Scarpart queda medido con las 32 partidas de la etapa 1: no se hacen las 20 tandas de la etapa 2.
+- En adelante, un grupo de tandas por mapa (editados por el usuario y originales del juego), bando común, unas 30
+  partidas por mapa. Objetivo: rating de mejores y peores posiciones, para ganar y para sobrevivir. Los cuadros se
+  publican en la página del Clan, uno por mapa.
+- Mientras dure el rating, DarklordAV.exe no cambia (la IA de prueba sigue igual a la original): si cambiara, los
+  mapas medidos antes y después no serían comparables. Programar la IA se hace compilando en otra carpeta.
+- Un mapa con menos de 8 lugares: tanda.bandos() da "?" (espera 8 colores); revisar a mano o ajustar si aparece.

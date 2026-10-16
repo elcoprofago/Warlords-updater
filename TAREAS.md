@@ -109,9 +109,12 @@ Resultado: nobre del bando: X-12.pgs
 3. Probalo con una tanda corta (Partidas: 1) y anotá si la PC se suspendió.
 Resultado:
 
-## IA: etapa 2, posiciones en Scarpart (16/10/2026)
-Empieza cuando termine la tanda 17 (la que está corriendo). Son 20 tandas de 6 partidas, todas en Scarpart.
-1. En el Banco de pruebas, botón **Guardadas**: dejá marcada **solo Tanda_Scarpart** y aceptá.
-2. Partidas: **6**. Apretá **Nueva tanda**. Repetí esto en cada tanda hasta completar 20.
-3. No hace falta tocar la partida guardada: ya tiene el mismo bando en los 8 colores.
+## IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026)
+Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
+1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
+   todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
+   Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
+2. En el Banco de pruebas, **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
+   (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
+3. Anotá abajo qué mapa quedó hecho. El cuadro del mapa lo armo yo.
 Resultado:
