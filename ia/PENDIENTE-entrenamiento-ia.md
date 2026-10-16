@@ -255,3 +255,21 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Mientras dure el rating, DarklordAV.exe no cambia (la IA de prueba sigue igual a la original): si cambiara, los
   mapas medidos antes y después no serían comparables. Programar la IA se hace compilando en otra carpeta.
 - Un mapa con menos de 8 lugares: tanda.bandos() da "?" (espera 8 colores); revisar a mano o ajustar si aparece.
+
+### 16/10/2026: etapas 1 y 2, y plan de la etapa 3 (alianzas)
+- Etapa 1 cerrada (tandas 6 a 17). Etapa 2 probada en 3 mapas (Scarpart 32, Borderlands 34, Kor 33 partidas) y el
+  PDF sale completo; sigue abierta para el resto de los mapas. Faltan las posiciones de arranque de Borderlands y Kor
+  en posiciones.json.
+- El cronograma escrito no tenía una etapa "alianzas": después de posiciones venían las modalidades (Crusade, norte
+  contra sur). La etapa 3 queda como "alianzas", y norte contra sur pasa a ser su primera prueba.
+- Plan de la etapa 3:
+  1. Registro: la matriz diplomática (DIPLO = 0x55ee4c, 0 aliados, 1 paz, 2 guerra; opción en DIPLO_OPT & 8) no se
+     anota hoy. Sumar al parche una línea por turno y par de colores cuando cambia (IA_DIP.CSV), tabla `diplomacia`
+     en datos.db. Cambia el exe: se compila e instala entre etapas, nunca en medio de una.
+  2. Prueba A, alianzas fijas: mismo .PGS común, equipos armados en la partida (norte contra sur, 4 y 4), Diplomacy
+     activada. Mide si los aliados se coordinan: ataques entre aliados (deberían ser 0), ciudades tomadas al enemigo
+     común, cuántos aliados sobreviven, qué equipo gana. Rotar qué equipo es norte para separar alianza de posición.
+  3. Prueba B, diplomacia libre: 8 contra 8 sin alianzas iniciales y Diplomacy activada. Mide cuándo y con quién la
+     IA propone paz o alianza, cuánto duran, si las rompe y si gana más quien se alía.
+  4. Recién con eso medido, programar "estrategias concertadas entre IA aliadas" (fuera de alcance en
+     specs\ia-destrezas-v1.md; spec nuevo).
