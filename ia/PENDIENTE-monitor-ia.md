@@ -86,3 +86,9 @@ mapa, bandos PGS, ...). Los lee gente que no vio las pruebas: cada PDF tiene que
 ## 1.0.1 (16/10/2026): colores por nombre
 La tabla de la partida en curso y la línea "Colores con la IA de prueba" muestran el nombre del color (blanco ...
 negro, tanda.COLORES) en vez del número. Se publica cuando se cierre el Monitor (estaba corriendo la tanda 17).
+
+## Scarpart: dónde arranca cada color (usuario, 16/10/2026), para el PDF de posiciones
+Cuadrantes de una grilla 3x3: I arriba a la izquierda, II arriba al centro, III arriba a la derecha, IV a V (centro)
+a VI en la fila del medio, VII abajo a la izquierda, VIII abajo al centro, IX abajo a la derecha.
+- Amarillo: I. Azul: V (centro). Blanco y naranja: islas del III. Rojo: islas del margen inferior izquierdo (VII).
+- Negro: isla del VIII. Celeste: IX, cerca del continente. Verde: IX, isla del margen inferior derecho, más alejado.
