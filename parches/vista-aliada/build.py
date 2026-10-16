@@ -260,9 +260,10 @@ rect = place('rect', '''
 ''')
 
 # ---- Ciudades compartidas por la alianza
-# partners(i) -> eax = máscara de los socios de la ciudad i: aliados mutuos y vivos del dueño que exploraron
-# por sí mismos ([casilla+4] & ~[casilla+5], no lo prestado por vista aliada) las 4 casillas de la ciudad.
-# Requiere la opción, Hidden Map y Diplomacy; la ciudad viva y con dueño < 8. Preserva ebx, esi, edi, ebp.
+# partners(i) -> eax = máscara de los socios de la ciudad i: aliados mutuos y vivos del dueño. Con Hidden Map, solo
+# los que exploraron por sí mismos ([casilla+4] & ~[casilla+5], no lo prestado por vista aliada) las 4 casillas de
+# la ciudad; con el mapa visible, todos (pedido del usuario, 16/10/2026: sin Hidden Map no había ciudad compartida
+# nunca). Requiere la opción y Diplomacy; la ciudad viva y con dueño < 8. Preserva ebx, esi, edi, ebp.
 CITIES = 0x537e2c
 partners = place('partners', f'''
     push ebx
@@ -270,8 +271,6 @@ partners = place('partners', f'''
     push edi
     push ebp
     test byte ptr [{SHOPT:#x}], 1
-    jz pt_none
-    test byte ptr [{OPT:#x}], 0x10
     jz pt_none
     test byte ptr [{DIPLO_OPT:#x}], 8
     jz pt_none
@@ -302,6 +301,9 @@ pt_anext:
     jb pt_alive
     test ebp, ebp
     jz pt_none
+    mov eax, ebp
+    test byte ptr [{OPT:#x}], 0x10
+    jz pt_ret
     movsx eax, word ptr [edi + {CITIES + 2:#x}]
     lea eax, [eax + eax*4]
     add eax, eax
@@ -8291,7 +8293,7 @@ setstr(chk, 0x9c, 16, 'Allied View')
 chk2 = bytearray(chk)
 struct.pack_into('<IIII', chk2, 4, SHCHK, 189, 162, 1)
 setstr(chk2, 0x1c, 16, 'Shared Cities')
-setstr(chk2, 0x2c, 64, 'Allies co-own cities both explored (Hidden Map)')
+setstr(chk2, 0x2c, 64, 'Allies co-own cities (with Hidden Map: both explored)')
 setstr(chk2, 0x9c, 16, 'Shared Cities')
 new_list[9] = [chk, chk2]
 
