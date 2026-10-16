@@ -310,3 +310,22 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Falta la prueba en vivo (TAREAS.md).
 - Próximo paso: etapa 3, paso 2 (tandas de control con alianzas fijas). Para retomar:
   "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3 paso 2: tandas de control con alianzas fijas".
+
+### 16/10/2026: etapa 3, paso 2 preparado (tandas de control con alianzas fijas)
+- Ninguna guardada existente sirve: todas sin alianzas, o de 2 bandos (Aliados01-03, hide01), o crusade01 (1 contra 7).
+  Las partidas las arma el usuario (TAREAS.md): Tanda_Scarpart_Alianzas y Tanda_Borderlands_Alianzas, bando común,
+  compartidas + diplomacia, dos equipos de 4.
+- Equipos elegidos con las partidas de la etapa 1 (tandas 6-17): el reparto con la misma suma de PV medio por color.
+  Scarpart 0,1,3,5 | 2,4,6,7 (diferencia 0,1); Borderlands 0,2,4,7 | 1,3,5,6 (diferencia 0,2). Kor no tiene
+  reparto parejo (color 0 con 13,9 de PV medio): queda afuera.
+- tanda.alianzas(guardada) lee del .SAV la matriz DIPLO y las opciones y lo anota en tanda.alianzas (columna nueva),
+  p. ej. "equipos 0135|2467; compartidas, diplomacia". Comprobado con crusade01 (equipos 123567), Aliados03 (23) y
+  Tanda_Scarpart (sin alianzas; diplomacia).
+- Monitor-IA 1.0.3: las guardadas con equipos se muestran "(alianzas)" y no vienen marcadas por defecto, para no
+  mezclarlas en un rating.
+- Tamaño: 32 partidas (16 por mapa). La primera tanda de 6 hace además de prueba en vivo de 1.0.33.0.
+- Para el paso 4 (A/B) los PATRONES de tanda.py tendrán que repartir la IA por equipo, no por color suelto; en el
+  control da igual (las dos IA son iguales).
+- Medir en el control: eventos tipo 5 por color y turno, batallas en ciudad con colores_d de más de un bit, cambios de
+  la matriz diplo durante la partida (si la IA rompe la alianza), equipo ganador.
+- Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3 paso 2: resultado de las tandas de control".

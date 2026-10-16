@@ -54,7 +54,7 @@ EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo parti
 
 ESQUEMA = f'''
 create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0,
-    parche text, exe text, bandos text);
+    parche text, exe text, bandos text, alianzas text);
 create table if not exists partida (id integer primary key, tanda integer, n integer, guardada text,
     asignacion text, inicio text, fin text, estado text, turnos integer);
 create table if not exists turno (partida integer, {', '.join(c + ' integer' for c in COL_T)});
@@ -98,6 +98,38 @@ def bandos(guardada):
     if len(colores[7]) < r or not all(c[:1].isalpha() for c in colores):
         return '?'
     return 'común' if all(c == colores[0] for c in colores) else 'distintos'
+
+
+# Diplomacia y opciones en el .SAV: los bloques se cargan a partir de 0x6d en este orden de direcciones del exe
+# (el mismo armado que parches\vista-aliada\prueba_iaregistro.py). DIPLO = 0x55ee4c + a*56 + b (0 aliados).
+SAV_BLOQUES = ((0x503e00, 0x12), (0x503e58, 0x32000), (0x535ed0, 0xa96), (0x536b30, 0x2d894))
+
+
+def alianzas(guardada):
+    """Equipos de aliados y opciones de la guardada, p. ej. 'equipos 0135|2467; compartidas, diplomacia'."""
+    with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
+        d = f.read()
+    def rd(va, n):
+        off = 0x6d
+        for b, t in SAV_BLOQUES:
+            if b <= va and va + n <= b + t:
+                return d[off + va - b:off + va - b + n]
+            off += t
+    o = rd(0x53c38c, 0x2a)
+    vivos = [c for c in range(8) if rd(0x536b30 + c * 0x1f8 + 1, 1)[0]]
+    equipos, vistos = [], set()
+    for c in vivos:
+        if c in vistos:
+            continue
+        eq, pend = set(), [c]
+        while pend:
+            x = pend.pop()
+            if x not in eq:
+                eq.add(x); pend += [y for y in vivos if y != x and rd(0x55ee4c + x * 56 + y, 1)[0] == 0]
+        vistos |= eq; equipos.append(''.join(map(str, sorted(eq))))
+    op = [n for n, v in (('compartidas', o[25] & 1), ('diplomacia', o[7] & 8)) if v]
+    eq = 'sin alianzas' if all(len(e) == 1 for e in equipos) else 'equipos ' + '|'.join(e for e in equipos if len(e) > 1)
+    return eq + ('; ' + ', '.join(op) if op else '')
 
 
 def ahora():
@@ -386,7 +418,7 @@ def preparar(a):
     """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
     db = sqlite3.connect(DB, check_same_thread=False); db.executescript(ESQUEMA)
     cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
-    for c in ('parche', 'exe', 'bandos'):   # bases anteriores al registro del parche y de los bandos
+    for c in ('parche', 'exe', 'bandos', 'alianzas'):   # bases anteriores al registro de parche, bandos y alianzas
         if c not in cols:
             db.execute(f'alter table tanda add column {c} text')
     if 'colores_d' not in [r[1] for r in db.execute('pragma table_info(batalla)')]:   # bases anteriores a 1.0.33.0
@@ -408,8 +440,11 @@ def preparar(a):
             sys.exit(f'No existen en {JUEGO}\\SAVES: {", ".join(g + ".SAV" for g in faltan)}')
         bs = {g: bandos(g) for g in gs}
         print('Bandos: ' + ', '.join(f'{g.removeprefix("Tanda_")} {b}' for g, b in bs.items()), flush=True)
-        tid = db.execute('insert into tanda (inicio, plan, parche, exe, bandos) values (?,?,?,?,?)',
-                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe, json.dumps(bs))).lastrowid
+        al = {g: alianzas(g) for g in gs}
+        print('Alianzas: ' + ', '.join(f'{g.removeprefix("Tanda_")} {v}' for g, v in al.items()), flush=True)
+        tid = db.execute('insert into tanda (inicio, plan, parche, exe, bandos, alianzas) values (?,?,?,?,?,?)',
+                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe, json.dumps(bs),
+                          json.dumps(al, ensure_ascii=False))).lastrowid
         db.commit()
     else:
         # Solo la última tanda: una vieja abandonada (por ejemplo, de pruebas) no se retoma por sorpresa.

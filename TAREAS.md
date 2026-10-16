@@ -136,8 +136,22 @@ Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo
 Resultado:
 
 ## IA: probar el registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0) (16/10/2026)
-Ya está instalada en esta PC.
-1. Corré una tanda corta (6 partidas) de cualquier mapa, con ciudades compartidas y diplomacia activadas.
-2. Abrí el Monitor de IA: la línea **Eventos** tiene que mostrar conteos (o "ninguno todavía", si no hubo).
-Avisame cuando termine: yo reviso en datos.db las tablas `diplo`, `evento` y la columna nueva de batallas.
+Se hace junto con la tarea siguiente (tandas de control con alianzas): la primera tanda de 6 partidas sirve de prueba.
+Resultado:
+
+## IA: tandas de control con alianzas fijas (etapa 3, paso 2) (16/10/2026)
+Mide cuánto se refugia y defiende en común la IA de hoy, antes de enseñarle nada.
+1. Armá dos partidas guardadas nuevas, igual que las del rating (el mismo .PGS X-12 en los 8 colores, 30 turnos,
+   2000 puntos), pero con **Shared Cities** y **Diplomacy** activadas y estos dos equipos de 4 aliados desde el
+   arranque (los repartos dejan los equipos parejos según las partidas ya jugadas):
+   - **Scarpart**: blanco, amarillo, rojo y azul contra naranja, verde, celeste y negro.
+     Guardala como **Tanda_Scarpart_Alianzas**.
+   - **The Borderlands**: blanco, naranja, verde y negro contra amarillo, rojo, azul y celeste.
+     Guardala como **Tanda_Borderlands_Alianzas**.
+   Como siempre, pasá un bando a Humano antes de guardar.
+2. Actualizá el Monitor de IA (botón Actualizar, versión 1.0.3). En **Guardadas** esas dos aparecen con
+   "(alianzas)" y no vienen marcadas: marcá solo las dos. Partidas: **6**. **Nueva tanda**.
+   Al empezar, la bitácora dice en la línea "Alianzas" qué equipos leyó de cada guardada.
+3. Si la primera tanda terminó bien, avisame (reviso los registros nuevos) y seguí con más tandas hasta
+   **32 partidas** en total (16 por mapa).
 Resultado:

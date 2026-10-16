@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.2'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.3'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -258,7 +258,9 @@ class Monitor(tk.Tk):
         ttk.Spinbox(fila, from_=1, to=500, width=5, textvariable=self.v_partidas).grid(row=0, column=1, sticky='w',
                                                                                      padx=6, pady=2)
         self.rotulo(fila, text='Guardadas:').grid(row=1, column=0, sticky='w')
-        self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
+        # Todas las Tanda_*.SAV sin alianzas (las del rating), hasta que se elija otra cosa: las de alianzas (etapa 3)
+        # se marcan a mano para no mezclarlas en un rating.
+        self.guardadas = [g for g in self.disponibles() if not self.con_alianzas(g)]
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
         self.b_guardadas.grid(row=1, column=1, sticky='w', padx=6, pady=2); self.rotular_guardadas()
         self.rotulo(fila, text='Estadísticas:').grid(row=2, column=0, sticky='w')
@@ -321,6 +323,13 @@ class Monitor(tk.Tk):
         self.iconos[self.b_susp] = self.imgs_susp['on' if self.suspender else 'off']
         self.pintar_icono(self.b_susp)
 
+    @staticmethod
+    def con_alianzas(g):
+        try:
+            return tanda.alianzas(g).startswith('equipos')
+        except (OSError, TypeError, IndexError):
+            return False
+
     def disponibles(self):
         d = os.path.join(tanda.JUEGO, 'SAVES')
         if not os.path.isdir(d):
@@ -344,7 +353,7 @@ class Monitor(tk.Tk):
         sb = ttk.Scrollbar(lf, command=lb.yview); lb['yscrollcommand'] = sb.set
         sb.pack(side='right', fill='y'); lb.pack(side='left', fill='both', expand=True)
         for i, g in enumerate(todas):
-            lb.insert('end', g.removeprefix('Tanda_'))
+            lb.insert('end', g.removeprefix('Tanda_') + ('  (alianzas)' if self.con_alianzas(g) else ''))
             if g in self.guardadas:
                 lb.selection_set(i)
         bf = ttk.Frame(v); bf.pack(fill='x', padx=8, pady=6)
