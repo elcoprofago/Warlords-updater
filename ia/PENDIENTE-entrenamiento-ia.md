@@ -294,8 +294,8 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   usuario cierre el grupo de mapas en curso. Así la etapa 2 sigue con un solo exe.
 
 ### 16/10/2026: etapa 3, paso 1 hecho: registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0)
-- NO instalado: la etapa 2 sigue con 1.0.32.0. Se compila aparte (`python build.py <carpeta>`) y se instala entre
-  etapas, cuando el usuario cierre el grupo de mapas en curso. Solo anota (con DATA\IA.INI); no cambia decisiones.
+- Instalado en C:\Warlords3 y publicado (16/10/2026): el usuario deja la etapa 2 para otro momento y sigue con la 3.
+  Solo anota (con DATA\IA.INI); no cambia decisiones.
 - DATA\IA_DIP.CSV (tabla `diplo`): por color y turno, `turno,color,opciones,d0..d7`. opciones: 1 ciudades
   compartidas, 2 diplomacia, 4 Hidden Map, 8 vista aliada. dN: 0 aliados, 1 paz, 2 guerra con el color N.
 - DATA\IA_EVT.CSV (tabla `evento`): `turno,color,ia,tipo,x,y,n`. Tipos: 1 puente derribado por criterio propio

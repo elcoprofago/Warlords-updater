@@ -136,9 +136,8 @@ Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo
 Resultado:
 
 ## IA: probar el registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0) (16/10/2026)
-Recién cuando cierres el grupo de mapas de la etapa 2 (antes no se instala la versión nueva).
-1. Actualizá con el botón Actualizar (vista-aliada 1.0.33.0).
-2. Corré una tanda corta (6 partidas) de cualquier mapa, con ciudades compartidas y diplomacia activadas.
-3. Abrí el Monitor de IA: la línea **Eventos** tiene que mostrar conteos (o "ninguno todavía", si no hubo).
+Ya está instalada en esta PC.
+1. Corré una tanda corta (6 partidas) de cualquier mapa, con ciudades compartidas y diplomacia activadas.
+2. Abrí el Monitor de IA: la línea **Eventos** tiene que mostrar conteos (o "ninguno todavía", si no hubo).
 Avisame cuando termine: yo reviso en datos.db las tablas `diplo`, `evento` y la columna nueva de batallas.
 Resultado:
