@@ -90,10 +90,10 @@ namespace Actualizador
                         case "8": await Herramienta("PGS-VISOR", "PGS-VISOR.zip"); pausa = true; break;
                         case "9": await Parches(); pausa = false; break;
                         case "10": await Herramienta("DARKCOMPARE", "DarkCompare.zip"); pausa = true; break;
-                        case "11": await AccesosDirectos(); pausa = false; break;
-                        case "12": await JugarEnRed(); pausa = true; break;
-                        case "13": await DelParcheHerramientas("VOTACIÓN", "votacion.exe"); pausa = true; break;
-                        case "14": await DelParcheHerramientas("SORTEO", "sorteo.exe"); pausa = true; break;
+                        case "11": await DelParcheHerramientas("VOTACIÓN", "votacion.exe"); pausa = true; break;
+                        case "12": await DelParcheHerramientas("SORTEO", "sorteo.exe"); pausa = true; break;
+                        case "13": await JugarEnRed(); pausa = true; break;
+                        case "14": await AccesosDirectos(); pausa = false; break;
                         case "15":
                             t.EscribirLinea();
                             Info("Saliendo...");
@@ -155,10 +155,10 @@ namespace Actualizador
             Opcion(8, "PGS-VISOR", dHerr);
             Opcion(9, "PARCHES", "→ " + juego);
             Opcion(10, "DARKCOMPARE", dHerr);
-            Opcion(11, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
-            Opcion(12, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
-            Opcion(13, "VOTACIÓN", dHerr);
-            Opcion(14, "SORTEO", dHerr);
+            Opcion(11, "VOTACIÓN", dHerr);
+            Opcion(12, "SORTEO", dHerr);
+            Opcion(13, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
+            Opcion(14, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
             Opcion(15, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
@@ -282,7 +282,7 @@ namespace Actualizador
         }
 
         /// <summary>
-        /// Opcion 12: Puente Warlords (repo puente-warlords). Deja el cliente en HERRAMIENTAS\PuenteWarlords, o lo
+        /// Opcion 13: Puente Warlords (repo puente-warlords). Deja el cliente en HERRAMIENTAS\PuenteWarlords, o lo
         /// actualiza si PuenteWarlords.txt de la release dice una version mas nueva, y lo abre. Como 7, 8 y 10:
         /// no pisa los .ini (puente.ini guarda el nombre y la clave del jugador).
         /// </summary>
@@ -406,7 +406,7 @@ namespace Actualizador
         }
 
         /// <summary>
-        /// Opciones 13 y 14: votacion.exe o sorteo.exe. Su unico canal de publicacion es el parche "herramientas"
+        /// Opciones 11 y 12: votacion.exe o sorteo.exe. Su unico canal de publicacion es el parche "herramientas"
         /// (parches\herramientas\build.py y tools\publicar-parche.ps1): se baja ese zip, se verifica como en la
         /// opcion 9 y se extrae solo el programa pedido. No marca el parche como instalado: trae los dos.
         /// </summary>
@@ -462,7 +462,7 @@ namespace Actualizador
             catch (IOException) { return ""; }
         }
 
-        // ------------------------------------------------------------------ 11 ACCESOS DIRECTOS
+        // ------------------------------------------------------------------ 14 ACCESOS DIRECTOS
 
         sealed class Programa
         {
@@ -475,9 +475,9 @@ namespace Actualizador
             new Programa { Exe = "DarkCompare.exe", Nombre = "DarkCompare", Descripcion = "Comparador de armas", Opcion = 10 },
             new Programa { Exe = "DarklordsValidator.exe", Nombre = "Darklords Validator", Descripcion = "Validador de unidades", Opcion = 7 },
             new Programa { Exe = "EditorPGS.exe", Nombre = "PGS-Visor", Descripcion = "Visor de bandos (.PGS)", Opcion = 8 },
-            new Programa { Exe = "votacion.exe", Nombre = "Votación", Descripcion = "Votación de la partida", Opcion = 13 },
-            new Programa { Exe = "sorteo.exe", Nombre = "Sorteo", Descripcion = "Sorteo de bandos", Opcion = 14 },
-            new Programa { Exe = @"PuenteWarlords\PuenteWarlords.exe", Nombre = "Puente Warlords", Descripcion = "Jugar en red", Opcion = 12 },
+            new Programa { Exe = "votacion.exe", Nombre = "Votación", Descripcion = "Votación de la partida", Opcion = 11 },
+            new Programa { Exe = "sorteo.exe", Nombre = "Sorteo", Descripcion = "Sorteo de bandos", Opcion = 12 },
+            new Programa { Exe = @"PuenteWarlords\PuenteWarlords.exe", Nombre = "Puente Warlords", Descripcion = "Jugar en red", Opcion = 13 },
         };
 
         async Task AccesosDirectos()
@@ -526,7 +526,7 @@ namespace Actualizador
 
                 t.EscribirLinea();
                 if (elegidos.Count == 0)
-                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8, 10, 12, 13 o 14.");
+                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8, 10, 11, 12 o 13.");
                 foreach (var p in elegidos)
                 {
                     var exe = Path.Combine(herramientas, p.Exe);
