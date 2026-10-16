@@ -1,7 +1,7 @@
 # Monitor de IA: panel de control de las tandas de ia\tanda.py (ia\PENDIENTE-monitor-ia.md).
 # Corre la tanda en un hilo propio (reemplaza tanda.bat y monitor.bat) y muestra en vivo la partida en curso, leyendo
 # ia\datos.db y los CSV que escribe DarklordAV.exe. Se empaqueta con build.py como ia\Monitor-IA.exe.
-import configparser, ctypes, io, json, os, queue, subprocess, sys, threading, time, urllib.request, winsound
+import configparser, ctypes, io, json, os, queue, sqlite3, subprocess, sys, threading, time, urllib.request, winsound
 import tkinter as tk
 import psutil
 from PIL import Image, ImageTk
@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.1'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.2'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -261,6 +261,9 @@ class Monitor(tk.Tk):
         self.guardadas = self.disponibles()   # todas las Tanda_*.SAV, hasta que se elija otra cosa
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
         self.b_guardadas.grid(row=1, column=1, sticky='w', padx=6, pady=2); self.rotular_guardadas()
+        self.rotulo(fila, text='Estadísticas:').grid(row=2, column=0, sticky='w')
+        ttk.Button(fila, text='Exportar PDF de un mapa…', width=34,
+                   command=self.exportar_pdf).grid(row=2, column=1, sticky='w', padx=6, pady=2)
         caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
         self.v_mudo = tk.BooleanVar(value=True)
@@ -352,6 +355,42 @@ class Monitor(tk.Tk):
             self.guardadas = [todas[i] for i in lb.curselection()]
             self.rotular_guardadas(); v.destroy()
         ttk.Button(bf, text='Aceptar', command=aceptar).pack(side='right')
+
+    def exportar_pdf(self):
+        """Cuadro de posiciones de un mapa (ia\\exportar.py), en PDF, para la página del Clan."""
+        from tkinter import filedialog
+        import exportar
+        try:
+            with sqlite3.connect(tanda.DB) as db:
+                mapas = exportar.mapas(db)
+        except Exception as e:
+            messagebox.showerror('Exportar', f'No se pudo leer datos.db:\n{e}', parent=self); return
+        if not mapas:
+            messagebox.showinfo('Exportar', 'Todavía no hay partidas con bando común para exportar.', parent=self); return
+        v = tk.Toplevel(self); v.title('Exportar PDF'); v.transient(self); v.grab_set()
+        ttk.Label(v, text='Mapa (partidas comparables):').pack(anchor='w', padx=8, pady=4)
+        lb = tk.Listbox(v, height=min(15, len(mapas)), width=40, activestyle='none', exportselection=False)
+        lb.pack(fill='both', expand=True, padx=8)
+        for g, n in mapas:
+            lb.insert('end', f'{g.removeprefix("Tanda_")}  ({n})')
+        lb.selection_set(0)
+
+        def aceptar():
+            if not lb.curselection():
+                return
+            g = mapas[lb.curselection()[0]][0]; v.destroy()
+            destino = filedialog.asksaveasfilename(parent=self, defaultextension='.pdf', filetypes=[('PDF', '*.pdf')],
+                                                   initialfile=f'{g.removeprefix("Tanda_")} - posiciones.pdf')
+            if not destino:
+                return
+            try:
+                with sqlite3.connect(tanda.DB) as db:
+                    exportar.exportar(g, destino, db)
+            except Exception as e:
+                messagebox.showerror('Exportar', f'No se pudo generar el PDF:\n{e}', parent=self); return
+            os.startfile(destino)
+        ttk.Button(v, text='Exportar…', command=aceptar).pack(anchor='e', padx=8, pady=6)
+        lb.bind('<Double-Button-1>', lambda e: aceptar())
 
     def guardar_monitor(self, i):
         guardar_config('Pantalla', preferida=self.mons[i][0])

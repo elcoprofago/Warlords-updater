@@ -92,3 +92,11 @@ Cuadrantes de una grilla 3x3: I arriba a la izquierda, II arriba al centro, III 
 a VI en la fila del medio, VII abajo a la izquierda, VIII abajo al centro, IX abajo a la derecha.
 - Amarillo: I. Azul: V (centro). Blanco y naranja: islas del III. Rojo: islas del margen inferior izquierdo (VII).
 - Negro: isla del VIII. Celeste: IX, cerca del continente. Verde: IX, isla del margen inferior derecho, más alejado.
+
+## 1.0.2: botón Exportar PDF (16/10/2026)
+- Panel Tanda → "Exportar PDF de un mapa…": lista los mapas con partidas comparables (estado ok, bando común,
+  un solo exe: el de más partidas de ese mapa) y genera `ia\exportar.py` → PDF apaisado con dos rankings
+  (ganar, sobrevivir), IC 95 % de Wilson, podio, PV y ciudades promedio, y la nota "cómo leerlo".
+- Las posiciones de arranque salen de `ia\posiciones.json` (hoy solo Scarpart); un mapa sin entrada deja la
+  columna vacía. Al medir un mapa nuevo, sumar sus posiciones ahí.
+- Depende de fpdf2 (pip install fpdf2) y de las fuentes Segoe UI de Windows.

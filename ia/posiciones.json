@@ -1,0 +1,12 @@
+{
+  "Tanda_Scarpart": {
+    "blanco": "islas del cuadrante III",
+    "amarillo": "cuadrante I",
+    "naranja": "islas del cuadrante III",
+    "rojo": "islas del cuadrante VII",
+    "verde": "isla lejana del cuadrante IX, en el margen",
+    "azul": "cuadrante V (centro)",
+    "celeste": "cuadrante IX, junto al continente",
+    "negro": "isla del cuadrante VIII"
+  }
+}
