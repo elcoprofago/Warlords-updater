@@ -223,3 +223,20 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Tanda_Borderlands y Tanda_Kor tienen las mismas 16 unidades en los 8 colores. Control: ABN_000_29.SAV da
   "distintos". tanda.py lo anota solo en tanda.bandos desde la versión que sigue a Monitor-IA.exe de las 16:15; si la
   tanda 6 se larga con ese exe, su columna bandos se carga a mano con lo verificado acá.
+
+### 16/10/2026: cierre de la etapa 1 (tandas 6 a 16)
+- 96 partidas válidas (32 por mapa), todas vista-aliada 1.0.32.0 exe 9d706a67, bando común verificado. Las tandas 9
+  y 16 tuvieron 18 y 24 partidas; la 14 tuvo una cortada y repetida.
+- La IA de prueba todavía es igual a la original, así que la etapa fue una prueba de control (las dos IA iguales):
+  ganadores 47 prueba, 45 original, 4 empates; diferencia de PV medio por partida 0,0 ± 1,2 (IC 95 %), 47 partidas
+  mejor y 47 peor. El banco no favorece a ningún lado. Ruido medido: con 96 partidas se detecta una diferencia de
+  ~1,2 PV (el 20 % de la spec, sobre PV medio ~6); para diferencias menores hacen falta más partidas.
+- Efecto de la posición muy fuerte (color = posición de arranque). Gana: Scarpart color 7 47 %, color 5 28 %;
+  Borderlands color 6 47 %, color 0 25 %; Kor color 0 50 %, color 2 25 %. Hay posiciones con 0 a 3 % de victorias.
+  Con las dos IA iguales, estas partidas ya valen para las chances por posición de los 3 mapas.
+- La tanda 17 (16/10, 12:20) se largó con la misma condición: cuenta como etapa 1 (control).
+- Cronograma corrido: la etapa 2 (posiciones, Scarpart, 20 tandas) empieza en la tanda que siga a la 17.
+- Choque a cuidar: programar la IA de prueba recompila DarklordAV.exe en C:\Warlords3 y cambiaría el exe a mitad
+  de la etapa 2. Mientras corra la etapa 2, build.py va a otra carpeta (python build.py <carpeta>) y se instala
+  recién entre etapas. Con la IA ya cambiada, se repite la etapa 1 (mismas 3 partidas) y se compara con este control.
+- Frase para retomar la IA: "Seguimos con specs\ia-destrezas-v1.md: programar la IA de prueba".
