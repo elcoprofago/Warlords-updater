@@ -260,16 +260,20 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Etapa 1 cerrada (tandas 6 a 17). Etapa 2 probada en 3 mapas (Scarpart 32, Borderlands 34, Kor 33 partidas) y el
   PDF sale completo; sigue abierta para el resto de los mapas. Faltan las posiciones de arranque de Borderlands y Kor
   en posiciones.json.
-- El cronograma escrito no tenía una etapa "alianzas": después de posiciones venían las modalidades (Crusade, norte
-  contra sur). La etapa 3 queda como "alianzas", y norte contra sur pasa a ser su primera prueba.
+- Corrección del usuario (16/10/2026): la etapa 3 no es de modalidades sino de alianzas: medir si la IA nueva arma
+  mejor las alianzas que la original, en concreto si refugia ejércitos en las ciudades compartidas de un aliado y si
+  defiende en común una ciudad sitiada. Crusade y demás modalidades pasan a segundo plano.
+- Hecho comprobado: la IA de prueba todavía no tiene ninguna destreza (build.py, comentario de IA.INI: "con prueba
+  juega igual que la original"). Las ciudades compartidas son una regla del parche que ambas IA pueden usar al mover,
+  pero ninguna la busca a propósito. Hoy una tanda original contra nueva daría empate por construcción.
 - Plan de la etapa 3:
-  1. Registro: la matriz diplomática (DIPLO = 0x55ee4c, 0 aliados, 1 paz, 2 guerra; opción en DIPLO_OPT & 8) no se
-     anota hoy. Sumar al parche una línea por turno y par de colores cuando cambia (IA_DIP.CSV), tabla `diplomacia`
-     en datos.db. Cambia el exe: se compila e instala entre etapas, nunca en medio de una.
-  2. Prueba A, alianzas fijas: mismo .PGS común, equipos armados en la partida (norte contra sur, 4 y 4), Diplomacy
-     activada. Mide si los aliados se coordinan: ataques entre aliados (deberían ser 0), ciudades tomadas al enemigo
-     común, cuántos aliados sobreviven, qué equipo gana. Rotar qué equipo es norte para separar alianza de posición.
-  3. Prueba B, diplomacia libre: 8 contra 8 sin alianzas iniciales y Diplomacy activada. Mide cuándo y con quién la
-     IA propone paz o alianza, cuánto duran, si las rompe y si gana más quien se alía.
-  4. Recién con eso medido, programar "estrategias concertadas entre IA aliadas" (fuera de alcance en
-     specs\ia-destrezas-v1.md; spec nuevo).
+  1. Registro: matriz diplomática por turno (DIPLO = 0x55ee4c) y eventos de refugio: pila de un color que entra o
+     termina el turno en una ciudad compartida de otro, y batallas en ciudad compartida con defensores de más de un
+     color (IA_BAT ya trae atacante/defensor; falta el color de cada defensor). Cambia el exe: entre etapas.
+  2. Control: tandas con alianzas fijas (dos equipos de 4, ciudades compartidas y diplomacia activadas), las dos IA
+     iguales. Mide cuánto refugio usa hoy la IA original sin proponérselo.
+  3. Programar la destreza en la IA de prueba (spec nuevo): refugiarse en la ciudad aliada cuando la pila está
+     amenazada, y reforzar una ciudad compartida sitiada. Solo para colores con ia_mode = prueba.
+  4. Tandas A/B: un equipo de 4 con la IA de prueba contra uno de 4 con la original, alternando qué equipo tiene
+     cada IA en pares complementarios (como la etapa 1). Mide refugios, defensas en común, ciudades compartidas
+     perdidas, aliados vivos y equipo ganador, contra el control del paso 2.
