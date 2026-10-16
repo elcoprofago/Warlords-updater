@@ -28,9 +28,23 @@ crea los accesos directos), `W3_PARCHES_URL` (otro `PARCHES.txt`, puede ser un a
 (respuestas separadas por `|`; al acabarse cierra), `W3_TRANSCRIPCION` (guarda el texto de la pantalla) y
 `W3_CAPTURA` (una captura PNG cada vez que espera una respuesta).
 
-`DarkValidator.zip` (opción 7), `PGS-VISOR.zip` (8) y `COMPLEMENTOS.zip` (10) son assets de la release Actualizador
-armados a mano; las tres opciones descomprimen en `C:\Warlords3\HERRAMIENTAS` y no pisan los `.ini` que ya estén
-(la configuración de cada PC).
+Cada programa de `C:\Warlords3\HERRAMIENTAS` se baja con su propia opción y se publica por un solo canal (no hay
+un zip con todos, que quedaba con versiones viejas):
+
+| Opción | Programa | Asset de la release Actualizador | Lo publica |
+|---|---|---|---|
+| 7 | DarklordsValidator | `DarkValidator.zip` | a mano |
+| 8 | EditorPGS (PGS-VISOR) | `PGS-VISOR.zip` | a mano |
+| 10 | DarkCompare | `DarkCompare.zip` | a mano |
+| 12 | Puente Warlords | `PuenteWarlords.zip` + `.txt` | `tools\publicar.ps1` de puente-warlords |
+| 13 | Votación | parche `herramientas` | `tools\publicar-parche.ps1 herramientas` |
+| 14 | Sorteo | parche `herramientas` | `tools\publicar-parche.ps1 herramientas` |
+
+7, 8 y 10 descomprimen su zip (los archivos sueltos, sin carpeta) en `HERRAMIENTAS` y no pisan los `.ini` que ya
+estén (la configuración de cada PC). 13 y 14 bajan el zip del parche `herramientas`, lo verifican como la opción 9 y
+extraen solo su programa. La opción 6 no trae nada de `HERRAMIENTAS` (ni lo publica `publicar-full.ps1` ni lo pisa
+el actualizador). `COMPLEMENTOS.zip` sigue en la release solo para la opción 10 de los actualizadores 1.0.8.0 y
+anteriores; no se actualiza más.
 
 La opción 12 (JUGAR EN RED) deja Puente Warlords en `C:\Warlords3\HERRAMIENTAS\PuenteWarlords` y lo abre. Baja
 `PuenteWarlords.txt` (la versión publicada) y, si es más nueva que la del exe instalado o no hay exe, baja

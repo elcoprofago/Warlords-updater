@@ -98,7 +98,7 @@ function Incluir($rel) {
     $ext = [IO.Path]::GetExtension($rel)
     if ($rel.IndexOf('\') -lt 0) {
         if ($raizPropia -contains $nombre -or $nombre -like 'unins000.*') { return $false }
-        # COMPLEMENTOS.zip y demas zips de la raiz: descargas de la opcion 10, no son el juego
+        # COMPLEMENTOS.zip y demas zips de la raiz: descargas de herramientas, no son el juego
         if ($ext -eq '.zip') { return $false }
     }
     if ((Split-Path -Parent $rel) -eq 'DATA' -and $dataPropia -contains $nombre) { return $false }

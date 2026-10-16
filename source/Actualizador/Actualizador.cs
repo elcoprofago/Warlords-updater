@@ -61,10 +61,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 13).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 15).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 13.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 15.");
                     await Pausa();
                     continue;
                 }
@@ -89,10 +89,12 @@ namespace Actualizador
                         case "7": await Herramienta("VALIDATOR", "DarkValidator.zip"); pausa = true; break;
                         case "8": await Herramienta("PGS-VISOR", "PGS-VISOR.zip"); pausa = true; break;
                         case "9": await Parches(); pausa = false; break;
-                        case "10": await Herramienta("COMPLEMENTOS", "COMPLEMENTOS.zip"); pausa = true; break;
+                        case "10": await Herramienta("DARKCOMPARE", "DarkCompare.zip"); pausa = true; break;
                         case "11": await AccesosDirectos(); pausa = false; break;
                         case "12": await JugarEnRed(); pausa = true; break;
-                        case "13":
+                        case "13": await DelParcheHerramientas("VOTACIÓN", "votacion.exe"); pausa = true; break;
+                        case "14": await DelParcheHerramientas("SORTEO", "sorteo.exe"); pausa = true; break;
+                        case "15":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -152,10 +154,12 @@ namespace Actualizador
             Opcion(7, "VALIDATOR", dHerr);
             Opcion(8, "PGS-VISOR", dHerr);
             Opcion(9, "PARCHES", "→ " + juego);
-            Opcion(10, "COMPLEMENTOS", dHerr);
+            Opcion(10, "DARKCOMPARE", dHerr);
             Opcion(11, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
             Opcion(12, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
-            Opcion(13, "SALIR", "", Paleta.Tenue);
+            Opcion(13, "VOTACIÓN", dHerr);
+            Opcion(14, "SORTEO", dHerr);
+            Opcion(15, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -260,17 +264,16 @@ namespace Actualizador
 
         /// <summary>
         /// Opciones 7, 8 y 10: un zip de la release que va a &lt;juego&gt;\HERRAMIENTAS, unico alojamiento de
-        /// DarkCompare, DarklordsValidator, EditorPGS, votacion y sorteo. Si el zip trae la carpeta HERRAMIENTAS\
-        /// en la raiz (COMPLEMENTOS.zip) se le quita, para que no quede HERRAMIENTAS\HERRAMIENTAS. Los .ini que ya
-        /// existen no se pisan: son la configuracion de cada PC (votacion.ini guarda la pantalla del jugador).
+        /// DarkCompare, DarklordsValidator, EditorPGS, votacion y sorteo. Cada programa se publica por un solo
+        /// canal: no hay un zip con todos que quede con versiones viejas. Los .ini que ya existen no se pisan: son
+        /// la configuracion de cada PC.
         /// </summary>
         async Task Herramienta(string nombre, string zip)
         {
             Titulo(nombre);
             var archivo = Path.Combine(temporal, zip);
             if (!await Bajar(new[] { Release + zip }, archivo)) return;
-            var conservados = await Descomprimir(archivo, herramientas,
-                rel => rel.StartsWith(@"HERRAMIENTAS\", StringComparison.OrdinalIgnoreCase) ? rel.Substring(13) : rel,
+            var conservados = await Descomprimir(archivo, herramientas, null,
                 dest => string.Equals(Path.GetExtension(dest), ".ini", StringComparison.OrdinalIgnoreCase));
             Borrar(archivo);
             if (conservados == null) return;
@@ -330,12 +333,7 @@ namespace Actualizador
                 await Pausa();
                 return;
             }
-            var parches = File.ReadAllLines(lista)
-                .Where(l => l.Trim().Length > 0 && !l.StartsWith("#"))
-                .Select(l => l.Split('|'))
-                .Where(c => c.Length >= 4)
-                .Select(c => new Parche { Id = c[0].Trim(), Version = c[1].Trim(), Sha = c[2].Trim(), Url = c[3].Trim(), Descripcion = c.Length > 4 ? c[4].Trim() : c[0].Trim() })
-                .ToList();
+            var parches = LeerParches(lista);
 
             while (true)
             {
@@ -381,11 +379,61 @@ namespace Actualizador
             }
         }
 
+        static List<Parche> LeerParches(string lista)
+        {
+            var parches = File.ReadAllLines(lista)
+                .Where(l => l.Trim().Length > 0 && !l.StartsWith("#"))
+                .Select(l => l.Split('|'))
+                .Where(c => c.Length >= 4)
+                .Select(c => new Parche { Id = c[0].Trim(), Version = c[1].Trim(), Sha = c[2].Trim(), Url = c[3].Trim(), Descripcion = c.Length > 4 ? c[4].Trim() : c[0].Trim() })
+                .ToList();
+            Borrar(lista);
+            return parches;
+        }
+
         async Task InstalarParche(Parche p)
         {
             Titulo($"PARCHE {p.Id} v{p.Version}");
+            var archivo = await BajarParche(p);
+            if (archivo == null) return;
+            bool ok = await Descomprimir(archivo, juego) != null;
+            Borrar(archivo);
+            if (!ok) return;
+            Directory.CreateDirectory(Path.Combine(juego, "PARCHES"));
+            // mismo contenido que escribia el .bat (">archivo echo version"): la version y un salto de linea
+            File.WriteAllText(Path.Combine(juego, "PARCHES", p.Id + ".txt"), p.Version + "\r\n");
+            Ok($"Parche {p.Id} v{p.Version} instalado correctamente.");
+        }
+
+        /// <summary>
+        /// Opciones 13 y 14: votacion.exe o sorteo.exe. Su unico canal de publicacion es el parche "herramientas"
+        /// (parches\herramientas\build.py y tools\publicar-parche.ps1): se baja ese zip, se verifica como en la
+        /// opcion 9 y se extrae solo el programa pedido. No marca el parche como instalado: trae los dos.
+        /// </summary>
+        async Task DelParcheHerramientas(string nombre, string exe)
+        {
+            Titulo(nombre);
+            var lista = Path.Combine(temporal, "PARCHES.txt");
+            if (!await Bajar(new[] { parchesUrl }, lista, sinCache: true, mostrarArchivo: "lista de parches")) return;
+            var p = LeerParches(lista).FirstOrDefault(x => x.Id == "herramientas");
+            if (p == null)
+            {
+                Error("El parche herramientas no está publicado.");
+                return;
+            }
+            var archivo = await BajarParche(p);
+            if (archivo == null) return;
+            bool ok = await Descomprimir(archivo, juego,
+                rel => string.Equals(Path.GetFileName(rel), exe, StringComparison.OrdinalIgnoreCase) ? rel : null) != null;
+            Borrar(archivo);
+            if (ok) Ok($"{nombre} actualizado en {herramientas} (parche herramientas v{p.Version}).");
+        }
+
+        /// <summary>Baja el zip de un parche y verifica que sea el publicado. Devuelve el archivo, o null.</summary>
+        async Task<string> BajarParche(Parche p)
+        {
             var archivo = Path.Combine(temporal, $"PARCHE-{p.Id}.zip");
-            if (!await Bajar(new[] { p.Url }, archivo, sinCache: true)) return;
+            if (!await Bajar(new[] { p.Url }, archivo, sinCache: true)) return null;
 
             // El zip tiene que ser exactamente el publicado: si no coincide no se toca el juego
             string hash;
@@ -400,17 +448,10 @@ namespace Actualizador
             {
                 Error("El archivo descargado no coincide con el publicado. No se instala.");
                 Borrar(archivo);
-                return;
+                return null;
             }
             Ok("Archivo verificado.");
-
-            bool ok = await Descomprimir(archivo, juego) != null;
-            Borrar(archivo);
-            if (!ok) return;
-            Directory.CreateDirectory(Path.Combine(juego, "PARCHES"));
-            // mismo contenido que escribia el .bat (">archivo echo version"): la version y un salto de linea
-            File.WriteAllText(Path.Combine(juego, "PARCHES", p.Id + ".txt"), p.Version + "\r\n");
-            Ok($"Parche {p.Id} v{p.Version} instalado correctamente.");
+            return archivo;
         }
 
         string VersionInstalada(string id)
@@ -434,8 +475,8 @@ namespace Actualizador
             new Programa { Exe = "DarkCompare.exe", Nombre = "DarkCompare", Descripcion = "Comparador de armas", Opcion = 10 },
             new Programa { Exe = "DarklordsValidator.exe", Nombre = "Darklords Validator", Descripcion = "Validador de unidades", Opcion = 7 },
             new Programa { Exe = "EditorPGS.exe", Nombre = "PGS-Visor", Descripcion = "Visor de bandos (.PGS)", Opcion = 8 },
-            new Programa { Exe = "votacion.exe", Nombre = "Votación", Descripcion = "Votación de la partida", Opcion = 10 },
-            new Programa { Exe = "sorteo.exe", Nombre = "Sorteo", Descripcion = "Sorteo de bandos", Opcion = 10 },
+            new Programa { Exe = "votacion.exe", Nombre = "Votación", Descripcion = "Votación de la partida", Opcion = 13 },
+            new Programa { Exe = "sorteo.exe", Nombre = "Sorteo", Descripcion = "Sorteo de bandos", Opcion = 14 },
             new Programa { Exe = @"PuenteWarlords\PuenteWarlords.exe", Nombre = "Puente Warlords", Descripcion = "Jugar en red", Opcion = 12 },
         };
 
@@ -485,7 +526,7 @@ namespace Actualizador
 
                 t.EscribirLinea();
                 if (elegidos.Count == 0)
-                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8, 10 o 12.");
+                    Aviso($"No hay programas instalados en {herramientas}. Bájalos con las opciones 7, 8, 10, 12, 13 o 14.");
                 foreach (var p in elegidos)
                 {
                     var exe = Path.Combine(herramientas, p.Exe);
