@@ -240,3 +240,9 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   de la etapa 2. Mientras corra la etapa 2, build.py va a otra carpeta (python build.py <carpeta>) y se instala
   recién entre etapas. Con la IA ya cambiada, se repite la etapa 1 (mismas 3 partidas) y se compara con este control.
 - Frase para retomar la IA: "Seguimos con specs\ia-destrezas-v1.md: programar la IA de prueba".
+- Numeración de colores (verificada 16/10/2026): el "color" de IA.CSV y datos.db es el índice del registro de jugador
+  (0x536b30 + p*0x1f8). En el .SAV esos registros traen el estandarte de cada uno: 0 Bwhite, 1 Byellow, 2 Borange,
+  3 Bred, 4 Bgreen, 5 Bblue, 6 Bcyan, 7 Bblack (Tanda_Scarpart.SAV, desde 0x32bb9). Mismo orden que "Scenario Sides"
+  de War3Ed.RES: 0 blanco, 1 amarillo, 2 naranja, 3 rojo, 4 verde, 5 azul, 6 celeste, 7 negro.
+- Scarpart, negro (7): con su bando propio murió en las 6 partidas de las tandas 1, 4 y 5; con el bando común gana
+  el 47 %. Según el usuario, su bando propio tiene voladores y el común no, y en Scarpart eso decide.
