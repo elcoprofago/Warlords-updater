@@ -335,3 +335,22 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Aliados03 son iguales; aquí la segunda trae 0 con los compañeros). tanda.alianzas lee la vigente, así que dice
   "sin alianzas". El usuario decidió no tocar los archivos: prueba de 1 partida (Scar_Alianzas) para ver en
   IA_DIP si el juego las vuelve vigentes. Si no, la vía es copiar +9..16 a +0..7 en el .SAV (pedirle permiso).
+
+### 16/10/2026: prueba de 1 partida con alianzas (tanda 18, partida 118, Tanda_Scar_Alianzas, 1.0.33.0 exe 3351b46a)
+- Las propuestas mutuas se vuelven vigentes solas: IA_DIP turno 2 a medias (cada color al jugar su turno), turno 3
+  completas. Los equipos siguieron aliados hasta el turno 30 (entre equipos, guerras a partir de la mitad). No hace
+  falta tocar los .SAV.
+- Equipo 0,1,3,5: 55 PV, ninguno eliminado; equipo 2,4,6,7: 17 PV, naranja (t20) y verde (t12) eliminados.
+- Eventos: 0 refugios, 0 convoyes, 1 puente derribado por misión. 76 batallas, ninguna con defensores de 2 colores.
+- CAUSA de cero refugios y de que el usuario no viera banderas dobles: partners() (build.py, "Ciudades compartidas
+  por la alianza") exige la opción Hidden Map, y las dos guardadas de alianzas tienen opciones 11 = compartidas +
+  diplomacia + vista aliada, SIN Hidden Map. Con el mapa visible no hay ciudad compartida nunca. El usuario pidió
+  bajar la exigencia de 4 casillas exploradas a 3; eso no habría cambiado esta partida. Decisión pendiente del
+  usuario (regla de juego): partidas con Hidden Map, o que con mapa visible las ciudades aliadas se compartan sin
+  exigir exploración; y si igual baja a 3 casillas.
+- Observaciones del usuario: (1) Scarpart tiene las ciudades en grupos muy alejados; para alianzas sirve más
+  Borderlands (más apretado) o más turnos. (3) En Tanda_Scar_Alianzas los colores arrancan en otras ciudades que en
+  Tanda_Scarpart (verificado en los .SAV: Scarpart sortea la ciudad inicial de cada color en cada partida nueva;
+  Borderlands no, las capitales son las mismas). El rating de posiciones de Scarpart vale solo para Tanda_Scarpart.
+  (4) El X-12 ahora trae la lancha rápida (cabotaje) y la IA parece usarla bien respetando la limitación.
+- La partida 117 "(a mano)" son 2 turnos que quedaron de armar las guardadas.
