@@ -354,3 +354,9 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Borderlands no, las capitales son las mismas). El rating de posiciones de Scarpart vale solo para Tanda_Scarpart.
   (4) El X-12 ahora trae la lancha rápida (cabotaje) y la IA parece usarla bien respetando la limitación.
 - La partida 117 "(a mano)" son 2 turnos que quedaron de armar las guardadas.
+
+### Estado al 16/10/2026 (fin de sesión)
+- vista-aliada 1.0.34.0 publicado e instalado: ciudades compartidas también con mapa visible (prueba_compartidas.py TODO OK).
+- La tanda 18 (partida 118) fue solo prueba; no entra en el control.
+- `tanda.alianzas()` ahora distingue vigentes de propuestas ("equipos ... (propuestas)").
+- Próximo paso: tanda de 6 con Tanda_Border_Alianzas (TAREAS 1, paso 5); revisar refugios y defensores de varios colores.

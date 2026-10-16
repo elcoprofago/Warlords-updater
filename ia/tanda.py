@@ -117,18 +117,23 @@ def alianzas(guardada):
             off += t
     o = rd(0x53c38c, 0x2a)
     vivos = [c for c in range(8) if rd(0x536b30 + c * 0x1f8 + 1, 1)[0]]
-    equipos, vistos = [], set()
-    for c in vivos:
-        if c in vistos:
-            continue
-        eq, pend = set(), [c]
-        while pend:
-            x = pend.pop()
-            if x not in eq:
-                eq.add(x); pend += [y for y in vivos if y != x and rd(0x55ee4c + x * 56 + y, 1)[0] == 0]
-        vistos |= eq; equipos.append(''.join(map(str, sorted(eq))))
+
+    def equipos(tabla):   # tabla 0 = vigente (+0..7 de cada fila); 9 = propuestas (+9..16): el juego las vuelve
+        out, vistos = [], set()   # vigentes al jugar cada color su turno (prueba del 16/10/2026)
+        for c in vivos:
+            if c in vistos:
+                continue
+            eq, pend = set(), [c]
+            while pend:
+                x = pend.pop()
+                if x not in eq:
+                    eq.add(x); pend += [y for y in vivos if y != x and rd(0x55ee4c + x * 56 + tabla + y, 1)[0] == 0
+                                        and rd(0x55ee4c + y * 56 + tabla + x, 1)[0] == 0]
+            vistos |= eq; out.append(''.join(map(str, sorted(eq))))
+        return '|'.join(e for e in out if len(e) > 1)
     op = [n for n, v in (('compartidas', o[25] & 1), ('diplomacia', o[7] & 8)) if v]
-    eq = 'sin alianzas' if all(len(e) == 1 for e in equipos) else 'equipos ' + '|'.join(e for e in equipos if len(e) > 1)
+    vig, prop = equipos(0), equipos(9)
+    eq = f'equipos {vig}' if vig else f'equipos {prop} (propuestas)' if prop else 'sin alianzas'
     return eq + ('; ' + ', '.join(op) if op else '')
 
 

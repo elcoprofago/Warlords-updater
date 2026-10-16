@@ -3,9 +3,9 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 1**, paso 2: la prueba de 1 partida (el paso 1 ya está hecho).
-2. **Tarea 2** (Suspender al terminar), al largar esa misma prueba: se prueban juntas.
-3. **Tarea 1**, pasos 3 y 4 (después de mi revisión).
+1. **Tarea 1**, paso 5: tanda de 6 con Border_Alianzas (los pasos 1 a 3 ya están hechos).
+2. **Tarea 2** (Suspender al terminar), al largar esa misma tanda: se prueban juntas.
+3. **Tarea 1**, paso 4 (después de mi revisión).
 4. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
@@ -33,6 +33,13 @@ Resultado: paso 1 hecho (16/10/2026). Guardadas como **Tanda_Scar_Alianzas** y *
 entran nombres más largos), las dos con blanco, amarillo, rojo y azul contra negro, verde, celeste y naranja.
   (Claude: los bandos son iguales en los 8 colores. Las alianzas quedaron como propuestas mutuas, todavía no
   vigentes. Por pedido tuyo no se tocan: la prueba del paso 2 dice si el juego las vuelve vigentes.)
+Resultado paso 2-3 (16/10/2026): partida 118 jugada. El juego volvió vigentes las alianzas solo, en el turno 3, y
+duraron hasta el final. Pero no hubo refugios ni banderas dobles: el parche exigía Hidden Map para compartir
+ciudades. Corregido en **vista-aliada 1.0.34.0** (ya publicado e instalado): con el mapa visible, toda ciudad de un
+aliado se comparte. La partida 118 cuenta solo como prueba.
+5. Tanda de **6** con **Border_Alianzas** solamente (Scarpart tiene las ciudades muy separadas, como notaste).
+   En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**, **Nueva tanda**.
+   Si mirás alguna partida, fijate si las ciudades de un aliado muestran dos banderas. Avisame al terminar.
 
 ## 2. IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
