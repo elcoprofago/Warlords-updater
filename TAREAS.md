@@ -6,7 +6,7 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 1. **Tarea 1**, paso 7: otra tanda de 6 con Border_Alianzas, de día (sábados no).
 2. Avisame al terminar: con esa cierro el control y sigue la etapa 3, paso 3.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
-4. **Tarea 18** (datos de la PC de Nico sobre Votación y Sorteo): en la próxima partida en red.
+4. **Tarea 18** (Votación y Sorteo en la PC de Nico): actualizar las dos PC y mandarme los .log de Nico tras la próxima partida en red.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
@@ -19,10 +19,20 @@ en su PC. Que Nico te mande:
 2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
    direcciones del Explorador) y su texto.
 3. ~~Si el juego ocupa toda la pantalla o se ve en una ventana.~~ (Respondido 17/10: ocupa toda la pantalla, igual que en la PC del anfitrión; Nico cierra las ventanas a mano.)
-4. En la próxima partida: con la Votación "congelada" en pantalla, que apriete **Ctrl+Shift+Esc** (Administrador
-   de tareas) y anote si en la lista aparece **votacion.exe** o "Sistema de Votación". Hacerlo de nuevo después
-   de que vos cierres la Votación.
-Anotá acá lo que mande Nico.
+4. ~~Administrador de tareas~~: ya no hace falta, lo reemplaza el registro de abajo.
+
+**Registro de lo que hacen las ventanas (lo principal, 17/10/2026).** Votación 1.1.4 y Sorteo 1.1.3 anotan todo
+lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto quedó detenida.
+1. En la PC de Nico **y en la tuya**: abrí el Actualizador y elegí la opción **11 (Votación)** y después la
+   **12 (Sorteo)**. Al abrirlas, el título de la ventana tiene que decir **v1.1.4** (Votación) y **v1.1.3** (Sorteo).
+   (En tu PC ya están instaladas; si el Actualizador dice que no hay nada nuevo, está bien.)
+2. Jueguen una partida en red como siempre y abrí, como anfitrión, la Votación y el Sorteo; cerralos cuando
+   terminen, igual que la vez pasada.
+3. Cuando termine la partida, que Nico te mande estos dos archivos (son de texto; mandarlos como archivo, no foto):
+   **C:\Warlords3\Herramientas\votacion.log** y **C:\Warlords3\Herramientas\sorteo.log**.
+   (Si su juego está en otra carpeta, son los que están junto a votacion.exe y sorteo.exe.)
+4. Copiá los dos archivos de Nico a **F:\source\repos\actualizador-warlords\nico\** (creá la carpeta) y anotá acá
+   la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
 
 ## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
