@@ -3,8 +3,8 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 1**, paso 6: tanda de 10 con Border_Alianzas (los pasos anteriores ya están hechos).
-2. Avisame al terminar: con eso cierro el control y sigue la etapa 3, paso 3.
+1. **Tarea 1**, pasos 6 y 7: una tanda de 6 y otra de 4 con Border_Alianzas, de día (sábados no).
+2. Avisame al terminar cada una: con la segunda cierro el control y sigue la etapa 3, paso 3.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
@@ -48,9 +48,11 @@ aliado se comparte. La partida 118 cuenta solo como prueba.
    En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**, **Nueva tanda**.
    Si mirás alguna partida, fijate si las ciudades de un aliado muestran dos banderas. Avisame al terminar.
 Resultado paso 5 (17/10/2026): hecho, se ven todas las banderas. Tarea 2 también cumplida.
-6. (Es el paso 4, ajustado: Scarpart queda afuera, así que son 16 partidas, todas en Borderlands.) Tanda de **10**
-   con **Border_Alianzas**: en el Monitor de IA, **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **10**,
+6. (Es el paso 4, ajustado: Scarpart queda afuera, así que son 16 partidas, todas en Borderlands. Faltan 10, en
+   tandas cortas de día, por pedido tuyo del 17/10/2026: una de **6** y otra de **4**.) Tanda de **6** con
+   **Border_Alianzas**: en el Monitor de IA, **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**,
    **Nueva tanda**. Podés dejar prendida la suspensión. Avisame al terminar.
+7. Lo mismo con Partidas: **4**. Avisame al terminar.
 
 ## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
