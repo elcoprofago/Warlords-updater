@@ -5,8 +5,8 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 ## Orden sugerido
 1. **Tarea 1**, paso 6: tanda de 10 con Border_Alianzas (los pasos anteriores ya están hechos).
 2. Avisame al terminar: con eso cierro el control y sigue la etapa 3, paso 3.
-4. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
-5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
+4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
