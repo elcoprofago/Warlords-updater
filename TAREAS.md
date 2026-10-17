@@ -18,7 +18,7 @@ en su PC. Que Nico te mande:
 1. El archivo **C:\Warlords3\dxcfg.ini** (abierto con el Bloc de notas, una foto alcanza).
 2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
    direcciones del Explorador) y su texto.
-3. Si al jugar, el juego ocupa **toda la pantalla** (sin barra de tareas ni bordes) o se ve **en una ventana**.
+3. ~~Si el juego ocupa toda la pantalla o se ve en una ventana.~~ (Respondido 17/10: ocupa toda la pantalla, igual que en la PC del anfitrión; Nico cierra las ventanas a mano.)
 4. En la próxima partida: con la Votación "congelada" en pantalla, que apriete **Ctrl+Shift+Esc** (Administrador
    de tareas) y anote si en la lista aparece **votacion.exe** o "Sistema de Votación". Hacerlo de nuevo después
    de que vos cierres la Votación.
