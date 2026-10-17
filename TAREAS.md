@@ -6,9 +6,17 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 1. **Tarea 1**, paso 7: otra tanda de 6 con Border_Alianzas, de día (sábados no).
 2. Avisame al terminar: con esa cierro el control y sigue la etapa 3, paso 3.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
-4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+4. **Tarea 17** (Nico: Votación y Sorteo): antes de la próxima partida en red.
+5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 17. Nico: actualizar Votación y Sorteo (17/10/2026)
+El puente frenó la partida porque la PC de Nico tiene otra versión de votacion.exe y sorteo.exe (con versiones
+distintas el espectador se queda trabado, por eso el puente las compara).
+1. En la PC de Nico, abrí el Actualizador y elegí la opción **11 (Votación)** y después la **12 (Sorteo)**.
+2. Volvé a armar la partida: ya no tienen que aparecer esos dos archivos en el cartel.
+   (El renglón de COMBAT.DAT se arregla en el puente; hasta entonces puede seguir apareciendo.)
 
 ## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
