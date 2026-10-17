@@ -309,6 +309,30 @@ def silenciar(pid, mudo=True):
             print(f'  (no se pudo silenciar el juego: {e})', flush=True)
 
 
+def devolver_sonido():
+    """Windows recuerda el silencio de cada programa (Mezclador de volumen): si el juego queda silenciado al cerrarse,
+    también arranca mudo en una partida normal (17/10/2026). Se borra esa marca de DarklordAV.exe en el registro."""
+    import winreg
+    raiz = r'Software\Microsoft\Internet Explorer\LowRegistry\Audio\PolicyConfig\PropertyStore'
+    exe = '\\' + os.path.splitdrive(JUEGO)[1].strip('\\').lower() + '\\' + EXE.lower() + '%b'
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, raiz) as r:
+            for i in range(winreg.QueryInfoKey(r)[0]):
+                with winreg.OpenKey(r, winreg.EnumKey(r, i)) as e:
+                    if exe not in str(winreg.QueryValueEx(e, '')[0]).lower():
+                        continue
+                    for j in range(winreg.QueryInfoKey(e)[0]):
+                        with winreg.OpenKey(e, winreg.EnumKey(e, j), 0, winreg.KEY_ALL_ACCESS) as g:
+                            try:
+                                v, t = winreg.QueryValueEx(g, '5')   # silencio: VT_BOOL, 0xFFFF = silenciado
+                            except OSError:
+                                continue
+                            if v[:2] == b'\x0b\x00' and v[8:10] != b'\x00\x00':
+                                winreg.SetValueEx(g, '5', 0, t, v[:8] + b'\x00\x00' + v[10:])
+    except OSError as e:
+        print(f'  (no se pudo devolver el sonido del juego: {e})', flush=True)
+
+
 def apretar_un_jugador(pid):
     """Aprieta "Single Player" en el lanzador del juego (botón 1001), si está a la vista. El parche ia_menu de
     vista-aliada 1.0.31.0 debía hacerlo solo y en vivo no lo hace (14/10/2026: 90 s quieto en el lanzador)."""
@@ -381,7 +405,10 @@ def jugar(db, tid, n, p, a):
             estado = 'cerrada'
         elif time.time() - ultimo_cambio > a.cuelgue * 60:
             estado = 'colgada'
+    if proc.poll() is None:
+        silenciar(proc.pid, False)   # que no quede silenciado para una partida normal
     cerrar_juego()
+    devolver_sonido()
     time.sleep(2)
     turnos = importar(db, pid, estado)
     print(f'[{ahora()}]   -> {estado}, {turnos} turnos, {(time.time() - t0) / 60:.1f} min', flush=True)
@@ -400,6 +427,7 @@ def correr(db, tid, a):
         db.execute('update tanda set terminada=1 where id=?', (tid,)); db.commit()
         print(f'Tanda {tid} terminada. Informe: python ia\\informe.py {tid}')
     finally:
+        devolver_sonido()
         escribir_ini(set(), None)   # sin [Tanda]: abrir el juego a mano ya no carga nada solo
 
 
