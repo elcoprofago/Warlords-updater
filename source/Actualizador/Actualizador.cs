@@ -713,7 +713,9 @@ namespace Actualizador
             Directory.CreateDirectory(raiz);
             using (var z = ZipFile.OpenRead(zip))
             {
-                var archivos = z.Entries.Where(e => e.Name.Length > 0).ToList();
+                // solo los que se extraen: con mapear (opciones 11 y 12) se saltean los demas y la barra no llegaba al 100%
+                var archivos = z.Entries.Where(e => e.Name.Length > 0
+                    && (mapear == null || !string.IsNullOrEmpty(mapear(e.FullName.Replace('/', '\\'))))).ToList();
                 long total = Math.Max(1, archivos.Sum(e => e.Length)), hecho = 0;
                 int i = 0;
                 var reloj = Stopwatch.StartNew();
