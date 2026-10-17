@@ -11,19 +11,18 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 
 # Pendientes
 
-## 18. Votación y Sorteo en la PC de Nico: tres datos para encontrar la falla (17/10/2026)
-En la partida del 17/10 el espectador (Nico) vio la Votación y el Sorteo quietos en la pantalla inicial, y no se
-cerraron cuando los cerraste vos. En tu PC está comprobado que tu juego mandó todo (votos y cierre), y en esta PC el
-espectador sigue los votos y se cierra solo. Falta saber qué pasa en la PC de Nico.
-1. Partida en red por el Puente, vos de anfitrión. Abrí la **Votación** y votá dos o tres veces.
-2. Nico mira **su juego** (detrás de la Votación): ¿aparece el cartel "Votacion en curso: partida en pausa"?
-   Que espere un minuto entero con la Votación abierta y anote si el cartel **sigue** o **desaparece solo**.
-3. Cerrá la Votación. Nico anota si su juego se puede volver a usar enseguida o si queda en pausa un minuto.
-   Si su ventana de Votación no se cierra sola, que la cierre él.
-4. Recién ahí Nico abre la carpeta **C:\Warlords3\HERRAMIENTAS**, busca **votacion.ver**, lo abre con el Bloc de
-   notas y te pasa una foto del texto y de la fecha y hora del archivo (vista Detalles). Si no está, anotá
-   "no está".
-Anotá acá lo que vio Nico en los pasos 2, 3 y 4.
+## 18. Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
+Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
+Lo que falla es cómo se ven las ventanas allá: en esta PC se actualizan bien. Hace falta saber cómo corre el juego
+en su PC. Que Nico te mande:
+1. El archivo **C:\Warlords3\dxcfg.ini** (abierto con el Bloc de notas, una foto alcanza).
+2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
+   direcciones del Explorador) y su texto.
+3. Si al jugar, el juego ocupa **toda la pantalla** (sin barra de tareas ni bordes) o se ve **en una ventana**.
+4. En la próxima partida: con la Votación "congelada" en pantalla, que apriete **Ctrl+Shift+Esc** (Administrador
+   de tareas) y anote si en la lista aparece **votacion.exe** o "Sistema de Votación". Hacerlo de nuevo después
+   de que vos cierres la Votación.
+Anotá acá lo que mande Nico.
 Resultado:
 
 ## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
