@@ -3,7 +3,7 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 16** (sonido del juego): cuando no haya una tanda corriendo.
+1. **Tarea 16** (sonido del juego), paso 2: abrir una partida normal y ver si suena.
 2. **Tarea 1**, paso 6: tanda de 10 con Border_Alianzas (los pasos anteriores ya están hechos).
 3. Avisame al terminar: con eso cierro el control y sigue la etapa 3, paso 3.
 4. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
@@ -14,8 +14,7 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 ## 16. Sonido del juego: comprobar que volvió (17/10/2026)
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
 normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar cada partida.
-1. Cerrá el Monitor de IA (sin tanda corriendo) y avisame: compilo y publico la 1.0.4 (con el Monitor abierto
-   Windows no deja reemplazar el .exe).
+1. (Hecho: la 1.0.4 está compilada y publicada.)
 2. Abrí DarklordAV.exe y empezá una partida normal: tiene que oírse la música.
 3. Si no se oye: clic derecho en el parlante de la barra de tareas → **Abrir el mezclador de volumen** y fijate si
    DarklordAV tiene el parlante tachado. Anotá acá lo que veas.
