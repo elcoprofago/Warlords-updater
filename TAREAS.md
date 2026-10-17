@@ -3,8 +3,8 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 1**, pasos 6 y 7: una tanda de 6 y otra de 4 con Border_Alianzas, de día (sábados no).
-2. Avisame al terminar cada una: con la segunda cierro el control y sigue la etapa 3, paso 3.
+1. **Tarea 1**, paso 7: otra tanda de 6 con Border_Alianzas, de día (sábados no).
+2. Avisame al terminar: con esa cierro el control y sigue la etapa 3, paso 3.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
@@ -52,7 +52,11 @@ Resultado paso 5 (17/10/2026): hecho, se ven todas las banderas. Tarea 2 tambié
    tandas cortas de día, por pedido tuyo del 17/10/2026: una de **6** y otra de **4**.) Tanda de **6** con
    **Border_Alianzas**: en el Monitor de IA, **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**,
    **Nueva tanda**. Podés dejar prendida la suspensión. Avisame al terminar.
-7. Lo mismo con Partidas: **4**. Avisame al terminar.
+Resultado paso 6 (17/10/2026, tanda 20): 5 partidas válidas; la primera se colgó en el turno 25 con el equipo
+negro-verde-celeste-naranja ya eliminado (no cuenta). Igual que la tanda anterior: alianzas firmes todo el juego,
+pero ningún refugio en ciudad aliada ni defensas conjuntas.
+7. Como se perdió una partida, en vez de 4 va otra de **6** (faltan 5 válidas y las partidas van de a pares):
+   Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
 
 ## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode

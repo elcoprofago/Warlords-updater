@@ -372,3 +372,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   (la prueba A/B usará los mismos equipos), pero la ventaja de 2467 es del mapa, no de la IA.
 - Decidido: Scarpart afuera (ciudades muy separadas). Control = 16 partidas en Borderlands: faltan 10 (TAREAS 1, paso 6).
 - Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3: cierre del control".
+
+### 17/10/2026: tanda 20 de control (6 partidas, Tanda_Border_Alianzas, vista-aliada 1.0.34.0, exe 6e1cc74e)
+- Mismo comportamiento que la 19: alianzas 0135|2467 vigentes hasta el final; refugios (evento 5): 0; ningún otro
+  evento; batallas con defensores de más de un color: 0 de 522 (colores_d es máscara: más de un bit = varios colores).
+- Partida 126 (n=0) colgada en el turno 25: el equipo 2467 ya estaba eliminado (4 en t11, 7 en t16, 2 en t24; 6 sin
+  fila en t25) y el juego dejó de registrar turnos tras jugar el color 3. Hipótesis sin verificar: con solo aliados
+  vivos el juego no muestra el "Game Over" que espera ia_fin. El informe la descarta; de hecho la ganó 0135 (38-0).
+- PV por equipo (0135 vs 2467) de las 5 válidas: 46-19, 26-33, 12-41, 40-14, 13-53 -> 0135 gana 2 de 5.
+  Acumulado del control (tandas 19 y 20): 11 partidas válidas, 2467 gana 7 de 11.
+- Faltan 5 válidas para las 16: se pide una tanda de 6 (de a pares) en vez de la de 4 (TAREAS 1, paso 7).
