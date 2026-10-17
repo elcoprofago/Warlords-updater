@@ -360,3 +360,15 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - La tanda 18 (partida 118) fue solo prueba; no entra en el control.
 - `tanda.alianzas()` ahora distingue vigentes de propuestas ("equipos ... (propuestas)").
 - Próximo paso: tanda de 6 con Tanda_Border_Alianzas (TAREAS 1, paso 5); revisar refugios y defensores de varios colores.
+
+### 17/10/2026: tanda 19 de control (6 partidas, Tanda_Border_Alianzas, vista-aliada 1.0.34.0, exe 6e1cc74e)
+- El usuario confirmó en vivo las banderas dobles en ciudades aliadas y la suspensión al terminar (TAREAS 2).
+- Alianzas 0135|2467 vigentes desde el arranque y nunca rotas en las 6; entre equipos, de paz pasan a guerra (t8-24).
+- Refugios (evento 5): 0. Batallas con defensores de más de un color: 0 de 533. Ningún otro evento (puentes, convoyes).
+  => la IA original no usa las ciudades aliadas. Límite: el refugio con member real nunca dio positivo en vivo; la
+  prueba emulada lo simula, y partners/member están probados por separado (prueba_compartidas.py).
+- PV por equipo (0135 vs 2467): 38-13, 2-54, 15-31, 6-50, 4-53, 46-13 -> el equipo 2467 gana 4 de 6. En Borderlands el
+  reparto parejo calculado era 0247|1356; el usuario armó 0135|2467 en los dos mapas. Para el control vale igual
+  (la prueba A/B usará los mismos equipos), pero la ventaja de 2467 es del mapa, no de la IA.
+- Decidido: Scarpart afuera (ciudades muy separadas). Control = 16 partidas en Borderlands: faltan 10 (TAREAS 1, paso 6).
+- Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md, etapa 3: cierre del control".
