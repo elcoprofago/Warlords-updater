@@ -6,17 +6,25 @@ Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman
 1. **Tarea 1**, paso 7: otra tanda de 6 con Border_Alianzas, de día (sábados no).
 2. Avisame al terminar: con esa cierro el control y sigue la etapa 3, paso 3.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
-4. **Tarea 17** (Nico: Votación y Sorteo): antes de la próxima partida en red.
+4. **Tarea 18** (datos de la PC de Nico sobre Votación y Sorteo): en la próxima partida en red.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
-## 17. Nico: actualizar Votación y Sorteo (17/10/2026)
-El puente frenó la partida porque la PC de Nico tiene otra versión de votacion.exe y sorteo.exe (con versiones
-distintas el espectador se queda trabado, por eso el puente las compara).
-1. En la PC de Nico, abrí el Actualizador y elegí la opción **11 (Votación)** y después la **12 (Sorteo)**.
-2. Volvé a armar la partida: ya no tienen que aparecer esos dos archivos en el cartel.
-   (El renglón de COMBAT.DAT se arregla en el puente; hasta entonces puede seguir apareciendo.)
+## 18. Votación y Sorteo en la PC de Nico: tres datos para encontrar la falla (17/10/2026)
+En la partida del 17/10 el espectador (Nico) vio la Votación y el Sorteo quietos en la pantalla inicial, y no se
+cerraron cuando los cerraste vos. En tu PC está comprobado que tu juego mandó todo (votos y cierre), y en esta PC el
+espectador sigue los votos y se cierra solo. Falta saber qué pasa en la PC de Nico.
+1. Partida en red por el Puente, vos de anfitrión. Abrí la **Votación** y votá dos o tres veces.
+2. Nico mira **su juego** (detrás de la Votación): ¿aparece el cartel "Votacion en curso: partida en pausa"?
+   Que espere un minuto entero con la Votación abierta y anote si el cartel **sigue** o **desaparece solo**.
+3. Cerrá la Votación. Nico anota si su juego se puede volver a usar enseguida o si queda en pausa un minuto.
+   Si su ventana de Votación no se cierra sola, que la cierre él.
+4. Recién ahí Nico abre la carpeta **C:\Warlords3\HERRAMIENTAS**, busca **votacion.ver**, lo abre con el Bloc de
+   notas y te pasa una foto del texto y de la fecha y hora del archivo (vista Detalles). Si no está, anotá
+   "no está".
+Anotá acá lo que vio Nico en los pasos 2, 3 y 4.
+Resultado:
 
 ## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
@@ -87,7 +95,8 @@ con los mismos .exe (copiá votacion.exe y sorteo.exe de esa carpeta a la misma 
    (que no quede minimizado, en negro ni colgado).
 5. Repetí 1 a 4 con **Draw Lots** (Sorteo).
 Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo publico para todos los jugadores.
-Resultado:
+Resultado: (17/10, partida con Nico) falló el paso 2: Votación y Sorteo quedaron quietos en la pantalla inicial y no
+se cerraron solos en el paso 4. Se sigue en la tarea 18.
 
 ## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
@@ -103,6 +112,15 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Resueltas
+
+## 17. [RESUELTA] Nico: actualizar Votación y Sorteo (17/10/2026)
+El puente frenó la partida porque la PC de Nico tiene otra versión de votacion.exe y sorteo.exe (con versiones
+distintas el espectador se queda trabado, por eso el puente las compara).
+1. En la PC de Nico, abrí el Actualizador y elegí la opción **11 (Votación)** y después la **12 (Sorteo)**.
+2. Volvé a armar la partida: ya no tienen que aparecer esos dos archivos en el cartel.
+   (El renglón de COMBAT.DAT se arregla en el puente; hasta entonces puede seguir apareciendo.)
+Resultado: (Claude: hecho; la partida del 17/10 arrancó y se jugó completa por el Puente.)
+
 
 ## 5. [RESUELTA] IA: averiguar con qué se interrumpe una partida de 8 bandos en IA (13/10/2026)
 1. Abrí Darklord.exe (el original) y empezá una partida con los 8 bandos manejados por la computadora.
