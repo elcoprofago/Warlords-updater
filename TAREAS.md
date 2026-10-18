@@ -109,12 +109,12 @@ duraron hasta el final. Pero no hubo refugios ni banderas dobles: el parche exig
 ciudades. Corregido en **vista-aliada 1.0.34.0** (ya publicado e instalado): con el mapa visible, toda ciudad de un
 aliado se comparte. La partida 118 cuenta solo como prueba.
 5. Tanda de **6** con **Border_Alianzas** solamente (Scarpart tiene las ciudades muy separadas, como notaste).
-   En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**, **Nueva tanda**.
+   En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**, **Nueva tanda**.
    Si mirás alguna partida, fijate si las ciudades de un aliado muestran dos banderas. Avisame al terminar.
 Resultado paso 5 (17/10/2026): hecho, se ven todas las banderas. Tarea 2 también cumplida.
 6. (Es el paso 4, ajustado: Scarpart queda afuera, así que son 16 partidas, todas en Borderlands. Faltan 10, en
    tandas cortas de día, por pedido tuyo del 17/10/2026: una de **6** y otra de **4**.) Tanda de **6** con
-   **Border_Alianzas**: en el Monitor de IA, **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**,
+   **Border_Alianzas**: en el Monitor de IA, **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**,
    **Nueva tanda**. Podés dejar prendida la suspensión. Avisame al terminar.
 Resultado paso 6 (17/10/2026, tanda 20): 5 partidas válidas; la primera se colgó en el turno 25 con el equipo
 negro-verde-celeste-naranja ya eliminado (no cuenta). Igual que la tanda anterior: alianzas firmes todo el juego,
