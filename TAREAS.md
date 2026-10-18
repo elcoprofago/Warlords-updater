@@ -11,8 +11,7 @@ Sorteo están acá (tarea 18).
 3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
 4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
    (Votación y Sorteo): una sola partida sirve para las dos.
-5. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
-   aparte de la IA). No tenés que hacer nada hasta entonces.
+5. **Tarea 1**, paso 7: tanda de 6 con Border_Alianzas. Sirve a la vez de prueba de la tarea 20 (sonido).
 6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
@@ -24,7 +23,7 @@ escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al
 unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu juego.
 1. Actualizá el Monitor de IA (botón Actualizar): tiene que decir 1.0.5.
 2. En la próxima partida normal fijate si se oyen la música y los efectos.
-3. Después de la próxima tanda, abrí el juego a mano: también tiene que oírse.
+3. Después de la tanda del paso 7 de la tarea 1, abrí el juego a mano: también tiene que oírse.
 Si en algún caso no se oye, anotá cuál y avisame.
 Resultado:
 
@@ -106,7 +105,9 @@ negro-verde-celeste-naranja ya eliminado (no cuenta). Igual que la tanda anterio
 pero ningún refugio en ciudad aliada ni defensas conjuntas.
 7. Como se perdió una partida, en vez de 4 va otra de **6** (faltan 5 válidas y las partidas van de a pares):
    Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
-Resultado paso 7 (17/10/2026): hecho. Falta que yo revise la tanda.
+(17/10/2026, corrección de Claude: el paso 7 figuraba como hecho, pero la base de datos del Monitor no tiene
+ninguna tanda después de la 20, que es la del paso 6 y terminó a las 14:05. El paso 7 sigue pendiente.)
+Resultado paso 7:
 
 ## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
