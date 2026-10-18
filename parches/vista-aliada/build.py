@@ -4750,7 +4750,7 @@ aibn_bridge:
 # 8 salida del refugio (n = 1 req. 3a, 2 req. 3b, 3 se perdió la ciudad o la alianza), 9 queda hasta el final
 # (n = fuerza), 10 refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
 # n = líder), 12 resultado de esa pila al turno siguiente (n = 1 sobrevivió, 0 no), 13 queda a defender la ciudad
-# del refugio (req. 5; n = amenaza).
+# del refugio (req. 5; n = amenaza), 14 pila que está en una ciudad aliada amenazada se queda a reforzarla (n = amenaza).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -8417,6 +8417,45 @@ al_rch:
     mov dword ptr [ebp - {L_CY}], eax
     jmp al_stay
 al_reinf:
+    xor esi, esi
+al_ks:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_ks_e
+    cmp esi, 256
+    jae al_ks_e
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_ksn
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    je al_ksn
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    mov ecx, dword ptr [ebp - {L_LX}]
+    sub ecx, eax
+    cmp ecx, 1
+    ja al_ksn
+    movsx edx, word ptr [edi + {CITIES + 2:#x}]
+    mov ecx, dword ptr [ebp - {L_LY}]
+    sub ecx, edx
+    cmp ecx, 1
+    ja al_ksn
+    imul ecx, esi, 12
+    mov ecx, dword ptr [ecx + {AL_CT:#x}]
+    test ecx, ecx
+    jz al_ksn
+    push ecx
+    push edx
+    push eax
+    push dword ptr [ebp - {L_P}]
+    push 14
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp al_done
+al_ksn:
+    inc esi
+    jmp al_ks
+al_ks_e:
     mov dword ptr [ebp - {L_OWNT}], 0
     xor esi, esi
 al_ow:

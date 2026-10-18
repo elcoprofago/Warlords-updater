@@ -7,8 +7,8 @@
 #   ataques desangrantes: ataque perdido que repite atacante, casilla y composición de otro ataque perdido antes;
 #   turnos sin progreso: los registra la destreza 1 (todavía no existe).
 # Alianzas (specs\ia-alianzas-v1.md, req. 12), por IA: a. pilas amenazadas y sobrevivientes al turno siguiente
-# (eventos 11 y 12); b. refugios (eventos 5 y 7), salidas (8), hasta el final (9), defensa del refugio (13) y refuerzos
-# (10); c. batallas en ciudad con defensores de más de un color (colores_d) y cuántas ganó la defensa; d. ciudades
+# (eventos 11 y 12); b. refugios (eventos 5 y 7), salidas (8), hasta el final (9), defensa del refugio (13), refuerzos
+# (10) y turnos en que un refuerzo se queda (14); c. batallas en ciudad con defensores de más de un color (colores_d) y cuántas ganó la defensa; d. ciudades
 # compartidas atacadas (defensor con un aliado ese turno y la opción de ciudades compartidas) y cuántas resistieron
 # el turno; e. héroes vivos al final; f. qué equipo ganó (PV por equipo, con los equipos de la guardada). Lo que una
 # tanda vieja no registró queda en blanco.
@@ -117,11 +117,11 @@ def alianzas(db, tid, validas, cuenta):
     b = lambda v, ok: str(v) if ok else ''
     print('\nAlianzas (req. 12; en blanco lo que la tanda no registró)')
     print(f'{"IA":28} {"amenaz.":>7} {"sobrev.":>7} {"refug.":>6} {"salid.":>6} {"final":>5} {"def.ref":>7} '
-          f'{"refuer.":>7} {"bat.multi":>9} {"ganó def":>8} {"compart.":>8} {"resist.":>7} {"héroes":>6}')
+          f'{"refuer.":>7} {"ref.qda":>7} {"bat.multi":>9} {"ganó def":>8} {"compart.":>8} {"resist.":>7} {"héroes":>6}')
     for ia in sorted(cuenta):
         e = ev[ia]; ok = bool(hay_ev)
         print(f'{IAS.get(ia, ia):28} {b(e[11], ok):>7} {b(e["sobrevivio"], ok):>7} {b(e[5] + e[7], ok):>6} '
-              f'{b(e[8], ok):>6} {b(e[9], ok):>5} {b(e[13], ok):>7} {b(e[10], ok):>7} {b(multi[ia][0], hay_col):>9} '
+              f'{b(e[8], ok):>6} {b(e[9], ok):>5} {b(e[13], ok):>7} {b(e[10], ok):>7} {b(e[14], ok):>7} {b(multi[ia][0], hay_col):>9} '
               f'{b(multi[ia][1], hay_col):>8} {b(len(comp[ia]), hay_dip):>8} '
               f'{b(sum(comp[ia].values()), hay_dip):>7} {heroes[ia]:6}')
     al = json.loads(db.execute('select alianzas from tanda where id=?', (tid,)).fetchone()[0] or '{}')

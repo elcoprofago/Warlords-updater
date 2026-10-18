@@ -181,3 +181,13 @@ No construido (queda para una versión siguiente):
   lo que vio el usuario. Pilas amenazadas que sobreviven: prueba 90 de 121 (74 %), original 99 de 124 (80 %).
 - «Desangradas»: 6 en prueba, 0 en original.
 - Faltan 10 válidas (5 pares) para el criterio del spec.
+
+## Corrección: el refuerzo se queda (vista-aliada 1.0.37.0, 18/10/2026)
+- Causa de las 0 defensas de más de un color en la tanda 22, confirmada en el emulador: la pila que llegaba a la
+  ciudad aliada no tenía estado de refuerzo. Al turno siguiente sus defensores ya la incluían, la ciudad dejaba de
+  «necesitar» refuerzo y la decisión volvía a la IA original, que la sacaba aunque la amenaza siguiera.
+- Ahora (ai_ally, al_reinf): una pila de la IA de prueba que está en una ciudad compartida de un aliado con amenaza
+  se queda y anota el evento 14 (n = amenaza), cada turno que se queda. Sin amenaza sigue la decisión original.
+- prueba_iaalianzas.py: 2 casos nuevos (se queda / con la amenaza pasada sigue la original), 38 TODO OK; el caso
+  nuevo falla con el exe de 1.0.36.0. informe.py: columna «ref.qda».
+- La tanda 22 queda como referencia de 1.0.36.0; la A/B de 16 válidas se arma de nuevo con 1.0.37.0.

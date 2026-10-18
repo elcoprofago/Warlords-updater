@@ -18,14 +18,16 @@ Sorteo están acá (tarea 18).
 
 ## 21. IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
 La IA de prueba ya sabe refugiar sus pilas en la ciudad de un aliado y reforzar ciudades aliadas amenazadas
-(vista-aliada 1.0.36.0, ya instalado en C:\Warlords3). Ahora un equipo de 4 colores juega con la IA de prueba y el
+(vista-aliada 1.0.37.0, ya instalado en C:\Warlords3; desde esta versión la pila que llega a reforzar se queda
+mientras la ciudad siga amenazada). Ahora un equipo de 4 colores juega con la IA de prueba y el
 otro con la original, y en la partida siguiente al revés. El informe compara las dos IA con las tandas de control.
 1. Actualizá el Monitor de IA (botón **Actualizar**): tiene que decir **1.0.6**. Esa versión reparte la IA por
    equipo cuando la guardada tiene alianzas.
 2. En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**, **Nueva tanda**. Podés dejar
    prendida la suspensión. En la bitácora, cada partida tiene que decir colores con IA de prueba **[0, 1, 3, 5]** o
    **[2, 4, 6, 7]**, alternados.
-3. Avisame al terminar. Siguen más tandas iguales hasta juntar **16 partidas válidas** (8 pares).
+3. Avisame al terminar. Siguen más tandas iguales hasta juntar **16 partidas válidas** (8 pares). La tanda 22
+   (con 1.0.36.0) ya está hecha y no cuenta: las 16 son con 1.0.37.0.
 Si mirás alguna partida: lo nuevo es que pilas de un color entran a ciudades de un aliado (dos banderas) cuando un
 enemigo fuerte se les acerca, o van a defender una ciudad aliada.
 Resultado:

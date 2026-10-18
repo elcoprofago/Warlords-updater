@@ -343,6 +343,20 @@ ev, _ = caso6b(False)
 r = [e for e in ev if e[0] == 10]
 check('6b control: no llega y no es importante: sin refuerzo (si las ruinas/neutrales no la hacen importante)',
       not r or r[0][3] % 10 == 1, ev)
+# 6: la pila que llegó a la ciudad aliada amenazada se queda a reforzarla (evento 14); sin amenaza, sigue la original
+def llego():
+    escenario(1)
+    put(E1, CX + reach, CY); put(LEAD, *T); put(SEG, *T)
+    if max(abs(T[0] - (CX + reach)), abs(T[1] - CY)) <= reach: put(E1, CX - reach if T[0] > CX else CX + reach, CY)
+    assert any(e[0] == 10 for e in jugar())
+    m.w(0x503328, '<h', m.s16(0x503328) + 1); put(LEAD, CX, CY); put(SEG, CX, CY)
+llego()
+ev = jugar()
+check('6: llegó y la amenaza sigue: se queda (evento 14, no la mueve la original)',
+      any(e[0] == 14 and e[1:3] == (CX, CY) for e in ev) and m.orig == 0 and m.moves == [], (ev, m.moves))
+llego(); put(E1, *AWAY)
+ev = jugar()
+check('6 control: llegó y la amenaza pasó: sigue la original', 14 not in tipos(ev) and m.orig == 1, ev)
 
 # ---------------------------------------------------------------- al_surv: resultado de la pila amenazada
 
