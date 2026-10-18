@@ -51,6 +51,12 @@ La opción 13 (JUGAR EN RED) deja Puente Warlords en `C:\Warlords3\HERRAMIENTAS\
 `PuenteWarlords.zip`; los dos assets de la release Actualizador los publica `tools\publicar.ps1` del repo
 puente-warlords. Tampoco pisa los `.ini`.
 
+La opción 14 (TAILSCALE) es la conexión de respaldo del Puente: si falta, baja e instala Tailscale
+(`https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe`), corre `tailscale up` y abre en el navegador el
+enlace de inicio de sesión, pide el enlace con que el dueño del servidor comparte su PC y espera a que el servidor
+conteste en el puerto 47800 de alguna dirección 100.64.0.0/10 del `servidor.txt` del Puente instalado. La 15 crea
+los accesos directos y la 16 sale.
+
 **Publicar un parche**
 
 1. Cambiar `parches/<ID>/build.py`, correrlo (`python parches\<ID>\build.py`) y probar el juego.

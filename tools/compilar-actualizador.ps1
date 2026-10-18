@@ -9,8 +9,8 @@ VERSION sale de <Version> de source\Actualizador\Actualizador.csproj (tambien ti
 <FileVersion> y <AssemblyVersion>). Compila con el SDK de .NET (dotnet build), que esta en el Windows 10.
 Las fuentes y los *_url.txt van embebidos: sale un solo exe que no deja nada junto a si.
 
-Prueba: corre el exe con W3_ENTRADA=15 (elige SALIR) y W3_TRANSCRIPCION, y exige que termine solo, con
-codigo 0, y que la pantalla muestre v<VERSION> y el menu de 15 opciones.
+Prueba: corre el exe con W3_ENTRADA=16 (elige SALIR) y W3_TRANSCRIPCION, y exige que termine solo, con
+codigo 0, y que la pantalla muestre v<VERSION> y el menu de 16 opciones.
 -Publicar exige main limpio y subido, que el exe no este ya en la release, y verifica bajando de nuevo.
 #>
 param([switch]$Publicar)
@@ -55,7 +55,7 @@ $prueba = Join-Path ([IO.Path]::GetTempPath()) ("w3upd-" + [guid]::NewGuid().ToS
 New-Item -ItemType Directory $prueba | Out-Null
 Copy-Item -LiteralPath $exe "$prueba\A.exe"
 $transcripcion = "$prueba\pantalla.txt"
-$env:W3_ENTRADA = '15'
+$env:W3_ENTRADA = '16'
 $env:W3_TRANSCRIPCION = $transcripcion
 try {
     $p = Start-Process "$prueba\A.exe" -WorkingDirectory $prueba -PassThru
@@ -65,12 +65,12 @@ if ($p.ExitCode) { Falla "el exe termino con codigo $($p.ExitCode) (probado en $
 if (-not (Test-Path -LiteralPath $transcripcion)) { Falla "el exe no dejo la transcripcion (probado en $prueba)" }
 $texto = Get-Content -Raw -Encoding UTF8 $transcripcion
 if ($texto -notmatch [regex]::Escape("v$version")) { Falla "la pantalla no muestra v$version (ver $transcripcion)" }
-foreach ($op in 'ACTUALIZAR TODO EL JUEGO', 'DARKCOMPARE', 'CREAR ACCESOS DIRECTOS AL ESCRITORIO', 'JUGAR EN RED', 'SORTEO', 'SALIR') {
+foreach ($op in 'ACTUALIZAR TODO EL JUEGO', 'DARKCOMPARE', 'CREAR ACCESOS DIRECTOS AL ESCRITORIO', 'JUGAR EN RED', 'TAILSCALE', 'SORTEO', 'SALIR') {
     if ($texto -notmatch [regex]::Escape($op)) { Falla "el menu no muestra '$op' (ver $transcripcion)" }
 }
 $sobrantes = @(Get-ChildItem -LiteralPath $prueba | Where-Object { $_.Name -notin 'A.exe', 'pantalla.txt' })
 if ($sobrantes) { Falla "el exe dejo archivos junto a si: $($sobrantes.Name -join ', ')" }
-Write-Host "  probado: abre, muestra v$version y el menu de 15 opciones, cierra con 15 y no deja nada"
+Write-Host "  probado: abre, muestra v$version y el menu de 16 opciones, cierra con 16 y no deja nada"
 Remove-Item -Recurse -Force -LiteralPath $prueba -ErrorAction SilentlyContinue
 
 # ---------------------------------------------------------------- zip (solo el exe, como los anteriores)

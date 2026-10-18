@@ -61,10 +61,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 15).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 16).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 15.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 16.");
                     await Pausa();
                     continue;
                 }
@@ -93,8 +93,9 @@ namespace Actualizador
                         case "11": await DelParcheHerramientas("VOTACIÓN", "votacion.exe"); pausa = true; break;
                         case "12": await DelParcheHerramientas("SORTEO", "sorteo.exe"); pausa = true; break;
                         case "13": await JugarEnRed(); pausa = true; break;
-                        case "14": await AccesosDirectos(); pausa = false; break;
-                        case "15":
+                        case "14": await Tailscale(); pausa = true; break;
+                        case "15": await AccesosDirectos(); pausa = false; break;
+                        case "16":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -158,8 +159,9 @@ namespace Actualizador
             Opcion(11, "VOTACIÓN", dHerr);
             Opcion(12, "SORTEO", dHerr);
             Opcion(13, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
-            Opcion(14, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
-            Opcion(15, "SALIR", "", Paleta.Tenue);
+            Opcion(14, "TAILSCALE", "→ conexión de respaldo para jugar en red");
+            Opcion(15, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
+            Opcion(16, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -316,6 +318,204 @@ namespace Actualizador
             Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = true });
             Ok("Se abrió Puente Warlords.");
         }
+
+        // ------------------------------------------------------------------ 14 TAILSCALE
+        // Red privada entre las PC de los jugadores: el Puente la usa si se corta el Wi-Fi del servidor. Cada
+        // jugador entra con su propia cuenta; el dueno del servidor le comparte su PC con un enlace.
+
+        static readonly string TailscaleExe =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Tailscale", "tailscale.exe");
+
+        async Task Tailscale()
+        {
+            Titulo("TAILSCALE");
+            // 1. el programa
+            if (!File.Exists(TailscaleExe))
+            {
+                Info("Tailscale no está instalado: se baja el instalador oficial.");
+                var archivo = Path.Combine(temporal, "tailscale-setup.exe");
+                if (!await Bajar(new[] { "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" }, archivo,
+                        mostrarArchivo: "instalador de Tailscale")) return;
+                Info("Se abre el instalador: acepta el permiso de administrador y sigue sus pasos.");
+                try
+                {
+                    using (var p = Process.Start(new ProcessStartInfo(archivo) { UseShellExecute = true }))
+                        await Task.Run(() => p.WaitForExit());
+                }
+                catch (Exception ex)
+                {
+                    Error("No se pudo abrir el instalador: " + ex.Message);
+                    return;
+                }
+                finally { Borrar(archivo); }
+                for (int i = 0; i < 20 && !File.Exists(TailscaleExe); i++) await Task.Delay(500);
+                if (!File.Exists(TailscaleExe))
+                {
+                    Error("Tailscale no quedó instalado. Vuelve a elegir la opción 14.");
+                    return;
+                }
+                Ok("Tailscale instalado.");
+            }
+            else Ok("Tailscale ya está instalado.");
+
+            // 2. la cuenta
+            var miIp = await IpTailscale();
+            if (miIp == null)
+            {
+                Info("Falta iniciar sesión. Se abre el navegador: entra con tu cuenta de Google, Microsoft u otra.");
+                Info("Si no tienes cuenta de Tailscale, se crea sola y es gratis.");
+                if (!await IniciarSesionTailscale()) return;
+                miIp = await IpTailscale();
+                if (miIp == null)
+                {
+                    Error("No se completó el inicio de sesión. Vuelve a elegir la opción 14.");
+                    return;
+                }
+            }
+            Ok($"Sesión iniciada. Dirección de esta PC en Tailscale: {miIp}");
+
+            // 3. la PC del servidor del Puente, compartida por su dueno
+            var servidores = ServidoresTailscale();
+            if (servidores.Count == 0)
+            {
+                Aviso("Falta el Puente Warlords con la dirección Tailscale del servidor: elige la opción 13 y vuelve.");
+                return;
+            }
+            if (servidores.Contains(miIp))
+            {
+                Ok("Esta PC es el servidor del Puente: los demás jugadores ya pueden entrar por Tailscale.");
+                return;
+            }
+            if (await PuertoAbierto(servidores))
+            {
+                Ok("El servidor del Puente responde por Tailscale. Si se corta su Wi-Fi, el Puente sigue por acá.");
+                return;
+            }
+            Info("Todavía no ves la PC del servidor. Pídele a su dueño el enlace para compartirla");
+            Info("(empieza con https://login.tailscale.com/...) y pégalo acá. ENTER solo para volver.");
+            t.Escribir("  enlace: ", Paleta.Tenue);
+            var enlace = (await t.LeerLinea(Paleta.Texto)).Trim();
+            if (enlace.Length == 0) return;
+            if (!enlace.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                Error("Eso no es un enlace (tiene que empezar con https://).");
+                return;
+            }
+            Process.Start(new ProcessStartInfo(enlace) { UseShellExecute = true });
+            Info("En el navegador, toca «Accept» con la misma cuenta con la que iniciaste sesión.");
+            bool responde = false;
+            using (new Actividad(t, "Esperando la PC del servidor..."))
+                for (int i = 0; i < 60 && !responde; i++)
+                {
+                    responde = await PuertoAbierto(servidores);
+                    if (!responde) await Task.Delay(3000);
+                }
+            if (responde) Ok("El servidor del Puente responde por Tailscale. Listo.");
+            else
+            {
+                Aviso("El servidor todavía no responde por Tailscale. Fíjate que su PC esté prendida y con el");
+                Aviso("servidor andando, y vuelve a elegir la opción 14.");
+            }
+        }
+
+        /// <summary>La IPv4 de esta PC en Tailscale, o null si no inicio sesion.</summary>
+        static async Task<string> IpTailscale()
+        {
+            var (codigo, salida) = await CorrerTailscale("ip -4", 15000);
+            if (codigo != 0) return null;
+            return salida.Split('\n').Select(l => l.Trim()).FirstOrDefault(l => IPAddress.TryParse(l, out _));
+        }
+
+        /// <summary>«tailscale up»: escribe el enlace de inicio de sesion, que se abre en el navegador.</summary>
+        async Task<bool> IniciarSesionTailscale()
+        {
+            var psi = new ProcessStartInfo(TailscaleExe, "up")
+            {
+                UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
+            };
+            Process p;
+            try { p = Process.Start(psi); }
+            catch (Exception ex)
+            {
+                Error("No se pudo correr Tailscale: " + ex.Message);
+                return false;
+            }
+            using (p)
+            {
+                int abierto = 0;
+                DataReceivedEventHandler leer = (o, e) =>
+                {
+                    if (e.Data == null) return;
+                    var m = System.Text.RegularExpressions.Regex.Match(e.Data, @"https://\S+");
+                    if (!m.Success || Interlocked.Exchange(ref abierto, 1) == 1) return;
+                    try { Process.Start(new ProcessStartInfo(m.Value) { UseShellExecute = true }); } catch (Exception) { }
+                };
+                p.OutputDataReceived += leer;
+                p.ErrorDataReceived += leer;
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
+                bool termino;
+                using (new Actividad(t, "Esperando el inicio de sesión en el navegador..."))
+                    termino = await Task.Run(() => p.WaitForExit(300000));
+                if (!termino)
+                {
+                    try { p.Kill(); } catch (Exception) { }
+                    Error("Pasaron 5 minutos sin iniciar sesión. Vuelve a elegir la opción 14.");
+                    return false;
+                }
+                return p.ExitCode == 0;
+            }
+        }
+
+        static async Task<(int, string)> CorrerTailscale(string args, int ms)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo(TailscaleExe, args)
+                    { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+                using (var p = Process.Start(psi))
+                {
+                    var salida = p.StandardOutput.ReadToEndAsync();
+                    var errores = p.StandardError.ReadToEndAsync();
+                    if (!await Task.Run(() => p.WaitForExit(ms)))
+                    {
+                        try { p.Kill(); } catch (Exception) { }
+                        return (-1, "");
+                    }
+                    await errores;
+                    return (p.ExitCode, await salida);
+                }
+            }
+            catch (Exception) { return (-1, ""); }
+        }
+
+        /// <summary>Las direcciones de Tailscale (100.64.0.0/10) del servidor.txt del Puente instalado.</summary>
+        List<string> ServidoresTailscale()
+        {
+            var txt = Path.Combine(herramientas, "PuenteWarlords", "servidor.txt");
+            if (!File.Exists(txt)) return new List<string>();
+            return File.ReadAllLines(txt).Select(l => l.Trim().Split(':')[0])
+                .Where(l => IPAddress.TryParse(l, out var a) && a.GetAddressBytes() is byte[] b && b.Length == 4
+                            && b[0] == 100 && (b[1] & 0xC0) == 64)
+                .ToList();
+        }
+
+        /// <summary>Si el servidor del Puente (puerto 47800) acepta la conexion en alguna de las direcciones.</summary>
+        static async Task<bool> PuertoAbierto(IEnumerable<string> ips)
+        {
+            foreach (var ip in ips)
+                using (var c = new System.Net.Sockets.TcpClient())
+                {
+                    try
+                    {
+                        var con = c.ConnectAsync(ip, 47800);
+                        if (await Task.WhenAny(con, Task.Delay(3000)) == con && c.Connected) return true;
+                    }
+                    catch (Exception) { }
+                }
+            return false;
+        }
+
 
         // ------------------------------------------------------------------ 9 PARCHES
         // PARCHES.txt (asset de la release "Actualizador"), una linea por parche:

@@ -3,13 +3,29 @@
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
 
 ## Orden sugerido
-1. **Tarea 1**, paso 7: otra tanda de 6 con Border_Alianzas, de día (sábados no).
-2. Avisame al terminar: con esa cierro el control y sigue la etapa 3, paso 3.
+1. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
+2. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
+   aparte de la IA). No tenés que hacer nada hasta entonces.
 3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
 4. **Tarea 18** (Votación y Sorteo en la PC de Nico): actualizar las dos PC y mandarme los .log de Nico tras la próxima partida en red.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 19. Tailscale: segunda conexión del Puente para Nico (17/10/2026)
+El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
+Tailscale. Tu servidor ya escucha ahí (dirección 100.77.65.99). El Actualizador 1.0.12.0 trae la opción
+**14 TAILSCALE**, que instala y configura Tailscale. Accesos directos pasó a la 15 y Salir a la 16.
+1. En tu PC: abrí https://login.tailscale.com/admin/machines con tu cuenta. En la fila de **desktop-liifpj1**
+   (100.77.65.99) tocá los tres puntitos «…», elegí **Share…** y copiá el enlace. Mandáselo a Nico por WhatsApp.
+2. En la PC de Nico: el Actualizador se actualiza solo a 1.0.12.0. Nico elige la **13** (trae el Puente 1.1.6.0)
+   y después la **14**. La 14 instala Tailscale (acepta el permiso de administrador), abre el navegador para que
+   entre con su cuenta (Google o Microsoft sirven; es gratis) y le pide que pegue tu enlace. Al final tiene que
+   decir **«El servidor del Puente responde por Tailscale»**.
+3. Si en algún paso aparece un mensaje en rojo, Nico saca una foto y me la pasás.
+   (La instalación y el inicio de sesión no se pudieron probar acá porque esta PC ya tiene Tailscale; la PC de
+   Nico es la primera prueba de esa parte.)
+Resultado:
 
 ## 18. Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
 Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
@@ -82,6 +98,7 @@ negro-verde-celeste-naranja ya eliminado (no cuenta). Igual que la tanda anterio
 pero ningún refugio en ciudad aliada ni defensas conjuntas.
 7. Como se perdió una partida, en vez de 4 va otra de **6** (faltan 5 válidas y las partidas van de a pares):
    Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
+Resultado paso 7 (17/10/2026): hecho. Falta que yo revise la tanda.
 
 ## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
