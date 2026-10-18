@@ -163,3 +163,12 @@ No construido (queda para una versión siguiente):
   (condición de victoria del escenario): no se ubicaron en el exe. Hoy una ciudad es importante solo por 7a.
 - La tabla de refugios no se guarda con la partida: al cargar una guardada, las pilas deciden desde cero.
 - Los umbrales (6 de fuerza, 100 de oro, 8 y 6 casillas, 3 sitios) son de diseño; se revisan con la tanda A/B.
+
+## Observaciones del usuario durante la tanda 22 (18/10/2026)
+- No se ven defensas de una ciudad con más de un color. Coincide con lo construido: el refuerzo solo dispara con
+  ciudades «importantes» por 7a (7b-7e no están), así que puede no darse nunca. Se confirma o descarta con el
+  evento 10 del informe A/B.
+- Los barcos con bono «cabotaje» y «landing» se comportan bien.
+- La IA de prueba no destruye puentes ni puertos con fin estratégico. No está en este spec (nada lo construye).
+  Definición dada por el usuario para una versión siguiente: el único fin que justifica destruir un lugar que
+  permite salir de una isla o cruzar a otro territorio es **defensivo**, impedir un ataque inminente por ese paso.
