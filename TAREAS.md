@@ -107,7 +107,9 @@ pero ningún refugio en ciudad aliada ni defensas conjuntas.
    Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
 (17/10/2026, corrección de Claude: el paso 7 figuraba como hecho, pero la base de datos del Monitor no tiene
 ninguna tanda después de la 20, que es la del paso 6 y terminó a las 14:05. El paso 7 sigue pendiente.)
-Resultado paso 7:
+Resultado paso 7: (en curso, 17/10) en la partida 2 apareció el cartel «victoria aliada» con Aceptar; la cerraste
+a mano. Al arrancar cada partida se oye un instante el juego antes de que el Monitor lo silencie. La suspensión no se
+prueba (ya está comprobada).
 
 ## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:

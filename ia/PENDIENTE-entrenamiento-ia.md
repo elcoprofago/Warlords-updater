@@ -382,3 +382,12 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - PV por equipo (0135 vs 2467) de las 5 válidas: 46-19, 26-33, 12-41, 40-14, 13-53 -> 0135 gana 2 de 5.
   Acumulado del control (tandas 19 y 20): 11 partidas válidas, 2467 gana 7 de 11.
 - Faltan 5 válidas para las 16: se pide una tanda de 6 (de a pares) en vez de la de 4 (TAREAS 1, paso 7).
+
+### 17/10/2026: tanda del paso 7 en curso (lo que vio el usuario)
+- Partida 2: el juego mostró un cartel de «victoria aliada» con un botón Aceptar y se quedó ahí. El usuario lo
+  aceptó, pasó al menú del disquete y salió a mano. Confirma la hipótesis de la partida 126: cuando solo quedan
+  aliados vivos, el juego muestra ese cartel en vez del «Game Over» que espera ia_fin. Pendiente: que la tanda (o
+  ia_fin) apriete Aceptar en ese cartel y cierre sola, para no perder partidas como colgadas. No se tocó el código
+  con la tanda corriendo.
+- Al arrancar cada partida se oye un momento el juego antes de que el Monitor lo silencie: silenciar() corre cada
+  5 s en el bucle de jugar(). Es esperable; si molesta, se puede silenciar apenas aparece la sesión de audio.
