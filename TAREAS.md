@@ -1,13 +1,17 @@
 # Tareas del usuario
 
 Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
+Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
+orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
+Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
-2. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
+1. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
+2. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
+3. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
+   (Votación y Sorteo): una sola partida sirve para las dos.
+4. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
    aparte de la IA). No tenés que hacer nada hasta entonces.
-3. **Tarea 3** (Herramientas en partida entre dos PC): cuando tengas la otra PC a mano; no depende de las demás.
-4. **Tarea 18** (Votación y Sorteo en la PC de Nico): actualizar las dos PC y mandarme los .log de Nico tras la próxima partida en red.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
@@ -51,14 +55,6 @@ lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto
    la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
 
-## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
-El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
-normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar cada partida.
-1. (Hecho: la 1.0.4 está compilada y publicada.)
-2. Abrí DarklordAV.exe y empezá una partida normal: tiene que oírse la música.
-3. Si no se oye: clic derecho en el parlante de la barra de tareas → **Abrir el mezclador de volumen** y fijate si
-   DarklordAV tiene el parlante tachado. Anotá acá lo que veas.
-
 ## 1. IA: tandas de control con alianzas fijas (etapa 3, paso 2) (16/10/2026)
 Mide cuánto se refugia y defiende en común la IA de hoy, antes de enseñarle nada.
 1. Armá dos partidas guardadas nuevas, igual que las del rating (el mismo .PGS X-12 en los 8 colores, 30 turnos,
@@ -100,30 +96,6 @@ pero ningún refugio en ciudad aliada ni defensas conjuntas.
    Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
 Resultado paso 7 (17/10/2026): hecho. Falta que yo revise la tanda.
 
-## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
-1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
-   (al pasar el mouse dice "modo sleep"). Un clic lo prende (luz roja encendida) y otro lo apaga. Queda
-   recordado para la próxima vez que abras el Monitor.
-2. Con el interruptor prendido, al terminar una tanda la bitácora avisa y la PC se suspende a los 30 segundos.
-   Si en esos 30 segundos lo apagás, se cancela. (Con la suspensión prendida no suena la alarma.)
-3. Probalo en la primera tanda de la tarea 1 (prendé el interruptor antes de apretar Nueva tanda) y anotá si la
-   PC se suspendió al terminar.
-Resultado:
-
-## 3. Herramientas 1.0.0.1: probar en partida que el espectador no pueda volver al Warlords (16/10/2026)
-Votación 1.1.3 y Sorteo 1.1.2 ya están instalados en C:\Warlords3\Herramientas de esta PC. Hace falta otra PC
-con los mismos .exe (copiá votacion.exe y sorteo.exe de esa carpeta a la misma carpeta de la otra PC).
-1. Partida por Puente Warlords entre las dos PC. Desde la anfitriona, abrí la **Votación**.
-2. En la otra PC (espectador) la Votación tiene que aparecer adelante y seguir lo que se vota en la anfitriona.
-3. En el espectador intentá volver al juego: clic sobre el juego, Alt+Tab, tecla Windows. En menos de un
-   segundo la Votación tiene que volver adelante.
-4. Cerrá la Votación en la anfitriona: en el espectador se cierra sola y el juego tiene que seguir normal
-   (que no quede minimizado, en negro ni colgado).
-5. Repetí 1 a 4 con **Draw Lots** (Sorteo).
-Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo publico para todos los jugadores.
-Resultado: (17/10, partida con Nico) falló el paso 2: Votación y Sorteo quedaron quietos en la pantalla inicial y no
-se cerraron solos en el paso 4. Se sigue en la tarea 18.
-
 ## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
 1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
@@ -138,6 +110,38 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Resueltas
+
+## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
+El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
+normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar cada partida.
+1. (Hecho: la 1.0.4 está compilada y publicada.)
+2. Abrí DarklordAV.exe y empezá una partida normal: tiene que oírse la música.
+3. Si no se oye: clic derecho en el parlante de la barra de tareas → **Abrir el mezclador de volumen** y fijate si
+   DarklordAV tiene el parlante tachado. Anotá acá lo que veas.
+
+## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
+1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
+   (al pasar el mouse dice "modo sleep"). Un clic lo prende (luz roja encendida) y otro lo apaga. Queda
+   recordado para la próxima vez que abras el Monitor.
+2. Con el interruptor prendido, al terminar una tanda la bitácora avisa y la PC se suspende a los 30 segundos.
+   Si en esos 30 segundos lo apagás, se cancela. (Con la suspensión prendida no suena la alarma.)
+3. Probalo en la primera tanda de la tarea 1 (prendé el interruptor antes de apretar Nueva tanda) y anotá si la
+   PC se suspendió al terminar.
+Resultado:
+
+## 3. [UNIDA A LA TAREA 18] Herramientas 1.0.0.1: probar en partida que el espectador no pueda volver al Warlords (16/10/2026)
+Votación 1.1.3 y Sorteo 1.1.2 ya están instalados en C:\Warlords3\Herramientas de esta PC. Hace falta otra PC
+con los mismos .exe (copiá votacion.exe y sorteo.exe de esa carpeta a la misma carpeta de la otra PC).
+1. Partida por Puente Warlords entre las dos PC. Desde la anfitriona, abrí la **Votación**.
+2. En la otra PC (espectador) la Votación tiene que aparecer adelante y seguir lo que se vota en la anfitriona.
+3. En el espectador intentá volver al juego: clic sobre el juego, Alt+Tab, tecla Windows. En menos de un
+   segundo la Votación tiene que volver adelante.
+4. Cerrá la Votación en la anfitriona: en el espectador se cierra sola y el juego tiene que seguir normal
+   (que no quede minimizado, en negro ni colgado).
+5. Repetí 1 a 4 con **Draw Lots** (Sorteo).
+Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo publico para todos los jugadores.
+Resultado: (17/10, partida con Nico) falló el paso 2: Votación y Sorteo quedaron quietos en la pantalla inicial y no
+se cerraron solos en el paso 4. Se sigue en la tarea 18.
 
 ## 17. [RESUELTA] Nico: actualizar Votación y Sorteo (17/10/2026)
 El puente frenó la partida porque la PC de Nico tiene otra versión de votacion.exe y sorteo.exe (con versiones
