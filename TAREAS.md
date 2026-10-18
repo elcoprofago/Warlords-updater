@@ -11,8 +11,7 @@ Sorteo están acá (tarea 18).
 3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
 4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
    (Votación y Sorteo): una sola partida sirve para las dos.
-5. **Tarea 1**, paso 7: tanda de 6 con Border_Alianzas. Sirve a la vez de prueba de la tarea 20 (sonido).
-6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
@@ -25,7 +24,7 @@ unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu
 2. En la próxima partida normal fijate si se oyen la música y los efectos.
 3. Después de la tanda del paso 7 de la tarea 1, abrí el juego a mano: también tiene que oírse.
 Si en algún caso no se oye, anotá cuál y avisame.
-Resultado:
+Resultado: (Claude, 18/10) medido después de la tanda 21: el juego abre sin silencio. Falta que lo confirmes de oído (pasos 2 y 3).
 
 ## 19. Tailscale: segunda conexión del Puente para Nico (17/10/2026)
 El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
@@ -107,9 +106,11 @@ pero ningún refugio en ciudad aliada ni defensas conjuntas.
    Partidas: **6**, el resto igual que el paso 6. Avisame al terminar.
 (17/10/2026, corrección de Claude: el paso 7 figuraba como hecho, pero la base de datos del Monitor no tiene
 ninguna tanda después de la 20, que es la del paso 6 y terminó a las 14:05. El paso 7 sigue pendiente.)
-Resultado paso 7: (en curso, 17/10) en la partida 2 apareció el cartel «victoria aliada» con Aceptar; la cerraste
-a mano. Al arrancar cada partida se oye un instante el juego antes de que el Monitor lo silencie. La suspensión no se
-prueba (ya está comprobada).
+Resultado paso 7: hecho (tanda 21, 17/10). 4 partidas ok y la que cerraste a mano en el turno 30 (cuenta: su
+resultado sale de los turnos). Se perdieron 2: una cortada en el turno 20 y una colgada con solo aliados vivos (el
+cartel «victoria aliada»). Control completo: 16 partidas válidas, 2467 gana 9 y 0135 gana 7. Refugios en ciudad
+aliada: 0; defensas con más de un color: 0. La IA original no usa las alianzas: el paso 2 de la etapa 3 está
+cerrado. No tenés nada más que hacer en esta tarea.
 
 ## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:

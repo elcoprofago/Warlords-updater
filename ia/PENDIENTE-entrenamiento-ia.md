@@ -391,3 +391,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   con la tanda corriendo.
 - Al arrancar cada partida se oye un momento el juego antes de que el Monitor lo silencie: silenciar() corre cada
   5 s en el bucle de jugar(). Es esperable; si molesta, se puede silenciar apenas aparece la sesión de audio.
+
+### 18/10/2026: tanda 21 de control (6 partidas, Tanda_Border_Alianzas): control cerrado
+- Partidas 133 (cortada, t20) y 134 (colgada, t28, solo vivos 0 y 1: otra «victoria aliada» sin atender) perdidas.
+  135 la cerró el usuario en el turno 30 tras el cartel: se cuenta con los PV del último turno (22-0, gana 0135).
+- PV (0135 vs 2467) de las 5 válidas: 22-0, 17-42, 48-13, 22-52, 47-9 -> 0135 gana 3 de 5.
+- Acumulado del control (tandas 19, 20 y 21): 16 partidas válidas, 2467 gana 9 y 0135 gana 7. Refugios (evento 5):
+  0; ningún otro evento; batallas con defensores de más de un color: 0 en las tres tandas.
+- Conclusión del paso 2: la IA original no se refugia ni defiende en común. Sigue el paso 3 (spec de la destreza en
+  la IA de prueba) y, antes de las tandas A/B, que la tanda apriete Aceptar en el cartel «victoria aliada».
+- Sonido: después de la tanda el juego abre sin silencio (medido con medir_mute leer). Monitor-IA 1.0.5 anda.
