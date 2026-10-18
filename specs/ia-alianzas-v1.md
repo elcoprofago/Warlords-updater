@@ -172,3 +172,12 @@ No construido (queda para una versión siguiente):
 - La IA de prueba no destruye puentes ni puertos con fin estratégico. No está en este spec (nada lo construye).
   Definición dada por el usuario para una versión siguiente: el único fin que justifica destruir un lugar que
   permite salir de una isla o cruzar a otro territorio es **defensivo**, impedir un ataque inminente por ese paso.
+
+## Tanda 22 (primera de la A/B, 6 válidas de 16, 18/10/2026)
+- Equipo ganador: 2467 gana 5 de 6, con cualquier IA: el mapa favorece a ese equipo. Por IA: prueba 2 de 6,
+  original 4 de 6 (PV por color 6,2 contra 7,4; ciudades 4,9 contra 5,8). Con 6 partidas no se separa del mapa.
+- Alianzas, prueba: 15 refugios, 2 salidas, 7 se quedan a defender, 41 refuerzos mandados. Pero 0 batallas con
+  defensores de más de un color, igual que la original: los refuerzos salen y no llegan a defender juntos. Confirma
+  lo que vio el usuario. Pilas amenazadas que sobreviven: prueba 90 de 121 (74 %), original 99 de 124 (80 %).
+- «Desangradas»: 6 en prueba, 0 en original.
+- Faltan 10 válidas (5 pares) para el criterio del spec.
