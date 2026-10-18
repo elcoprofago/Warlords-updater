@@ -4746,6 +4746,11 @@ aibn_bridge:
 # barco al que se suma, n = ese ejército), 3 grupo partido al embarcar (ai_move; x, y = líder, n = soltados),
 # 4 puente reconstruido (ai_brreb; n = costo), 5 refugio (ia_turn: al empezar el turno, pilas propias en una ciudad
 # compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
+# Alianzas (ai_ally; x, y = la ciudad salvo en 11 y 12): 7 refugio decidido (n = motivo 1/2/3 = req. 1a/b/c),
+# 8 salida del refugio (n = 1 req. 3a, 2 req. 3b, 3 se perdió la ciudad o la alianza), 9 queda hasta el final
+# (n = fuerza), 10 refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
+# n = líder), 12 resultado de esa pila al turno siguiente (n = 1 sobrevivió, 0 no), 13 queda a defender la ciudad
+# del refugio (req. 5; n = amenaza).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -7631,6 +7636,977 @@ rf_out:
     ret
 ''')
 
+# ---- IA de prueba: alianzas (specs/ia-alianzas-v1.md, etapa 3 paso 3). Solo con DATA\IA.INI (ia_on).
+# ai_ally reemplaza el call 0x40c990(pila, 0) de 0x40edf1, el que hace jugar cada pila de la IA en su turno (0x40eab0).
+# Para todo bando de la computadora anota, por pila amenazada (1a), el evento 11 y el resultado al turno siguiente
+# (12, al_surv desde ia_turn); eso no decide nada. Solo para ia_mode = prueba decide además:
+# - Refugio (req. 1, 2): motivo 1 = la amenaza al alcance (al_thr en la casilla del líder) es mayor que la pila;
+#   2 = perdió más de la mitad de su fuerza desde la decisión del turno anterior; 3 = un héroe enemigo al alcance va
+#   hacia ella (su destino a 2 casillas o menos). Va a la ciudad compartida de otro dueño (member) que alcanza este
+#   turno (costo del mapa de caminos 0x497750/0x4a65d0 <= movimiento del grupo, o ya está adentro), con lugar para
+#   la pila (32 ejércitos en sus 4 casillas) y más lejos del enemigo más cercano. Sin ninguna, sigue la original.
+# - Refugiada: si la alianza o la ciudad se pierden, deja de estarlo (evento 8, n = 3). Si la ciudad está amenazada
+#   se queda a defenderla (req. 5, evento 13 una vez). Si no: muy débil (fuerza <= AL_WEAK), sin oro (< AL_GOLD) y sin
+#   ejércitos propios fuera de la pila a 8 casillas o menos: se queda hasta el final (req. 4, evento 9). Sale (evento
+#   8) si el dueño juntó más fuerza en la ciudad que al entrar (n = 1, req. 3a) o si la pila creció la mitad (al menos
+#   2) desde que entró (n = 2, req. 3b). Mientras tanto vuelve a la ciudad si salió y no hace nada más.
+# - Refuerzo (req. 6): ciudades compartidas de otro dueño cuya amenaza supera a sus defensores (los aliados y lo ya
+#   mandado este turno, AL_CT). 6a: la alcanza este turno; si alguna ciudad propia está amenazada, solo va si la
+#   aliada es importante. 6b: no llega este turno pero el mapa la alcanza, es importante y con la pila la defensa
+#   supera a la amenaza. Importante (req. 7a, único criterio ubicado en el exe, n % 10 = 1): 0x41d640 + 0x41ec20
+#   (ruinas sin explorar y ciudades neutrales cerca, la cuenta de la IA original) >= 3, o una ciudad propia a 6
+#   casillas o menos. Evento 10, n = 10 * motivo (1 = 6a, 2 = 6b) + criterio.
+# Fuerza de un ejército = fuerza base * vida de su palabra +0xe (bits 9-12 y 13-15, como 0x467240); alcance de un
+# ejército enemigo = su movimiento +0x12 / 2 + 1 casillas de rey (aproximado: no mira el terreno).
+# La tabla AL_TAB (por jugador y pila, 16 bytes): +0 líder, +2 ciudad + 1, +4 motivo, +5 bits (1 hasta el final,
+# 2 evento 13 anotado), +6 fuerza al entrar, +8 fuerza del dueño en la ciudad al entrar, +0xa fuerza en la última
+# decisión, +0xc su turno + 1 (0 = sin decisión). No se guarda con la partida: al cargar, las pilas vuelven a decidir desde cero.
+AL_WEAK, AL_GOLD = 6, 100
+AL_TAB = place_data('al_tab', bytes(80 * 16))
+AL_THR = place_data('al_amen', bytes(80 * 8))     # líder, x, y, turno de la pila amenazada (req. 11)
+AL_CT = place_data('al_ct', bytes(256 * 12))     # por ciudad: amenaza, defensores, ya mandado
+AL_KEY = place_data('al_key', bytes(4))          # turno * 16 + jugador + 1 de AL_CT
+# al_str: eax = ejército -> eax = fuerza * vida. Preserva todo lo demás.
+al_str = place('al_str', '''
+    push edx
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    shr eax, 9
+    and eax, 15
+    shr edx, 13
+    and edx, 7
+    imul eax, edx
+    pop edx
+    ret
+''')
+# al_sstr(registro de pila) cdecl -> eax = fuerza de sus ejércitos vivos, ecx = cuántos. Preserva ebx esi edi ebp.
+al_sstr = place('al_sstr', f'''
+    push ebx
+    push esi
+    push edi
+    mov esi, dword ptr [esp + 0x10]
+    xor edi, edi
+    xor ecx, ecx
+    xor ebx, ebx
+ss_lp:
+    movsx eax, word ptr [esi + ebx*2 + 0xc]
+    test eax, eax
+    jle ss_nx
+    imul edx, eax, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz ss_nx
+    call {al_str:#x}
+    add edi, eax
+    inc ecx
+ss_nx:
+    inc ebx
+    cmp ebx, 8
+    jb ss_lp
+    mov eax, edi
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# al_thr(p, x, y) cdecl -> eax = fuerza de los ejércitos en guerra con p (DIPLO 2) que alcanzan (x, y) en su próximo
+# turno, edx = 1 si entre ellos hay un héroe con destino a 2 casillas o menos de (x, y), ecx = el ejército en guerra
+# más cercano (cualquier distancia; -1 ninguno). Preserva ebx esi edi ebp.
+al_thr = place('al_thr', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 16
+    mov dword ptr [esp], 0
+    mov dword ptr [esp + 4], 0
+    mov dword ptr [esp + 8], -1
+    mov dword ptr [esp + 0xc], 0x7fffffff
+    mov ebx, dword ptr [esp + 0x24]
+    mov esi, 1
+th_lp:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge th_end
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz th_nx
+    movzx eax, word ptr [edi + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, 8
+    jae th_nx
+    cmp eax, ebx
+    je th_nx
+    imul edx, ebx, 56
+    cmp byte ptr [edx + eax + {DIPLO:#x}], 2
+    jne th_nx
+    movsx eax, word ptr [edi + 0x54fe52]
+    sub eax, dword ptr [esp + 0x28]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ebp, eax
+    movsx eax, word ptr [edi + 0x54fe54]
+    sub eax, dword ptr [esp + 0x2c]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ebp
+    jle th_k
+    mov ebp, eax
+th_k:
+    cmp ebp, dword ptr [esp + 0xc]
+    jge th_r
+    mov dword ptr [esp + 0xc], ebp
+    mov dword ptr [esp + 8], esi
+th_r:
+    movzx eax, byte ptr [edi + 0x54fe62]
+    shr eax, 1
+    inc eax
+    cmp ebp, eax
+    jg th_nx
+    mov eax, esi
+    call {al_str:#x}
+    add dword ptr [esp], eax
+    mov al, byte ptr [edi + 0x54fe5e]
+    and al, 0x1f
+    cmp al, 0x10
+    jne th_nx
+    movsx eax, word ptr [edi + 0x54fe56]
+    sub eax, dword ptr [esp + 0x28]
+    add eax, 2
+    cmp eax, 4
+    ja th_nx
+    movsx eax, word ptr [edi + 0x54fe58]
+    sub eax, dword ptr [esp + 0x2c]
+    add eax, 2
+    cmp eax, 4
+    ja th_nx
+    mov dword ptr [esp + 4], 1
+th_nx:
+    inc esi
+    jmp th_lp
+th_end:
+    mov eax, dword ptr [esp]
+    mov edx, dword ptr [esp + 4]
+    mov ecx, dword ptr [esp + 8]
+    add esp, 16
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# al_def(p, ciudad) cdecl -> eax = fuerza de p y sus aliados (DIPLO 0) en las 4 casillas de la ciudad, edx = la del
+# dueño de la ciudad, ecx = ejércitos vivos de cualquiera en ellas. Preserva ebx esi edi ebp.
+al_def = place('al_def', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 16
+    imul eax, dword ptr [esp + 0x28], 0xde
+    movsx ebx, word ptr [eax + {CITIES:#x}]
+    movsx ebp, word ptr [eax + {CITIES + 2:#x}]
+    movzx eax, byte ptr [eax + {CITIES + 0xa5:#x}]
+    mov dword ptr [esp + 0xc], eax
+    mov dword ptr [esp], 0
+    mov dword ptr [esp + 4], 0
+    mov dword ptr [esp + 8], 0
+    mov esi, 1
+df_lp:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge df_end
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz df_nx
+    movsx eax, word ptr [edi + 0x54fe52]
+    sub eax, ebx
+    cmp eax, 1
+    ja df_nx
+    movsx eax, word ptr [edi + 0x54fe54]
+    sub eax, ebp
+    cmp eax, 1
+    ja df_nx
+    inc dword ptr [esp + 8]
+    movzx ecx, word ptr [edi + 0x54fe5e]
+    shr ecx, 5
+    and ecx, 15
+    mov eax, esi
+    call {al_str:#x}
+    cmp ecx, dword ptr [esp + 0xc]
+    jne df_o
+    add dword ptr [esp + 4], eax
+df_o:
+    cmp ecx, 8
+    jae df_nx
+    cmp ecx, dword ptr [esp + 0x24]
+    je df_f
+    imul edx, dword ptr [esp + 0x24], 56
+    cmp byte ptr [edx + ecx + {DIPLO:#x}], 0
+    jne df_nx
+df_f:
+    add dword ptr [esp], eax
+df_nx:
+    inc esi
+    jmp df_lp
+df_end:
+    mov eax, dword ptr [esp]
+    mov edx, dword ptr [esp + 4]
+    mov ecx, dword ptr [esp + 8]
+    add esp, 16
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# al_cost(p, ciudad) cdecl -> eax = menor costo del mapa de caminos de p (0x4a65d0) a una de las 4 casillas de la
+# ciudad, 0x7fffffff si ninguna lo tiene. Preserva ebx esi edi ebp.
+al_cost = place('al_cost', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    imul eax, dword ptr [esp + 0x18], 0xde
+    movsx ebx, word ptr [eax + {CITIES:#x}]
+    movsx ebp, word ptr [eax + {CITIES + 2:#x}]
+    mov edi, 0x7fffffff
+    xor esi, esi
+ac_lp:
+    mov eax, esi
+    shr eax, 1
+    add eax, ebp
+    push eax
+    mov eax, esi
+    and eax, 1
+    add eax, ebx
+    push eax
+    push dword ptr [esp + 0x1c]
+    call 0x4a65d0
+    add esp, 0xc
+    movzx eax, ax
+    test eax, eax
+    jz ac_nx
+    cmp eax, edi
+    jge ac_nx
+    mov edi, eax
+ac_nx:
+    inc esi
+    cmp esi, 4
+    jb ac_lp
+    mov eax, edi
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# al_tabla(p) cdecl: llena AL_CT para p una vez por turno (amenaza y defensores de las ciudades compartidas con p y
+# de las propias; las demás en 0; ya mandado en 0). Preserva todo.
+al_tabla = place('al_tabla', f'''
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    movsx eax, word ptr [0x503328]
+    shl eax, 4
+    lea eax, [eax + ebx + 1]
+    cmp eax, dword ptr [{AL_KEY:#x}]
+    je tb_out
+    mov dword ptr [{AL_KEY:#x}], eax
+    xor esi, esi
+tb_lp:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge tb_out
+    cmp esi, 256
+    jae tb_out
+    imul edi, esi, 12
+    mov dword ptr [edi + {AL_CT:#x}], 0
+    mov dword ptr [edi + {AL_CT + 4:#x}], 0
+    mov dword ptr [edi + {AL_CT + 8:#x}], 0
+    imul ebp, esi, 0xde
+    cmp byte ptr [ebp + {CITIES + 0xa4:#x}], 0
+    je tb_nx
+    movzx eax, byte ptr [ebp + {CITIES + 0xa5:#x}]
+    cmp eax, ebx
+    je tb_si
+    push ebx
+    push esi
+    call {member:#x}
+    add esp, 8
+    test eax, eax
+    jz tb_nx
+tb_si:
+    movsx eax, word ptr [ebp + {CITIES + 2:#x}]
+    push eax
+    movsx eax, word ptr [ebp + {CITIES:#x}]
+    push eax
+    push ebx
+    call {al_thr:#x}
+    add esp, 0xc
+    mov dword ptr [edi + {AL_CT:#x}], eax
+    push esi
+    push ebx
+    call {al_def:#x}
+    add esp, 8
+    mov dword ptr [edi + {AL_CT + 4:#x}], eax
+tb_nx:
+    inc esi
+    jmp tb_lp
+tb_out:
+    popad
+    ret
+''')
+# al_imp(p, ciudad) cdecl -> eax = 1 si la ciudad es importante (req. 7a), si no 0. Preserva ebx esi edi ebp.
+al_imp = place('al_imp', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    imul eax, dword ptr [esp + 0x18], 0xde
+    movsx ebx, word ptr [eax + {CITIES:#x}]
+    movsx ebp, word ptr [eax + {CITIES + 2:#x}]
+    push ebp
+    push ebx
+    call 0x41d640
+    add esp, 8
+    movsx edi, ax
+    push ebp
+    push ebx
+    call 0x41ec20
+    add esp, 8
+    movsx eax, ax
+    add edi, eax
+    cmp edi, 3
+    jge im_si
+    xor esi, esi
+im_lp:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge im_no
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je im_nx
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [esp + 0x14]
+    jne im_nx
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    sub eax, ebx
+    add eax, 6
+    cmp eax, 12
+    ja im_nx
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    sub eax, ebp
+    add eax, 6
+    cmp eax, 12
+    jbe im_si
+im_nx:
+    inc esi
+    jmp im_lp
+im_si:
+    mov eax, 1
+    jmp im_ret
+im_no:
+    xor eax, eax
+im_ret:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
+L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
+    L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT = (4 * (i + 1) for i in range(23))
+L_SIZE = 0x60
+def _al_go(lbl):
+    # mueve la pila hacia la ciudad [ebp - L_BEST] (arma el grupo si hace falta)
+    return f'''
+    cmp dword ptr [ebp - {L_MAP}], 0
+    jne {lbl}_g
+    mov eax, dword ptr [ebp - {L_REC}]
+    add eax, 0xc
+    push eax
+    call 0x497240
+    add esp, 4
+{lbl}_g:
+    imul eax, dword ptr [ebp - {L_BEST}], 0xde
+    movsx ecx, word ptr [eax + {CITIES + 2:#x}]
+    push ecx
+    movsx ecx, word ptr [eax + {CITIES:#x}]
+    push ecx
+    call 0x40d2b0
+    add esp, 8'''
+ai_ally = place('ai_ally', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je 0x40c990
+    movsx eax, word ptr [0x4fb0ec]
+    cmp eax, 8
+    jae 0x40c990
+    push ebp
+    mov ebp, esp
+    sub esp, {L_SIZE:#x}
+    pushad
+    mov dword ptr [ebp - {L_P}], eax
+    movsx ecx, word ptr [ebp + 8]
+    mov dword ptr [ebp - {L_S}], ecx
+    imul edx, eax, 0x49a
+    shl ecx, 6
+    lea edx, [edx + ecx + 0x561f00]
+    mov dword ptr [ebp - {L_REC}], edx
+    mov dword ptr [ebp - {L_MAP}], 0
+    movsx eax, word ptr [edx + 0xc]
+    mov dword ptr [ebp - {L_LEAD}], eax
+    test eax, eax
+    jle al_orig
+    imul ecx, eax, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz al_orig
+    movsx eax, word ptr [ecx + 0x54fe52]
+    mov dword ptr [ebp - {L_LX}], eax
+    movsx eax, word ptr [ecx + 0x54fe54]
+    mov dword ptr [ebp - {L_LY}], eax
+    push edx
+    call {al_sstr:#x}
+    add esp, 4
+    mov dword ptr [ebp - {L_STR}], eax
+    mov dword ptr [ebp - {L_CNT}], ecx
+    push dword ptr [ebp - {L_LY}]
+    push dword ptr [ebp - {L_LX}]
+    push dword ptr [ebp - {L_P}]
+    call {al_thr:#x}
+    add esp, 0xc
+    mov dword ptr [ebp - {L_E}], eax
+    mov dword ptr [ebp - {L_HUNT}], edx
+    mov dword ptr [ebp - {L_NEAR}], ecx
+    cmp eax, dword ptr [ebp - {L_STR}]
+    jle al_mode
+    push dword ptr [ebp - {L_LEAD}]
+    push dword ptr [ebp - {L_LY}]
+    push dword ptr [ebp - {L_LX}]
+    push dword ptr [ebp - {L_P}]
+    push 11
+    call {ia_evt:#x}
+    add esp, 0x14
+    imul eax, dword ptr [ebp - {L_P}], 10
+    add eax, dword ptr [ebp - {L_S}]
+    lea eax, [eax*8 + {AL_THR:#x}]
+    mov ecx, dword ptr [ebp - {L_LEAD}]
+    mov word ptr [eax], cx
+    mov ecx, dword ptr [ebp - {L_LX}]
+    mov word ptr [eax + 2], cx
+    mov ecx, dword ptr [ebp - {L_LY}]
+    mov word ptr [eax + 4], cx
+    mov cx, word ptr [0x503328]
+    mov word ptr [eax + 6], cx
+al_mode:
+    mov eax, dword ptr [ebp - {L_P}]
+    cmp byte ptr [eax + {IA_MODE:#x}], 1
+    jne al_orig
+    mov eax, dword ptr [ebp - {L_S}]
+    mov ecx, dword ptr [ebp - {L_REC}]
+    mov word ptr [0x5020d0], ax
+    mov dword ptr [0x5020d4], ecx
+    imul esi, dword ptr [ebp - {L_P}], 10
+    add esi, eax
+    shl esi, 4
+    add esi, {AL_TAB:#x}
+    mov dword ptr [ebp - {L_ENT}], esi
+    movsx eax, word ptr [esi]
+    cmp eax, dword ptr [ebp - {L_LEAD}]
+    je al_same
+    mov dword ptr [esi], 0
+    mov dword ptr [esi + 4], 0
+    mov dword ptr [esi + 8], 0
+    mov dword ptr [esi + 0xc], 0
+    mov eax, dword ptr [ebp - {L_LEAD}]
+    mov word ptr [esi], ax
+al_same:
+    xor eax, eax
+    mov dword ptr [ebp - {L_T1}], eax
+    movsx ecx, word ptr [esi + 0xc]
+    movsx edx, word ptr [0x503328]
+    inc edx
+    cmp ecx, edx
+    je al_cur
+    test ecx, ecx
+    jz al_last
+    movsx eax, word ptr [esi + 0xa]
+    mov ecx, dword ptr [ebp - {L_STR}]
+    add ecx, ecx
+    cmp ecx, eax
+    jge al_last
+    mov dword ptr [ebp - {L_T1}], 1
+al_last:
+    mov eax, dword ptr [ebp - {L_STR}]
+    mov word ptr [esi + 0xa], ax
+    mov word ptr [esi + 0xc], dx
+al_cur:
+    push dword ptr [ebp - {L_P}]
+    call {al_tabla:#x}
+    add esp, 4
+    movsx eax, word ptr [esi + 2]
+    test eax, eax
+    jz al_normal
+    dec eax
+    mov dword ptr [ebp - {L_BEST}], eax
+    imul edi, eax, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_lost
+    movzx ecx, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp ecx, dword ptr [ebp - {L_P}]
+    je al_lost
+    push dword ptr [ebp - {L_P}]
+    push eax
+    call {member:#x}
+    add esp, 8
+    test eax, eax
+    jz al_lost
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    mov dword ptr [ebp - {L_CX}], eax
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    mov dword ptr [ebp - {L_CY}], eax
+    imul eax, dword ptr [ebp - {L_BEST}], 12
+    cmp dword ptr [eax + {AL_CT:#x}], 0
+    je al_calm
+    test byte ptr [esi + 5], 2
+    jnz al_stay
+    or byte ptr [esi + 5], 2
+    push dword ptr [eax + {AL_CT:#x}]
+    push dword ptr [ebp - {L_CY}]
+    push dword ptr [ebp - {L_CX}]
+    push dword ptr [ebp - {L_P}]
+    push 13
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp al_stay
+al_calm:
+    and byte ptr [esi + 5], 0xfd
+    test byte ptr [esi + 5], 1
+    jnz al_stay
+    cmp dword ptr [ebp - {L_STR}], {AL_WEAK}
+    jg al_exits
+    imul eax, dword ptr [ebp - {L_P}], 0x1f8
+    movsx eax, word ptr [eax + 0x536b30 + 0xe4]
+    cmp eax, {AL_GOLD}
+    jge al_exits
+    mov esi, 1
+al_fr:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge al_final
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz al_frn
+    movzx eax, word ptr [edi + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, dword ptr [ebp - {L_P}]
+    jne al_frn
+    mov ecx, dword ptr [ebp - {L_REC}]
+    xor edx, edx
+al_frs:
+    movsx eax, word ptr [ecx + edx*2 + 0xc]
+    cmp eax, esi
+    je al_frn
+    inc edx
+    cmp edx, 8
+    jb al_frs
+    movsx eax, word ptr [edi + 0x54fe52]
+    sub eax, dword ptr [ebp - {L_LX}]
+    add eax, 8
+    cmp eax, 16
+    ja al_frn
+    movsx eax, word ptr [edi + 0x54fe54]
+    sub eax, dword ptr [ebp - {L_LY}]
+    add eax, 8
+    cmp eax, 16
+    jbe al_exits_r
+al_frn:
+    inc esi
+    jmp al_fr
+al_final:
+    mov esi, dword ptr [ebp - {L_ENT}]
+    or byte ptr [esi + 5], 1
+    push dword ptr [ebp - {L_STR}]
+    push dword ptr [ebp - {L_CY}]
+    push dword ptr [ebp - {L_CX}]
+    push dword ptr [ebp - {L_P}]
+    push 9
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp al_stay
+al_exits_r:
+    mov esi, dword ptr [ebp - {L_ENT}]
+al_exits:
+    push dword ptr [ebp - {L_BEST}]
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    movsx eax, word ptr [esi + 8]
+    cmp edx, eax
+    jle al_ex2
+    mov dword ptr [ebp - {L_T2}], 1
+    jmp al_exit
+al_ex2:
+    movsx eax, word ptr [esi + 6]
+    mov ecx, eax
+    shr ecx, 1
+    cmp ecx, 2
+    jge al_ex3
+    mov ecx, 2
+al_ex3:
+    add eax, ecx
+    cmp dword ptr [ebp - {L_STR}], eax
+    jl al_stay
+    mov dword ptr [ebp - {L_T2}], 2
+al_exit:
+    push dword ptr [ebp - {L_T2}]
+    push dword ptr [ebp - {L_CY}]
+    push dword ptr [ebp - {L_CX}]
+    push dword ptr [ebp - {L_P}]
+    push 8
+    call {ia_evt:#x}
+    add esp, 0x14
+    mov dword ptr [esi + 2], 0
+    mov dword ptr [esi + 6], 0
+    jmp al_orig
+al_lost:
+    imul edi, dword ptr [ebp - {L_BEST}], 0xde
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    movsx ecx, word ptr [edi + {CITIES:#x}]
+    push 3
+    push eax
+    push ecx
+    push dword ptr [ebp - {L_P}]
+    push 8
+    call {ia_evt:#x}
+    add esp, 0x14
+    mov dword ptr [esi + 2], 0
+    mov dword ptr [esi + 6], 0
+    jmp al_normal
+al_stay:
+    mov eax, dword ptr [ebp - {L_LX}]
+    sub eax, dword ptr [ebp - {L_CX}]
+    cmp eax, 1
+    ja al_back
+    mov eax, dword ptr [ebp - {L_LY}]
+    sub eax, dword ptr [ebp - {L_CY}]
+    cmp eax, 1
+    jbe al_done
+al_back:{_al_go('al_bk')}
+    jmp al_done
+al_normal:
+    mov dword ptr [ebp - {L_MOT}], 1
+    mov eax, dword ptr [ebp - {L_E}]
+    cmp eax, dword ptr [ebp - {L_STR}]
+    jg al_ref
+    mov dword ptr [ebp - {L_MOT}], 2
+    cmp dword ptr [ebp - {L_T1}], 0
+    jne al_ref
+    mov dword ptr [ebp - {L_MOT}], 3
+    cmp dword ptr [ebp - {L_HUNT}], 0
+    je al_reinf
+al_ref:
+    call al_map
+    mov dword ptr [ebp - {L_BEST}], -1
+    mov dword ptr [ebp - {L_BSC}], -1
+    xor esi, esi
+al_rc:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_rch
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_rcn
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    je al_rcn
+    push dword ptr [ebp - {L_P}]
+    push esi
+    call {member:#x}
+    add esp, 8
+    test eax, eax
+    jz al_rcn
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    mov dword ptr [ebp - {L_CX}], eax
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    mov dword ptr [ebp - {L_CY}], eax
+    mov eax, dword ptr [ebp - {L_LX}]
+    sub eax, dword ptr [ebp - {L_CX}]
+    cmp eax, 1
+    ja al_rcc
+    mov eax, dword ptr [ebp - {L_LY}]
+    sub eax, dword ptr [ebp - {L_CY}]
+    cmp eax, 1
+    jbe al_rcin
+al_rcc:
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    add ecx, dword ptr [ebp - {L_CNT}]
+    cmp ecx, 32
+    jg al_rcn
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_cost:#x}
+    add esp, 8
+    cmp eax, dword ptr [ebp - {L_MOV}]
+    jg al_rcn
+al_rcin:
+    xor eax, eax
+    mov ecx, dword ptr [ebp - {L_NEAR}]
+    test ecx, ecx
+    jl al_rcs
+    imul ecx, ecx, 0x1c
+    movsx eax, word ptr [ecx + 0x54fe52]
+    sub eax, dword ptr [ebp - {L_CX}]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov edx, eax
+    movsx eax, word ptr [ecx + 0x54fe54]
+    sub eax, dword ptr [ebp - {L_CY}]
+    push edx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    pop edx
+    cmp eax, edx
+    jge al_rcs
+    mov eax, edx
+al_rcs:
+    cmp eax, dword ptr [ebp - {L_BSC}]
+    jle al_rcn
+    mov dword ptr [ebp - {L_BSC}], eax
+    mov dword ptr [ebp - {L_BEST}], esi
+al_rcn:
+    inc esi
+    jmp al_rc
+al_rch:
+    mov eax, dword ptr [ebp - {L_BEST}]
+    test eax, eax
+    jl al_reinf
+    mov esi, dword ptr [ebp - {L_ENT}]
+    inc eax
+    mov word ptr [esi + 2], ax
+    mov eax, dword ptr [ebp - {L_MOT}]
+    mov byte ptr [esi + 4], al
+    and byte ptr [esi + 5], 0xfc
+    mov eax, dword ptr [ebp - {L_STR}]
+    mov word ptr [esi + 6], ax
+    push dword ptr [ebp - {L_BEST}]
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    mov word ptr [esi + 8], dx
+    imul edi, dword ptr [ebp - {L_BEST}], 0xde
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    movsx ecx, word ptr [edi + {CITIES:#x}]
+    push dword ptr [ebp - {L_MOT}]
+    push eax
+    push ecx
+    push dword ptr [ebp - {L_P}]
+    push 7
+    call {ia_evt:#x}
+    add esp, 0x14
+    mov dword ptr [ebp - {L_CX}], ecx
+    mov dword ptr [ebp - {L_CY}], eax
+    jmp al_stay
+al_reinf:
+    mov dword ptr [ebp - {L_OWNT}], 0
+    xor esi, esi
+al_ow:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_ow_e
+    cmp esi, 256
+    jae al_ow_e
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_own
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    jne al_own
+    imul eax, esi, 12
+    mov ecx, dword ptr [eax + {AL_CT:#x}]
+    cmp ecx, dword ptr [eax + {AL_CT + 4:#x}]
+    jle al_own
+    mov dword ptr [ebp - {L_OWNT}], 1
+    jmp al_ow_e
+al_own:
+    inc esi
+    jmp al_ow
+al_ow_e:
+    mov dword ptr [ebp - {L_BEST}], -1
+    mov dword ptr [ebp - {L_BSC}], 0x7fffffff
+    mov dword ptr [ebp - {L_MOT}], 0
+    xor esi, esi
+al_fc:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_fch
+    cmp esi, 256
+    jae al_fch
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_fcn
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    je al_fcn
+    imul ebx, esi, 12
+    add ebx, {AL_CT:#x}
+    mov eax, dword ptr [ebx + 4]
+    add eax, dword ptr [ebx + 8]
+    cmp dword ptr [ebx], eax
+    jle al_fcn
+    mov dword ptr [ebp - {L_T2}], eax
+    call al_map
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_cost:#x}
+    add esp, 8
+    cmp eax, 0x7fffffff
+    je al_fcn
+    mov dword ptr [ebp - {L_T1}], eax
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_imp:#x}
+    add esp, 8
+    mov ecx, eax
+    mov eax, dword ptr [ebp - {L_T1}]
+    cmp eax, dword ptr [ebp - {L_MOV}]
+    jg al_fc_b
+    test ecx, ecx
+    jnz al_fc_a
+    cmp dword ptr [ebp - {L_OWNT}], 0
+    jne al_fcn
+al_fc_a:
+    cmp dword ptr [ebp - {L_MOT}], 2
+    je al_fc_set
+    cmp eax, dword ptr [ebp - {L_BSC}]
+    jge al_fcn
+al_fc_set:
+    mov dword ptr [ebp - {L_MOT}], 1
+    jmp al_fc_take
+al_fc_b:
+    test ecx, ecx
+    jz al_fcn
+    cmp dword ptr [ebp - {L_MOT}], 1
+    je al_fcn
+    mov edx, dword ptr [ebp - {L_T2}]
+    add edx, dword ptr [ebp - {L_STR}]
+    cmp edx, dword ptr [ebx]
+    jle al_fcn
+    cmp eax, dword ptr [ebp - {L_BSC}]
+    jge al_fcn
+    mov dword ptr [ebp - {L_MOT}], 2
+al_fc_take:
+    mov dword ptr [ebp - {L_BSC}], eax
+    mov dword ptr [ebp - {L_BEST}], esi
+    mov dword ptr [ebp - {L_CRIT}], ecx
+al_fcn:
+    inc esi
+    jmp al_fc
+al_fch:
+    mov eax, dword ptr [ebp - {L_BEST}]
+    test eax, eax
+    jl al_orig
+    imul ecx, eax, 12
+    mov edx, dword ptr [ebp - {L_STR}]
+    add dword ptr [ecx + {AL_CT + 8:#x}], edx
+    imul edi, eax, 0xde
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    movsx ecx, word ptr [edi + {CITIES:#x}]
+    mov edx, dword ptr [ebp - {L_MOT}]
+    imul edx, edx, 10
+    add edx, dword ptr [ebp - {L_CRIT}]
+    push edx
+    push eax
+    push ecx
+    push dword ptr [ebp - {L_P}]
+    push 10
+    call {ia_evt:#x}
+    add esp, 0x14
+{_al_go('al_rf')}
+    jmp al_done
+al_map:
+    cmp dword ptr [ebp - {L_MAP}], 0
+    jne al_map_r
+    mov dword ptr [ebp - {L_MAP}], 1
+    mov eax, dword ptr [ebp - {L_REC}]
+    add eax, 0xc
+    push eax
+    call 0x497240
+    add esp, 4
+    push 0x100
+    call 0x497750
+    add esp, 4
+    imul eax, dword ptr [ebp - {L_P}], 0x4f0
+    movsx eax, word ptr [eax + 0x56eaa4]
+    mov dword ptr [ebp - {L_MOV}], eax
+al_map_r:
+    ret
+al_done:
+    popad
+    leave
+    ret
+al_orig:
+    popad
+    leave
+    jmp 0x40c990
+''')
+# al_surv(p) cdecl, desde ia_turn: por cada pila de p anotada como amenazada en un turno anterior, evento 12 con
+# x, y donde estaba y n = 1 si su líder sigue vivo y es de p, 0 si no. Preserva todo.
+al_surv = place('al_surv', f'''
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    cmp ebx, 8
+    jae sv_out
+    imul esi, ebx, 80
+    add esi, {AL_THR:#x}
+    mov edi, 10
+sv_lp:
+    movsx eax, word ptr [esi + 6]
+    test eax, eax
+    jz sv_nx
+    cmp ax, word ptr [0x503328]
+    jge sv_nx
+    xor edx, edx
+    movsx eax, word ptr [esi]
+    imul ecx, eax, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz sv_log
+    movzx eax, word ptr [ecx + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, ebx
+    jne sv_log
+    inc edx
+sv_log:
+    movsx eax, word ptr [esi + 4]
+    movsx ecx, word ptr [esi + 2]
+    push edx
+    push eax
+    push ecx
+    push ebx
+    push 12
+    call {ia_evt:#x}
+    add esp, 0x14
+    mov dword ptr [esi], 0
+    mov dword ptr [esi + 4], 0
+sv_nx:
+    add esi, 8
+    dec edi
+    jnz sv_lp
+sv_out:
+    popad
+    ret
+''')
+
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
     pushad
@@ -7710,6 +8686,7 @@ it_push:
     push ebx
     call {ia_dip:#x}
     call {ia_refug:#x}
+    call {al_surv:#x}
     add esp, 4
 it_out:
     popad
@@ -8136,6 +9113,7 @@ def rel(va, n):  # bytes originales
 
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
+patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ally:#x}', 0x40edf1))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))

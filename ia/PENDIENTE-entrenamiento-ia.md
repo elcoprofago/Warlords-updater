@@ -425,3 +425,21 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Medición: táctica, batalla por batalla; qué alianza gana se registra como dato secundario "con pinzas".
 - Próximo paso: construir según el spec, empezando por las preguntas abiertas (misión del héroe, fuerza de una pila).
   Para retomar: "Seguimos con specs/ia-alianzas-v1.md: construir la destreza de alianzas".
+
+### 18/10/2026: etapa 3, paso 3: destreza de alianzas construida (vista-aliada 1.0.36.0)
+- ai_ally (gancho en 0x40edf1, la decisión de cada pila de la IA): refugio (1a/1b/1c, salidas 3a/3b, req. 4 y 5) y
+  refuerzo de ciudad aliada (6a/6b con el criterio 7a). Detalle, umbrales y aproximaciones en specs/ia-alianzas-v1.md,
+  sección «Construcción». Eventos nuevos 7-13 en IA_EVT.CSV; 11/12 (pila amenazada y si sobrevivió) para las dos IA.
+- Probado emulado: parches/vista-aliada/prueba_iaalianzas.py (Tanda_Border_Alianzas, equipos y guerra armados en la
+  prueba) TODO OK; las demás pruebas del parche siguen OK. Bug encontrado por la prueba: la tabla usaba turno 0 como
+  «sin dato» y la tanda arranca en el turno 0 (se guarda turno + 1).
+- Hallazgos para la emulación: 0x497240 (formar grupo) llama a rutinas de pantalla (0x486ab0, 0x4868d0) y 0x4974a0
+  termina en _ftol; en la prueba van con stubs. En el SAV de turno 0 solo viven los héroes y 55 neutrales (las listas
+  de pilas traen ejércitos viejos, más allá de la cantidad [0x54fe50]).
+- tanda.py: con equipos en la guardada, la IA se reparte por equipo en pares complementarios (req. 13), probado en
+  juguete; Monitor de IA 1.0.6. informe.py: sección «Alianzas» (req. 12 a-f), probada sobre las tandas 19-21 (sin
+  eventos: en blanco; batallas con defensores de más de un color: 0).
+- No construido: criterios 7b-7e (no ubicados en el exe); la tabla de refugios no se guarda con la partida.
+- Próximo paso: tanda A/B en vivo (TAREAS 21) y su informe contra el control.
+  Para retomar: "Seguimos con specs/ia-alianzas-v1.md: informe de la tanda A/B".
+

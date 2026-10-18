@@ -6,7 +6,13 @@
 #   partidas ganadas (único primer puesto), primeros puestos compartidos con la otra IA y con la misma;
 #   ataques desangrantes: ataque perdido que repite atacante, casilla y composición de otro ataque perdido antes;
 #   turnos sin progreso: los registra la destreza 1 (todavía no existe).
-import os, sqlite3, sys
+# Alianzas (specs\ia-alianzas-v1.md, req. 12), por IA: a. pilas amenazadas y sobrevivientes al turno siguiente
+# (eventos 11 y 12); b. refugios (eventos 5 y 7), salidas (8), hasta el final (9), defensa del refugio (13) y refuerzos
+# (10); c. batallas en ciudad con defensores de más de un color (colores_d) y cuántas ganó la defensa; d. ciudades
+# compartidas atacadas (defensor con un aliado ese turno y la opción de ciudades compartidas) y cuántas resistieron
+# el turno; e. héroes vivos al final; f. qué equipo ganó (PV por equipo, con los equipos de la guardada). Lo que una
+# tanda vieja no registró queda en blanco.
+import json, os, sqlite3, sys
 from collections import defaultdict
 
 DB = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)),
@@ -68,6 +74,69 @@ def main(tid=None):
               f'{s["ejercitos"] / c:7.1f} {gana[ia]:7} {comp_otra[ia] + comp_misma[ia]:9} {ataques[ia]:7} '
               f'{perdidos[ia]:8} {desang[ia]:8}')
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
+    alianzas(db, tid, validas, cuenta)
+
+
+def equipos_de(texto):
+    if not texto or not texto.startswith('equipos '):
+        return []
+    return [set(map(int, e)) for e in texto.split()[1].rstrip(';').split('|')]
+
+
+def alianzas(db, tid, validas, cuenta):
+    q = ','.join('?' * len(validas))
+    ev = defaultdict(lambda: defaultdict(int))
+    hay_ev = db.execute(f'select count(*) from evento where partida in ({q})', validas).fetchone()[0]
+    for ia, tipo, n1, k in db.execute(f'select ia, tipo, n = 1, count(*) from evento where partida in ({q}) '
+                                      'group by ia, tipo, n = 1', validas):
+        ev[ia][tipo] += k
+        if tipo == 12 and n1: ev[ia]['sobrevivio'] += k
+    # amigos[(partida, turno, color)] = aliados ese turno, si la partida tiene ciudades compartidas
+    amigos = {}
+    for row in db.execute(f'select partida, turno, color, opciones, {", ".join(f"d{i}" for i in range(8))} from diplo '
+                          f'where partida in ({q})', validas):
+        if row[3] & 1:
+            amigos[row[:3]] = {j for j in range(8) if j != row[2] and row[4 + j] == 0}
+    hay_dip = bool(db.execute(f'select count(*) from diplo where partida in ({q})', validas).fetchone()[0])
+    multi = defaultdict(lambda: [0, 0]); comp = defaultdict(dict); hay_col = False
+    for pid, tur, de, ciu, res, ia, col in db.execute(
+            f'select partida, turno, defensor, ciudad, resultado, ia_d, colores_d from batalla '
+            f'where partida in ({q}) and ciudad >= 0', validas):
+        if col is not None:
+            hay_col = True
+            if bin(col).count('1') > 1:
+                multi[ia][0] += 1; multi[ia][1] += res != 1
+        if amigos.get((pid, tur, de)):
+            k = (pid, tur, ciu); comp[ia][k] = comp[ia].get(k, True) and res != 1
+    heroes = defaultdict(int)
+    for pid, color, ia, elim in db.execute(f'select partida, color, ia, eliminado_turno from resultado '
+                                           f'where partida in ({q})', validas):
+        h = db.execute('select heroes from turno where partida=? and color=? order by turno desc limit 1',
+                       (pid, color)).fetchone()
+        heroes[ia] += 0 if elim or not h else h[0]
+    b = lambda v, ok: str(v) if ok else ''
+    print('\nAlianzas (req. 12; en blanco lo que la tanda no registró)')
+    print(f'{"IA":28} {"amenaz.":>7} {"sobrev.":>7} {"refug.":>6} {"salid.":>6} {"final":>5} {"def.ref":>7} '
+          f'{"refuer.":>7} {"bat.multi":>9} {"ganó def":>8} {"compart.":>8} {"resist.":>7} {"héroes":>6}')
+    for ia in sorted(cuenta):
+        e = ev[ia]; ok = bool(hay_ev)
+        print(f'{IAS.get(ia, ia):28} {b(e[11], ok):>7} {b(e["sobrevivio"], ok):>7} {b(e[5] + e[7], ok):>6} '
+              f'{b(e[8], ok):>6} {b(e[9], ok):>5} {b(e[13], ok):>7} {b(e[10], ok):>7} {b(multi[ia][0], hay_col):>9} '
+              f'{b(multi[ia][1], hay_col):>8} {b(len(comp[ia]), hay_dip):>8} '
+              f'{b(sum(comp[ia].values()), hay_dip):>7} {heroes[ia]:6}')
+    al = json.loads(db.execute('select alianzas from tanda where id=?', (tid,)).fetchone()[0] or '{}')
+    print('\nEquipo ganador por partida (PV por equipo; IA del equipo: O original, P prueba, M mezcla)')
+    for pid, n, g, asig in db.execute(f'select id, n, guardada, asignacion from partida where id in ({q}) order by n',
+                                      validas):
+        eqs = equipos_de(al.get(g))
+        if len(eqs) < 2:
+            print(f'  {n + 1:2}. sin equipos'); continue
+        pv = dict(db.execute('select color, pv from resultado where partida=?', (pid,)).fetchall())
+        tot = sorted(((sum(pv.get(c) or 0 for c in e), e) for e in eqs), key=lambda t: -t[0])
+        ias = lambda e: (lambda s: s.pop() if len(s) == 1 else 'M')({asig[c] for c in e})
+        txt = ', '.join(f'{"".join(map(str, sorted(e)))} ({ias(e)}) {v}' for v, e in tot)
+        gan = 'empate' if tot[0][0] == tot[1][0] else f'gana {"".join(map(str, sorted(tot[0][1])))}'
+        print(f'  {n + 1:2}. {txt}: {gan}')
 
 
 if __name__ == '__main__':

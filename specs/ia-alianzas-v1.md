@@ -102,15 +102,16 @@ premios y las decisiones de rumbo, que esta destreza no toca).
 - **Héroe cazador que no se ve (mapa oculto)** → se usa lo que el juego sabe (req. 8).
 
 ## Definition of done
-- [ ] Prueba emulada, con partidas guardadas de alianzas: una pila de prueba amenazada por una más fuerte, con una
+- [x] Prueba emulada, con partidas guardadas de alianzas: una pila de prueba amenazada por una más fuerte, con una
       ciudad compartida al alcance, se mueve a ella y anota el evento; el mismo caso con IA original no cambia nada.
-- [ ] Prueba emulada de cada motivo del req. 1 (a, b, c), de las salidas del req. 3, del req. 4 y del req. 5.
+- [x] Prueba emulada de cada motivo del req. 1 (a, b, c), de las salidas del req. 3, del req. 4 y del req. 5.
 - [ ] Prueba emulada del refuerzo: casos 6a y 6b, cada criterio del req. 7 con un caso que lo cumple y uno que no.
-- [ ] Prueba emulada de control: sin IA.INI y con todos los colores en original, las decisiones son idénticas
+      (Hechos 6a, 6b y el criterio 7a; 7b-7e no están construidos, ver «Construcción».)
+- [x] Prueba emulada de control: sin IA.INI y con todos los colores en original, las decisiones son idénticas
       byte a byte a las de vista-aliada 1.0.35.0.
-- [ ] Prueba emulada de los casos límite (ciudad llena, sin ciudad al alcance, alianza rota).
-- [ ] tanda.py reparte la IA por equipo (req. 13), probado en juguete.
-- [ ] El informe de una tanda muestra los puntos a-f del req. 12, también para las tandas de control 19-21 (las que
+- [x] Prueba emulada de los casos límite (ciudad llena, sin ciudad al alcance, alianza rota).
+- [x] tanda.py reparte la IA por equipo (req. 13), probado en juguete.
+- [x] El informe de una tanda muestra los puntos a-f del req. 12, también para las tandas de control 19-21 (las que
       no tengan el dato, en blanco).
 - [ ] Tanda A/B en vivo de 16 partidas válidas (8 pares) en Tanda_Border_Alianzas: hay refugios y defensas con más
       de un color en los equipos con IA de prueba, y el informe compara las métricas a-e con la IA original y con el
@@ -126,3 +127,39 @@ premios y las decisiones de rumbo, que esta destreza no toca).
   cálculo de la IA original si existe en el exe, o una propia calibrada contra IA_BAT.
 - Los umbrales de "débil" (req. 1b), "muchas ruinas o ciudades neutrales" (req. 7a) y "unidades fuertes" (req. 7b) se
   fijan durante la construcción con datos de las tandas de control, y quedan escritos en el spec.
+
+## Construcción (vista-aliada 1.0.36.0, 18/10/2026)
+Lo construido (build.py, bloque «IA: destreza de alianzas»; prueba_iaalianzas.py, 36 casos TODO OK):
+- Gancho: ai_ally reemplaza el call 0x40c990(pila, 0) de 0x40edf1 (la decisión de cada pila de la IA en su turno).
+  Sin IA.INI salta directo a 0x40c990. Con IA.INI anota para todo color de la computadora el evento 11 (pila
+  amenazada, condición 1a) y al turno siguiente el 12 (sobrevivió 1 / 0, desde ia_turn). Solo con ia_mode = prueba
+  decide además refugio o refuerzo; si no decide nada, sigue la decisión original.
+- Fuerza de una pila: suma de fuerza base × vida (bits 9-12 y 13-15 de la palabra +0xe, como 0x467240).
+- Amenaza a una casilla: suma de la fuerza de los ejércitos en guerra (DIPLO 2) a no más de movimiento / 2 + 1
+  casillas (distancia de rey; aproximado, no mira el terreno).
+- Alcance propio: costo del mapa de caminos del juego (0x497750 / 0x4a65d0) <= movimiento que le queda al grupo,
+  o la pila ya está en la ciudad. Lugar: ejércitos en la ciudad + los de la pila <= 32.
+- 1a: amenaza > fuerza de la pila. 1b: fuerza × 2 < la fuerza de la decisión del turno anterior. 1c (aproximado):
+  un héroe enemigo al alcance con destino a 2 casillas o menos de la pila (no se ubicó en el exe la misión del héroe).
+- 2: elige la ciudad compartida alcanzable que queda más lejos del enemigo más cercano.
+- 3a: la fuerza del dueño en la ciudad supera la que tenía al entrar la pila. 3b: la pila tiene la fuerza de entrada
+  + max(2, la mitad). Ciudad perdida, alianza rota o dueño eliminado: sale (evento 8, n = 3) y decide de nuevo.
+- 4: fuerza <= 6, oro < 100 y ningún ejército propio fuera de la pila a 8 casillas o menos. Después ya no sale.
+- 5: si la ciudad está amenazada, se queda (evento 13, una vez por amenaza) aunque se cumpla una salida.
+- 6a: la alcanza este turno y la amenaza supera a los defensores más lo ya mandado ese turno; si una ciudad propia
+  está amenazada, solo va si la aliada es importante. 6b: no llega este turno, el mapa de caminos la alcanza, es
+  importante y defensores + ya mandado + la pila > amenaza. «Ya mandado» evita que vayan más pilas de las necesarias.
+- 7a: ruinas sin explorar + ciudades neutrales cerca (la cuenta de la IA original, 0x41d640 / 0x41ec20) >= 3, o una
+  ciudad propia a 6 casillas o menos.
+- Eventos nuevos en IA_EVT.CSV: 7 refugio (n = motivo), 8 salida (1 = 3a, 2 = 3b, 3 = ciudad o alianza perdida),
+  9 hasta el final, 10 refuerzo (n = 10 × motivo + criterio), 11 pila amenazada (n = líder), 12 su resultado,
+  13 se queda a defender.
+- Control (req. 9): sin IA.INI nada cambia y con la IA original el estado del juego queda igual byte a byte (prueba
+  emulada). Comparado con el exe de 1.0.35.0, fuera de las cuevas del parche solo cambian el gancho de 0x40edf1 y
+  ocho llamadas a las rutinas del registro, que se corrieron de lugar.
+
+No construido (queda para una versión siguiente):
+- Criterios 7b (producción fuerte o ventaja de un sitio), 7c (capital del aliado), 7d (paso difícil) y 7e
+  (condición de victoria del escenario): no se ubicaron en el exe. Hoy una ciudad es importante solo por 7a.
+- La tabla de refugios no se guarda con la partida: al cargar una guardada, las pilas deciden desde cero.
+- Los umbrales (6 de fuerza, 100 de oro, 8 y 6 casillas, 3 sitios) son de diseño; se revisan con la tanda A/B.

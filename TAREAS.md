@@ -7,6 +7,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 20** (sonido): actualizar el Monitor de IA y fijarte en la próxima partida.
+   La **tarea 21** (tanda A/B de alianzas) empieza con la misma actualización del Monitor: se pueden hacer juntas.
 2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
 3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
 4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
@@ -14,6 +15,20 @@ Sorteo están acá (tarea 18).
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 21. IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
+La IA de prueba ya sabe refugiar sus pilas en la ciudad de un aliado y reforzar ciudades aliadas amenazadas
+(vista-aliada 1.0.36.0, ya instalado en C:\Warlords3). Ahora un equipo de 4 colores juega con la IA de prueba y el
+otro con la original, y en la partida siguiente al revés. El informe compara las dos IA con las tandas de control.
+1. Actualizá el Monitor de IA (botón **Actualizar**): tiene que decir **1.0.6**. Esa versión reparte la IA por
+   equipo cuando la guardada tiene alianzas.
+2. En el Monitor de IA: **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **6**, **Nueva tanda**. Podés dejar
+   prendida la suspensión. En la bitácora, cada partida tiene que decir colores con IA de prueba **[0, 1, 3, 5]** o
+   **[2, 4, 6, 7]**, alternados.
+3. Avisame al terminar. Siguen más tandas iguales hasta juntar **16 partidas válidas** (8 pares).
+Si mirás alguna partida: lo nuevo es que pilas de un color entran a ciudades de un aliado (dos banderas) cuando un
+enemigo fuerte se les acerca, o van a defender una ciudad aliada.
+Resultado:
 
 ## 20. Sonido del juego: volvió a faltar (17/10/2026)
 La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El

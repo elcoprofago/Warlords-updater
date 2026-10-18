@@ -376,12 +376,26 @@ def cerrar_juego():
     subprocess.run(['taskkill', '/F', '/IM', EXE], capture_output=True)
 
 
-def plan(partidas, guardadas):
+def equipos_de(texto):
+    """Los equipos de un texto de alianzas(): 'equipos 0135|2467; ...' -> [{0, 1, 3, 5}, {2, 4, 6, 7}]."""
+    if not texto or not texto.startswith('equipos '):
+        return []
+    return [set(map(int, e)) for e in texto.split()[1].rstrip(';').split('|')]
+
+
+def plan(partidas, guardadas, alianzas_de=None):
+    # Con equipos de aliados (specs\ia-alianzas-v1.md, req. 13) la IA se reparte por equipo: la primera partida de cada
+    # par le da la IA de prueba a un equipo entero y la segunda al resto; de un par al siguiente de la misma guardada
+    # cambia qué equipo va primero. Sin equipos, los PATRONES de siempre.
     out = []
     for i in range(partidas):
         par = i // 2
         g = guardadas[par % len(guardadas)]
-        pat = set(PATRONES[(par // len(guardadas)) % len(PATRONES)])
+        eqs = equipos_de((alianzas_de or {}).get(g))
+        if len(eqs) >= 2:
+            pat = eqs[(par // len(guardadas)) % len(eqs)]
+        else:
+            pat = set(PATRONES[(par // len(guardadas)) % len(PATRONES)])
         out.append({'guardada': g, 'prueba': sorted(pat if i % 2 == 0 else set(range(8)) - pat)})
     return out
 
@@ -490,7 +504,7 @@ def preparar(a):
         al = {g: alianzas(g) for g in gs}
         print('Alianzas: ' + ', '.join(f'{g.removeprefix("Tanda_")} {v}' for g, v in al.items()), flush=True)
         tid = db.execute('insert into tanda (inicio, plan, parche, exe, bandos, alianzas) values (?,?,?,?,?,?)',
-                         (ahora(), json.dumps(plan(a.partidas, gs)), ver, exe, json.dumps(bs),
+                         (ahora(), json.dumps(plan(a.partidas, gs, al)), ver, exe, json.dumps(bs),
                           json.dumps(al, ensure_ascii=False))).lastrowid
         db.commit()
     else:
