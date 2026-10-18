@@ -3,6 +3,8 @@
 # Cada partida: escribe DATA\IA.INI (qué colores juegan con la IA de prueba y qué partida guardada cargar), abre
 # DarklordAV.exe, que carga sola SAVES\<partida>.SAV al llegar al menú principal (parche ia_menu), y espera:
 #   - DATA\IA_FIN.CSV con el podio del cartel "Game Over" (parche ia_fin)  -> estado "ok";
+#   - DATA\IA_VIC.CSV del cartel "An allied victory!" (parche ia_vic, solo aliados vivos: no hay Game Over ni podio,
+#     el juego espera Aceptar)  -> estado "ok", podio armado con la regla del juego;
 #   - el tope de turnos (--tope-turnos)                                       -> estado "tope", PV calculados acá;
 #   - IA.CSV sin crecer durante --cuelgue minutos, o el juego cerrado solo   -> estado "colgada" / "cerrada".
 # Después cierra el juego, pasa IA.CSV, IA_BAT.CSV e IA_FIN.CSV a ia\datos.db y los borra.
@@ -23,7 +25,7 @@ DATA = os.path.join(JUEGO, 'DATA')
 INI = os.path.join(DATA, 'IA.INI')
 CSV_T, CSV_B, CSV_F = (os.path.join(DATA, n) for n in ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV'))
 # Etapa 3 (alianzas, vista-aliada 1.0.33.0): diplomacia por turno y eventos (puentes, convoyes, refugios).
-CSV_D, CSV_E = (os.path.join(DATA, n) for n in ('IA_DIP.CSV', 'IA_EVT.CSV'))
+CSV_D, CSV_E, CSV_V = (os.path.join(DATA, n) for n in ('IA_DIP.CSV', 'IA_EVT.CSV', 'IA_VIC.CSV'))
 # Empaquetado en Monitor-IA.exe (ia\monitor-ia), el exe queda en ia\: la base y la configuración van junto a él.
 BASE = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 DB = os.path.join(BASE, 'datos.db')
@@ -45,6 +47,7 @@ COL_T = ['turno', 'color', 'ia', 'vivo', 'control', 'oro', 'ciudades', 'ejercito
 COL_B = (['turno', 'atacante', 'defensor', 'x', 'y', 'ciudad', 'resultado', 'ia_a', 'ia_d', 'n_a', 'n_d',
           'vivos_a', 'vivos_d'] + [f'a{i}' for i in range(17)] + [f'd{i}' for i in range(17)] + ['colores_d'])
 COL_F = ['turno', 'orden', 'puesto', 'color', 'ia', 'pv', 'ciudades', 'oro']
+COL_V = ['turno', 'color', 'ia', 'pv', 'ciudades', 'oro']
 # opciones: 1 ciudades compartidas, 2 Diplomacy, 4 Hidden Map, 8 vista aliada; d0..d7: 0 aliados, 1 paz, 2 guerra.
 COL_D = ['turno', 'color', 'opciones'] + [f'd{i}' for i in range(8)]
 COL_E = ['turno', 'color', 'ia', 'tipo', 'x', 'y', 'n']
@@ -177,6 +180,10 @@ def importar(db, pid, estado):
     db.executemany(f'insert into evento values (?{", ?" * len(COL_E)})', [[pid] + r for r in leer(CSV_E, len(COL_E))])
     # ia_fin corre cada vez que se dibuja el cartel: vale el primer bloque (orden 1, 2, ...).
     corte = next((k for k, r in enumerate(f) if k and r[1] == 1), len(f)); f = f[:corte]
+    v = leer(CSV_V, len(COL_V))
+    if not f and v:   # victoria aliada: vale el primer cartel; orden y puestos como el podio (por PV)
+        tabla = puestos([r for r in v if r[0] == v[0][0]], lambda r: r[3])
+        f = [[r[0], k + 1, -1 if k and p == tabla[k - 1][0] else p] + r[1:] for k, (p, r) in enumerate(tabla)]
     db.executemany(f'insert into turno values (?{", ?" * len(COL_T)})', [[pid] + r for r in t])
     db.executemany(f'insert into batalla values (?{", ?" * len(COL_B)})', [[pid] + r for r in b])
     ultimo = {}
@@ -204,7 +211,7 @@ def importar(db, pid, estado):
             db.execute('insert into resultado values (?,?,?,null,null,0,0,0,?)', (pid, c, u['ia'], u['turno'] + 1))
     db.execute('update partida set fin=?, estado=?, turnos=? where id=?', (ahora(), estado, turnos, pid))
     db.commit()
-    for ruta in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E):
+    for ruta in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E, CSV_V):
         if os.path.exists(ruta):
             os.remove(ruta)
     return turnos
@@ -402,7 +409,7 @@ def jugar(db, tid, n, p, a):
         silenciar(proc.pid, CONTROL['silenciar'])
         if CORTAR.is_set():
             estado = 'cortada'; break
-        if os.path.exists(CSV_F) and os.path.getsize(CSV_F) > 0:
+        if any(os.path.exists(r) and os.path.getsize(r) > 0 for r in (CSV_F, CSV_V)):
             time.sleep(3); estado = 'ok'; break
         s = os.path.getsize(CSV_T) if os.path.exists(CSV_T) else 0
         if s != tam:
@@ -468,7 +475,7 @@ def preparar(a):
     for (pid,) in db.execute("select id from partida where estado='jugando'").fetchall():
         importar(db, pid, 'cortada')
         print(f'Partida {pid} había quedado a medias: guardada como "cortada", se vuelve a jugar al retomar.')
-    if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E)):   # registros de una partida a mano: no se pierden
+    if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E, CSV_V)):   # registros de una partida a mano: no se pierden
         pid = db.execute('insert into partida (guardada, inicio, estado) values (?,?,?)',
                          ('(a mano)', ahora(), 'suelta')).lastrowid
         importar(db, pid, 'suelta')

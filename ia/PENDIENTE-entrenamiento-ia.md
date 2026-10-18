@@ -401,3 +401,19 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Conclusión del paso 2: la IA original no se refugia ni defiende en común. Sigue el paso 3 (spec de la destreza en
   la IA de prueba) y, antes de las tandas A/B, que la tanda apriete Aceptar en el cartel «victoria aliada».
 - Sonido: después de la tanda el juego abre sin silencio (medido con medir_mute leer). Monitor-IA 1.0.5 anda.
+
+### 18/10/2026: cartel «victoria aliada» atendido (vista-aliada 1.0.35.0, exe b392b261)
+- Causa, leída del exe: la rutina de fin 0x482570 abre el mismo cuadro (diálogo 0x2b, init 0x482c10) con la bandera
+  de victoria [0x571760] (aliada si [0x571758]) y sin Game Over ([0x57175c] = 0): textos 0xd3 de Sagetext ("Victory!
+  / An allied victory!"), sin podio. ia_fin está dentro del podio (0x482d70), así que nunca corría; después de
+  Aceptar la partida sigue.
+- Parche ia_vic (call 0x482c10 en 0x482790): con IA.INI, victoria y sin Game Over, calcula los PV con 0x440840 y
+  agrega a DATA\IA_VIC.CSV una línea por bando en juego: turno, color, ia, PV, ciudades, oro.
+- tanda.py: IA_VIC.CSV con datos = fin "ok" (cierra el juego, no espera el cuelgue); orden y puestos con la regla del
+  podio por PV (empate = mismo puesto, guardado como -1 igual que ia_fin); vale el primer cartel.
+- Probado: prueba_iaregistro.py (nuevo caso "victoria aliada", PV recalculados con la fórmula; con Game Over, sin
+  victoria y sin IA.INI no escribe) TODO OK en Tanda_Border_Alianzas, ABN_001-FIN, Aliados01, hide01 y
+  Tanda_Scarpart, contra el exe instalado. importar() probado en juguete (empate en el 2.º puesto, eliminado, CSV
+  borrados). Falta verlo en vivo: la primera tanda de alianzas que termine con solo aliados vivos.
+- Límite: el podio del juego ordena por la condición de victoria del escenario ([0x560e52]); ia_vic/tanda ordenan
+  siempre por PV. Las tandas usan PV (condición 0), así que coincide.

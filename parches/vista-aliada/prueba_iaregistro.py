@@ -1,7 +1,7 @@
 # Prueba emulada del registro de la IA (ia_turn / ia_snap): ejecuta el código parcheado real sobre el estado de
 # partidas guardadas, con fopen/fclose/fprintf/GetPrivateProfileStringA/_stricmp simulados, y compara cada línea con
 # un conteo independiente hecho en Python sobre el mismo .SAV.
-# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <ia_compu hex> <ia_evtb hex> <member hex> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
+# Uso: python prueba_iaregistro.py <DarklordAV.exe> <ia_turn hex> <turn hex> <ia_bat hex> <ia_fin hex> <ia_menu hex> <ia_compu hex> <ia_evtb hex> <member hex> <ia_on hex> <ia_mode hex> <ia_vic hex> <partida.SAV> [...]
 #   (las direcciones las imprime build.py en la línea "caves"; requiere pefile y unicorn)
 import pefile, struct, sys
 from unicorn import *
@@ -10,7 +10,8 @@ from unicorn.x86_const import *
 EXE, IA_TURN, TURN, IA_BAT = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
 IA_FIN, IA_MENU, IA_COMPU = int(sys.argv[5], 16), int(sys.argv[6], 16), int(sys.argv[7], 16)
 IA_EVTB, MEMBER, IA_ON_VA, IA_MODE_VA = (int(a, 16) for a in sys.argv[8:12])
-SAVS = sys.argv[12:]
+IA_VIC = int(sys.argv[12], 16)
+SAVS = sys.argv[13:]
 EXTRA = []   # (archivo, valores) de IA_DIP.CSV e IA_EVT.CSV
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, '_stricmp': 0x5a9be0, 'GetPrivateProfileStringA': 0x5a97e8}
@@ -223,6 +224,42 @@ for sav in SAVS[:1]:
     check(o == exp and ok_ and c[0] == 'fopen(.\\DATA\\IA_FIN.CSV,a)', f'IA_FIN: {o[:2]}... = esperado; sigue igual que el original')
     o, exp, c, ok_ = fin(sav, None)
     check(o == [] and c == [] and ok_, 'sin IA.INI: no abre ni escribe nada')
+# Victoria sin Game Over (cartel "An allied victory!"): ia_vic en la apertura del cartel escribe IA_VIC.CSV con los
+# bandos en juego y sigue a 0x482c10. Los PV los calcula el juego (0x440840); aquí se recalculan con la fórmula.
+def pv_formula(ci, heroes, oro):
+    o = oro if oro < 600 else 600 if oro <= 1000 else 600 + (oro - 1000) // 10
+    return max(0, min(100, ci + heroes + o // 100))
+def vic(sav, ini, vict, over):
+    def run(mu, out, calls):
+        out.clear(); calls.clear()
+        mu.mem_write(0x571760, bytes([vict])); mu.mem_write(0x57175c, bytes([over]))
+        sp = STK + 0x80000 - 64; mu.mem_write(sp, struct.pack('<II', 0xdead0000, 1)); mu.reg_write(UC_X86_REG_ESP, sp)
+        regs = {r: 0x44440000 + k for k, r in enumerate((UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP))}
+        for r, v in regs.items(): mu.reg_write(r, v)
+        mu.emu_start(IA_VIC, 0x482c10, count=5_000_000)
+        pres = (all(mu.reg_read(r) == v for r, v in regs.items()) and mu.reg_read(UC_X86_REG_ESP) == sp
+                and mu.reg_read(UC_X86_REG_EIP) == 0x482c10)
+        return out, calls, pres
+    o, c, pres = corrida(sav, ini, 27, 0, run)
+    m = load(sav); exp = []
+    for p in range(8):
+        pr = rd(m, 0x536b30 + p * 0x1f8, 0x1f8)
+        if pr[0] and pr[1]:
+            k = cuenta(m, p); nc = struct.unpack('<h', rd(m, 0x537e2a, 2))[0]
+            ci = sum(1 for j in range(nc) if rd(m, 0x537e2c + j * 0xde + 0xa5, 1)[0] == p and rd(m, 0x537e2c + j * 0xde + 0xa4, 1)[0] > 0)
+            exp.append([27, p, (p % 2) if ini is not None else 0, pv_formula(ci, k[5], k[2]), ci, k[2]])
+    return o, exp, c, pres
+for sav in SAVS[:1]:
+    print(sav, '(victoria aliada)'); ini = {f'Color{k}': ('prueba' if k % 2 else 'original') for k in range(8)}
+    o, exp, c, pres = vic(sav, ini, 1, 0)
+    check(o == exp and pres and c[0] == 'fopen(.\\DATA\\IA_VIC.CSV,a)', f'IA_VIC: {len(o)} bandos, {o[:2]}... = fórmula; sigue a 0x482c10')
+    if o != exp: print('      ', o, '\n      ', exp)
+    o, exp, c, pres = vic(sav, ini, 1, 1)
+    check(o == [] and c == [] and pres, 'con Game Over: no escribe (lo anota ia_fin)')
+    o, exp, c, pres = vic(sav, ini, 0, 0)
+    check(o == [] and c == [] and pres, 'sin victoria (derrota): no escribe')
+    o, exp, c, pres = vic(sav, None, 1, 0)
+    check(o == [] and c == [] and pres, 'sin IA.INI: no escribe')
 def compu(tanda):
     """ia_compu: con tanda, los bandos en Humano (-1) pasan a Computadora (2); sin tanda no cambia nada."""
     mu = Uc(UC_ARCH_X86, UC_MODE_32)

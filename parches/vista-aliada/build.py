@@ -8044,6 +8044,64 @@ if_back:
     jmp 0x482fdc
 ''')
 
+# Victoria sin Game Over (0x482570): cuando quedan solo aliados vivos, el juego abre el cartel "Victory! / An allied
+# victory!" (textos 0xd3) en vez del podio, espera Aceptar y la partida sigue: ia_fin no corre nunca y la tanda la daba
+# por colgada (partidas 126 y 134). En la apertura del cartel (call 0x482c10 en 0x482790), con IA.INI (ia_on),
+# victoria ([0x571760]) y sin Game Over ([0x57175c] = 0), calcula los PV como el podio (0x440840) y agrega a
+# DATA\IA_VIC.CSV una línea por bando en juego (+0 y +1 del registro distintos de 0, como 0x482da3): turno, color, ia,
+# PV, ciudades, oro. El orden y los puestos los arma la tanda con la regla del podio.
+IA_VCSV = place_data('ia_vcsv', cstr_(r'.\DATA\IA_VIC.CSV'))
+IA_VFMT = place_data('ia_vfmt', cstr_('%d,%d,%d,%d,%d,%d\n'))
+ia_vic = place('ia_vic', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je iv_back
+    cmp byte ptr [0x571760], 0
+    je iv_back
+    cmp byte ptr [0x57175c], 0
+    jne iv_back
+    pushad
+    call 0x440840
+    push {IA_A:#x}
+    push {IA_VCSV:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz iv_out
+    mov edi, eax
+    xor ebx, ebx
+iv_loop:
+    imul esi, ebx, 0x1f8
+    cmp byte ptr [esi + 0x536b30], 0
+    je iv_next
+    cmp byte ptr [esi + 0x536b31], 0
+    je iv_next
+    push dword ptr [esi + 0x536c14]
+    movsx eax, word ptr [ebx*2 + 0x536b20]
+    push eax
+    movsx eax, word ptr [ebx*2 + 0x5643c8]
+    push eax
+    movzx eax, byte ptr [ebx + {IA_MODE:#x}]
+    push eax
+    push ebx
+    movsx eax, word ptr [0x503328]
+    push eax
+    push {IA_VFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x20
+iv_next:
+    inc ebx
+    cmp ebx, 8
+    jb iv_loop
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+iv_out:
+    popad
+iv_back:
+    jmp 0x482c10
+''')
+
 
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
@@ -8089,6 +8147,7 @@ patch(0x4ed415, asm('test esi, esi; jne 0x4ed477; cmp byte ptr [0x501280], 0', 0
 # 2 GB, lo máximo que entra.
 patch(0x4e0799, rel(0x4e0799, 14), asm('mov esi, 0x7fffffff', 0x4e0799) + bytes([0x90]) * 9)
 patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
+patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {ia_vic:#x}', 0x482790))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))
