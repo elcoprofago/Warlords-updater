@@ -311,26 +311,34 @@ def silenciar(pid, mudo=True):
 
 def devolver_sonido():
     """Windows recuerda el silencio de cada programa (Mezclador de volumen): si el juego queda silenciado al cerrarse,
-    también arranca mudo en una partida normal (17/10/2026). Se borra esa marca de DarklordAV.exe en el registro."""
-    import winreg
-    raiz = r'Software\Microsoft\Internet Explorer\LowRegistry\Audio\PolicyConfig\PropertyStore'
-    exe = '\\' + os.path.splitdrive(JUEGO)[1].strip('\\').lower() + '\\' + EXE.lower() + '%b'
+    también arranca mudo en una partida normal (17/10/2026). El servicio de audio lo guarda en su memoria y lo vuelve
+    a escribir en el registro al cerrarse el juego: borrarlo del registro no alcanza (medido el 17/10/2026). Solo
+    sirve quitarlo con la sesión de audio viva, así que se abre el juego un momento, se le quita y se cierra.
+    Se llama al terminar la tanda, después de escribir_ini sin [Tanda], para que el juego no cargue nada."""
+    proc = None
     try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, raiz) as r:
-            for i in range(winreg.QueryInfoKey(r)[0]):
-                with winreg.OpenKey(r, winreg.EnumKey(r, i)) as e:
-                    if exe not in str(winreg.QueryValueEx(e, '')[0]).lower():
-                        continue
-                    for j in range(winreg.QueryInfoKey(e)[0]):
-                        with winreg.OpenKey(e, winreg.EnumKey(e, j), 0, winreg.KEY_ALL_ACCESS) as g:
-                            try:
-                                v, t = winreg.QueryValueEx(g, '5')   # silencio: VT_BOOL, 0xFFFF = silenciado
-                            except OSError:
-                                continue
-                            if v[:2] == b'\x0b\x00' and v[8:10] != b'\x00\x00':
-                                winreg.SetValueEx(g, '5', 0, t, v[:8] + b'\x00\x00' + v[10:])
-    except OSError as e:
+        from pycaw.pycaw import AudioUtilities
+        proc = subprocess.Popen([os.path.join(JUEGO, EXE)], cwd=JUEGO)
+        # La sesión aparece recién cuando el juego abre el sonido, y Windows le aplica el silencio guardado un
+        # momento después: se mira durante 8 s desde que aparece y se le quita cada vez que esté (medido el 17/10/2026).
+        desde = None
+        for _ in range(60):
+            time.sleep(0.3)
+            sesiones = [s for s in AudioUtilities.GetAllSessions() if s.ProcessId == proc.pid]
+            if sesiones:
+                desde = desde or time.time()
+                if sesiones[0].SimpleAudioVolume.GetMute():
+                    sesiones[0].SimpleAudioVolume.SetMute(0, None)
+                if time.time() - desde > 8:
+                    break
+        if desde is None:
+            print('  (no se pudo devolver el sonido del juego: no apareció su sesión de audio)', flush=True)
+    except Exception as e:
         print(f'  (no se pudo devolver el sonido del juego: {e})', flush=True)
+    finally:
+        if proc and proc.poll() is None:
+            proc.kill()
+            proc.wait()
 
 
 def apretar_un_jugador(pid):
@@ -408,7 +416,6 @@ def jugar(db, tid, n, p, a):
     if proc.poll() is None:
         silenciar(proc.pid, False)   # que no quede silenciado para una partida normal
     cerrar_juego()
-    devolver_sonido()
     time.sleep(2)
     turnos = importar(db, pid, estado)
     print(f'[{ahora()}]   -> {estado}, {turnos} turnos, {(time.time() - t0) / 60:.1f} min', flush=True)
@@ -427,8 +434,8 @@ def correr(db, tid, a):
         db.execute('update tanda set terminada=1 where id=?', (tid,)); db.commit()
         print(f'Tanda {tid} terminada. Informe: python ia\\informe.py {tid}')
     finally:
-        devolver_sonido()
         escribir_ini(set(), None)   # sin [Tanda]: abrir el juego a mano ya no carga nada solo
+        devolver_sonido()
 
 
 def main():

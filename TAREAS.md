@@ -6,15 +6,27 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
-2. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
-3. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
+1. **Tarea 20** (sonido): actualizar el Monitor de IA y fijarte en la próxima partida.
+2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
+3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
+4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
    (Votación y Sorteo): una sola partida sirve para las dos.
-4. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
+5. **Tarea 1**: el paso 7 ya está hecho; me toca a mí revisar esa tanda y cerrar el control (en una sesión
    aparte de la IA). No tenés que hacer nada hasta entonces.
-5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 20. Sonido del juego: volvió a faltar (17/10/2026)
+La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
+arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
+escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al terminar cada tanda abre el juego
+unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu juego.
+1. Actualizá el Monitor de IA (botón Actualizar): tiene que decir 1.0.5.
+2. En la próxima partida normal fijate si se oyen la música y los efectos.
+3. Después de la próxima tanda, abrí el juego a mano: también tiene que oírse.
+Si en algún caso no se oye, anotá cuál y avisame.
+Resultado:
 
 ## 19. Tailscale: segunda conexión del Puente para Nico (17/10/2026)
 El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
@@ -111,7 +123,7 @@ Resultado:
 
 # Resueltas
 
-## 16. [RESUELTA] Sonido del juego: comprobar que volvió (17/10/2026)
+## 16. [REABIERTA COMO LA 20] Sonido del juego: comprobar que volvió (17/10/2026)
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
 normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar cada partida.
 1. (Hecho: la 1.0.4 está compilada y publicada.)
