@@ -417,3 +417,11 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   borrados). Falta verlo en vivo: la primera tanda de alianzas que termine con solo aliados vivos.
 - Límite: el podio del juego ordena por la condición de victoria del escenario ([0x560e52]); ia_vic/tanda ordenan
   siempre por PV. Las tandas usan PV (condición 0), así que coincide.
+
+### 18/10/2026: etapa 3, paso 3: spec escrito (specs/ia-alianzas-v1.md)
+- Entrevista con el usuario: motivos de refugio (enemigo más fuerte a un turno, pila débil tras batalla, héroe con
+  misión de cazarla), salidas, quedarse hasta el final, refuerzo de ciudad aliada (a tiempo, o importante y aguanta;
+  5 criterios de importancia). La IA usa todo lo que sabe (sin limitar visión por ahora).
+- Medición: táctica, batalla por batalla; qué alianza gana se registra como dato secundario "con pinzas".
+- Próximo paso: construir según el spec, empezando por las preguntas abiertas (misión del héroe, fuerza de una pila).
+  Para retomar: "Seguimos con specs/ia-alianzas-v1.md: construir la destreza de alianzas".
