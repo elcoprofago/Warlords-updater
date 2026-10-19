@@ -50,7 +50,7 @@ la original, y en la partida siguiente al revés.
    **Tandas automatizadas**, serie de **2** tandas (la primera de las tres ya está: tanda 25, 19/10). La serie
    no cuenta las tandas ya corridas: siempre se pone las que faltan. **Nueva tanda**. Podés dejar prendida la
    suspensión: se suspende recién al terminar la última. En la bitácora, cada partida tiene que decir colores con IA de prueba
-   **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados, y entre tanda y tanda «Serie: tanda 1 de 3 terminada; arranca
+   **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados, y entre tanda y tanda «Serie: tanda 1 de 2 terminada; arranca
    la siguiente».
 2. Avisame cuando terminen las tres (24 partidas en total). Si una tanda se corta, la serie se detiene: apretá
    **Retomar** con el check tildado y la serie de las que falten.
