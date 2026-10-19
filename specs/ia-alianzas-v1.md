@@ -264,4 +264,20 @@ cambia nada.
 - Evento 17 (x, y = ciudad, n = tipo) cuando una pila cumple la orden, si hay IA.INI.
 - prueba_iaalianzas.py: TODO OK, con 13 casos nuevos (cada tipo, sin IA.INI, no llega, cumplida, vencida, contra
   el propio color, ya en la ciudad, y la cuenta de turnos en ia_turn con control de otro bando).
-- No publicado todavía: se publica junto con el paquete 0x2a2 y la barra «#n», que son los que lo hacen usable.
+- No publicado: se publica junto con el paquete 0x2a2 y la barra «#n» (1.0.41.0, abajo).
+
+## Dar la orden desde el juego: barra «#n» y paquete 0x2a2 (vista-aliada 1.0.41.0, 19/10/2026)
+- El humano escribe en la barra de chat «#n ORDEN», con n = número del bando aliado de la computadora (1 a 8):
+  «#n ataca CIUDAD» (nombre exacto), «#n ataca a BANDO» (número o nombre exacto) y «#n mandame refuerzos». Sin
+  distinguir mayúsculas; el verbo vale por sus 4 primeras letras («atacá» = «ataca»).
+- La barra original (0x409170) descartaba «#n» a un bando no humano (0x4091ea); ahí entra ch_ai. La PC del humano
+  interpreta la orden y la difunde como paquete 0x2a2 (bando que la da, bando que la recibe, tipo, objetivo), que un
+  Warlords sin parche descarta. El humano ve su propio texto; si no son aliados o la orden no se entiende, ve una
+  respuesta con el color del bando n («No somos aliados» o la lista de órdenes) solo en su pantalla.
+- Recepción (or_recv, en todas las PC): valida que quien la da sea humano de la máquina que mandó el paquete, que
+  el destino sea de la computadora, que sean aliados y el objetivo; llena OR_TAB con 3. La PC que corre ese bando
+  contesta con el chat nativo (0x1ac del bando de la computadora, solo a la máquina del humano): «Ok, ataco
+  CIUDAD», «Ok, ataco a BANDO», «Ok, te mando refuerzos». Ningún enemigo ve la orden ni la respuesta.
+- Todavía no hay «no puedo: MOTIVO»: si ninguna pila llega en 2 turnos, la IA sigue con lo suyo sin avisar.
+- prueba_chatordenes.py: 24 casos TODO OK (barra real 0x409170 con cada orden, errores y controles; recepción
+  válida en la PC del bando y en otra, siete rechazos y otro paquete que sigue a tl_recv).

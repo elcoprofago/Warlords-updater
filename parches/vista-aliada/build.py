@@ -8839,6 +8839,341 @@ or_no:
     leave
     jmp {ai_ally:#x}
 ''')
+# ---- Paquete 0x2a2 y barra de chat «#n» (ia\PENDIENTE-entrenamiento-ia.md, mensajes entre aliados).
+# La barra (0x409170) descarta «#n texto» si el bando n no es humano (salto en 0x4091ea). Ahí entra ch_ai: la PC del
+# humano interpreta la orden y la manda como OR_PKT (bando que la da, bando que la recibe, tipo, objetivo; 4 palabras),
+# que un Warlords sin parche descarta. Órdenes (sin distinguir mayúsculas; el verbo vale por sus 4 primeras letras,
+# así «atacá» y «ataca» son lo mismo):
+#   «#n ataca CIUDAD»      -> tipo 1, objetivo = la ciudad con ese nombre exacto;
+#   «#n ataca a BANDO»     -> tipo 2, objetivo = el bando de ese número (1 a 8) o con ese nombre exacto;
+#   «#n mandame refuerzos» -> tipo 3, objetivo = el bando que la da.
+# La PC del humano se muestra su propio texto (eco) y, si no son aliados o no entiende la orden, una respuesta con el
+# color del bando n solo en su pantalla (0x1ac con destino su máquina; nadie más lo ve).
+# or_recv (en todas las PC, por la difusión de 0x4dd3b0 con eco): si el que la da es humano de la máquina que la
+# mandó, el destino es de la computadora, son aliados y el objetivo es válido, llena OR_TAB con 3 (vale en los 2 turnos
+# siguientes del bando). La PC que corre ese bando (0x536b33) le contesta al humano con un 0x1ac del bando: se ve
+# con el chat nativo solo en la máquina del humano.
+OR_PKT = 0x2a2
+ch_buf = place_data('ch_buf', bytes(64))
+ch_out = place_data('ch_out', bytes(64))
+ch_k_atac = place_data('ch_k_atac', cstr_('atac'))
+ch_k_mand = place_data('ch_k_mand', cstr_('mand'))
+ch_t_help = place_data('ch_t_help', cstr_('Ordenes: ataca CIUDAD / ataca a BANDO / mandame refuerzos'))
+ch_t_ally = place_data('ch_t_ally', cstr_('No somos aliados'))
+ch_f = [place_data(f'ch_f{k}', cstr_(s)) for k, s in
+        enumerate(('Ok, ataco %s', 'Ok, ataco a %s', 'Ok, te mando refuerzos%s'), 1)]
+ch_ftab = place_data('ch_ftab', struct.pack('<3I', *ch_f))
+ch_empty = place_data('ch_empty', b'\0')
+# ch_msg(bando, texto) cdecl: 0x1ac del bando que solo se muestra en esta máquina.
+ch_msg = place('ch_msg', f'''
+    push ebp
+    mov ebp, esp
+    sub esp, 8
+    mov dword ptr [ebp - 8], 0
+    mov dword ptr [ebp - 4], 0
+    call 0x4dd3a0
+    movsx eax, ax
+    mov byte ptr [ebp + eax - 8], 1
+    push dword ptr [ebp + 0xc]
+    lea eax, [ebp - 8]
+    push eax
+    push dword ptr [ebp + 8]
+    call 0x4ba990
+    add esp, 0xc
+    leave
+    ret
+''')
+# ch_pre(texto, clave) cdecl -> eax = 1 si el texto empieza con la clave (en minúsculas), sin distinguir mayúsculas.
+ch_pre = place('ch_pre', f'''
+    mov ecx, dword ptr [esp + 4]
+    mov edx, dword ptr [esp + 8]
+cp_lp:
+    mov al, byte ptr [edx]
+    test al, al
+    jz cp_yes
+    mov ah, byte ptr [ecx]
+    or ah, 0x20
+    cmp ah, al
+    jne cp_no
+    inc ecx
+    inc edx
+    jmp cp_lp
+cp_yes:
+    mov eax, 1
+    ret
+cp_no:
+    xor eax, eax
+    ret
+''')
+# ch_order(n, texto) cdecl: texto = lo que sigue a «#n». Preserva ebx esi edi ebp.
+ch_order = place('ch_order', f'''
+    push ebp
+    mov ebp, esp
+    sub esp, 8
+    push ebx
+    push esi
+    push edi
+    movsx ebx, word ptr [0x537ce8]
+    mov edi, dword ptr [ebp + 8]
+    push dword ptr [ebp + 0xc]
+    push ebx
+    call {ch_msg:#x}
+    add esp, 8
+    imul eax, ebx, 56
+    cmp byte ptr [eax + edi + {DIPLO:#x}], 0
+    jne co_notally
+    mov esi, dword ptr [ebp + 0xc]
+co_sk:
+    cmp byte ptr [esi], 0x20
+    jne co_skd
+    inc esi
+    jmp co_sk
+co_skd:
+    push {ch_k_atac:#x}
+    push esi
+    call {ch_pre:#x}
+    add esp, 8
+    test eax, eax
+    jnz co_w
+    push {ch_k_mand:#x}
+    push esi
+    call {ch_pre:#x}
+    add esp, 8
+    test eax, eax
+    jz co_bad
+    mov ecx, 3
+    mov edx, ebx
+    jmp co_send
+co_w:
+    mov al, byte ptr [esi]
+    test al, al
+    jz co_bad
+    cmp al, 0x20
+    je co_ws
+    inc esi
+    jmp co_w
+co_ws:
+    inc esi
+    cmp byte ptr [esi], 0x20
+    je co_ws
+    xor ecx, ecx
+co_cp:
+    mov al, byte ptr [esi + ecx]
+    mov byte ptr [ecx + {ch_buf:#x}], al
+    test al, al
+    jz co_tr
+    inc ecx
+    cmp ecx, 63
+    jb co_cp
+    mov byte ptr [ecx + {ch_buf:#x}], 0
+co_tr:
+    test ecx, ecx
+    jz co_bad
+    cmp byte ptr [ecx + {ch_buf - 1:#x}], 0x20
+    jne co_city0
+    dec ecx
+    mov byte ptr [ecx + {ch_buf:#x}], 0
+    jmp co_tr
+co_city0:
+    xor esi, esi
+co_cl:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge co_side
+    imul eax, esi, 0xde
+    cmp byte ptr [eax + {CITIES + 0xa4:#x}], 0
+    je co_cn
+    add eax, {CITIES + 4:#x}
+    push eax
+    push {ch_buf:#x}
+    call dword ptr [{STRICMP:#x}]
+    add esp, 8
+    test eax, eax
+    jz co_city
+co_cn:
+    inc esi
+    jmp co_cl
+co_city:
+    mov ecx, 1
+    mov edx, esi
+    jmp co_send
+co_side:
+    mov al, byte ptr [{ch_buf:#x}]
+    or al, 0x20
+    cmp al, 0x61
+    jne co_bad
+    cmp byte ptr [{ch_buf + 1:#x}], 0x20
+    jne co_bad
+    mov esi, {ch_buf + 2:#x}
+co_ss:
+    cmp byte ptr [esi], 0x20
+    jne co_ssd
+    inc esi
+    jmp co_ss
+co_ssd:
+    movzx edx, byte ptr [esi]
+    sub edx, 0x31
+    cmp edx, 7
+    ja co_sname
+    cmp byte ptr [esi + 1], 0
+    je co_sok
+co_sname:
+    xor edx, edx
+co_sl:
+    imul eax, edx, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je co_sn
+    add eax, 0x536b34
+    push edx
+    push eax
+    push esi
+    call dword ptr [{STRICMP:#x}]
+    add esp, 8
+    pop edx
+    test eax, eax
+    jz co_sok
+co_sn:
+    inc edx
+    cmp edx, 8
+    jb co_sl
+    jmp co_bad
+co_sok:
+    imul eax, edx, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je co_bad
+    cmp edx, ebx
+    je co_bad
+    mov ecx, 2
+co_send:
+    mov word ptr [ebp - 8], bx
+    mov word ptr [ebp - 6], di
+    mov word ptr [ebp - 4], cx
+    mov word ptr [ebp - 2], dx
+    push 8
+    lea eax, [ebp - 8]
+    push eax
+    push {OR_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+    jmp co_end
+co_notally:
+    push {ch_t_ally:#x}
+    push edi
+    call {ch_msg:#x}
+    add esp, 8
+    jmp co_end
+co_bad:
+    push {ch_t_help:#x}
+    push edi
+    call {ch_msg:#x}
+    add esp, 8
+co_end:
+    pop edi
+    pop esi
+    pop ebx
+    leave
+    ret
+''')
+# Reemplaza «jne 0x409317» en 0x4091ea (ebp = «#n...», el bando n está activo y no es humano).
+ch_ai = place('ch_ai', f'''
+    pushad
+    lea eax, [ebp + 2]
+    push eax
+    movzx eax, byte ptr [ebp + 1]
+    sub eax, 0x31
+    push eax
+    call {ch_order:#x}
+    add esp, 8
+    popad
+    jmp 0x409317
+''')
+# Recepción (reemplaza «ja 0x4b85bb» en 0x4b6a22, antes que tl_recv; eax = tipo + 8, esi = paquete: +6 máquina que
+# lo mandó, +0xc carga).
+or_recv = place('or_recv', f'''
+    cmp eax, {OR_PKT + 8:#x}
+    jne {tl_recv:#x}
+    pushad
+    movsx ebx, word ptr [esi + 0xc]
+    movsx edi, word ptr [esi + 0xe]
+    cmp ebx, 8
+    jae orr_x
+    cmp edi, 8
+    jae orr_x
+    imul eax, ebx, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je orr_x
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    jne orr_x
+    movzx ecx, byte ptr [eax + {SIDE_MACHINE:#x}]
+    movsx edx, word ptr [esi + 6]
+    cmp ecx, edx
+    jne orr_x
+    imul eax, edi, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je orr_x
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    je orr_x
+    imul eax, ebx, 56
+    cmp byte ptr [eax + edi + {DIPLO:#x}], 0
+    jne orr_x
+    movzx ecx, word ptr [esi + 0x10]
+    movsx edx, word ptr [esi + 0x12]
+    cmp ecx, 1
+    jne orr_2
+    movsx eax, word ptr [0x537e2a]
+    cmp edx, eax
+    jae orr_x
+    imul eax, edx, 0xde
+    add eax, {CITIES + 4:#x}
+    jmp orr_ok
+orr_2:
+    cmp ecx, 2
+    jne orr_3
+    cmp edx, 8
+    jae orr_x
+    imul eax, edx, {SIDE:#x}
+    add eax, 0x536b34
+    jmp orr_ok
+orr_3:
+    cmp ecx, 3
+    jne orr_x
+    cmp edx, ebx
+    jne orr_x
+    mov eax, {ch_empty:#x}
+orr_ok:
+    mov byte ptr [edi*8 + {OR_TAB:#x}], cl
+    mov byte ptr [edi*8 + {OR_TAB + 1:#x}], 3
+    mov word ptr [edi*8 + {OR_TAB + 2:#x}], dx
+    mov byte ptr [edi*8 + {OR_TAB + 4:#x}], bl
+    mov esi, eax
+    mov ebp, ecx
+    call 0x4dd3a0
+    movsx eax, ax
+    imul ecx, edi, {SIDE:#x}
+    movzx ecx, byte ptr [ecx + {SIDE_MACHINE:#x}]
+    cmp eax, ecx
+    jne orr_x
+    push esi
+    push dword ptr [ebp*4 + {ch_ftab - 4:#x}]
+    push {ch_out:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    sub esp, 8
+    mov dword ptr [esp], 0
+    mov dword ptr [esp + 4], 0
+    imul eax, ebx, {SIDE:#x}
+    movzx eax, byte ptr [eax + {SIDE_MACHINE:#x}]
+    mov byte ptr [esp + eax], 1
+    mov eax, esp
+    push {ch_out:#x}
+    push eax
+    push edi
+    call 0x4ba990
+    add esp, 0x14
+orr_x:
+    popad
+    jmp 0x4b85bb
+''')
 # al_surv(p) cdecl, desde ia_turn: por cada pila de p anotada como amenazada en un turno anterior, evento 12 con
 # x, y donde estaba y n = 1 si su líder sigue vivo y es de p, 0 si no. Preserva todo.
 al_surv = place('al_surv', f'''
@@ -9398,6 +9733,8 @@ def rel(va, n):  # bytes originales
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
+assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
+patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
@@ -9534,7 +9871,7 @@ assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
 patch(0x46e892, asm('ja 0x46ed83', 0x46e892), asm(f'ja {tl_setclick:#x}', 0x46e892))
 assert rel(0x46ed83, 7) == bytes.fromhex('6633c05d5f5e5b')
 assert rel(0x4b6a16, 12) == bytes.fromhex('0fbf460483c0083d11020000')
-patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tl_recv:#x}', 0x4b6a22))
+patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {or_recv:#x}', 0x4b6a22))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
 patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
 assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')

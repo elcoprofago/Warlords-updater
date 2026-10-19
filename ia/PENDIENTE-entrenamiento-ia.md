@@ -563,4 +563,12 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   specs/ia-alianzas-v1.md, «Órdenes del humano». prueba_iaalianzas.py TODO OK.
 - Próximo paso: el paquete 0x2a2 (humano -> máquina que corre la IA; llena OR_TAB con 3 turnos) y la barra «#n»
   que interpreta «atacá CIUDAD / atacá a COLOR / mandame refuerzos» y confirma con un 0x1ac de la IA; después
-  publicar. Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md: paquete 0x2a2 y barra #n".
+  publicar. (Hecho, abajo.)
+- Hecho (vista-aliada 1.0.41.0, 19/10/2026, sin instalar ni publicar): barra «#n» y paquete 0x2a2; detalle en
+  specs/ia-alianzas-v1.md, «Dar la orden desde el juego». prueba_chatordenes.py TODO OK. No se instaló en
+  C:\Warlords3 porque la tanda de la tarea 21 estaba corriendo con 1.0.39.0 (la 1.0.41.0 no cambia la IA sin
+  órdenes, pero pisar el exe en plena tanda la corta).
+- Próximo paso: cuando termine la tanda 21, `python parches\vista-aliada\build.py` (instala en C:\Warlords3) y
+  `.\tools\publicar-parche.ps1 vista-aliada`; después el usuario prueba en red (TAREAS 22). Pendiente de diseño:
+  la respuesta «no puedo: MOTIVO» y la segunda etapa (pedidos de la IA, oro por Bribe). Para retomar: "Seguimos
+  con PENDIENTE-entrenamiento-ia.md: instalar y publicar 1.0.41.0".

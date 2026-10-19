@@ -11,10 +11,31 @@ Sorteo están acá (tarea 18).
 2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
 3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
 4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
-   (Votación y Sorteo): una sola partida sirve para las dos.
+   (Votación y Sorteo): una sola partida sirve para las dos. Si en esa partida hay un aliado de la computadora,
+   también la **tarea 22** (órdenes por chat).
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 22. Órdenes por chat a un aliado de la computadora (19/10/2026)
+Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
+ese aliado: los enemigos no se enteran.
+**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** (la publico cuando termine la
+tanda de la tarea 21). Tienen que tenerla todas las PC de la partida.
+1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
+2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
+3. En la barra de chat escribí, de a uno:
+   - `#3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
+   - `#3 ataca a 5` (el número del bando enemigo; también vale su nombre);
+   - `#3 mandame refuerzos`.
+   Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
+   refuerzos».
+4. Escribí `#3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
+   tiene que contestar «No somos aliados».
+5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
+   ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
+   (no tendría que haber visto nada).
+Resultado:
 
 ## 21. IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
 **Retomada (19/10/2026) con vista-aliada 1.0.39.0**, ya instalado en C:\Warlords3. Las tandas 22 a 24 son de
