@@ -62,9 +62,13 @@ usar el bono "trap" en una etapa posterior).
   contador global [0x4fe5e8] gira 0..9 y **solo descubre en radio de cada 10 pasos**; descubre la primera ruina
   oculta no vista a **distancia (|dx|+|dy|) ≤ radio**. Llama 0x4a1c10(jugador, ruina, 2, texto) (pone el bit,
   0x441290, mensaje) y 0x4a2170 (redibujar).
-- **radio = word [0x56eaae + p·0x4f0]** (+0x1e del grupo en movimiento): es el **mismo radio de visión** que despeja el
-  Hidden Map en ese paso (0x441f30 en 0x49cd80). Viene en el paquete de movimiento (copia en 0x4b7d6e → 0x497930).
-  El valor numérico concreto (depende de las unidades) no lo calculé; no hace falta: el pozo usa el mismo campo.
+- **radio = word [0x56eaae + p·0x4f0]** (+0x1e del grupo en movimiento), el mismo que despeja el Hidden Map en ese
+  paso (0x441f30 en 0x49cd80). **Corrección (19/10, a pedido del usuario):** no es un "rango visual" amplio. Lo calcula
+  0x486290 (0x486b71..0x487185): el mayor de ((word +0xe del ejército) & 0xe) >> 1 entre los del grupo, más las
+  habilidades "View" (0x17) y "View (group)" (0x18), **+2 solo si el jugador es la computadora** ([0x536c12] ≠ -1), con
+  tope **entre 1 y 7**. Para un humano sin "View" queda en 1 o poco más: coincide con lo que el usuario ve en el juego
+  ("casi tropezando, uno o dos casilleros"). No leí el valor base de cada tipo de unidad.
+  **Decisión: el pozo usa el mismo campo y la misma regla (radio y chance radio/10 por paso).**
 
 ### Caer: matar sin batalla y sonido
 - **0x485610(jugador, ejército, 1, 0, 1, 0)** ahoga a todos los de una casilla y da el aviso: es lo que ya usa el
@@ -85,9 +89,16 @@ usar el bono "trap" en una etapa posterior).
 - Costo de una ciudad: [0x56950e] (lo que cuesta reconstruir un puente).
 - Invisibles: solo los ve su dueño (0x414dbd); para la trampa hay que sumar a los aliados (como la vista aliada).
 
+## Decisiones del usuario (19/10/2026, segunda ronda)
+- Opciones de partida: las mismas Hidden Ruins / Discover Ruins. Sonido: RuinDie/RuinDie2 al azar.
+- Dibujos: para las pruebas, el de la ruina (PICTS\RUINS.PCX); el dibujo propio se edita después.
+- Costo de la trampa: el de una ciudad ([0x56950e]); menos haría el escenario intransitable.
+- **Remolino: el barco se hunde igual que con el comando "disband"** (con lo que lleve encima). Falta ubicar la rutina.
+- Guardado en el SAV y por red: decisión técnica mía.
+
 ## Falta averiguar
 - Rutina de dibujo de ruinas en el mapa principal y su hoja.
-- Hundir un barco con carga (remolino) sin batalla.
+- La rutina del comando "disband" (para el remolino).
 - Dónde guardar pozos/remolinos/trampas para que viajen en el SAV y por red (¿registros extra de la tabla de ruinas
   con un tipo nuevo? la tabla tiene tope: ver cuántas entradas admite).
 
