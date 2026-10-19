@@ -79,9 +79,8 @@ usar el bono "trap" en una etapa posterior).
   héroe en ruina; "al azar" = g aleatorio. (Ningún llamado directo con 7 en el exe original.)
 
 ### Dibujos
-- PICTS\RUINS.PCX (700×268): 3 filas × 8 cuadros; fila 1 cerrada, fila 2 abierta (explorada), fila 3 un aro. Es el
-  modelo para "sin activar / detonada". Falta confirmar qué rutina dibuja las ruinas en el mapa principal y con qué
-  hoja/cuadro según el tipo +0x94 (la del diálogo de ruina es el dibujo 0x51 / la hoja 0x4f).
+- **Corrección (19/10, tercera ronda):** PICTS\RUINS.PCX no es el dibujo de las ruinas: es solo la base de la hoja 0x4f
+  ("picts\ruins" en mpwar3.res), que el juego **rearma en memoria** al cargar. Ver "Dibujo de ruinas en el mapa" abajo.
 - Animación en agua para el remolino: falta buscar un modelo (TERRAIN\DATA\*anim*.PCX, cit_anim, dnganim).
 
 ### Ya resuelto por el parche (sirve tal cual)
@@ -96,11 +95,57 @@ usar el bono "trap" en una etapa posterior).
 - **Remolino: el barco se hunde igual que con el comando "disband"** (con lo que lleve encima). Falta ubicar la rutina.
 - Guardado en el SAV y por red: decisión técnica mía.
 
-## Falta averiguar
-- Rutina de dibujo de ruinas en el mapa principal y su hoja.
-- La rutina del comando "disband" (para el remolino).
-- Dónde guardar pozos/remolinos/trampas para que viajen en el SAV y por red (¿registros extra de la tabla de ruinas
-  con un tipo nuevo? la tabla tiene tope: ver cuántas entradas admite).
+## Averiguado en el exe (19/10/2026, tercera ronda)
+### Dibujo de ruinas en el mapa
+- **Tipos de ruina = archivos RUINS\<tipo>.RUI** (10 bytes: nombre de 9 + 1 bandera). 0x42fab0 lee **hasta 8** (bucle
+  `di < 8`) y guarda los nombres en 0x55ac64 (10 bytes cada uno; la bandera queda en +9 = 0x55ac6d). Hoy hay 8: cave,
+  henge, monolith, ruin_lrg, ruin_sml, tomb, tower, trapdoor → **no queda lugar libre para un tipo nuevo**.
+- Cada RUINS\<tipo>.PCX (262×250) trae arriba tres cuadros de 87×88 (en x = 1, 0x58, 0xaf: intacta, ?, explorada; en
+  trapdoor, puerta cerrada / abierta) y abajo la lámina del diálogo de exploración.
+- 0x42fbf0 arma la hoja 0x4f: por cada tipo i copia con 0x4dd490 (hoja 0x51 = el PCX del tipo) esos tres cuadros a
+  la columna x = i·87+1, filas y = 1, 0x5a, 0xb3.
+- Al armar el mapa (0x431c85) cada ruina se **sella en la casilla** (10 bytes en 0x503e58): palabra +2 bits 8-10 =
+  clase de cosa (**2 = ruina**, 4 = sitio; 0x436f73 también distingue 3); palabra +8 = byte bajo máscara de quién la
+  descubrió, bit 0x100 explorada, **bits 9-11 tipo (3 bits → 8 tipos)**. Los sitios (0x55acb4) usan la misma casilla.
+- El dibujo no lee la tabla: 0x4593f0 copia la casilla a celdas de vista de 0x1c bytes (+0 clase en bits 0x1c00,
+  8 = ruina; +0xe máscara, se compara con el bit del jugador que mira [0x560b20]; +0x16 "hay ruina", +0x17 byte
+  empaquetado) y **0x45c0e0** (llamada desde 0x459b90 y 0x45a02d) la dibuja de la hoja 0x4f con el byte empaquetado:
+  bits 5-7 tipo (x = tipo·0x57), bit 0x10 explorada (fila y = 1 o 0x5a), nibble bajo = qué cuarto del ícono va en esa
+  casilla (0..8; el ícono ocupa unas 2×2 casillas de 48).
+- Bandera +9 del .RUI (0x45a012): si no es 0, la ruina **explorada no se dibuja** (monolith la tiene en 1). Sirve de
+  modelo para "detonada" si se quiere que desaparezca, aunque el usuario pidió dibujo con fogonazo.
+- Consecuencia para el diseño: el pozo/remolino/trampa **no entra como un 9.º tipo de ruina** sin ensanchar el campo
+  de 3 bits (y la hoja 0x4f de 700 px de ancho ya está llena con 8 columnas de 87). Alternativas: otra clase de cosa
+  en la palabra +2 de la casilla (ver qué valores libres hay: 0, 1, 3, 5..7) con su propio dibujo, o reutilizar uno de
+  los 8 tipos. Decisión técnica pendiente al diseñar.
+
+### Disband (para el remolino)
+- Tecla BACKSPACE ("Disband Group", acción 19 de keys.w3); textos Sagetext grupo 0xfb (pregunta) y 0xfc (aviso).
+- Confirmado en 0x46cf80: copia los ejércitos del grupo seleccionado (0x56ea94 + p·0x4f0, cantidad 0x56eaa8), manda la
+  orden **0x146** (0x4b9020, vacía la pila) y por cada ejército la orden **0x199** (0x4ba530). Todo va por red.
+- El anfitrión recibe 0x199 (0x4b780d; los demás la ignoran por 0x4dd3a0) y la reenvía a todos como **0x1ca**
+  (0x4ba560); cada PC la aplica en 0x4b7e62 → **0x46d050(ejército)**: si es héroe (tipo & 0x1f == 0x10) marca
+  [0x536bf4 + jugador·0x1f8], luego **0x46c470(ejército, 1)** y 0x441290.
+- Ahogar (0x485610, puentes) usa la misma 0x46c470 pero con **0** y filtra con 0x43c240 (deja fuera voladores y
+  embarcados). El 2.º argumento solo cambia la rama de los **héroes** (0x46c54c); no la descifré (probablemente qué pasa
+  con sus objetos). Para el remolino: matar con 0x46c470 a todos los no voladores de la casilla, **embarcados
+  incluidos** (sin el filtro 0x43c240); con 1 imita al disband.
+- Despachador de órdenes: 0x4b69e0, tabla de bytes 0x4b892c (índice tipo+8) → tabla de saltos 0x4b85c4.
+
+### SAV y red
+- **SAV**: 0x439940 escribe bloques fijos con 0x4dfd70; entre ellos **0x536b30, 0x2d894 bytes** (hasta 0x5643c4),
+  que contiene la cantidad de ruinas (0x558872) y la tabla entera. Además el mapa 0x503e58 (0x32000 bytes), así que lo
+  sellado en la casilla también se guarda.
+- **Red**: al empezar, el anfitrión manda la partida en bloques (0x4aa170.., paquetes de 0x100 bytes con 0x4aa2c0); la
+  tabla de ruinas es el bloque 5 (cantidad·0xb8 bytes) y el receptor la guarda en 0x4aa3b5. 0x4aa590 la suma a la
+  comprobación de sincronía.
+- **Tope de la tabla: 50 ruinas** (0x558874 a 0x55ac64 = 0x23f0 = 50 × 0xb8, justo antes de los nombres de tipos).
+- Consecuencia: registros extra en la tabla de ruinas viajan solos en el SAV y por red, pero comparten el tope de 50
+  con las ruinas del mapa, y todo el código que recorre la tabla (búsqueda de héroes, IA "Goto Ruin", informes) los
+  vería como ruinas: habría que filtrarlos en cada lugar. Una tabla propia evita eso pero hay que sumarla a mano al
+  SAV (0x439940 y su lector), al envío inicial (0x4aa170 / 0x4aa390) y a la suma de sincronía. Las trampas creadas
+  durante la partida, además, necesitan una orden de red propia (como 0x2a2). Decisión técnica pendiente al diseñar.
 
 ## Estado
-Averiguado lo de arriba; nada programado. Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, falta averiguar".
+Averiguado todo lo que estaba pendiente; nada programado. Próximo paso: diseñar (dónde viven los datos, clase de casilla
+y dibujo). Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, diseño".
