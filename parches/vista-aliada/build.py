@@ -7059,6 +7059,241 @@ pol_end:
     ret
 ''')
 
+# Generación (partida nueva): al terminar de ocultar ruinas (0x4a1961, corre en toda partida nueva) se vacía la tabla
+# y, con Hidden Ruins, se reparten pozos y remolinos con el generador del juego (0x4deb20: n dados de 1..max + suma).
+# Cantidad de cada uno: 20 % de las ruinas, mínimo 1, como mucho PO_MAX/2; PO_TRIES tiros por cada uno (si el mapa
+# no tiene casillas válidas, quedan menos). Casilla válida: libre en po_map, sin edificio (palabra 0 & 0x4000), sin
+# estructura ([+3] & 7) ni cosa (palabra +2 bits 8-10: camino, puente, ruina, ciudad, sitio). Pozo: clase de terreno
+# (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
+# activo. Remolino: clase agua. pg_ok: esi = x, edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
+PO_TRIES = 400
+po_q = place_data('po_q', bytes(4))
+po_k = place_data('po_k', bytes(4))
+po_gen = place('po_gen', f'''
+    pushad
+    mov dword ptr [{PO_N:#x}], 0
+    test byte ptr [0x53c393], 0x10
+    jz pg_end
+    movsx eax, word ptr [0x558872]
+    imul eax, eax, 20
+    cdq
+    mov ecx, 100
+    idiv ecx
+    test eax, eax
+    jg pg_q1
+    mov eax, 1
+pg_q1:
+    cmp eax, {PO_MAX // 2}
+    jle pg_q2
+    mov eax, {PO_MAX // 2}
+pg_q2:
+    mov dword ptr [{po_q:#x}], eax
+    xor ebp, ebp
+pg_tipo:
+    mov ebx, dword ptr [{po_q:#x}]
+    mov dword ptr [{po_k:#x}], {PO_TRIES}
+pg_try:
+    test ebx, ebx
+    jz pg_tnext
+    dec dword ptr [{po_k:#x}]
+    js pg_tnext
+    push -1
+    movsx eax, word ptr [0x503e00]
+    push eax
+    push 1
+    call 0x4deb20
+    add esp, 12
+    movsx esi, ax
+    push -1
+    movsx eax, word ptr [0x503e02]
+    push eax
+    push 1
+    call 0x4deb20
+    add esp, 12
+    movsx edi, ax
+    call pg_ok
+    jnz pg_try
+    mov eax, dword ptr [{PO_N:#x}]
+    lea edx, [eax*8 + {PO_TAB:#x}]
+    mov word ptr [edx], si
+    mov word ptr [edx + 2], di
+    mov ecx, ebp
+    mov byte ptr [edx + 4], cl
+    mov byte ptr [edx + 5], 0
+    mov byte ptr [edx + 6], 0
+    mov byte ptr [edx + 7], 0xff
+    inc eax
+    mov dword ptr [{PO_N:#x}], eax
+    call {po_rebuild:#x}
+    dec ebx
+    jmp pg_try
+pg_tnext:
+    inc ebp
+    cmp ebp, {PO_REMOLINO}
+    jle pg_tipo
+pg_end:
+    call {po_rebuild:#x}
+    popad
+    xor si, si
+    cmp word ptr [0x558872], si
+    jle 0x4a103c
+    jmp 0x4a1971
+
+pg_ok:
+    pushad
+    test esi, esi
+    jl pk_no
+    test edi, edi
+    jl pk_no
+    cmp si, word ptr [0x503e00]
+    jge pk_no
+    cmp di, word ptr [0x503e02]
+    jge pk_no
+    mov cl, byte ptr [0x503e06]
+    mov eax, edi
+    shl eax, cl
+    add eax, esi
+    cmp eax, {PO_MAPSZ}
+    jae pk_no
+    cmp byte ptr [eax + {po_map:#x}], 0
+    jne pk_no
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    lea eax, [eax + edx*2 + 0x503e58]
+    movzx edx, word ptr [eax]
+    test dh, 0x40
+    jnz pk_no
+    test byte ptr [eax + 3], 7
+    jnz pk_no
+    test word ptr [eax + 2], 0x700
+    jnz pk_no
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    movsx edx, word ptr [edx + 0x535f0c]
+    cmp ebp, {PO_REMOLINO}
+    je pk_agua
+    cmp edx, 1
+    je pk_no
+    cmp edx, 4
+    je pk_no
+    xor ebx, ebx
+pk_cap:
+    imul eax, ebx, 0x1f8
+    cmp byte ptr [eax + 0x536b30], 0
+    je pk_capn
+    cmp byte ptr [eax + 0x536b31], 0
+    je pk_capn
+    movsx eax, word ptr [eax + 0x536c22]
+    test eax, eax
+    jl pk_capn
+    cmp ax, word ptr [0x537e2a]
+    jge pk_capn
+    imul eax, eax, 0xde
+    movsx ecx, word ptr [eax + 0x537e2c]
+    sub ecx, esi
+    cmp ecx, -2
+    jl pk_capn
+    cmp ecx, 2
+    jg pk_capn
+    movsx ecx, word ptr [eax + 0x537e2e]
+    sub ecx, edi
+    cmp ecx, -2
+    jl pk_capn
+    cmp ecx, 2
+    jle pk_no
+pk_capn:
+    inc ebx
+    cmp ebx, 8
+    jl pk_cap
+    jmp pk_si
+pk_agua:
+    cmp edx, 1
+    jne pk_no
+pk_si:
+    popad
+    cmp eax, eax
+    ret
+pk_no:
+    popad
+    or esp, esp
+    ret
+''')
+
+# Al empezar (0x42ddc1, antes de 0x4a1e20, que hace lo mismo con las ruinas): con Hidden Ruins, cada jugador activo
+# descubre los de la región (byte bajo de la palabra +2 de la casilla, distinto de 0) de su capital.
+po_start = place('po_start', f'''
+    pushad
+    test byte ptr [0x53c393], 0x10
+    jz ps_end
+    xor ebx, ebx
+ps_pl:
+    imul eax, ebx, 0x1f8
+    cmp byte ptr [eax + 0x536b30], 0
+    je ps_pln
+    cmp byte ptr [eax + 0x536b31], 0
+    je ps_pln
+    movsx eax, word ptr [eax + 0x536c22]
+    test eax, eax
+    jl ps_pln
+    cmp ax, word ptr [0x537e2a]
+    jge ps_pln
+    imul eax, eax, 0xde
+    movsx esi, word ptr [eax + 0x537e2c]
+    movsx edi, word ptr [eax + 0x537e2e]
+    call ps_reg
+    test eax, eax
+    jz ps_pln
+    mov ebp, eax
+    xor edx, edx
+ps_po:
+    cmp edx, dword ptr [{PO_N:#x}]
+    jae ps_pln
+    movsx esi, word ptr [edx*8 + {PO_TAB:#x}]
+    movsx edi, word ptr [edx*8 + {PO_TAB:#x} + 2]
+    call ps_reg
+    cmp eax, ebp
+    jne ps_pon
+    mov cl, bl
+    mov al, 1
+    shl al, cl
+    or byte ptr [edx*8 + {PO_TAB:#x} + 6], al
+ps_pon:
+    inc edx
+    jmp ps_po
+ps_pln:
+    inc ebx
+    cmp ebx, 8
+    jl ps_pl
+ps_end:
+    popad
+    jmp 0x4a1e20
+
+ps_reg:
+    xor eax, eax
+    test esi, esi
+    jl pr_end
+    test edi, edi
+    jl pr_end
+    cmp si, word ptr [0x503e00]
+    jge pr_end
+    cmp di, word ptr [0x503e02]
+    jge pr_end
+    push ecx
+    push edx
+    mov cl, byte ptr [0x503e06]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    movzx eax, byte ptr [eax + edx*2 + 0x503e5a]
+    pop edx
+    pop ecx
+pr_end:
+    ret
+''')
+
 # Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
 vt_savef = place('vt_savef', f'''
     push ecx
@@ -9991,6 +10226,8 @@ assert rel(0x439c84, 6) == asm('lea ecx, [ebp - 0x12c]', 0x439c84)
 patch(0x439c8a, asm('call 0x4dfdc0', 0x439c8a), asm(f'call {vt_savef:#x}', 0x439c8a))
 assert rel(0x439fdc, 6) == asm('lea ecx, [ebp - 0x120]', 0x439fdc)
 patch(0x43a00b, asm('push 0x564d08', 0x43a00b), asm(f'jmp {vt_loadf:#x}', 0x43a00b))
+patch(0x4a1961, rel(0x4a1961, 0x4a1971 - 0x4a1961), asm(f'jmp {po_gen:#x}', 0x4a1961))
+patch(0x42ddc1, asm('call 0x4a1e20', 0x42ddc1), asm(f'call {po_start:#x}', 0x42ddc1))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES

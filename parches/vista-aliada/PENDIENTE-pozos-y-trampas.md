@@ -242,5 +242,8 @@ usar el bono "trap" en una etapa posterior).
 ## Estado
 Orden: datos + SAV → generación → caer → descubrir → dibujo → red → trampa → IA, cada parte con su prueba.
 - Parte 1, datos + SAV: hecha (commit a1e07a8, 1.0.42.0). po_save/po_map, bloque POZO tras VOTA; prueba_pozos.py.
-- Próximo: parte 2, generación (y vaciar la tabla al empezar partida nueva, que hoy no se hace).
+- Parte 2, generación: hecha (1.0.43.0). po_gen en 0x4a1961 (vacía la tabla en toda partida nueva; con Hidden Ruins
+  reparte 20 % de las ruinas de cada uno, mínimo 1, tope 32, 400 tiros) y po_start en 0x42ddc1 (región de la capital).
+  Falta la red (parte 6): hoy cada PC generaría lo suyo.
+- Próximo: parte 3, caer.
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, programación".

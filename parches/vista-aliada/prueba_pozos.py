@@ -2,6 +2,7 @@
 # Uso: python prueba_pozos.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
 # Parte 1, datos + SAV: guardar y cargar corren desde la última escritura y la última lectura del .SAV (0x439c84,
 # 0x439fda) con el archivo de mentira (un dict).
+# Parte 2, generación: po_gen (desde 0x4a1961) con un mapa de juguete y el dado en Python; po_start (desde 0x42ddc1).
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
 import os, sys, struct, pefile
@@ -116,5 +117,62 @@ ver('control: el original carga el .SAV nuevo igual que uno viejo', (lambda g: (
     g.mu.mem_write(FRAME - 0x120 + 0x108, struct.pack('<I', 1)),
     g.correr(0x439fda, 0x43a010, regs=[(UC_X86_REG_EBP, FRAME)]),
     bytes(g.mu.mem_read(OPTS, 0x18)) == OPC)[-1])(Juego(ORIG)), True)
+print('-- parte 2: generación y descubrir al empezar')
+import random
+PO_GEN = 0x4a1961 + 5 + struct.unpack_from('<i', img, 0x4a1961 - BASE + 1)[0]
+PO_START = 0x42ddc1 + 5 + struct.unpack_from('<i', img, 0x42ddc1 - BASE + 1)[0]
+TIERRA, AGUA, MONTE = 0, 1, 2      # tipos de terreno -> clase 2, 1 y 4
+CAP = (5, 5)
+def casilla(x, y): return 0x503e58 + ((y * 10) << 6) + x * 10
+def armar(g, agua=True, hidden=True, ruinas=10):
+    mu = g.mu
+    for t, c in ((TIERRA, 2), (AGUA, 1), (MONTE, 4)): mu.mem_write(0x535f0c + t * 0x58, struct.pack('<h', c))
+    for y in range(30):
+        for x in range(40):
+            t, reg = (AGUA, 2) if agua and x >= 30 else (TIERRA, 1)
+            if y == 0: t = MONTE
+            w2 = reg
+            if x == 10: w2 |= 0x100                     # camino
+            if (x, y) == (12, 12): w2 |= 0x300          # ciudad
+            w0 = t | (0x4000 if (x, y) == (14, 14) else 0)
+            st = 1 if (x, y) == (35, 15) else 0          # puente
+            mu.mem_write(casilla(x, y), struct.pack('<HHB', w0, w2, st))
+    mu.mem_write(0x536b30, b'\1\1'); mu.mem_write(0x536c22, struct.pack('<h', 0))
+    mu.mem_write(0x536b30 + 0x1f8, b'\0\0')               # el jugador 1 no juega
+    mu.mem_write(0x537e2a, struct.pack('<h', 1)); mu.mem_write(0x537e2c, struct.pack('<hh', *CAP))
+    mu.mem_write(0x558872, struct.pack('<h', ruinas)); mu.mem_write(0x53c393, b'\x10' if hidden else b'\0')
+def generar(g, seed=1, **k):
+    armar(g, **k); g.poner([(1, 1, 0, 0, 0, 0xff)] * 5)   # lo de una partida anterior
+    r = random.Random(seed)
+    g.interceptar(0x4deb20, lambda a: sum(r.randint(1, a[1]) for _ in range(a[0])) + struct.unpack('<h', struct.pack('<H', a[2] & 0xffff))[0])
+    fin = 0x4a103c if k.get('ruinas', 10) == 0 else 0x4a1971
+    g.mu.reg_write(UC_X86_REG_ESP, STACK); g.mu.emu_start(PO_GEN, fin, count=5000000)
+    assert g.mu.reg_read(UC_X86_REG_EIP) == fin
+    return g.tabla()
+def valido(r):
+    x, y, t = r[:3]
+    if not (0 <= x < 40 and 0 <= y < 30) or y == 0 or x == 10 or (x, y) in ((12, 12), (14, 14), (35, 15)): return False
+    if t == 1: return x >= 30
+    return x < 30 and max(abs(x - CAP[0]), abs(y - CAP[1])) > 2
+def resumen(t): return (sum(r[2] == 0 for r in t), sum(r[2] == 1 for r in t))
+ver('sin Hidden Ruins: tabla vacía (se borra la anterior)', generar(Juego(), hidden=False), [])
+malos = []
+for s in range(40):
+    g = Juego(); t = generar(g, seed=s)
+    if (resumen(t) != (2, 2) or not all(map(valido, t)) or len({r[:2] for r in t}) != 4 or
+            any(r[3:] != (0, 0, 0xff) for r in t) or g.mapa() != {r[:2]: i + 1 for i, r in enumerate(t)}):
+        malos.append((s, t))
+ver('10 ruinas, 40 semillas: 2 pozos y 2 remolinos en casillas válidas, distintas y en po_map', malos, [])
+ver('0 ruinas: 1 de cada uno y sigue en 0x4a103c', resumen(generar(Juego(), ruinas=0)), (1, 1))
+ver('1000 ruinas: tope de 32 de cada uno', resumen(generar(Juego(), ruinas=1000)), (32, 32))
+ver('control: mapa sin agua: solo pozos', resumen(generar(Juego(), agua=False)), (2, 0))
+def empezar(g):
+    g.mu.mem_write(STACK, struct.pack('<I', RET)); g.mu.reg_write(UC_X86_REG_ESP, STACK)
+    g.mu.emu_start(PO_START, 0x4a1e20, count=1000000)
+    return [r[4] for r in g.tabla()]
+g = Juego(); generar(g)
+ver('al empezar: el jugador 0 descubre los pozos de la región de su capital, no los remolinos', empezar(g), [1, 1, 0, 0])
+g = Juego(); generar(g); g.mu.mem_write(0x53c393, b'\0')
+ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0, 0, 0, 0])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
