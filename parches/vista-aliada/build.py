@@ -4752,6 +4752,7 @@ aibn_bridge:
 # n = líder), 12 resultado de esa pila al turno siguiente (n = 1 sobrevivió, 0 no), 13 queda a defender la ciudad
 # del refugio (req. 5; n = amenaza), 14 (solo 1.0.37.0) refuerzo que se queda, 15 va a defender una ciudad aliada
 # amenazada (n = amenaza), 16 se queda en ella mientras dure la amenaza (n = amenaza).
+# Órdenes del humano (ai_ord): 17 la pila cumple la orden (x, y = ciudad, n = tipo 1 ciudad, 2 color, 3 refuerzos).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -8615,6 +8616,229 @@ al_orig:
     leave
     jmp 0x40c990
 ''')
+# ---- Órdenes del humano a un aliado de la computadora (ia\PENDIENTE-entrenamiento-ia.md, mensajes entre aliados).
+# 0x40c990(pila, arg) con arg != 0 se saltea el planificador 0x41eda0: meta = arg / 1000, objetivo = arg % 1000
+# (1 ir a la ciudad, 0x40db40; 7 atacar la ciudad enemiga, 0x40d9f0(c, 7)). ai_ord va antes que ai_ally (con o sin
+# IA.INI, y antes del refugio y de la defensa de ciudades aliadas: manda el humano). Con una orden vigente para el
+# bando, la cumple la pila que llega en 2 turnos o menos (costo del mapa de caminos <= 2 * movimiento: a la ciudad
+# para ir, como al_cost; a una casilla de al lado para atacar, or_ring):
+# - tipo 1, atacar la ciudad OR +2: meta 7. Si la ciudad ya es del bando o de un aliado, la orden se da por cumplida.
+# - tipo 2, atacar al color OR +2: meta 7 a la ciudad de ese color más barata de alcanzar.
+# - tipo 3, refuerzos al bando OR +4: meta 1 a la ciudad de ese bando más barata de alcanzar (o en la que ya está).
+# La pila que no llega sigue con ai_ally. Evento 17 (x, y = ciudad, n = tipo) si hay IA.INI.
+# OR_TAB, 8 bytes por bando: +0 tipo, +1 turnos que quedan + 1 (quien recibe la orden pone 3; ia_turn lo baja al
+# empezar cada turno del bando, así vale en sus 2 turnos siguientes, sea antes o después del humano en la ronda),
+# +2 objetivo (palabra), +4 bando que la dio. No se guarda con la partida.
+OR_TAB = place_data('or_tab', bytes(8 * 8))
+OR_P, OR_REC, OR_BEST, OR_BC, OR_REACH = 4, 8, 12, 16, 20
+# or_ring(p, ciudad) cdecl -> eax = menor costo del mapa de caminos (ya armado) a una de las 12 casillas que rodean la
+# ciudad (0x7fffffff ninguna): las casillas de una ciudad enemiga no tienen costo de paso; se ataca desde al lado,
+# como la meta 7 (0x497830). Preserva ebx esi edi ebp.
+or_ring = place('or_ring', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    imul eax, dword ptr [esp + 0x18], 0xde
+    movsx ebx, word ptr [eax + {CITIES:#x}]
+    movsx ebp, word ptr [eax + {CITIES + 2:#x}]
+    mov edi, 0x7fffffff
+    mov esi, -1
+rg_y:
+    mov ecx, -1
+rg_x:
+    cmp ecx, 0
+    jl rg_ok
+    cmp ecx, 1
+    jg rg_ok
+    cmp esi, 0
+    jl rg_ok
+    cmp esi, 1
+    jle rg_nx
+rg_ok:
+    lea eax, [ebx + ecx]
+    cmp eax, 0
+    jl rg_nx
+    movsx edx, word ptr [0x503e00]
+    cmp eax, edx
+    jge rg_nx
+    lea edx, [ebp + esi]
+    cmp edx, 0
+    jl rg_nx
+    push ecx
+    movsx ecx, word ptr [0x503e02]
+    cmp edx, ecx
+    pop ecx
+    jge rg_nx
+    push ecx
+    push edx
+    push eax
+    push dword ptr [esp + 0x20]
+    call 0x4a65d0
+    add esp, 0xc
+    pop ecx
+    movzx eax, ax
+    test eax, eax
+    jz rg_nx
+    cmp eax, edi
+    jge rg_nx
+    mov edi, eax
+rg_nx:
+    inc ecx
+    cmp ecx, 2
+    jle rg_x
+    inc esi
+    cmp esi, 2
+    jle rg_y
+    mov eax, edi
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+ai_ord = place('ai_ord', f'''
+    movsx eax, word ptr [0x4fb0ec]
+    cmp eax, 8
+    jae {ai_ally:#x}
+    cmp byte ptr [eax*8 + {OR_TAB + 1:#x}], 1
+    jbe {ai_ally:#x}
+    push ebp
+    mov ebp, esp
+    sub esp, 0x18
+    pushad
+    mov dword ptr [ebp - {OR_P}], eax
+    movsx ecx, word ptr [ebp + 8]
+    imul edx, eax, 0x49a
+    mov eax, ecx
+    shl ecx, 6
+    lea edx, [edx + ecx + 0x561f00]
+    mov dword ptr [ebp - {OR_REC}], edx
+    movsx ecx, word ptr [edx + 0xc]
+    test ecx, ecx
+    jle or_no
+    imul ecx, ecx, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz or_no
+    mov word ptr [0x5020d0], ax
+    mov dword ptr [0x5020d4], edx
+    add edx, 0xc
+    push edx
+    call 0x497240
+    add esp, 4
+    push 0x100
+    call 0x497750
+    add esp, 4
+    mov ebx, dword ptr [ebp - {OR_P}]
+    imul eax, ebx, 0x4f0
+    movsx eax, word ptr [eax + 0x56eaa4]
+    add eax, eax
+    mov dword ptr [ebp - {OR_REACH}], eax
+    mov dword ptr [ebp - {OR_BEST}], -1
+    mov dword ptr [ebp - {OR_BC}], 0x7fffffff
+    xor esi, esi
+or_lp:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge or_end
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je or_nx
+    movzx edx, byte ptr [edi + {CITIES + 0xa5:#x}]
+    movzx eax, byte ptr [ebx*8 + {OR_TAB:#x}]
+    cmp eax, 1
+    jne or_t2
+    cmp si, word ptr [ebx*8 + {OR_TAB + 2:#x}]
+    jne or_nx
+    cmp edx, ebx
+    je or_done1
+    cmp edx, 8
+    jae or_ringc
+    imul eax, ebx, 56
+    cmp byte ptr [eax + edx + {DIPLO:#x}], 0
+    jne or_ringc
+or_done1:
+    mov byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0
+    jmp or_no
+or_t2:
+    cmp eax, 2
+    jne or_t3
+    cmp edx, ebx
+    je or_nx
+    cmp dx, word ptr [ebx*8 + {OR_TAB + 2:#x}]
+    jne or_nx
+or_ringc:
+    push esi
+    push ebx
+    call {or_ring:#x}
+    add esp, 8
+    jmp or_cmp
+or_t3:
+    cmp eax, 3
+    jne or_no
+    cmp dl, byte ptr [ebx*8 + {OR_TAB + 4:#x}]
+    jne or_nx
+    mov ecx, dword ptr [ebp - {OR_REC}]
+    movsx ecx, word ptr [ecx + 0xc]
+    imul ecx, ecx, 0x1c
+    mov ax, word ptr [ecx + 0x54fe52]
+    sub ax, word ptr [edi + {CITIES:#x}]
+    cmp ax, 1
+    ja or_cost
+    mov ax, word ptr [ecx + 0x54fe54]
+    sub ax, word ptr [edi + {CITIES + 2:#x}]
+    cmp ax, 1
+    ja or_cost
+    xor eax, eax
+    jmp or_cmp
+or_cost:
+    push esi
+    push ebx
+    call {al_cost:#x}
+    add esp, 8
+or_cmp:
+    cmp eax, dword ptr [ebp - {OR_REACH}]
+    jg or_nx
+    cmp eax, dword ptr [ebp - {OR_BC}]
+    jge or_nx
+    mov dword ptr [ebp - {OR_BC}], eax
+    mov dword ptr [ebp - {OR_BEST}], esi
+or_nx:
+    inc esi
+    jmp or_lp
+or_end:
+    mov esi, dword ptr [ebp - {OR_BEST}]
+    test esi, esi
+    jl or_no
+    movzx eax, byte ptr [ebx*8 + {OR_TAB:#x}]
+    imul edi, esi, 0xde
+    push eax
+    movsx ecx, word ptr [edi + {CITIES + 2:#x}]
+    push ecx
+    movsx ecx, word ptr [edi + {CITIES:#x}]
+    push ecx
+    push ebx
+    push 17
+    call {ia_evt:#x}
+    add esp, 0x14
+    cmp eax, 3
+    mov eax, 7000
+    jne or_go
+    mov eax, 1000
+or_go:
+    add eax, esi
+    push eax
+    push dword ptr [ebp + 8]
+    call 0x40c990
+    add esp, 8
+    popad
+    leave
+    ret
+or_no:
+    popad
+    leave
+    jmp {ai_ally:#x}
+''')
 # al_surv(p) cdecl, desde ia_turn: por cada pila de p anotada como amenazada en un turno anterior, evento 12 con
 # x, y donde estaba y n = 1 si su líder sigue vivo y es de p, 0 si no. Preserva todo.
 al_surv = place('al_surv', f'''
@@ -8669,6 +8893,10 @@ ia_turn = place('ia_turn', f'''
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae it_out
+    cmp byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0
+    je it_ord
+    dec byte ptr [ebx*8 + {OR_TAB + 1:#x}]
+it_ord:
     mov byte ptr [{IA_ON:#x}], 0
     push {IA_R:#x}
     push {IA_PATH:#x}
@@ -9169,7 +9397,7 @@ def rel(va, n):  # bytes originales
 
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
-patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ally:#x}', 0x40edf1))
+patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))

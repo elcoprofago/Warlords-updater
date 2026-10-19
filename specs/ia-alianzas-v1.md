@@ -243,3 +243,25 @@ Las dos reglas tácticas que el usuario confirmó en la revisión táctica / est
   y salida en las dos reglas. Contra 1.0.38.0 fallan los 5 casos nuevos que la distinguen.
 - informe.py: columnas ref.hér (evento 7 con n = 3), def.ali (15) y def.qda (16).
 - Próximo paso: A/B de 16 partidas con 1.0.39.0 (TAREAS 21).
+
+## Órdenes del humano a un aliado de la computadora (vista-aliada 1.0.40.0, 19/10/2026)
+Primera parte de los mensajes entre aliados (ia/PENDIENTE-entrenamiento-ia.md): la IA ya sabe cumplir una orden;
+todavía no hay forma de dársela desde el juego (falta el paquete 0x2a2 y la barra «#n»), así que en partida no
+cambia nada.
+- Decisiones del usuario: **la orden va primero**, antes del refugio, de la defensa de ciudades aliadas y de la IA
+  original («quien comanda es el humano; si toma malas decisiones, es a su costo y riesgo»). La cumplen **las pilas
+  que llegan en 2 turnos o menos**, y la orden **caduca a los 2 turnos** de emitida.
+- Entrada en el exe: 0x40c990(pila, arg) con arg != 0 saltea el planificador: meta = arg / 1000, objetivo =
+  arg % 1000. ai_ord (gancho de 0x40edf1, antes de ai_ally, con o sin IA.INI) pasa:
+  - «atacá CIUDAD» (tipo 1): 7000 + ciudad. Si la ciudad ya es del bando o de un aliado, la orden queda cumplida.
+  - «atacá a COLOR» (tipo 2): 7000 + la ciudad de ese color más barata de alcanzar.
+  - «mandame refuerzos» (tipo 3): 1000 + la ciudad del que la dio más barata de alcanzar (o en la que ya está).
+- «Llega en 2 turnos» = costo del mapa de caminos <= 2 * movimiento del grupo; para atacar, a una de las 12
+  casillas que rodean la ciudad (or_ring), porque las de una ciudad enemiga no tienen costo de paso. Aproximación:
+  el movimiento del turno siguiente se supone igual al de este.
+- Vencimiento: OR_TAB +1 = turnos que quedan + 1; quien recibe la orden pone 3 e ia_turn lo baja al empezar cada
+  turno del bando: vale en sus 2 turnos siguientes, juegue antes o después del humano en la ronda.
+- Evento 17 (x, y = ciudad, n = tipo) cuando una pila cumple la orden, si hay IA.INI.
+- prueba_iaalianzas.py: TODO OK, con 13 casos nuevos (cada tipo, sin IA.INI, no llega, cumplida, vencida, contra
+  el propio color, ya en la ciudad, y la cuenta de turnos en ia_turn con control de otro bando).
+- No publicado todavía: se publica junto con el paquete 0x2a2 y la barra «#n», que son los que lo hacen usable.

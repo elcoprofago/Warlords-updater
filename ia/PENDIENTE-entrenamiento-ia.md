@@ -557,3 +557,10 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   que llegan en 3 turnos o menos; dura hasta cumplirse o 5 turnos.
 - Próximo paso: con esas respuestas, programar la tabla de órdenes y su uso en ai_ally (probado emulado como
   prueba_iaalianzas.py, con 0x40c990 en stub para ver el arg), y después el paquete 0x2a2 y la barra «#n».
+- Respuestas del usuario (19/10/2026): la orden va **primero** (antes del refugio y de la defensa: manda el humano,
+  a su costo y riesgo); la cumplen las pilas que llegan en **2 turnos** o menos; **caduca a los 2 turnos**.
+- Hecho (vista-aliada 1.0.40.0, sin publicar): tabla de órdenes OR_TAB y ai_ord antes de ai_ally; detalle en
+  specs/ia-alianzas-v1.md, «Órdenes del humano». prueba_iaalianzas.py TODO OK.
+- Próximo paso: el paquete 0x2a2 (humano -> máquina que corre la IA; llena OR_TAB con 3 turnos) y la barra «#n»
+  que interpreta «atacá CIUDAD / atacá a COLOR / mandame refuerzos» y confirma con un 0x1ac de la IA; después
+  publicar. Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md: paquete 0x2a2 y barra #n".

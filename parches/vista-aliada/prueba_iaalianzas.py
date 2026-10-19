@@ -19,8 +19,13 @@ DATA = (0x4f9000, 0xb0000)
 
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 def rva(va): return va - 0x400000
-# direcciones del parche: ai_ally por el call de 0x40edf1; IA_ON e IA_MODE por sus primeras instrucciones
-AI_ALLY = 0x40edf6 + struct.unpack_from('<i', img, rva(0x40edf2))[0]
+# direcciones del parche: ai_ord por el call de 0x40edf1 y ai_ally por su primer salto (jae ai_ally); OR_TAB por la
+# instrucción siguiente (cmp byte ptr [eax*8 + OR_TAB + 1], 1); IA_ON e IA_MODE por las primeras de ai_ally
+AI_ORD = 0x40edf6 + struct.unpack_from('<i', img, rva(0x40edf2))[0]
+assert img[rva(AI_ORD) + 10:rva(AI_ORD) + 12] == b'\x0f\x83', 'ai_ord no empieza con el salto a ai_ally'
+AI_ALLY = AI_ORD + 16 + struct.unpack_from('<i', img, rva(AI_ORD) + 12)[0]
+assert img[rva(AI_ORD) + 16:rva(AI_ORD) + 19] == b'\x80\x3c\xc5', 'ai_ord: falta el cmp de OR_TAB'
+OR_TAB = struct.unpack_from('<I', img, rva(AI_ORD) + 19)[0] - 1
 assert img[rva(AI_ALLY):rva(AI_ALLY) + 2] == b'\x80\x3d', 'ai_ally no empieza con cmp byte ptr [ia_on]'
 IA_ON = struct.unpack_from('<I', img, rva(AI_ALLY) + 2)[0]
 
@@ -46,7 +51,7 @@ class Maquina:
         s.stub(0x4974a0, lambda a: dist([((v & 0xffff) ^ 0x8000) - 0x8000 for v in a[:4]]))
         s.call(0x4a4f90, [])
         s.data0 = s.rd(*DATA)
-    def _orig(s, a): s.orig += 1; return 0
+    def _orig(s, a): s.orig += 1; s.oarg = a[1] & 0xffff; return 0
     def _move(s, a): s.moves.append((a[0] & 0xffff, a[1] & 0xffff)); return 1
     def imports(s):
         mu = s.mu; mu.mem_map(0xdead1000, 0x10000); mu.mem_map(0x30000000, 0x4000000)
@@ -385,8 +390,10 @@ m.w(0x503328, '<h', m.s16(0x503328) - 1)
 # ---------------------------------------------------------------- al_surv: resultado de la pila amenazada
 
 def al_surv_addr():
-    # al_surv es lo que ia_turn llama justo después de ia_refug: se busca el call a una dirección > ai_ally
-    for k in range(rva(AI_ALLY), len(img) - 5):
+    # al_surv es lo que ia_turn llama justo después de ia_refug: se busca, dentro de ia_turn, el call a una dirección
+    # > ai_ally
+    ia_turn = 0x4223b2 + struct.unpack_from('<i', img, rva(0x4223ae))[0]
+    for k in range(rva(ia_turn), len(img) - 5):
         if img[k] == 0xe8:
             t = 0x400000 + k + 5 + struct.unpack_from('<i', img, k + 1)[0]
             if AI_ALLY < t < AI_ALLY + 0x1000 and img[rva(t) - 1] in (0xcc, 0xc3, 0x90) and t != AI_ALLY:
@@ -405,5 +412,91 @@ for sobrevive in (True, False):
     check(f'12: la pila amenazada {"sobrevivió" if sobrevive else "murió"} (evento 12, n = {int(sobrevive)})',
           [e for e in ev if e[0] == 12] == [(12, T[0], T[1], int(sobrevive))], ev)
     m.w(0x503328, '<h', m.s16(0x503328) - 1)
+
+# ---------------------------------------------------------------- órdenes del humano (ai_ord)
+def ordenar(tipo, obj, quedan=3, origen=0):
+    m.w(OR_TAB + P * 8, '<BBhB', tipo, quedan, obj, origen)
+def jugar_ord(stk=0):
+    m.evts.clear(); m.orig = 0; m.oarg = None; m.moves.clear()
+    m.call(AI_ORD, [stk, 0])
+    return [(e[3], e[4], e[5], e[6]) for e in m.evts]
+def cheb(a, b): return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
+vivas = [i for i in range(ncity) if m.rd(CITIES + i * 0xde + 0xa4, 1)[0]]
+enemc = sorted((i for i in vivas if cowner(i) in EQ[0]), key=lambda i: cheb(city(i), T))
+KE = enemc[0]; KX, KY = city(KE); KO = cowner(KE)
+# la pila, a 3 casillas de tierra de esa ciudad
+TE = next((KX + dx, KY + dy) for dx, dy in ((-3, 0), (4, 0), (0, -3), (0, 4), (-3, -3), (4, 4), (-3, 4), (4, -3))
+          if tierra(KX + dx, KY + dy))
+print('ciudad enemiga', KE, (KX, KY), 'dueño', KO, 'pila en', TE)
+def esc_ord(mov=30, on=1):
+    escenario(1, on)
+    m.w(0x56ea90 + P * 0x4f0 + 0x14, '<h', mov)
+    put(LEAD, *TE); put(SEG, *TE)
+# sin orden: igual que ai_ally
+esc_ord(); ordenar(0, 0, 0)
+ev = jugar_ord()
+check('orden: sin orden sigue con ai_ally (la original, arg 0)', not ev and m.orig == 1 and m.oarg == 0, (ev, m.oarg))
+# tipo 1: atacar la ciudad
+esc_ord(); ordenar(1, KE)
+ev = jugar_ord()
+check('orden 1: ataca la ciudad (0x40c990 con 7000 + ciudad, evento 17)', m.oarg == 7000 + KE and m.orig == 1
+      and ev == [(17, KX, KY, 1)], (ev, m.oarg))
+esc_ord(on=0); ordenar(1, KE)
+ev = jugar_ord()
+check('orden 1 sin IA.INI: la cumple igual, sin eventos', m.oarg == 7000 + KE and not ev, (ev, m.oarg))
+esc_ord(mov=1); ordenar(1, KE)
+ev = jugar_ord()
+check('orden 1: no llega en 2 turnos: sigue con ai_ally', m.oarg == 0 and 17 not in tipos(ev), (ev, m.oarg))
+esc_ord(); ordenar(1, KE); m.w(CITIES + KE * 0xde + 0xa5, '<B', P)
+ev = jugar_ord()
+check('orden 1: la ciudad ya es del bando: cumplida (se borra) y sigue con ai_ally',
+      m.oarg == 0 and m.rd(OR_TAB + P * 8 + 1, 1)[0] == 0, (ev, m.oarg))
+m.w(CITIES + KE * 0xde + 0xa5, '<B', KO)
+esc_ord(); ordenar(1, KE); m.w(CITIES + KE * 0xde + 0xa5, '<B', OWN)
+ev = jugar_ord()
+check('orden 1: la ciudad pasó a un aliado: cumplida', m.oarg == 0 and m.rd(OR_TAB + P * 8 + 1, 1)[0] == 0)
+m.w(CITIES + KE * 0xde + 0xa5, '<B', KO)
+esc_ord(); ordenar(1, KE, quedan=1)
+ev = jugar_ord()
+check('orden 1 vencida (quedan 1): se ignora', m.oarg == 0, m.oarg)
+# tipo 2: atacar al color
+esc_ord(); ordenar(2, KO)
+ev = jugar_ord()
+r = [e for e in ev if e[0] == 17]
+kc = [i for i in vivas if r and city(i) == r[0][1:3]]
+check('orden 2: ataca una ciudad de ese color (7000 + ciudad)', kc and cowner(kc[0]) == KO
+      and m.oarg == 7000 + kc[0] and r[0][3] == 2, (ev, m.oarg))
+esc_ord(); ordenar(2, P)
+ev = jugar_ord()
+check('orden 2 contra el propio color: no hace nada distinto', m.oarg == 0 and 17 not in tipos(ev))
+# tipo 3: refuerzos al bando que la dio (OWN, aliado)
+esc_ord(); ordenar(3, 0, origen=OWN); put(LEAD, *T); put(SEG, *T)
+ev = jugar_ord()
+r = [e for e in ev if e[0] == 17]
+kc = [i for i in vivas if r and city(i) == r[0][1:3]]
+check('orden 3: va a una ciudad del que la dio (1000 + ciudad)', kc and cowner(kc[0]) == OWN
+      and m.oarg == 1000 + kc[0] and r[0][3] == 3, (ev, m.oarg))
+esc_ord(mov=1); ordenar(3, 0, origen=OWN); put(LEAD, CX, CY); put(SEG, CX, CY)
+ev = jugar_ord()
+check('orden 3: ya está en la ciudad del que la dio: se queda ahí (1000 + esa ciudad)', m.oarg == 1000 + C,
+      (ev, m.oarg))
+ordenar(0, 0, 0)
+
+# ia_turn baja los turnos de la orden al empezar el turno del bando (se corre hasta el mov byte ptr [ia_on], 0)
+IA_TURN = 0x4223b2 + struct.unpack_from('<i', img, rva(0x4223ae))[0]
+pat = b'\xc6\x05' + struct.pack('<I', IA_ON) + b'\x00'
+stop = IA_TURN + img[rva(IA_TURN):rva(IA_TURN) + 0x40].index(pat)
+def turno_de(p):
+    sp = 0x10080000 - 8; m.mu.mem_write(sp, struct.pack('<Ii', 0xdead0000, p)); m.mu.reg_write(UC_X86_REG_ESP, sp)
+    m.mu.emu_start(IA_TURN, stop, count=1000)
+def quedan(): return m.rd(OR_TAB + P * 8 + 1, 1)[0]
+ordenar(1, KE, quedan=3)
+q = []
+for _ in range(4): turno_de(P); q.append(quedan())
+turno_de(P ^ 1); q.append(quedan())
+check('ia_turn: la orden vale 2 turnos del bando (3 -> 2 -> 1 -> 0 y queda en 0)', q[:4] == [2, 1, 0, 0], q)
+ordenar(1, KE, quedan=3); turno_de(P ^ 1)
+check('ia_turn: el turno de otro bando no la toca', quedan() == 3)
+ordenar(0, 0, 0)
 print('\nRESULTADO:', 'TODO OK' if not fallas else f'{fallas} FALLAS')
 sys.exit(1 if fallas else 0)
