@@ -471,3 +471,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 | Armar grupos por cantidad al principio, por calidad al final | destrezas 12 | **estratégica** |
 | Destrezas 4-7: economía, cuidado del héroe, reportes y terreno/retirada, salir del aislamiento | destrezas, fuera de alcance | economía y aislamiento estratégicas; héroe y retirada tácticas |
 | Elegir el bando (PGS) según el mapa; prioridades por fases; memoria entre partidas | plan, etapas 4, 5, 7 | **estratégicas** |
+- Revisión del usuario (19/10/2026): la clasificación es correcta, con estos cambios:
+  - Exploración con fin: no tocarla sin cuidado. La IA original ya explora bien, y no se sabe si para la IA el
+    mapa oculto es oculto de verdad (verificarlo en el exe antes de cualquier cambio).
+  - Cantidad / calidad de los grupos: pasa a **táctica**, redefinida como regla simple: en el primer tercio de la
+    partida (por turnos o por tiempo) asegurar cantidad; después, cuidar también la calidad del grupo.
+  - Táctica incluye «evitar perder»: sostener una ciudad es siempre buena decisión táctica. Abandonar una ciudad
+    defendible es estratégico (excepción), y no se le pide a la IA.
+  - Regla nueva propuesta por el usuario: «Siempre defender una ciudad aliada en riesgo inminente de ataque de un
+    enemigo común, salvo que eso descuide una ciudad propia también en riesgo.» Respuesta y forma lógica en el
+    chat del 19/10; queda a confirmar antes de programarla.
