@@ -240,6 +240,7 @@ usar el bono "trap" en una etapa posterior).
 - Lo mismo vale para la IA: no tiene "ruta expresa", así que nunca entra en uno que vea.
 
 ## Estado
-Diseño escrito y respondido; nada programado. Próximo paso: programar en este orden,
-cada parte con su prueba: datos + SAV → generación → caer → descubrir → dibujo → red → trampa → IA.
+Orden: datos + SAV → generación → caer → descubrir → dibujo → red → trampa → IA, cada parte con su prueba.
+- Parte 1, datos + SAV: hecha (commit a1e07a8, 1.0.42.0). po_save/po_map, bloque POZO tras VOTA; prueba_pozos.py.
+- Próximo: parte 2, generación (y vaciar la tabla al empezar partida nueva, que hoy no se hace).
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, programación".
