@@ -488,7 +488,7 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   - Quedan para después: la regla de cantidad / calidad por tercios, y derribar puentes o puertos solo para frenar
     un ataque inminente. La exploración no se toca hasta verificar si el mapa oculto es oculto para la IA.
 
-### 19/10/2026: idea del usuario, mensajes entre aliados (sin empezar)
+### 19/10/2026: idea del usuario, mensajes entre aliados (averiguado el chat nativo)
 - El humano le ordena a un aliado de la computadora por chat («atacá la ciudad XX», «atacá al verde», «mandame
   refuerzos»), sin que lo vean los enemigos; y la IA le pide al humano lo que le falta («mandame oro»), sabiendo
   qué le sobra al aliado (fuerzas, oro). Dos partes: a) mandar pedidos; b) recibirlos, interpretarlos y decidir.
@@ -497,3 +497,34 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   diálogo propio del parche, como los botones de Votación y Sorteo).
 - Clasificación (borrador para revisar con el usuario): obedecer una orden concreta del humano es táctico (la
   decisión ya la tomó el humano); decidir qué pedir y si conceder un pedido es estratégico.
+
+**Chat nativo en partida (averiguado en el exe original el 19/10/2026):**
+- Ojo: el número que el exe le pasa a 0x4d7980 (abrir diálogo) no es el número de diálogo del RES; se traduce por
+  la tabla tipo 6 del RES (entradas de 32 bytes; el 3er campo es el diálogo). Ej.: exe 0x67 -> RES 108, exe 0x6c ->
+  RES 74 (Kills Report).
+- Diálogo "Multiplayer Chat" (RES 108, exe 0x67, se abre en 0x408a00, manejador 0x408ae0): 9 renglones de historial
+  (0x501788, 64 bytes c/u), casilla Mute ([0x4f91b4]), campo Message (control 4) y 7 botones Send (19-25), uno por
+  cada bando humano de otra máquina. Cada fila guarda la **máquina** del bando ([0x5019d0+fila], de 0x536b33); el
+  botón alterna el byte [0x5019c8+máquina]. **Los bandos de la computadora no aparecen** (solo los que tienen
+  0x536c12 == -1, humanos).
+- Barra de chat (0x409170, llamada desde 0x473319/0x473335): «#3 texto» va solo al bando 3 (si es humano);
+  «#nombre texto» a los bandos humanos cuyo nombre empieza así; sin «#», a los destinatarios marcados con Send.
+- Envío 0x4ba990(bando, destinos[8 por máquina], texto): paquete **0x1ac** de 0x4a bytes = bando (word) + 8 bytes de
+  destino + texto (hasta 63 caracteres), por 0x4dd3b0 (la misma difusión que usan TL_OPEN/TL_STATE). Llega a todas
+  las máquinas; el receptor 0x409040 lo muestra solo si su máquina (0x4dd3a0) está marcada y no tiene Mute: un
+  enemigo con el exe original no lo ve. El remitente siempre se incluye (eco).
+- Consecuencia: **el chat nativo no puede dirigirse a un aliado de la computadora**, y como esos bandos corren en la
+  máquina de algún humano (0x536b33), marcar esa máquina se lo mostraría a ese humano, que puede ser enemigo.
+
+**Diseño propuesto (a programar en vista-aliada):**
+- Humano -> IA: ampliar la barra de chat para que «#n texto» con n = bando de la computadora no use 0x1ac sino un
+  paquete propio (0x2a2, que un Warlords sin parche descarta, como 0x2a0/0x2a1) con bando de origen, bando destino
+  y texto. Lo procesa solo la máquina que corre ese bando; no se muestra a nadie. Ahí se interpreta la orden (lista
+  cerrada de órdenes, ver abajo) y se le confirma al humano.
+- IA -> humano: la máquina que corre el bando de la IA manda un 0x1ac normal con remitente = bando de la IA y
+  destino = máquina del humano aliado; se ve con el sistema nativo, con el color de la IA, sin cambios en el receptor.
+- Primeras órdenes (cada una es táctica: la decisión ya la tomó el humano): «atacá CIUDAD», «atacá a COLOR»,
+  «mandame refuerzos». Respuestas de la IA: «ok», «no puedo: MOTIVO». Los pedidos de la IA («mandame oro») van
+  en una segunda etapa, porque decidir qué pedir es estratégico.
+- Pendiente de averiguar antes de programar: cómo se manda oro entre bandos en partida (si existe), y por dónde
+  meter una orden en el plan de la IA para un turno (los ganchos de alianzas de 1.0.39.0 son el punto de partida).
