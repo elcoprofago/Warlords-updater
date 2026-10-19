@@ -526,5 +526,9 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Primeras órdenes (cada una es táctica: la decisión ya la tomó el humano): «atacá CIUDAD», «atacá a COLOR»,
   «mandame refuerzos». Respuestas de la IA: «ok», «no puedo: MOTIVO». Los pedidos de la IA («mandame oro») van
   en una segunda etapa, porque decidir qué pedir es estratégico.
-- Pendiente de averiguar antes de programar: cómo se manda oro entre bandos en partida (si existe), y por dónde
-  meter una orden en el plan de la IA para un turno (los ganchos de alianzas de 1.0.39.0 son el punto de partida).
+- Respuestas del usuario (19/10/2026): empezar con esas tres órdenes; la clasificación (obedecer = táctico; qué
+  pedir y si conceder = estratégico) es correcta. El oro ya se puede pasar a cualquier bando en partida: cuadro de
+  Diplomacia, botón «Bribe», que abre un diálogo con barra deslizante para el monto según las reservas (sirve para
+  la segunda etapa: la IA concede oro por ese mismo camino).
+- Próximo paso: averiguar por dónde meter una orden en el plan de la IA para un turno (los ganchos de alianzas de
+  1.0.39.0 son el punto de partida), y luego programar el paquete 0x2a2 y la barra «#n».
