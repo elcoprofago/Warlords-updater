@@ -29,12 +29,15 @@ usar el bono "trap" en una etapa posterior).
 - Qué viaja por red y qué se guarda con la partida: pozos y trampas tienen que estar en el SAV y ser iguales en
   todas las PC.
 
-## Preguntas de juego para el usuario (no técnicas)
-- ¿La trampa del bono "trap" afecta también a los aliados del creador, o solo a los enemigos?
-- ¿Un héroe cae como cualquier otro, o tiene alguna chance de salvarse?
-- ¿Los pozos y remolinos son una opción de la partida (como Hidden Ruins) o van siempre?
-- ¿Una trampa construida se puede descubrir por los demás con el mismo rango, y una vez descubierta deja de ser
-  peligrosa (se la esquiva) o sigue matando a quien la pise?
+## Respuestas del usuario (19/10/2026)
+1. **A quién afecta:** pozos, remolinos y trampas matan a cualquiera, incluso al creador de la trampa. Lo que cambia
+   es la **visibilidad**: el creador y sus aliados ven la trampa aunque esté oculta para el resto.
+2. **Héroes:** "unidad" incluye a los héroes. Caen como cualquiera (solo se salvan los voladores).
+3. **Mapas:** pozos y remolinos van en cualquier mapa, prearmado o al azar. Si en los prearmados no se puede sin
+   reeditarlos, solo en los mapas al azar.
+4. **Trampa descubierta:** mata **una única vez**. Dos dibujos, con la lógica de las ruinas exploradas:
+   - trampa descubierta al paso, sin activar;
+   - trampa detonada (el mismo dibujo con un fogonazo); ya no mata.
 
 ## Estado
 Nada averiguado ni programado. Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md".
