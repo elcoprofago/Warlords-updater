@@ -577,3 +577,19 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - La IA maneja bien los barcos con bono `landing` y con cabotaje; **no así con el bono `carrier`**. Sin averiguar
   todavía qué hace mal (ai_conv solo ordena convoy cuando el grupo no entra en un barco y hay otro barco propio con
   Carrier en la casilla vecina yendo al mismo destino; ver «verificar que la IA usa las mejoras del juego»).
+
+### 19/10/2026: tanda 25, primera A/B válida (8 partidas, Tanda_Border_Alianzas, vista-aliada 1.0.39.0, exe a2927257)
+- 8/8 ok, 30 turnos. Equipos alternados 0135|2467 entre IA de prueba (P) y original (O). La serie de 2 (tandas 26
+  y 27) no corrió: no hay tandas después de la 25. Desde las 14:17 C:\Warlords3 tiene 1.0.43.0: las órdenes por chat
+  no actúan sin humano y los pozos se generan al armar partida (la guardada no trae bloque POZO), así que no cambia
+  la prueba; igual el exe queda anotado en la tabla tanda y se compara por esa columna.
+- Por color (32 cada IA): P 8.1 PV, 6.2 ciudades, 24.0 ejércitos; O 6.9 PV, 5.0 ciudades, 19.1 ejércitos.
+- Por equipo (PV promedio): 0135 con P 26.5 (32, 2, 47, 25) contra 19.3 con O (8, 9, 48, 12); 2467 con P 38.0
+  contra 36.3 con O. Victorias: 2467 gana 6 de 8 (cada IA ganó una vez con 0135); en el control 19-21, 2467 ganó 5
+  de 9: la ventaja del mapa sigue. Dispersión enorme (2 a 47 PV): con 8 partidas la diferencia no es concluyente.
+- Alianzas (tácticas): P registró 18 refugios, 1 salida, 3 defensas desde refugio, 2 defensas de ciudad aliada y 2
+  batallas con defensores de varios colores; O, 0 en todo (la IA original no lo hace). Héroes vivos: P 14, O 17;
+  amenazados que sobreviven: P 118/157 (75 %), O 136/169 (80 %). Resistencias en compartidas: P 21, O 32.
+- Lectura: las reglas nuevas se ejecutan en vivo (antes, en el control, todo en cero). El resultado tiende a
+  favor de P en PV y ciudades, pero sin significancia; el refugio no mejoró todavía la supervivencia de amenazados
+  ni de héroes. Falta juntar las tandas 26-27 (24 partidas) antes de concluir.

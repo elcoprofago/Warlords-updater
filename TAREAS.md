@@ -56,7 +56,10 @@ la original, y en la partida siguiente al revés.
    **Retomar** con el check tildado y la serie de las que falten.
 Si mirás alguna partida: lo nuevo es ver una ciudad aliada defendida por ejércitos de dos colores (dos banderas)
 cuando un enemigo se le acerca.
-Resultado:
+Resultado: (Claude, 19/10) la tanda 25 (8 partidas) está analizada. **La serie de 2 no llegó a correr**: en la
+base no hay ninguna tanda después de la 25 (la última partida terminó 12:35) y no hay un juego abierto. Falta
+repetir el paso 1 (serie de 2 → serían las tandas 26 y 27). El Monitor ya usa el juego 1.0.43.0; para esta prueba
+da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
 
 ## 20. Sonido del juego: volvió a faltar (17/10/2026)
 La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
