@@ -191,3 +191,16 @@ No construido (queda para una versión siguiente):
 - prueba_iaalianzas.py: 2 casos nuevos (se queda / con la amenaza pasada sigue la original), 38 TODO OK; el caso
   nuevo falla con el exe de 1.0.36.0. informe.py: columna «ref.qda».
 - La tanda 22 queda como referencia de 1.0.36.0; la A/B de 16 válidas se arma de nuevo con 1.0.37.0.
+
+## Tandas 23 y 24 (A/B con 1.0.37.0, 15 válidas, 19/10/2026)
+- 15 válidas de 16 (la 4 de la tanda 24 se colgó al cargar, 0 turnos). Gana el equipo de la IA original 12 de 15.
+  PV por color: prueba 3,5 / 3,7 contra original 10,9 / 10,4 (en la tanda 22, con 1.0.36.0: 6,2 contra 7,4).
+- Evento 14 (refuerzo que se queda): 0 en vivo. De los 94 refuerzos, solo 3 dejan rastro de la pila en la ciudad
+  en los 4 turnos siguientes (evento 7, 11 o 13 en sus casillas): las pilas casi nunca llegan.
+- 80 de los 94 refuerzos son 6b (no llega este turno). 6b solo pide que el mapa de caminos alcance la ciudad, sin
+  límite de distancia, y se decide de nuevo cada turno: las pilas cruzan el mapa detrás de amenazas que se van
+  antes de que lleguen, y dejan de jugar su propio frente. Es la explicación más probable de la caída de la IA de
+  prueba (menos ciudades, menos ataques, menos héroes vivos).
+- Próximo paso: 6b con límite (la ciudad a no más de 2 turnos de movimiento, y la amenaza tiene que seguir al
+  llegar), y el refuerzo guardado en AL_TAB como el refugio, para que la pila siga el mismo destino y no decida de
+  nuevo cada turno. Después, otra A/B.
