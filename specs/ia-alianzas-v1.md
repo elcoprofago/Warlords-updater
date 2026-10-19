@@ -204,3 +204,12 @@ No construido (queda para una versión siguiente):
 - Próximo paso: 6b con límite (la ciudad a no más de 2 turnos de movimiento, y la amenaza tiene que seguir al
   llegar), y el refuerzo guardado en AL_TAB como el refugio, para que la pila siga el mismo destino y no decida de
   nuevo cada turno. Después, otra A/B.
+
+## Refuerzo quitado (vista-aliada 1.0.38.0, 19/10/2026)
+- Pedido del usuario: los req. 6 y 7 (refuerzo de ciudades aliadas) se quitan. Mandar refuerzos es una decisión
+  estratégica (los fines de la contienda, según el criterio de victoria), no táctica (ganar cada batalla).
+- build.py: fuera al_reinf (6a/6b, evento 14) y al_imp (7a); la pila que no se refugia sigue la decisión original.
+  prueba_iaalianzas.py: los casos 6/6b pasan a un solo control (ciudad aliada amenazada al alcance: sin evento 10
+  ni 14, sigue la original); 33 TODO OK.
+- Lo que sigue: clasificar todas las instrucciones pendientes en tácticas o estratégicas (ver
+  ia/PENDIENTE-entrenamiento-ia.md, «Clasificación táctica / estratégica») antes de otra A/B.

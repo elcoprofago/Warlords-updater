@@ -17,6 +17,9 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 ## 21. IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
+**En pausa (19/10/2026):** no largues tandas nuevas. Se quitó el refuerzo de ciudades aliadas (vista-aliada
+1.0.38.0) y antes de otra A/B revisamos qué instrucciones de la IA quedan.
+
 La IA de prueba ya sabe refugiar sus pilas en la ciudad de un aliado y reforzar ciudades aliadas amenazadas
 (vista-aliada 1.0.37.0, ya instalado en C:\Warlords3; desde esta versión la pila que llega a reforzar se queda
 mientras la ciudad siga amenazada). Ahora un equipo de 4 colores juega con la IA de prueba y el

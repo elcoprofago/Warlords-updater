@@ -4748,9 +4748,9 @@ aibn_bridge:
 # compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
 # Alianzas (ai_ally; x, y = la ciudad salvo en 11 y 12): 7 refugio decidido (n = motivo 1/2/3 = req. 1a/b/c),
 # 8 salida del refugio (n = 1 req. 3a, 2 req. 3b, 3 se perdió la ciudad o la alianza), 9 queda hasta el final
-# (n = fuerza), 10 refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
+# (n = fuerza), 10 (hasta 1.0.37.0) refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
 # n = líder), 12 resultado de esa pila al turno siguiente (n = 1 sobrevivió, 0 no), 13 queda a defender la ciudad
-# del refugio (req. 5; n = amenaza), 14 pila que está en una ciudad aliada amenazada se queda a reforzarla (n = amenaza).
+# del refugio (req. 5; n = amenaza), 14 (solo 1.0.37.0) refuerzo que se queda.
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -7650,12 +7650,8 @@ rf_out:
 #   ejércitos propios fuera de la pila a 8 casillas o menos: se queda hasta el final (req. 4, evento 9). Sale (evento
 #   8) si el dueño juntó más fuerza en la ciudad que al entrar (n = 1, req. 3a) o si la pila creció la mitad (al menos
 #   2) desde que entró (n = 2, req. 3b). Mientras tanto vuelve a la ciudad si salió y no hace nada más.
-# - Refuerzo (req. 6): ciudades compartidas de otro dueño cuya amenaza supera a sus defensores (los aliados y lo ya
-#   mandado este turno, AL_CT). 6a: la alcanza este turno; si alguna ciudad propia está amenazada, solo va si la
-#   aliada es importante. 6b: no llega este turno pero el mapa la alcanza, es importante y con la pila la defensa
-#   supera a la amenaza. Importante (req. 7a, único criterio ubicado en el exe, n % 10 = 1): 0x41d640 + 0x41ec20
-#   (ruinas sin explorar y ciudades neutrales cerca, la cuenta de la IA original) >= 3, o una ciudad propia a 6
-#   casillas o menos. Evento 10, n = 10 * motivo (1 = 6a, 2 = 6b) + criterio.
+# - Refuerzo de ciudades aliadas (req. 6 y 7): quitado en 1.0.38.0 por pedido del usuario (decisión estratégica,
+#   no táctica). Los eventos 10 y 14 ya no se anotan.
 # Fuerza de un ejército = fuerza base * vida de su palabra +0xe (bits 9-12 y 13-15, como 0x467240); alcance de un
 # ejército enemigo = su movimiento +0x12 / 2 + 1 casillas de rey (aproximado: no mira el terreno).
 # La tabla AL_TAB (por jugador y pila, 16 bytes): +0 líder, +2 ciudad + 1, +4 motivo, +5 bits (1 hasta el final,
@@ -7959,64 +7955,6 @@ tb_out:
     popad
     ret
 ''')
-# al_imp(p, ciudad) cdecl -> eax = 1 si la ciudad es importante (req. 7a), si no 0. Preserva ebx esi edi ebp.
-al_imp = place('al_imp', f'''
-    push ebx
-    push esi
-    push edi
-    push ebp
-    imul eax, dword ptr [esp + 0x18], 0xde
-    movsx ebx, word ptr [eax + {CITIES:#x}]
-    movsx ebp, word ptr [eax + {CITIES + 2:#x}]
-    push ebp
-    push ebx
-    call 0x41d640
-    add esp, 8
-    movsx edi, ax
-    push ebp
-    push ebx
-    call 0x41ec20
-    add esp, 8
-    movsx eax, ax
-    add edi, eax
-    cmp edi, 3
-    jge im_si
-    xor esi, esi
-im_lp:
-    movsx eax, word ptr [0x537e2a]
-    cmp esi, eax
-    jge im_no
-    imul edi, esi, 0xde
-    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
-    je im_nx
-    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
-    cmp eax, dword ptr [esp + 0x14]
-    jne im_nx
-    movsx eax, word ptr [edi + {CITIES:#x}]
-    sub eax, ebx
-    add eax, 6
-    cmp eax, 12
-    ja im_nx
-    movsx eax, word ptr [edi + {CITIES + 2:#x}]
-    sub eax, ebp
-    add eax, 6
-    cmp eax, 12
-    jbe im_si
-im_nx:
-    inc esi
-    jmp im_lp
-im_si:
-    mov eax, 1
-    jmp im_ret
-im_no:
-    xor eax, eax
-im_ret:
-    pop ebp
-    pop edi
-    pop esi
-    pop ebx
-    ret
-''')
 # ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
 L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
     L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT = (4 * (i + 1) for i in range(23))
@@ -8308,7 +8246,7 @@ al_normal:
     jne al_ref
     mov dword ptr [ebp - {L_MOT}], 3
     cmp dword ptr [ebp - {L_HUNT}], 0
-    je al_reinf
+    je al_orig
 al_ref:
     call al_map
     mov dword ptr [ebp - {L_BEST}], -1
@@ -8389,7 +8327,7 @@ al_rcn:
 al_rch:
     mov eax, dword ptr [ebp - {L_BEST}]
     test eax, eax
-    jl al_reinf
+    jl al_orig
     mov esi, dword ptr [ebp - {L_ENT}]
     inc eax
     mov word ptr [esi + 2], ax
@@ -8416,162 +8354,6 @@ al_rch:
     mov dword ptr [ebp - {L_CX}], ecx
     mov dword ptr [ebp - {L_CY}], eax
     jmp al_stay
-al_reinf:
-    xor esi, esi
-al_ks:
-    movsx eax, word ptr [0x537e2a]
-    cmp esi, eax
-    jge al_ks_e
-    cmp esi, 256
-    jae al_ks_e
-    imul edi, esi, 0xde
-    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
-    je al_ksn
-    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
-    cmp eax, dword ptr [ebp - {L_P}]
-    je al_ksn
-    movsx eax, word ptr [edi + {CITIES:#x}]
-    mov ecx, dword ptr [ebp - {L_LX}]
-    sub ecx, eax
-    cmp ecx, 1
-    ja al_ksn
-    movsx edx, word ptr [edi + {CITIES + 2:#x}]
-    mov ecx, dword ptr [ebp - {L_LY}]
-    sub ecx, edx
-    cmp ecx, 1
-    ja al_ksn
-    imul ecx, esi, 12
-    mov ecx, dword ptr [ecx + {AL_CT:#x}]
-    test ecx, ecx
-    jz al_ksn
-    push ecx
-    push edx
-    push eax
-    push dword ptr [ebp - {L_P}]
-    push 14
-    call {ia_evt:#x}
-    add esp, 0x14
-    jmp al_done
-al_ksn:
-    inc esi
-    jmp al_ks
-al_ks_e:
-    mov dword ptr [ebp - {L_OWNT}], 0
-    xor esi, esi
-al_ow:
-    movsx eax, word ptr [0x537e2a]
-    cmp esi, eax
-    jge al_ow_e
-    cmp esi, 256
-    jae al_ow_e
-    imul edi, esi, 0xde
-    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
-    je al_own
-    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
-    cmp eax, dword ptr [ebp - {L_P}]
-    jne al_own
-    imul eax, esi, 12
-    mov ecx, dword ptr [eax + {AL_CT:#x}]
-    cmp ecx, dword ptr [eax + {AL_CT + 4:#x}]
-    jle al_own
-    mov dword ptr [ebp - {L_OWNT}], 1
-    jmp al_ow_e
-al_own:
-    inc esi
-    jmp al_ow
-al_ow_e:
-    mov dword ptr [ebp - {L_BEST}], -1
-    mov dword ptr [ebp - {L_BSC}], 0x7fffffff
-    mov dword ptr [ebp - {L_MOT}], 0
-    xor esi, esi
-al_fc:
-    movsx eax, word ptr [0x537e2a]
-    cmp esi, eax
-    jge al_fch
-    cmp esi, 256
-    jae al_fch
-    imul edi, esi, 0xde
-    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
-    je al_fcn
-    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
-    cmp eax, dword ptr [ebp - {L_P}]
-    je al_fcn
-    imul ebx, esi, 12
-    add ebx, {AL_CT:#x}
-    mov eax, dword ptr [ebx + 4]
-    add eax, dword ptr [ebx + 8]
-    cmp dword ptr [ebx], eax
-    jle al_fcn
-    mov dword ptr [ebp - {L_T2}], eax
-    call al_map
-    push esi
-    push dword ptr [ebp - {L_P}]
-    call {al_cost:#x}
-    add esp, 8
-    cmp eax, 0x7fffffff
-    je al_fcn
-    mov dword ptr [ebp - {L_T1}], eax
-    push esi
-    push dword ptr [ebp - {L_P}]
-    call {al_imp:#x}
-    add esp, 8
-    mov ecx, eax
-    mov eax, dword ptr [ebp - {L_T1}]
-    cmp eax, dword ptr [ebp - {L_MOV}]
-    jg al_fc_b
-    test ecx, ecx
-    jnz al_fc_a
-    cmp dword ptr [ebp - {L_OWNT}], 0
-    jne al_fcn
-al_fc_a:
-    cmp dword ptr [ebp - {L_MOT}], 2
-    je al_fc_set
-    cmp eax, dword ptr [ebp - {L_BSC}]
-    jge al_fcn
-al_fc_set:
-    mov dword ptr [ebp - {L_MOT}], 1
-    jmp al_fc_take
-al_fc_b:
-    test ecx, ecx
-    jz al_fcn
-    cmp dword ptr [ebp - {L_MOT}], 1
-    je al_fcn
-    mov edx, dword ptr [ebp - {L_T2}]
-    add edx, dword ptr [ebp - {L_STR}]
-    cmp edx, dword ptr [ebx]
-    jle al_fcn
-    cmp eax, dword ptr [ebp - {L_BSC}]
-    jge al_fcn
-    mov dword ptr [ebp - {L_MOT}], 2
-al_fc_take:
-    mov dword ptr [ebp - {L_BSC}], eax
-    mov dword ptr [ebp - {L_BEST}], esi
-    mov dword ptr [ebp - {L_CRIT}], ecx
-al_fcn:
-    inc esi
-    jmp al_fc
-al_fch:
-    mov eax, dword ptr [ebp - {L_BEST}]
-    test eax, eax
-    jl al_orig
-    imul ecx, eax, 12
-    mov edx, dword ptr [ebp - {L_STR}]
-    add dword ptr [ecx + {AL_CT + 8:#x}], edx
-    imul edi, eax, 0xde
-    movsx eax, word ptr [edi + {CITIES + 2:#x}]
-    movsx ecx, word ptr [edi + {CITIES:#x}]
-    mov edx, dword ptr [ebp - {L_MOT}]
-    imul edx, edx, 10
-    add edx, dword ptr [ebp - {L_CRIT}]
-    push edx
-    push eax
-    push ecx
-    push dword ptr [ebp - {L_P}]
-    push 10
-    call {ia_evt:#x}
-    add esp, 0x14
-{_al_go('al_rf')}
-    jmp al_done
 al_map:
     cmp dword ptr [ebp - {L_MAP}], 0
     jne al_map_r

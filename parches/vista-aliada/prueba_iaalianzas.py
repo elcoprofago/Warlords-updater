@@ -4,8 +4,8 @@
 # Uso: python prueba_iaalianzas.py [DarklordAV.exe] [partida.SAV]
 # ai_ally se llama como en 0x40edf1 (pila, 0), con stubs: 0x40c990 (la decisión original: se anota que se llamó) y
 # 0x40d2b0 (mover la pila: se anota el destino). Los eventos se leen de lo que ia_evt manda a fprintf.
-# Esperado: los casos del Definition of done del spec (refugio 1a/1b/1c, salidas 3a/3b, req. 4 y 5, refuerzo 6a/6b
-# con y sin importancia 7a, casos límite) y los controles: con la IA original y sin IA.INI no cambia nada.
+# Esperado: los casos del Definition of done del spec (refugio 1a/1b/1c, salidas 3a/3b, req. 4 y 5, casos
+# límite; sin refuerzo de ciudades aliadas desde 1.0.38.0) y los controles: con la IA original y sin IA.INI no cambia nada.
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -315,48 +315,8 @@ dist_pila = max(abs(T[0] - (CX + reach)), abs(T[1] - CY))
 if dist_pila <= m.rd(arm(E1) + 0x12, 1)[0] // 2 + 1:
     put(E1, CX - reach if T[0] > CX else CX + reach, CY)
 ev = jugar()
-r = [e for e in ev if e[0] == 10]
-check('6a: ciudad aliada amenazada al alcance: refuerzo (evento 10, motivo 1)', r and r[0][1:3] == (CX, CY)
-      and r[0][3] // 10 == 1 and m.moves == [(CX, CY)], (ev, m.moves))
-escenario(1)
-put(E1, *AWAY)
-ev = jugar()
-check('6 control: ciudad sin amenaza: sin refuerzo', 10 not in tipos(ev) and m.orig == 1, ev)
-# 6b: la pila no llega este turno (movimiento 1); con importancia y sin ella
-def caso6b(imp):
-    escenario(1)
-    setfs(LEAD, 9, 3); setfs(SEG, 9, 3)
-    setfs(E1, 6, 3)
-    put(E1, CX - reach if T[0] > CX else CX + reach, CY)
-    m.w(0x56ea90 + P * 0x4f0 + 0x14, '<h', 1)
-    # importancia 7a por una ciudad propia a 6 casillas: se le da o se le quita a P la más cercana
-    cerca = [i for i in range(ncity) if i != C and max(abs(city(i)[0] - CX), abs(city(i)[1] - CY)) <= 6]
-    lejos_o = [i for i in range(ncity) if cowner(i) == P]
-    for i in lejos_o: m.w(CITIES + i * 0xde + 0xa5, '<B', 8)
-    if imp and cerca: m.w(CITIES + cerca[0] * 0xde + 0xa5, '<B', P)
-    return jugar(), bool(cerca)
-ev, hay = caso6b(True)
-r = [e for e in ev if e[0] == 10]
-check('6b: no llega, importante (7a) y la suma vence: refuerzo motivo 2, criterio 1',
-      hay and r and r[0][3] == 21, (ev, hay))
-ev, _ = caso6b(False)
-r = [e for e in ev if e[0] == 10]
-check('6b control: no llega y no es importante: sin refuerzo (si las ruinas/neutrales no la hacen importante)',
-      not r or r[0][3] % 10 == 1, ev)
-# 6: la pila que llegó a la ciudad aliada amenazada se queda a reforzarla (evento 14); sin amenaza, sigue la original
-def llego():
-    escenario(1)
-    put(E1, CX + reach, CY); put(LEAD, *T); put(SEG, *T)
-    if max(abs(T[0] - (CX + reach)), abs(T[1] - CY)) <= reach: put(E1, CX - reach if T[0] > CX else CX + reach, CY)
-    assert any(e[0] == 10 for e in jugar())
-    m.w(0x503328, '<h', m.s16(0x503328) + 1); put(LEAD, CX, CY); put(SEG, CX, CY)
-llego()
-ev = jugar()
-check('6: llegó y la amenaza sigue: se queda (evento 14, no la mueve la original)',
-      any(e[0] == 14 and e[1:3] == (CX, CY) for e in ev) and m.orig == 0 and m.moves == [], (ev, m.moves))
-llego(); put(E1, *AWAY)
-ev = jugar()
-check('6 control: llegó y la amenaza pasó: sigue la original', 14 not in tipos(ev) and m.orig == 1, ev)
+check('sin refuerzo (quitado en 1.0.38.0): ciudad aliada amenazada al alcance, sigue la original',
+      10 not in tipos(ev) and 14 not in tipos(ev) and m.orig == 1, ev)
 
 # ---------------------------------------------------------------- al_surv: resultado de la pila amenazada
 
