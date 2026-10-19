@@ -146,6 +146,92 @@ usar el bono "trap" en una etapa posterior).
   SAV (0x439940 y su lector), al envío inicial (0x4aa170 / 0x4aa390) y a la suma de sincronía. Las trampas creadas
   durante la partida, además, necesitan una orden de red propia (como 0x2a2). Decisión técnica pendiente al diseñar.
 
+## Averiguado para el diseño (19/10/2026, cuarta ronda)
+- El campo "clase de cosa" de la casilla (palabra +2 bits 8-10) **no es una enumeración limpia**: las ruinas se sellan
+  con `and 0xfaff / or ah,2` (borra solo 0x400, conserva 0x100) y los sitios con `and 0xfcff / or ah,4`. Valores en
+  uso: 1 camino/puente, 2 ruina, 3 (ciudad; unas 15 comparaciones `cmp ah,3`), 4 sitio. 5..7 no aparecen en ninguna
+  comparación, pero el 0x100 se combina con otros bits y hay unas 40 lecturas del campo: meter una clase nueva ahí
+  obliga a revisarlas todas. **Descartado.**
+- Precedente en el parche para datos propios en el SAV: la tabla de la Votación va **al final del .SAV** con firma
+  ('VOTA', vt_savef / vt_loadf, build.py ~l.6700): el exe original ignora lo que sobra y un SAV viejo la carga vacía.
+- Precedente para red: el paquete propio 0x2a2 (build.py ~l.8842).
+
+## Diseño (19/10/2026)
+### Datos: una tabla propia, fuera de la de ruinas y fuera de la casilla
+- `pz_tab`: hasta **64** registros de 8 bytes: +0 x (word), +2 y (word), +4 tipo (0 pozo, 1 remolino, 2 trampa),
+  +5 estado (0 intacto, 1 detonado: solo trampas), +6 **máscara de quién lo descubrió** (bit = jugador, como +0x9b de
+  la ruina), +7 dueño (solo trampa; 0xff en pozos y remolinos). `pz_n` = cantidad.
+- `pz_map`: un byte por casilla (índice + 1 en `pz_tab`, 0 = nada), para que el paso y el dibujo no recorran la tabla.
+  No se guarda: se rearma desde `pz_tab` al empezar, al cargar y al recibir la partida por red.
+- Ningún código del juego ve la tabla: búsqueda de héroes, IA "Goto Ruin", informes y el tope de 50 ruinas quedan
+  intactos.
+- **SAV:** bloque 'POZO' al final del .SAV, detrás del de la Votación, con la misma técnica (SAV viejo → tabla vacía;
+  exe original → lo ignora).
+- **Red:** el anfitrión genera los pozos y los manda en la transferencia inicial como un bloque más (después del bloque
+  5, el de ruinas; emisor 0x4aa170, receptor 0x4aa390), y se suman a la comprobación de sincronía (0x4aa590). Las
+  trampas nuevas viajan como orden propia por el paquete 0x2a2 y se aplican en todas las PC, como 0x1ca (disband).
+  Descubrir y caer no necesitan red: ocurren dentro del paso, que ya corre igual en todas las PC (como las ruinas).
+
+### Generación (mapas nuevos, prearmados o al azar)
+- Solo con **Hidden Ruins** activa. Justo después de ocultar las ruinas (0x4a14f2..0x4a194c), con el mismo generador.
+- Cantidad: **20 % de la cantidad de ruinas del mapa** para pozos y otro 20 % para remolinos (mínimo 1 de cada uno si
+  el mapa tiene tierra y agua transitables). Es la proporción que el juego usa para ocultar ruinas.
+- Pozo: casilla de tierra transitable sin ciudad, ruina, sitio, camino ni puente, a más de 2 casillas de toda capital.
+  Remolino: casilla de agua abierta (no puente). Nunca dos en la misma casilla.
+- Al empezar, como las ruinas (0x4a1e20): cada jugador descubre los de la región de su capital.
+
+### Descubrir
+- En el mismo paso y con la misma regla que las ruinas (0x4a1ce0 desde 0x49ce08): Hidden Ruins + Discover Ruins, el
+  contador de 10 pasos, radio del grupo (0x486290), distancia |dx|+|dy| ≤ radio. Pone el bit del jugador en +6, da el
+  aviso y redibuja.
+- Trampa: siempre visible para el **dueño y sus aliados** (mismo criterio que la vista aliada); los demás la
+  descubren como un pozo.
+
+### Caer
+- Al terminar cada paso (0x49ce08), si `pz_map` de la casilla ≠ 0 y el registro está activo (pozo, remolino, o trampa
+  no detonada):
+  - **Pozo / trampa:** 0x46c470(ejército, 0) a cada ejército **no volador** de la casilla (héroes incluidos), el aviso
+    y 0x441290; los voladores siguen. Como br_drown, pero filtrando con isfly en vez de 0x43c240.
+  - **Remolino:** como el disband: 0x46c470(ejército, 1) a todos los no voladores, **embarcados incluidos**.
+  - Sonido: 0x4465e0(7, g) con g al azar (RuinDie / RuinDie2).
+  - Queda descubierto para el que cayó. Trampa: pasa a **detonada** (ya no mata) y queda vista por todos.
+  - El movimiento se corta ahí; si sobrevivieron voladores, se detienen en la casilla.
+
+### Bono "trap" y construir la trampa
+- Subtipo nuevo TERRAIN\SUBTYPE\trap.STT, como landing / carrier / cabotage; lo llevan las armas que se elijan en el
+  editor (por ejemplo los zappers).
+- Construir: grupo con al menos un ejército "trap", en una casilla libre (sin ciudad, ruina, sitio, puente ni otro
+  pozo), con oro ≥ [0x56950e] (costo de una ciudad). Se ofrece como el **Build** de los puentes (mismo menú y misma
+  confirmación). La trampa queda donde está el grupo; no cae al salir, sí si **vuelve** a pisarla.
+- Tope: lo libre de los 64 registros; lleno → aviso y no se construye.
+
+### Dibujos
+- Hoja propia (como sorteo.pcx / darkcomp.pcx), no la 0x4f: sus 8 lugares de tipo de ruina están ocupados. Cuadros:
+  pozo, remolino (4 de animación), trampa intacta, trampa detonada (con fogonazo). Para las pruebas, copiados del de
+  una ruina, como decidió el usuario.
+- Gancho después de 0x45c0e0 en sus dos llamadas (0x459b90 y 0x45a02d): si la casilla tiene registro en `pz_map` y el
+  jugador que mira [0x560b20] lo ve (bit en +6, o dueño/aliado de la trampa), copia el cuadro con 0x4dd490. El
+  remolino elige el cuadro por un contador de tiempo.
+- **Falta averiguar** (primer paso al programar el dibujo): cómo repinta el juego las casillas animadas (temporizador
+  o solo al mover), para que el remolino se mueva sin repintar todo el mapa.
+
+### IA
+- No pisa a sabiendas un pozo, remolino o trampa que ve: en su búsqueda de camino esa casilla es intransitable para
+  ese jugador. Usar el bono "trap" queda para una etapa posterior, como pidió el usuario.
+
+### Pruebas (prueba_pozos.py, como las demás prueba_*.py)
+- Generación: cantidad y casillas válidas en un mapa al azar y uno prearmado; nada sin Hidden Ruins.
+- SAV: guardar y cargar conserva la tabla; un SAV viejo carga vacío; el exe original abre el SAV nuevo.
+- Caer: tierra en pozo (mueren todos, sonido), grupo con voladores (siguen los voladores), barco cargado en remolino
+  (se hunde con todo), trampa (mata una vez, después detonada), el dueño que vuelve a su trampa (cae).
+- Descubrir: con y sin Discover Ruins; trampa visible para dueño y aliados, oculta para el resto.
+- Red: dos PC con la misma tabla y la misma suma de sincronía.
+
+## Pregunta para el usuario
+- Un **pozo o remolino ya descubierto**, ¿mata igual al humano que lo pisa? Propuesta: el camino automático lo esquiva
+  si el jugador lo ve; si el jugador lo pisa a propósito, casilla por casilla, cae.
+
 ## Estado
-Averiguado todo lo que estaba pendiente; nada programado. Próximo paso: diseñar (dónde viven los datos, clase de casilla
-y dibujo). Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, diseño".
+Diseño escrito; nada programado. Falta la respuesta a la pregunta de arriba. Próximo paso: programar en este orden,
+cada parte con su prueba: datos + SAV → generación → caer → descubrir → dibujo → red → trampa → IA.
+Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, programación".
