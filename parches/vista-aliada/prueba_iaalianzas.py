@@ -4,8 +4,8 @@
 # Uso: python prueba_iaalianzas.py [DarklordAV.exe] [partida.SAV]
 # ai_ally se llama como en 0x40edf1 (pila, 0), con stubs: 0x40c990 (la decisión original: se anota que se llamó) y
 # 0x40d2b0 (mover la pila: se anota el destino). Los eventos se leen de lo que ia_evt manda a fprintf.
-# Esperado: los casos del Definition of done del spec (refugio 1a/1b/1c, salidas 3a/3b, req. 4 y 5, casos
-# límite; sin refuerzo de ciudades aliadas desde 1.0.38.0) y los controles: con la IA original y sin IA.INI no cambia nada.
+# Esperado: los casos del Definition of done del spec (refugio 1a/1b, salidas 3a/3b, req. 5, casos límite; sin
+# refuerzo de ciudades aliadas desde 1.0.38.0), la regla del héroe y la defensa de ciudades aliadas (1.0.39.0) y los controles: con la IA original y sin IA.INI no cambia nada.
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -226,16 +226,54 @@ ev = jugar()
 check('sin alianza con el dueño: no es refugio', 7 not in tipos(ev) and m.orig == 1, ev)
 m.w(DIPLO + P * 56 + OWN, '<B', 0); m.w(DIPLO + OWN * 56 + P, '<B', 0)
 
-# ---------------------------------------------------------------- 1c: héroe enemigo que viene hacia la pila
-escenario(1)
+# ---------------------------------------------------------------- regla del héroe (motivo 3, 1.0.39.0)
+# misión 11 «Assassinating an Enemy» del color 1 (en guerra con P) contra el líder de la pila
 hero = next(i for i in range(1, NARM) if (m.u16(arm(i) + 0xe) & 0x1f) == 0x10 and owner(i) == 1)
-revive(hero); setfs(hero, 1, 1); put(hero, T[0] + 3, T[1]); m.w(arm(hero) + 6, '<hh', T[0], T[1])
+MIS = 0x55edc4 + 1 * 16
+defs = neut[-5:-3]                                     # dos ejércitos del dueño de la ciudad de refugio
+def cazado(objetivo=None, lejos=False, fuerza=(15, 7), defensa=True, activa=1):
+    escenario(1)
+    setfs(LEAD, 3, 3); setfs(SEG, 3, 3)                # pila: 18
+    revive(hero); setfs(hero, *fuerza)
+    reach = m.rd(arm(hero) + 0x12, 1)[0] // 2 + 1
+    put(hero, T[0] + (reach + 6 if lejos else 1), T[1])
+    m.w(MIS, '<BBhhh', activa, 0, hero, 11, LEAD if objetivo is None else objetivo)
+    for i in defs:
+        setown(i, OWN); revive(i); setfs(i, 15, 7 if defensa else 0); put(i, CX, CY)
+    return jugar()
+ev = cazado()
+check('héroe: perseguido (misión 11), perseguidor cerca y más fuerte, ciudad bien defendida: refugio motivo 3',
+      (7, CX, CY, 3) in ev and m.moves == [(CX, CY)] and m.orig == 0, (ev, m.moves))
+ev = cazado(defensa=False)
+check('héroe control a): ciudad sin defensa del aliado: no es refugio de motivo 3', all(
+    not (e[0] == 7 and e[3] == 3) for e in ev), ev)
+ev2 = cazado(objetivo=mios[0])
+check('héroe control b): la misión apunta a otro ejército: sin motivo 3', all(
+    not (e[0] == 7 and e[3] == 3) for e in ev2), ev2)
+ev = cazado(activa=0)
+check('héroe control b): misión inactiva: sin motivo 3', all(not (e[0] == 7 and e[3] == 3) for e in ev), ev)
+ev = cazado(lejos=True)
+check('héroe control c): perseguidor fuera de alcance: sin motivo 3', all(
+    not (e[0] == 7 and e[3] == 3) for e in ev), ev)
+ev = cazado(fuerza=(1, 1))
+check('héroe control: la pila es más fuerte que el perseguidor: sin motivo 3', all(
+    not (e[0] == 7 and e[3] == 3) for e in ev), ev)
+# permanencia
+cazado()
+put(LEAD, CX, CY); put(SEG, CX, CY)
+m.w(0x503328, '<h', m.s16(0x503328) + 1)
+put(hero, CX + 1 + 1, CY)                              # sigue cerca (a 1 de la casilla de la ciudad + 1)
 ev = jugar()
-check('1c: héroe débil que viene: refugio motivo 3', (7, CX, CY, 3) in ev, ev)
-escenario(1)
-revive(hero); setfs(hero, 1, 1); put(hero, T[0] + 3, T[1]); m.w(arm(hero) + 6, '<hh', T[0] + 10, T[1] + 10)
+check('héroe: mientras siga la persecución, se queda (sin moverse, sin la original)', not m.moves and m.orig == 0
+      and 8 not in tipos(ev), (ev, m.moves, m.orig))
+m.w(MIS, '<B', 0); put(hero, *AWAY)            # sin misión y lejos (si no, req. 5 la retiene)
+m.w(0x503328, '<h', m.s16(0x503328) + 1)
 ev = jugar()
-check('1c control: héroe que va a otro lado: sin refugio', 7 not in tipos(ev), ev)
+check('héroe: terminada la misión, sale (evento 8, n = 4) y sigue la original', (8, CX, CY, 4) in ev
+      and m.orig == 1, (ev, m.orig))
+m.w(0x503328, '<h', m.s16(0x503328) - 2)
+kill(hero); m.w(MIS, '<B', 0)
+for i in defs: kill(i)
 
 # ---------------------------------------------------------------- 1b: débil después de una batalla
 escenario(1)
@@ -287,36 +325,62 @@ m.w(DIPLO + P * 56 + OWN, '<B', 2); m.w(DIPLO + OWN * 56 + P, '<B', 2)
 ev = jugar()
 check('alianza rota: deja el refugio (evento 8, n = 3)', (8, CX, CY, 3) in ev, ev)
 m.w(DIPLO + P * 56 + OWN, '<B', 0); m.w(DIPLO + OWN * 56 + P, '<B', 0)
-# req. 4: muy débil, sin oro y sin refuerzos cerca
+# req. 4 (quedarse hasta el final) quitado en 1.0.39.0
 refugiar()
-kill(SEG); setfs(LEAD, 2, 2)                          # 4 <= 6
+kill(SEG); setfs(LEAD, 2, 2)
 m.w(0x536b30 + P * 0x1f8 + 0xe4, '<h', 50)
 ev = jugar()
-check('4: muy débil y sin oro: se queda hasta el final (evento 9)', (9, CX, CY, 4) in ev and m.orig == 0, ev)
-setfs(LEAD, 5, 6)
-ev = jugar()
-check('4: después no sale aunque se refuerce', 8 not in tipos(ev) and m.orig == 0, ev)
-refugiar()
-kill(SEG); setfs(LEAD, 2, 2); m.w(0x536b30 + P * 0x1f8 + 0xe4, '<h', 500)
-ev = jugar()
-check('4 control: con oro no se queda hasta el final', 9 not in tipos(ev), ev)
-refugiar()
-kill(SEG); setfs(LEAD, 2, 2); m.w(0x536b30 + P * 0x1f8 + 0xe4, '<h', 50)
-revive(mios[0]); put(mios[0], CX + 3, CY)
-ev = jugar()
-check('4 control: con refuerzos propios cerca no se queda hasta el final', 9 not in tipos(ev), ev)
+check('sin req. 4 (quitado en 1.0.39.0): muy débil y sin oro no anota el evento 9', 9 not in tipos(ev), ev)
 
-# ---------------------------------------------------------------- refuerzo
-escenario(1)
-setfs(E1, 15, 7); put(E1, CX + 5, CY)              # amenaza la ciudad (alcance 4 casillas desde E1... ver abajo)
-reach = m.rd(arm(E1) + 0x12, 1)[0] // 2 + 1
-put(E1, CX + reach, CY); put(LEAD, *T); put(SEG, *T)
-dist_pila = max(abs(T[0] - (CX + reach)), abs(T[1] - CY))
-if dist_pila <= m.rd(arm(E1) + 0x12, 1)[0] // 2 + 1:
-    put(E1, CX - reach if T[0] > CX else CX + reach, CY)
+# ---------------------------------------------------------------- defensa de ciudades aliadas (1.0.39.0)
+def amenazar():
+    escenario(1)
+    setfs(LEAD, 15, 7); setfs(SEG, 15, 7)              # pila: 210, sin miedo a la amenaza
+    setfs(E1, 15, 7)
+    reach = m.rd(arm(E1) + 0x12, 1)[0] // 2 + 1
+    put(E1, CX + reach, CY)
+    if max(abs(T[0] - (CX + reach)), abs(T[1] - CY)) <= reach:
+        put(E1, CX - reach if T[0] > CX else CX + reach, CY)
+amenazar()
 ev = jugar()
-check('sin refuerzo (quitado en 1.0.38.0): ciudad aliada amenazada al alcance, sigue la original',
-      10 not in tipos(ev) and 14 not in tipos(ev) and m.orig == 1, ev)
+check('defensa: ciudad aliada en riesgo al alcance, nada propio en riesgo: va (evento 15) y no sigue la original',
+      [e for e in ev if e[0] == 15] == [(15, CX, CY, 105)] and m.moves == [(CX, CY)] and m.orig == 0, (ev, m.moves))
+ev = jugar()
+check('defensa: lo ya mandado este turno cubre la amenaza: la segunda vez no va', 15 not in tipos(ev)
+      and m.orig == 1, ev)
+amenazar()
+m.w(0x56ea90 + P * 0x4f0 + 0x14, '<h', 0)
+ev = jugar()
+check('defensa control: no llega este turno: no va', 15 not in tipos(ev) and m.orig == 1, ev)
+amenazar()
+setfs(LEAD, 1, 1); kill(SEG)
+setfs(E2, 1, 1); put(E2, *AWAY)
+for i in defs: setown(i, OWN); revive(i); setfs(i, 15, 7); put(i, CX, CY)
+ev = jugar()
+check('defensa control: la ciudad ya tiene defensores de sobra: no va', 15 not in tipos(ev), ev)
+for i in defs: kill(i)
+# ciudad propia en riesgo: una ciudad lejos de la pila pasa a P, sin defensores, con un enemigo al lado
+lejana = next(i for i in range(ncity) if i != C and m.rd(CITIES + i * 0xde + 0xa4, 1)[0]
+              and max(abs(city(i)[0] - T[0]), abs(city(i)[1] - T[1])) > 20
+              and max(abs(city(i)[0] - CX), abs(city(i)[1] - CY)) > 20)
+amenazar()
+m.w(CITIES + lejana * 0xde + 0xa5, '<B', P)
+setfs(E2, 15, 7); put(E2, city(lejana)[0] + 2, city(lejana)[1])
+ev = jugar()
+check('defensa control: una ciudad propia en riesgo: no va (sigue la original)', 15 not in tipos(ev)
+      and 16 not in tipos(ev) and m.orig == 1, ev)
+# permanencia
+amenazar()
+put(LEAD, CX, CY); put(SEG, CX, CY)
+ev = jugar()
+check('defensa: ya en la ciudad aliada amenazada: se queda (evento 16, sin la original)',
+      (16, CX, CY, 105) in ev and not m.moves and m.orig == 0, (ev, m.moves))
+put(E1, *AWAY)
+m.w(0x503328, '<h', m.s16(0x503328) + 1)
+ev = jugar()
+check('defensa: pasó la amenaza: vuelve a la original', 16 not in tipos(ev) and 15 not in tipos(ev)
+      and m.orig == 1, ev)
+m.w(0x503328, '<h', m.s16(0x503328) - 1)
 
 # ---------------------------------------------------------------- al_surv: resultado de la pila amenazada
 

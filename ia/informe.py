@@ -8,7 +8,8 @@
 #   turnos sin progreso: los registra la destreza 1 (todavía no existe).
 # Alianzas (specs\ia-alianzas-v1.md, req. 12), por IA: a. pilas amenazadas y sobrevivientes al turno siguiente
 # (eventos 11 y 12); b. refugios (eventos 5 y 7), salidas (8), hasta el final (9), defensa del refugio (13), refuerzos
-# (10) y turnos en que un refuerzo se queda (14); c. batallas en ciudad con defensores de más de un color (colores_d) y cuántas ganó la defensa; d. ciudades
+# (10, hasta 1.0.37.0), turnos en que un refuerzo se queda (14, solo 1.0.37.0), refugios de héroe perseguido (7 con
+# n = 3, desde 1.0.39.0), idas a defender una ciudad aliada (15) y turnos que se queda en ella (16); c. batallas en ciudad con defensores de más de un color (colores_d) y cuántas ganó la defensa; d. ciudades
 # compartidas atacadas (defensor con un aliado ese turno y la opción de ciudades compartidas) y cuántas resistieron
 # el turno; e. héroes vivos al final; f. qué equipo ganó (PV por equipo, con los equipos de la guardada). Lo que una
 # tanda vieja no registró queda en blanco.
@@ -87,10 +88,11 @@ def alianzas(db, tid, validas, cuenta):
     q = ','.join('?' * len(validas))
     ev = defaultdict(lambda: defaultdict(int))
     hay_ev = db.execute(f'select count(*) from evento where partida in ({q})', validas).fetchone()[0]
-    for ia, tipo, n1, k in db.execute(f'select ia, tipo, n = 1, count(*) from evento where partida in ({q}) '
-                                      'group by ia, tipo, n = 1', validas):
+    for ia, tipo, n, k in db.execute(f'select ia, tipo, n, count(*) from evento where partida in ({q}) '
+                                     'group by ia, tipo, n', validas):
         ev[ia][tipo] += k
-        if tipo == 12 and n1: ev[ia]['sobrevivio'] += k
+        if tipo == 12 and n == 1: ev[ia]['sobrevivio'] += k
+        if tipo == 7 and n == 3: ev[ia]['heroe'] += k
     # amigos[(partida, turno, color)] = aliados ese turno, si la partida tiene ciudades compartidas
     amigos = {}
     for row in db.execute(f'select partida, turno, color, opciones, {", ".join(f"d{i}" for i in range(8))} from diplo '
@@ -117,11 +119,11 @@ def alianzas(db, tid, validas, cuenta):
     b = lambda v, ok: str(v) if ok else ''
     print('\nAlianzas (req. 12; en blanco lo que la tanda no registró)')
     print(f'{"IA":28} {"amenaz.":>7} {"sobrev.":>7} {"refug.":>6} {"salid.":>6} {"final":>5} {"def.ref":>7} '
-          f'{"refuer.":>7} {"ref.qda":>7} {"bat.multi":>9} {"ganó def":>8} {"compart.":>8} {"resist.":>7} {"héroes":>6}')
+          f'{"refuer.":>7} {"ref.qda":>7} {"ref.hér":>7} {"def.ali":>7} {"def.qda":>7} {"bat.multi":>9} {"ganó def":>8} {"compart.":>8} {"resist.":>7} {"héroes":>6}')
     for ia in sorted(cuenta):
         e = ev[ia]; ok = bool(hay_ev)
         print(f'{IAS.get(ia, ia):28} {b(e[11], ok):>7} {b(e["sobrevivio"], ok):>7} {b(e[5] + e[7], ok):>6} '
-              f'{b(e[8], ok):>6} {b(e[9], ok):>5} {b(e[13], ok):>7} {b(e[10], ok):>7} {b(e[14], ok):>7} {b(multi[ia][0], hay_col):>9} '
+              f'{b(e[8], ok):>6} {b(e[9], ok):>5} {b(e[13], ok):>7} {b(e[10], ok):>7} {b(e[14], ok):>7} {b(e["heroe"], ok):>7} {b(e[15], ok):>7} {b(e[16], ok):>7} {b(multi[ia][0], hay_col):>9} '
               f'{b(multi[ia][1], hay_col):>8} {b(len(comp[ia]), hay_dip):>8} '
               f'{b(sum(comp[ia].values()), hay_dip):>7} {heroes[ia]:6}')
     al = json.loads(db.execute('select alianzas from tanda where id=?', (tid,)).fetchone()[0] or '{}')

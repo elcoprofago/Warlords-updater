@@ -4747,10 +4747,11 @@ aibn_bridge:
 # 4 puente reconstruido (ai_brreb; n = costo), 5 refugio (ia_turn: al empezar el turno, pilas propias en una ciudad
 # compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
 # Alianzas (ai_ally; x, y = la ciudad salvo en 11 y 12): 7 refugio decidido (n = motivo 1/2/3 = req. 1a/b/c),
-# 8 salida del refugio (n = 1 req. 3a, 2 req. 3b, 3 se perdió la ciudad o la alianza), 9 queda hasta el final
-# (n = fuerza), 10 (hasta 1.0.37.0) refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
+# 8 salida del refugio (n = 1 req. 3a, 2 req. 3b, 3 se perdió la ciudad o la alianza, 4 terminó la persecución del
+# héroe), 9 (hasta 1.0.38.0) queda hasta el final (n = fuerza), 10 (hasta 1.0.37.0) refuerzo de ciudad aliada (n = 10 * motivo 6a/6b + criterio 7), 11 pila amenazada (x, y = líder,
 # n = líder), 12 resultado de esa pila al turno siguiente (n = 1 sobrevivió, 0 no), 13 queda a defender la ciudad
-# del refugio (req. 5; n = amenaza), 14 (solo 1.0.37.0) refuerzo que se queda.
+# del refugio (req. 5; n = amenaza), 14 (solo 1.0.37.0) refuerzo que se queda, 15 va a defender una ciudad aliada
+# amenazada (n = amenaza), 16 se queda en ella mientras dure la amenaza (n = amenaza).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -7640,24 +7641,32 @@ rf_out:
 # ai_ally reemplaza el call 0x40c990(pila, 0) de 0x40edf1, el que hace jugar cada pila de la IA en su turno (0x40eab0).
 # Para todo bando de la computadora anota, por pila amenazada (1a), el evento 11 y el resultado al turno siguiente
 # (12, al_surv desde ia_turn); eso no decide nada. Solo para ia_mode = prueba decide además:
-# - Refugio (req. 1, 2): motivo 1 = la amenaza al alcance (al_thr en la casilla del líder) es mayor que la pila;
-#   2 = perdió más de la mitad de su fuerza desde la decisión del turno anterior; 3 = un héroe enemigo al alcance va
-#   hacia ella (su destino a 2 casillas o menos). Va a la ciudad compartida de otro dueño (member) que alcanza este
-#   turno (costo del mapa de caminos 0x497750/0x4a65d0 <= movimiento del grupo, o ya está adentro), con lugar para
-#   la pila (32 ejércitos en sus 4 casillas) y más lejos del enemigo más cercano. Sin ninguna, sigue la original.
+# - Refugio (req. 1, 2): motivo 3 (regla táctica del héroe, 1.0.39.0) = al_hunt: un héroe enemigo con la misión
+#   «Assassinating an Enemy» contra un héroe de la pila la alcanza el próximo turno y su pila es más fuerte; solo
+#   sirven ciudades donde el dueño ya tiene más fuerza que la amenaza (a). Se mira primero; sin ciudad así, siguen
+#   los otros motivos. Motivo 1 = la amenaza al alcance (al_thr en la casilla del líder) es mayor que la pila;
+#   2 = perdió más de la mitad de su fuerza desde la decisión del turno anterior. Va a la ciudad compartida de otro
+#   dueño (member) que alcanza este turno (costo del mapa de caminos 0x497750/0x4a65d0 <= movimiento del grupo, o ya
+#   está adentro), con lugar para la pila (32 ejércitos en sus 4 casillas) y más lejos del enemigo más cercano. Sin
+#   ninguna, sigue la original.
 # - Refugiada: si la alianza o la ciudad se pierden, deja de estarlo (evento 8, n = 3). Si la ciudad está amenazada
-#   se queda a defenderla (req. 5, evento 13 una vez). Si no: muy débil (fuerza <= AL_WEAK), sin oro (< AL_GOLD) y sin
-#   ejércitos propios fuera de la pila a 8 casillas o menos: se queda hasta el final (req. 4, evento 9). Sale (evento
-#   8) si el dueño juntó más fuerza en la ciudad que al entrar (n = 1, req. 3a) o si la pila creció la mitad (al menos
-#   2) desde que entró (n = 2, req. 3b). Mientras tanto vuelve a la ciudad si salió y no hace nada más.
+#   se queda a defenderla (req. 5, evento 13 una vez). Motivo 3: se queda mientras al_hunt siga dando un perseguidor
+#   y el dueño siga más fuerte que la amenaza en la ciudad; si no, sale (evento 8, n = 4). Motivos 1 y 2: sale
+#   (evento 8) si el dueño juntó más fuerza en la ciudad que al entrar (n = 1, req. 3a) o si la pila creció la mitad
+#   (al menos 2) desde que entró (n = 2, req. 3b). Mientras tanto vuelve a la ciudad si salió y no hace nada más.
+#   «Quedarse hasta el final» (req. 4, evento 9) quitado en 1.0.39.0: lo reemplaza el motivo 3.
 # - Refuerzo de ciudades aliadas (req. 6 y 7): quitado en 1.0.38.0 por pedido del usuario (decisión estratégica,
-#   no táctica). Los eventos 10 y 14 ya no se anotan.
+#   no táctica).
+# - Defensa de ciudades aliadas (1.0.39.0, regla del usuario), si la pila no se refugia: si ninguna ciudad propia
+#   tiene amenaza mayor que sus defensores, la pila que ya está en una ciudad aliada con amenaza se queda (evento 16)
+#   y si no, va (evento 15) a la ciudad aliada que alcanza este turno, con lugar, cuya amenaza supera a defensores +
+#   lo ya mandado este turno (AL_CT +8) por más; suma su fuerza a lo mandado. Amenaza = enemigos de p (al_thr): se
+#   supone que el enemigo de p es también del aliado (equipos). Después, la original.
 # Fuerza de un ejército = fuerza base * vida de su palabra +0xe (bits 9-12 y 13-15, como 0x467240); alcance de un
 # ejército enemigo = su movimiento +0x12 / 2 + 1 casillas de rey (aproximado: no mira el terreno).
 # La tabla AL_TAB (por jugador y pila, 16 bytes): +0 líder, +2 ciudad + 1, +4 motivo, +5 bits (1 hasta el final,
-# 2 evento 13 anotado), +6 fuerza al entrar, +8 fuerza del dueño en la ciudad al entrar, +0xa fuerza en la última
+# 2 evento 13 anotado; el 1 ya no se usa), +6 fuerza al entrar, +8 fuerza del dueño en la ciudad al entrar, +0xa fuerza en la última
 # decisión, +0xc su turno + 1 (0 = sin decisión). No se guarda con la partida: al cargar, las pilas vuelven a decidir desde cero.
-AL_WEAK, AL_GOLD = 6, 100
 AL_TAB = place_data('al_tab', bytes(80 * 16))
 AL_THR = place_data('al_amen', bytes(80 * 8))     # líder, x, y, turno de la pila amenazada (req. 11)
 AL_CT = place_data('al_ct', bytes(256 * 12))     # por ciudad: amenaza, defensores, ya mandado
@@ -7955,6 +7964,128 @@ tb_out:
     popad
     ret
 ''')
+# al_hunt(p, registro de pila) cdecl -> eax = el héroe enemigo que persigue a un héroe de la pila (0 = ninguno):
+# un jugador en guerra con p (DIPLO 2) tiene la misión activa 11 «Assassinating an Enemy» (0x55edc4 + jugador * 16:
+# +0 activa, +2 su héroe, +4 tipo, +6 el ejército objetivo, según el generador 0x45ec40) con objetivo en la pila, su
+# héroe vive, alcanza al objetivo en su próximo turno (movimiento / 2 + 1 casillas de rey, como al_thr) y los
+# ejércitos de su color en su casilla suman más fuerza que la pila (la pila es débil). Preserva ebx esi edi ebp.
+al_hunt = place('al_hunt', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 8
+    push dword ptr [esp + 0x20]
+    call {al_sstr:#x}
+    add esp, 4
+    mov dword ptr [esp], eax
+    xor ebx, ebx
+hu_q:
+    cmp ebx, 8
+    jae hu_none
+    cmp ebx, dword ptr [esp + 0x1c]
+    je hu_nx
+    imul edx, dword ptr [esp + 0x1c], 56
+    cmp byte ptr [edx + ebx + {DIPLO:#x}], 2
+    jne hu_nx
+    mov edi, ebx
+    shl edi, 4
+    cmp byte ptr [edi + 0x55edc4], 0
+    je hu_nx
+    cmp word ptr [edi + 0x55edc8], 11
+    jne hu_nx
+    movsx eax, word ptr [edi + 0x55edca]
+    test eax, eax
+    jle hu_nx
+    mov dword ptr [esp + 4], eax
+    mov ecx, dword ptr [esp + 0x20]
+    xor edx, edx
+hu_s:
+    cmp ax, word ptr [ecx + edx*2 + 0xc]
+    je hu_in
+    inc edx
+    cmp edx, 8
+    jb hu_s
+    jmp hu_nx
+hu_in:
+    movsx esi, word ptr [edi + 0x55edc6]
+    test esi, esi
+    jle hu_nx
+    imul ebp, esi, 0x1c
+    test byte ptr [ebp + 0x54fe63], 0x40
+    jz hu_nx
+    movzx eax, word ptr [ebp + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, ebx
+    jne hu_nx
+    imul ecx, dword ptr [esp + 4], 0x1c
+    movsx eax, word ptr [ebp + 0x54fe52]
+    movsx edx, word ptr [ecx + 0x54fe52]
+    sub eax, edx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov edi, eax
+    movsx eax, word ptr [ebp + 0x54fe54]
+    movsx edx, word ptr [ecx + 0x54fe54]
+    sub eax, edx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, edi
+    jle hu_d
+    mov edi, eax
+hu_d:
+    movzx eax, byte ptr [ebp + 0x54fe62]
+    shr eax, 1
+    inc eax
+    cmp edi, eax
+    jg hu_nx
+    xor edi, edi
+    mov ecx, 1
+hu_g:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge hu_gd
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz hu_gn
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, ebx
+    jne hu_gn
+    mov ax, word ptr [edx + 0x54fe52]
+    cmp ax, word ptr [ebp + 0x54fe52]
+    jne hu_gn
+    mov ax, word ptr [edx + 0x54fe54]
+    cmp ax, word ptr [ebp + 0x54fe54]
+    jne hu_gn
+    mov eax, ecx
+    call {al_str:#x}
+    add edi, eax
+hu_gn:
+    inc ecx
+    jmp hu_g
+hu_gd:
+    cmp dword ptr [esp], edi
+    jge hu_nx
+    mov eax, esi
+    jmp hu_out
+hu_nx:
+    inc ebx
+    jmp hu_q
+hu_none:
+    xor eax, eax
+hu_out:
+    add esp, 8
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
 # ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
 L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
     L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT = (4 * (i + 1) for i in range(23))
@@ -8122,62 +8253,23 @@ al_cur:
     jmp al_stay
 al_calm:
     and byte ptr [esi + 5], 0xfd
-    test byte ptr [esi + 5], 1
-    jnz al_stay
-    cmp dword ptr [ebp - {L_STR}], {AL_WEAK}
-    jg al_exits
-    imul eax, dword ptr [ebp - {L_P}], 0x1f8
-    movsx eax, word ptr [eax + 0x536b30 + 0xe4]
-    cmp eax, {AL_GOLD}
-    jge al_exits
-    mov esi, 1
-al_fr:
-    movsx eax, word ptr [0x54fe50]
-    cmp esi, eax
-    jge al_final
-    imul edi, esi, 0x1c
-    test byte ptr [edi + 0x54fe63], 0x40
-    jz al_frn
-    movzx eax, word ptr [edi + 0x54fe5e]
-    shr eax, 5
-    and eax, 15
-    cmp eax, dword ptr [ebp - {L_P}]
-    jne al_frn
-    mov ecx, dword ptr [ebp - {L_REC}]
-    xor edx, edx
-al_frs:
-    movsx eax, word ptr [ecx + edx*2 + 0xc]
-    cmp eax, esi
-    je al_frn
-    inc edx
-    cmp edx, 8
-    jb al_frs
-    movsx eax, word ptr [edi + 0x54fe52]
-    sub eax, dword ptr [ebp - {L_LX}]
-    add eax, 8
-    cmp eax, 16
-    ja al_frn
-    movsx eax, word ptr [edi + 0x54fe54]
-    sub eax, dword ptr [ebp - {L_LY}]
-    add eax, 8
-    cmp eax, 16
-    jbe al_exits_r
-al_frn:
-    inc esi
-    jmp al_fr
-al_final:
-    mov esi, dword ptr [ebp - {L_ENT}]
-    or byte ptr [esi + 5], 1
-    push dword ptr [ebp - {L_STR}]
-    push dword ptr [ebp - {L_CY}]
-    push dword ptr [ebp - {L_CX}]
+    cmp byte ptr [esi + 4], 3
+    jne al_exits
+    mov dword ptr [ebp - {L_T2}], 4
+    push dword ptr [ebp - {L_REC}]
     push dword ptr [ebp - {L_P}]
-    push 9
-    call {ia_evt:#x}
-    add esp, 0x14
+    call {al_hunt:#x}
+    add esp, 8
+    test eax, eax
+    jz al_exit
+    push dword ptr [ebp - {L_BEST}]
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    imul eax, dword ptr [ebp - {L_BEST}], 12
+    cmp edx, dword ptr [eax + {AL_CT:#x}]
+    jle al_exit
     jmp al_stay
-al_exits_r:
-    mov esi, dword ptr [ebp - {L_ENT}]
 al_exits:
     push dword ptr [ebp - {L_BEST}]
     push dword ptr [ebp - {L_P}]
@@ -8237,6 +8329,15 @@ al_stay:
 al_back:{_al_go('al_bk')}
     jmp al_done
 al_normal:
+    push dword ptr [ebp - {L_REC}]
+    push dword ptr [ebp - {L_P}]
+    call {al_hunt:#x}
+    add esp, 8
+    mov dword ptr [ebp - {L_HUNT}], eax
+    mov dword ptr [ebp - {L_MOT}], 3
+    test eax, eax
+    jnz al_ref
+al_n12:
     mov dword ptr [ebp - {L_MOT}], 1
     mov eax, dword ptr [ebp - {L_E}]
     cmp eax, dword ptr [ebp - {L_STR}]
@@ -8244,9 +8345,7 @@ al_normal:
     mov dword ptr [ebp - {L_MOT}], 2
     cmp dword ptr [ebp - {L_T1}], 0
     jne al_ref
-    mov dword ptr [ebp - {L_MOT}], 3
-    cmp dword ptr [ebp - {L_HUNT}], 0
-    je al_orig
+    jmp al_dfn
 al_ref:
     call al_map
     mov dword ptr [ebp - {L_BEST}], -1
@@ -8295,6 +8394,16 @@ al_rcc:
     cmp eax, dword ptr [ebp - {L_MOV}]
     jg al_rcn
 al_rcin:
+    cmp dword ptr [ebp - {L_MOT}], 3
+    jne al_rcin2
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    imul eax, esi, 12
+    cmp edx, dword ptr [eax + {AL_CT:#x}]
+    jle al_rcn
+al_rcin2:
     xor eax, eax
     mov ecx, dword ptr [ebp - {L_NEAR}]
     test ecx, ecx
@@ -8327,7 +8436,11 @@ al_rcn:
 al_rch:
     mov eax, dword ptr [ebp - {L_BEST}]
     test eax, eax
-    jl al_orig
+    jge al_rok
+    cmp dword ptr [ebp - {L_MOT}], 3
+    je al_n12
+    jmp al_orig
+al_rok:
     mov esi, dword ptr [ebp - {L_ENT}]
     inc eax
     mov word ptr [esi + 2], ax
@@ -8354,6 +8467,128 @@ al_rch:
     mov dword ptr [ebp - {L_CX}], ecx
     mov dword ptr [ebp - {L_CY}], eax
     jmp al_stay
+al_dfn:
+    xor esi, esi
+al_do:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_ds0
+    cmp esi, 256
+    jae al_ds0
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_don
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    jne al_don
+    imul eax, esi, 12
+    mov ecx, dword ptr [eax + {AL_CT:#x}]
+    cmp ecx, dword ptr [eax + {AL_CT + 4:#x}]
+    jg al_orig
+al_don:
+    inc esi
+    jmp al_do
+al_ds0:
+    xor esi, esi
+al_ds:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_dg0
+    cmp esi, 256
+    jae al_dg0
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_dsn
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    je al_dsn
+    imul eax, esi, 12
+    mov ecx, dword ptr [eax + {AL_CT:#x}]
+    test ecx, ecx
+    jz al_dsn
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    movsx edx, word ptr [edi + {CITIES + 2:#x}]
+    mov ebx, dword ptr [ebp - {L_LX}]
+    sub ebx, eax
+    cmp ebx, 1
+    ja al_dsn
+    mov ebx, dword ptr [ebp - {L_LY}]
+    sub ebx, edx
+    cmp ebx, 1
+    ja al_dsn
+    push ecx
+    push edx
+    push eax
+    push dword ptr [ebp - {L_P}]
+    push 16
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp al_done
+al_dsn:
+    inc esi
+    jmp al_ds
+al_dg0:
+    call al_map
+    mov dword ptr [ebp - {L_BEST}], -1
+    mov dword ptr [ebp - {L_BSC}], 0
+    xor esi, esi
+al_dg:
+    movsx eax, word ptr [0x537e2a]
+    cmp esi, eax
+    jge al_dgh
+    cmp esi, 256
+    jae al_dgh
+    imul edi, esi, 0xde
+    cmp byte ptr [edi + {CITIES + 0xa4:#x}], 0
+    je al_dgn
+    movzx eax, byte ptr [edi + {CITIES + 0xa5:#x}]
+    cmp eax, dword ptr [ebp - {L_P}]
+    je al_dgn
+    imul eax, esi, 12
+    mov ecx, dword ptr [eax + {AL_CT:#x}]
+    sub ecx, dword ptr [eax + {AL_CT + 4:#x}]
+    sub ecx, dword ptr [eax + {AL_CT + 8:#x}]
+    cmp ecx, dword ptr [ebp - {L_BSC}]
+    jle al_dgn
+    mov dword ptr [ebp - {L_T2}], ecx
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_def:#x}
+    add esp, 8
+    add ecx, dword ptr [ebp - {L_CNT}]
+    cmp ecx, 32
+    jg al_dgn
+    push esi
+    push dword ptr [ebp - {L_P}]
+    call {al_cost:#x}
+    add esp, 8
+    cmp eax, dword ptr [ebp - {L_MOV}]
+    jg al_dgn
+    mov eax, dword ptr [ebp - {L_T2}]
+    mov dword ptr [ebp - {L_BSC}], eax
+    mov dword ptr [ebp - {L_BEST}], esi
+al_dgn:
+    inc esi
+    jmp al_dg
+al_dgh:
+    mov esi, dword ptr [ebp - {L_BEST}]
+    test esi, esi
+    jl al_orig
+    imul eax, esi, 12
+    mov ecx, dword ptr [ebp - {L_STR}]
+    add dword ptr [eax + {AL_CT + 8:#x}], ecx
+    imul edi, esi, 0xde
+    push dword ptr [eax + {AL_CT:#x}]
+    movsx eax, word ptr [edi + {CITIES + 2:#x}]
+    push eax
+    movsx eax, word ptr [edi + {CITIES:#x}]
+    push eax
+    push dword ptr [ebp - {L_P}]
+    push 15
+    call {ia_evt:#x}
+    add esp, 0x14
+{_al_go('al_dgo')}
+    jmp al_done
 al_map:
     cmp dword ptr [ebp - {L_MAP}], 0
     jne al_map_r

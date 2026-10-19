@@ -213,3 +213,33 @@ No construido (queda para una versión siguiente):
   ni 14, sigue la original); 33 TODO OK.
 - Lo que sigue: clasificar todas las instrucciones pendientes en tácticas o estratégicas (ver
   ia/PENDIENTE-entrenamiento-ia.md, «Clasificación táctica / estratégica») antes de otra A/B.
+
+## Regla del héroe y defensa de ciudades aliadas (vista-aliada 1.0.39.0, 19/10/2026)
+Las dos reglas tácticas que el usuario confirmó en la revisión táctica / estratégica.
+- **Héroe perseguido** (reemplaza al 1c aproximado y al req. 4 «quedarse hasta el final», que se quita): un héroe
+  débil se refugia en una ciudad aliada mientras a) la ciudad ya esté bien defendida por el aliado, b) un héroe
+  enemigo lo persiga para asesinarlo y cumplir una misión, y c) el perseguidor esté cerca. Cómo lo mide la IA:
+  - b) un jugador en guerra tiene la misión activa 11 «Assassinating an Enemy» con objetivo en la pila. La misión
+    activa está en 0x55edc4 + jugador * 16: +0 activa, +2 su héroe, +4 tipo, +6 el ejército objetivo, según el
+    generador 0x45ec40. Los nombres de los tipos 1..12 están en Sagetext.tex: el 10 es «Destroying an Enemy Site»
+    y el 11 «Assassinating an Enemy».
+  - c) el perseguidor alcanza al objetivo en su próximo turno (movimiento / 2 + 1 casillas, como la amenaza).
+  - débil: los ejércitos del perseguidor en su casilla suman más fuerza que la pila.
+  - a) el dueño de la ciudad tiene en ella más fuerza que la amenaza a esa ciudad.
+  - Se mira antes que los motivos 1 y 2 (evento 7, n = 3); si ninguna ciudad cumple a), siguen ellos. Se queda
+    mientras se cumplan las cuatro y sale cuando alguna falla (evento 8, n = 4). Si la ciudad está amenazada,
+    manda el req. 5.
+- **Defensa de ciudades aliadas** (regla del usuario: «siempre defender una ciudad aliada en riesgo inminente de
+  ataque de un enemigo común, salvo que eso descuide una ciudad propia también en riesgo»). Para la pila que no se
+  refugia, si ninguna ciudad propia tiene amenaza mayor que sus defensores:
+  - si ya está en una ciudad aliada con amenaza, se queda (evento 16, cada turno);
+  - si no, va (evento 15) a la ciudad aliada que alcanza este turno, con lugar, cuya amenaza supera a sus
+    defensores más lo ya mandado este turno por otras pilas. Entre varias, va a la que le falta más defensa.
+  - Pasada la amenaza, decide la original. No hay criterio de «importancia» de la ciudad.
+  - Aproximación: la amenaza son los enemigos del que manda; se supone que también son enemigos del aliado, como
+    en las partidas por equipos.
+- prueba_iaalianzas.py: 44 TODO OK. Casos nuevos con controles: misión de otro objetivo o inactiva, perseguidor
+  lejos o más débil, ciudad sin defensa, no llega este turno, ya cubierta, ciudad propia en riesgo, y permanencia
+  y salida en las dos reglas. Contra 1.0.38.0 fallan los 5 casos nuevos que la distinguen.
+- informe.py: columnas ref.hér (evento 7 con n = 3), def.ali (15) y def.qda (16).
+- Próximo paso: A/B de 16 partidas con 1.0.39.0 (TAREAS 21).

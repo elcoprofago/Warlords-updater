@@ -480,4 +480,10 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
     defendible es estratégico (excepción), y no se le pide a la IA.
   - Regla nueva propuesta por el usuario: «Siempre defender una ciudad aliada en riesgo inminente de ataque de un
     enemigo común, salvo que eso descuide una ciudad propia también en riesgo.» Respuesta y forma lógica en el
-    chat del 19/10; queda a confirmar antes de programarla.
+    chat del 19/10. Confirmada por el usuario y programada en vista-aliada 1.0.39.0.
+  - Héroe (alianzas 4) redefinido por el usuario como táctico: «un héroe débil se refugia en una ciudad aliada
+    mientras a) la ciudad ya esté bien defendida con armas aliadas, b) un héroe enemigo lo persiga para asesinarlo
+    y cumplir una misión, y c) el perseguidor esté cerca». Programado en 1.0.39.0; reemplaza al req. 4 y al 1c
+    aproximado. Detalle en specs/ia-alianzas-v1.md, «Regla del héroe y defensa de ciudades aliadas».
+  - Quedan para después: la regla de cantidad / calidad por tercios, y derribar puentes o puertos solo para frenar
+    un ataque inminente. La exploración no se toca hasta verificar si el mapa oculto es oculto para la IA.
