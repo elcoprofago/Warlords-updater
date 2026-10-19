@@ -532,3 +532,28 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   la segunda etapa: la IA concede oro por ese mismo camino).
 - Próximo paso: averiguar por dónde meter una orden en el plan de la IA para un turno (los ganchos de alianzas de
   1.0.39.0 son el punto de partida), y luego programar el paquete 0x2a2 y la barra «#n».
+
+**Por dónde meter una orden en el plan de la IA (averiguado en el exe original el 19/10/2026):**
+- La decisión de cada pila es 0x40c990(pila, arg), que llama a 0x40ca70(pila, arg). Con arg = 0 (el único llamador,
+  0x40edf1, que hoy es ai_ally) la meta la elige el planificador 0x41eda0 (tras puntuar con 0x41cb10). **Con arg != 0
+  se saltea el planificador: meta = arg / 1000, objetivo = arg % 1000.** Es una entrada que el exe ya tiene y no usa.
+- Metas (tabla 0x40d02c, textos del registro de la IA): 1 ir a una ciudad («Form to City», 0x40db40: va al centro de
+  la ciudad, sin mirar el dueño, y al llegar llama a 0x48c510(ciudad, 0), sin averiguar qué hace), 2 ruina, 3 ciudad
+  neutral (0x40d9f0(c, 3)), 4 ítem, 5 héroe (0x40dd00), 6 misión, **7 ciudad enemiga** (0x40d9f0(c, 7): anota la meta
+  en el registro de la pila, +6 = 7 y +8 = ciudad, se acerca con 0x497830/0x40d2b0 y entrar ataca), 8 sitio
+  (0x40d450), 9 reconstruir (0x40dbf0).
+- El planificador vuelve a puntuar todo en cada llamada (la meta anotada en +6/+8 no lo ata): una orden que dure
+  varios turnos hay que volver a pasarla en cada turno.
+- Consecuencia para el diseño: ai_ally ya intercepta cada pila; con una orden vigente para el bando, en vez de
+  0x40c990(pila, 0) llama a 0x40c990(pila, meta * 1000 + objetivo). Sin tocar el resto de la IA:
+  - «atacá CIUDAD» -> 7000 + ciudad;
+  - «atacá a COLOR» -> 7000 + la ciudad de ese color más cercana a la pila (elección del parche);
+  - «mandame refuerzos» -> 1000 + una ciudad del humano (la más cercana a la pila, o la amenazada).
+  La orden se guarda por bando (tipo, objetivo, turno en que vence) en una tabla del parche, la llena el receptor del
+  paquete 0x2a2 y ai_ally la consulta.
+- A decidir con el usuario (es comportamiento del juego, no técnica): ¿la orden va antes o después del refugio y de la
+  defensa de ciudades aliadas? ¿la cumplen todas las pilas o solo las que llegan en N turnos / parte de la fuerza?
+  ¿cuántos turnos dura? Propuesta: refugio primero (supervivencia de la pila), luego la orden; la cumplen las pilas
+  que llegan en 3 turnos o menos; dura hasta cumplirse o 5 turnos.
+- Próximo paso: con esas respuestas, programar la tabla de órdenes y su uso en ai_ally (probado emulado como
+  prueba_iaalianzas.py, con 0x40c990 en stub para ver el arg), y después el paquete 0x2a2 y la barra «#n».
