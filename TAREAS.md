@@ -45,10 +45,14 @@ La IA de prueba ahora tiene dos reglas nuevas: el héroe perseguido por un héro
 se refugia en una ciudad aliada bien defendida, y las pilas van a defender una ciudad aliada a punto de ser
 atacada (si ninguna ciudad propia está en riesgo). Un equipo de 4 colores juega con la IA de prueba y el otro con
 la original, y en la partida siguiente al revés.
-1. En el Monitor de IA (tiene que decir **1.0.6**): **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**,
-   **Nueva tanda**. Podés dejar prendida la suspensión. En la bitácora, cada partida tiene que decir colores con IA
-   de prueba **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados.
-2. Al terminar, dos tandas más iguales de 8 (24 partidas en total). Avisame cuando terminen las tres.
+1. En el Monitor de IA (tiene que decir **1.0.8**; si dice menos: ruedita → **Buscar actualización**, cuando no
+   haya una tanda corriendo): **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**. En **Controles** tildá
+   **Tandas automatizadas**, serie de **3** tandas. **Nueva tanda**. Podés dejar prendida la suspensión: se
+   suspende recién al terminar la tercera. En la bitácora, cada partida tiene que decir colores con IA de prueba
+   **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados, y entre tanda y tanda «Serie: tanda 1 de 3 terminada; arranca
+   la siguiente».
+2. Avisame cuando terminen las tres (24 partidas en total). Si una tanda se corta, la serie se detiene: apretá
+   **Retomar** con el check tildado y la serie de las que falten.
 Si mirás alguna partida: lo nuevo es ver una ciudad aliada defendida por ejércitos de dos colores (dos banderas)
 cuando un enemigo se le acerca.
 Resultado:
