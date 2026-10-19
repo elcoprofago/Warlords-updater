@@ -200,9 +200,12 @@ usar el bono "trap" en una etapa posterior).
 ### Bono "trap" y construir la trampa
 - Subtipo nuevo TERRAIN\SUBTYPE\trap.STT, como landing / carrier / cabotage; lo llevan las armas que se elijan en el
   editor (por ejemplo los zappers).
-- Construir: grupo con al menos un ejército "trap", en una casilla libre (sin ciudad, ruina, sitio, puente ni otro
-  pozo), con oro ≥ [0x56950e] (costo de una ciudad). Se ofrece como el **Build** de los puentes (mismo menú y misma
-  confirmación). La trampa queda donde está el grupo; no cae al salir, sí si **vuelve** a pisarla.
+- Construir (corrección del usuario, 19/10): el Build de los puentes **no sirve de modelo**, porque solo aparece al pie
+  de un puente derribado. La trampa va donde el jugador elija: el grupo camina hasta la casilla que quiera y ahí usa
+  una opción nueva **"Trap"** del menú de órdenes del grupo (el mismo menú de Raze / Build, 0x4b0660, ver br_menu
+  ~l.4089). Se enciende siempre que el grupo tenga un ejército "trap", sea su turno, la casilla esté libre (sin ciudad,
+  ruina, sitio, puente ni otro pozo) y el oro alcance ([0x56950e], costo de una ciudad). Pide confirmación y la orden
+  viaja por red. No cae al salir; sí si **vuelve** a pisarla.
 - Tope: lo libre de los 64 registros; lleno → aviso y no se construye.
 
 ### Dibujos
@@ -212,8 +215,10 @@ usar el bono "trap" en una etapa posterior).
 - Gancho después de 0x45c0e0 en sus dos llamadas (0x459b90 y 0x45a02d): si la casilla tiene registro en `pz_map` y el
   jugador que mira [0x560b20] lo ve (bit en +6, o dueño/aliado de la trampa), copia el cuadro con 0x4dd490. El
   remolino elige el cuadro por un contador de tiempo.
-- **Falta averiguar** (primer paso al programar el dibujo): cómo repinta el juego las casillas animadas (temporizador
-  o solo al mover), para que el remolino se mueva sin repintar todo el mapa.
+- Animación (dato del usuario, 19/10): en el mapa solo se animan el **agua**, la **lava** y algunos **sitios**; las
+  ruinas no. El remolino va siempre sobre agua: **el modelo es la animación del agua** (cómo y cada cuánto repinta el
+  juego esas casillas). Averiguarlo es el primer paso al programar el dibujo; si hace falta un segundo modelo, el de
+  los sitios animados.
 
 ### IA
 - No pisa a sabiendas un pozo, remolino o trampa que ve: en su búsqueda de camino esa casilla es intransitable para
@@ -227,11 +232,14 @@ usar el bono "trap" en una etapa posterior).
 - Descubrir: con y sin Discover Ruins; trampa visible para dueño y aliados, oculta para el resto.
 - Red: dos PC con la misma tabla y la misma suma de sincronía.
 
-## Pregunta para el usuario
-- Un **pozo o remolino ya descubierto**, ¿mata igual al humano que lo pisa? Propuesta: el camino automático lo esquiva
-  si el jugador lo ve; si el jugador lo pisa a propósito, casilla por casilla, cae.
+## Decisión del usuario (19/10/2026): pozos ya descubiertos
+- El **camino automático** los esquiva siempre que el jugador los vea (pozo, remolino o trampa no detonada, en la
+  búsqueda de camino es intransitable para ese jugador).
+- **Salvo la ruta expresa del jugador, larga o paso a paso:** si el jugador elige como destino la casilla del pozo, o
+  lo pisa avanzando casilla por casilla, cae. (El camino largo esquiva los demás pozos que vea y termina en ese.)
+- Lo mismo vale para la IA: no tiene "ruta expresa", así que nunca entra en uno que vea.
 
 ## Estado
-Diseño escrito; nada programado. Falta la respuesta a la pregunta de arriba. Próximo paso: programar en este orden,
+Diseño escrito y respondido; nada programado. Próximo paso: programar en este orden,
 cada parte con su prueba: datos + SAV → generación → caer → descubrir → dibujo → red → trampa → IA.
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, programación".
