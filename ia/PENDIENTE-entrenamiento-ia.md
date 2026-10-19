@@ -487,3 +487,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
     aproximado. Detalle en specs/ia-alianzas-v1.md, «Regla del héroe y defensa de ciudades aliadas».
   - Quedan para después: la regla de cantidad / calidad por tercios, y derribar puentes o puertos solo para frenar
     un ataque inminente. La exploración no se toca hasta verificar si el mapa oculto es oculto para la IA.
+
+### 19/10/2026: idea del usuario, mensajes entre aliados (sin empezar)
+- El humano le ordena a un aliado de la computadora por chat («atacá la ciudad XX», «atacá al verde», «mandame
+  refuerzos»), sin que lo vean los enemigos; y la IA le pide al humano lo que le falta («mandame oro»), sabiendo
+  qué le sobra al aliado (fuerzas, oro). Dos partes: a) mandar pedidos; b) recibirlos, interpretarlos y decidir.
+- Nada averiguado todavía. Primero: si el chat nativo existe durante la partida en multijugador (teclas, a quién
+  llega, si se puede dirigir a un solo color) y dónde lo maneja el exe; si no, ver otra vía (por ejemplo un
+  diálogo propio del parche, como los botones de Votación y Sorteo).
+- Clasificación (borrador para revisar con el usuario): obedecer una orden concreta del humano es táctico (la
+  decisión ya la tomó el humano); decidir qué pedir y si conceder un pedido es estratégico.
