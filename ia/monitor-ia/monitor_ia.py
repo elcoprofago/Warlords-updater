@@ -11,11 +11,11 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.7'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
-REPO = 'elcoprofago/Monitor-IA'   # repo pÃºblico donde se publican las releases del .exe
+VERSION = '1.0.8'                 # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
-AVISO_MIN = 5              # a partir de acÃ¡ se avisa de un posible cuelgue
+AVISO_MIN = 5              # a partir de acá se avisa de un posible cuelgue
 IAS = {0: 'original', 1: 'prueba'}
 
 
@@ -25,8 +25,8 @@ def juego_abierto():
     return tanda.EXE.lower() in r.stdout.lower()
 
 
-# CÃ­rculo de consumo (CPU o RAM de toda la PC), con las imÃ¡genes y los cortes de semÃ¡foro de USBagent
-# (tools/usbagent-hub/Controls/PerfCircle.xaml.cs): <30 % / 30-69 % / >=70 %, tres imÃ¡genes por franja.
+# Círculo de consumo (CPU o RAM de toda la PC), con las imágenes y los cortes de semáforo de USBagent
+# (tools/usbagent-hub/Controls/PerfCircle.xaml.cs): <30 % / 30-69 % / >=70 %, tres imágenes por franja.
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'assets')
 
 
@@ -63,7 +63,7 @@ def leer_config(seccion):
 
 
 def guardar_config(seccion, **valores):
-    """Cambia una secciÃ³n de tanda.ini sin tocar las demÃ¡s (Pantalla la usa tambiÃ©n tanda.py)."""
+    """Cambia una sección de tanda.ini sin tocar las demás (Pantalla la usa también tanda.py)."""
     c = configparser.ConfigParser(); c.read(tanda.CONFIG)
     c[seccion] = valores
     with open(tanda.CONFIG, 'w') as f:
@@ -75,7 +75,7 @@ def version_tupla(v):
 
 
 def version_de(exe):
-    """La versiÃ³n que trae adentro un Monitor-IA.exe (se la pregunta con --version; lo usa tambiÃ©n publicar.py)."""
+    """La versión que trae adentro un Monitor-IA.exe (se la pregunta con --version; lo usa también publicar.py)."""
     marca = exe + '.version'
     subprocess.run([exe, '--version', marca], timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
     with open(marca) as f:
@@ -102,7 +102,7 @@ class Ayuda:
 
 
 class Salida(io.TextIOBase):
-    """Lo que tanda.py imprime va a la bitÃ¡cora del panel."""
+    """Lo que tanda.py imprime va a la bitácora del panel."""
     def __init__(self, cola):
         self.cola = cola
 
@@ -114,22 +114,22 @@ class Salida(io.TextIOBase):
 class Monitor(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(f'Banco de pruebas de la IA â€” Monitor {VERSION}')
+        self.title(f'Banco de pruebas de la IA — Monitor {VERSION}')
         self.geometry('740x760')
         self.cola = queue.Queue()
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
         self.tid = None
         self.retomable = False
-        self.progreso = [('tanda', None, 'â€”', False), ('partida', None, 'â€”', False)]
+        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
         self.aplicar_fondo()
         self.refrescar()
 
     # ---- interfaz ----
-    # Los paneles son tk (no ttk) para poder mostrar la textura: cada caja y cada rÃ³tulo lleva de imagen el recorte
-    # del mosaico que cae en su lugar de la ventana, asÃ­ se ve continua detrÃ¡s de todo (repintar).
+    # Los paneles son tk (no ttk) para poder mostrar la textura: cada caja y cada rótulo lleva de imagen el recorte
+    # del mosaico que cae en su lugar de la ventana, así se ve continua detrás de todo (repintar).
     def caja(self, padre, titulo=None, borde=False):
         f = tk.Frame(padre, bd=0, highlightthickness=1 if borde else 0, highlightbackground='#8a8a8a')
         fondo = tk.Label(f, bd=0, highlightthickness=0); fondo.place(x=0, y=0, relwidth=1, relheight=1)
@@ -139,16 +139,16 @@ class Monitor(tk.Tk):
         return f
 
     def panel(self, padre, titulo):
-        """Caja con tÃ­tulo y flechita â–¼/â–¶ para plegarla (como en GPUmon). Devuelve (recuadro, contenido)."""
+        """Caja con título y flechita ▼/▶ para plegarla (como en GPUmon). Devuelve (recuadro, contenido)."""
         caja = self.caja(padre, borde=True)
         cab = self.caja(caja); cab.pack(fill='x', padx=6, pady=(3, 0))
         self.rotulo(cab, text=titulo, font=('Segoe UI', 10, 'bold')).pack(side='left')
         cuerpo = self.caja(caja)
-        flecha = tk.Button(cab, text='â–¼', font=('Segoe UI', 7), width=2, padx=0, pady=0, relief='solid', bd=1,
+        flecha = tk.Button(cab, text='▼', font=('Segoe UI', 7), width=2, padx=0, pady=0, relief='solid', bd=1,
                            cursor='hand2', takefocus=False, command=lambda: self.plegar(caja, cuerpo, flecha))
         flecha.pack(side='left', padx=(6, 0)); self.flechas.append(flecha)
         cuerpo.pack(fill='both', expand=True)
-        pie = self.caja(caja); pie.configure(height=3); pie.pack(fill='x')   # aire bajo el tÃ­tulo plegado
+        pie = self.caja(caja); pie.configure(height=3); pie.pack(fill='x')   # aire bajo el título plegado
         cuerpo.pie = pie
         return caja, cuerpo
 
@@ -160,12 +160,12 @@ class Monitor(tk.Tk):
             cuerpo.pack_forget()
         else:
             cuerpo.pack(fill='both', expand=True, before=cuerpo.pie)
-        flecha['text'] = 'â–¶' if plegar else 'â–¼'
-        if caja is self.p_bitacora:   # plegada, la bitÃ¡cora deja de absorber el alto sobrante
+        flecha['text'] = '▶' if plegar else '▼'
+        if caja is self.p_bitacora:   # plegada, la bitácora deja de absorber el alto sobrante
             caja.pack_configure(fill='x', expand=False) if plegar else caja.pack_configure(fill='both', expand=True)
         self.update_idletasks()
         alto = max(200, self.winfo_height() + self.winfo_reqheight() - antes)
-        if plegar:   # si la ventana era mÃ¡s baja que lo pedido, restar la diferencia la achica de mÃ¡s y se solapan
+        if plegar:   # si la ventana era más baja que lo pedido, restar la diferencia la achica de más y se solapan
             alto = max(alto, self.winfo_reqheight())
         self.geometry(f'{self.winfo_width()}x{alto}')
 
@@ -193,7 +193,7 @@ class Monitor(tk.Tk):
         return l
 
     def encender(self, l, si):
-        """Enciende el botÃ³n cuadrado si se puede apretar ahora; apagado no responde al clic."""
+        """Enciende el botón cuadrado si se puede apretar ahora; apagado no responde al clic."""
         if l.activo != si:
             l.activo = si
             self.iconos[l] = l.imgs['on' if si else 'off']
@@ -216,7 +216,7 @@ class Monitor(tk.Tk):
         arriba = self.caja(self); arriba.pack(fill='x')
         tarjeta = self.caja(arriba, borde=True); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
         semaforos = self.caja(tarjeta); semaforos.pack(padx=(4, 30), pady=(4, 0))   # aire para la ruedita
-        # Interruptor de suspensiÃ³n (la ficha on/off translÃºcida de MovilCode), a la izquierda de los semÃ¡foros:
+        # Interruptor de suspensión (la ficha on/off translúcida de MovilCode), a la izquierda de los semáforos:
         # encendido, la PC se suspende al terminar la tanda.
         fs = self.caja(semaforos); fs.pack(side='left', padx=(4, 8))
         self.suspender = leer_config('Suspension').get('activa') == 'si'
@@ -240,7 +240,7 @@ class Monitor(tk.Tk):
                                 highlightbackground='#3f8f6a', bd=0)
         self.barras.pack(padx=6, pady=(0, 6))
         rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
-        # En el Ã¡ngulo superior derecho de la tarjeta, al costado de los cÃ­rculos.
+        # En el ángulo superior derecho de la tarjeta, al costado de los círculos.
         b = self.icono(tarjeta, rueda, cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
         b.bind('<Button-1>', lambda e: self.configurar())
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
@@ -263,8 +263,8 @@ class Monitor(tk.Tk):
         self.guardadas = [g for g in self.disponibles() if not self.con_alianzas(g)]
         self.b_guardadas = ttk.Button(fila, width=34, command=self.elegir_guardadas)
         self.b_guardadas.grid(row=1, column=1, sticky='w', padx=6, pady=2); self.rotular_guardadas()
-        self.rotulo(fila, text='EstadÃ­sticas:').grid(row=2, column=0, sticky='w')
-        ttk.Button(fila, text='Exportar PDF de un mapaâ€¦', width=34,
+        self.rotulo(fila, text='Estadísticas:').grid(row=2, column=0, sticky='w')
+        ttk.Button(fila, text='Exportar PDF de un mapa…', width=34,
                    command=self.exportar_pdf).grid(row=2, column=1, sticky='w', padx=6, pady=2)
         caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
@@ -274,7 +274,7 @@ class Monitor(tk.Tk):
         self.v_alarma = tk.BooleanVar(value=True)
         self.check(c, 'Alarma al terminar la tanda', self.v_alarma).grid(row=0, column=1, sticky='w', **pad)
         # Serie programada: al terminar una tanda arranca sola la siguiente, con las mismas guardadas y partidas,
-        # hasta completar las de la serie (alarma y suspensiÃ³n, solo al final).
+        # hasta completar las de la serie (alarma y suspensión, solo al final).
         self.v_auto = tk.BooleanVar(value=False)
         fa = self.caja(c); fa.grid(row=2, column=0, columnspan=2, sticky='w', **pad)
         self.check(fa, 'Tandas automatizadas', self.v_auto).pack(side='left')
@@ -307,7 +307,7 @@ class Monitor(tk.Tk):
         self.l_cuelgue = tk.Label(p, foreground='white', background='#c62828', font=('Segoe UI', 10, 'bold'))
         cols = ('color', 'ia', 'estado', 'pv', 'ciudades', 'oro', 'ejercitos', 'heroes')
         self.tabla = ttk.Treeview(p, columns=cols, show='headings', height=8)
-        for k, t in zip(cols, ('Color', 'IA', 'Estado', 'PV', 'Ciudades', 'Oro', 'EjÃ©rcitos', 'HÃ©roes')):
+        for k, t in zip(cols, ('Color', 'IA', 'Estado', 'PV', 'Ciudades', 'Oro', 'Ejércitos', 'Héroes')):
             self.tabla.heading(k, text=t); self.tabla.column(k, width=76, anchor='center')
         ttk.Style(self).configure('Treeview.Heading', font=('Segoe UI', 9, 'bold'))
         self.tabla.tag_configure('prueba', background='#dbe9ff', foreground='#0b3d91')
@@ -315,14 +315,14 @@ class Monitor(tk.Tk):
         self.tabla.tag_configure('eliminado', background='#eeeeee', foreground='#999999')
         self.tabla.pack(fill='x', **pad)
 
-        self.p_bitacora, b = self.panel(self, 'BitÃ¡cora e informe')
+        self.p_bitacora, b = self.panel(self, 'Bitácora e informe')
         self.p_bitacora.pack(fill='both', expand=True, **pad)
         tf = tk.Frame(b); tf.pack(fill='both', expand=True, padx=8, pady=(4, 8))
         self.log = tk.Text(tf, height=12, font=('Consolas', 9), wrap='none')
         sb = ttk.Scrollbar(tf, command=self.log.yview); self.log['yscrollcommand'] = sb.set
         sb.pack(side='right', fill='y'); self.log.pack(fill='both', expand=True)
         self.protocol('WM_DELETE_WINDOW', self.salir)
-        # Todo widget de la ventana principal lleva '.' en sus bindtags: cualquier cambio de tamaÃ±o o lugar repinta.
+        # Todo widget de la ventana principal lleva '.' en sus bindtags: cualquier cambio de tamaño o lugar repinta.
         self.pendiente = False
         self.bind('<Configure>', lambda e: self.programar_repintado())
 
@@ -348,14 +348,14 @@ class Monitor(tk.Tk):
     def rotular_guardadas(self):
         n = len(self.guardadas)
         txt = self.guardadas[0] if n == 1 else f'{n} partidas guardadas' if n else '(ninguna elegida)'
-        self.b_guardadas['text'] = txt + '  â–¾'
+        self.b_guardadas['text'] = txt + '  ▾'
 
     def elegir_guardadas(self):
         """Lista desplegable para marcar las Tanda_*.SAV de la carpeta del juego que entran en la tanda."""
         todas = self.disponibles()
         v = tk.Toplevel(self); v.title('Partidas guardadas'); v.transient(self); v.grab_set()
         v.geometry(f'+{self.b_guardadas.winfo_rootx()}+{self.b_guardadas.winfo_rooty() + 30}')
-        ttk.Label(v, text=f'MarcÃ¡ las partidas de la tanda ({len(todas)} disponibles):').pack(anchor='w', padx=8, pady=4)
+        ttk.Label(v, text=f'Marcá las partidas de la tanda ({len(todas)} disponibles):').pack(anchor='w', padx=8, pady=4)
         lf = ttk.Frame(v); lf.pack(fill='both', expand=True, padx=8)
         lb = tk.Listbox(lf, selectmode='multiple', height=min(15, max(5, len(todas))), width=40,
                         activestyle='none', selectbackground='#0b5ed7', exportselection=False)
@@ -375,7 +375,7 @@ class Monitor(tk.Tk):
         ttk.Button(bf, text='Aceptar', command=aceptar).pack(side='right')
 
     def exportar_pdf(self):
-        """Cuadro de posiciones de un mapa (ia\\exportar.py), en PDF, para la pÃ¡gina del Clan."""
+        """Cuadro de posiciones de un mapa (ia\\exportar.py), en PDF, para la página del Clan."""
         from tkinter import filedialog
         import exportar
         try:
@@ -384,7 +384,7 @@ class Monitor(tk.Tk):
         except Exception as e:
             messagebox.showerror('Exportar', f'No se pudo leer datos.db:\n{e}', parent=self); return
         if not mapas:
-            messagebox.showinfo('Exportar', 'TodavÃ­a no hay partidas con bando comÃºn para exportar.', parent=self); return
+            messagebox.showinfo('Exportar', 'Todavía no hay partidas con bando común para exportar.', parent=self); return
         v = tk.Toplevel(self); v.title('Exportar PDF'); v.transient(self); v.grab_set()
         ttk.Label(v, text='Mapa (partidas comparables):').pack(anchor='w', padx=8, pady=4)
         lb = tk.Listbox(v, height=min(15, len(mapas)), width=40, activestyle='none', exportselection=False)
@@ -407,7 +407,7 @@ class Monitor(tk.Tk):
             except Exception as e:
                 messagebox.showerror('Exportar', f'No se pudo generar el PDF:\n{e}', parent=self); return
             os.startfile(destino)
-        ttk.Button(v, text='Exportarâ€¦', command=aceptar).pack(anchor='e', padx=8, pady=6)
+        ttk.Button(v, text='Exportar…', command=aceptar).pack(anchor='e', padx=8, pady=6)
         lb.bind('<Double-Button-1>', lambda e: aceptar())
 
     def guardar_monitor(self, i):
@@ -443,7 +443,7 @@ class Monitor(tk.Tk):
             self.after(30, self.repintar)
 
     def recorte(self, w, tam=None):
-        """El pedazo de mosaico que queda detrÃ¡s del widget w (None si no hay textura o w no estÃ¡ a la vista)."""
+        """El pedazo de mosaico que queda detrás del widget w (None si no hay textura o w no está a la vista)."""
         if self.mosaico is None or not w.winfo_ismapped():
             return None
         x, y = w.winfo_rootx() - self.winfo_rootx(), w.winfo_rooty() - self.winfo_rooty()
@@ -480,7 +480,7 @@ class Monitor(tk.Tk):
     def configurar(self):
         from tkinter import colorchooser, filedialog
         c = leer_config('Fondo')
-        v = tk.Toplevel(self); v.title('ConfiguraciÃ³n'); v.transient(self); v.grab_set(); v.resizable(False, False)
+        v = tk.Toplevel(self); v.title('Configuración'); v.transient(self); v.grab_set(); v.resizable(False, False)
         v.geometry(f'+{self.winfo_rootx() + self.winfo_width() - 380}+{self.winfo_rooty() + 90}')
         tipo = tk.StringVar(value=c.get('tipo', 'color'))
         color = tk.StringVar(value=c.get('color', '#f0f0f0'))
@@ -503,57 +503,57 @@ class Monitor(tk.Tk):
 
         def examinar():
             r = filedialog.askopenfilename(parent=v, title='Imagen para la textura',
-                                           filetypes=[('ImÃ¡genes', '*.png *.jpg *.jpeg *.bmp *.gif')])
+                                           filetypes=[('Imágenes', '*.png *.jpg *.jpeg *.bmp *.gif')])
             if r:
                 ruta.set(os.path.normpath(r)); tipo.set('textura')
         tk.Button(fr, text='Examinar...', command=examinar).grid(row=4, column=2, padx=6)
 
         def aceptar():
             if tipo.get() == 'textura' and not os.path.exists(ruta.get()):
-                return messagebox.showwarning('ConfiguraciÃ³n', 'ElegÃ­ una imagen para la textura.', parent=v)
+                return messagebox.showwarning('Configuración', 'Elegí una imagen para la textura.', parent=v)
             guardar_config('Fondo', tipo=tipo.get(), color=color.get(), textura=ruta.get())
             self.aplicar_fondo(); v.destroy()
-        tk.Label(fr, text='ActualizaciÃ³n:', font=('Segoe UI', 10, 'bold')).grid(row=5, column=0, columnspan=3,
+        tk.Label(fr, text='Actualización:', font=('Segoe UI', 10, 'bold')).grid(row=5, column=0, columnspan=3,
                                                                               sticky='w', pady=(12, 0))
-        tk.Label(fr, text=f'VersiÃ³n instalada: {VERSION}').grid(row=6, column=0, columnspan=2, sticky='w')
-        tk.Button(fr, text='Buscar actualizaciÃ³n', command=lambda: self.actualizar(v)).grid(row=6, column=2, padx=6)
+        tk.Label(fr, text=f'Versión instalada: {VERSION}').grid(row=6, column=0, columnspan=2, sticky='w')
+        tk.Button(fr, text='Buscar actualización', command=lambda: self.actualizar(v)).grid(row=6, column=2, padx=6)
         bf = tk.Frame(fr); bf.grid(row=7, column=0, columnspan=3, sticky='e', pady=(12, 0))
         tk.Button(bf, text='Aceptar', width=10, command=aceptar).pack(side='left', padx=4)
         tk.Button(bf, text='Cancelar', width=10, command=v.destroy).pack(side='left')
 
-    # ---- actualizaciÃ³n desde las releases de REPO ----
+    # ---- actualización desde las releases de REPO ----
     def actualizar(self, padre):
         if not getattr(sys, 'frozen', False):
-            return messagebox.showinfo('ActualizaciÃ³n', 'Corriendo desde el cÃ³digo: se actualiza con git.', parent=padre)
+            return messagebox.showinfo('Actualización', 'Corriendo desde el código: se actualiza con git.', parent=padre)
         if self.corriendo():
-            return messagebox.showwarning('ActualizaciÃ³n', 'Hay una tanda corriendo: actualizÃ¡ cuando termine.',
+            return messagebox.showwarning('Actualización', 'Hay una tanda corriendo: actualizá cuando termine.',
                                           parent=padre)
         try:
             with urllib.request.urlopen(f'https://api.github.com/repos/{REPO}/releases/latest', timeout=15) as r:
                 rel = json.load(r)
         except Exception as e:
-            return messagebox.showerror('ActualizaciÃ³n', f'No se pudo consultar GitHub:\n{e}', parent=padre)
+            return messagebox.showerror('Actualización', f'No se pudo consultar GitHub:\n{e}', parent=padre)
         etiqueta = rel['tag_name'].lstrip('v')
         if version_tupla(etiqueta) <= version_tupla(VERSION):
-            return messagebox.showinfo('ActualizaciÃ³n', f'Ya tenÃ©s la Ãºltima versiÃ³n ({VERSION}).', parent=padre)
+            return messagebox.showinfo('Actualización', f'Ya tenés la última versión ({VERSION}).', parent=padre)
         exe = next((a for a in rel['assets'] if a['name'] == 'Monitor-IA.exe'), None)
         if not exe:
-            return messagebox.showerror('ActualizaciÃ³n', f'La release {etiqueta} no trae Monitor-IA.exe.', parent=padre)
-        if not messagebox.askyesno('ActualizaciÃ³n', f'Hay una versiÃ³n nueva: {etiqueta} (tenÃ©s {VERSION}).\n'
-                                   'Â¿Bajarla e instalarla? El Monitor se cierra y se vuelve a abrir.', parent=padre):
+            return messagebox.showerror('Actualización', f'La release {etiqueta} no trae Monitor-IA.exe.', parent=padre)
+        if not messagebox.askyesno('Actualización', f'Hay una versión nueva: {etiqueta} (tenés {VERSION}).\n'
+                                   '¿Bajarla e instalarla? El Monitor se cierra y se vuelve a abrir.', parent=padre):
             return
         actual = sys.executable
         nuevo = actual[:-4] + '.nuevo.exe'
         try:
             urllib.request.urlretrieve(exe['browser_download_url'], nuevo)
-            # La release tiene que ser lo que dice su etiqueta: se le pregunta la versiÃ³n al .exe bajado.
+            # La release tiene que ser lo que dice su etiqueta: se le pregunta la versión al .exe bajado.
             interna = version_de(nuevo)
             if interna != etiqueta:
-                raise RuntimeError(f'la release {etiqueta} trae adentro la versiÃ³n {interna}')
+                raise RuntimeError(f'la release {etiqueta} trae adentro la versión {interna}')
         except Exception as e:
             if os.path.exists(nuevo):
                 os.remove(nuevo)
-            return messagebox.showerror('ActualizaciÃ³n', f'No se instalÃ³ la actualizaciÃ³n:\n{e}', parent=padre)
+            return messagebox.showerror('Actualización', f'No se instaló la actualización:\n{e}', parent=padre)
         # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
         bat, pid = actual[:-4] + '.actualizar.bat', os.getpid()
         with open(bat, 'w', encoding='mbcs') as f:
@@ -571,7 +571,7 @@ class Monitor(tk.Tk):
         if self.corriendo():
             return
         if accion == 'nueva' and not self.guardadas:
-            return messagebox.showwarning('Nueva tanda', 'ElegÃ­ al menos una partida guardada.')
+            return messagebox.showwarning('Nueva tanda', 'Elegí al menos una partida guardada.')
         a = SimpleNamespace(accion=accion, partidas=self.v_partidas.get(), guardadas=','.join(self.guardadas),
                             tope_turnos=0, cuelgue=CUELGUE_MIN)
         tanda.CORTAR.clear()
@@ -590,17 +590,17 @@ class Monitor(tk.Tk):
                 terminada = db.execute('select terminada from tanda where id=?', (self.tid,)).fetchone()[0]
                 print()
                 informe.main(self.tid)
-                # Sigue la serie solo si esta tanda terminÃ³ entera y no se tocÃ³ Cortar ni se destildÃ³ el check.
+                # Sigue la serie solo si esta tanda terminó entera y no se tocó Cortar ni se destildó el check.
                 if not terminada or tanda.CORTAR.is_set() or i == serie - 1 or not self.v_auto.get():
                     break
                 print(f'\nSerie: tanda {i + 1} de {serie} terminada; arranca la siguiente.\n')
                 a = SimpleNamespace(**{**vars(a), 'accion': 'nueva'})
             if terminada and self.suspender:
-                print('Tanda terminada: la PC se suspende en 30 segundos (apagÃ¡ el interruptor para evitarlo).')
+                print('Tanda terminada: la PC se suspende en 30 segundos (apagá el interruptor para evitarlo).')
                 for _ in range(30):
                     time.sleep(1)
                     if not self.suspender:
-                        print('SuspensiÃ³n cancelada.'); break
+                        print('Suspensión cancelada.'); break
                 else:
                     ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
                     ctypes.windll.powrprof.SetSuspendState(False, False, False)
@@ -615,9 +615,9 @@ class Monitor(tk.Tk):
 
     def cortar(self):
         if self.corriendo() and messagebox.askyesno(
-                'Cortar', 'Se cierra el juego y la partida en curso se vuelve a jugar al retomar. Â¿Cortar?'):
+                'Cortar', 'Se cierra el juego y la partida en curso se vuelve a jugar al retomar. ¿Cortar?'):
             tanda.CORTAR.set()
-            print('Cortandoâ€¦')
+            print('Cortando…')
 
     def alarma(self):
         threading.Thread(target=lambda: [winsound.PlaySound(ALARMA, winsound.SND_FILENAME) for _ in range(3)],
@@ -626,7 +626,7 @@ class Monitor(tk.Tk):
     def salir(self):
         if not self.corriendo():
             return self.destroy()
-        if messagebox.askyesno('Salir', 'Hay una tanda corriendo. Â¿Cortarla y salir? Se retoma con "Retomar".'):
+        if messagebox.askyesno('Salir', 'Hay una tanda corriendo. ¿Cortarla y salir? Se retoma con "Retomar".'):
             tanda.CORTAR.set()
             self.after(500, self.esperar_y_salir)
 
@@ -667,7 +667,7 @@ class Monitor(tk.Tk):
                 xf = x0 + (x1 - x0) * max(0.0, min(1.0, frac))
                 c.create_rectangle(x0, y - 5, xf, y + 5, fill=verde if lista else naranja, outline='')
             c.create_text(x1 + 4, y, text=txt, anchor='w', font=mono, fill=verde if lista else naranja)
-        c.create_text(4, 45, text='verde â†’ hecha  naranja â†’ en curso', anchor='w', font=('Consolas', 7), fill=gris)
+        c.create_text(4, 45, text='verde → hecha  naranja → en curso', anchor='w', font=('Consolas', 7), fill=gris)
 
     def escribir(self, *partes):
         """Reescribe el recuadro de la partida en curso: partes = (texto, estilo) o texto sin estilo."""
@@ -678,7 +678,7 @@ class Monitor(tk.Tk):
 
     @staticmethod
     def parches(db, tid):
-        """Con quÃ© parche juega la tanda mostrada y con cuÃ¡l jugaron todas, agrupadas de corrido."""
+        """Con qué parche juega la tanda mostrada y con cuál jugaron todas, agrupadas de corrido."""
         cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
         if 'exe' not in cols:
             return 'sin registrar', ''
@@ -692,25 +692,25 @@ class Monitor(tk.Tk):
                 grupos[-1][1] = i
             else:
                 grupos.append([i, i, (v, e)])
-        return actual, ' Â· '.join(f'{a}{"â€“" + str(b) if b != a else ""}: {rotulo(*ve)}' for a, b, ve in grupos)
+        return actual, ' · '.join(f'{a}{"–" + str(b) if b != a else ""}: {rotulo(*ve)}' for a, b, ve in grupos)
 
     def mostrar(self):
         import sqlite3
         self.externa = False
         self.retomable = False
-        self.progreso = [('tanda', None, 'â€”', False), ('partida', None, 'â€”', False)]
+        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
-            self.v_tanda.set('Sin tandas todavÃ­a.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         db = sqlite3.connect(tanda.DB)
-        # La tanda que se estÃ¡ jugando; si no hay ninguna, la que corriÃ³ este panel; si no, la Ãºltima.
+        # La tanda que se está jugando; si no hay ninguna, la que corrió este panel; si no, la última.
         r = db.execute("select tanda from partida where estado='jugando' and tanda is not null "
                        "order by id desc").fetchone()
         ult = db.execute('select terminada from tanda order by id desc').fetchone()
-        self.retomable = bool(ult) and not ult[0]   # tanda.preparar solo retoma la Ãºltima
+        self.retomable = bool(ult) and not ult[0]   # tanda.preparar solo retoma la última
         tid = r[0] if r else self.tid or db.execute('select max(id) from tanda').fetchone()[0]
         t = db.execute('select id, inicio, plan, terminada from tanda where id=?', (tid,)).fetchone()
         if not t:
-            self.v_tanda.set('Sin tandas todavÃ­a.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
+            self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         tid, inicio, plan, term = t
         total = len(json.loads(plan))
         parts = db.execute('select n, guardada, asignacion, inicio, fin, estado, turnos from partida where tanda=? '
@@ -721,15 +721,15 @@ class Monitor(tk.Tk):
         self.externa = bool(en_curso) and not self.corriendo() and juego_abierto()
         estado = ('terminada' if term else 'corriendo' if self.corriendo() else
                   'corriendo fuera del Monitor' if self.externa else 'detenida')
-        self.v_tanda.set(f'Tanda {tid} ({estado}) â€” desde {inicio}')
+        self.v_tanda.set(f'Tanda {tid} ({estado}) — desde {inicio}')
         txt = f'{len(hechas)} de {total} partidas terminadas'
         if en_curso:
-            txt += f' â€” jugando la {en_curso[0] + 1}.Âª'
+            txt += f' — jugando la {en_curso[0] + 1}.ª'
         dur = [time.mktime(time.strptime(p[4], '%Y-%m-%d %H:%M:%S')) -
                time.mktime(time.strptime(p[3], '%Y-%m-%d %H:%M:%S')) for p in hechas if p[3] and p[4]]
         if dur and not term:
             fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
-            txt += f' â€” fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
+            txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
         self.progreso[0] = ('tanda', len(hechas) / total if total else 0, f'{len(hechas)}/{total}', bool(term))
         actual, todas = self.parches(db, tid); self.v_parche.set(actual); self.v_todas.set(todas)
@@ -762,12 +762,12 @@ class Monitor(tk.Tk):
         for ia, (g, p) in res.items():
             bt += [('   IA ' + IAS.get(ia, str(ia)) + ': ', IAS.get(ia, 'b')), (f'{g} ganadas', 'gana'), ' / ',
                    (f'{p} perdidas', 'pierde')]
-        self.escribir((f'Partida {n + 1} Â· {guardada.removeprefix("Tanda_")} Â· turno {turno}', 'titulo'),
-                      (f'     empezÃ³ {ini[11:]}\n', 'gris'),
+        self.escribir((f'Partida {n + 1} · {guardada.removeprefix("Tanda_")} · turno {turno}', 'titulo'),
+                      (f'     empezó {ini[11:]}\n', 'gris'),
                       'Colores con la IA de prueba: ', (', '.join(tanda.COLORES[c] for c in prueba) + '\n', 'prueba'),
                       ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt,
                       '\nEventos: ' +(', '.join(f'{tanda.EVENTOS.get(t, t)} {k}' for t, k in sorted(evs.items()))
-                                        or 'ninguno todavÃ­a'))
+                                        or 'ninguno todavía'))
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
         if quieto > AVISO_MIN * 60:
@@ -786,8 +786,8 @@ class Monitor(tk.Tk):
             self.tabla.insert('', 'end', tags=('eliminado' if not vivo else 'prueba' if u['ia'] == 1 else 'original',), values=(
                 tanda.COLORES[c] if 0 <= c < 8 else c, IAS.get(u['ia'], u['ia']), 'vivo' if vivo else 'eliminado',
                 tanda.pv_calc(u['ciudades'], u['heroes'], u['oro']) if vivo else 0,
-                # de un eliminado, IA.CSV guarda lo que tenÃ­a en su Ãºltimo turno vivo: no vale mostrarlo
-                *((u['ciudades'], u['oro'], u['ejercitos'], u['heroes']) if vivo else ('â€”',) * 4)))
+                # de un eliminado, IA.CSV guarda lo que tenía en su último turno vivo: no vale mostrarlo
+                *((u['ciudades'], u['oro'], u['ejercitos'], u['heroes']) if vivo else ('—',) * 4)))
 
 
 if __name__ == '__main__':
