@@ -39,5 +39,57 @@ usar el bono "trap" en una etapa posterior).
    - trampa descubierta al paso, sin activar;
    - trampa detonada (el mismo dibujo con un fogonazo); ya no mata.
 
+## Averiguado en el exe (19/10/2026)
+### Opciones de partida
+- **Hidden Ruins** ("Not all ruins visible at start") = bit 0x10 de [0x53c393]. **Discover Ruins** ("Discover hidden
+  ruins as you pass", diálogo Viewing Options, control 5) = bit 0x20 de [0x53c393] (copia del diálogo: 0x503d07).
+  Hidden Map = 0x10 de [0x53c38e]. Pozos y remolinos pueden seguir las mismas dos opciones (propuesta).
+
+### Ruinas: tabla y banderas
+- Cantidad word [0x558872]; registro de 0xb8 bytes desde 0x558874: +0 x, +2 y, +4 nombre, +0x94 tipo de dibujo
+  (0..6, nombres en 0x55ac64: cave, henge, ... = RUINS\*.RUI), +0x95 explorada, +0x96 contenido, +0x98 guardián,
+  **+0x9a oculta**, **+0x9b máscara de jugadores que la descubrieron** (bit = jugador), +0x9c parámetro.
+- Se arman en 0x4a14f2..0x4a194c (corre en toda partida, mapa prearmado o al azar): **20 %** de las ruinas quedan
+  ocultas (rand(1..100) < 20), algunas siempre. **Porcentaje para pozos/remolinos: 20 %** (a definir sobre qué base,
+  ver diseño).
+- Al empezar (0x4a1e20, llamada en 0x42ddc1): cada jugador descubre las ocultas de la región de su capital
+  (mapa de regiones = byte bajo de la palabra +2 de cada casilla, 0x503e5a).
+- La casilla del mapa (10 bytes en 0x503e58, fila = y·10 << [0x503e06]) lleva en su byte +8 la máscara de quién ve la
+  ruina; 0x441290 la recalcula desde +0x9b y el dibujo la consulta.
+
+### Descubrir al pasar (el "rango")
+- 0x4a1ce0(jugador, x, y, radio), llamada en cada paso desde 0x49ce08. Si Hidden Ruins y Discover Ruins: un
+  contador global [0x4fe5e8] gira 0..9 y **solo descubre en radio de cada 10 pasos**; descubre la primera ruina
+  oculta no vista a **distancia (|dx|+|dy|) ≤ radio**. Llama 0x4a1c10(jugador, ruina, 2, texto) (pone el bit,
+  0x441290, mensaje) y 0x4a2170 (redibujar).
+- **radio = word [0x56eaae + p·0x4f0]** (+0x1e del grupo en movimiento): es el **mismo radio de visión** que despeja el
+  Hidden Map en ese paso (0x441f30 en 0x49cd80). Viene en el paquete de movimiento (copia en 0x4b7d6e → 0x497930).
+  El valor numérico concreto (depende de las unidades) no lo calculé; no hace falta: el pozo usa el mismo campo.
+
+### Caer: matar sin batalla y sonido
+- **0x485610(jugador, ejército, 1, 0, 1, 0)** ahoga a todos los de una casilla y da el aviso: es lo que ya usa el
+  parche al derribar un puente (br_drown, build.py ~l.3992). 0x43c240 filtra quién puede ahogarse (deja fuera a
+  voladores y embarcados). Para el remolino hay que ver cómo se hunde el barco **con** su carga.
+- Voladores: el parche ya tiene isfly / listfly / grpfly (build.py ~l.1816).
+- Sonido: 0x4465e0(7, g): g = 0 → FX\RuinDie.wav (sonido 0x1c), g ≠ 0 → FX\RuinDie2.wav (0x32). Son las muertes de
+  héroe en ruina; "al azar" = g aleatorio. (Ningún llamado directo con 7 en el exe original.)
+
+### Dibujos
+- PICTS\RUINS.PCX (700×268): 3 filas × 8 cuadros; fila 1 cerrada, fila 2 abierta (explorada), fila 3 un aro. Es el
+  modelo para "sin activar / detonada". Falta confirmar qué rutina dibuja las ruinas en el mapa principal y con qué
+  hoja/cuadro según el tipo +0x94 (la del diálogo de ruina es el dibujo 0x51 / la hoja 0x4f).
+- Animación en agua para el remolino: falta buscar un modelo (TERRAIN\DATA\*anim*.PCX, cit_anim, dnganim).
+
+### Ya resuelto por el parche (sirve tal cual)
+- Bonos de movimiento nuevos como TERRAIN\SUBTYPE\*.STT (landing, carrier, cabotage): "trap" se suma igual.
+- Costo de una ciudad: [0x56950e] (lo que cuesta reconstruir un puente).
+- Invisibles: solo los ve su dueño (0x414dbd); para la trampa hay que sumar a los aliados (como la vista aliada).
+
+## Falta averiguar
+- Rutina de dibujo de ruinas en el mapa principal y su hoja.
+- Hundir un barco con carga (remolino) sin batalla.
+- Dónde guardar pozos/remolinos/trampas para que viajen en el SAV y por red (¿registros extra de la tabla de ruinas
+  con un tipo nuevo? la tabla tiene tope: ver cuántas entradas admite).
+
 ## Estado
-Nada averiguado ni programado. Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md".
+Averiguado lo de arriba; nada programado. Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, falta averiguar".
