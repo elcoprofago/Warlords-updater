@@ -572,3 +572,8 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   `.\tools\publicar-parche.ps1 vista-aliada`; después el usuario prueba en red (TAREAS 22). Pendiente de diseño:
   la respuesta «no puedo: MOTIVO» y la segunda etapa (pedidos de la IA, oro por Bribe). Para retomar: "Seguimos
   con PENDIENTE-entrenamiento-ia.md: instalar y publicar 1.0.41.0".
+
+### 19/10/2026: observación del usuario sobre barcos
+- La IA maneja bien los barcos con bono `landing` y con cabotaje; **no así con el bono `carrier`**. Sin averiguar
+  todavía qué hace mal (ai_conv solo ordena convoy cuando el grupo no entra en un barco y hay otro barco propio con
+  Carrier en la casilla vecina yendo al mismo destino; ver «verificar que la IA usa las mejoras del juego»).
