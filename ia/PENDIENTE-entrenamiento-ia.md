@@ -443,3 +443,31 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Próximo paso: tanda A/B en vivo (TAREAS 21) y su informe contra el control.
   Para retomar: "Seguimos con specs/ia-alianzas-v1.md: informe de la tanda A/B".
 
+
+### 19/10/2026: refuerzo quitado (vista-aliada 1.0.38.0) y clasificación táctica / estratégica
+- El usuario quitó el refuerzo de ciudades aliadas (spec de alianzas, req. 6 y 7): es estratégico, no táctico.
+- Criterio del usuario: **táctica** = ganar cada batalla individual; **estratégica** = los fines últimos de la
+  contienda, en función del criterio de victoria.
+- Propuesta de clasificación (pendiente de que el usuario la revise):
+
+| Instrucción | Origen | Clase propuesta |
+|---|---|---|
+| Refugiarse ante una pila enemiga más fuerte que la alcanza | alianzas 1a | táctica |
+| Refugiarse tras quedar débil en una batalla | alianzas 1b | táctica |
+| Refugiarse ante un héroe enemigo que viene a cazarla | alianzas 1c | táctica |
+| Elegir el refugio alcanzable este turno, lejos de la amenaza | alianzas 2 | táctica |
+| Salir del refugio al pasar el peligro o reforzarse | alianzas 3 | táctica |
+| Quedarse hasta el final porque un héroe vivo suma PV | alianzas 4 | **estratégica** |
+| Quedarse a defender la ciudad aliada atacada donde está | alianzas 5 | táctica |
+| Atacar un blanco débil que tiene en el camino | destrezas 8 | táctica |
+| No atacar con baja probabilidad de victoria (salvo un sondeo) | destrezas 10 | táctica |
+| Tras 2 derrotas, juntar fuerzas y atacar con un grupo superior y distinto | destrezas 11 | táctica |
+| … o cambiar de objetivo si el blanco no es vital | destrezas 11 | **estratégica** |
+| Ordenar el grupo antes de la batalla según el rival | destrezas 13 | táctica |
+| Corregir la estimación de batalla de la IA con el combate real | plan, etapa 3 | táctica |
+| Derribar un puente o puerto solo para frenar un ataque inminente | idea del usuario, 18/10 | táctica |
+| Un objetivo por grupo (tomar ciudad, reforzar sector, reagrupar) | destrezas 7 | **estratégica** |
+| Exploración con fin (una ruina o zona concreta) | destrezas 9 | **estratégica** |
+| Armar grupos por cantidad al principio, por calidad al final | destrezas 12 | **estratégica** |
+| Destrezas 4-7: economía, cuidado del héroe, reportes y terreno/retirada, salir del aislamiento | destrezas, fuera de alcance | economía y aislamiento estratégicas; héroe y retirada tácticas |
+| Elegir el bando (PGS) según el mapa; prioridades por fases; memoria entre partidas | plan, etapas 4, 5, 7 | **estratégicas** |
