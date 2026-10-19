@@ -306,15 +306,16 @@ def cargar_sav(g, datos):
     return g.votos(), bytes(g.mu.mem_read(OPTS, 0x18)) == OPC
 g = Juego(); votacion(g, 's1', ('libre', 0, 'sssnn---')); votacion(g, 's2', ('libre', 0, 'n-------'))
 sav = guardar(g)
-ver('guardado: lo del original y después VOTA, cantidad y tabla',
-    (sav[:9 + 0x18] == b'PRINCIPIO' + OPC, sav[0x21:0x25], struct.unpack_from('<i', sav, 0x25)[0], len(sav) - 0x29),
-    (True, b'VOTA', 2, VT_MAX * 0x1c))
+ver('guardado: lo del original y después VOTA, cantidad y tabla (y detrás POZO)',
+    (sav[:9 + 0x18] == b'PRINCIPIO' + OPC, sav[0x21:0x25], struct.unpack_from('<i', sav, 0x25)[0],
+     sav[0x29 + VT_MAX * 0x1c:0x2d + VT_MAX * 0x1c]),
+    (True, b'VOTA', 2, b'POZO'))
 ver('  el original no escribe nada más', len(guardar(Juego(ORIG))), 9 + 0x18)
 ver('cargado: la tabla vuelve', cargar_sav(Juego(), sav), ([(3, 2), (0, 1)], True))
 ver('control: .SAV viejo (sin VOTA): tabla vacía', cargar_sav(Juego(), sav[:0x21]), ([], True))
 ver('control: .SAV con 0x18 incompleto: tabla vacía', cargar_sav(Juego(), sav[:0x1d]), ([], False))
 ver('control: otra marca: tabla vacía', cargar_sav(Juego(), sav[:0x21] + b'XOTA' + sav[0x25:]), ([], True))
-ver('control: tabla cortada: vacía', cargar_sav(Juego(), sav[:-1]), ([], True))
+ver('control: tabla cortada: vacía', cargar_sav(Juego(), sav[:0x29 + VT_MAX * 0x1c - 1]), ([], True))
 ver('control: cantidad mayor que el tope: vacía', cargar_sav(Juego(), sav[:0x25] + struct.pack('<i', 9) + sav[0x29:]), ([], True))
 ver('control: el original carga el .SAV nuevo igual que uno viejo', (lambda g: (
     g.fs.__setitem__(b'P.SAV', bytearray(sav)), g.abiertos.__setitem__(FRAME - 0x120, [b'P.SAV', 9]),

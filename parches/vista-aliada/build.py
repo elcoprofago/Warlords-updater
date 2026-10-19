@@ -6978,11 +6978,97 @@ vl_text:
     jmp 0x4b41a0
 ''')
 
+# ---- Pozos, remolinos y trampas (po_*; diseño en PENDIENTE-pozos-y-trampas.md). Tabla propia, fuera de la de ruinas
+# y de la casilla: PO_MAX registros de 8 bytes (+0 x, +2 y, +4 tipo, +5 estado, +6 máscara de quién lo descubrió,
+# +7 dueño). po_map: un byte por casilla (índice + 1, 0 = nada), rearmado desde la tabla; no se guarda.
+# En el .SAV va detrás del bloque de la Votación: 'POZO', cantidad (dword) y la tabla entera.
+PO_MAX, PO_REC = 64, 8
+PO_POZO, PO_REMOLINO, PO_TRAMPA = 0, 1, 2
+PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
+po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
+PO_SAVELEN = 8 + PO_MAX * PO_REC
+PO_N, PO_TAB = po_save + 4, po_save + 8
+po_magic = place_data('po_magic', bytes(4))
+po_map = place_data('po_map', bytes(PO_MAPSZ))
+
+# Rearma po_map desde la tabla. Un registro fuera del mapa no se marca. Preserva todo.
+po_rebuild = place('po_rebuild', f'''
+    pushad
+    mov edi, {po_map:#x}
+    mov ecx, {PO_MAPSZ // 4}
+    xor eax, eax
+    rep stosd
+    xor ebx, ebx
+por_loop:
+    cmp ebx, dword ptr [{PO_N:#x}]
+    jae por_end
+    lea esi, [ebx*8 + {PO_TAB:#x}]
+    movsx eax, word ptr [esi]
+    movsx edx, word ptr [esi + 2]
+    test eax, eax
+    jl por_next
+    test edx, edx
+    jl por_next
+    movsx ecx, word ptr [0x503e00]
+    cmp eax, ecx
+    jge por_next
+    movsx ecx, word ptr [0x503e02]
+    cmp edx, ecx
+    jge por_next
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {PO_MAPSZ}
+    jae por_next
+    lea eax, [ebx + 1]
+    mov byte ptr [edx + {po_map:#x}], al
+por_next:
+    inc ebx
+    jmp por_loop
+por_end:
+    popad
+    ret
+''')
+
+# Al cargar, detrás de la Votación (ebp = el marco de 0x439e..): la tabla, si está; si no, o rota, vacía.
+po_loadf = place('po_loadf', f'''
+    pushad
+    mov dword ptr [{PO_N:#x}], 0
+    mov dword ptr [{po_magic:#x}], 0
+    push 4
+    push {po_magic:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 4
+    jne pol_end
+    cmp dword ptr [{po_magic:#x}], 0x4f5a4f50
+    jne pol_end
+    push {4 + PO_MAX * PO_REC}
+    push {PO_N:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, {4 + PO_MAX * PO_REC}
+    jne pol_bad
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jbe pol_end
+pol_bad:
+    mov dword ptr [{PO_N:#x}], 0
+pol_end:
+    call {po_rebuild:#x}
+    popad
+    ret
+''')
+
 # Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
 vt_savef = place('vt_savef', f'''
     push ecx
     push {len(b'VOTA') + 4 + VT_MAX * 0x1c}
     push {vt_save:#x}
+    call 0x4dfd70
+    pop ecx
+    push ecx
+    push {PO_SAVELEN}
+    push {po_save:#x}
     call 0x4dfd70
     pop ecx
     jmp 0x4dfdc0
@@ -7010,6 +7096,7 @@ vt_loadf = place('vt_loadf', f'''
 vl_bad:
     mov dword ptr [{VT_N:#x}], 0
 vl_end:
+    call {po_loadf:#x}
     push 0x564d08
     jmp 0x43a010
 ''')
