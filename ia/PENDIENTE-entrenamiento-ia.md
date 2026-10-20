@@ -603,8 +603,12 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Alianzas sumadas: P 56 refugios, 4 salidas, 8 defensas desde refugio, 9 defensas de ciudad aliada, 4 batallas
   con defensores de varios colores; O 0 en todo. Pero amenazados que sobreviven: P 280/404 (69 %), O 400/505 (79 %);
   héroes vivos al final: P 13.3, O 16.7 por partida.
-- Conclusión: las reglas de alianzas se ejecutan, pero no mejoran el resultado (empate en victorias, +1.8 PV por
-  equipo, muy por debajo del desvío) y la supervivencia de amenazados y de héroes es peor con P. Próximo paso:
-  averiguar por qué los refugiados mueren igual (¿el refugio cae con ellos adentro? ¿se refugian demasiado tarde
-  o en ciudades que luego se pierden?), mirando los eventos de refugio contra las batallas de esas pilas.
-  Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md: por qué los refugiados no sobreviven más".
+- Conclusión: las reglas de alianzas se ejecutan; a nivel de bloque, el resultado es neutro (empate en victorias,
+  +1.8 PV por equipo, muy por debajo del desvío): ni ganan ni cuestan.
+- Corrección del usuario (20/10/2026): la menor supervivencia de amenazados y héroes no se le puede atribuir, aislada,
+  a un defecto. Un héroe puede quedarse a defender una ciudad clave, y su caída o la de esa ciudad puede ganar tiempo
+  para la alianza en otro sector. Aunque las pruebas sean de reglas tácticas, el balance es siempre estratégico: el
+  objetivo es que gane el bloque, no cada color. Esas pérdidas serían un problema solo si vinieran con menos victorias
+  del equipo, y no es el caso (12 a 12).
+- Próximo paso: no hay defecto que corregir en las reglas de alianzas. Para ver si dan ventaja hace falta más
+  muestra o un mapa sin ventaja de un equipo; decisión pendiente de qué sigue.
