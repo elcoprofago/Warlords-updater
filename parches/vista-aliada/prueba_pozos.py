@@ -3,6 +3,8 @@
 # Parte 1, datos + SAV: guardar y cargar corren desde la última escritura y la última lectura del .SAV (0x439c84,
 # 0x439fda) con el archivo de mentira (un dict).
 # Parte 2, generación: po_gen (desde 0x4a1961) con un mapa de juguete y el dado en Python; po_start (desde 0x42ddc1).
+# Parte 3, caer: po_step (desde 0x49ce08) anota y po_fall (desde 0x4b6e9d) mata, con 0x46c470, el aviso y el sonido
+# de mentira; vuela quien diga el diccionario (0x497010 / 0x48f9a0).
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
 import os, sys, struct, pefile
@@ -174,5 +176,60 @@ g = Juego(); generar(g)
 ver('al empezar: el jugador 0 descubre los pozos de la región de su capital, no los remolinos', empezar(g), [1, 1, 0, 0])
 g = Juego(); generar(g); g.mu.mem_write(0x53c393, b'\0')
 ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0, 0, 0, 0])
+print('-- parte 3: caer')
+PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
+PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
+def caer(regs, ejs, pasos, mira=2):
+    # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
+    # la tabla y lo que quedó anotado.
+    g = Juego(); mu = g.mu; g.poner(regs)
+    for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
+    mu.mem_write(0x54fe50, struct.pack('<h', len(ejs) + 1))
+    vuela = {}
+    for i, (x, y, d, h, v) in enumerate(ejs, 1):
+        a = 0x54fe50 + i * 0x1c
+        mu.mem_write(a + 2, struct.pack('<hh', x, y)); mu.mem_write(a + 0xe, struct.pack('<H', (0x10 if h else 3) | d << 5))
+        mu.mem_write(a + 0x13, b'@'); vuela[i] = v
+    mu.mem_write(0x560b20, struct.pack('<h', mira))
+    muertos, avisos, sonidos = [], [], []
+    def matar(a):
+        muertos.append((a[0] & 0xffff, a[1] & 0xff)); b = 0x54fe50 + (a[0] & 0xffff) * 0x1c + 0x13
+        mu.mem_write(b, bytes([mu.mem_read(b, 1)[0] & ~0x40]))
+    g.interceptar(0x46c470, matar)
+    g.interceptar(0x497010, lambda a: vuela[a[0] & 0xffff]); g.interceptar(0x48f9a0, lambda a: vuela[a[0] & 0xffff])
+    g.interceptar(0x4c2790, lambda a: avisos.append(bytes(mu.mem_read(a[0], 64)).split(b'\0')[0].decode()))
+    g.interceptar(0x4465e0, lambda a: sonidos.append((a[0] & 0xffff, a[1] & 0xffff)))
+    for f in (0x441290, 0x4a2170): g.interceptar(f, lambda a: 0)
+    for j, x, y in pasos:
+        mu.mem_write(STACK, struct.pack('<5I', RET, j, x & 0xffff, y & 0xffff, 1)); mu.reg_write(UC_X86_REG_ESP, STACK)
+        mu.emu_start(PO_STEP, 0x4a1ce0, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == 0x4a1ce0
+    mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
+    mu.emu_start(PO_FALL, 0x49d1a0, count=1000000); assert mu.reg_read(UC_X86_REG_EIP) == 0x49d1a0
+    assert mu.reg_read(UC_X86_REG_ESP) == STACK
+    return muertos, avisos, [s[0] for s in sonidos], g.tabla()
+POZOS = [(10, 10, 0, 0, 0, 0xff), (20, 10, 1, 0, 0, 0xff), (15, 15, 2, 0, 0, 3), (16, 16, 2, 1, 0xff, 3)]
+GRUPO = [(10, 10, 2, 0, 0), (10, 10, 2, 1, 0), (10, 10, 2, 0, 0)]
+r = caer(POZOS, GRUPO + [(10, 10, 3, 0, 0), (11, 10, 2, 0, 0)], [(2, 10, 10)])
+ver('pozo: mueren los 3 del grupo (héroe incluido), con 0; otro bando y otra casilla quedan', r[0], [(1, 0), (2, 0), (3, 0)])
+ver('pozo: aviso y sonido 7 en la PC del que cayó; descubierto para él', (r[1], r[2], r[3][0][4]),
+    (['Your army fell into a hidden pit!'], [7], 0x04))
+r = caer(POZOS, GRUPO, [(2, 10, 10)], mira=1)
+ver('control: en otra PC mueren igual, sin aviso ni sonido', (r[0], r[1], r[2]), ([(1, 0), (2, 0), (3, 0)], [], []))
+r = caer(POZOS, [(10, 10, 2, 0, 1), (10, 10, 2, 0, 0)], [(2, 10, 10)])
+ver('pozo con volador: el volador sigue', r[0], [(2, 0)])
+r = caer(POZOS, [(10, 10, 2, 0, 1), (10, 10, 2, 1, 1)], [(2, 10, 10)])
+ver('solo voladores: nadie cae, no se descubre, sin aviso', (r[0], r[1], r[3][0][4]), ([], [], 0))
+r = caer(POZOS, [(20, 10, 2, 0, 0), (20, 10, 2, 0, 0), (20, 10, 2, 0, 1)], [(2, 20, 10)])
+ver('remolino: se hunde todo lo que no vuela, con 1 (como el disband)', (r[0], r[1]),
+    ([(1, 1), (2, 1)], ['Your army was swallowed by a whirlpool!']))
+r = caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3)
+ver('trampa: cae hasta el dueño; queda detonada y vista por todos', (r[0], r[1], r[3][2][3:]),
+    ([(1, 0)], ['Your army fell into a trap!'], (1, 0xff, 3)))
+r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
+ver('control: trampa detonada ya no mata', (r[0], r[1]), ([], []))
+r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
+ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
+r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
+ver('dos jugadores en el mismo lote: cada uno en lo suyo', r[0], [(1, 0), (2, 0), (3, 0), (4, 1)])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

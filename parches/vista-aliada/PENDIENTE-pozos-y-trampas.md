@@ -245,5 +245,11 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
 - Parte 2, generación: hecha (1.0.43.0). po_gen en 0x4a1961 (vacía la tabla en toda partida nueva; con Hidden Ruins
   reparte 20 % de las ruinas de cada uno, mínimo 1, tope 32, 400 tiros) y po_start en 0x42ddc1 (región de la capital).
   Falta la red (parte 6): hoy cada PC generaría lo suyo.
-- Próximo: parte 3, caer.
-Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, programación".
+- Parte 3, caer: hecha (1.0.44.0). po_step en 0x49ce08 (paso normal, al descubrir ruinas) anota la casilla en
+  po_pend[jugador]; po_fall en 0x4b6e9d (fin del lote de pasos 0x14d, antes de 0x49d1a0, en todas las PC) mata con
+  0x46c470 (0 pozo/trampa, 1 remolino) a los no voladores de ese jugador en la casilla. 0x46c470 suelta el grupo
+  (0x485c00) y el tic siguiente 0x49e280 devuelve -1: el movimiento se corta. Aviso (0x4c2790) y sonido 0x4465e0(7,
+  rdtsc & 1) solo en la PC del que cayó. Probado en unicorn (prueba_pozos.py), no en el juego: la prueba en el juego va a TAREAS cuando haya dibujo (parte 5), porque hoy los pozos no se ven.
+  Sin probar en el juego: qué hace 0x46c470 con un héroe (arg 0 vs 1) y si el sonido 7 suena.
+- Próximo: parte 4, descubrir.
+Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 4 (descubrir)".

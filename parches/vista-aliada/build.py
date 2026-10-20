@@ -7294,6 +7294,134 @@ pr_end:
     ret
 ''')
 
+# Caer. El anfitrión arma cada tic un paso por jugador que se mueve (0x49e1a0 -> 0x49e280) y los manda juntos (orden
+# 0x14d); todas las PC aplican el lote en 0x4b6e62: un 0x49c9f0 por paso y al final 0x49d1a0. En el paso normal
+# (código 0), al descubrir ruinas (0x49ce08), po_step anota en po_pend[jugador] el registro de la casilla de llegada
+# si está activo (pozo, remolino o trampa sin detonar). po_fall, antes de 0x49d1a0, mata en cada casilla anotada a
+# los ejércitos vivos de ese jugador que no vuelan (héroes incluidos; en un remolino también lo embarcado) con
+# 0x46c470(ejército, 0) en pozo y trampa o 0x46c470(ejército, 1) en remolino, como el disband. 0x46c470 suelta el
+# grupo en movimiento (0x485c00): en el tic siguiente 0x49e280 devuelve -1 y el movimiento se corta; los voladores
+# que sobrevivan quedan en la casilla. Si murió alguno: el registro queda descubierto para ese jugador (la trampa,
+# detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
+# muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego).
+po_pend = place_data('po_pend', bytes(8))
+str_po_fell = [place_data(f'str_po_fell{i}', cstr_(s)) for i, s in enumerate((
+    'Your army fell into a hidden pit!', 'Your army was swallowed by a whirlpool!', 'Your army fell into a trap!'))]
+po_fellt = place_data('po_fellt', struct.pack('<3I', *str_po_fell))
+po_step = place('po_step', f'''
+    pushad
+    movsx ebx, word ptr [esp + 0x24]
+    movsx esi, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    cmp ebx, 8
+    jae pt_end
+    test esi, esi
+    jl pt_end
+    test edi, edi
+    jl pt_end
+    cmp si, word ptr [0x503e00]
+    jge pt_end
+    cmp di, word ptr [0x503e02]
+    jge pt_end
+    mov cl, byte ptr [0x503e06]
+    shl edi, cl
+    add edi, esi
+    cmp edi, {PO_MAPSZ}
+    jae pt_end
+    movzx eax, byte ptr [edi + {po_map:#x}]
+    test eax, eax
+    jz pt_end
+    cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TRAMPA}
+    jne pt_mark
+    cmp byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}], 0
+    jne pt_end
+pt_mark:
+    mov byte ptr [ebx + {po_pend:#x}], al
+pt_end:
+    popad
+    jmp 0x4a1ce0
+''')
+po_fall = place('po_fall', f'''
+    pushad
+    xor ebx, ebx
+pf_pl:
+    movzx eax, byte ptr [ebx + {po_pend:#x}]
+    test eax, eax
+    jz pf_pln
+    mov byte ptr [ebx + {po_pend:#x}], 0
+    lea ebp, [eax*8 + {PO_TAB - 8:#x}]
+    xor edi, edi
+    mov esi, 1
+pf_ej:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge pf_ejf
+    imul edx, esi, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz pf_ejn
+    mov eax, dword ptr [edx + 0x54fe52]
+    cmp eax, dword ptr [ebp]
+    jne pf_ejn
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne pf_ejn
+    mov eax, esi
+    call {isfly:#x}
+    test eax, eax
+    jnz pf_ejn
+    xor eax, eax
+    cmp byte ptr [ebp + 4], {PO_REMOLINO}
+    sete al
+    push eax
+    push esi
+    call 0x46c470
+    add esp, 8
+    inc edi
+pf_ejn:
+    inc esi
+    jmp pf_ej
+pf_ejf:
+    test edi, edi
+    jz pf_pln
+    mov cl, bl
+    mov al, 1
+    shl al, cl
+    or byte ptr [ebp + 6], al
+    cmp byte ptr [ebp + 4], {PO_TRAMPA}
+    jne pf_vis
+    mov byte ptr [ebp + 5], 1
+    mov byte ptr [ebp + 6], 0xff
+pf_vis:
+    call 0x441290
+    call {REDRAW:#x}
+    cmp word ptr [0x560b20], bx
+    jne pf_pln
+    movzx eax, byte ptr [ebp + 4]
+    cmp eax, {PO_TRAMPA}
+    jbe pf_txt
+    xor eax, eax
+pf_txt:
+    push 0x14
+    push dword ptr [eax*4 + {po_fellt:#x}]
+    call 0x4c2790
+    add esp, 8
+    rdtsc
+    shr eax, 8
+    and eax, 1
+    push eax
+    push 7
+    call 0x4465e0
+    add esp, 8
+pf_pln:
+    inc ebx
+    cmp ebx, 8
+    jl pf_pl
+    popad
+    jmp 0x49d1a0
+''')
+
 # Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
 vt_savef = place('vt_savef', f'''
     push ecx
@@ -10228,6 +10356,8 @@ assert rel(0x439fdc, 6) == asm('lea ecx, [ebp - 0x120]', 0x439fdc)
 patch(0x43a00b, asm('push 0x564d08', 0x43a00b), asm(f'jmp {vt_loadf:#x}', 0x43a00b))
 patch(0x4a1961, rel(0x4a1961, 0x4a1971 - 0x4a1961), asm(f'jmp {po_gen:#x}', 0x4a1961))
 patch(0x42ddc1, asm('call 0x4a1e20', 0x42ddc1), asm(f'call {po_start:#x}', 0x42ddc1))
+patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
+patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES
