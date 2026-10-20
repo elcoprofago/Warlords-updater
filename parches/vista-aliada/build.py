@@ -10219,6 +10219,59 @@ iv_back:
     jmp 0x482c10
 ''')
 
+# ---------------------------------------------------------------- ícono del exe: craneo.ico (64, 32 y 16)
+# El original trae RT_GROUP_ICON 148 con dos RT_ICON de 32x32 (ids 5 y 6). .rsrc no tiene lugar libre y lo sigue
+# .reloc, así que todo lo nuevo va en .avis: un subdirectorio RT_ICON con los tres tamaños (los offsets de
+# directorio son relativos al comienzo de .rsrc y .avis está después, quedan positivos), sus imágenes y el grupo
+# nuevo. En .rsrc solo cambian el offset del subdirectorio RT_ICON y la entrada de datos del grupo 148.
+RSRC_RVA = 0x1ab000
+def rsrc_off(rva):
+    return 0x101a00 + rva - RSRC_RVA
+assert struct.unpack_from('<II', exe, opt + 96 + 8 * 2) == (RSRC_RVA, 0xee6dc)
+def rsrc_entries(dir_off):
+    n_named, n_id = struct.unpack_from('<HH', exe, rsrc_off(RSRC_RVA + dir_off) + 12)
+    return [(rsrc_off(RSRC_RVA + dir_off) + 16 + 8 * i,) + struct.unpack_from('<II', exe, rsrc_off(RSRC_RVA + dir_off) + 16 + 8 * i)
+            for i in range(n_named + n_id)]
+def rsrc_find(dir_off, ident):
+    hit = [e for e in rsrc_entries(dir_off) if e[1] == ident]
+    assert len(hit) == 1, ident
+    return hit[0]
+ico = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'craneo.ico'), 'rb').read()
+assert struct.unpack_from('<HHH', ico) == (0, 1, 3)
+ico_imgs = []   # (cabecera de 12 bytes del grupo, imagen)
+for i in range(3):
+    w, h, cc, r0, planes, bpp, size, off = struct.unpack_from('<BBBBHHII', ico, 6 + 16 * i)
+    ico_imgs.append((struct.pack('<BBBBHHI', w, h, cc, r0, planes, bpp, size), ico[off:off + size]))
+ICO_IDS = (5, 6, 7)
+def place_rsrc(name, data):   # alineado a 4 (directorios y datos de recursos)
+    addr = CAVE + sum(len(b) for b in caves.values())
+    pad = -addr % 4
+    if pad:
+        k = list(caves)[-1]; caves[k] = caves[k] + b'\0' * pad
+    return place_data(name, data)
+img_va = [place_rsrc(f'ico_img{i}', img) for i, (_, img) in enumerate(ico_imgs)]
+grp = struct.pack('<HHH', 0, 1, 3) + b''.join(hd + struct.pack('<H', ICO_IDS[i]) for i, (hd, _) in enumerate(ico_imgs))
+grp_va = place_rsrc('ico_grp', grp)
+# subdirectorio RT_ICON: directorio de ids, tres directorios de idioma, tres entradas de datos (16 bytes c/u)
+dir_va = CAVE + sum(len(b) for b in caves.values()) + (-(CAVE + sum(len(b) for b in caves.values())) % 4)
+lang_va = [dir_va + 16 + 8 * 3 + 24 * i for i in range(3)]
+data_va = [dir_va + 16 + 8 * 3 + 24 * 3 + 16 * i for i in range(3)]
+rel = lambda va: va - BASE - RSRC_RVA
+d = struct.pack('<IIHHHH', 0, 0, 0, 0, 0, 3)
+d += b''.join(struct.pack('<II', ICO_IDS[i], 0x80000000 | rel(lang_va[i])) for i in range(3))
+d += b''.join(struct.pack('<IIHHHHII', 0, 0, 0, 0, 0, 1, 1033, rel(data_va[i])) for i in range(3))
+d += b''.join(struct.pack('<IIII', img_va[i] - BASE, len(ico_imgs[i][1]), 0, 0) for i in range(3))
+assert place_rsrc('ico_dir', d) == dir_va
+t_icon = rsrc_find(0, 3)
+assert t_icon[2] & 0x80000000 and [e[1] for e in rsrc_entries(t_icon[2] & 0x7fffffff)] == [5, 6]
+struct.pack_into('<I', exe, t_icon[0] + 4, 0x80000000 | rel(dir_va))
+t_grp = rsrc_find(0, 14)
+g148 = rsrc_find(t_grp[2] & 0x7fffffff, 148)
+g_lang = rsrc_entries(g148[2] & 0x7fffffff)
+assert len(g_lang) == 1 and not g_lang[0][2] & 0x80000000
+g_data = rsrc_off(RSRC_RVA + g_lang[0][2])
+assert struct.unpack_from('<I', exe, g_data + 4)[0] == 34
+struct.pack_into('<II', exe, g_data, grp_va - BASE, len(grp))
 
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
