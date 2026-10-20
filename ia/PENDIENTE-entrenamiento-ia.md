@@ -593,3 +593,18 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Lectura: las reglas nuevas se ejecutan en vivo (antes, en el control, todo en cero). El resultado tiende a
   favor de P en PV y ciudades, pero sin significancia; el refugio no mejoró todavía la supervivencia de amenazados
   ni de héroes. Falta juntar las tandas 26-27 (24 partidas) antes de concluir.
+
+### 20/10/2026: tandas A/B 27 y 28 y cierre de la serie (25, 27, 28: 24 partidas, Tanda_Border_Alianzas)
+- La 26 no es de esta prueba (Borderlands/Kor/Scarpart sin alianzas, cortada en la partida 1): se excluye.
+  27 y 28: 16/16 ok, exe 832708c1 en las dos (vista-aliada 1.0.43.0/1.0.44.0); la 25 fue con 1.0.39.0 (a2927257).
+- PV por color: P 9.1 / O 6.5 (t27), P 6.6 / O 9.0 (t28); con la 25, P 7.9 y O 7.5 en promedio.
+- PV por equipo en las 24 (promedio ± desvío): 0135 P 29.8±19.5, O 27.5±18.5; 2467 P 33.5±16.5, O 32.2±21.6.
+  Victorias: P 12, O 12. La ventaja del mapa de 2467 se achicó (ganó 4 de 8 en la 27 y en la 28).
+- Alianzas sumadas: P 56 refugios, 4 salidas, 8 defensas desde refugio, 9 defensas de ciudad aliada, 4 batallas
+  con defensores de varios colores; O 0 en todo. Pero amenazados que sobreviven: P 280/404 (69 %), O 400/505 (79 %);
+  héroes vivos al final: P 13.3, O 16.7 por partida.
+- Conclusión: las reglas de alianzas se ejecutan, pero no mejoran el resultado (empate en victorias, +1.8 PV por
+  equipo, muy por debajo del desvío) y la supervivencia de amenazados y de héroes es peor con P. Próximo paso:
+  averiguar por qué los refugiados mueren igual (¿el refugio cae con ellos adentro? ¿se refugian demasiado tarde
+  o en ciudades que luego se pierden?), mirando los eventos de refugio contra las batallas de esas pilas.
+  Para retomar: "Seguimos con PENDIENTE-entrenamiento-ia.md: por qué los refugiados no sobreviven más".

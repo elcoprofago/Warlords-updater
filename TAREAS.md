@@ -61,6 +61,9 @@ base no hay ninguna tanda después de la 25 (la última partida terminó 12:35) 
 repetir el paso 1 (serie de 2 → serían las tandas 26 y 27). El Monitor ya usa el juego 1.0.43.0; para esta prueba
 da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
 
+(Claude, 20/10) Serie completa con las tandas 27 y 28 (24 partidas): tarea terminada. Resultado: empate (12 victorias
+cada IA); detalle en ia\PENDIENTE-entrenamiento-ia.md.
+
 ## 20. Sonido del juego: volvió a faltar (17/10/2026)
 La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
 arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
