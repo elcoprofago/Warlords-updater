@@ -7304,10 +7304,17 @@ pr_end:
 # que sobrevivan quedan en la casilla. Si murió alguno: el registro queda descubierto para ese jugador (la trampa,
 # detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
 # muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego).
+# Descubrir al pasar (parte 4): po_step llama primero a 0x4a1ce0 (que avanza el contador de pasos [0x4fe5e8] y descubre
+# ruinas) y después aplica la misma regla a la tabla: con Hidden Ruins y Discover Ruins, si contador < radio del grupo,
+# el primer registro no visto por el jugador a |dx|+|dy| <= radio queda descubierto para él, se redibuja y, en su PC,
+# el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
 po_pend = place_data('po_pend', bytes(8))
 str_po_fell = [place_data(f'str_po_fell{i}', cstr_(s)) for i, s in enumerate((
     'Your army fell into a hidden pit!', 'Your army was swallowed by a whirlpool!', 'Your army fell into a trap!'))]
 po_fellt = place_data('po_fellt', struct.pack('<3I', *str_po_fell))
+str_po_disc = [place_data(f'str_po_disc{i}', cstr_(s)) for i, s in enumerate((
+    'You have discovered a hidden pit!', 'You have discovered a hidden whirlpool!', 'You have discovered a hidden trap!'))]
+po_disct = place_data('po_disct', struct.pack('<3I', *str_po_disc))
 po_step = place('po_step', f'''
     pushad
     movsx ebx, word ptr [esp + 0x24]
@@ -7339,7 +7346,71 @@ pt_mark:
     mov byte ptr [ebx + {po_pend:#x}], al
 pt_end:
     popad
-    jmp 0x4a1ce0
+    push dword ptr [esp + 0x10]
+    push dword ptr [esp + 0x10]
+    push dword ptr [esp + 0x10]
+    push dword ptr [esp + 0x10]
+    call 0x4a1ce0
+    add esp, 0x10
+    pushad
+    test byte ptr [0x53c393], 0x10
+    jz pd_end
+    test byte ptr [0x53c393], 0x20
+    jz pd_end
+    movsx ebp, word ptr [esp + 0x30]
+    movsx eax, word ptr [0x4fe5e8]
+    cmp eax, ebp
+    jge pd_end
+    movsx ebx, word ptr [esp + 0x24]
+    cmp ebx, 8
+    jae pd_end
+    movsx esi, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    xor edx, edx
+pd_po:
+    cmp edx, dword ptr [{PO_N:#x}]
+    jae pd_end
+    movzx eax, byte ptr [edx*8 + {PO_TAB + 6:#x}]
+    bt eax, ebx
+    jc pd_pon
+    movsx ecx, word ptr [edx*8 + {PO_TAB:#x}]
+    sub ecx, esi
+    jge pd_dx
+    neg ecx
+pd_dx:
+    movsx eax, word ptr [edx*8 + {PO_TAB + 2:#x}]
+    sub eax, edi
+    jge pd_dy
+    neg eax
+pd_dy:
+    add ecx, eax
+    cmp ecx, ebp
+    jle pd_hit
+pd_pon:
+    inc edx
+    jmp pd_po
+pd_hit:
+    mov cl, bl
+    mov al, 1
+    shl al, cl
+    or byte ptr [edx*8 + {PO_TAB + 6:#x}], al
+    push edx
+    call {REDRAW:#x}
+    pop edx
+    cmp word ptr [0x560b20], bx
+    jne pd_end
+    movzx eax, byte ptr [edx*8 + {PO_TAB + 4:#x}]
+    cmp eax, {PO_TRAMPA}
+    jbe pd_txt
+    xor eax, eax
+pd_txt:
+    push 0x14
+    push dword ptr [eax*4 + {po_disct:#x}]
+    call 0x4c2790
+    add esp, 8
+pd_end:
+    popad
+    ret
 ''')
 po_fall = place('po_fall', f'''
     pushad

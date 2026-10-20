@@ -5,6 +5,7 @@
 # Parte 2, generación: po_gen (desde 0x4a1961) con un mapa de juguete y el dado en Python; po_start (desde 0x42ddc1).
 # Parte 3, caer: po_step (desde 0x49ce08) anota y po_fall (desde 0x4b6e9d) mata, con 0x46c470, el aviso y el sonido
 # de mentira; vuela quien diga el diccionario (0x497010 / 0x48f9a0).
+# Parte 4, descubrir: po_step (desde 0x49ce08) con el 0x4a1ce0 real (sin ruinas), que avanza el contador de pasos.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
 import os, sys, struct, pefile
@@ -231,5 +232,35 @@ r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
 ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
 r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
 ver('dos jugadores en el mismo lote: cada uno en lo suyo', r[0], [(1, 0), (2, 0), (3, 0), (4, 1)])
+print('-- parte 4: descubrir')
+def descubrir(regs, pasos, cont=9, opc=0x30, mira=2):
+    # pasos: (jugador, x, y, radio). Devuelve las máscaras, los avisos y el contador al final.
+    g = Juego(); mu = g.mu; g.poner(regs)
+    mu.mem_write(0x558872, struct.pack('<h', 0)); mu.mem_write(0x53c393, bytes([opc]))
+    mu.mem_write(0x4fe5e8, struct.pack('<h', cont)); mu.mem_write(0x560b20, struct.pack('<h', mira))
+    avisos = []
+    g.interceptar(0x4c2790, lambda a: avisos.append(bytes(mu.mem_read(a[0], 64)).split(b'\0')[0].decode()))
+    g.interceptar(REDRAW_, lambda a: 0)
+    for j, x, y, rad in pasos:
+        mu.mem_write(STACK, struct.pack('<5I', RET, j, x & 0xffff, y & 0xffff, rad)); mu.reg_write(UC_X86_REG_ESP, STACK)
+        mu.emu_start(PO_STEP, RET, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == RET
+        assert mu.reg_read(UC_X86_REG_ESP) == STACK + 4
+    return [r[4] for r in g.tabla()], avisos, struct.unpack('<h', mu.mem_read(0x4fe5e8, 2))[0]
+REDRAW_ = 0x4a2170
+LEJOS = [(30, 20, 0, 0, 0, 0xff), (10, 11, 0, 0, 0, 0xff), (11, 11, 1, 0, 0, 0xff), (10, 13, 2, 0, 0, 3)]
+ver('contador 9 -> 0 < radio 1: descubre el pozo a 1 (solo el primero), aviso en su PC',
+    descubrir(LEJOS, [(2, 10, 10, 1)]), ([0, 4, 0, 0], ['You have discovered a hidden pit!'], 0))
+ver('control: contador 0 -> 1, no < radio 1: nada', descubrir(LEJOS, [(2, 10, 10, 1)], cont=0)[:2], ([0, 0, 0, 0], []))
+ver('radio 3, contador -> 2: el primero no visto; ya visto se saltea',
+    descubrir([(10, 11, 0, 0, 4, 0xff)] + LEJOS[2:], [(2, 10, 10, 3)], cont=1)[:2],
+    ([4, 4, 0], ['You have discovered a hidden whirlpool!']))
+ver('trampa a 3: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 10, 3)])[:2], ([4], ['You have discovered a hidden trap!']))
+ver('control: a 4 con radio 3 no', descubrir(LEJOS[3:], [(2, 10, 9, 3)])[:2], ([0], []))
+ver('control: otra PC descubre igual, sin aviso', descubrir(LEJOS, [(2, 10, 10, 1)], mira=1)[:2], ([0, 4, 0, 0], []))
+ver('control: sin Discover Ruins nada (el contador avanza igual)', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x10), ([0] * 4, [], 0))
+ver('control: sin Hidden Ruins nada', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x20)[:2], ([0] * 4, []))
+ver('control: jugador inválido nada', descubrir(LEJOS, [(9, 10, 10, 1)])[:2], ([0] * 4, []))
+ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), descubre una vez',
+    descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered a hidden pit!'], 9))
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

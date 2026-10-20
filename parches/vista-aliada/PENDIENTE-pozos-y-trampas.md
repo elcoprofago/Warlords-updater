@@ -251,5 +251,10 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   (0x485c00) y el tic siguiente 0x49e280 devuelve -1: el movimiento se corta. Aviso (0x4c2790) y sonido 0x4465e0(7,
   rdtsc & 1) solo en la PC del que cayó. Probado en unicorn (prueba_pozos.py), no en el juego: la prueba en el juego va a TAREAS cuando haya dibujo (parte 5), porque hoy los pozos no se ven.
   Sin probar en el juego: qué hace 0x46c470 con un héroe (arg 0 vs 1) y si el sonido 7 suena.
-- Próximo: parte 4, descubrir.
-Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 4 (descubrir)".
+- Parte 4, descubrir: hecha (1.0.45.0). po_step ya no salta a 0x4a1ce0: lo llama (avanza el contador y descubre
+  ruinas) y después aplica la misma regla a la tabla: Hidden + Discover Ruins, contador < radio, el primer registro no
+  visto por el jugador a |dx|+|dy| <= radio; pone su bit en +6, redibuja y da el aviso en su PC. Pozo y ruina pueden
+  descubrirse en el mismo paso (cada uno el suyo). Sin Discover Ruins una trampa ajena solo se descubre al caer (el
+  dueño y sus aliados la ven siempre: eso es del dibujo, parte 5). Probado en unicorn, no en el juego.
+- Próximo: parte 5, dibujo (empieza averiguando cómo anima el juego el agua).
+Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 5 (dibujo)".
