@@ -7,7 +7,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 20** (sonido): actualizar el Monitor de IA y fijarte en la próxima partida.
-   La **tarea 21** (tanda A/B de alianzas) empieza con la misma actualización del Monitor: se pueden hacer juntas.
+   La **tarea 23** (tanda A/B de alianzas en Hexagon) puede correr mientras tanto.
 2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
 3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
 4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
@@ -16,6 +16,21 @@ Sorteo están acá (tarea 18).
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
+En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos
+recursos, así que mide mejor si las reglas de alianzas ayudan al bloque. (Los mapas al azar no igualan las
+condiciones: descartados.)
+1. Armá una partida guardada en **Hexagon** igual que Tanda_Border_Alianzas: el mismo .PGS en todos los colores, 30
+   turnos, 2000 puntos, **Shared Cities** y **Diplomacy** activadas, y **dos equipos aliados del mismo tamaño** desde
+   el arranque (Hexagon no admite 8 bandos: repartí los que admita en dos mitades). Elegí los equipos para que las
+   dos mitades queden en posiciones equivalentes del mapa. Pasá un bando a Humano antes de guardar.
+   Guardala como **Tanda_Hex_Alianzas**.
+2. En el Monitor de IA: **Ninguna**, marcá solo **Hex_Alianzas** (tiene que aparecer «(alianzas)»), Partidas: **8**,
+   **Tandas automatizadas** con serie de **3**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
+   alternándose con la IA de prueba.
+3. Avisame cuando terminen las 3 (24 partidas). Si una tanda se corta: **Retomar** con la serie de las que falten.
+Resultado:
 
 ## 22. Órdenes por chat a un aliado de la computadora (19/10/2026)
 Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve

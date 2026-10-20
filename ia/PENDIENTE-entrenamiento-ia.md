@@ -612,3 +612,6 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   del equipo, y no es el caso (12 a 12).
 - Próximo paso: no hay defecto que corregir en las reglas de alianzas. Para ver si dan ventaja hace falta más
   muestra o un mapa sin ventaja de un equipo; decisión pendiente de qué sigue.
+- Decidido (20/10/2026): repetir la A/B en Hexagon (posiciones y recursos casi iguales; los mapas al azar no igualan
+  condiciones). TAREAS 23: el usuario arma Tanda_Hex_Alianzas (dos equipos iguales, menos de 8 bandos). Al recibir
+  la primera tanda, verificar que tanda.plan e informe.py se porten bien con colores ausentes (hoy asumen 8).
