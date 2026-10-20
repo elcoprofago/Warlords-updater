@@ -7493,6 +7493,111 @@ pf_pln:
     jmp 0x49d1a0
 ''')
 
+# Dibujo. La vista del mapa (0x459790, ebp = la vista) recorre sus celdas en dos pasadas; la 1.ª pinta el terreno, la
+# ruina (0x45c0e0) y el sitio, por debajo de los ejércitos. po_draw va entre la ruina y el sitio (reemplaza
+# 0x459b95..0x459b9a; esi = celda, [esp+0x14] columna, [esp+0x16] fila, [esp+0x18] x y [esp+0x1a] y en pantalla; la
+# casilla es (columna + [ebp+0x28], fila + [ebp+0x2a]), las mismas que 0x45857e copia a las celdas). Solo llegan las
+# celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
+# es su dueño o un aliado mutuo con vista aliada (fogally). Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
+# 11 es transparente): 0 pozo, 1..4 remolino, 5 trampa, 6 trampa detonada. El remolino se anima como el agua: cuadro
+# 1 + ([ebp+0x3c] & 3), la fase que 0x456fdc avanza cada tic de la animación del mapa. La hoja se carga (0x4dd3f0) la
+# primera vez que hace falta, o de nuevo si el juego la descargó; si no se puede, no se insiste.
+PO_FILE = RAM_FILE + 3       # después de sorteo.pcx y darkcomp.pcx (ver table_add, más abajo)
+PO_FRAMES = 7
+po_nosheet = place_data('po_nosheet', bytes(4))
+po_draw = place('po_draw', f'''
+    pushad
+    movsx eax, word ptr [esp + 0x34]
+    movsx ecx, word ptr [ebp + 0x28]
+    add eax, ecx
+    movsx edx, word ptr [esp + 0x36]
+    movsx ecx, word ptr [ebp + 0x2a]
+    add edx, ecx
+    test eax, eax
+    jl pw_end
+    test edx, edx
+    jl pw_end
+    cmp ax, word ptr [0x503e00]
+    jge pw_end
+    cmp dx, word ptr [0x503e02]
+    jge pw_end
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {PO_MAPSZ}
+    jae pw_end
+    movzx eax, byte ptr [edx + {po_map:#x}]
+    test eax, eax
+    jz pw_end
+    lea ebx, [eax*8 + {PO_TAB - 8:#x}]
+    movsx edx, word ptr [0x560b20]
+    cmp edx, 8
+    jae pw_end
+    movzx eax, byte ptr [ebx + 6]
+    bt eax, edx
+    jc pw_vis
+    cmp byte ptr [ebx + 4], {PO_TRAMPA}
+    jne pw_end
+    movzx ecx, byte ptr [ebx + 7]
+    cmp ecx, edx
+    je pw_vis
+    call {fogally:#x}
+    jne pw_end
+pw_vis:
+    movzx eax, byte ptr [ebx + 4]
+    xor edi, edi
+    cmp eax, {PO_REMOLINO}
+    jne pw_trap
+    movzx edi, word ptr [ebp + 0x3c]
+    and edi, 3
+    inc edi
+    jmp pw_sheet
+pw_trap:
+    cmp eax, {PO_TRAMPA}
+    jne pw_sheet
+    mov edi, 5
+    cmp byte ptr [ebx + 5], 0
+    je pw_sheet
+    inc edi
+pw_sheet:
+    cmp dword ptr [{po_nosheet:#x}], 0
+    jne pw_end
+    push {PO_FILE}
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz pw_fail
+    cmp dword ptr [eax + 8], 0
+    jne pw_blit
+    push {PO_FILE}
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jnz pw_blit
+pw_fail:
+    mov dword ptr [{po_nosheet:#x}], 1
+    jmp pw_end
+pw_blit:
+    movsx eax, word ptr [esp + 0x3a]
+    push eax
+    movsx eax, word ptr [esp + 0x3c]
+    push eax
+    push 0x27
+    push 48
+    push 48
+    push 0
+    imul edi, edi, 48
+    push edi
+    push {PO_FILE}
+    call 0x4dd530
+    add esp, 0x20
+pw_end:
+    popad
+    cmp byte ptr [esi + 0x10], 0
+    je 0x459bb9
+    jmp 0x459b9b
+''')
+
 # Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
 vt_savef = place('vt_savef', f'''
     push ecx
@@ -10482,6 +10587,7 @@ patch(0x4a1961, rel(0x4a1961, 0x4a1971 - 0x4a1961), asm(f'jmp {po_gen:#x}', 0x4a
 patch(0x42ddc1, asm('call 0x4a1e20', 0x42ddc1), asm(f'call {po_start:#x}', 0x42ddc1))
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
+patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES
@@ -10722,6 +10828,34 @@ struct.pack_into('<I', butt_std, 0, DC_FILE)
 setstr(butt_std, 4, 32, 'darkcomp')
 table_add(res, 2, DC_FILE, bytes(butt_std))
 
+# Hoja PO_FILE = RUINS\pozos.pcx, con los campos de henge (0x51, el PCX de un tipo de ruina; el 10 es la carpeta
+# RUINS): los cuadros de 48x48 de po_draw, uno al lado del otro. Para las pruebas (decisión del usuario), recortados de
+# los dibujos de ruinas: pozo = cueva, remolino = la cueva girada 0, 90, 180 y 270 grados (para que se vea la
+# animación), trampa = puerta trampa cerrada, detonada = abierta. Misma paleta que las ruinas; el 11 es transparente.
+assert PO_FILE == DC_FILE + 1
+henge = bytearray(res[o2 + 20 + 0x51 * 60:o2 + 20 + 0x52 * 60])
+assert henge[4:10] == b'henge\0' and struct.unpack_from('<6I', henge, 36) == (10, 1, 0, 0, 0, 2)
+struct.pack_into('<I', henge, 0, PO_FILE)
+setstr(henge, 4, 32, 'pozos')
+table_add(res, 2, PO_FILE, bytes(henge))
+def cuadro_ruina(tipo, columna):
+    im = Image.open(rf'C:\Warlords3\RUINS\{tipo}.PCX')
+    x0 = 1 + columna * 0x57
+    c = im.crop((x0, 1, x0 + 87, 89)); px = c.load()
+    pts = [(x, y) for x in range(87) for y in range(88) if px[x, y] not in (11, 101)]
+    cx = (min(p[0] for p in pts) + max(p[0] for p in pts) + 1) // 2
+    cy = (min(p[1] for p in pts) + max(p[1] for p in pts) + 1) // 2
+    assert max(p[0] for p in pts) - min(p[0] for p in pts) < 48 and max(p[1] for p in pts) - min(p[1] for p in pts) < 48
+    out = Image.new('P', (48, 48), 11); out.putpalette(im.getpalette())
+    for x, y in pts: out.putpixel((x - cx + 24, y - cy + 24), px[x, y])
+    return out
+cueva = cuadro_ruina('cave', 0)
+po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(cueva.getpalette())
+for i, im in enumerate([cueva] + [cueva.rotate(-90 * k) for k in range(4)] +
+                       [cuadro_ruina('trapdoor', 0), cuadro_ruina('trapdoor', 1)]):
+    po_hoja.paste(im, (48 * i, 0))
+pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
+
 # Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco) va pintada en el fondo, en
 # lugar del texto del control 19 (que queda vacío). El fondo es el archivo 1 (picts\startup, 640x480, por la pantalla
 # 1 de la tabla tipo 5) o, a 800x600 y 1024x768, el 138 o el 139 (0x4aab9a), con el diálogo corrido (80,60) o
@@ -10910,6 +11044,7 @@ NUEVOS = dict(STTS)
 NUEVOS[os.path.join('DATA', 'BRIDNAME.TXT')] = BRIDNAME
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
+NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS.update(NUEVOS_TIT)
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)

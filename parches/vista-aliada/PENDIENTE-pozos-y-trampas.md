@@ -256,5 +256,16 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   visto por el jugador a |dx|+|dy| <= radio; pone su bit en +6, redibuja y da el aviso en su PC. Pozo y ruina pueden
   descubrirse en el mismo paso (cada uno el suyo). Sin Discover Ruins una trampa ajena solo se descubre al caer (el
   dueño y sus aliados la ven siempre: eso es del dibujo, parte 5). Probado en unicorn, no en el juego.
-- Próximo: parte 5, dibujo (empieza averiguando cómo anima el juego el agua).
-Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 5 (dibujo)".
+- Parte 5, dibujo: hecha (1.0.47.0). Averiguado: la vista del mapa (0x459790, ebp = vista) pinta en su 1.ª pasada,
+  por debajo de los ejércitos, terreno, ruina (0x45c0e0) y sitio (0x45aa80); la casilla de cada celda es (columna +
+  [vista+0x28], fila + [vista+0x2a]). Lo animado (agua 0x15 en 0x4598c5, sitios en 0x459b16) elige su cuadro con
+  (... + [vista+0x3c] o [vista+0x3e]) & 3; 0x456fdc avanza esa fase (0..15) en cada tic de la animación del mapa.
+  Copia con transparencia: 0x4dd530(hoja, x, y, ancho, alto, destino 0x27, x, y); hoja cargada = [objeto+8] ≠ 0
+  (objeto = 0x4e4a90(id), ecx = 0x58cf78); cargar = 0x4dd3f0(id) (1 si cargó).
+  Hecho: po_draw en 0x459b95 (entre ruina y sitio) dibuja de la hoja nueva RUINS\pozos.pcx (archivo 168 del .RES,
+  campos de henge) un cuadro de 48x48: pozo, remolino (4 cuadros, 1 + fase & 3), trampa, trampa detonada. Se ve si
+  quien mira lo descubrió, o si es trampa suya o de un aliado mutuo con vista aliada (fogally). Dibujos de prueba
+  recortados de las ruinas (cueva; cueva girada para el remolino; puerta trampa cerrada / abierta). Probado en
+  unicorn; la prueba en el juego quedó en TAREAS 24 (solo en esta PC: sin la parte 6 cada PC genera sus pozos).
+- Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía).
+Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

@@ -357,7 +357,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: tres más (165, 166 y 167)', (len(fn), len(fo)), (168, 165))
+ver('archivos: cuatro más (165 a 168; el 168 es el de pozos)', (len(fn), len(fo)), (169, 165))
 ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0], fn[166][4:11], struct.unpack_from('<6I', fn[166], 36)),
     (166, b'sorteo\0', (16, 1, 0, 0, 0, 0)))
 TITULO = {1: b'startav', 138: b'startav1', 139: b'startav2'}   # fondos del menú con el título (1.0.19.0)

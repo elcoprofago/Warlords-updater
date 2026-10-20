@@ -9,9 +9,29 @@ Sorteo están acá (tarea 18).
 1. **Tarea 23** (tanda A/B de alianzas en Hexagon): corre sola, de noche.
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
-3. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+3. **Tarea 24** (pozos y remolinos en el juego): una partida corta contra la computadora, en esta PC.
+4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 24. Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
+Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubren al pasar, matan al que cae y ahora
+se dibujan. Los dibujos son provisorios: el pozo es la cueva de las ruinas y el remolino la misma cueva girando.
+**Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). DarklordAV.exe ya está armado en
+C:\Warlords3 (vista-aliada 1.0.47.0).
+1. Abrí DarklordAV.exe y empezá una partida nueva **contra la computadora**, en un mapa al azar, con **Hidden Ruins**
+   activada y, en Viewing Options, **Discover hidden ruins as you pass**.
+2. Al empezar: mirá la zona de tu capital. Si en esa región tocó un pozo, tiene que verse el dibujo de la cueva
+   en esa casilla. Si no ves ninguno, seguí al paso 3.
+3. Mové ejércitos por tierra y barcos por el agua unos turnos. Cuando descubras uno tiene que salir el aviso «You
+   have discovered a hidden pit!» (o «whirlpool») y quedar dibujado. El remolino tiene que verse **girando**.
+4. Mandá a propósito un ejército barato (no voladores) a un pozo descubierto, eligiendo esa casilla como destino:
+   tiene que morir, salir «Your army fell into a hidden pit!» y sonar el grito de muerte de héroe. Si tenés un barco
+   descartable, lo mismo con un remolino («swallowed by a whirlpool»).
+5. Si podés, probá también con un grupo que tenga un **volador**: el volador tiene que sobrevivir y quedarse ahí.
+6. Guardá la partida, salí y volvé a cargarla: los pozos y remolinos descubiertos tienen que seguir dibujados.
+7. Anotá abajo qué viste (y si algún dibujo queda mal ubicado, tapa algo o parpadea).
+Resultado:
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
 En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos

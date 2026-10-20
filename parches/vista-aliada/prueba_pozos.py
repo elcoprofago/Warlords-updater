@@ -6,6 +6,8 @@
 # Parte 3, caer: po_step (desde 0x49ce08) anota y po_fall (desde 0x4b6e9d) mata, con 0x46c470, el aviso y el sonido
 # de mentira; vuela quien diga el diccionario (0x497010 / 0x48f9a0).
 # Parte 4, descubrir: po_step (desde 0x49ce08) con el 0x4a1ce0 real (sin ruinas), que avanza el contador de pasos.
+# Parte 5, dibujo: po_draw (desde 0x459b95) con una vista y una celda de juguete; 0x4dd530, 0x4e4a90 y 0x4dd3f0 de
+# mentira.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
 import os, sys, struct, pefile
@@ -262,5 +264,60 @@ ver('control: sin Hidden Ruins nada', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x2
 ver('control: jugador inválido nada', descubrir(LEJOS, [(9, 10, 10, 1)])[:2], ([0] * 4, []))
 ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), descubre una vez',
     descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered a hidden pit!'], 9))
+print('-- parte 5: dibujo')
+PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]
+VISTA, CELDA, HOJA = 0x180000, 0x181000, 0x182000
+PO_FILE = 168
+def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vista=True, cargada=True, hay=True,
+            sitio=0):
+    # Una celda de la vista: columna/fila celda, origen de la vista, quien mira. Devuelve los dibujos de 0x4dd530
+    # (hoja, x, y, ancho, alto, destino, x, y en pantalla), las cargas de la hoja y por dónde siguió.
+    g = Juego(); mu = g.mu; g.poner(regs)
+    for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
+    mu.mem_write(VISTA + 0x28, struct.pack('<hh', *origen)); mu.mem_write(VISTA + 0x3c, struct.pack('<h', fase))
+    mu.mem_write(CELDA + 0x10, bytes([sitio])); mu.mem_write(0x560b20, struct.pack('<h', mira))
+    mu.mem_write(0x55ee4c, b'\2' * 56 * 8)
+    for a, b in aliados: mu.mem_write(0x55ee4c + a * 56 + b, b'\0'); mu.mem_write(0x55ee4c + b * 56 + a, b'\0')
+    mu.mem_write(0x53c38e, b'\x90' if vista else b'\x10'); mu.mem_write(0x53c393, b'\x08')
+    mu.mem_write(HOJA + 8, struct.pack('<I', 1 if cargada else 0))
+    dibujos, cargas = [], []
+    g.interceptar(0x4e4a90, lambda a: HOJA if hay and a[0] == PO_FILE else 0, pop=4)
+    def cargar(a):
+        cargas.append(a[0]); mu.mem_write(HOJA + 8, struct.pack('<I', 1)); return 1
+    g.interceptar(0x4dd3f0, cargar)
+    def blit(a):
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        dibujos.append(struct.unpack('<8i', mu.mem_read(sp + 4, 32)))
+    g.interceptar(0x4dd530, blit)
+    sp = STACK - 0x40
+    mu.mem_write(sp + 0x14, struct.pack('<hhhh', celda[0], celda[1], celda[0] * 48, celda[1] * 48))
+    mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBP, VISTA); mu.reg_write(UC_X86_REG_ESI, CELDA)
+    sigue = None
+    for fin in (0x459b9b, 0x459bb9):
+        mu.hook_add(UC_HOOK_CODE, lambda mu, a, s, _, f=fin: mu.emu_stop(), begin=fin, end=fin)
+    mu.emu_start(PO_DRAW, 0, count=100000)
+    sigue = mu.reg_read(UC_X86_REG_EIP)
+    assert mu.reg_read(UC_X86_REG_ESP) == sp and mu.reg_read(UC_X86_REG_EBP) == VISTA
+    assert mu.reg_read(UC_X86_REG_ESI) == CELDA
+    return [(d[1] // 48,) + d[2:] for d in dibujos if d[0] == PO_FILE], cargas, hex(sigue)
+EN = (13, 22)       # la casilla de la celda (3, 2) con origen (10, 20); en pantalla (144, 96)
+def en(t, est=0, m=0, d=0xff): return [EN + (t, est, m, d)]
+ver('pozo visto por quien mira: cuadro 0, 48x48 en la celda, al destino 0x27; sin sitio salta al fin de la celda',
+    dibujar(en(0, m=0x04)), ([(0, 0, 48, 48, 0x27, 144, 96)], [], '0x459bb9'))
+ver('control: con sitio en la celda sigue a dibujarlo', dibujar(en(0, m=0x04), sitio=1)[2], '0x459b9b')
+ver('control: pozo no descubierto por quien mira: nada', dibujar(en(0, m=0x08))[0], [])
+ver('control: otra casilla: nada', dibujar(en(0, m=0x04), celda=(4, 2))[0], [])
+ver('remolino: cuadro 1 + fase & 3', [dibujar(en(1, m=0x04), fase=f)[0][0][0] for f in range(6)], [1, 2, 3, 4, 1, 2])
+ver('trampa del que mira (no descubierta): cuadro 5', dibujar(en(2, d=2))[0][0][0], 5)
+ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[(2, 3)])[0][0][0], 5)
+ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])
+ver('control: trampa de otro (no aliado): no', dibujar(en(2, d=3))[0], [])
+ver('trampa ajena descubierta: se ve', dibujar(en(2, m=0x04, d=3))[0][0][0], 5)
+ver('trampa detonada (vista por todos): cuadro 6', dibujar(en(2, 1, 0xff, 3))[0][0][0], 6)
+ver('hoja sin cargar: la carga una vez y dibuja', dibujar(en(0, m=0x04), cargada=False)[:2],
+    ([(0, 0, 48, 48, 0x27, 144, 96)], [PO_FILE]))
+ver('control: hoja inexistente: no dibuja ni insiste', dibujar(en(0, m=0x04), hay=False)[:2], ([], []))
+ver('control: quien mira inválido: nada', dibujar(en(0, m=0xff), mira=9)[0], [])
+ver('control: casilla fuera del mapa: nada', dibujar([(45, 22, 0, 0, 0xff, 0xff)], origen=(42, 20))[0], [])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
