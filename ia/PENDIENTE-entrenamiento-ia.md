@@ -615,3 +615,16 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Decidido (20/10/2026): repetir la A/B en Hexagon (posiciones y recursos casi iguales; los mapas al azar no igualan
   condiciones). TAREAS 23: el usuario arma Tanda_Hex_Alianzas (dos equipos iguales, menos de 8 bandos). Al recibir
   la primera tanda, verificar que tanda.plan e informe.py se porten bien con colores ausentes (hoy asumen 8).
+
+### 20/10/2026: tandas A/B 29 a 34 en Hexagon (48 partidas, Tanda_hex_alianzas, equipos 013|457, exe df2d19b0)
+- 48/48 ok. Colores 2 y 6 no juegan; los datos no tienen filas de ellos (el plan los nombraba: arreglado en Monitor 1.0.9).
+- Victorias por equipo: P 20, O 27, 1 empate. PV por equipo: 013 con P 44.8±11.1, con O 47.8±9.6; 457 con P
+  31.5±8.5, con O 34.9±10.6.
+- Hexagon no quedó parejo con estos equipos: 013 ganó 37 de 48 (margen de 10 a 16 PV). Controlando por equipo
+  (margen 013-457 con 013 en P contra 013 en O), el efecto de la IA de prueba es -3.2 ± 2.8 PV por equipo: en contra,
+  pero dentro de lo que da el azar.
+- Las reglas casi no se disparan en Hexagon: 16 refugios, 4 defensas desde refugio, 2 defensas de ciudad aliada y 1
+  batalla con defensores de varios colores en 48 partidas (en Borderlands: 56, 8, 9 y 4 en 24).
+- Conclusión, sumada a Borderlands (+1.8 PV, 12 a 12): las reglas de alianzas no muestran ventaja para el bloque;
+  en Hexagon tienden levemente en contra sin significancia, y se activan tan poco que no pueden explicar mucho de la
+  diferencia. Decisión pendiente del usuario: seguir con otra destreza o revisar por qué casi no se activan acá.

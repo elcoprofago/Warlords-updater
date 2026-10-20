@@ -26,7 +26,7 @@ condiciones: descartados.)
    **Tandas automatizadas** con serie de **6**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
    alternándose con la IA de prueba.
 3. Avisame cuando terminen las 6 (48 partidas; a unos 18 minutos por partida son unas 15 horas). Si una tanda se corta: **Retomar** con la serie de las que falten.
-Resultado:
+Resultado: (Claude, 20/10) las 6 tandas (29 a 34) completas y analizadas; detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
 ## 22. Órdenes por chat a un aliado de la computadora (19/10/2026)
 Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
