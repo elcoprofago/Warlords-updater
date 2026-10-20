@@ -6,14 +6,12 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 20** (sonido): actualizar el Monitor de IA y fijarte en la próxima partida.
-   La **tarea 23** (tanda A/B de alianzas en Hexagon) puede correr mientras tanto.
+1. **Tarea 23** (tanda A/B de alianzas en Hexagon): puede correr mientras hacés lo demás.
 2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
-3. **Tarea 19** (Tailscale con Nico): antes de la próxima partida en red.
-4. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
+3. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
    (Votación y Sorteo): una sola partida sirve para las dos. Si en esa partida hay un aliado de la computadora,
    también la **tarea 22** (órdenes por chat).
-5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
@@ -50,59 +48,6 @@ tanda de la tarea 21). Tienen que tenerla todas las PC de la partida.
 5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
    ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
    (no tendría que haber visto nada).
-Resultado:
-
-## 21. IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
-**Retomada (19/10/2026) con vista-aliada 1.0.39.0**, ya instalado en C:\Warlords3. Las tandas 22 a 24 son de
-versiones anteriores y no cuentan.
-
-La IA de prueba ahora tiene dos reglas nuevas: el héroe perseguido por un héroe enemigo con misión de asesinarlo
-se refugia en una ciudad aliada bien defendida, y las pilas van a defender una ciudad aliada a punto de ser
-atacada (si ninguna ciudad propia está en riesgo). Un equipo de 4 colores juega con la IA de prueba y el otro con
-la original, y en la partida siguiente al revés.
-1. En el Monitor de IA (tiene que decir **1.0.8**; si dice menos: ruedita → **Buscar actualización**, cuando no
-   haya una tanda corriendo): **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**. En **Controles** tildá
-   **Tandas automatizadas**, serie de **2** tandas (la primera de las tres ya está: tanda 25, 19/10). La serie
-   no cuenta las tandas ya corridas: siempre se pone las que faltan. **Nueva tanda**. Podés dejar prendida la
-   suspensión: se suspende recién al terminar la última. En la bitácora, cada partida tiene que decir colores con IA de prueba
-   **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados, y entre tanda y tanda «Serie: tanda 1 de 2 terminada; arranca
-   la siguiente».
-2. Avisame cuando terminen las tres (24 partidas en total). Si una tanda se corta, la serie se detiene: apretá
-   **Retomar** con el check tildado y la serie de las que falten.
-Si mirás alguna partida: lo nuevo es ver una ciudad aliada defendida por ejércitos de dos colores (dos banderas)
-cuando un enemigo se le acerca.
-Resultado: (Claude, 19/10) la tanda 25 (8 partidas) está analizada. **La serie de 2 no llegó a correr**: en la
-base no hay ninguna tanda después de la 25 (la última partida terminó 12:35) y no hay un juego abierto. Falta
-repetir el paso 1 (serie de 2 → serían las tandas 26 y 27). El Monitor ya usa el juego 1.0.43.0; para esta prueba
-da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
-
-(Claude, 20/10) Serie completa con las tandas 27 y 28 (24 partidas): tarea terminada. Resultado: empate (12 victorias
-cada IA); detalle en ia\PENDIENTE-entrenamiento-ia.md.
-
-## 20. Sonido del juego: volvió a faltar (17/10/2026)
-La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
-arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
-escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al terminar cada tanda abre el juego
-unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu juego.
-1. Actualizá el Monitor de IA (botón Actualizar): tiene que decir 1.0.5.
-2. En la próxima partida normal fijate si se oyen la música y los efectos.
-3. Después de la tanda del paso 7 de la tarea 1, abrí el juego a mano: también tiene que oírse.
-Si en algún caso no se oye, anotá cuál y avisame.
-Resultado: (Claude, 18/10) medido después de la tanda 21: el juego abre sin silencio. Falta que lo confirmes de oído (pasos 2 y 3).
-
-## 19. Tailscale: segunda conexión del Puente para Nico (17/10/2026)
-El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
-Tailscale. Tu servidor ya escucha ahí (dirección 100.77.65.99). El Actualizador 1.0.12.0 trae la opción
-**14 TAILSCALE**, que instala y configura Tailscale. Accesos directos pasó a la 15 y Salir a la 16.
-1. En tu PC: abrí https://login.tailscale.com/admin/machines con tu cuenta. En la fila de **desktop-liifpj1**
-   (100.77.65.99) tocá los tres puntitos «…», elegí **Share…** y copiá el enlace. Mandáselo a Nico por WhatsApp.
-2. En la PC de Nico: el Actualizador se actualiza solo a 1.0.12.0. Nico elige la **13** (trae el Puente 1.1.6.0)
-   y después la **14**. La 14 instala Tailscale (acepta el permiso de administrador), abre el navegador para que
-   entre con su cuenta (Google o Microsoft sirven; es gratis) y le pide que pegue tu enlace. Al final tiene que
-   decir **«El servidor del Puente responde por Tailscale»**.
-3. Si en algún paso aparece un mensaje en rojo, Nico saca una foto y me la pasás.
-   (La instalación y el inicio de sesión no se pudieron probar acá porque esta PC ya tiene Tailscale; la PC de
-   Nico es la primera prueba de esa parte.)
 Resultado:
 
 ## 18. Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
@@ -190,6 +135,61 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Resueltas
+
+## 21. [RESUELTA] IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
+**Retomada (19/10/2026) con vista-aliada 1.0.39.0**, ya instalado en C:\Warlords3. Las tandas 22 a 24 son de
+versiones anteriores y no cuentan.
+
+La IA de prueba ahora tiene dos reglas nuevas: el héroe perseguido por un héroe enemigo con misión de asesinarlo
+se refugia en una ciudad aliada bien defendida, y las pilas van a defender una ciudad aliada a punto de ser
+atacada (si ninguna ciudad propia está en riesgo). Un equipo de 4 colores juega con la IA de prueba y el otro con
+la original, y en la partida siguiente al revés.
+1. En el Monitor de IA (tiene que decir **1.0.8**; si dice menos: ruedita → **Buscar actualización**, cuando no
+   haya una tanda corriendo): **Ninguna**, marcá solo **Border_Alianzas**, Partidas: **8**. En **Controles** tildá
+   **Tandas automatizadas**, serie de **2** tandas (la primera de las tres ya está: tanda 25, 19/10). La serie
+   no cuenta las tandas ya corridas: siempre se pone las que faltan. **Nueva tanda**. Podés dejar prendida la
+   suspensión: se suspende recién al terminar la última. En la bitácora, cada partida tiene que decir colores con IA de prueba
+   **[0, 1, 3, 5]** o **[2, 4, 6, 7]**, alternados, y entre tanda y tanda «Serie: tanda 1 de 2 terminada; arranca
+   la siguiente».
+2. Avisame cuando terminen las tres (24 partidas en total). Si una tanda se corta, la serie se detiene: apretá
+   **Retomar** con el check tildado y la serie de las que falten.
+Si mirás alguna partida: lo nuevo es ver una ciudad aliada defendida por ejércitos de dos colores (dos banderas)
+cuando un enemigo se le acerca.
+Resultado: (Claude, 19/10) la tanda 25 (8 partidas) está analizada. **La serie de 2 no llegó a correr**: en la
+base no hay ninguna tanda después de la 25 (la última partida terminó 12:35) y no hay un juego abierto. Falta
+repetir el paso 1 (serie de 2 → serían las tandas 26 y 27). El Monitor ya usa el juego 1.0.43.0; para esta prueba
+da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
+
+(Claude, 20/10) Serie completa con las tandas 27 y 28 (24 partidas): tarea terminada. Resultado: empate (12 victorias
+cada IA); detalle en ia\PENDIENTE-entrenamiento-ia.md.
+
+## 20. [RESUELTA] Sonido del juego: volvió a faltar (17/10/2026)
+La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
+arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
+escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al terminar cada tanda abre el juego
+unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu juego.
+1. Actualizá el Monitor de IA (botón Actualizar): tiene que decir 1.0.5.
+2. En la próxima partida normal fijate si se oyen la música y los efectos.
+3. Después de la tanda del paso 7 de la tarea 1, abrí el juego a mano: también tiene que oírse.
+Si en algún caso no se oye, anotá cuál y avisame.
+Resultado: (Claude, 18/10) medido después de la tanda 21: el juego abre sin silencio. Falta que lo confirmes de oído (pasos 2 y 3).
+Resultado (usuario, 20/10/2026): cumplida.
+
+## 19. [RESUELTA] Tailscale: segunda conexión del Puente para Nico (17/10/2026)
+El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
+Tailscale. Tu servidor ya escucha ahí (dirección 100.77.65.99). El Actualizador 1.0.12.0 trae la opción
+**14 TAILSCALE**, que instala y configura Tailscale. Accesos directos pasó a la 15 y Salir a la 16.
+1. En tu PC: abrí https://login.tailscale.com/admin/machines con tu cuenta. En la fila de **desktop-liifpj1**
+   (100.77.65.99) tocá los tres puntitos «…», elegí **Share…** y copiá el enlace. Mandáselo a Nico por WhatsApp.
+2. En la PC de Nico: el Actualizador se actualiza solo a 1.0.12.0. Nico elige la **13** (trae el Puente 1.1.6.0)
+   y después la **14**. La 14 instala Tailscale (acepta el permiso de administrador), abre el navegador para que
+   entre con su cuenta (Google o Microsoft sirven; es gratis) y le pide que pegue tu enlace. Al final tiene que
+   decir **«El servidor del Puente responde por Tailscale»**.
+3. Si en algún paso aparece un mensaje en rojo, Nico saca una foto y me la pasás.
+   (La instalación y el inicio de sesión no se pudieron probar acá porque esta PC ya tiene Tailscale; la PC de
+   Nico es la primera prueba de esa parte.)
+Resultado:
+Resultado (usuario, 20/10/2026): cumplida.
 
 ## 16. [REABIERTA COMO LA 20] Sonido del juego: comprobar que volvió (17/10/2026)
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
