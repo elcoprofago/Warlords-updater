@@ -100,3 +100,11 @@ a VI en la fila del medio, VII abajo a la izquierda, VIII abajo al centro, IX ab
 - Las posiciones de arranque salen de `ia\posiciones.json` (hoy solo Scarpart); un mapa sin entrada deja la
   columna vacía. Al medir un mapa nuevo, sumar sus posiciones ahí.
 - Depende de fpdf2 (pip install fpdf2) y de las fuentes Segoe UI de Windows.
+
+### 20/10/2026: 1.0.9 sin compilar ni publicar (equipos en mapas de menos de 8 bandos)
+- En Hexagon (equipos 013|457) el plan le daba la IA de prueba al «otro equipo» como todos los colores que no son
+  del primero (2, 4, 5, 6, 7): el panel y la bitácora nombraban colores que no juegan. Los datos no se afectaron
+  (resultado, batallas y equipos solo traen los 6 que juegan). Corregido en tanda.plan: el complemento es la unión
+  de los equipos.
+- Falta: compilar (`python ia\monitor-ia\build.py`) y publicar cuando termine la serie de la tarea 23 (el exe está
+  en uso y actualizar corta la tanda).

@@ -392,11 +392,13 @@ def plan(partidas, guardadas, alianzas_de=None):
         par = i // 2
         g = guardadas[par % len(guardadas)]
         eqs = equipos_de((alianzas_de or {}).get(g))
+        todos = set(range(8))
         if len(eqs) >= 2:
             pat = eqs[(par // len(guardadas)) % len(eqs)]
+            todos = set().union(*eqs)   # en mapas de menos de 8 bandos (Hexagon) no nombrar colores que no juegan
         else:
             pat = set(PATRONES[(par // len(guardadas)) % len(PATRONES)])
-        out.append({'guardada': g, 'prueba': sorted(pat if i % 2 == 0 else set(range(8)) - pat)})
+        out.append({'guardada': g, 'prueba': sorted(pat if i % 2 == 0 else todos - pat)})
     return out
 
 
