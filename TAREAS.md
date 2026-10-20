@@ -6,12 +6,10 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 23** (tanda A/B de alianzas en Hexagon): puede correr mientras hacés lo demás.
-2. **Puente 1** (reiniciar el router Huawei): hoy Nico no puede entrar por el Wi-Fi.
-3. **Puente 2** (partida de prueba con el Puente 1.1.6.0). En la misma partida se hace la **tarea 18**
-   (Votación y Sorteo): una sola partida sirve para las dos. Si en esa partida hay un aliado de la computadora,
-   también la **tarea 22** (órdenes por chat).
-4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+1. **Tarea 23** (tanda A/B de alianzas en Hexagon): corre sola, de noche.
+2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
+   **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
+3. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
@@ -25,9 +23,9 @@ condiciones: descartados.)
    dos mitades queden en posiciones equivalentes del mapa. Pasá un bando a Humano antes de guardar.
    Guardala como **Tanda_Hex_Alianzas**.
 2. En el Monitor de IA: **Ninguna**, marcá solo **Hex_Alianzas** (tiene que aparecer «(alianzas)»), Partidas: **8**,
-   **Tandas automatizadas** con serie de **3**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
+   **Tandas automatizadas** con serie de **6**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
    alternándose con la IA de prueba.
-3. Avisame cuando terminen las 3 (24 partidas). Si una tanda se corta: **Retomar** con la serie de las que falten.
+3. Avisame cuando terminen las 6 (48 partidas; a unos 18 minutos por partida son unas 15 horas). Si una tanda se corta: **Retomar** con la serie de las que falten.
 Resultado:
 
 ## 22. Órdenes por chat a un aliado de la computadora (19/10/2026)
