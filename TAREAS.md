@@ -6,7 +6,7 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 25** (Hexagon con menos azar): la partida ya está; falta correr la tanda (te aviso cómo).
+1. **Tarea 25** (Hexagon con menos azar): igualar el bando del blanco (paso 3) y correr la tanda (paso 4).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
 3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.50.0 (remolinos, distancia y 1 de cada 5 pasos).
@@ -54,6 +54,16 @@ Resultado: (usuario, 21/10) hecha, pero guardada sobre **Tanda_hex_alianzas** (n
 simple, sin maná, casi el mismo héroe, mismos bandos, sin ruinas; dos grupos de aliados intercalados en el mapa.
 (usuario, 21/10) los colores quedaron intercalados igual que antes (equipos 013|457).
 (Este número era 24, repetido con la de pozos: pasó a 25.)
+(Claude, 21/10) Revisada: los equipos 013|457 y las opciones están bien. Pero el **blanco no tiene el mismo bando**
+que los demás: tiene 3 unidades más (Peasants, Clay Golems y Moonguard, en los lugares 13, 14 y 15), que en
+amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
+3. Abrí Tanda_hex_alianzas y dejá el blanco con el mismo bando que los otros (sacale esas 3 unidades, o cargale
+   a todos el mismo .PGS). Volvé a pasar un bando a Humano y guardala con el mismo nombre. Avisame y la reviso.
+4. Cuando te confirme que está bien: abrí el Monitor de IA y tocá **Actualizar** (tiene que pasar a la versión
+   **1.0.10**; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
+   aparecer «(alianzas)»), Partidas: **8**, **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La
+   bitácora tiene que decir «Bandos: hex_alianzas común» y «equipos 013|457». Son unas 15 horas; si se corta,
+   **Retomar** con las que falten.
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
 En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos

@@ -640,3 +640,12 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Tanda_hex_simple): bando nuevo sin maná, casi el mismo héroe, mismos bandos, sin ruinas, dos grupos de aliados
   intercalados en ubicación (el usuario confirmó que quedaron intercalados igual que antes: 013|457).
   Próximo: revisar el SAV y armar la tanda nueva (TAREAS 25).
+- (21/10/2026) Revisión del SAV con tanda.bandos/alianzas:
+  - Alianzas: 013 vigente, 457 solo propuesta (se guardó antes de que jugaran). tanda.alianzas leía solo la vigente
+    y daba «equipos 013»: el plan habría caído en los PATRONES de 8 colores. Arreglado (cuenta vigentes y
+    propuestas) en Monitor 1.0.10; ahora da «equipos 013|457; compartidas, diplomacia».
+  - Bandos: tanda.bandos daba «?» porque exigía datos en los 8 colores (2 y 6 no juegan). Arreglado: solo cuenta
+    los colores que juegan. Resultado: **distintos**. Los colores 1, 3, 4, 5 y 7 son idénticos; el blanco (0)
+    tiene además 3 unidades en los lugares 13 a 15 (Peasants, Clay Golems, Moonguard) que los otros tienen vacíos.
+    Pedido al usuario en TAREAS 25 que lo iguale; la tanda espera a eso.
+  - Próximo: cuando el usuario avise, verificar que bandos dé «común» y lanzar la tanda (8 partidas x 6, como la 23).

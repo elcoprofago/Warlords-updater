@@ -98,7 +98,9 @@ def bandos(guardada):
         d = f.read()
     r = 16 * UNIDAD
     colores = [d[SAV_BANDOS + c * r:SAV_BANDOS + (c + 1) * r] for c in range(8)]
-    if len(colores[7]) < r or not all(c[:1].isalpha() for c in colores):
+    # Los colores que no juegan (Hexagon: 2 y 6) traen un bloque vacío o el bando de fábrica: no cuentan.
+    colores = [c for c in colores if c[:1].isalpha()]
+    if len(colores) < 2 or len(colores[-1]) < r:
         return '?'
     return 'común' if all(c == colores[0] for c in colores) else 'distintos'
 
@@ -135,8 +137,12 @@ def alianzas(guardada):
             vistos |= eq; out.append(''.join(map(str, sorted(eq))))
         return '|'.join(e for e in out if len(e) > 1)
     op = [n for n, v in (('compartidas', o[25] & 1), ('diplomacia', o[7] & 8)) if v]
+    # Al guardar en el primer turno, los colores que todavía no jugaron tienen la alianza solo como propuesta
+    # (Tanda_hex_alianzas del 21/10/2026: 013 vigente, 457 propuesta): se cuentan ambas.
     vig, prop = equipos(0), equipos(9)
-    eq = f'equipos {vig}' if vig else f'equipos {prop} (propuestas)' if prop else 'sin alianzas'
+    eqs = sorted({e for e in (vig + '|' + prop).split('|') if e}, key=lambda e: e[0])
+    eqs = [e for e in eqs if not any(set(e) < set(o) for o in eqs)]
+    eq = f'equipos {"|".join(eqs)}' if eqs else 'sin alianzas'
     return eq + ('; ' + ', '.join(op) if op else '')
 
 
