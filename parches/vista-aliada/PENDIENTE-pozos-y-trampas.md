@@ -272,7 +272,7 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   casillas o menos, nunca sobre el pozo, que sigue oculto para quien no lo descubrió; (3) trampa detonada animada: un
   agujero irregular del que sale humo, el humo sacado de TERRAIN\DATA\cit_anim.PCX. Hecho: tipo nuevo PO_TUMBA (3) en
   la misma tabla (+5 = cuál imagen, +6 = 0xff: vista por todos), así viaja en el SAV y, en la parte 6, por red;
-  po_grave (desde po_fall, solo pozos: remolino y trampa no dejan tumba) elige la casilla con un azar sacado de la
+  po_grave (desde po_fall, solo pozos: remolino y trampa no dejan tumba; las trampas pueden ir juntas, como barrera, y no dejarían lugar a las tumbas) elige la casilla con un azar sacado de la
   tabla (igual en todas las PC) y pg_ok sin mirar capitales; po_step no anota tumbas. Hoja de 13 cuadros: detonada =
   cuadros 6..9 con la fase del agua, tumbas 10..12. Dato: lapida.pcx y el cuadro de tumba.PCX son **el mismo dibujo**
   píxel por píxel (se avisó al usuario; si cambia lapida.pcx basta recompilar).
