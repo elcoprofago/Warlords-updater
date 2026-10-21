@@ -216,13 +216,13 @@ class Monitor(tk.Tk):
         self.fondo = tk.Label(self, bd=0); self.fondo.place(x=0, y=0, relwidth=1, relheight=1)
         arriba = self.caja(self); arriba.pack(fill='x')
         tarjeta = self.caja(arriba, borde=True); tarjeta.pack(side='right', anchor='n', padx=(0, 8), pady=(10, 0))
-        semaforos = self.caja(tarjeta); semaforos.pack(padx=(4, 30), pady=(4, 0))   # aire para la ruedita
+        semaforos = self.caja(tarjeta); semaforos.pack(padx=4, pady=(4, 0))
         # Interruptor de suspensión (la ficha on/off translúcida de MovilCode), a la izquierda de los semáforos:
         # encendido, la PC se suspende al terminar la tanda.
         fs = self.caja(semaforos); fs.pack(side='left', padx=(4, 8))
         self.suspender = leer_config('Suspension').get('activa') == 'si'
         self.imgs_susp = {e: Image.open(os.path.join(ASSETS, f'suspender_{e}.png')).convert('RGBA')
-                          .resize((25, 39), Image.LANCZOS) for e in ('on', 'off')}
+                          .resize((29, 45), Image.LANCZOS) for e in ('on', 'off')}
         self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
         self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
         Ayuda(self.b_susp, 'modo sleep')
@@ -240,11 +240,11 @@ class Monitor(tk.Tk):
         self.barras = tk.Canvas(tarjeta, width=190, height=50, bg='#0d1512', highlightthickness=1,
                                 highlightbackground='#3f8f6a', bd=0)
         self.barras.pack(padx=6, pady=(0, 6))
-        # Botón de configuración en el ángulo superior derecho de la tarjeta, al costado de los círculos:
+        # Botón de configuración en la fila de los semáforos, a la derecha de los círculos:
         # normal, hover con el mouse encima, active mientras se aprieta, disabled con la configuración abierta.
         imgs = {e: Image.open(os.path.join(ASSETS, f'menu_settings_{e}.png')).convert('RGBA').resize((28, 28), Image.LANCZOS)
                 for e in ('normal', 'hover', 'active', 'disabled')}
-        b = self.icono(tarjeta, imgs['normal'], cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
+        b = self.icono(semaforos, imgs['normal'], cursor='hand2'); b.pack(side='left', padx=(4, 6))
         b.imgs, b.abierta = imgs, False
         self.b_config = b
 
