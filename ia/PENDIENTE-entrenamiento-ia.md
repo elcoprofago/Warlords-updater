@@ -636,3 +636,7 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   ganó 37 de 48); el A/B lo compensa alternando, pero suma varianza. (2) las reglas de alianzas se activaron muy poco
   en Hexagon (16 refugios en 48 partidas): con menos azar se mide mejor, pero si casi no se activan el efecto
   seguirá siendo chico.
+- (21/10/2026) El usuario armó la partida con el bando simple, pero la guardó sobre **Tanda_hex_alianzas** (no como
+  Tanda_hex_simple): bando nuevo sin maná, casi el mismo héroe, mismos bandos, sin ruinas, dos grupos de aliados
+  intercalados en ubicación (los equipos pueden no ser 013|457: verificarlos en el SAV antes de la tanda).
+  Próximo: revisar el SAV y armar la tanda nueva (TAREAS 25).
