@@ -6,7 +6,7 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 25** (Hexagon con menos azar): igualar el bando del blanco (paso 3) y correr la tanda (paso 4).
+1. **Tarea 25** (Hexagon con menos azar): correr la tanda (paso 4).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
 3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.50.0 (remolinos, distancia y 1 de cada 5 pasos).
@@ -59,6 +59,7 @@ que los demás: tiene 3 unidades más (Peasants, Clay Golems y Moonguard, en los
 amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
 3. Abrí Tanda_hex_alianzas y dejá el blanco con el mismo bando que los otros (sacale esas 3 unidades, o cargale
    a todos el mismo .PGS). Volvé a pasar un bando a Humano y guardala con el mismo nombre. Avisame y la reviso.
+   (usuario, 21/10) hecho. (Claude, 21/10) revisada: bandos iguales en los 6 colores, equipos 013|457. Seguí con el 4.
 4. Cuando te confirme que está bien: abrí el Monitor de IA y tocá **Actualizar** (tiene que pasar a la versión
    **1.0.10**; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
    aparecer «(alianzas)»), Partidas: **8**, **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La

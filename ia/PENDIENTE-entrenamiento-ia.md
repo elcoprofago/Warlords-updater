@@ -648,4 +648,6 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
     los colores que juegan. Resultado: **distintos**. Los colores 1, 3, 4, 5 y 7 son idénticos; el blanco (0)
     tiene además 3 unidades en los lugares 13 a 15 (Peasants, Clay Golems, Moonguard) que los otros tienen vacíos.
     Pedido al usuario en TAREAS 25 que lo iguale; la tanda espera a eso.
-  - Próximo: cuando el usuario avise, verificar que bandos dé «común» y lanzar la tanda (8 partidas x 6, como la 23).
+  - (21/10) El usuario igualó el blanco: bandos «común», equipos 013|457 (SAV de 01:23).
+  - Próximo: el usuario corre la tanda (TAREAS 25, paso 4: 8 partidas x 6, Monitor 1.0.10); después, analizarla
+    como las 29 a 34.
