@@ -60,6 +60,7 @@ amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
 3. Abrí Tanda_hex_alianzas y dejá el blanco con el mismo bando que los otros (sacale esas 3 unidades, o cargale
    a todos el mismo .PGS). Volvé a pasar un bando a Humano y guardala con el mismo nombre. Avisame y la reviso.
    (usuario, 21/10) hecho. (Claude, 21/10) revisada: bandos iguales en los 6 colores, equipos 013|457. Seguí con el 4.
+   (usuario, 21/10) corriendo con **10 partidas** por tanda en vez de 8 (60 en total, unas 18 horas).
 4. Cuando te confirme que está bien: abrí el Monitor de IA y tocá **Actualizar** (tiene que pasar a la versión
    **1.0.10**; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
    aparecer «(alianzas)»), Partidas: **8**, **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La
