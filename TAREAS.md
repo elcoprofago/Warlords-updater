@@ -44,8 +44,8 @@ condiciones idénticas y sin ruinas.
    (lo que te parezca necesario para que no haya dados de más).
 2. Armá en **Hexagon** una partida guardada igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared Cities,
    Diplomacy, los mismos equipos 013 contra 457, un bando en Humano), pero con ese bando en todos los colores.
-   Guardala como **Tanda_hex_simple**. Avisame: yo le dejo todas las ruinas exploradas y vacías
-   (queda como **Tanda_hex_simple_SR**) y te digo cuándo correr la tanda.
+   **Sin ruinas** (desde las opciones de la partida). Guardala como **Tanda_hex_simple** y avisame: te digo cuándo
+   correr la tanda.
 Resultado:
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
