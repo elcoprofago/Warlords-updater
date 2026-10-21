@@ -276,5 +276,10 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   tabla (igual en todas las PC) y pg_ok sin mirar capitales; po_step no anota tumbas. Hoja de 13 cuadros: detonada =
   cuadros 6..9 con la fase del agua, tumbas 10..12. Dato: lapida.pcx y el cuadro de tumba.PCX son **el mismo dibujo**
   píxel por píxel (se avisó al usuario; si cambia lapida.pcx basta recompilar).
+- Prueba del usuario en el juego (21/10/2026): pozos y tumbas funcionan. Pidió (1.0.49.0, hecho): remolinos = el
+  doble que los pozos (por el agua se circula menos; no vio ninguno), tope 16 pozos y 32 remolinos; descubrir a
+  **una casilla** (PO_RADIO = 1, no el radio del grupo); un grupo de solo voladores no descubre. Se mantuvo el
+  contador de 10 pasos de las ruinas (con radio 1 descubre en 1 de cada 10 pasos): si el usuario los nota difíciles
+  de descubrir, es eso. Trampas: no vio cómo construirlas, porque es la parte 7 (sin hacer).
 - Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía).
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

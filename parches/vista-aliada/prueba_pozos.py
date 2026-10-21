@@ -164,21 +164,21 @@ ver('sin Hidden Ruins: tabla vacía (se borra la anterior)', generar(Juego(), hi
 malos = []
 for s in range(40):
     g = Juego(); t = generar(g, seed=s)
-    if (resumen(t) != (2, 2) or not all(map(valido, t)) or len({r[:2] for r in t}) != 4 or
-            any(r[3:] != (0, 0, 0xff) for r in t) or g.mapa() != {r[:2]: i + 1 for i, r in enumerate(t)}):
+    if (resumen(t) != (2, 4) or len({r[:2] for r in t}) != 6 or not all(map(valido, t)) or
+            any(r[3:] != (0, 0, 0xff) for r in t) or g.mapa() != {r[:2]: i + 1 for i, r in enumerate(t)}) :
         malos.append((s, t))
-ver('10 ruinas, 40 semillas: 2 pozos y 2 remolinos en casillas válidas, distintas y en po_map', malos, [])
-ver('0 ruinas: 1 de cada uno y sigue en 0x4a103c', resumen(generar(Juego(), ruinas=0)), (1, 1))
-ver('1000 ruinas: tope de 32 de cada uno', resumen(generar(Juego(), ruinas=1000)), (32, 32))
+ver('10 ruinas, 40 semillas: 2 pozos y 4 remolinos (el doble) en casillas válidas, distintas y en po_map', malos, [])
+ver('0 ruinas: 1 pozo, 2 remolinos y sigue en 0x4a103c', resumen(generar(Juego(), ruinas=0)), (1, 2))
+ver('1000 ruinas: tope de 16 pozos y 32 remolinos', resumen(generar(Juego(), ruinas=1000)), (16, 32))
 ver('control: mapa sin agua: solo pozos', resumen(generar(Juego(), agua=False)), (2, 0))
 def empezar(g):
     g.mu.mem_write(STACK, struct.pack('<I', RET)); g.mu.reg_write(UC_X86_REG_ESP, STACK)
     g.mu.emu_start(PO_START, 0x4a1e20, count=1000000)
     return [r[4] for r in g.tabla()]
 g = Juego(); generar(g)
-ver('al empezar: el jugador 0 descubre los pozos de la región de su capital, no los remolinos', empezar(g), [1, 1, 0, 0])
+ver('al empezar: el jugador 0 descubre los pozos de la región de su capital, no los remolinos', empezar(g), [1, 1, 0, 0, 0, 0])
 g = Juego(); generar(g); g.mu.mem_write(0x53c393, b'\0')
-ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0, 0, 0, 0])
+ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
@@ -259,9 +259,15 @@ lleno = POZOS + [(1, 1 + i // 30, 3, 0, 0xff, 0xff) for i in range(PO_MAX - len(
 r = caer(lleno, GRUPO, [(2, 10, 10)])
 ver('control: tabla llena: caen igual, sin tumba', (len(r[0]), len(r[3])), (3, PO_MAX))
 print('-- parte 4: descubrir')
-def descubrir(regs, pasos, cont=9, opc=0x30, mira=2):
-    # pasos: (jugador, x, y, radio). Devuelve las máscaras, los avisos y el contador al final.
+def descubrir(regs, pasos, cont=9, opc=0x30, mira=2, grupo=(0,)):
+    # pasos: (jugador, x, y, radio del grupo, que ya no cuenta). grupo: si vuela cada ejército del grupo en movimiento.
+    # Devuelve las máscaras, los avisos y el contador al final.
     g = Juego(); mu = g.mu; g.poner(regs)
+    for j in range(8):
+        mu.mem_write(0x56ea94 + j * 0x4f0, struct.pack(f'<{len(grupo)}h', *range(1, len(grupo) + 1)))
+        mu.mem_write(0x56eaa8 + j * 0x4f0, struct.pack('<h', len(grupo)))
+    for i in range(1, len(grupo) + 1): mu.mem_write(0x54fe50 + i * 0x1c + 0xe, struct.pack('<H', 3))
+    g.interceptar(0x497010, lambda a: grupo[(a[0] & 0xffff) - 1]); g.interceptar(0x48f9a0, lambda a: grupo[(a[0] & 0xffff) - 1])
     mu.mem_write(0x558872, struct.pack('<h', 0)); mu.mem_write(0x53c393, bytes([opc]))
     mu.mem_write(0x4fe5e8, struct.pack('<h', cont)); mu.mem_write(0x560b20, struct.pack('<h', mira))
     avisos = []
@@ -277,11 +283,15 @@ LEJOS = [(30, 20, 0, 0, 0, 0xff), (10, 11, 0, 0, 0, 0xff), (11, 11, 1, 0, 0, 0xf
 ver('contador 9 -> 0 < radio 1: descubre el pozo a 1 (solo el primero), aviso en su PC',
     descubrir(LEJOS, [(2, 10, 10, 1)]), ([0, 4, 0, 0], ['You have discovered a hidden pit!'], 0))
 ver('control: contador 0 -> 1, no < radio 1: nada', descubrir(LEJOS, [(2, 10, 10, 1)], cont=0)[:2], ([0, 0, 0, 0], []))
-ver('radio 3, contador -> 2: el primero no visto; ya visto se saltea',
-    descubrir([(10, 11, 0, 0, 4, 0xff)] + LEJOS[2:], [(2, 10, 10, 3)], cont=1)[:2],
+ver('el primero no visto a 1; ya visto se saltea',
+    descubrir([(10, 11, 0, 0, 4, 0xff)] + LEJOS[2:], [(2, 11, 10, 1)])[:2],
     ([4, 4, 0], ['You have discovered a hidden whirlpool!']))
-ver('trampa a 3: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 10, 3)])[:2], ([4], ['You have discovered a hidden trap!']))
-ver('control: a 4 con radio 3 no', descubrir(LEJOS[3:], [(2, 10, 9, 3)])[:2], ([0], []))
+ver('trampa a 1: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 12, 1)])[:2], ([4], ['You have discovered a hidden trap!']))
+ver('control: a 2 no, aunque el grupo tenga radio 7', descubrir(LEJOS[3:], [(2, 10, 11, 7)])[:2], ([0], []))
+ver('control: radio del grupo 3 y contador -> 1: nada (cuenta 1, no el radio)', descubrir(LEJOS, [(2, 10, 10, 3)], cont=0)[:2], ([0] * 4, []))
+ver('grupo de voladores: no descubre', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=(1, 1))[:2], ([0] * 4, []))
+ver('grupo con un volador y uno de a pie: descubre', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=(1, 0))[0], [0, 4, 0, 0])
+ver('control: grupo vacío: nada', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=())[:2], ([0] * 4, []))
 ver('control: otra PC descubre igual, sin aviso', descubrir(LEJOS, [(2, 10, 10, 1)], mira=1)[:2], ([0, 4, 0, 0], []))
 ver('control: sin Discover Ruins nada (el contador avanza igual)', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x10), ([0] * 4, [], 0))
 ver('control: sin Hidden Ruins nada', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x20)[:2], ([0] * 4, []))

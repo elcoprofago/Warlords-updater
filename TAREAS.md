@@ -6,10 +6,10 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 24** (Hexagon con menos azar): armar el bando y la partida guardada.
+1. **Tarea 25** (Hexagon con menos azar): la partida ya está; falta correr la tanda (te aviso cómo).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
-3. **Tarea 24** (pozos y remolinos en el juego): una partida corta contra la computadora, en esta PC.
+3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.49.0 (remolinos y distancia de descubrir).
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
@@ -19,7 +19,10 @@ Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubr
 se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX); el remolino sigue provisorio (la cueva de las ruinas
 girando). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
 **Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). DarklordAV.exe ya está armado en
-C:\Warlords3 (vista-aliada 1.0.48.0).
+C:\Warlords3 (vista-aliada 1.0.49.0).
+**Cambios de 1.0.49.0 (tu prueba del 21/10):** los remolinos salen el doble que los pozos; pozos, remolinos y trampas
+se descubren solo a **una casilla** (antes, con el radio de visión del grupo); un grupo de **solo voladores no
+descubre** nada. Las trampas todavía no se pueden construir: es la parte 7 del plan, sin hacer.
 1. Abrí DarklordAV.exe y empezá una partida nueva **contra la computadora**, en un mapa al azar, con **Hidden Ruins**
    activada y, en Viewing Options, **Discover hidden ruins as you pass**.
 2. Al empezar: mirá la zona de tu capital. Si en esa región tocó un pozo, tiene que verse el dibujo del pozo
@@ -37,7 +40,7 @@ C:\Warlords3 (vista-aliada 1.0.48.0).
 7. Anotá abajo qué viste (y si algún dibujo queda mal ubicado, tapa algo o parpadea).
 Resultado:
 
-## 24. IA: Hexagon con menos azar (20/10/2026)
+## 25. IA: Hexagon con menos azar (20/10/2026)
 Las tandas 25 a 34 no alcanzaron para demostrar nada: hay demasiado azar entre partidas. Esta vez todos juegan en
 condiciones idénticas y sin ruinas.
 1. Armá un bando simple con el editor de bandos: sin maná, el mismo héroe y los mismos regulares en todos los colores
@@ -46,7 +49,9 @@ condiciones idénticas y sin ruinas.
    Diplomacy, los mismos equipos 013 contra 457, un bando en Humano), pero con ese bando en todos los colores.
    **Sin ruinas** (desde las opciones de la partida). Guardala como **Tanda_hex_simple** y avisame: te digo cuándo
    correr la tanda.
-Resultado:
+Resultado: (usuario, 21/10) hecha, pero guardada sobre **Tanda_hex_alianzas** (no Tanda_hex_simple): bando nuevo más
+simple, sin maná, casi el mismo héroe, mismos bandos, sin ruinas; dos grupos de aliados intercalados en el mapa.
+(Este número era 24, repetido con la de pozos: pasó a 25.)
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
 En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos

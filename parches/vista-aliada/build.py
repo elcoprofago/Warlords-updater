@@ -7061,7 +7061,8 @@ pol_end:
 
 # Generación (partida nueva): al terminar de ocultar ruinas (0x4a1961, corre en toda partida nueva) se vacía la tabla
 # y, con Hidden Ruins, se reparten pozos y remolinos con el generador del juego (0x4deb20: n dados de 1..max + suma).
-# Cantidad de cada uno: 20 % de las ruinas, mínimo 1, como mucho PO_MAX/2; PO_TRIES tiros por cada uno (si el mapa
+# Cantidad: pozos, 20 % de las ruinas, mínimo 1, como mucho PO_MAX/4; remolinos, el doble (pedido del usuario,
+# 21/10/2026: por el agua se circula menos); PO_TRIES tiros por cada uno (si el mapa
 # no tiene casillas válidas, quedan menos). Casilla válida: libre en po_map, sin edificio (palabra 0 & 0x4000), sin
 # estructura ([+3] & 7) ni cosa (palabra +2 bits 8-10: camino, puente, ruina, ciudad, sitio). Pozo: clase de terreno
 # (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
@@ -7167,14 +7168,18 @@ po_gen = place('po_gen', f'''
     jg pg_q1
     mov eax, 1
 pg_q1:
-    cmp eax, {PO_MAX // 2}
+    cmp eax, {PO_MAX // 4}
     jle pg_q2
-    mov eax, {PO_MAX // 2}
+    mov eax, {PO_MAX // 4}
 pg_q2:
     mov dword ptr [{po_q:#x}], eax
     xor ebp, ebp
 pg_tipo:
     mov ebx, dword ptr [{po_q:#x}]
+    cmp ebp, {PO_REMOLINO}
+    jne pg_cnt
+    add ebx, ebx
+pg_cnt:
     mov dword ptr [{po_k:#x}], {PO_TRIES}
 pg_try:
     test ebx, ebx
@@ -7309,9 +7314,10 @@ pr_end:
 # detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
 # muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego).
 # Descubrir al pasar (parte 4): po_step llama primero a 0x4a1ce0 (que avanza el contador de pasos [0x4fe5e8] y descubre
-# ruinas) y después aplica la misma regla a la tabla: con Hidden Ruins y Discover Ruins, si contador < radio del grupo,
-# el primer registro no visto por el jugador a |dx|+|dy| <= radio queda descubierto para él, se redibuja y, en su PC,
-# el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
+# ruinas) y después aplica la regla a la tabla: con Hidden Ruins y Discover Ruins, si contador < PO_RADIO (no el radio
+# del grupo, que crece con "View" y para la computadora) y el grupo en movimiento (0x56ea94 + p*0x4f0) tiene alguno
+# que no vuela (los voladores no caen, así que no descubren), el primer registro no visto por el jugador a
+# |dx|+|dy| <= PO_RADIO queda descubierto para él, se redibuja y, en su PC, el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
 po_pend = place_data('po_pend', bytes(8))
 str_po_fell = [place_data(f'str_po_fell{i}', cstr_(s)) for i, s in enumerate((
     'Your army fell into a hidden pit!', 'Your army was swallowed by a whirlpool!', 'Your army fell into a trap!'))]
@@ -7319,6 +7325,7 @@ po_fellt = place_data('po_fellt', struct.pack('<3I', *str_po_fell))
 str_po_disc = [place_data(f'str_po_disc{i}', cstr_(s)) for i, s in enumerate((
     'You have discovered a hidden pit!', 'You have discovered a hidden whirlpool!', 'You have discovered a hidden trap!'))]
 po_disct = place_data('po_disct', struct.pack('<3I', *str_po_disc))
+PO_RADIO = 1    # pedido del usuario (21/10/2026): se descubren a una casilla, no con el radio del grupo
 po_step = place('po_step', f'''
     pushad
     movsx ebx, word ptr [esp + 0x24]
@@ -7363,13 +7370,23 @@ pt_end:
     jz pd_end
     test byte ptr [0x53c393], 0x20
     jz pd_end
-    movsx ebp, word ptr [esp + 0x30]
+    mov ebp, {PO_RADIO}
     movsx eax, word ptr [0x4fe5e8]
     cmp eax, ebp
     jge pd_end
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae pd_end
+    imul eax, ebx, 0x4f0
+    lea esi, [eax + 0x56ea94]
+    movsx ecx, word ptr [eax + 0x56eaa8]
+pd_gr:
+    dec ecx
+    js pd_end
+    movsx eax, word ptr [esi + ecx*2]
+    call {isfly:#x}
+    test eax, eax
+    jnz pd_gr
     movsx esi, word ptr [esp + 0x28]
     movsx edi, word ptr [esp + 0x2c]
     xor edx, edx
