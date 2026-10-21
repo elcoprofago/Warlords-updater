@@ -289,6 +289,8 @@ ver('el primero no visto a 1; ya visto se saltea',
 ver('trampa a 1: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 12, 1)])[:2], ([4], ['You have discovered a hidden trap!']))
 ver('control: a 2 no, aunque el grupo tenga radio 7', descubrir(LEJOS[3:], [(2, 10, 11, 7)])[:2], ([0], []))
 ver('control: radio del grupo 3 y contador -> 1: nada (cuenta 1, no el radio)', descubrir(LEJOS, [(2, 10, 10, 3)], cont=0)[:2], ([0] * 4, []))
+ver('contador 4 -> 5: descubre (1 de cada 5 pasos)', descubrir(LEJOS, [(2, 10, 10, 1)], cont=4)[0], [0, 4, 0, 0])
+ver('control: contador 5 -> 6 y 3 -> 4: nada', [descubrir(LEJOS, [(2, 10, 10, 1)], cont=c)[0] for c in (5, 3)], [[0] * 4] * 2)
 ver('grupo de voladores: no descubre', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=(1, 1))[:2], ([0] * 4, []))
 ver('grupo con un volador y uno de a pie: descubre', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=(1, 0))[0], [0, 4, 0, 0])
 ver('control: grupo vacío: nada', descubrir(LEJOS, [(2, 10, 10, 1)], grupo=())[:2], ([0] * 4, []))
@@ -296,7 +298,7 @@ ver('control: otra PC descubre igual, sin aviso', descubrir(LEJOS, [(2, 10, 10, 
 ver('control: sin Discover Ruins nada (el contador avanza igual)', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x10), ([0] * 4, [], 0))
 ver('control: sin Hidden Ruins nada', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x20)[:2], ([0] * 4, []))
 ver('control: jugador inválido nada', descubrir(LEJOS, [(9, 10, 10, 1)])[:2], ([0] * 4, []))
-ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), descubre una vez',
+ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), descubre una vez (el primero sirve)',
     descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered a hidden pit!'], 9))
 print('-- parte 5: dibujo')
 PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]

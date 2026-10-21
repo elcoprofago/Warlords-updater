@@ -638,5 +638,5 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   seguirá siendo chico.
 - (21/10/2026) El usuario armó la partida con el bando simple, pero la guardó sobre **Tanda_hex_alianzas** (no como
   Tanda_hex_simple): bando nuevo sin maná, casi el mismo héroe, mismos bandos, sin ruinas, dos grupos de aliados
-  intercalados en ubicación (los equipos pueden no ser 013|457: verificarlos en el SAV antes de la tanda).
+  intercalados en ubicación (el usuario confirmó que quedaron intercalados igual que antes: 013|457).
   Próximo: revisar el SAV y armar la tanda nueva (TAREAS 25).

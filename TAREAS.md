@@ -9,7 +9,7 @@ Sorteo están acá (tarea 18).
 1. **Tarea 25** (Hexagon con menos azar): la partida ya está; falta correr la tanda (te aviso cómo).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
-3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.49.0 (remolinos y distancia de descubrir).
+3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.50.0 (remolinos, distancia y 1 de cada 5 pasos).
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
@@ -19,7 +19,8 @@ Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubr
 se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX); el remolino sigue provisorio (la cueva de las ruinas
 girando). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
 **Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). DarklordAV.exe ya está armado en
-C:\Warlords3 (vista-aliada 1.0.49.0).
+C:\Warlords3 (vista-aliada 1.0.50.0).
+**Cambio de 1.0.50.0:** se descubre en **1 de cada 5 pasos** (antes 1 de cada 10).
 **Cambios de 1.0.49.0 (tu prueba del 21/10):** los remolinos salen el doble que los pozos; pozos, remolinos y trampas
 se descubren solo a **una casilla** (antes, con el radio de visión del grupo); un grupo de **solo voladores no
 descubre** nada. Las trampas todavía no se pueden construir: es la parte 7 del plan, sin hacer.
@@ -51,6 +52,7 @@ condiciones idénticas y sin ruinas.
    correr la tanda.
 Resultado: (usuario, 21/10) hecha, pero guardada sobre **Tanda_hex_alianzas** (no Tanda_hex_simple): bando nuevo más
 simple, sin maná, casi el mismo héroe, mismos bandos, sin ruinas; dos grupos de aliados intercalados en el mapa.
+(usuario, 21/10) los colores quedaron intercalados igual que antes (equipos 013|457).
 (Este número era 24, repetido con la de pozos: pasó a 25.)
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)

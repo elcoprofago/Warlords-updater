@@ -280,6 +280,6 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   doble que los pozos (por el agua se circula menos; no vio ninguno), tope 16 pozos y 32 remolinos; descubrir a
   **una casilla** (PO_RADIO = 1, no el radio del grupo); un grupo de solo voladores no descubre. Se mantuvo el
   contador de 10 pasos de las ruinas (con radio 1 descubre en 1 de cada 10 pasos): si el usuario los nota difíciles
-  de descubrir, es eso. Trampas: no vio cómo construirlas, porque es la parte 7 (sin hacer).
+  de descubrir, es eso. (1.0.50.0, pedido del usuario: 1 de cada 5 pasos, contador 0 o 5.) Trampas: no vio cómo construirlas, porque es la parte 7 (sin hacer).
 - Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía).
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

@@ -7314,10 +7314,10 @@ pr_end:
 # detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
 # muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego).
 # Descubrir al pasar (parte 4): po_step llama primero a 0x4a1ce0 (que avanza el contador de pasos [0x4fe5e8] y descubre
-# ruinas) y después aplica la regla a la tabla: con Hidden Ruins y Discover Ruins, si contador < PO_RADIO (no el radio
-# del grupo, que crece con "View" y para la computadora) y el grupo en movimiento (0x56ea94 + p*0x4f0) tiene alguno
+# ruinas) y después aplica la regla a la tabla: con Hidden Ruins y Discover Ruins, en 1 de cada 5 pasos (contador 0 o
+# 5; pedido del usuario, 21/10/2026: las ruinas usan 1 de cada 10 con radio 1) y el grupo en movimiento (0x56ea94 + p*0x4f0) tiene alguno
 # que no vuela (los voladores no caen, así que no descubren), el primer registro no visto por el jugador a
-# |dx|+|dy| <= PO_RADIO queda descubierto para él, se redibuja y, en su PC, el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
+# |dx|+|dy| <= PO_RADIO (no el radio del grupo, que crece con "View" y para la computadora) queda descubierto para él, se redibuja y, en su PC, el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
 po_pend = place_data('po_pend', bytes(8))
 str_po_fell = [place_data(f'str_po_fell{i}', cstr_(s)) for i, s in enumerate((
     'Your army fell into a hidden pit!', 'Your army was swallowed by a whirlpool!', 'Your army fell into a trap!'))]
@@ -7372,8 +7372,12 @@ pt_end:
     jz pd_end
     mov ebp, {PO_RADIO}
     movsx eax, word ptr [0x4fe5e8]
-    cmp eax, ebp
-    jge pd_end
+    cmp eax, 5
+    jl pd_c5
+    sub eax, 5
+pd_c5:
+    test eax, eax
+    jnz pd_end
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae pd_end
