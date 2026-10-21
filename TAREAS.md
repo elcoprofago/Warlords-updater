@@ -6,7 +6,7 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 23** (tanda A/B de alianzas en Hexagon): corre sola, de noche.
+1. **Tarea 24** (Hexagon con menos azar): armar el bando y la partida guardada.
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
 3. **Tarea 24** (pozos y remolinos en el juego): una partida corta contra la computadora, en esta PC.
@@ -35,6 +35,17 @@ C:\Warlords3 (vista-aliada 1.0.48.0).
 6. Guardá la partida, salí y volvé a cargarla: los pozos y remolinos descubiertos y las tumbas tienen que seguir
    dibujados.
 7. Anotá abajo qué viste (y si algún dibujo queda mal ubicado, tapa algo o parpadea).
+Resultado:
+
+## 24. IA: Hexagon con menos azar (20/10/2026)
+Las tandas 25 a 34 no alcanzaron para demostrar nada: hay demasiado azar entre partidas. Esta vez todos juegan en
+condiciones idénticas y sin ruinas.
+1. Armá un bando simple con el editor de bandos: sin maná, el mismo héroe y los mismos regulares en todos los colores
+   (lo que te parezca necesario para que no haya dados de más).
+2. Armá en **Hexagon** una partida guardada igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared Cities,
+   Diplomacy, los mismos equipos 013 contra 457, un bando en Humano), pero con ese bando en todos los colores.
+   Guardala como **Tanda_hex_simple**. Avisame: yo le dejo todas las ruinas exploradas y vacías
+   (queda como **Tanda_hex_simple_SR**) y te digo cuándo correr la tanda.
 Resultado:
 
 ## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)

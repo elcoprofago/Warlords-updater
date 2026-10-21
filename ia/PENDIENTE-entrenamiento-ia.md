@@ -628,3 +628,13 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - Conclusión, sumada a Borderlands (+1.8 PV, 12 a 12): las reglas de alianzas no muestran ventaja para el bloque;
   en Hexagon tienden levemente en contra sin significancia, y se activan tan poco que no pueden explicar mucho de la
   diferencia. Decisión pendiente del usuario: seguir con otra destreza o revisar por qué casi no se activan acá.
+- Decisión del usuario (20/10/2026): reducir el azar. Bando simple (sin maná, mismo héroe y regulares en todos los
+  colores), Hexagon, sin ruinas (TAREAS 24). Las ruinas de Hexagon tienen contenido, guardián y «oculta» distintos
+  entre sí (47 ruinas), así que desbalancean aun con el mapa simétrico.
+- Hecho: ia\sin_ruinas.py escribe <guardada>_SR.SAV con todas las ruinas exploradas (+0x95=1), sin contenido, sin
+  guardián y visibles. Probado en memoria sobre Tanda_hex_alianzas: solo cambian 148 bytes, todos dentro de la tabla.
+  Sin verificar todavía en el juego: una partida de prueba con la _SR (que ningún héroe saque nada de una ruina).
+- Ojo, dos límites que el bando simple no resuelve: (1) los equipos 013|457 no quedaron parejos en Hexagon (013
+  ganó 37 de 48); el A/B lo compensa alternando, pero suma varianza. (2) las reglas de alianzas se activaron muy poco
+  en Hexagon (16 refugios en 48 partidas): con menos azar se mide mejor, pero si casi no se activan el efecto
+  seguirá siendo chico.
