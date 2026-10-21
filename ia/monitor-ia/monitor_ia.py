@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.10'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.11'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -120,6 +120,7 @@ class Monitor(tk.Tk):
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
         self.tid = None
+        self.serie = None   # (tandas terminadas, tandas de la serie) mientras corre una serie
         self.retomable = False
         self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
@@ -584,10 +585,13 @@ class Monitor(tk.Tk):
         ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)   # ES_CONTINUOUS | SYSTEM_REQUIRED
         try:
             serie = self.v_serie.get() if self.v_auto.get() else 1
+            self.serie = (0, serie)
             for i in range(serie):
                 db, self.tid = tanda.preparar(a)
                 tanda.correr(db, self.tid, a)
                 terminada = db.execute('select terminada from tanda where id=?', (self.tid,)).fetchone()[0]
+                if terminada:
+                    self.serie = (i + 1, serie)
                 print()
                 informe.main(self.tid)
                 # Sigue la serie solo si esta tanda terminó entera y no se tocó Cortar ni se destildó el check.
@@ -654,10 +658,12 @@ class Monitor(tk.Tk):
 
     def dibujar_barras(self):
         c = self.barras; c.delete('all')
-        mono, verde, naranja, gris = ('Consolas', 8), '#6fd39a', '#f0a070', '#9aa7a1'
-        x0, x1 = 52, 136
-        for i, (rot, frac, txt, lista) in enumerate(self.progreso):
-            y = 9 + i * 18
+        mono, verde, naranja = ('Consolas', 7), '#6fd39a', '#f0a070'
+        x0, x1 = 46, 136
+        h, n = self.serie or (None, None)
+        serie = ('serie', h / n, f'{h}/{n}', True) if n else ('serie', None, '—', True)   # siempre en verde
+        for i, (rot, frac, txt, lista) in enumerate([serie] + self.progreso):
+            y = 9 + i * 16
             c.create_text(4, y, text=rot, anchor='w', font=mono, fill='#d8e4de')
             c.create_rectangle(x0, y - 5, x1, y + 5, fill='#1a2420', outline='')
             for xx in range(x0, x1, 2):   # resto rayado, como en la imagen de referencia
@@ -667,7 +673,6 @@ class Monitor(tk.Tk):
                 xf = x0 + (x1 - x0) * max(0.0, min(1.0, frac))
                 c.create_rectangle(x0, y - 5, xf, y + 5, fill=verde if lista else naranja, outline='')
             c.create_text(x1 + 4, y, text=txt, anchor='w', font=mono, fill=verde if lista else naranja)
-        c.create_text(4, 45, text='verde → hecha  naranja → en curso', anchor='w', font=('Consolas', 7), fill=gris)
 
     def escribir(self, *partes):
         """Reescribe el recuadro de la partida en curso: partes = (texto, estilo) o texto sin estilo."""
