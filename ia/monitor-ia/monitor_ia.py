@@ -240,10 +240,21 @@ class Monitor(tk.Tk):
         self.barras = tk.Canvas(tarjeta, width=190, height=50, bg='#0d1512', highlightthickness=1,
                                 highlightbackground='#3f8f6a', bd=0)
         self.barras.pack(padx=6, pady=(0, 6))
-        rueda = Image.open(os.path.join(ASSETS, 'rueda1.png')).convert('RGBA').resize((26, 25), Image.LANCZOS)
-        # En el ángulo superior derecho de la tarjeta, al costado de los círculos.
-        b = self.icono(tarjeta, rueda, cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
-        b.bind('<Button-1>', lambda e: self.configurar())
+        # Botón de configuración en el ángulo superior derecho de la tarjeta, al costado de los círculos:
+        # normal, hover con el mouse encima, active mientras se aprieta, disabled con la configuración abierta.
+        imgs = {e: Image.open(os.path.join(ASSETS, f'menu_settings_{e}.png')).convert('RGBA').resize((28, 28), Image.LANCZOS)
+                for e in ('normal', 'hover', 'active', 'disabled')}
+        b = self.icono(tarjeta, imgs['normal'], cursor='hand2'); b.place(relx=1, x=-4, y=4, anchor='ne')
+        b.imgs, b.abierta = imgs, False
+        self.b_config = b
+
+        def estado(e):
+            if not b.abierta:
+                self.iconos[b] = imgs[e]; self.pintar_icono(b)
+        b.bind('<Enter>', lambda e: estado('hover'))
+        b.bind('<Leave>', lambda e: estado('normal'))
+        b.bind('<ButtonPress-1>', lambda e: estado('active'))
+        b.bind('<ButtonRelease-1>', lambda e: (estado('hover'), b.abierta or self.configurar()))
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar(); self.v_todas = tk.StringVar()
         self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
@@ -482,6 +493,13 @@ class Monitor(tk.Tk):
         from tkinter import colorchooser, filedialog
         c = leer_config('Fondo')
         v = tk.Toplevel(self); v.title('Configuración'); v.transient(self); v.grab_set(); v.resizable(False, False)
+        b = self.b_config; b.abierta = True; b['cursor'] = 'arrow'
+        self.iconos[b] = b.imgs['disabled']; self.pintar_icono(b)
+
+        def cerrada(e):
+            if e.widget is v and b.winfo_exists():
+                b.abierta = False; b['cursor'] = 'hand2'; self.iconos[b] = b.imgs['normal']; self.pintar_icono(b)
+        v.bind('<Destroy>', cerrada)
         v.geometry(f'+{self.winfo_rootx() + self.winfo_width() - 380}+{self.winfo_rooty() + 90}')
         tipo = tk.StringVar(value=c.get('tipo', 'color'))
         color = tk.StringVar(value=c.get('color', '#f0f0f0'))
