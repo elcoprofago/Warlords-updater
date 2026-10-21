@@ -234,6 +234,30 @@ r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
 ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
 r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
 ver('dos jugadores en el mismo lote: cada uno en lo suyo', r[0], [(1, 0), (2, 0), (3, 0), (4, 1)])
+print('-- tumbas al caer en un pozo')
+def tumbas(t, n=len(POZOS)): return [r for r in t[n:] if r[2] == 3]
+r = caer(POZOS, GRUPO, [(2, 10, 10)])
+tb = tumbas(r[3])
+ver('pozo: una tumba a 2 o menos, no en el pozo, imagen 0..2, vista por todos; el resto de la tabla igual',
+    (len(tb), all(max(abs(x - 10), abs(y - 10)) <= 2 and (x, y) != (10, 10) and k <= 2 and (m, d) == (0xff, 0xff)
+                  for x, y, _, k, m, d in tb), r[3][1:len(POZOS)] == POZOS[1:], len(r[3])), (1, True, True, 5))
+ver('control: la misma caída da la misma tumba (en todas las PC igual)', tumbas(caer(POZOS, GRUPO, [(2, 10, 10)], mira=1)[3]), tb)
+ver('control: la tumba no mata ni se anota al pisarla', caer(POZOS + tb, [(tb[0][0], tb[0][1], 2, 0, 0)],
+    [(2, tb[0][0], tb[0][1])])[:2], ([], []))
+t2 = tumbas(caer(POZOS + tb, GRUPO, [(2, 10, 10)])[3], len(POZOS) + 1)
+ver('segunda caída: otra tumba, en otra casilla', (len(t2), t2[0][:2] != tb[0][:2], max(abs(t2[0][0] - 10), abs(t2[0][1] - 10)) <= 2), (1, True, True))
+t = POZOS
+for i in range(30):
+    t = caer(t, GRUPO, [(2, 10, 10)])[3]
+n = len(tumbas(t))
+ver('30 caídas: entre 16 y 24 tumbas (las 24 casillas alrededor; con pocas libres, 32 tiros pueden no acertar), distintas',
+    (16 <= n <= 24, len({r[:2] for r in tumbas(t)}) == n), (True, True))
+ver('las tres imágenes salen', sorted({r[3] for r in tumbas(t)}), [0, 1, 2])
+ver('control: remolino y trampa no dejan tumba', [len(tumbas(caer(POZOS, [(x, y, 3, 0, 0)], [(3, x, y)])[3])) for x, y in ((20, 10), (15, 15))], [0, 0])
+ver('control: solo voladores (nadie muere): sin tumba', len(tumbas(caer(POZOS, [(10, 10, 2, 0, 1)], [(2, 10, 10)])[3])), 0)
+lleno = POZOS + [(1, 1 + i // 30, 3, 0, 0xff, 0xff) for i in range(PO_MAX - len(POZOS))]
+r = caer(lleno, GRUPO, [(2, 10, 10)])
+ver('control: tabla llena: caen igual, sin tumba', (len(r[0]), len(r[3])), (3, PO_MAX))
 print('-- parte 4: descubrir')
 def descubrir(regs, pasos, cont=9, opc=0x30, mira=2):
     # pasos: (jugador, x, y, radio). Devuelve las máscaras, los avisos y el contador al final.
@@ -313,7 +337,11 @@ ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[
 ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])
 ver('control: trampa de otro (no aliado): no', dibujar(en(2, d=3))[0], [])
 ver('trampa ajena descubierta: se ve', dibujar(en(2, m=0x04, d=3))[0][0][0], 5)
-ver('trampa detonada (vista por todos): cuadro 6', dibujar(en(2, 1, 0xff, 3))[0][0][0], 6)
+ver('trampa detonada (vista por todos): humea, cuadro 6 + fase & 3', [dibujar(en(2, 1, 0xff, 3), fase=f)[0][0][0] for f in range(6)],
+    [6, 7, 8, 9, 6, 7])
+ver('tumba, lápida y cruz (vistas por todos): cuadros 10, 11 y 12', [dibujar(en(3, k, 0xff), mira=m)[0][0][0] for k, m in ((0, 0), (1, 5), (2, 7))],
+    [10, 11, 12])
+ver('control: tumba con imagen fuera de rango: nada', dibujar(en(3, 3, 0xff))[0], [])
 ver('hoja sin cargar: la carga una vez y dibuja', dibujar(en(0, m=0x04), cargada=False)[:2],
     ([(0, 0, 48, 48, 0x27, 144, 96)], [PO_FILE]))
 ver('control: hoja inexistente: no dibuja ni insiste', dibujar(en(0, m=0x04), hay=False)[:2], ([], []))

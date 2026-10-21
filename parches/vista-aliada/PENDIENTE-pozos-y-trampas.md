@@ -267,5 +267,14 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   quien mira lo descubrió, o si es trampa suya o de un aliado mutuo con vista aliada (fogally). Dibujos de prueba
   recortados de las ruinas (cueva; cueva girada para el remolino; puerta trampa cerrada / abierta). Probado en
   unicorn; la prueba en el juego quedó en TAREAS 24 (solo en esta PC: sin la parte 6 cada PC genera sus pozos).
+- Dibujos del usuario y tumbas (20/10/2026, 1.0.48.0). Pedido: (1) pozo descubierto = su picts\pozo.PCX; (2) cada
+  vez que muere un grupo en un pozo, una tumba, lápida o cruz al azar (picts	umba.PCX, lapida.pcx, cruz.pcx) a 2
+  casillas o menos, nunca sobre el pozo, que sigue oculto para quien no lo descubrió; (3) trampa detonada animada: un
+  agujero irregular del que sale humo, el humo sacado de TERRAIN\DATA\cit_anim.PCX. Hecho: tipo nuevo PO_TUMBA (3) en
+  la misma tabla (+5 = cuál imagen, +6 = 0xff: vista por todos), así viaja en el SAV y, en la parte 6, por red;
+  po_grave (desde po_fall, solo pozos: remolino y trampa no dejan tumba) elige la casilla con un azar sacado de la
+  tabla (igual en todas las PC) y pg_ok sin mirar capitales; po_step no anota tumbas. Hoja de 13 cuadros: detonada =
+  cuadros 6..9 con la fase del agua, tumbas 10..12. Dato: lapida.pcx y el cuadro de tumba.PCX son **el mismo dibujo**
+  píxel por píxel (se avisó al usuario; si cambia lapida.pcx basta recompilar).
 - Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía).
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

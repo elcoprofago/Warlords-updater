@@ -6983,7 +6983,7 @@ vl_text:
 # +7 dueño). po_map: un byte por casilla (índice + 1, 0 = nada), rearmado desde la tabla; no se guarda.
 # En el .SAV va detrás del bloque de la Votación: 'POZO', cantidad (dword) y la tabla entera.
 PO_MAX, PO_REC = 64, 8
-PO_POZO, PO_REMOLINO, PO_TRAMPA = 0, 1, 2
+PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tumba, lápida, cruz), vista por todos
 PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
 po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
 PO_SAVELEN = 8 + PO_MAX * PO_REC
@@ -7065,10 +7065,94 @@ pol_end:
 # no tiene casillas válidas, quedan menos). Casilla válida: libre en po_map, sin edificio (palabra 0 & 0x4000), sin
 # estructura ([+3] & 7) ni cosa (palabra +2 bits 8-10: camino, puente, ruina, ciudad, sitio). Pozo: clase de terreno
 # (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
-# activo. Remolino: clase agua. pg_ok: esi = x, edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
+# activo. Remolino: clase agua. Tumba (po_grave): como el pozo, pero sin mirar las capitales. pg_ok: esi = x,
+# edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
 PO_TRIES = 400
 po_q = place_data('po_q', bytes(4))
 po_k = place_data('po_k', bytes(4))
+pg_ok = place('pg_ok', f'''
+    pushad
+    test esi, esi
+    jl pk_no
+    test edi, edi
+    jl pk_no
+    cmp si, word ptr [0x503e00]
+    jge pk_no
+    cmp di, word ptr [0x503e02]
+    jge pk_no
+    mov cl, byte ptr [0x503e06]
+    mov eax, edi
+    shl eax, cl
+    add eax, esi
+    cmp eax, {PO_MAPSZ}
+    jae pk_no
+    cmp byte ptr [eax + {po_map:#x}], 0
+    jne pk_no
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    lea eax, [eax + edx*2 + 0x503e58]
+    movzx edx, word ptr [eax]
+    test dh, 0x40
+    jnz pk_no
+    test byte ptr [eax + 3], 7
+    jnz pk_no
+    test word ptr [eax + 2], 0x700
+    jnz pk_no
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    movsx edx, word ptr [edx + 0x535f0c]
+    cmp ebp, {PO_REMOLINO}
+    je pk_agua
+    cmp edx, 1
+    je pk_no
+    cmp edx, 4
+    je pk_no
+    cmp ebp, {PO_TUMBA}
+    je pk_si
+    xor ebx, ebx
+pk_cap:
+    imul eax, ebx, 0x1f8
+    cmp byte ptr [eax + 0x536b30], 0
+    je pk_capn
+    cmp byte ptr [eax + 0x536b31], 0
+    je pk_capn
+    movsx eax, word ptr [eax + 0x536c22]
+    test eax, eax
+    jl pk_capn
+    cmp ax, word ptr [0x537e2a]
+    jge pk_capn
+    imul eax, eax, 0xde
+    movsx ecx, word ptr [eax + 0x537e2c]
+    sub ecx, esi
+    cmp ecx, -2
+    jl pk_capn
+    cmp ecx, 2
+    jg pk_capn
+    movsx ecx, word ptr [eax + 0x537e2e]
+    sub ecx, edi
+    cmp ecx, -2
+    jl pk_capn
+    cmp ecx, 2
+    jle pk_no
+pk_capn:
+    inc ebx
+    cmp ebx, 8
+    jl pk_cap
+    jmp pk_si
+pk_agua:
+    cmp edx, 1
+    jne pk_no
+pk_si:
+    popad
+    cmp eax, eax
+    ret
+pk_no:
+    popad
+    or esp, esp
+    ret
+''')
 po_gen = place('po_gen', f'''
     pushad
     mov dword ptr [{PO_N:#x}], 0
@@ -7111,7 +7195,7 @@ pg_try:
     call 0x4deb20
     add esp, 12
     movsx edi, ax
-    call pg_ok
+    call {pg_ok:#x}
     jnz pg_try
     mov eax, dword ptr [{PO_N:#x}]
     lea edx, [eax*8 + {PO_TAB:#x}]
@@ -7139,86 +7223,6 @@ pg_end:
     jle 0x4a103c
     jmp 0x4a1971
 
-pg_ok:
-    pushad
-    test esi, esi
-    jl pk_no
-    test edi, edi
-    jl pk_no
-    cmp si, word ptr [0x503e00]
-    jge pk_no
-    cmp di, word ptr [0x503e02]
-    jge pk_no
-    mov cl, byte ptr [0x503e06]
-    mov eax, edi
-    shl eax, cl
-    add eax, esi
-    cmp eax, {PO_MAPSZ}
-    jae pk_no
-    cmp byte ptr [eax + {po_map:#x}], 0
-    jne pk_no
-    lea eax, [edi + edi*4]
-    add eax, eax
-    shl eax, cl
-    lea edx, [esi + esi*4]
-    lea eax, [eax + edx*2 + 0x503e58]
-    movzx edx, word ptr [eax]
-    test dh, 0x40
-    jnz pk_no
-    test byte ptr [eax + 3], 7
-    jnz pk_no
-    test word ptr [eax + 2], 0x700
-    jnz pk_no
-    and edx, 0x1f
-    imul edx, edx, 0x58
-    movsx edx, word ptr [edx + 0x535f0c]
-    cmp ebp, {PO_REMOLINO}
-    je pk_agua
-    cmp edx, 1
-    je pk_no
-    cmp edx, 4
-    je pk_no
-    xor ebx, ebx
-pk_cap:
-    imul eax, ebx, 0x1f8
-    cmp byte ptr [eax + 0x536b30], 0
-    je pk_capn
-    cmp byte ptr [eax + 0x536b31], 0
-    je pk_capn
-    movsx eax, word ptr [eax + 0x536c22]
-    test eax, eax
-    jl pk_capn
-    cmp ax, word ptr [0x537e2a]
-    jge pk_capn
-    imul eax, eax, 0xde
-    movsx ecx, word ptr [eax + 0x537e2c]
-    sub ecx, esi
-    cmp ecx, -2
-    jl pk_capn
-    cmp ecx, 2
-    jg pk_capn
-    movsx ecx, word ptr [eax + 0x537e2e]
-    sub ecx, edi
-    cmp ecx, -2
-    jl pk_capn
-    cmp ecx, 2
-    jle pk_no
-pk_capn:
-    inc ebx
-    cmp ebx, 8
-    jl pk_cap
-    jmp pk_si
-pk_agua:
-    cmp edx, 1
-    jne pk_no
-pk_si:
-    popad
-    cmp eax, eax
-    ret
-pk_no:
-    popad
-    or esp, esp
-    ret
 ''')
 
 # Al empezar (0x42ddc1, antes de 0x4a1e20, que hace lo mismo con las ruinas): con Hidden Ruins, cada jugador activo
@@ -7338,6 +7342,8 @@ po_step = place('po_step', f'''
     movzx eax, byte ptr [edi + {po_map:#x}]
     test eax, eax
     jz pt_end
+    cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TUMBA}
+    je pt_end
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TRAMPA}
     jne pt_mark
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}], 0
@@ -7412,6 +7418,82 @@ pd_end:
     popad
     ret
 ''')
+# Tumba (pedido del usuario, 20/10/2026): cada vez que muere un grupo en un pozo, po_fall suma un registro PO_TUMBA en
+# una casilla al azar a 2 o menos (max |dx|,|dy|) del pozo, nunca en él ni en otra tumba, pozo o trampa (pg_ok), con
+# una de las tres imágenes al azar (+5) y vista por todos (+6 = 0xff). El azar sale de la tabla misma (x, y y
+# cantidad de registros), no del generador del juego: po_fall corre en todas las PC y tienen que elegir lo mismo.
+# PO_GTRIES tiros; si ninguno sirve o la tabla está llena, no hay tumba. ebp = el registro del pozo; preserva todo.
+PO_GTRIES = 32
+po_grave = place('po_grave', f'''
+    pushad
+    mov eax, dword ptr [{PO_N:#x}]
+    cmp eax, {PO_MAX}
+    jae pv_end
+    movsx esi, word ptr [ebp]
+    movsx edi, word ptr [ebp + 2]
+    imul ebx, esi, 0x9e3779b1
+    imul ecx, edi, 0x85ebca77
+    add ebx, ecx
+    imul ecx, eax, 0xc2b2ae3d
+    add ebx, ecx
+    mov ebp, {PO_TUMBA}
+    mov ecx, {PO_GTRIES}
+pv_try:
+    imul ebx, ebx, 1103515245
+    add ebx, 12345
+    mov eax, ebx
+    shr eax, 16
+    xor edx, edx
+    push ecx
+    mov ecx, 25
+    div ecx
+    pop ecx
+    cmp edx, 12
+    je pv_next
+    mov eax, edx
+    xor edx, edx
+    push ecx
+    mov ecx, 5
+    div ecx
+    pop ecx
+    lea eax, [eax + edi - 2]
+    lea edx, [edx + esi - 2]
+    push esi
+    push edi
+    mov esi, edx
+    mov edi, eax
+    call {pg_ok:#x}
+    jz pv_ok
+    pop edi
+    pop esi
+pv_next:
+    dec ecx
+    jnz pv_try
+    jmp pv_end
+pv_ok:
+    mov eax, dword ptr [{PO_N:#x}]
+    lea edx, [eax*8 + {PO_TAB:#x}]
+    mov word ptr [edx], si
+    mov word ptr [edx + 2], di
+    mov byte ptr [edx + 4], {PO_TUMBA}
+    push edx
+    mov eax, ebx
+    shr eax, 24
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    mov eax, edx
+    pop edx
+    mov byte ptr [edx + 5], al
+    mov word ptr [edx + 6], 0xffff
+    inc dword ptr [{PO_N:#x}]
+    call {po_rebuild:#x}
+    pop edi
+    pop esi
+pv_end:
+    popad
+    ret
+''')
 po_fall = place('po_fall', f'''
     pushad
     xor ebx, ebx
@@ -7460,6 +7542,10 @@ pf_ejf:
     mov al, 1
     shl al, cl
     or byte ptr [ebp + 6], al
+    cmp byte ptr [ebp + 4], {PO_POZO}
+    jne pf_trap
+    call {po_grave:#x}
+pf_trap:
     cmp byte ptr [ebp + 4], {PO_TRAMPA}
     jne pf_vis
     mov byte ptr [ebp + 5], 1
@@ -7499,11 +7585,12 @@ pf_pln:
 # casilla es (columna + [ebp+0x28], fila + [ebp+0x2a]), las mismas que 0x45857e copia a las celdas). Solo llegan las
 # celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
 # es su dueño o un aliado mutuo con vista aliada (fogally). Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
-# 11 es transparente): 0 pozo, 1..4 remolino, 5 trampa, 6 trampa detonada. El remolino se anima como el agua: cuadro
-# 1 + ([ebp+0x3c] & 3), la fase que 0x456fdc avanza cada tic de la animación del mapa. La hoja se carga (0x4dd3f0) la
+# 11 es transparente): 0 pozo, 1..4 remolino, 5 trampa, 6..9 trampa detonada (humea), 10..12 tumba, lápida y cruz
+# (+5 del registro). Remolino y trampa detonada se animan como el agua: cuadro + ([ebp+0x3c] & 3), la fase que
+# 0x456fdc avanza cada tic de la animación del mapa. La hoja se carga (0x4dd3f0) la
 # primera vez que hace falta, o de nuevo si el juego la descargó; si no se puede, no se insiste.
 PO_FILE = RAM_FILE + 3       # después de sorteo.pcx y darkcomp.pcx (ver table_add, más abajo)
-PO_FRAMES = 7
+PO_FRAMES = 13
 po_nosheet = place_data('po_nosheet', bytes(4))
 po_draw = place('po_draw', f'''
     pushad
@@ -7554,11 +7641,21 @@ pw_vis:
     jmp pw_sheet
 pw_trap:
     cmp eax, {PO_TRAMPA}
-    jne pw_sheet
+    jne pw_tumba
     mov edi, 5
     cmp byte ptr [ebx + 5], 0
     je pw_sheet
-    inc edi
+    movzx edi, word ptr [ebp + 0x3c]
+    and edi, 3
+    add edi, 6
+    jmp pw_sheet
+pw_tumba:
+    cmp eax, {PO_TUMBA}
+    jne pw_sheet
+    movzx edi, byte ptr [ebx + 5]
+    cmp edi, 2
+    ja pw_end
+    add edi, 10
 pw_sheet:
     cmp dword ptr [{po_nosheet:#x}], 0
     jne pw_end
@@ -10829,30 +10926,94 @@ setstr(butt_std, 4, 32, 'darkcomp')
 table_add(res, 2, DC_FILE, bytes(butt_std))
 
 # Hoja PO_FILE = RUINS\pozos.pcx, con los campos de henge (0x51, el PCX de un tipo de ruina; el 10 es la carpeta
-# RUINS): los cuadros de 48x48 de po_draw, uno al lado del otro. Para las pruebas (decisión del usuario), recortados de
-# los dibujos de ruinas: pozo = cueva, remolino = la cueva girada 0, 90, 180 y 270 grados (para que se vea la
-# animación), trampa = puerta trampa cerrada, detonada = abierta. Misma paleta que las ruinas; el 11 es transparente.
+# RUINS): los cuadros de 48x48 de po_draw, uno al lado del otro, en la paleta de las ruinas (la del mapa; el 11 es
+# transparente). Dibujos del usuario en picts\ del repo (20/10/2026): pozo = cuadro del medio de pozo.PCX (hoja con
+# el formato de una ruina, fondo magenta y grilla violeta, con matices), tumba = primer cuadro de tumba.PCX, lápida = lapida.pcx; cruz = cruz.pcx
+# recortada de su pasto (los dos palos y la sombra oscura que cae abajo a la derecha). Trampa detonada: un agujero
+# irregular propio (radio con ruido fijo, achatado) con el humo del pozo humeante de TERRAIN\DATA\cit_anim.PCX
+# (columna 4, sus 4 cuadros): lo que difiere de la columna 5 (el mismo pozo con lava) y es gris claro, llevado al
+# centro del agujero. Siguen de prueba (recortados de las ruinas): remolino = la cueva girada, trampa = puerta trampa.
 assert PO_FILE == DC_FILE + 1
 henge = bytearray(res[o2 + 20 + 0x51 * 60:o2 + 20 + 0x52 * 60])
 assert henge[4:10] == b'henge\0' and struct.unpack_from('<6I', henge, 36) == (10, 1, 0, 0, 0, 2)
 struct.pack_into('<I', henge, 0, PO_FILE)
 setstr(henge, 4, 32, 'pozos')
 table_add(res, 2, PO_FILE, bytes(henge))
-def cuadro_ruina(tipo, columna):
-    im = Image.open(rf'C:\Warlords3\RUINS\{tipo}.PCX')
-    x0 = 1 + columna * 0x57
-    c = im.crop((x0, 1, x0 + 87, 89)); px = c.load()
-    pts = [(x, y) for x in range(87) for y in range(88) if px[x, y] not in (11, 101)]
+PICTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts')
+po_pal = Image.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]
+cit = Image.open(r'C:\Warlords3\TERRAIN\DATA\cit_anim.PCX')
+assert cit.size == (384, 192) and cit.getpalette()[:768] == po_pal
+po_usar = sorted(set(cit.tobytes()) | set(Image.open(r'C:\Warlords3\RUINS\cave.PCX').tobytes()) - {11, 101})
+_po_memo = {}
+def po_color(rgb):
+    if rgb not in _po_memo:
+        _po_memo[rgb] = min(po_usar, key=lambda i: sum((po_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+    return _po_memo[rgb]
+def po_cuadro(im, pts):   # los puntos pts (x, y) de im (RGB), centrados en un cuadro de 48x48 y en la paleta
+    px = im.load()
     cx = (min(p[0] for p in pts) + max(p[0] for p in pts) + 1) // 2
     cy = (min(p[1] for p in pts) + max(p[1] for p in pts) + 1) // 2
     assert max(p[0] for p in pts) - min(p[0] for p in pts) < 48 and max(p[1] for p in pts) - min(p[1] for p in pts) < 48
-    out = Image.new('P', (48, 48), 11); out.putpalette(im.getpalette())
-    for x, y in pts: out.putpixel((x - cx + 24, y - cy + 24), px[x, y])
+    out = Image.new('P', (48, 48), 11); out.putpalette(po_pal)
+    for x, y in pts: out.putpixel((x - cx + 24, y - cy + 24), po_color(px[x, y][:3]))
     return out
+def po_dibujo(nombre, caja=None, fondo=(11, 101)):   # fondo: índices transparentes (P) o, en RGB, fondo(color) -> bool
+    im = Image.open(os.path.join(PICTS, nombre))
+    if caja: im = im.crop(caja)
+    if im.mode == 'P': pts = [(x, y) for x in range(im.width) for y in range(im.height) if im.getpixel((x, y)) not in fondo]
+    else: pts = [(x, y) for x in range(im.width) for y in range(im.height) if not fondo(im.convert('RGB').getpixel((x, y)))]
+    return po_cuadro(im.convert('RGB'), pts)
+def cuadro_ruina(tipo, columna):
+    im = Image.open(rf'C:\Warlords3\RUINS\{tipo}.PCX')
+    x0 = 1 + columna * 0x57
+    c = im.crop((x0, 1, x0 + 87, 89))
+    return po_cuadro(c.convert('RGB'), [(x, y) for x in range(87) for y in range(88) if c.getpixel((x, y)) not in (11, 101)])
+pozo = po_dibujo('pozo.PCX', (0x58, 1, 0x58 + 87, 89), fondo=lambda c: c[0] > 130 and c[1] < 40 and c[2] > 190)   # magenta y violeta
+tumba = po_dibujo('tumba.PCX', (1, 1, 88, 89))
+lapida = po_dibujo('lapida.pcx')
+cruz_im = Image.open(os.path.join(PICTS, 'cruz.pcx'))
+assert cruz_im.size == (21, 21)
+cruz = po_cuadro(cruz_im.convert('RGB'), [(x, y) for x in range(21) for y in range(21)
+       if 8 <= x <= 11 and 4 <= y <= 15 or 5 <= x <= 14 and 7 <= y <= 9
+       or x >= 8 and y >= 14 and cruz_im.getpixel((x, y)) in (16, 130, 160, 162, 211)])
+import math, random
+_lum = lambda i: sum(po_pal[3 * i:3 * i + 3]) / 3
+_gris = lambda i: max(po_pal[3 * i:3 * i + 3]) - min(po_pal[3 * i:3 * i + 3]) < 30
+_ref = cit.crop((240, 0, 288, 48))
+_osc = [(x, y) for y in range(48) for x in range(48) if _lum(cit.getpixel((192 + x, y))) < 40]
+HX, HY = sum(p[0] for p in _osc) / len(_osc), sum(p[1] for p in _osc) / len(_osc)
+_rnd = random.Random(7)
+_amp = [_rnd.uniform(-0.22, 0.22) for _ in range(9)]; _fas = [_rnd.uniform(0, 6.28) for _ in range(9)]
+RX, RY, CX, CY = 15, 10, 24, 28
+agujero = Image.new('P', (48, 48), 11); agujero.putpalette(po_pal)
+for y in range(48):
+    for x in range(48):
+        dx, dy = (x - CX) / RX, (y - CY) / RY
+        d, r = math.hypot(dx, dy), 1 + sum(_amp[k] * math.sin((k + 2) * math.atan2(dy, dx) + _fas[k]) / (k + 1) ** 0.5 for k in range(9))
+        if d < r * 0.78:     # fondo, más oscuro hacia el centro y abajo
+            v = 12 + 34 * (d / r) ** 2 - 8 * dy
+            agujero.putpixel((x, y), po_color((v, v * 0.9, v * 0.8)))
+        elif d < r:          # borde de tierra removida
+            v = _rnd.uniform(0.7, 1.15) * (1 if dy < 0 else 0.7)
+            agujero.putpixel((x, y), po_color((120 * v, 85 * v, 45 * v)))
+        elif d < r * 1.35 and _rnd.random() < 0.18 * (1.35 - d / r) / 0.35:   # cascotes
+            v = _rnd.uniform(0.5, 1.0)
+            agujero.putpixel((x, y), po_color((110 * v, 80 * v, 45 * v)))
+detonada = []
+for fr in range(4):
+    c, f = cit.crop((192, fr * 48, 240, fr * 48 + 48)), agujero.copy()
+    for y in range(48):
+        for x in range(48):
+            i = c.getpixel((x, y))
+            nx, ny = round(x - HX + CX), round(y - HY + CY - 2)
+            if i != _ref.getpixel((x, y)) and _lum(i) > 75 and _gris(i) and 0 <= nx < 48 and 0 <= ny < CY + 3:
+                f.putpixel((nx, ny), i)
+    detonada.append(f)
 cueva = cuadro_ruina('cave', 0)
-po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(cueva.getpalette())
-for i, im in enumerate([cueva] + [cueva.rotate(-90 * k) for k in range(4)] +
-                       [cuadro_ruina('trapdoor', 0), cuadro_ruina('trapdoor', 1)]):
+po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
+cuadros = [pozo] + [cueva.rotate(-90 * k) for k in range(4)] + [cuadro_ruina('trapdoor', 0)] + detonada + [tumba, lapida, cruz]
+assert len(cuadros) == PO_FRAMES
+for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))
 pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
 
