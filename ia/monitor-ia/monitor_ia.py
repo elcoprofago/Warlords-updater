@@ -120,9 +120,9 @@ class Monitor(tk.Tk):
         sys.stdout = sys.stderr = Salida(self.cola)
         self.hilo = None
         self.tid = None
-        self.serie = None   # (tandas terminadas, tandas de la serie) mientras corre una serie
+        self.serie = None   # (tandas terminadas, tandas de la serie, número de la primera) mientras corre una serie
         self.retomable = False
-        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
+        self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
         self.aplicar_fondo()
@@ -603,13 +603,15 @@ class Monitor(tk.Tk):
         ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)   # ES_CONTINUOUS | SYSTEM_REQUIRED
         try:
             serie = self.v_serie.get() if self.v_auto.get() else 1
-            self.serie = (0, serie)
+            self.serie = None
             for i in range(serie):
                 db, self.tid = tanda.preparar(a)
+                if i == 0:
+                    self.serie = (0, serie, self.tid)
                 tanda.correr(db, self.tid, a)
                 terminada = db.execute('select terminada from tanda where id=?', (self.tid,)).fetchone()[0]
                 if terminada:
-                    self.serie = (i + 1, serie)
+                    self.serie = (i + 1, serie, self.serie[2])
                 print()
                 informe.main(self.tid)
                 # Sigue la serie solo si esta tanda terminó entera y no se tocó Cortar ni se destildó el check.
@@ -678,8 +680,9 @@ class Monitor(tk.Tk):
         c = self.barras; c.delete('all')
         mono, verde, naranja = ('Consolas', 7), '#6fd39a', '#f0a070'
         x0, x1 = 46, 136
-        h, n = self.serie or (None, None)
-        serie = ('serie', h / n, f'{h}/{n}', True) if n else ('serie', None, '—', True)   # siempre en verde
+        # Serie: T<tanda en curso>/<última de la serie>, siempre en verde.
+        h, n, t0 = self.serie or (None, None, None)
+        serie = ('Serie', h / n, f'T{self.tid}/{t0 + n - 1}', True) if n else ('Serie', None, '—', True)
         for i, (rot, frac, txt, lista) in enumerate([serie] + self.progreso):
             y = 9 + i * 16
             c.create_text(4, y, text=rot, anchor='w', font=mono, fill='#d8e4de')
@@ -721,7 +724,7 @@ class Monitor(tk.Tk):
         import sqlite3
         self.externa = False
         self.retomable = False
-        self.progreso = [('tanda', None, '—', False), ('partida', None, '—', False)]
+        self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         db = sqlite3.connect(tanda.DB)
@@ -754,7 +757,7 @@ class Monitor(tk.Tk):
             fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
-        self.progreso[0] = ('tanda', len(hechas) / total if total else 0, f'{len(hechas)}/{total}', bool(term))
+        self.progreso[0] = ('Tanda', len(hechas) / total if total else 0, f'P{len(hechas)}/{total}', bool(term))
         actual, todas = self.parches(db, tid); self.v_parche.set(actual); self.v_todas.set(todas)
 
         if not en_curso:
@@ -774,9 +777,9 @@ class Monitor(tk.Tk):
         largos = [p[0] for p in db.execute("select turnos from partida where turnos>0 and estado!='cortada'")]
         if largos:
             esperado = sum(largos) / len(largos)
-            self.progreso[1] = ('partida', turno / esperado, f't{turno}/~{esperado:.0f}', False)
+            self.progreso[1] = ('Partida', turno / esperado, f'tº{turno}/{esperado:.0f}', False)
         else:
-            self.progreso[1] = ('partida', None, f't{turno}', False)
+            self.progreso[1] = ('Partida', None, f'tº{turno}', False)
         prueba = [c for c in range(8) if asig[c] == 'P']
         res = {ia: [0, 0] for ia in (0, 1)}
         for r in bats:
