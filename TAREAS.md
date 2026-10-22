@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 25** (Hexagon con menos azar): la tanda está corriendo (paso 4); no hay que hacer nada hasta que termine.
-2. Cerrá el juego y decime «instalá vista-aliada 1.0.57» (tarea 29, paso 0). Después hacé la **29** y, en una misma partida contra la
+2. Hacé la **29** (usando war3ed_av.exe) y, en una misma partida contra la
    computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
@@ -21,7 +21,7 @@ Sorteo están acá (tarea 18).
 Ahora **Bridge** es una habilidad especial (Bridge +1, +2, +3…: suma a la fuerza cuando se pelea sobre un puente en
 pie); **Trap** es un Combat Bonus y ya no un Move Bonus; Landing, Carrier y Cabotage son solo Move Bonus. Para que
 el editor lo muestre así hay un editor nuevo, **war3ed_av.exe** (el war3ed_ssg.exe de siempre no se tocó).
-0. Cerrá el juego y decime «instalá vista-aliada 1.0.57»: con el juego abierto no se puede reemplazar.
+0. Ya está: vista-aliada 1.0.57.0 quedó instalada en C:\Warlords3 (22/10/2026). Cerrá war3ed_ssg.exe y usá **war3ed_av.exe**.
 1. Abrí **war3ed_av.exe** → Edit Army Data de una unidad. En los cuatro Move Bonus **no** tienen que estar «bridge» ni
    «trap» (sí landing, carrier, cabotage). En Combat Bonus **no** tienen que estar landing, carrier, cabotage ni
    bridge (sí «trap»). En Special Ability tiene que estar **«Bridge +N»** donde antes decía «Giantslayer +N».
