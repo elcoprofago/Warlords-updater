@@ -7366,7 +7366,11 @@ pr_end:
 # grupo en movimiento (0x485c00): en el tic siguiente 0x49e280 devuelve -1 y el movimiento se corta; los voladores
 # que sobrevivan quedan en la casilla. Si murió alguno: el registro queda descubierto para ese jugador (la trampa,
 # detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
-# muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego).
+# muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego). En
+# una trampa suena además, a la vez, la explosión FX\Burst.wav (sonido PO_SND; pedido del usuario, 21/10/2026): con la
+# misma condición que el 7 (bit 0x20 de [0x564d08]), 0x4eca00(id) busca el buffer en la lista 0x5a6f50 y 0x4e6fd0(0, 0)
+# lo toca; DirectSound mezcla los dos.
+PO_SND = 56                  # el sonido siguiente al último (Dispel, 55) de la tabla de sonidos del RES (ver más abajo)
 # Descubrir al pasar (parte 4): po_step llama primero a 0x4a1ce0 (que avanza el contador de pasos [0x4fe5e8] y descubre
 # ruinas) y después aplica la regla a la tabla: con Hidden Ruins y Discover Ruins, en 1 de cada 5 pasos (contador 0 o
 # 5; pedido del usuario, 21/10/2026: las ruinas usan 1 de cada 10 con radio 1) y el grupo en movimiento (0x56ea94 + p*0x4f0) tiene alguno
@@ -7660,6 +7664,20 @@ pf_vis:
     mov edx, ebp
     xor ecx, ecx
     call {po_msg:#x}
+    cmp byte ptr [ebp + 4], {PO_TRAMPA}
+    jne pf_die
+    test byte ptr [0x564d08], 0x20
+    jz pf_die
+    push {PO_SND}
+    mov ecx, 0x5a6f50
+    call 0x4eca00
+    test eax, eax
+    jz pf_die
+    push 0
+    mov ecx, eax
+    push 0
+    call 0x4e6fd0
+pf_die:
     rdtsc
     shr eax, 8
     and eax, 1
@@ -11251,6 +11269,17 @@ assert henge[4:10] == b'henge\0' and struct.unpack_from('<6I', henge, 36) == (10
 struct.pack_into('<I', henge, 0, PO_FILE)
 setstr(henge, 4, 32, 'pozos')
 table_add(res, 2, PO_FILE, bytes(henge))
+# Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
+# es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
+# es un buffer de la lista 0x5a6f50, buscado por el id (+0).
+o3, h3 = table(res, 3)
+assert h3[2] == PO_SND
+dispel = bytearray(res[o3 + 20 + 55 * 52:o3 + 20 + 56 * 52])
+assert struct.unpack_from('<I', dispel, 0)[0] == 55 and dispel[4:11] == b'Dispel\0' and struct.unpack_from('<I', dispel, 36)[0] == 14
+struct.pack_into('<I', dispel, 0, PO_SND)
+setstr(dispel, 4, 16, 'Burst')
+table_add(res, 3, PO_SND, bytes(dispel))
+BURST = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'sonidos', 'Burst.wav'), 'rb').read()
 PICTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts')
 po_pal = Image.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]
 cit = Image.open(r'C:\Warlords3\TERRAIN\DATA\cit_anim.PCX')
@@ -11518,6 +11547,7 @@ NUEVOS[os.path.join('DATA', 'BRIDNAME.TXT')] = BRIDNAME
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
+NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS.update(NUEVOS_TIT)
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)

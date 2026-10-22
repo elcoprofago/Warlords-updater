@@ -20,7 +20,7 @@ Sorteo están acá (tarea 18).
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. **Antes:** el parche nuevo (vista-aliada 1.0.52.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
+0. **Antes:** el parche nuevo (vista-aliada 1.0.53.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
    estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
    trampas» y lo instalo.
 1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
@@ -31,9 +31,11 @@ con vista aliada la ven siempre; los demás no. La computadora todavía no las c
 4. Elegilo: sale la ventana de reconstruir con «Building a trap» y el costo de una ciudad. Si no te alcanza el oro, el
    OK queda apagado. Con oro, dale OK: tiene que descontarse el oro y aparecer la trampa (puerta cerrada) en esa casilla.
 5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y la trampa quedar **detonada**
-   (agujero con humo). En esa casilla ya no se puede construir otra.
+   (agujero con humo). Con el sonido del juego encendido tiene que oírse **la explosión (Burst) junto con el grito**
+   de muerte de héroe. En esa casilla ya no se puede construir otra.
 6. Guardá, salí y volvé a cargar: la trampa (armada o detonada) tiene que seguir.
-7. Anotá abajo qué viste (en especial si el renglón «Build Trap» queda mal ubicado o tapa algo del menú).
+7. Anotá abajo qué viste (en especial si el renglón «Build Trap» queda mal ubicado o tapa algo del menú, y si la
+   explosión y el grito suenan bien juntos o preferís el grito un poco después).
 Resultado:
 
 ## 24. Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)

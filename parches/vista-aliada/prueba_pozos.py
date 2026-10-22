@@ -22,7 +22,9 @@ PO_MAX, PO_REC, PO_MAPSZ, VT_MAX = 64, 8, 0x32000 // 10, 8
 SPRINTF = 0x1f8000   # dirección de mentira para [0x5a9bec]
 
 def cargar(nombre):
-    pe = pefile.PE(os.path.join(DIR, nombre))
+    # el original se lee de C:\Warlords3 si la carpeta armada no lo tiene
+    ruta = os.path.join(DIR, nombre)
+    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(r'C:\Warlords3', nombre))
     return pe, pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
 AV, ORIG = cargar('DarklordAV.exe'), cargar('Darklord.exe')
 _, BASE, img = AV
@@ -194,7 +196,7 @@ ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
-def caer(regs, ejs, pasos, mira=2):
+def caer(regs, ejs, pasos, mira=2, snd=0x20):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
     g = Juego(); mu = g.mu; g.poner(regs)
@@ -214,6 +216,10 @@ def caer(regs, ejs, pasos, mira=2):
     g.interceptar(0x497010, lambda a: vuela[a[0] & 0xffff]); g.interceptar(0x48f9a0, lambda a: vuela[a[0] & 0xffff])
     g.interceptar(0x4c2790, lambda a: avisos.append(bytes(mu.mem_read(a[0], 64)).split(b'\0')[0].decode()))
     g.interceptar(0x4465e0, lambda a: sonidos.append((a[0] & 0xffff, a[1] & 0xffff)))
+    # sonido suelto (Burst en la trampa): 0x4eca00(id) da el buffer, 0x4e6fd0 lo toca
+    mu.mem_write(0x564d08, bytes([snd]))
+    g.interceptar(0x4eca00, lambda a: 0x1f7000 + a[0], pop=4)
+    g.interceptar(0x4e6fd0, lambda a: sonidos.append((('fx', mu.reg_read(UC_X86_REG_ECX) - 0x1f7000), 0)), pop=8)
     for f in (0x441290, 0x4a2170): g.interceptar(f, lambda a: 0)
     for j, x, y in pasos:
         mu.mem_write(STACK, struct.pack('<5I', RET, j, x & 0xffff, y & 0xffff, 1)); mu.reg_write(UC_X86_REG_ESP, STACK)
@@ -245,6 +251,9 @@ ver('remolino: se hunde todo lo que no vuela, con 1 (como el disband)', (r[0], r
 r = caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3)
 ver('trampa: cae hasta el dueño; queda detonada y vista por todos', (r[0], r[1], r[3][2][3:]),
     ([(1, 0)], ['Your army fell into a trap!'], (1, 0xff, 3)))
+ver('trampa: suena Burst (sonido 56) y el grito', r[2], [('fx', 56), 7])
+ver('control: sin la opción de sonido, sin Burst', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3, snd=0)[2], [7])
+ver('control: en otra PC, la trampa no suena', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=1)[2], [])
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
 ver('control: trampa detonada ya no mata', (r[0], r[1]), ([], []))
 r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])

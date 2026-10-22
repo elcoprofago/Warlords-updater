@@ -302,11 +302,15 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   red cada PC tiene sus propios pozos; las trampas construidas sí viajan, pero sobre tablas distintas.
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
 
-## Pedidos del 21/10/2026 (después de la parte 7), sin hacer
-- **Sonido de trampa:** al detonar, FX\Burst.wav + RuinDie/RuinDie2. Los sonidos son buffers de DirectSound
-  (0x4465e0 → 0x4eca00(id) en 0x5a6f50 → 0x4e6fd0 play); dos sonidos distintos se mezclan. **Dato del usuario
-  (21/10):** Burst.wav lo sumó él, nuevo; **ningún hechizo lo usa**, así que no tiene id cargado: hay que agregarlo
-  como sonido nuevo (o un TrapDie.wav ya mezclado, Burst + grito corrido unos ms, que evita temporizadores).
+## Pedidos del 21/10/2026 (después de la parte 7)
+- **Sonido de trampa: hecho (21/10/2026, 1.0.53.0).** Los sonidos son la tabla tipo 3 del RES (registros de 52: +0 id,
+  +4 nombre, +36 carpeta, 14 = FX; +48 clase), que 0x4ec490 carga entera al arrancar como buffers de la lista
+  0x5a6f50; 0x4eca00(id) busca por id y 0x4e6fd0 toca. Los ids que usa 0x4465e0 son los de esa tabla (0x1c ruindie,
+  0x32 RuinDie2). Se agregó el sonido 56 «Burst» con los campos de Dispel; Burst.wav (el del usuario) está en
+  sonidos\ del repo y el parche lo instala en FX\. po_fall, en una trampa, lo toca junto con el grito, con la misma
+  condición de la opción de sonido (bit 0x20 de [0x564d08]). Suenan a la vez, sin temporizador; si el usuario
+  prefiere el grito corrido, la salida es un TrapDie.wav ya mezclado. Probado en unicorn (prueba_pozos.py); en el
+  juego va con la tarea 26. De paso: parches.txt seguía con un tabulador real en lugar de la barra y la t de trap.STT.
 - **Nombres de pozos y remolinos: hecho (21/10/2026, 1.0.52.0).** 16 nombres de pozo y 32 de remolino (PO_NOMBRES,
   tantos como el tope de cada tipo), en +5 del registro (el estado solo lo usan las trampas), así van en el SAV sin
   cambiar el formato; un SAV anterior trae 0 = el primero. po_gen tira un comienzo al azar por tipo y después
