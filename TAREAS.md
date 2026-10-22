@@ -37,29 +37,33 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
    trap-disarming team to the trap Afland02.».
 5. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
    caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
-6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): la misión de B tiene que **fracasar** al
-   turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
+6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): mientras le queden explosiones la misión
+   de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
 
 - [ ] **26.** Construir una trampa en el juego (21/10/2026)
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
-fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
-con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. Hace falta vista-aliada 1.0.57.0 instalada (tarea 29, paso 0): desde esa versión **Trap** es un Combat Bonus.
+fundar una ciudad. Desde la 1.0.58.0 la trampa es una **mina** (bola de hierro con puntas), se puede construir
+**también sobre un camino**, y **explota tres veces** (mata a quien entre, también a vos) antes de desaparecer. Vos y
+tus aliados con vista aliada la ven siempre; los demás, solo después de descubrirla o de caer en ella. La
+computadora todavía no las construye. **Solo en esta PC, no en red.**
+0. Ya está: vista-aliada 1.0.58.0 quedó instalada en C:\Warlords3 (22/10/2026).
 1. Abrí el editor **war3ed_av.exe** (en C:\Warlords3) y a una unidad barata de tu bando (no un héroe) ponele **Trap**
    como **Combat Bonus**. Guardá el bando. (Tus pikemen, lightinf, half_bra, FU_halfe y Zappers ya lo tienen ahí.)
 2. Empezá una partida nueva **contra la computadora** con ese bando, y comprá o juntá esa unidad.
-3. Llevá un grupo con esa unidad a una casilla de **tierra libre** (sin camino, ciudad, ruina ni sitio) y abrí el menú
-   de órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. En un camino o en una ciudad, apagado.
+3. Llevá un grupo con esa unidad a una casilla de **tierra libre o un camino** (sin ciudad, ruina, sitio ni puente) y
+   abrí el menú de órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. Sobre un camino, también
+   encendido. En una ciudad o un puente, apagado.
 4. Elegilo: sale la ventana de reconstruir con «Building a trap» y el costo de una ciudad. Si no te alcanza el oro, el
-   OK queda apagado. Con oro, dale OK: tiene que descontarse el oro y aparecer la trampa (puerta cerrada) en esa casilla.
-5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y la trampa quedar **detonada**
-   (agujero con humo). Con el sonido del juego encendido tiene que oírse **la explosión (Burst) junto con el grito**
+   OK queda apagado. Con oro, dale OK: tiene que descontarse el oro y aparecer la **mina** en esa casilla.
+5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y la mina **seguir ahí**. Repetilo:
+   el segundo y el tercero también mueren; después del **tercero la mina desaparece** y un cuarto ejército pasa sin
+   morir. Con el sonido del juego encendido tiene que oírse **la explosión (Burst) junto con el grito**
    de muerte de héroe. El aviso tiene que nombrar la trampa con la **ciudad más cercana y un número**, por ejemplo
    «Your army fell into the trap Afland01!»; una segunda trampa junto a la misma ciudad, «…Afland02!». En esa casilla
-   ya no se puede construir otra.
-6. Guardá, salí y volvé a cargar: la trampa (armada o detonada) tiene que seguir.
+   ya no se puede construir otra, ni después de que desaparezca.
+6. Guardá con la mina explotada una o dos veces, salí y volvé a cargar: tiene que seguir, con los usos que le quedaban.
 7. Anotá abajo qué viste (en especial si el renglón «Build Trap» queda mal ubicado o tapa algo del menú, y si la
    explosión y el grito suenan bien juntos o preferís el grito un poco después).
 Resultado:

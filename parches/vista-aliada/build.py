@@ -7024,6 +7024,10 @@ vl_text:
 # En el .SAV va detrás del bloque de la Votación: 'POZO', cantidad (dword) y la tabla entera.
 PO_MAX, PO_REC = 64, 8
 PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tumba, lápida, cruz), vista por todos
+# Trampa: +5 = explosiones que lleva (pedido del usuario, 22/10/2026: explota TR_USOS veces y desaparece). Activa
+# mientras +5 < TR_USOS; gastada, el registro queda (los nombres dependen del orden de la tabla) pero no mata, no se
+# descubre ni se dibuja. Un .SAV de antes trae 1 en las detonadas: les quedan 2 usos.
+TR_USOS = 3
 PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
 po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
 PO_SAVELEN = 8 + PO_MAX * PO_REC
@@ -7104,7 +7108,8 @@ pol_end:
 # Cantidad: pozos, 20 % de las ruinas, mínimo 1, como mucho PO_MAX/4; remolinos, el doble (pedido del usuario,
 # 21/10/2026: por el agua se circula menos); PO_TRIES tiros por cada uno (si el mapa
 # no tiene casillas válidas, quedan menos). Casilla válida: libre en po_map, sin edificio (palabra 0 & 0x4000), sin
-# estructura ([+3] & 7) ni cosa (palabra +2 bits 8-10: camino, puente, ruina, ciudad, sitio). Pozo: clase de terreno
+# cosa (palabra +2 bits 8-10, el mismo campo que la «estructura» [+3] & 7: 1 camino o puente, 2 ruina, 3 ciudad, 4
+# sitio); la trampa puede ir sobre un camino (pedido del usuario, 22/10/2026; el puente queda fuera por ser agua). Pozo: clase de terreno
 # (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
 # activo. Remolino: clase agua. Tumba (po_grave): como el pozo, pero sin mirar las capitales. pg_ok: esi = x,
 # edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
@@ -7164,10 +7169,14 @@ pg_ok = place('pg_ok', f'''
     movzx edx, word ptr [eax]
     test dh, 0x40
     jnz pk_no
-    test byte ptr [eax + 3], 7
-    jnz pk_no
-    test word ptr [eax + 2], 0x700
-    jnz pk_no
+    movzx ecx, word ptr [eax + 2]
+    and ecx, 0x700
+    jz pk_cosa
+    cmp ebp, {PO_TRAMPA}
+    jne pk_no
+    cmp ecx, 0x100
+    jne pk_no
+pk_cosa:
     and edx, 0x1f
     imul edx, edx, 0x58
     movsx edx, word ptr [edx + 0x535f0c]
@@ -7178,6 +7187,8 @@ pg_ok = place('pg_ok', f'''
     cmp edx, 4
     je pk_no
     cmp ebp, {PO_TUMBA}
+    je pk_si
+    cmp ebp, {PO_TRAMPA}
     je pk_si
     xor ebx, ebx
 pk_cap:
@@ -7390,7 +7401,7 @@ pr_end:
 # 0x46c470(ejército, 0) en pozo y trampa o 0x46c470(ejército, 1) en remolino, como el disband. 0x46c470 suelta el
 # grupo en movimiento (0x485c00): en el tic siguiente 0x49e280 devuelve -1 y el movimiento se corta; los voladores
 # que sobrevivan quedan en la casilla. Si murió alguno: el registro queda descubierto para ese jugador (la trampa,
-# detonada y vista por todos), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
+# con una explosión más, ver TR_USOS), 0x441290, el mapa y, en la PC de ese jugador ([0x560b20]), el aviso y el sonido de
 # muerte de héroe (0x4465e0(7, g): RuinDie o RuinDie2; g al azar con rdtsc, que no toca el generador del juego). En
 # una trampa suena además, a la vez, la explosión FX\Burst.wav (sonido PO_SND; pedido del usuario, 21/10/2026): con la
 # misma condición que el 7 (bit 0x20 de [0x564d08]), 0x4eca00(id) busca el buffer en la lista 0x5a6f50 y 0x4e6fd0(0, 0)
@@ -7574,8 +7585,8 @@ po_step = place('po_step', f'''
     je pt_end
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TRAMPA}
     jne pt_mark
-    cmp byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}], 0
-    jne pt_end
+    cmp byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}], {TR_USOS}
+    jae pt_end
 pt_mark:
     mov byte ptr [ebx + {po_pend:#x}], al
 pt_end:
@@ -7621,6 +7632,11 @@ pd_po:
     movzx eax, byte ptr [edx*8 + {PO_TAB + 6:#x}]
     bt eax, ebx
     jc pd_pon
+    cmp byte ptr [edx*8 + {PO_TAB + 4:#x}], {PO_TRAMPA}
+    jne pd_act
+    cmp byte ptr [edx*8 + {PO_TAB + 5:#x}], {TR_USOS}
+    jae pd_pon
+pd_act:
     movsx ecx, word ptr [edx*8 + {PO_TAB:#x}]
     sub ecx, esi
     jge pd_dx
@@ -7785,8 +7801,7 @@ pf_ejf:
 pf_trap:
     cmp byte ptr [ebp + 4], {PO_TRAMPA}
     jne pf_vis
-    mov byte ptr [ebp + 5], 1
-    mov byte ptr [ebp + 6], 0xff
+    inc byte ptr [ebp + 5]
     mov eax, ebx
     shl eax, 4
     cmp byte ptr [eax + 0x55edc4], 0
@@ -7875,8 +7890,8 @@ qs_loop:
     lea edx, [ebx*8 + {PO_TAB:#x}]
     cmp byte ptr [edx + 4], {PO_TRAMPA}
     jne qs_next
-    cmp byte ptr [edx + 5], 0
-    jne qs_next
+    cmp byte ptr [edx + 5], {TR_USOS}
+    jae qs_next
     mov ecx, dword ptr [esp]
     movzx eax, byte ptr [edx + 6]
     bt eax, ecx
@@ -8082,8 +8097,8 @@ qtf:
     movzx eax, word ptr [esi + 6]
     cmp eax, {PO_MAX}
     jae 0x461d5d
-    cmp byte ptr [eax*8 + {PO_TAB + 5:#x}], 0
-    je 0x461d5d
+    cmp byte ptr [eax*8 + {PO_TAB + 5:#x}], {TR_USOS}
+    jb 0x461d5d
     cmp word ptr [esi + 0xa], 0
     jne 0x461d5d
     jmp 0x461d4d
@@ -8143,8 +8158,8 @@ qta:
 # casilla es (columna + [ebp+0x28], fila + [ebp+0x2a]), las mismas que 0x45857e copia a las celdas). Solo llegan las
 # celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
 # es su dueño o un aliado mutuo con vista aliada (fogally). Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
-# 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa, 6..9 trampa detonada (humea), 10..12 tumba, lápida y cruz
-# (+5 del registro), PO_REMO0.. remolino. Remolino y trampa detonada se animan como el agua con la fase [ebp+0x3c] & 3
+# 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa (mina; gastada no se dibuja), 6..9 sin uso, 10..12 tumba, lápida y cruz
+# (+5 del registro), PO_REMO0.. remolino. El remolino se anima como el agua con la fase [ebp+0x3c] & 3
 # que 0x456fdc avanza cada tic de la animación del mapa. El remolino ocupa 3x3 casillas (pedido del usuario,
 # 22/10/2026; solo mata la del medio): cada celda de agua sin edificio ni estructura pinta, por cada remolino
 # descubierto en ella o en una de sus 8 vecinas, la pieza (dy + 1) * 3 + (dx + 1) de esa fase, con (dx, dy) = celda -
@@ -8307,12 +8322,9 @@ pw_vis:
     cmp eax, {PO_TRAMPA}
     jne pw_tumba
     mov edi, 5
-    cmp byte ptr [ebx + 5], 0
-    je pw_sheet
-    movzx edi, word ptr [ebp + 0x3c]
-    and edi, 3
-    add edi, 6
-    jmp pw_sheet
+    cmp byte ptr [ebx + 5], {TR_USOS}
+    jb pw_sheet
+    jmp pw_end
 pw_tumba:
     cmp eax, {PO_TUMBA}
     jne pw_sheet
@@ -10534,7 +10546,7 @@ orr_x:
 # ---- Construir trampas (PENDIENTE-pozos-y-trampas.md, parte 7). Un grupo con un ejército (no héroe) cuyo registro
 # tiene el bono "Trap" construye, desde su menú de órdenes (diálogo 0x1f = RES 34, renglón nuevo TR_TXT / TR_HOT),
 # una trampa oculta en la casilla del líder, al costo de fundar una ciudad. Casilla: la de una tumba (pg_ok
-# PO_TUMBA: tierra transitable, libre, sin camino, ciudad, sitio ni estructura) y lugar en la tabla. Confirma con el
+# PO_TRAMPA: tierra transitable, libre, sin ciudad, sitio ni ruina; camino sí) y lugar en la tabla. Confirma con el
 # diálogo de reconstruir (TR_MARK) y la orden viaja como TR_PKT (bando, x, y): en todas las PC tr_recv vuelve a
 # comprobar todo, cobra y agrega {x, y, PO_TRAMPA, 0, bit del dueño, dueño}. La IA no la usa.
 TRAP = b'trap'      # bono de combate (nombre +0xd6), no de movimiento
@@ -10552,7 +10564,7 @@ tr_check = place('tr_check', f'''
     jae tk_out
     mov esi, edi
     mov edi, ebp
-    mov ebp, {PO_TUMBA}
+    mov ebp, {PO_TRAMPA}
     call {pg_ok:#x}
     jnz tk_out
     movsx ebx, word ptr [0x537ce8]
@@ -10687,7 +10699,7 @@ tr_recv = place('tr_recv', f'''
     jae tv_x
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
-    mov ebp, {PO_TUMBA}
+    mov ebp, {PO_TRAMPA}
     call {pg_ok:#x}
     jnz tv_x
     push ebx
@@ -11902,8 +11914,35 @@ def remolino(fase):
     return im
 remolinos = [remolino(-k * math.pi / 4) for k in range(4)]
 remo_piezas = [r.crop((48 * (k % 3), 48 * (k // 3), 48 * (k % 3) + 48, 48 * (k // 3) + 48)) for r in remolinos for k in range(9)]
+# Trampa = mina (pedido del usuario, 22/10/2026): una bola de hierro chica con 8 puntas, iluminada desde arriba a la
+# izquierda, con un brillo y su sombra en el suelo. Reemplaza a la puerta trampa de prueba (cuadro 5).
+def mina():
+    im = Image.new('P', (48, 48), 11); im.putpalette(po_pal)
+    MX, MY, R = 23.5, 22.5, 8.5
+    for y in range(48):
+        for x in range(48):
+            if ((x - MX - 2) / 12) ** 2 + ((y - MY - 11) / 4) ** 2 < 1:      # sombra
+                im.putpixel((x, y), po_color((22, 20, 18)))
+    for y in range(48):                                                    # puntas: conos finos de R - 1 a R + 5
+        for x in range(48):
+            for k in range(8):
+                a = k * math.pi / 4 + math.pi / 8
+                u = (x - MX) * math.cos(a) + (y - MY) * math.sin(a)        # a lo largo de la punta
+                w = -(x - MX) * math.sin(a) + (y - MY) * math.cos(a)       # de costado
+                if R - 1 < u < R + 5 and abs(w) < 0.4 + 1.3 * (R + 5 - u) / 6:
+                    v = 55 + 90 * (0.5 + 0.5 * (-math.cos(a) - math.sin(a)) / 1.42) - (25 if w > 0.3 else 0)
+                    im.putpixel((x, y), po_color((v, v, v * 1.05)))
+    for y in range(48):
+        for x in range(48):
+            dx, dy = (x - MX) / R, (y - MY) / R
+            if dx * dx + dy * dy >= 1: continue
+            dz = math.sqrt(1 - dx * dx - dy * dy)
+            luz = max(0, (-dx - dy + dz) / 1.73)
+            v = 30 + 130 * luz + (70 if luz > 0.95 else 0)
+            im.putpixel((x, y), po_color((v, v, v * 1.08)))
+    return im
 po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
-cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [cuadro_ruina('trapdoor', 0)] + detonada
+cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
            + [tumba, lapida, cruz] + remo_piezas)
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):

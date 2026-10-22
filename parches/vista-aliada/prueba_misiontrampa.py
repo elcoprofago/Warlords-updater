@@ -8,7 +8,7 @@
 #   T2 (5,30)  dist 25, demasiado lejos                 -> no
 #   T3 (12,12) dueño en paz                             -> no
 #   T4 (15,5)  enemiga, no vista por UI                 -> no
-#   T5 (8,8)   enemiga, vista, ya detonada              -> no
+#   T5 (8,8)   enemiga, vista, gastada (3 explosiones)  -> no
 #   T6 (9,9)   propia                                   -> no
 #   P7 (7,7)   un pozo visto, no una trampa             -> no
 #   T8 (20,20) dist 15, enemiga, vista, entera          -> candidata
@@ -22,7 +22,7 @@ def load(path):
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
 ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
-PO_MAX, PO_REC, PO_TRAMPA, PO_POZO, QT = 64, 8, 2, 0, 13
+PO_MAX, PO_REC, PO_TRAMPA, PO_POZO, QT, TR_USOS = 64, 8, 2, 0, 13, 3
 PO_SAVE = AV[0] + AV[1].index(b'POZO' + bytes(4 + PO_MAX * PO_REC)); PO_N, PO_TAB = PO_SAVE + 4, PO_SAVE + 8
 k = AV[1].index(bytes.fromhex('6031db0fb683'))                 # po_fall: pushad; xor ebx, ebx; movzx eax, byte [ebx + po_pend]
 assert AV[1].find(bytes.fromhex('6031db0fb683'), k + 1) < 0
@@ -34,7 +34,7 @@ HERO = 1                                  # ejército 1 = el héroe de UI; 2 = o
 STUB = 0x100000; STACK = 0x200000; END = 0x1fff00; OUT = 0x101000; USED = 0x101100; FMT = 0x101200; BUF = 0x101400
 M = 1 << UI
 TRAPS = [(10, 5, PO_TRAMPA, 0, M, ENEMY), (6, 5, PO_TRAMPA, 0, M, ENEMY), (5, 30, PO_TRAMPA, 0, M, ENEMY),
-         (12, 12, PO_TRAMPA, 0, M, PEACE), (15, 5, PO_TRAMPA, 0, 0, ENEMY), (8, 8, PO_TRAMPA, 1, 0xff, ENEMY),
+         (12, 12, PO_TRAMPA, 0, M, PEACE), (15, 5, PO_TRAMPA, 0, 0, ENEMY), (8, 8, PO_TRAMPA, TR_USOS, 0xff, ENEMY),
          (9, 9, PO_TRAMPA, 0, M, UI), (7, 7, PO_POZO, 0, M, 0xff), (20, 20, PO_TRAMPA, 0, M, ENEMY)]
 CITIES = [((10, 7), ENEMY, True, 'Afland'), ((30, 30), ENEMY, True, 'Belgor'), ((4, 28), PEACE, False, 'Arrasada')]
 HERO_NAME = 'Heroe Uno'
@@ -171,6 +171,8 @@ for pick, idx in ((0, 0), (1, 8)):
           and qtype(g) == QT and target(g) == (idx, ENEMY) and g['out'][0] == 1
           and struct.unpack_from('<h', g['out'], 2)[0] == HERO and struct.unpack_from('<h', g['out'], 0xa)[0] == 0,
           f"{g['out'].hex()} {g['rand']}")
+g = gen([6, 0], traps=TRAPS[:5] + [TRAPS[5][:3] + (TR_USOS - 1,) + TRAPS[5][4:]] + TRAPS[6:])
+check('gen: T5 con un uso todavía (2 explosiones), es candidata (3 candidatas)', g['rand'][1]['n'] == 3, g['rand'])
 g = gen([6, 0], war=(ENEMY, PEACE))
 check('gen: en guerra también con el de T3, entra (3 candidatas)', g['rand'][1]['n'] == 3 and target(g) == (0, ENEMY), g['rand'])
 g = gen([6, 0], q=3)
@@ -201,7 +203,7 @@ def with_quest(tgt, a=0, typ=QT, hero=HERO, **kw):
     b = Bench(**kw)
     b.mu.mem_write(0x55edc4 + UI * 16, struct.pack('<BBhhhhhhh', 1, 0, hero, typ, tgt, ENEMY, a, 0, 2))
     return b
-def det(traps, i, st=1):
+def det(traps, i, st=TR_USOS):
     t = list(traps); t[i] = t[i][:3] + (st, 0xff) + t[i][5:]; return t
 DET0 = det(TRAPS, 0)
 def arrive(xy, a=1, traps=DET0, **kw):
@@ -240,7 +242,9 @@ for nombre, typ, tgt, xy in [('llega: escolta tipo 1 a la ciudad 0, igual al ori
 for nombre, traps, a, st in [('turno: trampa entera, sigue', TRAPS, 0, 0),
                              ('turno: detonada por otro, fracasa', DET0, 0, 2),
                              ('turno: detonada por él, sigue', DET0, 1, 0),
-                             ('turno: detonada otra trampa, sigue', det(TRAPS, 8), 0, 0)]:
+                             ('turno: detonada otra trampa, sigue', det(TRAPS, 8), 0, 0),
+                             ('turno: explotó 1 vez por otro, le quedan usos, sigue', det(TRAPS, 0, 1), 0, 0),
+                             ('turno: explotó 2 veces por otro, le queda 1, sigue', det(TRAPS, 0, 2), 0, 0)]:
     b = with_quest(0, a, traps=traps)
     end = b.run(0x461a60, (0, 0, 0, 0, 0, 1))
     check(nombre, end == END and b.saved_ok() and b.status() == st, f'status={b.status()}')

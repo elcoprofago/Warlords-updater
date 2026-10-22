@@ -3,7 +3,7 @@
 # Menú: br_menu (desde su entrada) llama a tr_check, que deja TR_FLAG; el grupo de juguete está en 0x56ea94.
 # Diálogo: br_rebtxt con TR_MARK; tr_send arma TR_PKT (0x4dd3b0 de mentira) o sigue a 0x4b9ce0 si no es la trampa.
 # Red: tr_recv (desde 0x4b6a22) con un paquete de juguete; 0x43fd60, 0x4057a0 y el redibujo de mentira.
-# Controles: héroe con "Trap", sin el bono, casilla con camino, agua, ciudad u ocupada por un pozo, tabla llena, no es su
+# Controles: héroe con "Trap", sin el bono, puente, ruina, agua, ciudad u ocupada por un pozo, tabla llena, no es su
 # turno; en la red: otra máquina, sin oro, casilla mala, tabla llena, bando de la computadora.
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
@@ -46,7 +46,7 @@ class Juego:
         for y in range(30):
             for x in range(40):
                 t = 1 if x >= 30 else 0
-                w2 = 1 | (0x100 if x == 10 else 0) | (0x300 if (x, y) == (12, 12) else 0)
+                w2 = 1 | (0x100 if x == 10 or (x, y) == (31, 3) else 0) | (0x300 if (x, y) == (12, 12) else 0) | (0x200 if (x, y) == (14, 14) else 0)
                 mu.mem_write(casilla(x, y), struct.pack('<HHB', t, w2, 0))
         mu.mem_write(0x537e2a, struct.pack('<h', 0))   # sin ciudades: ni capitales ni puentes que buscar
         mu.mem_write(0x56950e, struct.pack('<h', CIUDAD))
@@ -100,7 +100,9 @@ ver('control: sin el bono', menu([(3, '', ['Landing'])])[0], 0)
 ver('control: "Trap" como bono de movimiento no vale', menu([(3, 'Landing', ['Carrier', 'Trap'])])[0], 0)
 ver('control: solo un héroe con "Trap" (ranura 0x10)', menu([(0x10, 'Trap', [])])[0], 0)
 ver('control: "Traps" no es "Trap"', menu([(3, 'Traps', [])])[0], 0)
-ver('control: casilla con camino', menu([(3, 'Trap', [])], x=10)[0], 0)
+ver('casilla con camino: se puede (pedido del 22/10/2026)', menu([(3, 'Trap', [])], x=10)[0], 1)
+ver('control: puente (agua con camino)', menu([(3, 'Trap', [])], x=31, y=3)[0], 0)
+ver('control: ruina (cosa 2)', menu([(3, 'Trap', [])], x=14, y=14)[0], 0)
 ver('control: ciudad', menu([(3, 'Trap', [])], x=12, y=12)[0], 0)
 ver('control: agua', menu([(3, 'Trap', [])], x=33)[0], 0)
 ver('control: ya hay un pozo ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
@@ -155,7 +157,8 @@ ver('  justo con el oro del costo', recibir(oro=CIUDAD)[1], [(2, -CIUDAD)])
 NADA = ([], [], True, 0)
 ver('control: lo manda otra máquina', recibir(maquina=0), NADA)
 ver('control: no alcanza el oro', recibir(oro=CIUDAD - 1), NADA)
-ver('control: casilla con camino', recibir(x=10)[:3], NADA[:3])
+ver('casilla con camino: se acepta', recibir(x=10)[:2], ([(10, 7, 2, 0, 4, 2)], [(2, -CIUDAD)]))
+ver('control: puente', recibir(x=31, y=3)[:3], NADA[:3])
 ver('control: agua', recibir(x=33), NADA)
 ver('control: bando de la computadora', recibir(humano=False), NADA)
 ver('control: bando fuera de rango', recibir(p=9)[:3], NADA[:3])

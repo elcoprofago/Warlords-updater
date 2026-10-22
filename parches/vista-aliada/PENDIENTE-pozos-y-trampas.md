@@ -351,14 +351,18 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
 - Probado en unicorn: prueba_pozos.py (piezas, fases, controles de tierra, puente, no descubierto, borde del mapa,
   dos remolinos vecinos, pozo encima), prueba_trampas.py y prueba_misiontrampa.py, todo OK. En el juego: tarea 24.
 
-## Pedidos del 22/10/2026 (después de 1.0.57.0): nada hecho todavía
-1. **Dibujo nuevo de la trampa construida:** una mina, o sea una bola metálica chica con puntas, hecha por código
-   como el remolino. Más adelante quizá también se pueda construir en el agua (no pedido todavía).
-2. **Tres usos:** la trampa explota tres veces antes de desaparecer. Hoy el registro de 8 bytes usa +5 para el
-   estado, +6 para la máscara de quién la descubrió y +7 para el dueño. Hay que ver dónde se guardan los usos que
-   le quedan, sin cambiar el formato del SAV, quizá en bits libres de +5. Mientras le queden usos, sigue visible para
-   los jugadores que ya la descubrieron, al pasar cerca o al caer en ella (la máscara de +6 ya hace eso).
-   Hay que revisar qué hacen con las explosiones intermedias la misión del tipo 13 y la tumba.
-3. **Construir sobre caminos:** hoy el chequeo para construir trampas (tr_check / pg_ok) no deja hacerlo sobre un
-   camino. Hay que permitirlo.
-Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, pedidos del 22/10/2026».
+## Pedidos del 22/10/2026 (después de 1.0.57.0): hechos (1.0.58.0)
+1. **Mina:** cuadro 5 de pozos.pcx = `mina()` en build.py (bola de hierro iluminada arriba a la izquierda, 8 puntas
+   finas, brillo y sombra). Reemplaza a la puerta trampa. Construir en el agua: no pedido todavía.
+2. **Tres usos (TR_USOS = 3):** +5 de la trampa = explosiones que lleva; activa mientras +5 < 3, sin cambiar el SAV (un
+   SAV de antes trae 1 en las detonadas: les quedan 2). po_fall suma 1 y pone solo el bit de quien cayó (antes
+   0xff). Gastada: no mata (po_step), no se descubre (pd_po la salta), no se dibuja (po_draw), y el registro queda
+   (los nombres Afland01.. dependen del orden de la tabla), así que en esa casilla no se puede volver a construir.
+   Los cuadros 6..9 (agujero con humo) quedan sin uso. Misión 13: candidata si le quedan usos (qt_scan); +0xa se marca
+   en cualquier explosión del jugador; fracasa solo cuando la trampa se gasta sin que la haya detonado el jugador
+   (qt_fail). La tumba no cambia: solo la dejan los pozos.
+3. **Caminos:** dato averiguado: el byte +3 «estructura» de la casilla es el mismo campo que los bits 8-10 de la palabra
+   +2 (1 camino o puente). pg_ok con ebp = PO_TRAMPA (tr_check y tr_recv, antes PO_TUMBA) acepta el valor 1; el
+   puente queda fuera porque su terreno es agua. Pozos, remolinos y tumbas siguen sin ir sobre caminos.
+- Pruebas en unicorn: prueba_pozos, prueba_trampas (camino sí; puente y ruina no) y prueba_misiontrampa (usos
+  intermedios), todo OK. En el juego: tareas 26 y 27 (actualizadas).
