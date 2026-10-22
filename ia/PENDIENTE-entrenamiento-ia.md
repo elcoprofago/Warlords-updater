@@ -636,6 +636,9 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   Ruins apagada). La tanda en curso corre **con las 47 ruinas de Hexagon, todas visibles**: el azar de su contenido
   y guardián sigue ahí. (Con Hidden Ruins apagada tampoco hay pozos ni remolinos.) Si hace falta quitarlo, la vía
   es la descartada: sacar las ruinas del mapa o igualarlas.
+  **Retomado (21/10/2026):** ia\sin_ruinas.py vuelve (del commit e7aff43): de la guardada arma
+  SAVES\<guardada>_SR.SAV con las 47 ruinas exploradas, vacías y sin guardián, sin tocar el mapa ni la original.
+  Ya armada: Tanda_hex_alianzas_SR.SAV (verificado: 47 de 47). Se usa en la próxima tanda.
 - Ojo, dos límites que el bando simple no resuelve: (1) los equipos 013|457 no quedaron parejos en Hexagon (013
   ganó 37 de 48); el A/B lo compensa alternando, pero suma varianza. (2) las reglas de alianzas se activaron muy poco
   en Hexagon (16 refugios en 48 partidas): con menos azar se mide mejor, pero si casi no se activan el efecto
