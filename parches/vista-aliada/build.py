@@ -12011,9 +12011,23 @@ tumba = po_dibujo('tumba.PCX', (1, 1, 88, 89))
 lapida = po_dibujo('lapida.pcx')
 cruz_im = Image.open(os.path.join(PICTS, 'cruz.pcx'))
 assert cruz_im.size == (21, 21)
-cruz = po_cuadro(cruz_im.convert('RGB'), [(x, y) for x in range(21) for y in range(21)
-       if 8 <= x <= 11 and 4 <= y <= 15 or 5 <= x <= 14 and 7 <= y <= 9
-       or x >= 8 and y >= 14 and cruz_im.getpixel((x, y)) in (16, 130, 160, 162, 211)])
+# Cruz (pedido del usuario, 22/10/2026: con el formato de la tumba): el montículo de la tumba sin su lápida (lo gris
+# arriba a la derecha) y en su lugar los dos palos de cruz.pcx al doble, apoyados en el montículo.
+_tc = Image.open(os.path.join(PICTS, 'tumba.PCX')).crop((1, 1, 88, 89)); _tr = _tc.convert('RGB')
+_cr = cruz_im.convert('RGB')
+_cz = Image.new('RGB', (87, 88)); _czp = []
+for x in range(87):
+    for y in range(88):
+        p = _tr.getpixel((x, y))
+        if _tc.getpixel((x, y)) in (11, 101) or x >= 38 and (y <= 41 or y <= 47 and max(p) - min(p) < 40): continue
+        _cz.putpixel((x, y), p); _czp.append((x, y))
+for x, y in [(x, y) for x in range(21) for y in range(21) if 8 <= x <= 11 and 4 <= y <= 15 or 5 <= x <= 14 and 7 <= y <= 9]:
+    for a in range(2):
+        for b in range(2):
+            q = (44 + (x - 10) * 2 + a, 49 + (y - 15) * 2 + b)
+            _cz.putpixel(q, _cr.getpixel((x, y)))
+            if q not in _czp: _czp.append(q)
+cruz = po_cuadro(_cz, _czp)
 import math, random
 _lum = lambda i: sum(po_pal[3 * i:3 * i + 3]) / 3
 _gris = lambda i: max(po_pal[3 * i:3 * i + 3]) - min(po_pal[3 * i:3 * i + 3]) < 30

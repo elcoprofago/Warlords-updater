@@ -99,7 +99,7 @@ descubre** nada. Construir trampas se prueba en la tarea 26.
 4. Mandá a propósito un ejército barato (no voladores) a un pozo descubierto, eligiendo esa casilla como destino:
    tiene que morir, salir «Your army fell into the Well of …!» y sonar el grito de muerte de héroe. Además tiene que
    aparecer una tumba, lápida o cruz a 2 casillas o menos del pozo (nunca encima). Si tirás otro ejército, otra más,
-   en otra casilla. Si tenés un barco
+   en otra casilla (desde 1.0.61.0 la cruz es el montículo de la tumba con una cruz en lugar de la piedra). Si tenés un barco
    descartable, lo mismo con un remolino («Your army was swallowed by the Maelstrom of …!»).
 5. Si podés, probá también con un grupo que tenga un **volador**: el volador tiene que sobrevivir y quedarse ahí.
 6. Guardá la partida, salí y volvé a cargarla: los pozos y remolinos descubiertos y las tumbas tienen que seguir
