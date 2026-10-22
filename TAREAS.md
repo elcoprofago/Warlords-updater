@@ -17,8 +17,8 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **28.** Revisar el Monitor de IA 1.0.11 (22/10/2026)
-Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.11». Fijate que tenga:
+- [ ] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
+Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
 a) el botón de configuración nuevo, a la derecha de los semáforos, que cambia de imagen al pasar el mouse y al
 apretarlo; b) la barra verde «Serie» arriba de las de Tanda y Partida; c) el interruptor «modo sleep» un poco
 más grande. Si falta algo, decime cuál.
