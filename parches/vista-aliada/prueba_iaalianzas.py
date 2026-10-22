@@ -396,7 +396,7 @@ def al_surv_addr():
     for k in range(rva(ia_turn), len(img) - 5):
         if img[k] == 0xe8:
             t = 0x400000 + k + 5 + struct.unpack_from('<i', img, k + 1)[0]
-            if AI_ALLY < t < AI_ALLY + 0x1000 and img[rva(t) - 1] in (0xcc, 0xc3, 0x90) and t != AI_ALLY:
+            if AI_ALLY < t < AI_ALLY + 0x2000 and img[rva(t) - 1] in (0xcc, 0xc3, 0x90) and t != AI_ALLY:
                 if k > rva(t): return t
 AL_SURV = al_surv_addr()
 print('al_surv', hex(AL_SURV))
