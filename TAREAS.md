@@ -10,9 +10,30 @@ Sorteo están acá (tarea 18).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
 3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.50.0 (remolinos, distancia y 1 de cada 5 pasos).
-4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+4. **Tarea 26** (construir trampas), cuando termine la tanda de la 25.
+5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 26. Construir una trampa en el juego (21/10/2026)
+Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
+fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
+con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
+0. **Antes:** el parche nuevo (vista-aliada 1.0.51.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
+   estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
+   trampas» y lo instalo.
+1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
+   Move Bonus (tiene que aparecer en la lista, como Landing o Carrier). Guardá el bando.
+2. Empezá una partida nueva **contra la computadora** con ese bando, y comprá o juntá esa unidad.
+3. Llevá un grupo con esa unidad a una casilla de **tierra libre** (sin camino, ciudad, ruina ni sitio) y abrí el menú
+   de órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. En un camino o en una ciudad, apagado.
+4. Elegilo: sale la ventana de reconstruir con «Building a trap» y el costo de una ciudad. Si no te alcanza el oro, el
+   OK queda apagado. Con oro, dale OK: tiene que descontarse el oro y aparecer la trampa (puerta cerrada) en esa casilla.
+5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y la trampa quedar **detonada**
+   (agujero con humo). En esa casilla ya no se puede construir otra.
+6. Guardá, salí y volvé a cargar: la trampa (armada o detonada) tiene que seguir.
+7. Anotá abajo qué viste (en especial si el renglón «Build Trap» queda mal ubicado o tapa algo del menú).
+Resultado:
 
 ## 24. Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
 Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubren al pasar, matan al que cae y ahora

@@ -280,6 +280,24 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
   doble que los pozos (por el agua se circula menos; no vio ninguno), tope 16 pozos y 32 remolinos; descubrir a
   **una casilla** (PO_RADIO = 1, no el radio del grupo); un grupo de solo voladores no descubre. Se mantuvo el
   contador de 10 pasos de las ruinas (con radio 1 descubre en 1 de cada 10 pasos): si el usuario los nota difíciles
-  de descubrir, es eso. (1.0.50.0, pedido del usuario: 1 de cada 5 pasos, contador 0 o 5.) Trampas: no vio cómo construirlas, porque es la parte 7 (sin hacer).
-- Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía).
+  de descubrir, es eso. (1.0.50.0, pedido del usuario: 1 de cada 5 pasos, contador 0 o 5.) Trampas: no vio cómo construirlas, porque era la parte 7 (hecha después, ver abajo).
+- Parte 7, construir trampas: hecha (21/10/2026, 1.0.51.0). Bono nuevo TERRAIN\SUBTYPE\trap.STT ("trap", sin
+  distinguir mayúsculas, en cualquiera de los 4 bonos del registro; los héroes no cuentan). Menú de órdenes del grupo
+  (diálogo 0x1f = RES 34): renglón nuevo «Build Trap» al final (texto 0x17, zona 0x18; los 12 renglones a 16 px desde
+  y = 53). br_menu llama a tr_check (por el puntero TR_CHKP, porque está después en build.py), que deja TR_FLAG y la
+  casilla del líder (TR_X, TR_Y): se enciende si es su turno, algún ejército del grupo tiene "trap", la casilla pasa
+  pg_ok PO_TUMBA (tierra transitable, sin camino, ciudad, sitio, estructura ni otro registro) y hay lugar en la
+  tabla. tr_init (0x4affc2) habilita la zona, tr_hover (0x4b0450) pone texto y color, tr_click (0x4b0487) cierra el
+  menú y abre el diálogo de reconstruir con [0x587e5c] = TR_MARK (0x7fff): br_rebdraw no busca imagen, br_cost da
+  el costo de una ciudad, br_rebtxt muestra «Building a trap» y el OK se apaga solo si no alcanza el oro. tr_send
+  (0x4b6236) manda TR_PKT 0x2a3 (bando, x, y); tr_recv (antes que or_recv) en todas las PC exige humano de la
+  máquina que lo mandó, vuelve a pasar pg_ok, tabla y oro, cobra (0x43fd60) y agrega {x, y, PO_TRAMPA, 0, bit del
+  dueño, dueño}. Probado en unicorn (prueba_trampas.py), no en el juego (TAREAS 26).
+  Diferencias con el diseño (§ Bono "trap"): con la tabla llena la opción queda apagada, sin aviso; sin oro la
+  opción se enciende igual y el OK del diálogo queda apagado (así el jugador ve el costo). El Army List no nombra
+  "Trap" (solo Landing, Carrier, Cabotage).
+  No se armó en C:\Warlords3: había una tanda corriendo con DarklordAV.exe; se armó y probó en una carpeta aparte.
+  Hay que volver a correr build.py sin argumentos cuando termine (queda en TAREAS 26 como condición).
+- Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía). Sin ella, en
+  red cada PC tiene sus propios pozos; las trampas construidas sí viajan, pero sobre tablas distintas.
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

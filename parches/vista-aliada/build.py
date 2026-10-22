@@ -4087,8 +4087,16 @@ brb_out:
     ret
 ''')
 # Habilitación del menú (salidas de 0x4b0660, esi = búfer, bl = no es su turno, bp = líder). Raze (+8) y Build (+0xc)
-# se encienden también con un puente vecino entero / derribado.
+# se encienden también con un puente vecino entero / derribado. Además anota en TR_FLAG si se puede construir una
+# trampa en la casilla del líder (tr_check, más abajo con los pozos; se llama por TR_CHKP porque está después).
+tr_vars = place_data('tr_vars', bytes(8))
+TR_FLAG, TR_X, TR_Y, TR_CHKP = tr_vars, tr_vars + 2, tr_vars + 4, place_data('tr_chkp', bytes(4))
+# Código de la trampa en el diálogo de reconstruir ([0x587e5c]): >= BR_CODE, así br_rebdraw no busca imagen y br_cost
+# le pone el costo de fundar una ciudad; br_rebtxt le pone su texto y tr_send la manda por red.
+TR_MARK = 0x7fff
+tr_dlgtxt = place_data('tr_dlgtxt', cstr_('Building a trap'))
 br_menu = place('br_menu', f'''
+    mov byte ptr [{TR_FLAG:#x}], 0
     test bl, bl
     jnz brm_out
     test bp, bp
@@ -4097,6 +4105,7 @@ br_menu = place('br_menu', f'''
     imul eax, eax, 0x1c
     movsx edi, word ptr [eax + 0x54fe52]
     movsx ebp, word ptr [eax + 0x54fe54]
+    call dword ptr [{TR_CHKP:#x}]
     cmp byte ptr [esi + 8], 0
     jne brm_reb
     mov al, byte ptr [0x53c393]
@@ -6251,9 +6260,11 @@ br_rebdraw = place('br_rebdraw', f'''
     jge 0x4b64e3
     jmp 0x4b64a7
 ''')
-# Texto "Rebuilding %s" (0x4b64f0).
+# Texto "Rebuilding %s" (0x4b64f0); la trampa, tr_dlgtxt como formato (0x4b6516 -> 0x4dd260(5, texto, 0)).
 br_rebtxt = place('br_rebtxt', f'''
     movsx eax, word ptr [0x587e5c]
+    cmp eax, {TR_MARK:#x}
+    je brx_trap
     cmp eax, {BR_CODE:#x}
     jl brx_site
     push 0
@@ -6270,6 +6281,10 @@ brx_site:
 brx_go:
     mov ecx, 0x589880
     jmp 0x4b650c
+brx_trap:
+    push 0
+    mov eax, {tr_dlgtxt:#x}
+    jmp 0x4b6516
 ''')
 # Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.
 br_cost = place('br_cost', f'''
@@ -9918,6 +9933,195 @@ orr_x:
     popad
     jmp 0x4b85bb
 ''')
+# ---- Construir trampas (PENDIENTE-pozos-y-trampas.md, parte 7). Un grupo con un ejército (no héroe) cuyo registro
+# tiene el bono "Trap" construye, desde su menú de órdenes (diálogo 0x1f = RES 34, renglón nuevo TR_TXT / TR_HOT),
+# una trampa oculta en la casilla del líder, al costo de fundar una ciudad. Casilla: la de una tumba (pg_ok
+# PO_TUMBA: tierra transitable, libre, sin camino, ciudad, sitio ni estructura) y lugar en la tabla. Confirma con el
+# diálogo de reconstruir (TR_MARK) y la orden viaja como TR_PKT (bando, x, y): en todas las PC tr_recv vuelve a
+# comprobar todo, cobra y agrega {x, y, PO_TRAMPA, 0, bit del dueño, dueño}. La IA no la usa.
+TRAP = b'trap'
+trapstr = place_data('trapstr', TRAP + b'\0')
+TR_TXT, TR_HOT = 0x17, 0x18
+TR_PKT = 0x2a3
+tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
+# Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
+tr_check = place('tr_check', f'''
+    pushad
+    mov word ptr [{TR_X:#x}], di
+    mov word ptr [{TR_Y:#x}], bp
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jae tk_out
+    mov esi, edi
+    mov edi, ebp
+    mov ebp, {PO_TUMBA}
+    call {pg_ok:#x}
+    jnz tk_out
+    movsx ebx, word ptr [0x537ce8]
+    cmp ebx, 8
+    jae tk_out
+    imul ebx, ebx, 0x4f0
+    movsx ecx, word ptr [ebx + 0x56eaa8]
+tk_army:
+    dec ecx
+    js tk_out
+    movsx eax, word ptr [ebx + ecx*2 + 0x56ea94]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 15
+    ja tk_army
+    shr eax, 5
+    and eax, 0xf
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {trapstr:#x}
+    call {recbon:#x}
+    test eax, eax
+    jz tk_army
+    mov byte ptr [{TR_FLAG:#x}], 1
+tk_out:
+    popad
+    ret
+''')
+caves['tr_chkp'] = struct.pack('<I', tr_check)
+# Habilitación (en 0x4affc2 de 0x4afec0, al abrir el menú, después de 0x4b0660).
+tr_init = place('tr_init', f'''
+    cmp byte ptr [{TR_FLAG:#x}], 1
+    sbb eax, eax
+    and eax, 2
+    push eax
+    push {TR_HOT:#x}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    jmp 0x4affc7
+''')
+# Texto y color (en 0x4b0450 de 0x4b0130; esi = zona bajo el mouse, [esp + 0x1c] = 1 al crear).
+tr_hover = place('tr_hover', f'''
+    cmp dword ptr [esp + 0x1c], 0
+    je th_col
+    push {tr_menutxt:#x}
+    push {TR_TXT:#x}
+    call 0x4dd240
+    add esp, 8
+th_col:
+    push 0
+    push 0
+    cmp esi, {TR_HOT:#x}
+    jne th_en
+    push 0xf
+    jmp th_set
+th_en:
+    cmp byte ptr [{TR_FLAG:#x}], 0
+    je th_dis
+    push 0x5c
+    jmp th_set
+th_dis:
+    push 0x56
+th_set:
+    push {TR_TXT:#x}
+    call 0x4dd2b0
+    add esp, 0x10
+    mov ecx, 0x588bd0
+    jmp 0x4b0455
+''')
+# Clic (en 0x4b0487 de 0x4b0460; eax = zona): cierra el menú y abre el diálogo de reconstruir con TR_MARK.
+tr_click = place('tr_click', f'''
+    cmp eax, {TR_HOT:#x}
+    je tc_trap
+    sub eax, 0xb
+    cmp eax, 0xb
+    ja 0x4b0496
+    jmp 0x4b048f
+tc_trap:
+    cmp byte ptr [{TR_FLAG:#x}], 0
+    je 0x4b0496
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    mov word ptr [0x587e5c], {TR_MARK:#x}
+    call 0x4b6180
+    pop edi
+    pop esi
+    ret
+''')
+# OK del diálogo (reemplaza «call 0x4b9ce0(índice, costo, jugador)» en 0x4b6236).
+tr_send = place('tr_send', f'''
+    cmp word ptr [esp + 4], {TR_MARK:#x}
+    jne 0x4b9ce0
+    sub esp, 8
+    mov ax, word ptr [esp + 0x14]
+    mov word ptr [esp], ax
+    mov ax, word ptr [{TR_X:#x}]
+    mov word ptr [esp + 2], ax
+    mov ax, word ptr [{TR_Y:#x}]
+    mov word ptr [esp + 4], ax
+    mov word ptr [esp + 6], 0
+    mov eax, esp
+    push 8
+    push eax
+    push {TR_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0x14
+    ret
+''')
+# Recepción (antes que or_recv; eax = tipo + 8, esi = paquete: +6 máquina que lo mandó, +0xc bando, x, y).
+tr_recv = place('tr_recv', f'''
+    cmp eax, {TR_PKT + 8:#x}
+    jne {or_recv:#x}
+    pushad
+    movsx ebx, word ptr [esi + 0xc]
+    cmp ebx, 8
+    jae tv_x
+    imul eax, ebx, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je tv_x
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    jne tv_x
+    movzx ecx, byte ptr [eax + {SIDE_MACHINE:#x}]
+    movsx edx, word ptr [esi + 6]
+    cmp ecx, edx
+    jne tv_x
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jae tv_x
+    movsx edi, word ptr [esi + 0x10]
+    movsx esi, word ptr [esi + 0xe]
+    mov ebp, {PO_TUMBA}
+    call {pg_ok:#x}
+    jnz tv_x
+    push ebx
+    push {TR_MARK:#x}
+    call 0x4b65e0
+    add esp, 8
+    movsx ebp, ax
+    imul eax, ebx, {SIDE:#x}
+    cmp ebp, dword ptr [eax + 0x536c14]
+    jg tv_x
+    neg ebp
+    push ebp
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    mov eax, dword ptr [{PO_N:#x}]
+    lea edx, [eax*8 + {PO_TAB:#x}]
+    mov word ptr [edx], si
+    mov word ptr [edx + 2], di
+    mov byte ptr [edx + 4], {PO_TRAMPA}
+    mov byte ptr [edx + 5], 0
+    mov cl, bl
+    mov al, 1
+    shl al, cl
+    mov byte ptr [edx + 6], al
+    mov byte ptr [edx + 7], bl
+    inc dword ptr [{PO_N:#x}]
+    call {po_rebuild:#x}
+    call {REDRAW:#x}
+tv_x:
+    popad
+    jmp 0x4b85bb
+''')
 # al_surv(p) cdecl, desde ia_turn: por cada pila de p anotada como amenazada en un turno anterior, evento 12 con
 # x, y donde estaba y n = 1 si su líder sigue vivo y es de p, 0 si no. Preserva todo.
 al_surv = place('al_surv', f'''
@@ -10668,7 +10872,13 @@ assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
 patch(0x46e892, asm('ja 0x46ed83', 0x46e892), asm(f'ja {tl_setclick:#x}', 0x46e892))
 assert rel(0x46ed83, 7) == bytes.fromhex('6633c05d5f5e5b')
 assert rel(0x4b6a16, 12) == bytes.fromhex('0fbf460483c0083d11020000')
-patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {or_recv:#x}', 0x4b6a22))
+patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tr_recv:#x}', 0x4b6a22))
+# Construir trampas (tr_*)
+patch(0x4affc2, asm('mov ecx, 0x588bd0', 0x4affc2), asm(f'jmp {tr_init:#x}', 0x4affc2))
+patch(0x4b0450, asm('mov ecx, 0x588bd0', 0x4b0450), asm(f'jmp {tr_hover:#x}', 0x4b0450))
+patch(0x4b0487, asm('sub eax, 0xb; cmp eax, 0xb; ja 0x4b0496', 0x4b0487),
+      asm(f'jmp {tr_click:#x}', 0x4b0487))
+patch(0x4b6236, asm('call 0x4b9ce0', 0x4b6236), asm(f'call {tr_send:#x}', 0x4b6236))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
 patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
 assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')
@@ -10813,6 +11023,27 @@ for k, (ti, hi) in enumerate(MENU):
     struct.pack_into('<I', buf, o + 0x1c, 16)
 new_list[35] = [vtxt, vhot]
 
+# Diálogo 34 (menú de órdenes del grupo, 0x1f en el código): renglón nuevo TR_TXT / TR_HOT (construir trampa) al final.
+# Los 12 renglones pasan a 16 píxeles entre sí desde el primero (53); cada zona de clic, 2 píxeles por encima de su
+# texto y de 16 de alto, conserva su x y su ancho.
+r34 = records(res, 34)
+ORD = [(0x15, 0x16)] + [(k, k + 10) for k in range(1, 11)] + [('new', 'new')]
+assert sorted(i for pair in ORD if pair[0] != 'new' for i in pair) == sorted(r34)
+p, t = r34[10]; assert t == 0x13
+ttxt = bytearray(res[p:p + 4 + SZ[0x13]])
+struct.pack_into('<I', ttxt, 4, TR_TXT)
+p, t = r34[20]; assert t == 3
+thot = bytearray(res[p:p + 4 + SZ[3]])
+struct.pack_into('<I', thot, 4, TR_HOT)
+for k, (ti, hi) in enumerate(ORD):
+    y = 53 + 16 * k
+    buf, o = (ttxt, 0) if ti == 'new' else (res, r34[ti][0])
+    struct.pack_into('<I', buf, o + 0xc, y)
+    buf, o = (thot, 0) if hi == 'new' else (res, r34[hi][0])
+    struct.pack_into('<I', buf, o + 0xc, y - 2)
+    struct.pack_into('<I', buf, o + 0x1c, 16)
+new_list[34] = [ttxt, thot]
+
 # Diálogo 7 (preparación): botón COIN clonado de Chat (id 80, butt_std en (436,80)), en SORTEO_X/Y y de
 # SORTEO_W x SORTEO_H; su dibujo es el ícono de Sorteo, en (0,0) de la hoja SORTEO_FILE (más abajo).
 r7 = records(res, 7)
@@ -10838,7 +11069,7 @@ setstr(dcb, 0x30, 16, 'Compare')
 setstr(dcb, 0x40, 64, 'Compare army units (DarkCompare)')
 new_list[86] = [dcb]
 
-for did in (115, 86, 35, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
+for did in (115, 86, 35, 34, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
     append(res, did, b''.join(new_list[did]))
 
 # Nombre del juego en los textos de los diálogos (ayudas de botón: +0x40, 64 bytes; texto tipo 0x12: +0x2c, se
@@ -11121,7 +11352,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'), ('trap', 'Trap'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
