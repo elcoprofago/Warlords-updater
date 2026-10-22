@@ -350,3 +350,15 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
   pieza de cada remolino descubierto; pw_put es el blit común.
 - Probado en unicorn: prueba_pozos.py (piezas, fases, controles de tierra, puente, no descubierto, borde del mapa,
   dos remolinos vecinos, pozo encima), prueba_trampas.py y prueba_misiontrampa.py, todo OK. En el juego: tarea 24.
+
+## Pedidos del 22/10/2026 (después de 1.0.57.0): nada hecho todavía
+1. **Dibujo nuevo de la trampa construida:** una mina, o sea una bola metálica chica con puntas, hecha por código
+   como el remolino. Más adelante quizá también se pueda construir en el agua (no pedido todavía).
+2. **Tres usos:** la trampa explota tres veces antes de desaparecer. Hoy el registro de 8 bytes usa +5 para el
+   estado, +6 para la máscara de quién la descubrió y +7 para el dueño. Hay que ver dónde se guardan los usos que
+   le quedan, sin cambiar el formato del SAV, quizá en bits libres de +5. Mientras le queden usos, sigue visible para
+   los jugadores que ya la descubrieron, al pasar cerca o al caer en ella (la máscara de +6 ya hace eso).
+   Hay que revisar qué hacen con las explosiones intermedias la misión del tipo 13 y la tumba.
+3. **Construir sobre caminos:** hoy el chequeo para construir trampas (tr_check / pg_ok) no deja hacerlo sobre un
+   camino. Hay que permitirlo.
+Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, pedidos del 22/10/2026».
