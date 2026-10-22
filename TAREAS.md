@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 29).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 30).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 25** (Hexagon con menos azar): la tanda está corriendo (paso 4); no hay que hacer nada hasta que termine.
-2. Cuando termine: decime «armá el parche de trampas» (tarea 26, paso 0) y hacé, en una misma partida contra la
+2. Cerrá el juego y decime «instalá vista-aliada 1.0.57» (tarea 29, paso 0). Después hacé la **29** y, en una misma partida contra la
    computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
@@ -17,7 +17,22 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
+- [ ] **29.** Bonos ordenados en el editor y habilidad «Bridge» (22/10/2026)
+Ahora **Bridge** es una habilidad especial (Bridge +1, +2, +3…: suma a la fuerza cuando se pelea sobre un puente en
+pie); **Trap** es un Combat Bonus y ya no un Move Bonus; Landing, Carrier y Cabotage son solo Move Bonus. Para que
+el editor lo muestre así hay un editor nuevo, **war3ed_av.exe** (el war3ed_ssg.exe de siempre no se tocó).
+0. Cerrá el juego y decime «instalá vista-aliada 1.0.57»: con el juego abierto no se puede reemplazar.
+1. Abrí **war3ed_av.exe** → Edit Army Data de una unidad. En los cuatro Move Bonus **no** tienen que estar «bridge» ni
+   «trap» (sí landing, carrier, cabotage). En Combat Bonus **no** tienen que estar landing, carrier, cabotage ni
+   bridge (sí «trap»). En Special Ability tiene que estar **«Bridge +N»** donde antes decía «Giantslayer +N».
+2. Las unidades que tenían «bridge» como Combat Bonus hay que pasarlas a la habilidad: Special Ability «Bridge +N» y
+   el número. **Nautilus** tiene hoy Combat Bonus bridge +5 **y** Lightning +5: una unidad tiene una sola habilidad
+   especial, así que elegí cuál de las dos le queda.
+3. En una partida, una unidad con Bridge peleando sobre un puente en pie: en el detalle de la batalla tiene que sumar
+   su valor; fuera del puente, o en un puente derribado, no. Los héroes no la usan.
+Resultado:
+
+- [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
 Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
 a) el botón de configuración nuevo, a la derecha de los semáforos, que cambia de imagen al pasar el mouse y al
 apretarlo; b) la barra verde «Serie» arriba de las de Tanda y Partida; c) el interruptor «modo sleep» un poco
@@ -47,9 +62,9 @@ Resultado:
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. Ya está: vista-aliada 1.0.56.0 quedó instalada en C:\Warlords3 (22/10/2026, al terminar la tanda de la 25).
-1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
-   Move Bonus (tiene que aparecer en la lista, como Landing o Carrier). Guardá el bando.
+0. Hace falta vista-aliada 1.0.57.0 instalada (tarea 29, paso 0): desde esa versión **Trap** es un Combat Bonus.
+1. Abrí el editor **war3ed_av.exe** (en C:\Warlords3) y a una unidad barata de tu bando (no un héroe) ponele **Trap**
+   como **Combat Bonus**. Guardá el bando. (Tus pikemen, lightinf, half_bra, FU_halfe y Zappers ya lo tienen ahí.)
 2. Empezá una partida nueva **contra la computadora** con ese bando, y comprá o juntá esa unidad.
 3. Llevá un grupo con esa unidad a una casilla de **tierra libre** (sin camino, ciudad, ruina ni sitio) y abrí el menú
    de órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. En un camino o en una ciudad, apagado.

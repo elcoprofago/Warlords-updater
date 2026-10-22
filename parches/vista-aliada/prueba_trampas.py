@@ -77,35 +77,37 @@ class Juego:
 
 print('-- menú: tr_check desde br_menu')
 def menu(ejs, x=5, y=7, turno=0, regs=(), p=0):
-    # ejs: (ranura, bonos) del grupo de p; el primero es el líder, en (x, y).
+    # ejs: (ranura, bono de combate, bonos de movimiento) del grupo de p; el primero es el líder, en (x, y).
     g = Juego(); mu = g.mu; g.poner(regs)
     mu.mem_write(0x537ce8, struct.pack('<h', p))
-    for i, (ranura, bonos) in enumerate(ejs, 1):
+    for i, (ranura, comb, bonos) in enumerate(ejs, 1):
         a = 0x54fe50 + i * 0x1c
         mu.mem_write(a + 2, struct.pack('<hh', x, y)); mu.mem_write(a + 0xe, struct.pack('<H', ranura | p << 5))
         if ranura < 16:
-            rec = 0x53c410 + ((p << 4) + ranura) * 0xfc + 0xb2
-            mu.mem_write(rec, b''.join(b.encode().ljust(9, b'\0') for b in bonos).ljust(36, b'\0'))
+            rec = 0x53c410 + ((p << 4) + ranura) * 0xfc
+            mu.mem_write(rec + 0xb2, b''.join(b.encode().ljust(9, b'\0') for b in bonos).ljust(36, b'\0'))
+            mu.mem_write(rec + 0xd6, comb.encode().ljust(9, b'\0'))
         mu.mem_write(p * 0x4f0 + 0x56ea94 + (i - 1) * 2, struct.pack('<h', i))
     mu.mem_write(p * 0x4f0 + 0x56eaa8, struct.pack('<h', len(ejs)))
     mu.mem_write(TR_FLAG, b'\x07')
     g.correr(BR_MENU, RET, bytes(4 * 4 + 0x14) + struct.pack('<I', RET),
              [(UC_X86_REG_ESI, 0x150000), (UC_X86_REG_EBX, turno), (UC_X86_REG_EBP, 1)])
     return mu.mem_read(TR_FLAG, 1)[0], struct.unpack('<hh', mu.mem_read(TR_X, 4))
-ver('unidad con "Trap" en tierra libre: se puede, en la casilla del líder', menu([(3, ['Trap'])]), (1, (5, 7)))
-ver('  "TRAP" entre otros bonos, en el segundo ejército', menu([(2, ['Landing']), (4, ['Carrier', 'TRAP'])])[0], 1)
-ver('  jugador 3', menu([(3, ['Trap'])], p=3)[0], 1)
-ver('control: sin el bono', menu([(3, ['Landing'])])[0], 0)
-ver('control: solo un héroe con "Trap" (ranura 0x10)', menu([(0x10, ['Trap'])])[0], 0)
-ver('control: "Traps" no es "Trap"', menu([(3, ['Traps'])])[0], 0)
-ver('control: casilla con camino', menu([(3, ['Trap'])], x=10)[0], 0)
-ver('control: ciudad', menu([(3, ['Trap'])], x=12, y=12)[0], 0)
-ver('control: agua', menu([(3, ['Trap'])], x=33)[0], 0)
-ver('control: ya hay un pozo ahí', menu([(3, ['Trap'])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
-ver('control: ya hay una trampa detonada ahí', menu([(3, ['Trap'])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 0)
-ver('control: tabla llena', menu([(3, ['Trap'])], regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[0], 0)
-ver('control: no es su turno', menu([(3, ['Trap'])], turno=1)[0], 0)
-ver('control: un pozo en otra casilla no molesta', menu([(3, ['Trap'])], regs=[(6, 7, 0, 0, 0, 0xff)])[0], 1)
+ver('unidad con "Trap" en tierra libre: se puede, en la casilla del líder', menu([(3, 'Trap', [])]), (1, (5, 7)))
+ver('  "TRAP" entre otros bonos, en el segundo ejército', menu([(2, '', ['Landing']), (4, 'TRAP', ['Carrier'])])[0], 1)
+ver('  jugador 3', menu([(3, 'Trap', [])], p=3)[0], 1)
+ver('control: sin el bono', menu([(3, '', ['Landing'])])[0], 0)
+ver('control: "Trap" como bono de movimiento no vale', menu([(3, 'Landing', ['Carrier', 'Trap'])])[0], 0)
+ver('control: solo un héroe con "Trap" (ranura 0x10)', menu([(0x10, 'Trap', [])])[0], 0)
+ver('control: "Traps" no es "Trap"', menu([(3, 'Traps', [])])[0], 0)
+ver('control: casilla con camino', menu([(3, 'Trap', [])], x=10)[0], 0)
+ver('control: ciudad', menu([(3, 'Trap', [])], x=12, y=12)[0], 0)
+ver('control: agua', menu([(3, 'Trap', [])], x=33)[0], 0)
+ver('control: ya hay un pozo ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
+ver('control: ya hay una trampa detonada ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 0)
+ver('control: tabla llena', menu([(3, 'Trap', [])], regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[0], 0)
+ver('control: no es su turno', menu([(3, 'Trap', [])], turno=1)[0], 0)
+ver('control: un pozo en otra casilla no molesta', menu([(3, 'Trap', [])], regs=[(6, 7, 0, 0, 0, 0xff)])[0], 1)
 
 print('-- diálogo: texto y envío')
 g = Juego(); mu = g.mu

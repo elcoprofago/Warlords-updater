@@ -1,10 +1,10 @@
-# Prueba de juguete del Combat Bonus "Bridge" (gancho bridgecb) sobre el exe parcheado, en unicorn.
+# Prueba de juguete de la habilidad "Bridge +N" (código 34, gancho bridgeab) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_bonopuente.py [DarklordAV.exe] [Darklord.exe] [partida.SAV]
 #      (por defecto los de C:\Warlords3 y Saves\Aliados03.SAV; armar antes con build.py)
 # Se corre el comparador de terreno del bono (0x467b33 .. 0x467d1f) con casillas reales de la partida (tabla de
-# terrenos incluida) y el bono de la unidad en un registro armado a mano. Esperado: un bono "bridge" (con cualquier
-# mayúscula) suma solo en un puente en pie; cualquier otro nombre da lo mismo que el exe original, registros y pila
-# incluidos.
+# terrenos incluida) y el bono de combate y la habilidad de la unidad en un registro armado a mano. Esperado: la
+# habilidad 34 suma su valor (al bono de combate, si también coincide) solo en un puente en pie y no para héroes;
+# cualquier otra habilidad, o la 34 fuera de un puente, da lo mismo que el exe original, registros y pila incluidos.
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -41,14 +41,13 @@ CASILLAS = {
     'bosque (capa)': tile(*buscar(lambda b: b[3] & 0x40)),
     'colinas': tile(*buscar(lambda b: b[0] & 0x1f == 3 and estructura(b) == 0)),
 }
-NOMBRES = ['bridge', 'Bridge', 'BRIDGE', 'bridges', 'bridg', 'water', 'city', 'open', 'field', 'woods', 'forest',
-           'plains', 'hills', 'landing', '']
-ES_PUENTE = lambda n: n.lower() == 'bridge'
+NOMBRES = ['bridge', 'water', 'city', 'open', 'woods', 'hills', 'landing', '']
+HABIL = [(34, 3), (34, 0), (39, 3), (33, 2), (0, 0)]     # (código, valor): 34 = Bridge
 
 STUB, REC, TILE, ESP = 0x100000, 0x101000, 0x102000, 0x108000
 REGS = ('EAX', 'EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP', 'ESP')
 
-def run(exe, nombre, valor, casilla):
+def run(exe, nombre, valor, casilla, hab=(0, 0), heroe=False):
     base, img, size = exe
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(base, size); mu.mem_write(base, img[:size])
@@ -64,10 +63,11 @@ def run(exe, nombre, valor, casilla):
     mu.hook_add(UC_HOOK_CODE, stricmp, begin=STUB, end=STUB)
     rec = bytearray(0xfc)
     rec[0xd6:0xd6 + 9] = nombre.encode().ljust(9, b'\0'); rec[0xdf] = valor
+    struct.pack_into('<H', rec, 0xe6, hab[0]); rec[0xe8] = hab[1]
     mu.mem_write(REC, bytes(rec)); mu.mem_write(TILE, bytes(casilla))
     marco = bytearray(range(0xc0))
     struct.pack_into('<I', marco, 0x30, REC); struct.pack_into('<I', marco, 0x38, TILE)
-    marco[0x11] = 0; struct.pack_into('<H', marco, 0x16, 0x7777); struct.pack_into('<H', marco, 0x26, 0)
+    marco[0x11] = 0; struct.pack_into('<H', marco, 0x16, 0x7777); struct.pack_into('<H', marco, 0x26, 0x10 if heroe else 0)
     mu.mem_write(ESP, bytes(marco))
     for k, v in dict(EAX=0x11223344, EBX=0x55667788, ECX=0x99aabbcc, EDX=0xddeeff01, ESI=0x02030405,
                      EDI=0x06070809, EBP=0x0a0b0c0d, ESP=ESP).items():
@@ -82,24 +82,26 @@ mal = total = 0
 for cnom, cas in CASILLAS.items():
     for nombre in NOMBRES:
         for valor in (2, 0):
-            total += 1
-            got, regs, pila = run(NEW, nombre, valor, cas)
-            ref, regs_o, pila_o = run(OLD, nombre, valor, cas)
-            if ES_PUENTE(nombre):
-                exp = valor if cnom.startswith('puente (') else 0
-                ok = got == exp
-            else:
-                exp = ref
-                ok = (got, regs, pila) == (ref, regs_o, pila_o)
-            if not ok:
-                mal += 1
-                print(f'MAL {cnom:16} "{nombre}" +{valor}: da {got}, esperado {exp}')
-            elif valor and (got or ES_PUENTE(nombre)):
-                print(f'ok  {cnom:16} "{nombre}" +{valor}: {got}')
-# Control: el exe original no da bono "bridge" en el puente (si lo diera, la prueba no mide el gancho), y el bono
-# "water" sí suma en el puente (la casilla de la prueba se lee bien).
-ctl = run(OLD, 'bridge', 2, puente)[0] == 0 and run(OLD, 'water', 2, puente)[0] == 2 and \
-      run(OLD, 'city', 3, CASILLAS['ciudad'])[0] == 3
-print(f'control (original: bridge 0, water 2 y city 3 donde corresponde): {"ok" if ctl else "MAL"}')
+            for hab in HABIL:
+                for heroe in (False, True):
+                    total += 1
+                    got, regs, pila = run(NEW, nombre, valor, cas, hab, heroe)
+                    ref, regs_o, pila_o = run(OLD, nombre, valor, cas, hab, heroe)
+                    suma = hab[0] == 34 and hab[1] and not heroe and cnom.startswith('puente (')
+                    if suma:
+                        exp = ref + hab[1]
+                        ok = got == exp
+                    else:
+                        exp = ref
+                        ok = (got, regs, pila) == (ref, regs_o, pila_o)
+                    if not ok:
+                        mal += 1
+                        print(f'MAL {cnom:16} "{nombre}" +{valor} hab {hab} heroe {heroe}: da {got}, esperado {exp}')
+                    elif suma and valor and nombre in ('', 'water', 'bridge'):
+                        print(f'ok  {cnom:16} "{nombre}" +{valor} hab {hab}: {got}')
+# Control: el exe original no suma la habilidad 34 en el puente (si lo hiciera, la prueba no mide el gancho), y el
+# bono "water" sí suma en el puente (la casilla de la prueba se lee bien).
+ctl = run(OLD, '', 0, puente, (34, 3))[0] == 0 and run(OLD, 'water', 2, puente)[0] == 2 and       run(OLD, 'city', 3, CASILLAS['ciudad'])[0] == 3
+print(f'control (original: Bridge 0, water 2 y city 3 donde corresponde): {"ok" if ctl else "MAL"}')
 print(f'{total} casos, ' + ('TODO OK' if not mal and ctl else f'{mal} MAL'))
 sys.exit(1 if mal or not ctl else 0)

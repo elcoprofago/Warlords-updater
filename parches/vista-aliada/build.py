@@ -1,12 +1,13 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), los subtipos de terreno
-# TERRAIN\SUBTYPE\landing.STT, carrier.STT, bridge.STT y cabotage.STT, y el dibujo del botón de Sorteo
-# SETS\Fantasy\sorteo.pcx.
+# TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT y trap.STT, y el dibujo del botón de Sorteo
+# SETS\Fantasy\sorteo.pcx, y el editor war3ed_av.exe (editor_av.py).
 # Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
 # (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
 # Convoy: hasta tres barcos en fila de un bando con bono de movimiento "Carrier" forman uno de hasta 24 (crlink).
 # Puentes: derribar (Raze, con la opción de arrasar sitios) y reconstruir (Build, al costo de una ciudad); el diálogo
 # de derribar muestra el retrato del ariete orco.
-# Combat Bonus "Bridge": el bono suma cuando la batalla es en un puente en pie (subtipo TERRAIN\SUBTYPE\bridge.STT).
+# Habilidad especial "Bridge +N" (código 34, sin uso en el original): suma N a la fuerza cuando la batalla es en un
+# puente en pie.
 # Cabotaje: el barco de un bando con el bono de movimiento "Cabotage" no se aleja más de 2 casillas de la costa
 # (salvo para acercarse); cruza ríos y lagos angostos.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
@@ -969,6 +970,13 @@ TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0x147, 3, GAME + '?', 'Warlords III - Darklords Rising?'),
     (0x148, 3, GAME + '?', 'Warlords III - Darklords Rising?'),
     (0x14c, 1, GAME + ' will now exit!', 'Warlords III - Darklords Rising will now exit!'),
+    # Habilidad 34 (sin uso en el original, textos de relleno): "Bridge +N", ver Habilidad "Bridge +N" más abajo.
+    (0x18a, 0, 'Bridge +%d', 'XXXX +%d'),
+    (0x18a, 1, 'brg +%d', 'xx +%d'),
+    (0x18a, 2, 'Bridge', 'XXXX'),
+    (0x18a, 3, 'Each point of Bridge adds 1 to the strength of ', 'XXXX '),
+    (0x18a, 4, 'this army when the battle is on a bridge that ', 'XXXX '),
+    (0x18a, 5, 'is still standing.', 'XXXX'),
 ]
 strs = {}
 for g, i, s, _ in TEXTS:
@@ -2185,18 +2193,19 @@ LANDING = b'landing'    # se compara sin distinguir mayúsculas
 landstr = place_data('landstr', LANDING + b'\0')
 # eax = jugador (0..7) -> eax = 1 si el barco de su bando tiene "Landing", 0 si no. Preserva el resto.
 # Con rec=True: eax = registro de unidad y edx = texto en minúsculas (para cualquier unidad, no solo el barco).
-def boatbon_src(lbl, straddr, rec=False):
-    head = 'lea esi, [eax + 0xb2]' if rec else f'''shl eax, 4
+# off y slots: dónde están los nombres de 9 bytes (bonos de movimiento: 0xb2, 4; bono de combate: 0xd6, 1).
+def boatbon_src(lbl, straddr, rec=False, off=0xb2, slots=4):
+    head = f'lea esi, [eax + {off:#x}]' if rec else f'''shl eax, 4
     add eax, 15
     imul esi, eax, 0xfc
-    add esi, {0x53c410 + 0xb2:#x}'''
+    add esi, {0x53c410 + off:#x}'''
     straddr = 'edx' if rec else f'{straddr:#x}'
     return f'''
     push ecx
     push esi
     push edi
     {head}
-    mov edi, 4
+    mov edi, {slots}
 {lbl}_slot:
     xor ecx, ecx
 {lbl}_ch:
@@ -6446,34 +6455,50 @@ bvd_next:
     jmp 0x459af5
 ''')
 
-# ---------------------------------------------------------------- Combat Bonus "Bridge"
+# ---------------------------------------------------------------- Habilidad "Bridge +N"
 # El bono de combate de cada unidad (nombre +0xd6, valor +0xdf del registro) se compara en 0x467b4a..0x467d09 con la
-# casilla de la batalla (la del defensor, [esp+0x38]; vale para atacantes y defensores): "OPEN"/"FIELD", "CITY",
-# "WOODS"/"FOREST" o el nombre del terreno; si coincide, [esp+0x11] = 1 y el valor se suma a la fuerza. Se agrega
-# "BRIDGE" (sin distinguir mayúsculas): coincide si la casilla es un puente en pie, clase agua (di, palabra 0x535f0c
-# del tipo, ya cargada) con estructura 1 ([+3] & 7, la misma definición que el constructor de caminos en 0x4a5135).
-# Un puente derribado tiene estructura 0: no cuenta. El texto "+N ..." lo arma 0x46a6e0 con bridge.STT.
-bridgestr = place_data('bridgestr', b'BRIDGE\0')
-bridgecb = place('bridgecb', f'''
-    lea eax, [esp + 0x4c]
-    push {bridgestr:#x}
-    push eax
-    call dword ptr [0x5a9be0]
-    add esp, 8
-    test eax, eax
-    jnz bcb_other
-    mov edx, dword ptr [esp + 0x38]
-    mov al, byte ptr [edx + 3]
-    and al, 7
-    cmp al, 1
-    jne 0x467d0e
+# casilla de la batalla (la del defensor, [esp+0x38]; vale para atacantes y defensores); si coincide, [esp+0x11] = 1
+# y en 0x467d0e el valor ([esp+0x12]) pasa a [esp+0x16], lo que se suma a la fuerza. Ahí se suma además la habilidad
+# 34 (palabra +0xe6, valor byte +0xe8; sin efecto en el original) si la casilla es un puente en pie: clase agua (di,
+# palabra 0x535f0c del tipo, ya cargada) con estructura 1 ([+3] & 7, la misma definición que el constructor de
+# caminos en 0x4a5135). Un puente derribado tiene estructura 0: no cuenta. No vale para héroes ([esp+0x26] = 0x10).
+# Sin bono ni puente, registros y pila quedan como en el original. El nombre lo dan los textos 0x18a (TEXTS).
+BRIDGE_AB = 34
+bridgeab = place('bridgeab', f'''
+    push ecx
+    push edx
+    xor ecx, ecx
+    cmp byte ptr [esp + 0x19], 0
+    je bab_chk
+    mov cx, word ptr [esp + 0x1a]
+bab_chk:
+    cmp word ptr [esp + 0x2e], 0x10
+    je bab_no
     cmp di, 1
-    jne 0x467d0e
-    jmp 0x467d09
-bcb_other:
-    lea eax, [esp + 0x4c]
-    push 0x4fc808
-    jmp 0x467bac
+    jne bab_no
+    mov edx, dword ptr [esp + 0x40]
+    mov dl, byte ptr [edx + 3]
+    and dl, 7
+    cmp dl, 1
+    jne bab_no
+    mov edx, dword ptr [esp + 0x38]
+    cmp word ptr [edx + 0xe6], {BRIDGE_AB}
+    jne bab_no
+    movzx edx, byte ptr [edx + 0xe8]
+    test edx, edx
+    jz bab_no
+    add ecx, edx
+    jmp bab_put
+bab_no:
+    cmp byte ptr [esp + 0x19], 0
+    je bab_out
+bab_put:
+    mov ax, cx
+    mov word ptr [esp + 0x1e], ax
+bab_out:
+    pop edx
+    pop ecx
+    jmp 0x467d1f
 ''')
 
 # ---------------------------------------------------------------- Botones de Votación y Sorteo
@@ -10512,8 +10537,9 @@ orr_x:
 # PO_TUMBA: tierra transitable, libre, sin camino, ciudad, sitio ni estructura) y lugar en la tabla. Confirma con el
 # diálogo de reconstruir (TR_MARK) y la orden viaja como TR_PKT (bando, x, y): en todas las PC tr_recv vuelve a
 # comprobar todo, cobra y agrega {x, y, PO_TRAMPA, 0, bit del dueño, dueño}. La IA no la usa.
-TRAP = b'trap'
+TRAP = b'trap'      # bono de combate (nombre +0xd6), no de movimiento
 trapstr = place_data('trapstr', TRAP + b'\0')
+reccomb = place('reccomb', boatbon_src('reccomb', None, rec=True, off=0xd6, slots=1))
 TR_TXT, TR_HOT = 0x17, 0x18
 TR_PKT = 0x2a3
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
@@ -10551,7 +10577,7 @@ tk_army:
     imul eax, eax, 0xfc
     add eax, 0x53c410
     mov edx, {trapstr:#x}
-    call {recbon:#x}
+    call {reccomb:#x}
     test eax, eax
     jz tk_army
     mov byte ptr [{TR_FLAG:#x}], 1
@@ -11408,7 +11434,8 @@ patch(0x4b6610, b'\x56' + asm('call 0x4a2170', 0x4b6611), asm(f'jmp {br_rebapply
 patch(0x45846d, bytes.fromhex('66f7c5001c66892f7408668b41086689470e'),
       asm(f'jmp {br_vfill:#x}', 0x45846d))
 patch(0x459a9f, bytes.fromhex('668b0680e41c80fc04754b'), asm(f'jmp {br_vdraw:#x}', 0x459a9f))
-patch(0x467ba3, asm('lea eax, [esp + 0x4c]; push 0x4fc808', 0x467ba3), asm(f'jmp {bridgecb:#x}', 0x467ba3))
+patch(0x467d0e, asm('cmp byte ptr [esp + 0x11], 0; je 0x467d1f; mov ax, word ptr [esp + 0x12]; mov word ptr [esp + 0x16], ax', 0x467d0e),
+      asm(f'jmp {bridgeab:#x}', 0x467d0e).ljust(17, b'\x90'))
 # Misión "derribar un puente" (qb_*)
 patch(0x460dfb, bytes.fromhex('6685ff0f8e9c010000'), asm(f'jmp {qb_gen:#x}', 0x460dfb))
 patch(0x461336, bytes.fromhex('516a42b980985800e8eddb0700'), asm(f'jmp {qb_name:#x}', 0x461336))
@@ -11966,7 +11993,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('bridge', 'Bridge'), ('cabotage', 'Cabotage'), ('trap', 'Trap'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
@@ -12093,3 +12120,8 @@ for rel_, data in NUEVOS.items():
     open(path, 'wb').write(data)
 print('caves', {k: hex(CAVE + sum(len(caves[j]) for j in list(caves)[:list(caves).index(k)])) for k in caves})
 print('exe', OUT_EXE, len(exe), 'res', OUT_RES, len(res), 'nuevos', ', '.join(NUEVOS))
+# Editor de escenarios con las listas de bonos y la habilidad Bridge acordes al juego (editor_av.py).
+import editor_av
+OUT_ED = os.path.join(OUT_DIR, 'war3ed_av.exe')
+assert os.path.abspath(OUT_ED).lower() != os.path.abspath(editor_av.SRC).lower()
+print('editor', OUT_ED, editor_av.armar(OUT_ED))
