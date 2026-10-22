@@ -8,29 +8,13 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 25** (Hexagon con menos azar): la tanda está corriendo (paso 4); no hay que hacer nada hasta que termine.
-2. Hacé la **29** (usando war3ed_av.exe) y, en una misma partida contra la
-   computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
+2. En una misma partida contra la computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
    (órdenes por chat) queda esperando: ver su aviso.
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
-
-- [ ] **29.** Bonos ordenados en el editor y habilidad «Bridge» (22/10/2026)
-Ahora **Bridge** es una habilidad especial (Bridge +1, +2, +3…: suma a la fuerza cuando se pelea sobre un puente en
-pie); **Trap** es un Combat Bonus y ya no un Move Bonus; Landing, Carrier y Cabotage son solo Move Bonus. Para que
-el editor lo muestre así hay un editor nuevo, **war3ed_av.exe** (el war3ed_ssg.exe de siempre no se tocó).
-0. Ya está: vista-aliada 1.0.57.0 quedó instalada en C:\Warlords3 (22/10/2026). Cerrá war3ed_ssg.exe y usá **war3ed_av.exe**.
-1. Abrí **war3ed_av.exe** → Edit Army Data de una unidad. En los cuatro Move Bonus **no** tienen que estar «bridge» ni
-   «trap» (sí landing, carrier, cabotage). En Combat Bonus **no** tienen que estar landing, carrier, cabotage ni
-   bridge (sí «trap»). En Special Ability tiene que estar **«Bridge +N»** donde antes decía «Giantslayer +N».
-2. Las unidades que tenían «bridge» como Combat Bonus hay que pasarlas a la habilidad: Special Ability «Bridge +N» y
-   el número. **Nautilus** tiene hoy Combat Bonus bridge +5 **y** Lightning +5: una unidad tiene una sola habilidad
-   especial, así que elegí cuál de las dos le queda.
-3. En una partida, una unidad con Bridge peleando sobre un puente en pie: en el detalle de la batalla tiene que sumar
-   su valor; fuera del puente, o en un puente derribado, no. Los héroes no la usan.
-Resultado:
 
 - [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
 Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
@@ -198,6 +182,23 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Hecho
+
+- [x] **29.** Bonos ordenados en el editor y habilidad «Bridge» (22/10/2026)
+**Resultado (22/10/2026):** el editor nuevo funciona bien.
+Ahora **Bridge** es una habilidad especial (Bridge +1, +2, +3…: suma a la fuerza cuando se pelea sobre un puente en
+pie); **Trap** es un Combat Bonus y ya no un Move Bonus; Landing, Carrier y Cabotage son solo Move Bonus. Para que
+el editor lo muestre así hay un editor nuevo, **war3ed_av.exe** (el war3ed_ssg.exe de siempre no se tocó).
+0. Ya está: vista-aliada 1.0.57.0 quedó instalada en C:\Warlords3 (22/10/2026). Cerrá war3ed_ssg.exe y usá **war3ed_av.exe**.
+1. Abrí **war3ed_av.exe** → Edit Army Data de una unidad. En los cuatro Move Bonus **no** tienen que estar «bridge» ni
+   «trap» (sí landing, carrier, cabotage). En Combat Bonus **no** tienen que estar landing, carrier, cabotage ni
+   bridge (sí «trap»). En Special Ability tiene que estar **«Bridge +N»** donde antes decía «Giantslayer +N».
+2. Las unidades que tenían «bridge» como Combat Bonus hay que pasarlas a la habilidad: Special Ability «Bridge +N» y
+   el número. **Nautilus** tiene hoy Combat Bonus bridge +5 **y** Lightning +5: una unidad tiene una sola habilidad
+   especial, así que elegí cuál de las dos le queda.
+3. En una partida, una unidad con Bridge peleando sobre un puente en pie: en el detalle de la batalla tiene que sumar
+   su valor; fuera del puente, o en un puente derribado, no. Los héroes no la usan.
+Resultado:
+
 
 - [x] **23.** IA: tanda A/B de alianzas en Hexagon (20/10/2026)
 En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos
