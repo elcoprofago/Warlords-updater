@@ -12008,7 +12008,25 @@ def cuadro_ruina(tipo, columna):
     return po_cuadro(c.convert('RGB'), [(x, y) for x in range(87) for y in range(88) if c.getpixel((x, y)) not in (11, 101)])
 pozo = po_dibujo('pozo.PCX', (0x58, 1, 0x58 + 87, 89), fondo=lambda c: c[0] > 130 and c[1] < 40 and c[2] > 190)   # magenta y violeta
 tumba = po_dibujo('tumba.PCX', (1, 1, 88, 89))
-lapida = po_dibujo('lapida.pcx')
+# Lápida (pedido del usuario, 22/10/2026; lapida.pcx era la tumba repetida): una cruz chica de cruz.pcx (a 1,5x),
+# sin montículo, con cinco ramos de flores al pie (tallo verde de 4, flor de 10 puntos con el centro de otro color).
+_lc = Image.open(os.path.join(PICTS, 'cruz.pcx')).convert('RGB')
+_lm = {(x, y) for x in range(21) for y in range(21) if 8 <= x <= 11 and 4 <= y <= 15 or 5 <= x <= 14 and 7 <= y <= 9}
+_lp = Image.new('RGB', (48, 48)); _lpp = []
+def _lput(q, c):
+    _lp.putpixel(q, c)
+    if q not in _lpp: _lpp.append(q)
+for X in range(15):
+    for Y in range(18):
+        if (5 + X * 2 // 3, 4 + Y * 2 // 3) in _lm: _lput((17 + X, 16 + Y), _lc.getpixel((5 + X * 2 // 3, 4 + Y * 2 // 3)))
+for bx, by, fl in [(18, 38, (200, 30, 30)), (29, 38, (235, 235, 235)), (23, 40, (230, 200, 40)), (33, 36, (150, 60, 170)),
+                   (14, 35, (235, 235, 235))]:
+    for dx in (-1, 0, 1):
+        for k in range(4): _lput((bx + dx * (k >= 2), by - k), (40, 110, 30))
+    for fx, fy in [(-2, -4), (-1, -5), (0, -6), (1, -5), (2, -4), (-1, -4), (1, -4), (0, -5), (-1, -6), (1, -6)]:
+        _lput((bx + fx, by + fy), fl)
+    _lput((bx, by - 5), (250, 230, 90) if fl[1] < 200 else (200, 110, 20))
+lapida = po_cuadro(_lp, _lpp)
 cruz_im = Image.open(os.path.join(PICTS, 'cruz.pcx'))
 assert cruz_im.size == (21, 21)
 # Cruz (pedido del usuario, 22/10/2026: con el formato de la tumba): el montículo de la tumba sin su lápida (lo gris
