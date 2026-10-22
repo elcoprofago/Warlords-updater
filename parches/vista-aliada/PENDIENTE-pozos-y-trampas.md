@@ -358,7 +358,7 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
    SAV de antes trae 1 en las detonadas: les quedan 2). po_fall suma 1 y pone solo el bit de quien cayó (antes
    0xff). Gastada: no mata (po_step), no se descubre (pd_po la salta), no se dibuja (po_draw), y el registro queda
    (los nombres Afland01.. dependen del orden de la tabla), así que en esa casilla no se puede volver a construir.
-   Los cuadros 6..9 (agujero con humo) quedan sin uso. Misión 13: candidata si le quedan usos (qt_scan); +0xa se marca
+   Misión 13: candidata si le quedan usos (qt_scan); +0xa se marca
    en cualquier explosión del jugador; fracasa solo cuando la trampa se gasta sin que la haya detonado el jugador
    (qt_fail). La tumba no cambia: solo la dejan los pozos.
 3. **Caminos:** dato averiguado: el byte +3 «estructura» de la casilla es el mismo campo que los bits 8-10 de la palabra
@@ -366,3 +366,16 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
    puente queda fuera porque su terreno es agua. Pozos, remolinos y tumbas siguen sin ir sobre caminos.
 - Pruebas en unicorn: prueba_pozos, prueba_trampas (camino sí; puente y ruina no) y prueba_misiontrampa (usos
   intermedios), todo OK. En el juego: tareas 26 y 27 (actualizadas).
+
+## Correcciones del 22/10/2026 (después de 1.0.58.0): hechas (1.0.59.0)
+1. **Humo después de cada explosión:** +5 de la trampa pasa a ser: bits 0-3 explosiones, bits 4-6 quién la hizo
+   explotar la última vez, bit 7 (TR_RECIEN) recién explotada. po_fall lo arma; tr_turn (desde ia_turn, al empezar el
+   turno de cada jugador, en todas las PC) borra el bit 7 de las trampas que explotó ese jugador. po_draw: recién
+   explotada o gastada -> agujero con humo (cuadros 6..9, animado con la fase del agua); si no, la mina. La recién
+   explotada la ve quien la ve siempre (quien la descubrió, el dueño, sus aliados con vista aliada); la gastada,
+   todos, hasta el final. Todas las comparaciones con TR_USOS miran solo los bits 0-3 (po_step, pd_po, qt_scan,
+   qt_fail, po_draw). SAV sin cambios.
+2. **Puentes:** pg_ok, para PO_TRAMPA con estructura 1 (camino o puente), acepta sin mirar el terreno. El dibujo va
+   en la misma pasada que sobre tierra.
+- Pruebas en unicorn: prueba_pozos (humo por fase, gastada vista por todos, tr_turn), prueba_trampas (puente sí) y
+  prueba_misiontrampa (bit 7 con usos y gastada), todo OK.

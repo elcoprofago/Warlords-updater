@@ -244,7 +244,9 @@ for nombre, traps, a, st in [('turno: trampa entera, sigue', TRAPS, 0, 0),
                              ('turno: detonada por él, sigue', DET0, 1, 0),
                              ('turno: detonada otra trampa, sigue', det(TRAPS, 8), 0, 0),
                              ('turno: explotó 1 vez por otro, le quedan usos, sigue', det(TRAPS, 0, 1), 0, 0),
-                             ('turno: explotó 2 veces por otro, le queda 1, sigue', det(TRAPS, 0, 2), 0, 0)]:
+                             ('turno: explotó 2 veces por otro, le queda 1, sigue', det(TRAPS, 0, 2), 0, 0),
+                             ('turno: recién explotada (bit 7, jugador 3) con 2, sigue', det(TRAPS, 0, 0xb2), 0, 0),
+                             ('turno: recién gastada (bit 7, jugador 3), fracasa', det(TRAPS, 0, 0xb3), 0, 2)]:
     b = with_quest(0, a, traps=traps)
     end = b.run(0x461a60, (0, 0, 0, 0, 0, 1))
     check(nombre, end == END and b.saved_ok() and b.status() == st, f'status={b.status()}')
@@ -300,7 +302,7 @@ for nombre, kw, marca in [('cae: UI en su trampa objetivo -> marca +0xa', dict(p
                           ('cae: UI en otra trampa -> no marca', dict(player=UI, trap=8), 0),
                           ('cae: misión de otro tipo con el mismo número -> no marca', dict(player=UI, typ=10), 0)]:
     ok, q, t, calls = fall(**kw)
-    check(nombre, ok and q[6] == marca and t[3] == 1 and ('muere', 3) in calls, f'{q} {t} {calls}')
+    check(nombre, ok and q[6] == marca and t[3] & 0x0f == 1 and t[3] & 0x80 and ('muere', 3) in calls, f'{q} {t} {calls}')
 
 check('SAV: la misión activa y su estado están en el bloque guardado (0x536b30..0x5643c4)',
       0x536b30 <= 0x55edc4 and 0x55edc4 + 8 * 16 <= 0x5643c4 and 0x55ee44 + 8 <= 0x5643c4)

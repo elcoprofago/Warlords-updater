@@ -44,26 +44,29 @@ Resultado:
 
 - [ ] **26.** Construir una trampa en el juego (21/10/2026)
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
-fundar una ciudad. Desde la 1.0.58.0 la trampa es una **mina** (bola de hierro con puntas), se puede construir
-**también sobre un camino**, y **explota tres veces** (mata a quien entre, también a vos) antes de desaparecer. Vos y
-tus aliados con vista aliada la ven siempre; los demás, solo después de descubrirla o de caer en ella. La
-computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. Ya está: vista-aliada 1.0.58.0 quedó instalada en C:\Warlords3 (22/10/2026).
+fundar una ciudad. Desde la 1.0.59.0 la trampa es una **mina** (bola de hierro con puntas), se puede construir
+**también sobre un camino o un puente**, y **explota tres veces** (mata a quien entre, también a vos). Después de cada
+explosión se ve un **agujero con humo** hasta el turno siguiente de quien cayó; si le quedan explosiones, después
+vuelve la mina. Después de la tercera, el agujero con humo queda **para todos** hasta el final. Vos y tus aliados
+con vista aliada la ven siempre; los demás, solo después de descubrirla o de caer en ella. La computadora todavía no
+las construye. **Solo en esta PC, no en red.**
+0. Ya está: vista-aliada 1.0.59.0 quedó instalada en C:\Warlords3 (22/10/2026).
 1. Abrí el editor **war3ed_av.exe** (en C:\Warlords3) y a una unidad barata de tu bando (no un héroe) ponele **Trap**
    como **Combat Bonus**. Guardá el bando. (Tus pikemen, lightinf, half_bra, FU_halfe y Zappers ya lo tienen ahí.)
 2. Empezá una partida nueva **contra la computadora** con ese bando, y comprá o juntá esa unidad.
-3. Llevá un grupo con esa unidad a una casilla de **tierra libre o un camino** (sin ciudad, ruina, sitio ni puente) y
-   abrí el menú de órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. Sobre un camino, también
-   encendido. En una ciudad o un puente, apagado.
+3. Llevá un grupo con esa unidad a una casilla de **tierra libre** (sin ciudad, ruina ni sitio) y abrí el menú de
+   órdenes del grupo: al final tiene que estar **«Build Trap»** encendido. Sobre un camino y sobre un puente, también
+   encendido. En una ciudad, apagado.
 4. Elegilo: sale la ventana de reconstruir con «Building a trap» y el costo de una ciudad. Si no te alcanza el oro, el
    OK queda apagado. Con oro, dale OK: tiene que descontarse el oro y aparecer la **mina** en esa casilla.
-5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y la mina **seguir ahí**. Repetilo:
-   el segundo y el tercero también mueren; después del **tercero la mina desaparece** y un cuarto ejército pasa sin
-   morir. Con el sonido del juego encendido tiene que oírse **la explosión (Burst) junto con el grito**
+5. Sacá el grupo y volvé a entrar con otro ejército barato tuyo: tiene que morir y verse **el agujero con humo**.
+   Terminá el turno: al volver a tu turno tiene que verse **otra vez la mina**. Repetilo: el segundo y el tercero
+   también mueren; después del **tercero queda el agujero con humo para siempre**, y lo ve también el otro jugador
+   (si hay uno humano), y un cuarto ejército pasa sin morir. Probá lo mismo con una trampa **sobre un puente**. Con el sonido del juego encendido tiene que oírse **la explosión (Burst) junto con el grito**
    de muerte de héroe. El aviso tiene que nombrar la trampa con la **ciudad más cercana y un número**, por ejemplo
    «Your army fell into the trap Afland01!»; una segunda trampa junto a la misma ciudad, «…Afland02!». En esa casilla
-   ya no se puede construir otra, ni después de que desaparezca.
-6. Guardá con la mina explotada una o dos veces, salí y volvé a cargar: tiene que seguir, con los usos que le quedaban.
+   ya no se puede construir otra, ni después de gastada.
+6. Guardá con la mina explotada una o dos veces (con el humo a la vista y también después), salí y volvé a cargar: tiene que seguir, con los usos que le quedaban.
 7. Anotá abajo qué viste (en especial si el renglón «Build Trap» queda mal ubicado o tapa algo del menú, y si la
    explosión y el grito suenan bien juntos o preferís el grito un poco después).
 Resultado:

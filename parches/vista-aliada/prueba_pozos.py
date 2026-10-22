@@ -254,20 +254,34 @@ r = caer(POZOS, [(20, 10, 2, 0, 0), (20, 10, 2, 0, 0), (20, 10, 2, 0, 1)], [(2, 
 ver('remolino: se hunde todo lo que no vuela, con 1 (como el disband)', (r[0], r[1]),
     ([(1, 1), (2, 1)], ['Your army was swallowed by the Maelstrom of Kor!']))
 r = caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3)
-ver('trampa: cae hasta el dueño; lleva 1 explosión y la ve solo quien cayó', (r[0], r[1], r[3][2][3:]),
-    ([(1, 0)], ['Your army fell into a trap!'], (1, 0x08, 3)))
+ver('trampa: cae hasta el dueño; lleva 1 explosión, recién explotada por el 3, y la ve solo quien cayó',
+    (r[0], r[1], r[3][2][3:]), ([(1, 0)], ['Your army fell into a trap!'], (0x80 | 3 << 4 | 1, 0x08, 3)))
 ver('trampa: suena Burst (sonido 56) y el grito', r[2], [('fx', 56), 7])
 ver('control: sin la opción de sonido, sin Burst', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3, snd=0)[2], [7])
 ver('control: en otra PC, la trampa no suena', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=1)[2], [])
 for k in (1, 2):
     t = POZOS[:2] + [(15, 15, 2, k, 0, 3)] + POZOS[3:]
     r = caer(t, [(15, 15, 2, 0, 0)], [(2, 15, 15)])
-    ver(f'trampa con {k} explosión(es): mata otra vez y suma una', (r[0], r[3][2][3:5]), ([(1, 0)], (k + 1, 0x04)))
+    ver(f'trampa con {k} explosión(es): mata otra vez y suma una', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa0 | k + 1, 0x04)))
+r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
+ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
 ver('SAV viejo: trampa detonada (+5 = 1) mata de nuevo, le quedan 2 usos', (r[0], r[1]), ([(1, 0)], ['Your army fell into a trap!']))
-t = POZOS[:3] + [(16, 16, 2, 3, 0xff, 3)]
-r = caer(t, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
-ver('control: trampa con 3 explosiones (gastada) ya no mata', (r[0], r[1]), ([], []))
+for e in (3, 0xa3):
+    r = caer(POZOS[:3] + [(16, 16, 2, e, 0xff, 3)], [(16, 16, 2, 0, 0)], [(2, 16, 16)])
+    ver(f'control: trampa gastada (+5 = {e:#x}) ya no mata', (r[0], r[1]), ([], []))
+print('-- trampa: tr_turn al empezar el turno')
+k = 0x4223ad + 5 + struct.unpack_from('<i', img, 0x4223ad - BASE + 1)[0] - BASE
+k = img.index(bytes([0xe8]), k + 9); TR_TURN = k + BASE + 5 + struct.unpack_from('<i', img, k + 1)[0]
+def turno(regs, p):
+    g = Juego(); mu = g.mu; g.poner(regs)
+    mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK); mu.reg_write(UC_X86_REG_EBX, p)
+    mu.emu_start(TR_TURN, RET, count=100000); assert mu.reg_read(UC_X86_REG_EBX) == p
+    return [r[3] for r in g.tabla()]
+T = [(1, 1, 2, 0xb1, 8, 0), (2, 1, 2, 0xa2, 4, 0), (3, 1, 2, 0xb3, 8, 0), (4, 1, 0, 0xb1, 8, 0), (5, 1, 3, 0xb1, 8, 0)]
+ver('empieza el 3: sus trampas dejan de estar recién explotadas; las del 2, pozo y tumba igual', turno(T, 3),
+    [1, 0xa2, 3, 0xb1, 0xb1])
+ver('empieza el 2', turno(T, 2), [0xb1, 2, 0xb3, 0xb1, 0xb1])
 r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
 ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
 r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
@@ -418,8 +432,11 @@ ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[
 ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])
 ver('control: trampa de otro (no aliado): no', dibujar(en(2, d=3))[0], [])
 ver('trampa ajena descubierta: se ve', dibujar(en(2, m=0x04, d=3))[0][0][0], 5)
-ver('trampa con 1 o 2 explosiones: sigue la mina (cuadro 5)', [dibujar(en(2, k, 0x04, 3))[0][0][0] for k in (1, 2)], [5, 5])
-ver('control: trampa gastada (3 explosiones): no se dibuja', dibujar(en(2, 3, 0xff, 3))[0], [])
+ver('trampa con 1 o 2 explosiones (turno siguiente): la mina (cuadro 5)', [dibujar(en(2, k, 0x04, 3))[0][0][0] for k in (1, 2)], [5, 5])
+ver('recién explotada: agujero con humo, 6 + fase', [dibujar(en(2, 0xa1, 0x04, 3), fase=f)[0][0][0] for f in range(5)], [6, 7, 8, 9, 6])
+ver('control: recién explotada, quien no la descubrió no la ve', dibujar(en(2, 0xa1, 0x08, 3))[0], [])
+ver('gastada: agujero con humo para todos, aunque no la hayan descubierto',
+    [dibujar(en(2, e, 0, 3), mira=m, fase=1)[0][0][0] for e, m in ((3, 2), (0xa3, 5), (3, 0))], [7, 7, 7])
 ver('tumba, lápida y cruz (vistas por todos): cuadros 10, 11 y 12', [dibujar(en(3, k, 0xff), mira=m)[0][0][0] for k, m in ((0, 0), (1, 5), (2, 7))],
     [10, 11, 12])
 ver('control: tumba con imagen fuera de rango: nada', dibujar(en(3, 3, 0xff))[0], [])

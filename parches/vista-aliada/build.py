@@ -7024,10 +7024,12 @@ vl_text:
 # En el .SAV va detrás del bloque de la Votación: 'POZO', cantidad (dword) y la tabla entera.
 PO_MAX, PO_REC = 64, 8
 PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tumba, lápida, cruz), vista por todos
-# Trampa: +5 = explosiones que lleva (pedido del usuario, 22/10/2026: explota TR_USOS veces y desaparece). Activa
-# mientras +5 < TR_USOS; gastada, el registro queda (los nombres dependen del orden de la tabla) pero no mata, no se
-# descubre ni se dibuja. Un .SAV de antes trae 1 en las detonadas: les quedan 2 usos.
-TR_USOS = 3
+# Trampa: +5 = explosiones que lleva en los bits 0-3 (pedido del usuario, 22/10/2026: explota TR_USOS veces). Activa
+# mientras lleve menos de TR_USOS; gastada, no mata ni se descubre, y queda a la vista de todos como agujero con humo
+# hasta el final (pedido del usuario, 22/10/2026). Bit 7 (TR_RECIEN): explotó y su jugador (bits 4-6) todavía no
+# empezó otro turno; mientras tanto, quien la ve, ve el agujero con humo, y después de nuevo la mina (tr_turn).
+# Un .SAV de antes trae 1 en las detonadas: les quedan 2 usos.
+TR_USOS, TR_CUENTA, TR_RECIEN = 3, 0x0f, 0x80
 PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
 po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
 PO_SAVELEN = 8 + PO_MAX * PO_REC
@@ -7176,6 +7178,7 @@ pg_ok = place('pg_ok', f'''
     jne pk_no
     cmp ecx, 0x100
     jne pk_no
+    jmp pk_si
 pk_cosa:
     and edx, 0x1f
     imul edx, edx, 0x58
@@ -7585,7 +7588,9 @@ po_step = place('po_step', f'''
     je pt_end
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TRAMPA}
     jne pt_mark
-    cmp byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}], {TR_USOS}
+    mov cl, byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
     jae pt_end
 pt_mark:
     mov byte ptr [ebx + {po_pend:#x}], al
@@ -7634,7 +7639,9 @@ pd_po:
     jc pd_pon
     cmp byte ptr [edx*8 + {PO_TAB + 4:#x}], {PO_TRAMPA}
     jne pd_act
-    cmp byte ptr [edx*8 + {PO_TAB + 5:#x}], {TR_USOS}
+    mov cl, byte ptr [edx*8 + {PO_TAB + 5:#x}]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
     jae pd_pon
 pd_act:
     movsx ecx, word ptr [edx*8 + {PO_TAB:#x}]
@@ -7801,7 +7808,14 @@ pf_ejf:
 pf_trap:
     cmp byte ptr [ebp + 4], {PO_TRAMPA}
     jne pf_vis
-    inc byte ptr [ebp + 5]
+    mov al, byte ptr [ebp + 5]
+    and al, {TR_CUENTA}
+    inc al
+    mov ah, bl
+    shl ah, 4
+    or al, ah
+    or al, {TR_RECIEN}
+    mov byte ptr [ebp + 5], al
     mov eax, ebx
     shl eax, 4
     cmp byte ptr [eax + 0x55edc4], 0
@@ -7890,7 +7904,9 @@ qs_loop:
     lea edx, [ebx*8 + {PO_TAB:#x}]
     cmp byte ptr [edx + 4], {PO_TRAMPA}
     jne qs_next
-    cmp byte ptr [edx + 5], {TR_USOS}
+    mov al, byte ptr [edx + 5]
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
     jae qs_next
     mov ecx, dword ptr [esp]
     movzx eax, byte ptr [edx + 6]
@@ -8097,7 +8113,9 @@ qtf:
     movzx eax, word ptr [esi + 6]
     cmp eax, {PO_MAX}
     jae 0x461d5d
-    cmp byte ptr [eax*8 + {PO_TAB + 5:#x}], {TR_USOS}
+    mov cl, byte ptr [eax*8 + {PO_TAB + 5:#x}]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
     jb 0x461d5d
     cmp word ptr [esi + 0xa], 0
     jne 0x461d5d
@@ -8157,8 +8175,8 @@ qta:
 # 0x459b95..0x459b9a; esi = celda, [esp+0x14] columna, [esp+0x16] fila, [esp+0x18] x y [esp+0x1a] y en pantalla; la
 # casilla es (columna + [ebp+0x28], fila + [ebp+0x2a]), las mismas que 0x45857e copia a las celdas). Solo llegan las
 # celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
-# es su dueño o un aliado mutuo con vista aliada (fogally). Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
-# 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa (mina; gastada no se dibuja), 6..9 sin uso, 10..12 tumba, lápida y cruz
+# es su dueño o un aliado mutuo con vista aliada (fogally); una trampa gastada, todos. Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
+# 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa (mina), 6..9 agujero con humo (trampa recién explotada o gastada, animado con la fase del agua), 10..12 tumba, lápida y cruz
 # (+5 del registro), PO_REMO0.. remolino. El remolino se anima como el agua con la fase [ebp+0x3c] & 3
 # que 0x456fdc avanza cada tic de la animación del mapa. El remolino ocupa 3x3 casillas (pedido del usuario,
 # 22/10/2026; solo mata la del medio): cada celda de agua sin edificio ni estructura pinta, por cada remolino
@@ -8309,6 +8327,10 @@ pw_own:
     jc pw_vis
     cmp byte ptr [ebx + 4], {PO_TRAMPA}
     jne pw_end
+    mov al, byte ptr [ebx + 5]
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
+    jae pw_vis
     movzx ecx, byte ptr [ebx + 7]
     cmp ecx, edx
     je pw_vis
@@ -8322,9 +8344,17 @@ pw_vis:
     cmp eax, {PO_TRAMPA}
     jne pw_tumba
     mov edi, 5
-    cmp byte ptr [ebx + 5], {TR_USOS}
+    mov al, byte ptr [ebx + 5]
+    test al, {TR_RECIEN}
+    jnz pw_humo
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
     jb pw_sheet
-    jmp pw_end
+pw_humo:
+    movzx edi, word ptr [ebp + 0x3c]
+    and edi, 3
+    add edi, 6
+    jmp pw_sheet
 pw_tumba:
     cmp eax, {PO_TUMBA}
     jne pw_sheet
@@ -10546,7 +10576,7 @@ orr_x:
 # ---- Construir trampas (PENDIENTE-pozos-y-trampas.md, parte 7). Un grupo con un ejército (no héroe) cuyo registro
 # tiene el bono "Trap" construye, desde su menú de órdenes (diálogo 0x1f = RES 34, renglón nuevo TR_TXT / TR_HOT),
 # una trampa oculta en la casilla del líder, al costo de fundar una ciudad. Casilla: la de una tumba (pg_ok
-# PO_TRAMPA: tierra transitable, libre, sin ciudad, sitio ni ruina; camino sí) y lugar en la tabla. Confirma con el
+# PO_TRAMPA: tierra transitable, libre, sin ciudad, sitio ni ruina; camino y puente sí) y lugar en la tabla. Confirma con el
 # diálogo de reconstruir (TR_MARK) y la orden viaja como TR_PKT (bando, x, y): en todas las PC tr_recv vuelve a
 # comprobar todo, cobra y agrega {x, y, PO_TRAMPA, 0, bit del dueño, dueño}. La IA no la usa.
 TRAP = b'trap'      # bono de combate (nombre +0xd6), no de movimiento
@@ -10781,12 +10811,42 @@ sv_out:
     ret
 ''')
 
+# tr_turn: ebx = jugador que empieza su turno -> las trampas que explotó dejan de estar recién explotadas (TR_RECIEN):
+# vuelve a verse la mina, o el humo si está gastada. Corre en todas las PC con los mismos datos. Preserva todo.
+tr_turn = place('tr_turn', f'''
+    pushad
+    xor edx, edx
+tt_loop:
+    cmp edx, dword ptr [{PO_N:#x}]
+    jae tt_end
+    cmp edx, {PO_MAX}
+    jae tt_end
+    cmp byte ptr [edx*8 + {PO_TAB + 4:#x}], {PO_TRAMPA}
+    jne tt_next
+    movzx eax, byte ptr [edx*8 + {PO_TAB + 5:#x}]
+    test al, {TR_RECIEN}
+    jz tt_next
+    mov ecx, eax
+    shr ecx, 4
+    and ecx, 7
+    cmp ecx, ebx
+    jne tt_next
+    and al, {TR_CUENTA}
+    mov byte ptr [edx*8 + {PO_TAB + 5:#x}], al
+tt_next:
+    inc edx
+    jmp tt_loop
+tt_end:
+    popad
+    ret
+''')
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
     pushad
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae it_out
+    call {tr_turn:#x}
     cmp byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0
     je it_ord
     dec byte ptr [ebx*8 + {OR_TAB + 1:#x}]
