@@ -8118,13 +8118,57 @@ qta:
 # casilla es (columna + [ebp+0x28], fila + [ebp+0x2a]), las mismas que 0x45857e copia a las celdas). Solo llegan las
 # celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
 # es su dueño o un aliado mutuo con vista aliada (fogally). Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
-# 11 es transparente): 0 pozo, 1..4 remolino, 5 trampa, 6..9 trampa detonada (humea), 10..12 tumba, lápida y cruz
-# (+5 del registro). Remolino y trampa detonada se animan como el agua: cuadro + ([ebp+0x3c] & 3), la fase que
-# 0x456fdc avanza cada tic de la animación del mapa. La hoja se carga (0x4dd3f0) la
+# 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa, 6..9 trampa detonada (humea), 10..12 tumba, lápida y cruz
+# (+5 del registro), PO_REMO0.. remolino. Remolino y trampa detonada se animan como el agua con la fase [ebp+0x3c] & 3
+# que 0x456fdc avanza cada tic de la animación del mapa. El remolino ocupa 3x3 casillas (pedido del usuario,
+# 22/10/2026; solo mata la del medio): cada celda de agua sin edificio ni estructura pinta, por cada remolino
+# descubierto en ella o en una de sus 8 vecinas, la pieza (dy + 1) * 3 + (dx + 1) de esa fase, con (dx, dy) = celda -
+# remolino; sobre tierra, costa o puente esa pieza no se pinta. Al descubrirlo se redibuja el mapa entero (REDRAW),
+# así que las vecinas se actualizan. La hoja se carga (0x4dd3f0) la
 # primera vez que hace falta, o de nuevo si el juego la descargó; si no se puede, no se insiste.
 PO_FILE = RAM_FILE + 3       # después de sorteo.pcx y darkcomp.pcx (ver table_add, más abajo)
-PO_FRAMES = 13
+PO_REMO0 = 13                # remolino grande: 4 fases x 9 piezas (3x3), desde el cuadro 13
+PO_FRAMES = PO_REMO0 + 36
+# po_vecs[k]: (dy << 4) | (dx & 15) de la pieza k = (dy + 1) * 3 + (dx + 1), con (dx, dy) = celda - remolino
+po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
+po_cx = place_data('po_cx', bytes(8))   # casilla (x, y) y lugar en pantalla (x, y) de la celda que se dibuja
+# pw_put: edi = cuadro de la hoja -> lo pinta en la celda; preserva ebp.
+pw_put = place('pw_put', f'''
+    cmp dword ptr [{po_nosheet:#x}], 0
+    jne pp_end
+    push {PO_FILE}
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz pp_fail
+    cmp dword ptr [eax + 8], 0
+    jne pp_blit
+    push {PO_FILE}
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jnz pp_blit
+pp_fail:
+    mov dword ptr [{po_nosheet:#x}], 1
+    jmp pp_end
+pp_blit:
+    movsx eax, word ptr [{po_cx + 6:#x}]
+    push eax
+    movsx eax, word ptr [{po_cx + 4:#x}]
+    push eax
+    push 0x27
+    push 48
+    push 48
+    push 0
+    imul edi, edi, 48
+    push edi
+    push {PO_FILE}
+    call 0x4dd530
+    add esp, 0x20
+pp_end:
+    ret
+''')
 po_draw = place('po_draw', f'''
     pushad
     movsx eax, word ptr [esp + 0x34]
@@ -8133,6 +8177,12 @@ po_draw = place('po_draw', f'''
     movsx edx, word ptr [esp + 0x36]
     movsx ecx, word ptr [ebp + 0x2a]
     add edx, ecx
+    mov word ptr [{po_cx:#x}], ax
+    mov word ptr [{po_cx + 2:#x}], dx
+    mov cx, word ptr [esp + 0x38]
+    mov word ptr [{po_cx + 4:#x}], cx
+    mov cx, word ptr [esp + 0x3a]
+    mov word ptr [{po_cx + 6:#x}], cx
     test eax, eax
     jl pw_end
     test edx, edx
@@ -8141,6 +8191,69 @@ po_draw = place('po_draw', f'''
     jge pw_end
     cmp dx, word ptr [0x503e02]
     jge pw_end
+    movsx ecx, word ptr [0x560b20]
+    cmp ecx, 8
+    jae pw_end
+    mov cl, byte ptr [0x503e06]
+    lea esi, [edx + edx*4]
+    add esi, esi
+    shl esi, cl
+    lea edi, [eax + eax*4]
+    lea esi, [esi + edi*2 + 0x503e58]
+    movzx edi, word ptr [esi]
+    test edi, 0x4000
+    jnz pw_own
+    test byte ptr [esi + 3], 7
+    jnz pw_own
+    and edi, 0x1f
+    imul edi, edi, 0x58
+    cmp word ptr [edi + 0x535f0c], 1
+    jne pw_own
+    mov esi, 8
+pw_vec:
+    movzx eax, byte ptr [esi + {po_vecs:#x}]
+    movsx edi, al
+    sar edi, 4
+    shl eax, 28
+    sar eax, 28
+    movsx ecx, word ptr [{po_cx:#x}]
+    sub ecx, eax
+    jl pw_vnext
+    cmp cx, word ptr [0x503e00]
+    jge pw_vnext
+    movsx edx, word ptr [{po_cx + 2:#x}]
+    sub edx, edi
+    jl pw_vnext
+    cmp dx, word ptr [0x503e02]
+    jge pw_vnext
+    push ecx
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    pop ecx
+    add edx, ecx
+    cmp edx, {PO_MAPSZ}
+    jae pw_vnext
+    movzx eax, byte ptr [edx + {po_map:#x}]
+    test eax, eax
+    jz pw_vnext
+    lea ebx, [eax*8 + {PO_TAB - 8:#x}]
+    cmp byte ptr [ebx + 4], {PO_REMOLINO}
+    jne pw_vnext
+    movzx eax, byte ptr [ebx + 6]
+    movsx edx, word ptr [0x560b20]
+    bt eax, edx
+    jnc pw_vnext
+    movzx edi, word ptr [ebp + 0x3c]
+    and edi, 3
+    imul edi, edi, 9
+    lea edi, [edi + esi + {PO_REMO0}]
+    call {pw_put:#x}
+pw_vnext:
+    dec esi
+    jns pw_vec
+pw_own:
+    movsx eax, word ptr [{po_cx:#x}]
+    movsx edx, word ptr [{po_cx + 2:#x}]
     mov cl, byte ptr [0x503e06]
     shl edx, cl
     add edx, eax
@@ -8151,8 +8264,6 @@ po_draw = place('po_draw', f'''
     jz pw_end
     lea ebx, [eax*8 + {PO_TAB - 8:#x}]
     movsx edx, word ptr [0x560b20]
-    cmp edx, 8
-    jae pw_end
     movzx eax, byte ptr [ebx + 6]
     bt eax, edx
     jc pw_vis
@@ -8167,12 +8278,7 @@ pw_vis:
     movzx eax, byte ptr [ebx + 4]
     xor edi, edi
     cmp eax, {PO_REMOLINO}
-    jne pw_trap
-    movzx edi, word ptr [ebp + 0x3c]
-    and edi, 3
-    inc edi
-    jmp pw_sheet
-pw_trap:
+    je pw_end
     cmp eax, {PO_TRAMPA}
     jne pw_tumba
     mov edi, 5
@@ -8190,37 +8296,7 @@ pw_tumba:
     ja pw_end
     add edi, 10
 pw_sheet:
-    cmp dword ptr [{po_nosheet:#x}], 0
-    jne pw_end
-    push {PO_FILE}
-    mov ecx, 0x58cf78
-    call 0x4e4a90
-    test eax, eax
-    jz pw_fail
-    cmp dword ptr [eax + 8], 0
-    jne pw_blit
-    push {PO_FILE}
-    call 0x4dd3f0
-    add esp, 4
-    test eax, eax
-    jnz pw_blit
-pw_fail:
-    mov dword ptr [{po_nosheet:#x}], 1
-    jmp pw_end
-pw_blit:
-    movsx eax, word ptr [esp + 0x3a]
-    push eax
-    movsx eax, word ptr [esp + 0x3c]
-    push eax
-    push 0x27
-    push 48
-    push 48
-    push 0
-    imul edi, edi, 48
-    push edi
-    push {PO_FILE}
-    call 0x4dd530
-    add esp, 0x20
+    call {pw_put:#x}
 pw_end:
     popad
     cmp byte ptr [esi + 0x10], 0
@@ -11688,7 +11764,7 @@ table_add(res, 2, DC_FILE, bytes(butt_std))
 # recortada de su pasto (los dos palos y la sombra oscura que cae abajo a la derecha). Trampa detonada: un agujero
 # irregular propio (radio con ruido fijo, achatado) con el humo del pozo humeante de TERRAIN\DATA\cit_anim.PCX
 # (columna 4, sus 4 cuadros): lo que difiere de la columna 5 (el mismo pozo con lava) y es gris claro, llevado al
-# centro del agujero. Siguen de prueba (recortados de las ruinas): remolino = la cueva girada, trampa = puerta trampa.
+# centro del agujero. Sigue de prueba (recortada de las ruinas): trampa = puerta trampa. Remolino: más abajo.
 assert PO_FILE == DC_FILE + 1
 henge = bytearray(res[o2 + 20 + 0x51 * 60:o2 + 20 + 0x52 * 60])
 assert henge[4:10] == b'henge\0' and struct.unpack_from('<6I', henge, 36) == (10, 1, 0, 0, 0, 2)
@@ -11776,9 +11852,32 @@ for fr in range(4):
             if i != _ref.getpixel((x, y)) and _lum(i) > 75 and _gris(i) and 0 <= nx < 48 and 0 <= ny < CY + 3:
                 f.putpixel((nx, ny), i)
     detonada.append(f)
-cueva = cuadro_ruina('cave', 0)
+# Remolino (aprobado por el usuario, 22/10/2026, «un poco más grande», simétrico): 3x3 casillas, unas dos de ancho;
+# solo mata la del medio. Espiral de dos brazos de espuma sobre un embudo que oscurece hacia el centro, girada 45° por
+# fase (con dos brazos, 4 fases dan media vuelta y el ciclo empalma), en los azules del agua del mapa. Fondo
+# transparente: alrededor se ve el agua (con su animación); el borde se deshilacha con un ruido fijo, igual en las 4
+# fases. Cada fase se corta en 9 piezas de 48x48 (cuadros PO_REMO0 + fase * 9 + pieza, ver po_draw); los cuadros 1..4
+# (el remolino chico de antes) quedan con la pieza del medio.
+RE_AZUL = sorted([32, 33, 34, 35, 36, 37, 38, 42, 43, 46] + list(range(148, 160)), key=lambda i: sum(po_pal[3 * i:3 * i + 3]))
+_rr = random.Random(11)
+_ruido = [[_rr.random() for x in range(144)] for y in range(144)]
+def remolino(fase):
+    im = Image.new('P', (144, 144), 11); im.putpalette(po_pal)
+    for y in range(144):
+        for x in range(144):
+            dx, dy = (x - 71.5) / 46, (y - 71.5) / 37
+            r = math.hypot(dx, dy)
+            if r >= 1 or r > 0.7 and _ruido[y][x] < (r - 0.7) / 0.3: continue
+            a = math.atan2(dy, dx) + fase + 5.5 * math.log(r + 0.08)
+            brazo = (math.cos(2 * a) + 1) / 2            # 1 en la cresta de espuma, 0 en el valle
+            l = (0.15 + 0.85 * r ** 0.6) * (0.55 + 0.6 * brazo ** 3) + 0.08 * (_ruido[x][y] - 0.5)
+            im.putpixel((x, y), RE_AZUL[max(0, min(len(RE_AZUL) - 1, int(l * len(RE_AZUL))))])
+    return im
+remolinos = [remolino(-k * math.pi / 4) for k in range(4)]
+remo_piezas = [r.crop((48 * (k % 3), 48 * (k // 3), 48 * (k % 3) + 48, 48 * (k // 3) + 48)) for r in remolinos for k in range(9)]
 po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
-cuadros = [pozo] + [cueva.rotate(-90 * k) for k in range(4)] + [cuadro_ruina('trapdoor', 0)] + detonada + [tumba, lapida, cruz]
+cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [cuadro_ruina('trapdoor', 0)] + detonada
+           + [tumba, lapida, cruz] + remo_piezas)
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))

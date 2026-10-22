@@ -8,7 +8,7 @@
 # Parte 4, descubrir: po_step (desde 0x49ce08) con el 0x4a1ce0 real (sin ruinas), que avanza el contador de pasos.
 # Nombres (21/10/2026): po_gen los reparte en +5; los avisos los arman con sprintf ([0x5a9bec], de mentira).
 # Parte 5, dibujo: po_draw (desde 0x459b95) con una vista y una celda de juguete; 0x4dd530, 0x4e4a90 y 0x4dd3f0 de
-# mentira.
+# mentira. Remolino de 3x3 (22/10/2026): cada casilla de agua pinta su pieza de los remolinos de ella y sus vecinas.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
 import os, re, sys, struct, pefile
@@ -348,10 +348,12 @@ PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]
 VISTA, CELDA, HOJA = 0x180000, 0x181000, 0x182000
 PO_FILE = 168
 def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vista=True, cargada=True, hay=True,
-            sitio=0):
+            sitio=0, agua=(), puente=()):
     # Una celda de la vista: columna/fila celda, origen de la vista, quien mira. Devuelve los dibujos de 0x4dd530
     # (hoja, x, y, ancho, alto, destino, x, y en pantalla), las cargas de la hoja y por dónde siguió.
     g = Juego(); mu = g.mu; g.poner(regs)
+    mu.mem_write(0x535f0c + AGUA * 0x58, struct.pack('<h', 1))
+    for x, y in agua: mu.mem_write(casilla(x, y), struct.pack('<HH', AGUA, 0x100 if (x, y) in puente else 0))
     for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
     mu.mem_write(VISTA + 0x28, struct.pack('<hh', *origen)); mu.mem_write(VISTA + 0x3c, struct.pack('<h', fase))
     mu.mem_write(CELDA + 0x10, bytes([sitio])); mu.mem_write(0x560b20, struct.pack('<h', mira))
@@ -386,7 +388,24 @@ ver('pozo visto por quien mira: cuadro 0, 48x48 en la celda, al destino 0x27; si
 ver('control: con sitio en la celda sigue a dibujarlo', dibujar(en(0, m=0x04), sitio=1)[2], '0x459b9b')
 ver('control: pozo no descubierto por quien mira: nada', dibujar(en(0, m=0x08))[0], [])
 ver('control: otra casilla: nada', dibujar(en(0, m=0x04), celda=(4, 2))[0], [])
-ver('remolino: cuadro 1 + fase & 3', [dibujar(en(1, m=0x04), fase=f)[0][0][0] for f in range(6)], [1, 2, 3, 4, 1, 2])
+MAR = [(x, y) for x in range(8, 20) for y in range(17, 28)]
+R0 = 13             # PO_REMO0: remolino, 4 fases x 9 piezas
+ver('remolino en el agua: pieza del medio, R0 + fase * 9 + 4', [dibujar(en(1, m=0x04), fase=f, agua=MAR)[0] for f in range(6)],
+    [[(R0 + (f & 3) * 9 + 4, 0, 48, 48, 0x27, 144, 96)] for f in range(6)])
+ver('vecinas de agua: cada una su pieza (dy + 1) * 3 + (dx + 1)',
+    [dibujar(en(1, m=0x04), celda=(3 + dx, 2 + dy), fase=1, agua=MAR)[0][0][:1] for dy in (-1, 0, 1) for dx in (-1, 0, 1)],
+    [(R0 + 9 + k,) for k in range(9)])
+ver('control: a dos casillas, nada', [dibujar(en(1, m=0x04), celda=c, agua=MAR)[0] for c in ((5, 2), (3, 4), (1, 0))], [[]] * 3)
+ver('control: vecina en tierra, nada', dibujar(en(1, m=0x04), celda=(4, 2), agua=[EN])[0], [])
+ver('control: vecina con puente, nada', dibujar(en(1, m=0x04), celda=(4, 2), agua=MAR, puente=[(14, 22)])[0], [])
+ver('control: remolino no descubierto por quien mira, ni en su casilla ni en las vecinas',
+    [dibujar(en(1, m=0x08), celda=c, agua=MAR)[0] for c in ((3, 2), (4, 3))], [[], []])
+ver('dos remolinos vecinos: la casilla del medio pinta una pieza de cada uno',
+    [d[0] for d in dibujar([(12, 22, 1, 0, 4, 0xff), (14, 22, 1, 0, 4, 0xff)], agua=MAR)[0]], [R0 + 5, R0 + 3])
+ver('pozo en una vecina de agua: primero la pieza del remolino, encima el pozo',
+    [d[0] for d in dibujar([EN + (1, 0, 4, 0xff), (14, 22, 0, 0, 4, 0xff)], celda=(4, 2), agua=MAR)[0]], [R0 + 5, 0])
+ver('remolino en el borde del mapa: las vecinas de afuera no cuentan',
+    [d[0] for d in dibujar([(0, 0, 1, 0, 4, 0xff)], celda=(0, 0), origen=(0, 0), agua=[(0, 0)])[0]], [R0 + 4])
 ver('trampa del que mira (no descubierta): cuadro 5', dibujar(en(2, d=2))[0][0][0], 5)
 ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[(2, 3)])[0][0][0], 5)
 ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])

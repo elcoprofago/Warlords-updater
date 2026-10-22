@@ -41,7 +41,7 @@ Resultado:
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. **Antes:** el parche nuevo (vista-aliada 1.0.55.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
+0. **Antes:** el parche nuevo (vista-aliada 1.0.56.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
    estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
    trampas» y lo instalo. Sirve también para las tareas 24 y 27.
 1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
@@ -63,10 +63,12 @@ Resultado:
 
 - [ ] **24.** Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
 Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubren al pasar, matan al que cae y ahora
-se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX); el remolino sigue provisorio (la cueva de las ruinas
-girando). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
+se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
 **Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). En C:\Warlords3 está la 1.0.50.0;
-hacela con la 1.0.55.0 instalada (tarea 26, paso 0), que trae los nombres.
+hacela con la 1.0.56.0 instalada (tarea 26, paso 0), que trae los nombres y el remolino nuevo.
+**Cambio de 1.0.56.0:** el remolino tiene su dibujo propio (la espiral que aprobaste), de unas dos casillas de ancho
+y girando. Mirá que se vea entero y parejo sobre el agua, que junto a la costa no se pinte sobre la tierra, y que
+**solo mate la casilla del medio** (las de alrededor se cruzan sin riesgo).
 **Cambio de 1.0.52.0:** cada pozo y remolino tiene **nombre** (por ejemplo «the Well of Souls», «the Maelstrom of
 Kor»), y los avisos lo dicen: «You have discovered the Well of Souls!», «Your army fell into the Well of Souls!».
 **Cambio de 1.0.50.0:** se descubre en **1 de cada 5 pasos** (antes 1 de cada 10).
