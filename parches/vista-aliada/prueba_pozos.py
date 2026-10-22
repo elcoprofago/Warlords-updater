@@ -11,7 +11,7 @@
 # mentira.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
-import os, sys, struct, pefile
+import os, re, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
@@ -57,8 +57,13 @@ class Juego:
         self.interceptar(0x4dfdc0, lambda a: self.abiertos.pop(self.mu.reg_read(UC_X86_REG_ECX), None) and 0)
         mu.mem_write(0x5a9bec, struct.pack('<I', SPRINTF)); self.interceptar(SPRINTF, self.sprintf)   # solo %s
     def cadena(self, a): return bytes(self.mu.mem_read(a, 256)).split(b'\0')[0]
-    def sprintf(self, a):
-        t = self.cadena(a[1]).replace(b'%s', self.cadena(a[2])); self.mu.mem_write(a[0], t + b'\0'); return len(t)
+    def sprintf(self, a):   # %s y %d (con ancho y precisión), hasta dos argumentos
+        f = self.cadena(a[1]).decode('latin1'); ts = re.findall(r'%[-.0-9]*([sd])', f)
+        t = (f % tuple(self.cadena(v).decode('latin1') if c == 's' else v for c, v in zip(ts, a[2:]))).encode('latin1')
+        self.mu.mem_write(a[0], t + b'\0'); return len(t)
+    def ciudades(self, cs):   # (x, y, nombre)
+        self.mu.mem_write(0x537e2a, struct.pack('<h', len(cs)))
+        for i, (x, y, n) in enumerate(cs): self.mu.mem_write(0x537e2c + i * 0xde, struct.pack('<hh', x, y) + n.encode() + b'\0')
     def interceptar(self, addr, fn, pop=0):
         def g(mu, a, size, _):
             sp = mu.reg_read(UC_X86_REG_ESP)
@@ -196,10 +201,10 @@ ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
-def caer(regs, ejs, pasos, mira=2, snd=0x20):
+def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=()):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
-    g = Juego(); mu = g.mu; g.poner(regs)
+    g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
     for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
     mu.mem_write(0x54fe50, struct.pack('<h', len(ejs) + 1))
     vuela = {}
@@ -260,6 +265,16 @@ r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
 ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
 r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
 ver('dos jugadores en el mismo lote: cada uno en lo suyo', r[0], [(1, 0), (2, 0), (3, 0), (4, 1)])
+print('-- nombres de trampas')
+CS = [(5, 5, 'Afland'), (30, 20, 'Belgor'), (14, 14, 'Corvin'), (0, 0, 'Xenomorphic Stronghold of Doom')]
+TR = [(15, 15, 2, 0, 0, 3), (40, 40, 2, 1, 0xff, 3), (13, 13, 2, 0, 0, 1), (16, 13, 2, 0, 0, 3), (28, 22, 2, 0, 0, 5)]
+def trampa(i, cs=CS): return caer(TR, [(TR[i][0], TR[i][1], 3, 0, 0)], [(3, TR[i][0], TR[i][1])], mira=3, cs=cs)[1]
+ver('caer: ciudad más cercana y número correlativo por ciudad (la de 40,40 es de Belgor: no cuenta para Corvin)',
+    [trampa(i) for i in (0, 2, 3, 4)], [['Your army fell into the trap Corvin01!'], ['Your army fell into the trap Corvin02!'],
+                                        ['Your army fell into the trap Corvin03!'], ['Your army fell into the trap Belgor02!']])
+ver('empate de distancia: la primera ciudad', trampa(0, [(13, 15, 'Afland'), (17, 15, 'Belgor')]), ['Your army fell into the trap Afland01!'])
+ver('nombre largo: a 20 letras', trampa(0, [(15, 16, 'Xenomorphic Stronghold of Doom')]), ['Your army fell into the trap Xenomorphic Strongho01!'])
+ver('control: sin ciudades, el aviso de antes', trampa(0, []), ['Your army fell into a trap!'])
 print('-- tumbas al caer en un pozo')
 def tumbas(t, n=len(POZOS)): return [r for r in t[n:] if r[2] == 3]
 r = caer(POZOS, GRUPO, [(2, 10, 10)])
@@ -285,10 +300,10 @@ lleno = POZOS + [(1, 1 + i // 30, 3, 0, 0xff, 0xff) for i in range(PO_MAX - len(
 r = caer(lleno, GRUPO, [(2, 10, 10)])
 ver('control: tabla llena: caen igual, sin tumba', (len(r[0]), len(r[3])), (3, PO_MAX))
 print('-- parte 4: descubrir')
-def descubrir(regs, pasos, cont=9, opc=0x30, mira=2, grupo=(0,)):
+def descubrir(regs, pasos, cont=9, opc=0x30, mira=2, grupo=(0,), cs=()):
     # pasos: (jugador, x, y, radio del grupo, que ya no cuenta). grupo: si vuela cada ejército del grupo en movimiento.
     # Devuelve las máscaras, los avisos y el contador al final.
-    g = Juego(); mu = g.mu; g.poner(regs)
+    g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
     for j in range(8):
         mu.mem_write(0x56ea94 + j * 0x4f0, struct.pack(f'<{len(grupo)}h', *range(1, len(grupo) + 1)))
         mu.mem_write(0x56eaa8 + j * 0x4f0, struct.pack('<h', len(grupo)))
@@ -313,6 +328,8 @@ ver('el primero no visto a 1; ya visto se saltea',
     descubrir([(10, 11, 0, 0, 4, 0xff)] + LEJOS[2:], [(2, 11, 10, 1)])[:2],
     ([4, 4, 0], ['You have discovered the Maelstrom of Kor!']))
 ver('trampa a 1: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 12, 1)])[:2], ([4], ['You have discovered a hidden trap!']))
+ver('trampa a 1, con ciudades: aviso con su nombre', descubrir(TR[2:3], [(2, 13, 12, 1)], cs=CS)[:2],
+    ([4], ['You have discovered the trap Corvin01!']))
 ver('control: a 2 no, aunque el grupo tenga radio 7', descubrir(LEJOS[3:], [(2, 10, 11, 7)])[:2], ([0], []))
 ver('control: radio del grupo 3 y contador -> 1: nada (cuenta 1, no el radio)', descubrir(LEJOS, [(2, 10, 10, 3)], cont=0)[:2], ([0] * 4, []))
 ver('contador 4 -> 5: descubre (1 de cada 5 pasos)', descubrir(LEJOS, [(2, 10, 10, 1)], cont=4)[0], [0, 4, 0, 0])

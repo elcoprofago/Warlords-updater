@@ -7384,7 +7384,65 @@ str_po_disc = [place_data(f'str_po_disc{i}', cstr_(s)) for i, s in enumerate((
     'You have discovered a hidden pit!', 'You have discovered a hidden whirlpool!', 'You have discovered a hidden trap!'))]
 po_disct = place_data('po_disct', struct.pack('<3I', *str_po_disc))
 po_gent = place_data('po_gent', struct.pack('<6I', *str_po_fell, *str_po_disc))
-# Aviso: eax = tipo, edx = registro, ecx = 0 caer / 1 descubrir. Pozo y remolino con su nombre; preserva todo.
+# Nombre de la trampa (pedido del usuario, 21/10/2026): la ciudad más cercana y un número de dos cifras («Afland01»).
+# No se guarda (el registro no tiene lugar libre): se calcula al dar el aviso. Ciudad: la más cercana de todas
+# (distancia de rey; en empate, la primera), también las arrasadas, para que el nombre no cambie durante la partida.
+# Número: 1 + las trampas anteriores en la tabla con la misma ciudad; los registros nunca se borran y la tabla es la
+# misma en todas las PC, así que el número tampoco cambia. Sin ciudades, el aviso fijo de antes.
+# tr_city: esi = registro -> eax = ciudad o -1; preserva el resto.
+tr_city = place('tr_city', f'''
+    push ebx
+    push ecx
+    push edx
+    push edi
+    push ebp
+    or edi, -1
+    mov ebp, 0x7fffffff
+    xor ebx, ebx
+tcy_loop:
+    movsx eax, word ptr [0x537e2a]
+    cmp ebx, eax
+    jge tcy_out
+    imul ecx, ebx, 0xde
+    movsx eax, word ptr [ecx + 0x537e2e]
+    movsx edx, word ptr [esi + 2]
+    sub eax, edx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    push eax
+    movsx eax, word ptr [ecx + 0x537e2c]
+    movsx edx, word ptr [esi]
+    sub eax, edx
+    cdq
+    xor eax, edx
+    sub eax, edx
+    pop ecx
+    cmp eax, ecx
+    jge tcy_d
+    mov eax, ecx
+tcy_d:
+    cmp eax, ebp
+    jge tcy_next
+    mov ebp, eax
+    mov edi, ebx
+tcy_next:
+    inc ebx
+    jmp tcy_loop
+tcy_out:
+    mov eax, edi
+    pop ebp
+    pop edi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+TR_FMT = ('Your army fell into the trap %.20s%02d!', 'You have discovered the trap %.20s%02d!')
+assert all(len(f % ('x' * 20, 99)) < 64 for f in TR_FMT)   # renglón de 0x4c2790; el nombre de ciudad, a 20
+tr_fmtt = place_data('tr_fmtt', struct.pack('<2I', *(place_data(f'str_tr_fmt{i}', cstr_(f)) for i, f in enumerate(TR_FMT))))
+# Aviso: eax = tipo, edx = registro, ecx = 0 caer / 1 descubrir. Pozo y remolino con su nombre, trampa con el suyo;
+# preserva todo.
 po_msg = place('po_msg', f'''
     pushad
     cmp eax, {PO_TRAMPA}
@@ -7394,6 +7452,44 @@ pm_t:
     lea esi, [ecx + ecx*2]
     add esi, eax
     mov esi, dword ptr [esi*4 + {po_gent:#x}]
+    cmp eax, {PO_TRAMPA}
+    jne pm_pozo
+    mov edi, edx
+    push esi
+    mov esi, edx
+    call {tr_city:#x}
+    pop esi
+    test eax, eax
+    jl pm_show
+    mov ebx, eax
+    mov ebp, 1
+    push esi
+    mov esi, {PO_TAB:#x}
+pm_tn:
+    cmp esi, edi
+    jae pm_tnf
+    cmp byte ptr [esi + 4], {PO_TRAMPA}
+    jne pm_tnn
+    call {tr_city:#x}
+    cmp eax, ebx
+    jne pm_tnn
+    inc ebp
+pm_tnn:
+    add esi, {PO_REC}
+    jmp pm_tn
+pm_tnf:
+    pop esi
+    push ebp
+    imul eax, ebx, 0xde
+    add eax, 0x537e30
+    push eax
+    push dword ptr [ecx*4 + {tr_fmtt:#x}]
+    push {po_buf:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 16
+    mov esi, {po_buf:#x}
+    jmp pm_show
+pm_pozo:
     cmp eax, {PO_REMOLINO}
     ja pm_show
     movzx edx, byte ptr [edx + 5]

@@ -319,7 +319,14 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
   dice «Your army», no el nombre del héroe (como antes). Trampa y tumba siguen con su texto fijo. Probado en unicorn
   (prueba_pozos.py, 75 OK); no en el juego (va con la tarea 24). Viajan por red con la tabla cuando se haga la parte 6.
   De paso se corrigió la prueba: el puente del mapa de juguete estaba en el byte +4 y pg_ok lo mira en +3.
-- **Nombres de trampas:** ciudad más cercana + número de dos cifras («Afland01»).
+- **Nombres de trampas: hecho (21/10/2026, 1.0.54.0).** Ciudad más cercana + número de dos cifras («Afland01»). No se
+  guarda: el registro de 8 bytes no tiene lugar libre (+5 estado, +6 máscara, +7 dueño). po_msg lo calcula al dar el
+  aviso: tr_city = la ciudad más cercana de todas (distancia de rey, en empate la primera; **también las arrasadas**,
+  para que el nombre no cambie en la partida); número = 1 + las trampas anteriores en la tabla con la misma ciudad
+  (los registros nunca se borran y la tabla es la misma en todas las PC). Nombre de ciudad recortado a 20 letras
+  (%.20s) por el renglón de 64 del aviso. Avisos: «Your army fell into the trap Afland01!», «You have discovered the
+  trap Afland01!». Sin ciudades, el aviso fijo de antes. El diálogo «Building a trap» no lo muestra (se calcula
+  cuando la trampa ya está en la tabla). Probado en unicorn (prueba_pozos.py, 83 OK); en el juego, tarea 26.
 - **Misión dura «Escort trap-disarming team to Afland02»:** se cumple cuando la trampa fue detonada por un ejército
   del jugador y después el héroe llega por tierra a una casilla vecina (volando no cuenta). Requiere estudiar el
   generador de misiones (tipos, texto, chequeo de cumplido) — no estudiado todavía.
