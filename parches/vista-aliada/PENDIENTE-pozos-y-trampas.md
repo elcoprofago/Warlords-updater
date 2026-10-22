@@ -379,3 +379,15 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
    en la misma pasada que sobre tierra.
 - Pruebas en unicorn: prueba_pozos (humo por fase, gastada vista por todos, tr_turn), prueba_trampas (puente sí) y
   prueba_misiontrampa (bit 7 con usos y gastada), todo OK.
+
+## Pedidos del 22/10/2026 (después de 1.0.59.0): hechos (1.0.60.0)
+1. **Trampas en cualquier lugar:** pg_ok con PO_TRAMPA solo pide casilla libre en po_map (ciudad, ruina, sitio, camino,
+   puente, agua y montaña sí). Las arman las mismas unidades (bono «Trap»), también embarcadas.
+2. **Mina más chica y sin sombra** (`mina()`, R 6.5). **Mina submarina:** trampa en agua sin puente (po_wet; sobre un
+   puente es terrestre). Cuadro PO_MINAGUA (el último de pozos.pcx), la misma mina en los azules del agua (RE_AZUL).
+   Al explotar no deja rastro: recién explotada o gastada no se dibuja. Mata como el remolino (0x46c470(ej, 1), también
+   lo embarcado). Tres usos, como la de tierra. No es candidata a la misión 13 (el héroe no puede llegar por tierra).
+3. **Remolino lejos de la costa:** po_mar exige agua sin edificio ni estructura en toda casilla a 2 o menos (5x5), dentro
+   del mapa. Así no hay remolinos en ríos (hacen falta 5 casillas de agua de ancho). Los de partidas ya empezadas quedan.
+- Pruebas: prueba_pozos (submarina, puente, remolino en río), prueba_trampas (ciudad, ruina, agua) y prueba_misiontrampa
+  (submarina fuera de las candidatas), todo OK.

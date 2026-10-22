@@ -7111,9 +7111,10 @@ pol_end:
 # 21/10/2026: por el agua se circula menos); PO_TRIES tiros por cada uno (si el mapa
 # no tiene casillas válidas, quedan menos). Casilla válida: libre en po_map, sin edificio (palabra 0 & 0x4000), sin
 # cosa (palabra +2 bits 8-10, el mismo campo que la «estructura» [+3] & 7: 1 camino o puente, 2 ruina, 3 ciudad, 4
-# sitio); la trampa puede ir sobre un camino (pedido del usuario, 22/10/2026; el puente queda fuera por ser agua). Pozo: clase de terreno
+# sitio). Trampa: cualquier casilla libre en po_map (pedido del usuario, 22/10/2026: también ciudad, ruina, sitio,
+# camino, puente y agua). Pozo: clase de terreno
 # (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
-# activo. Remolino: clase agua. Tumba (po_grave): como el pozo, pero sin mirar las capitales. pg_ok: esi = x,
+# activo. Remolino: clase agua, y agua todo alrededor hasta 2 casillas (po_mar). Tumba (po_grave): como el pozo, pero sin mirar las capitales. pg_ok: esi = x,
 # edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
 # Nombres de pozos y remolinos (pedido del usuario, 21/10/2026): como las ruinas, para los avisos («Your army fell
 # into the Well of Souls!»). En +5 del registro (el estado solo lo usan las trampas): índice en la lista de su tipo,
@@ -7145,6 +7146,81 @@ po_buf = place_data('po_buf', bytes(64))
 PO_TRIES = 400
 po_q = place_data('po_q', bytes(4))
 po_k = place_data('po_k', bytes(4))
+# po_mar: esi = x, edi = y -> ZF = 1 si toda casilla a 2 o menos (max |dx|,|dy|) está en el mapa y es agua sin
+# edificio ni estructura (pedido del usuario, 22/10/2026: el remolino junto a la costa se ve entrecortado; así
+# tampoco hay remolinos en ríos). Preserva todo.
+po_mar = place('po_mar', f'''
+    pushad
+    mov ebx, -2
+pmr_y:
+    mov ebp, -2
+pmr_x:
+    lea eax, [esi + ebp]
+    lea edx, [edi + ebx]
+    test eax, eax
+    jl pmr_no
+    test edx, edx
+    jl pmr_no
+    cmp ax, word ptr [0x503e00]
+    jge pmr_no
+    cmp dx, word ptr [0x503e02]
+    jge pmr_no
+    mov cl, byte ptr [0x503e06]
+    lea edx, [edx + edx*4]
+    add edx, edx
+    shl edx, cl
+    lea eax, [eax + eax*4]
+    lea edx, [edx + eax*2 + 0x503e58]
+    test word ptr [edx], 0x4000
+    jnz pmr_no
+    test word ptr [edx + 2], 0x700
+    jnz pmr_no
+    movzx eax, word ptr [edx]
+    and eax, 0x1f
+    imul eax, eax, 0x58
+    cmp word ptr [eax + 0x535f0c], 1
+    jne pmr_no
+    inc ebp
+    cmp ebp, 2
+    jle pmr_x
+    inc ebx
+    cmp ebx, 2
+    jle pmr_y
+    popad
+    cmp eax, eax
+    ret
+pmr_no:
+    popad
+    test esp, esp
+    ret
+''')
+# po_wet: eax = registro -> ZF = 1 si su casilla es agua sin puente (mina submarina, pedido del usuario, 22/10/2026).
+# Preserva todo.
+po_wet = place('po_wet', f'''
+    pushad
+    movsx esi, word ptr [eax]
+    movsx edi, word ptr [eax + 2]
+    mov cl, byte ptr [0x503e06]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    lea eax, [eax + edx*2 + 0x503e58]
+    movzx edx, word ptr [eax + 2]
+    and edx, 0x700
+    cmp edx, 0x100
+    je pwt_no
+    movzx edx, word ptr [eax]
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    cmp word ptr [edx + 0x535f0c], 1
+    popad
+    ret
+pwt_no:
+    test esp, esp
+    popad
+    ret
+''')
 pg_ok = place('pg_ok', f'''
     pushad
     test esi, esi
@@ -7163,6 +7239,8 @@ pg_ok = place('pg_ok', f'''
     jae pk_no
     cmp byte ptr [eax + {po_map:#x}], 0
     jne pk_no
+    cmp ebp, {PO_TRAMPA}
+    je pk_si
     lea eax, [edi + edi*4]
     add eax, eax
     shl eax, cl
@@ -7173,13 +7251,7 @@ pg_ok = place('pg_ok', f'''
     jnz pk_no
     movzx ecx, word ptr [eax + 2]
     and ecx, 0x700
-    jz pk_cosa
-    cmp ebp, {PO_TRAMPA}
-    jne pk_no
-    cmp ecx, 0x100
-    jne pk_no
-    jmp pk_si
-pk_cosa:
+    jnz pk_no
     and edx, 0x1f
     imul edx, edx, 0x58
     movsx edx, word ptr [edx + 0x535f0c]
@@ -7190,8 +7262,6 @@ pk_cosa:
     cmp edx, 4
     je pk_no
     cmp ebp, {PO_TUMBA}
-    je pk_si
-    cmp ebp, {PO_TRAMPA}
     je pk_si
     xor ebx, ebx
 pk_cap:
@@ -7225,6 +7295,8 @@ pk_capn:
     jmp pk_si
 pk_agua:
     cmp edx, 1
+    jne pk_no
+    call {po_mar:#x}
     jne pk_no
 pk_si:
     popad
@@ -7784,10 +7856,17 @@ pf_ej:
     call {isfly:#x}
     test eax, eax
     jnz pf_ejn
-    xor eax, eax
+    push 1
     cmp byte ptr [ebp + 4], {PO_REMOLINO}
-    sete al
-    push eax
+    je pf_kill
+    cmp byte ptr [ebp + 4], {PO_TRAMPA}
+    jne pf_seco
+    mov eax, ebp
+    call {po_wet:#x}
+    je pf_kill
+pf_seco:
+    mov dword ptr [esp], 0
+pf_kill:
     push esi
     call 0x46c470
     add esp, 8
@@ -7908,6 +7987,9 @@ qs_loop:
     and al, {TR_CUENTA}
     cmp al, {TR_USOS}
     jae qs_next
+    mov eax, edx
+    call {po_wet:#x}
+    je qs_next
     mov ecx, dword ptr [esp]
     movzx eax, byte ptr [edx + 6]
     bt eax, ecx
@@ -8177,7 +8259,8 @@ qta:
 # celdas visibles (Hidden Map). Se dibuja si quien mira ([0x560b20]) lo descubrió (bit en +6) o, si es una trampa, si
 # es su dueño o un aliado mutuo con vista aliada (fogally); una trampa gastada, todos. Cuadro de 48x48 de la hoja PO_FILE (RUINS\pozos.pcx, el
 # 11 es transparente): 0 pozo, 1..4 sin uso, 5 trampa (mina), 6..9 agujero con humo (trampa recién explotada o gastada, animado con la fase del agua), 10..12 tumba, lápida y cruz
-# (+5 del registro), PO_REMO0.. remolino. El remolino se anima como el agua con la fase [ebp+0x3c] & 3
+# (+5 del registro), PO_REMO0.. remolino, PO_MINAGUA mina submarina (trampa en agua sin puente, po_wet: no deja
+# rastro; recién explotada o gastada no se dibuja). El remolino se anima como el agua con la fase [ebp+0x3c] & 3
 # que 0x456fdc avanza cada tic de la animación del mapa. El remolino ocupa 3x3 casillas (pedido del usuario,
 # 22/10/2026; solo mata la del medio): cada celda de agua sin edificio ni estructura pinta, por cada remolino
 # descubierto en ella o en una de sus 8 vecinas, la pieza (dy + 1) * 3 + (dx + 1) de esa fase, con (dx, dy) = celda -
@@ -8186,7 +8269,8 @@ qta:
 # primera vez que hace falta, o de nuevo si el juego la descargó; si no se puede, no se insiste.
 PO_FILE = RAM_FILE + 3       # después de sorteo.pcx y darkcomp.pcx (ver table_add, más abajo)
 PO_REMO0 = 13                # remolino grande: 4 fases x 9 piezas (3x3), desde el cuadro 13
-PO_FRAMES = PO_REMO0 + 36
+PO_MINAGUA = PO_REMO0 + 36   # mina submarina
+PO_FRAMES = PO_MINAGUA + 1
 # po_vecs[k]: (dy << 4) | (dx & 15) de la pieza k = (dy + 1) * 3 + (dx + 1), con (dx, dy) = celda - remolino
 po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
@@ -8343,6 +8427,18 @@ pw_vis:
     je pw_end
     cmp eax, {PO_TRAMPA}
     jne pw_tumba
+    mov eax, ebx
+    call {po_wet:#x}
+    jne pw_seca
+    mov al, byte ptr [ebx + 5]
+    test al, {TR_RECIEN}
+    jnz pw_end
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
+    jae pw_end
+    mov edi, {PO_MINAGUA}
+    jmp pw_sheet
+pw_seca:
     mov edi, 5
     mov al, byte ptr [ebx + 5]
     test al, {TR_RECIEN}
@@ -10576,7 +10672,7 @@ orr_x:
 # ---- Construir trampas (PENDIENTE-pozos-y-trampas.md, parte 7). Un grupo con un ejército (no héroe) cuyo registro
 # tiene el bono "Trap" construye, desde su menú de órdenes (diálogo 0x1f = RES 34, renglón nuevo TR_TXT / TR_HOT),
 # una trampa oculta en la casilla del líder, al costo de fundar una ciudad. Casilla: la de una tumba (pg_ok
-# PO_TRAMPA: tierra transitable, libre, sin ciudad, sitio ni ruina; camino y puente sí) y lugar en la tabla. Confirma con el
+# PO_TRAMPA: cualquier casilla libre, también agua; ahí es mina submarina) y lugar en la tabla. Confirma con el
 # diálogo de reconstruir (TR_MARK) y la orden viaja como TR_PKT (bando, x, y): en todas las PC tr_recv vuelve a
 # comprobar todo, cobra y agrega {x, y, PO_TRAMPA, 0, bit del dueño, dueño}. La IA no la usa.
 TRAP = b'trap'      # bono de combate (nombre +0xd6), no de movimiento
@@ -11975,23 +12071,23 @@ def remolino(fase):
 remolinos = [remolino(-k * math.pi / 4) for k in range(4)]
 remo_piezas = [r.crop((48 * (k % 3), 48 * (k // 3), 48 * (k % 3) + 48, 48 * (k // 3) + 48)) for r in remolinos for k in range(9)]
 # Trampa = mina (pedido del usuario, 22/10/2026): una bola de hierro chica con 8 puntas, iluminada desde arriba a la
-# izquierda, con un brillo y su sombra en el suelo. Reemplaza a la puerta trampa de prueba (cuadro 5).
-def mina():
+# izquierda, con un brillo, sin sombra. Reemplaza a la puerta trampa de prueba (cuadro 5). La submarina
+# (PO_MINAGUA) es la misma, en los azules del agua del mapa (RE_AZUL) según su brillo.
+def mina(agua=False):
     im = Image.new('P', (48, 48), 11); im.putpalette(po_pal)
-    MX, MY, R = 23.5, 22.5, 8.5
-    for y in range(48):
-        for x in range(48):
-            if ((x - MX - 2) / 12) ** 2 + ((y - MY - 11) / 4) ** 2 < 1:      # sombra
-                im.putpixel((x, y), po_color((22, 20, 18)))
-    for y in range(48):                                                    # puntas: conos finos de R - 1 a R + 5
+    MX, MY, R = 23.5, 23.5, 6.5
+    def color(v, b):
+        if agua: return RE_AZUL[max(0, min(len(RE_AZUL) - 1, int(v / 230 * len(RE_AZUL))))]
+        return po_color((v, v, v * b))
+    for y in range(48):                                                    # puntas: conos finos de R - 1 a R + 4
         for x in range(48):
             for k in range(8):
                 a = k * math.pi / 4 + math.pi / 8
                 u = (x - MX) * math.cos(a) + (y - MY) * math.sin(a)        # a lo largo de la punta
                 w = -(x - MX) * math.sin(a) + (y - MY) * math.cos(a)       # de costado
-                if R - 1 < u < R + 5 and abs(w) < 0.4 + 1.3 * (R + 5 - u) / 6:
+                if R - 1 < u < R + 4 and abs(w) < 0.4 + 1.1 * (R + 4 - u) / 5:
                     v = 55 + 90 * (0.5 + 0.5 * (-math.cos(a) - math.sin(a)) / 1.42) - (25 if w > 0.3 else 0)
-                    im.putpixel((x, y), po_color((v, v, v * 1.05)))
+                    im.putpixel((x, y), color(v, 1.05))
     for y in range(48):
         for x in range(48):
             dx, dy = (x - MX) / R, (y - MY) / R
@@ -11999,11 +12095,11 @@ def mina():
             dz = math.sqrt(1 - dx * dx - dy * dy)
             luz = max(0, (-dx - dy + dz) / 1.73)
             v = 30 + 130 * luz + (70 if luz > 0.95 else 0)
-            im.putpixel((x, y), po_color((v, v, v * 1.08)))
+            im.putpixel((x, y), color(v, 1.08))
     return im
 po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
-           + [tumba, lapida, cruz] + remo_piezas)
+           + [tumba, lapida, cruz] + remo_piezas + [mina(True)])
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))

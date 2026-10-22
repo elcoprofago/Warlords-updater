@@ -173,6 +173,8 @@ for pick, idx in ((0, 0), (1, 8)):
           f"{g['out'].hex()} {g['rand']}")
 g = gen([6, 0], traps=TRAPS[:5] + [TRAPS[5][:3] + (TR_USOS - 1,) + TRAPS[5][4:]] + TRAPS[6:])
 check('gen: T5 con un uso todavía (2 explosiones), es candidata (3 candidatas)', g['rand'][1]['n'] == 3, g['rand'])
+g = gen([6, 0], water={TRAPS[0][:2]})
+check('gen: T0 en el agua (mina submarina) no es candidata: queda T8 sola', g['rand'][1]['n'] == 1 and target(g) == (8, ENEMY), g['rand'])
 g = gen([6, 0], war=(ENEMY, PEACE))
 check('gen: en guerra también con el de T3, entra (3 candidatas)', g['rand'][1]['n'] == 3 and target(g) == (0, ENEMY), g['rand'])
 g = gen([6, 0], q=3)

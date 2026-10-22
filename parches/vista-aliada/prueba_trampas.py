@@ -3,8 +3,8 @@
 # Menú: br_menu (desde su entrada) llama a tr_check, que deja TR_FLAG; el grupo de juguete está en 0x56ea94.
 # Diálogo: br_rebtxt con TR_MARK; tr_send arma TR_PKT (0x4dd3b0 de mentira) o sigue a 0x4b9ce0 si no es la trampa.
 # Red: tr_recv (desde 0x4b6a22) con un paquete de juguete; 0x43fd60, 0x4057a0 y el redibujo de mentira.
-# Controles: héroe con "Trap", sin el bono, ruina, agua, ciudad u ocupada por un pozo, tabla llena, no es su
-# turno; en la red: otra máquina, sin oro, casilla mala, tabla llena, bando de la computadora.
+# Controles: héroe con "Trap", sin el bono, ocupada por un pozo, tabla llena, no es su
+# turno; en la red: otra máquina, sin oro, tabla llena, bando de la computadora.
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -102,9 +102,8 @@ ver('control: solo un héroe con "Trap" (ranura 0x10)', menu([(0x10, 'Trap', [])
 ver('control: "Traps" no es "Trap"', menu([(3, 'Traps', [])])[0], 0)
 ver('casilla con camino: se puede (pedido del 22/10/2026)', menu([(3, 'Trap', [])], x=10)[0], 1)
 ver('puente (agua con camino): se puede (pedido del 22/10/2026)', menu([(3, 'Trap', [])], x=31, y=3)[0], 1)
-ver('control: ruina (cosa 2)', menu([(3, 'Trap', [])], x=14, y=14)[0], 0)
-ver('control: ciudad', menu([(3, 'Trap', [])], x=12, y=12)[0], 0)
-ver('control: agua', menu([(3, 'Trap', [])], x=33)[0], 0)
+ver('ruina, ciudad y agua: se puede (pedido del 22/10/2026: en cualquier lugar)',
+    [menu([(3, 'Trap', [])], x=x, y=y)[0] for x, y in ((14, 14), (12, 12), (33, 7))], [1, 1, 1])
 ver('control: ya hay un pozo ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
 ver('control: ya hay una trampa detonada ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 0)
 ver('control: ni una gastada', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 3, 0xff, 0)])[0], 0)
@@ -160,7 +159,7 @@ ver('control: lo manda otra máquina', recibir(maquina=0), NADA)
 ver('control: no alcanza el oro', recibir(oro=CIUDAD - 1), NADA)
 ver('casilla con camino: se acepta', recibir(x=10)[:2], ([(10, 7, 2, 0, 4, 2)], [(2, -CIUDAD)]))
 ver('puente: se acepta', recibir(x=31, y=3)[:2], ([(31, 3, 2, 0, 4, 2)], [(2, -CIUDAD)]))
-ver('control: agua', recibir(x=33), NADA)
+ver('agua: se acepta', recibir(x=33)[:2], ([(33, 7, 2, 0, 4, 2)], [(2, -CIUDAD)]))
 ver('control: bando de la computadora', recibir(humano=False), NADA)
 ver('control: bando fuera de rango', recibir(p=9)[:3], NADA[:3])
 ver('control: tabla llena', recibir(regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[:2], NADA[:2])

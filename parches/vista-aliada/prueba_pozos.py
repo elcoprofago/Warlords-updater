@@ -142,12 +142,12 @@ PO_START = 0x42ddc1 + 5 + struct.unpack_from('<i', img, 0x42ddc1 - BASE + 1)[0]
 TIERRA, AGUA, MONTE = 0, 1, 2      # tipos de terreno -> clase 2, 1 y 4
 CAP = (5, 5)
 def casilla(x, y): return 0x503e58 + ((y * 10) << 6) + x * 10
-def armar(g, agua=True, hidden=True, ruinas=10):
+def armar(g, agua=True, hidden=True, ruinas=10, mar=30):
     mu = g.mu
     for t, c in ((TIERRA, 2), (AGUA, 1), (MONTE, 4)): mu.mem_write(0x535f0c + t * 0x58, struct.pack('<h', c))
     for y in range(30):
         for x in range(40):
-            t, reg = (AGUA, 2) if agua and x >= 30 else (TIERRA, 1)
+            t, reg = (AGUA, 2) if agua and x >= mar else (TIERRA, 1)
             if y == 0: t = MONTE
             w2 = reg
             if x == 10: w2 |= 0x100                     # camino
@@ -170,7 +170,8 @@ def generar(g, seed=1, **k):
 def valido(r):
     x, y, t = r[:3]
     if not (0 <= x < 40 and 0 <= y < 30) or y == 0 or x == 10 or (x, y) in ((12, 12), (14, 14), (35, 15)): return False
-    if t == 1: return x >= 30
+    if t == 1:   # agua a 2 casillas a la redonda: lejos de la orilla (x 30), de la montaña (y 0), del borde y del puente
+        return 32 <= x <= 37 and 3 <= y <= 27 and max(abs(x - 35), abs(y - 15)) > 2
     return x < 30 and max(abs(x - CAP[0]), abs(y - CAP[1])) > 2
 def resumen(t): return (sum(r[2] == 0 for r in t), sum(r[2] == 1 for r in t))
 ver('sin Hidden Ruins: tabla vacía (se borra la anterior)', generar(Juego(), hidden=False), [])
@@ -190,6 +191,8 @@ ver('  con los 16 y los 32 nombres, sin repetir', [sorted(r[3] for r in t if r[2
     [list(range(16)), list(range(32))])
 ver('nombres: el comienzo cambia con la partida', len({generar(Juego(), seed=s)[0][3] for s in range(20)}) > 4, True)
 ver('control: mapa sin agua: solo pozos', resumen(generar(Juego(), agua=False)), (2, 0))
+ver('control: agua de 4 casillas de ancho (como un río): ningún remolino', resumen(generar(Juego(), mar=36)), (2, 0))
+ver('  con 5 de ancho, sí, en la columna del medio', {r[0] for r in generar(Juego(), mar=35, ruinas=1000) if r[2] == 1}, {37})
 def empezar(g):
     g.mu.mem_write(STACK, struct.pack('<I', RET)); g.mu.reg_write(UC_X86_REG_ESP, STACK)
     g.mu.emu_start(PO_START, 0x4a1e20, count=1000000)
@@ -201,11 +204,13 @@ ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
-def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=()):
+def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=()):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
     g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
     for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
+    mu.mem_write(0x535f0c + AGUA * 0x58, struct.pack('<h', 1))
+    for x, y in agua: mu.mem_write(casilla(x, y), struct.pack('<HH', AGUA, 0x100 if (x, y) in puente else 0))
     mu.mem_write(0x54fe50, struct.pack('<h', len(ejs) + 1))
     vuela = {}
     for i, (x, y, d, h, v) in enumerate(ejs, 1):
@@ -267,6 +272,11 @@ r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0
 ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
 ver('SAV viejo: trampa detonada (+5 = 1) mata de nuevo, le quedan 2 usos', (r[0], r[1]), ([(1, 0)], ['Your army fell into a trap!']))
+r = caer(POZOS, [(15, 15, 2, 0, 0), (15, 15, 2, 0, 1)], [(2, 15, 15)], agua=[(15, 15)])
+ver('mina submarina: se hunde lo que no vuela, con 1 (como el remolino), y suma una', (r[0], r[1], r[3][2][3]),
+    ([(1, 1)], ['Your army fell into a trap!'], 0xa1))
+r = caer(POZOS, [(15, 15, 2, 0, 0)], [(2, 15, 15)], agua=[(15, 15)], puente=[(15, 15)])
+ver('control: sobre un puente es terrestre, con 0', r[0], [(1, 0)])
 for e in (3, 0xa3):
     r = caer(POZOS[:3] + [(16, 16, 2, e, 0xff, 3)], [(16, 16, 2, 0, 0)], [(2, 16, 16)])
     ver(f'control: trampa gastada (+5 = {e:#x}) ya no mata', (r[0], r[1]), ([], []))
@@ -437,6 +447,12 @@ ver('recién explotada: agujero con humo, 6 + fase', [dibujar(en(2, 0xa1, 0x04, 
 ver('control: recién explotada, quien no la descubrió no la ve', dibujar(en(2, 0xa1, 0x08, 3))[0], [])
 ver('gastada: agujero con humo para todos, aunque no la hayan descubierto',
     [dibujar(en(2, e, 0, 3), mira=m, fase=1)[0][0][0] for e, m in ((3, 2), (0xa3, 5), (3, 0))], [7, 7, 7])
+MA = 49            # PO_MINAGUA
+ver('mina submarina: cuadro PO_MINAGUA', dibujar(en(2, 1, 0x04, 3), agua=[EN])[0][0][0], MA)
+ver('mina submarina recién explotada o gastada: nada (no deja rastro)',
+    [dibujar(en(2, e, m, 3), agua=[EN])[0] for e, m in ((0xa1, 0x04), (3, 0x04), (3, 0))], [[], [], []])
+ver('control: trampa sobre un puente: mina y humo de tierra', [dibujar(en(2, e, 0x04, 3), agua=[EN], puente=[EN], fase=0)[0][0][0]
+    for e in (1, 0xa1, 3)], [5, 6, 6])
 ver('tumba, lápida y cruz (vistas por todos): cuadros 10, 11 y 12', [dibujar(en(3, k, 0xff), mira=m)[0][0][0] for k, m in ((0, 0), (1, 5), (2, 7))],
     [10, 11, 12])
 ver('control: tumba con imagen fuera de rango: nada', dibujar(en(3, 3, 0xff))[0], [])
