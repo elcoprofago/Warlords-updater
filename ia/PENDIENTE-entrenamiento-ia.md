@@ -632,12 +632,16 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   colores), Hexagon, sin ruinas (TAREAS 24). Las ruinas de Hexagon tienen contenido, guardián y «oculta» distintos
   entre sí (47 ruinas), así que desbalancean aun con el mapa simétrico.
 - Las ruinas las quita el usuario desde las opciones de la partida (ia\sin_ruinas.py se descartó).
+  **Corrección del usuario (21/10/2026):** el juego no tiene opción «sin ruinas», solo «sin ruinas ocultas» (Hidden
+  Ruins apagada). La tanda en curso corre **con las 47 ruinas de Hexagon, todas visibles**: el azar de su contenido
+  y guardián sigue ahí. (Con Hidden Ruins apagada tampoco hay pozos ni remolinos.) Si hace falta quitarlo, la vía
+  es la descartada: sacar las ruinas del mapa o igualarlas.
 - Ojo, dos límites que el bando simple no resuelve: (1) los equipos 013|457 no quedaron parejos en Hexagon (013
   ganó 37 de 48); el A/B lo compensa alternando, pero suma varianza. (2) las reglas de alianzas se activaron muy poco
   en Hexagon (16 refugios en 48 partidas): con menos azar se mide mejor, pero si casi no se activan el efecto
   seguirá siendo chico.
 - (21/10/2026) El usuario armó la partida con el bando simple, pero la guardó sobre **Tanda_hex_alianzas** (no como
-  Tanda_hex_simple): bando nuevo sin maná, casi el mismo héroe, mismos bandos, sin ruinas, dos grupos de aliados
+  Tanda_hex_simple): bando nuevo sin maná, casi el mismo héroe, mismos bandos, sin ruinas ocultas (no «sin ruinas»: ver la corrección de arriba), dos grupos de aliados
   intercalados en ubicación (el usuario confirmó que quedaron intercalados igual que antes: 013|457).
   Próximo: revisar el SAV y armar la tanda nueva (TAREAS 25).
 - (21/10/2026) Revisión del SAV con tanda.bandos/alianzas:

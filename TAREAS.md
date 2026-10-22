@@ -68,15 +68,16 @@ Resultado:
 
 ## 25. IA: Hexagon con menos azar (20/10/2026)
 Las tandas 25 a 34 no alcanzaron para demostrar nada: hay demasiado azar entre partidas. Esta vez todos juegan en
-condiciones idénticas y sin ruinas.
+condiciones idénticas y sin ruinas ocultas.
 1. Armá un bando simple con el editor de bandos: sin maná, el mismo héroe y los mismos regulares en todos los colores
    (lo que te parezca necesario para que no haya dados de más).
 2. Armá en **Hexagon** una partida guardada igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared Cities,
    Diplomacy, los mismos equipos 013 contra 457, un bando en Humano), pero con ese bando en todos los colores.
-   **Sin ruinas** (desde las opciones de la partida). Guardala como **Tanda_hex_simple** y avisame: te digo cuándo
+   **Sin ruinas ocultas** (Hidden Ruins apagada; el juego no tiene opción para quitar las ruinas). Guardala como **Tanda_hex_simple** y avisame: te digo cuándo
    correr la tanda.
 Resultado: (usuario, 21/10) hecha, pero guardada sobre **Tanda_hex_alianzas** (no Tanda_hex_simple): bando nuevo más
-simple, sin maná, casi el mismo héroe, mismos bandos, sin ruinas; dos grupos de aliados intercalados en el mapa.
+simple, sin maná, casi el mismo héroe, mismos bandos, **sin ruinas ocultas** (corrección del usuario, 21/10: no "sin
+ruinas", esa opción no existe; las ruinas están, todas visibles); dos grupos de aliados intercalados en el mapa.
 (usuario, 21/10) los colores quedaron intercalados igual que antes (equipos 013|457).
 (Este número era 24, repetido con la de pozos: pasó a 25.)
 (Claude, 21/10) Revisada: los equipos 013|457 y las opciones están bien. Pero el **blanco no tiene el mismo bando**
