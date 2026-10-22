@@ -12008,24 +12008,32 @@ def cuadro_ruina(tipo, columna):
     return po_cuadro(c.convert('RGB'), [(x, y) for x in range(87) for y in range(88) if c.getpixel((x, y)) not in (11, 101)])
 pozo = po_dibujo('pozo.PCX', (0x58, 1, 0x58 + 87, 89), fondo=lambda c: c[0] > 130 and c[1] < 40 and c[2] > 190)   # magenta y violeta
 tumba = po_dibujo('tumba.PCX', (1, 1, 88, 89))
-# Lápida (pedido del usuario, 22/10/2026; lapida.pcx era la tumba repetida): una cruz chica de cruz.pcx (a 1,5x),
-# sin montículo, con cinco ramos de flores al pie (tallo verde de 4, flor de 10 puntos con el centro de otro color).
+# Lápida (pedido del usuario, 22/10/2026; lapida.pcx era la tumba repetida): la cruz de cruz.pcx (18x22, sin
+# montículo) con su sombra hacia abajo a la derecha, y tres ramos de flores acostados contra el pie.
 _lc = Image.open(os.path.join(PICTS, 'cruz.pcx')).convert('RGB')
 _lm = {(x, y) for x in range(21) for y in range(21) if 8 <= x <= 11 and 4 <= y <= 15 or 5 <= x <= 14 and 7 <= y <= 9}
 _lp = Image.new('RGB', (48, 48)); _lpp = []
 def _lput(q, c):
+    if not (0 <= q[0] < 48 and 0 <= q[1] < 48): return
     _lp.putpixel(q, c)
     if q not in _lpp: _lpp.append(q)
-for X in range(15):
-    for Y in range(18):
-        if (5 + X * 2 // 3, 4 + Y * 2 // 3) in _lm: _lput((17 + X, 16 + Y), _lc.getpixel((5 + X * 2 // 3, 4 + Y * 2 // 3)))
-for bx, by, fl in [(18, 38, (200, 30, 30)), (29, 38, (235, 235, 235)), (23, 40, (230, 200, 40)), (33, 36, (150, 60, 170)),
-                   (14, 35, (235, 235, 235))]:
-    for dx in (-1, 0, 1):
-        for k in range(4): _lput((bx + dx * (k >= 2), by - k), (40, 110, 30))
-    for fx, fy in [(-2, -4), (-1, -5), (0, -6), (1, -5), (2, -4), (-1, -4), (1, -4), (0, -5), (-1, -6), (1, -6)]:
-        _lput((bx + fx, by + fy), fl)
-    _lput((bx, by - 5), (250, 230, 90) if fl[1] < 200 else (200, 110, 20))
+_SOMB, _TALLO = (40, 30, 10), (40, 110, 30)
+_lx, _ly = 15, 34   # pie de la cruz
+_lcz = [(_lx - 9 + X, _ly - 21 + Y, _lc.getpixel((5 + X * 5 // 9, 4 + Y * 12 // 22))) for X in range(18) for Y in range(22)
+        if (5 + X * 5 // 9, 4 + Y * 12 // 22) in _lm]
+for x, y, _ in _lcz:
+    for d in (0, 1): _lput((x + int((_ly - y) * 0.9) + 2 + d, _ly + 1 + int((_ly - y) * 0.3)), _SOMB)
+for sx, sy, fl in [(13, 36, (200, 30, 30)), (18, 38, (235, 235, 235)), (9, 37, (230, 200, 40))]:
+    for k in range(9):
+        _lput((sx - k, sy + k // 2 + 1), _SOMB)
+        _lput((sx - k, sy + k // 2), _TALLO)
+    for fx in range(-2, 3):
+        for fy in range(-2, 2):
+            if abs(fx) + abs(fy) < 4: _lput((sx + 2 + fx, sy - 1 + fy), fl)
+    for fx in range(-1, 5): _lput((sx + 2 + fx, sy + 2), _SOMB)
+    cen = (250, 230, 90) if fl[1] < 200 else (200, 110, 20)
+    _lput((sx + 2, sy - 2), cen); _lput((sx + 3, sy), cen)
+for x, y, c in _lcz: _lput((x, y), c)
 lapida = po_cuadro(_lp, _lpp)
 cruz_im = Image.open(os.path.join(PICTS, 'cruz.pcx'))
 assert cruz_im.size == (21, 21)
