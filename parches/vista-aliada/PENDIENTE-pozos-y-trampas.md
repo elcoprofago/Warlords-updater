@@ -391,3 +391,16 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
    del mapa. Así no hay remolinos en ríos (hacen falta 5 casillas de agua de ancho). Los de partidas ya empezadas quedan.
 - Pruebas: prueba_pozos (submarina, puente, remolino en río), prueba_trampas (ciudad, ruina, agua) y prueba_misiontrampa
   (submarina fuera de las candidatas), todo OK.
+
+## Pedido del 22/10/2026 (después de 1.0.64.0): lupa y botón derecho. Nada hecho todavía
+Hoy los nombres de pozos, remolinos y trampas (1.0.52.0 y 1.0.54.0) **solo salen en los avisos** al caer en ellos o
+al descubrirlos. El usuario quiere que se vean igual que en sitios, ruinas y ciudades:
+- al pasar el mouse por encima, el cursor cambia a una lupa;
+- con el botón derecho se abre un cuadro con la información: nombre, tipo y, en una trampa, quizá los usos que le
+  quedan;
+- solo para lo que ese jugador ya descubrió.
+
+Primer paso: encontrar en DarklordAV.exe dónde elige el juego el cursor de lupa y dónde arma el cuadro del botón
+derecho para ruinas y sitios. Después, sumar el caso de PO_TAB: el registro de esa casilla en po_map, con el bit de
+descubierto en +6.
+Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, lupa y botón derecho».
