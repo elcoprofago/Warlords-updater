@@ -11,16 +11,36 @@ Sorteo están acá (tarea 18).
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
 3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.52.0 (remolinos, distancia, 1 de cada 5 pasos y
    nombres), junto con la 26.
-4. **Tarea 26** (construir trampas), cuando termine la tanda de la 25.
+4. **Tarea 26** (construir trampas), cuando termine la tanda de la 25; después, **tarea 27** (misión de la trampa).
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+## 27. Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
+Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
+la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
+Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
+jugador** que **ya descubriste**. Como la computadora todavía no construye trampas, hacen falta **dos jugadores
+humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26 (paso 0 de esa tarea).
+1. Partida nueva en esta PC con **dos jugadores humanos** (A y B), con misiones de héroe activadas, incluida la
+   dificultad **Hard**.
+2. Con A, construí una trampa (como en la tarea 26) en tierra, a unas 5 a 15 casillas de donde va a andar el héroe de B.
+3. Con B, pasá al lado de la trampa hasta que salga «You have discovered the trap …».
+4. Con el héroe de B pedí misiones **Hard** en un templo varias veces (o en turnos distintos): alguna vez tiene que
+   salir «Escort trap-disarming team to Afland02» (con el nombre de esa trampa), y el texto «… must escort a
+   trap-disarming team to the trap Afland02.».
+5. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
+   caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
+6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): la misión de B tiene que **fracasar** al
+   turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
+7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
+Resultado:
 
 ## 26. Construir una trampa en el juego (21/10/2026)
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. **Antes:** el parche nuevo (vista-aliada 1.0.54.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
+0. **Antes:** el parche nuevo (vista-aliada 1.0.55.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
    estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
    trampas» y lo instalo.
 1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los

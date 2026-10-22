@@ -7438,6 +7438,37 @@ tcy_out:
     pop ebx
     ret
 ''')
+QT_TYPE = 13   # misión «escoltar al equipo que desarma la trampa» (qt_*, más abajo)
+# tr_id: edx = registro de trampa -> eax = ciudad del nombre (o -1, sin ciudades), ecx = número; preserva el resto.
+tr_id = place('tr_id', f'''
+    push ebx
+    push esi
+    mov esi, edx
+    call {tr_city:#x}
+    test eax, eax
+    jl ti_out
+    mov ebx, eax
+    mov ecx, 1
+    mov esi, {PO_TAB:#x}
+ti_loop:
+    cmp esi, edx
+    jae ti_end
+    cmp byte ptr [esi + 4], {PO_TRAMPA}
+    jne ti_next
+    call {tr_city:#x}
+    cmp eax, ebx
+    jne ti_next
+    inc ecx
+ti_next:
+    add esi, {PO_REC}
+    jmp ti_loop
+ti_end:
+    mov eax, ebx
+ti_out:
+    pop esi
+    pop ebx
+    ret
+''')
 TR_FMT = ('Your army fell into the trap %.20s%02d!', 'You have discovered the trap %.20s%02d!')
 assert all(len(f % ('x' * 20, 99)) < 64 for f in TR_FMT)   # renglón de 0x4c2790; el nombre de ciudad, a 20
 tr_fmtt = place_data('tr_fmtt', struct.pack('<2I', *(place_data(f'str_tr_fmt{i}', cstr_(f)) for i, f in enumerate(TR_FMT))))
@@ -7454,33 +7485,13 @@ pm_t:
     mov esi, dword ptr [esi*4 + {po_gent:#x}]
     cmp eax, {PO_TRAMPA}
     jne pm_pozo
-    mov edi, edx
-    push esi
-    mov esi, edx
-    call {tr_city:#x}
-    pop esi
+    mov ebx, ecx
+    call {tr_id:#x}
+    xchg ebx, ecx
     test eax, eax
     jl pm_show
-    mov ebx, eax
-    mov ebp, 1
-    push esi
-    mov esi, {PO_TAB:#x}
-pm_tn:
-    cmp esi, edi
-    jae pm_tnf
-    cmp byte ptr [esi + 4], {PO_TRAMPA}
-    jne pm_tnn
-    call {tr_city:#x}
-    cmp eax, ebx
-    jne pm_tnn
-    inc ebp
-pm_tnn:
-    add esi, {PO_REC}
-    jmp pm_tn
-pm_tnf:
-    pop esi
-    push ebp
-    imul eax, ebx, 0xde
+    push ebx
+    imul eax, eax, 0xde
     add eax, 0x537e30
     push eax
     push dword ptr [ecx*4 + {tr_fmtt:#x}]
@@ -7751,6 +7762,17 @@ pf_trap:
     jne pf_vis
     mov byte ptr [ebp + 5], 1
     mov byte ptr [ebp + 6], 0xff
+    mov eax, ebx
+    shl eax, 4
+    cmp byte ptr [eax + 0x55edc4], 0
+    je pf_vis
+    cmp word ptr [eax + 0x55edc8], {QT_TYPE}
+    jne pf_vis
+    lea edx, [ebp - {PO_TAB:#x}]
+    shr edx, 3
+    cmp word ptr [eax + 0x55edca], dx
+    jne pf_vis
+    mov word ptr [eax + 0x55edce], 1
 pf_vis:
     call 0x441290
     call {REDRAW:#x}
@@ -7787,6 +7809,307 @@ pf_pln:
     jl pf_pl
     popad
     jmp 0x49d1a0
+''')
+
+# ---------------------------------------------------------------- Misión dura «escoltar al equipo que desarma una trampa»
+# Tipo nuevo QT_TYPE (13); en el registro de la misión (0x55edc4 + jugador*16): +6 = índice de la trampa en PO_TAB,
+# +8 = su dueño, +0xa = 1 cuando la detonó un ejército del jugador (po_fall; el generador lo deja en 0). Recorrido:
+# - Generador 0x45ec40, dificultad Hard (0x45f4f6): qt_hard tira 0..6 en vez de 0..5 si hay alguna trampa candidata
+#   (entera, descubierta por el jugador, de otro dueño que pase 0x461080, a distancia de rey 2..4Q+23 del héroe); el 6
+#   es esta misión, con una de ellas al azar. Solo para humanos y si el tipo no está ya ofrecido; sin candidatas, la
+#   tirada es la del original (0..5) y todo sigue igual.
+# - Cumplida (evento 5, el héroe llegó a una casilla, 0x461fee): trampa detonada por el jugador (+0xa), el héroe a una
+#   casilla o menos de la trampa, en tierra (no agua) y sin volar (isfly del héroe, grpfly del grupo que se mueve).
+# - Fracasada (evento 0, cada turno, 0x461d0c): la trampa está detonada y no fue el jugador.
+# - Textos: nombre del tipo (0x461163) «Escort trap-disarming team to Afland02» (ciudad y número como en po_msg; el
+#   renglón más corto que lo recibe es de 0x40 bytes y esto llega a 52) y el objetivo (0x461432).
+# - Premio: el switch de 0x46231d solo trata 7..11; el 13 toma el de por defecto, como los otros tipos. Los lectores
+#   del tipo en la IA (0x40ee41, 0x41d084, 0x41d31e, 0x41dca8, 0x41df13, 0x435fd0, 0x436390) van por su default: la
+#   IA no la recibe, y si toma un jugador que la tenía, la ignora.
+QT_NAME = 'Escort trap-disarming team to %.20s%02d'
+assert len(QT_NAME % ('x' * 20, 99)) < 0x40
+str_qt_name = place_data('str_qt_name', cstr_(QT_NAME))
+str_qt_name0 = place_data('str_qt_name0', cstr_('Escort trap-disarming team'))
+str_qt_obj = place_data('str_qt_obj', cstr_('%s must escort a trap-disarming team to the trap %.20s%02d.'))
+str_qt_obj0 = place_data('str_qt_obj0', cstr_('%s must escort a trap-disarming team to a trap.'))
+# eax = jugador, ecx = x y edx = y del héroe, edi = cuál (-1: ninguna) -> ebp = candidatas contadas antes de la pedida
+# (con -1, todas), esi = índice de la pedida o -1. Preserva ebx, edi.
+qt_scan = place('qt_scan', f'''
+    push ebx
+    push edx
+    push ecx
+    push eax
+    xor ebp, ebp
+    or esi, -1
+    xor ebx, ebx
+qs_loop:
+    cmp ebx, dword ptr [{PO_N:#x}]
+    jge qs_end
+    cmp ebx, {PO_MAX}
+    jge qs_end
+    lea edx, [ebx*8 + {PO_TAB:#x}]
+    cmp byte ptr [edx + 4], {PO_TRAMPA}
+    jne qs_next
+    cmp byte ptr [edx + 5], 0
+    jne qs_next
+    mov ecx, dword ptr [esp]
+    movzx eax, byte ptr [edx + 6]
+    bt eax, ecx
+    jnc qs_next
+    movzx eax, byte ptr [edx + 7]
+    cmp eax, ecx
+    je qs_next
+    movsx eax, word ptr [edx]
+    sub eax, dword ptr [esp + 4]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    lea edx, [ebx*8 + {PO_TAB:#x}]
+    movsx eax, word ptr [edx + 2]
+    sub eax, dword ptr [esp + 8]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge qs_d
+    mov eax, ecx
+qs_d:
+    cmp eax, 2
+    jl qs_next
+    movsx ecx, word ptr [0x56950a]
+    lea ecx, [ecx*4 + 0x17]
+    cmp eax, ecx
+    jg qs_next
+    movzx eax, byte ptr [ebx*8 + {PO_TAB + 7:#x}]
+    push eax
+    call 0x461080
+    add esp, 4
+    test al, al
+    jz qs_next
+    cmp ebp, edi
+    je qs_found
+    inc ebp
+qs_next:
+    inc ebx
+    jmp qs_loop
+qs_found:
+    mov esi, ebx
+qs_end:
+    pop eax
+    pop ecx
+    pop edx
+    pop ebx
+    ret
+''')
+# Reemplaza 0x45f4f6..0x45f517 (la tirada 0..5 y el salto por la tabla 0x46101c). +0x10 por los cuatro push.
+qt_hard = place('qt_hard', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    xor ebp, ebp
+    movsx eax, word ptr [esp + 0x26]
+    imul edx, eax, 0x1f8
+    cmp word ptr [edx + 0x536c12], -1
+    jne qth_roll
+    movsx ecx, word ptr [esp + 0x258]
+    mov edx, dword ptr [esp + 0x254]
+qth_used:
+    dec ecx
+    jl qth_count
+    cmp word ptr [edx + ecx*2], {QT_TYPE}
+    je qth_roll
+    jmp qth_used
+qth_count:
+    movsx ecx, word ptr [esp + 0x2a]
+    movsx edx, word ptr [esp + 0x28]
+    or edi, -1
+    call {qt_scan:#x}
+qth_roll:
+    xor eax, eax
+    test ebp, ebp
+    setnz al
+    add eax, 6
+    push -1
+    push eax
+    push 1
+    call 0x4deb20
+    add esp, 0xc
+    movsx eax, ax
+    cmp eax, 6
+    je qth_trap
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    cmp eax, 5
+    ja 0x45fd6f
+    jmp dword ptr [eax*4 + 0x46101c]
+qth_trap:
+    push -1
+    push ebp
+    push 1
+    call 0x4deb20
+    add esp, 0xc
+    movsx edi, ax
+    movsx eax, word ptr [esp + 0x26]
+    movsx ecx, word ptr [esp + 0x2a]
+    movsx edx, word ptr [esp + 0x28]
+    call {qt_scan:#x}
+    test esi, esi
+    jl qth_out
+    mov word ptr [esp + 0x34], {QT_TYPE}
+    mov word ptr [esp + 0x36], si
+    movzx eax, byte ptr [esi*8 + {PO_TAB + 7:#x}]
+    mov word ptr [esp + 0x38], ax
+    mov byte ptr [esp + 0x21], 1
+qth_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    jmp 0x45fd6f
+''')
+# Nombre del tipo (0x461163; ebx = renglón, [esp+0x10] = misión).
+qt_name = place('qt_name', f'''
+    cmp eax, {QT_TYPE}
+    je qtn
+    dec eax
+    cmp eax, 0xb
+    ja 0x4613c8
+    jmp dword ptr [eax*4 + 0x4613cc]
+qtn:
+    mov eax, dword ptr [esp + 0x10]
+    movzx edx, word ptr [eax + 6]
+    cmp edx, {PO_MAX}
+    jae qtn0
+    lea edx, [edx*8 + {PO_TAB:#x}]
+    call {tr_id:#x}
+    test eax, eax
+    jl qtn0
+    push ecx
+    imul eax, eax, 0xde
+    add eax, 0x537e30
+    push eax
+    push {str_qt_name:#x}
+    push ebx
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 16
+    jmp 0x4613c8
+qtn0:
+    push {str_qt_name0:#x}
+    push ebx
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 8
+    jmp 0x4613c8
+''')
+# Objetivo (0x461432; ebx = renglón, edi = misión; sale por el epílogo 0x461a20).
+qt_text = place('qt_text', f'''
+    movsx eax, word ptr [edi + 4]
+    cmp eax, {QT_TYPE}
+    je qtt
+    dec eax
+    cmp eax, 0xb
+    ja 0x461a20
+    jmp dword ptr [eax*4 + 0x461a28]
+qtt:
+    movsx eax, word ptr [edi + 2]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe62]
+    and eax, 0x3f00
+    shr eax, 8
+    imul esi, eax, 0xb8
+    add esi, 0x556bb4
+    movzx edx, word ptr [edi + 6]
+    cmp edx, {PO_MAX}
+    jae qtt0
+    lea edx, [edx*8 + {PO_TAB:#x}]
+    call {tr_id:#x}
+    test eax, eax
+    jl qtt0
+    push ecx
+    imul eax, eax, 0xde
+    add eax, 0x537e30
+    push eax
+    push esi
+    push {str_qt_obj:#x}
+    push ebx
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0x14
+    jmp 0x461a20
+qtt0:
+    push esi
+    push {str_qt_obj0:#x}
+    push ebx
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    jmp 0x461a20
+''')
+# Fracaso (0x461d0c; cx = tipo, esi = misión): detonada por otro.
+qt_fail = place('qt_fail', f'''
+    cmp cx, {QT_TYPE}
+    je qtf
+    cmp cx, 0xb
+    jne 0x461d5d
+    jmp 0x461d12
+qtf:
+    movzx eax, word ptr [esi + 6]
+    cmp eax, {PO_MAX}
+    jae 0x461d5d
+    cmp byte ptr [eax*8 + {PO_TAB + 5:#x}], 0
+    je 0x461d5d
+    cmp word ptr [esi + 0xa], 0
+    jne 0x461d5d
+    jmp 0x461d4d
+''')
+# Cumplida (0x461fee, evento 5; esi = misión, edi = jugador, x [esp+0x24], y [esp+0x28]; ebp libre).
+qt_arrive = place('qt_arrive', f'''
+    mov ax, word ptr [esi + 4]
+    cmp ax, {QT_TYPE}
+    je qta
+    cmp ax, 1
+    jne 0x462062
+    jmp 0x461ff8
+qta:
+    cmp word ptr [esi + 0xa], 0
+    je 0x462168
+    movzx ebp, word ptr [esi + 6]
+    cmp ebp, {PO_MAX}
+    jae 0x462168
+    lea ebp, [ebp*8 + {PO_TAB:#x}]
+    movsx eax, word ptr [esp + 0x24]
+    movsx ecx, word ptr [ebp]
+    sub eax, ecx
+    inc eax
+    cmp eax, 2
+    ja 0x462168
+    movsx eax, word ptr [esp + 0x28]
+    movsx ecx, word ptr [ebp + 2]
+    sub eax, ecx
+    inc eax
+    cmp eax, 2
+    ja 0x462168
+    movsx eax, word ptr [esp + 0x28]
+    imul eax, eax, 10
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    movsx ecx, word ptr [esp + 0x24]
+    imul ecx, ecx, 10
+    movzx edx, word ptr [eax + ecx + 0x503e58]
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    cmp word ptr [edx + 0x535f0c], 1
+    je 0x462168
+    movsx eax, word ptr [esi + 2]
+    call {isfly:#x}
+    test eax, eax
+    jnz 0x462168
+    mov eax, edi
+    call {grpfly:#x}
+    test eax, eax
+    jnz 0x462168
+    jmp 0x462055
 ''')
 
 # Dibujo. La vista del mapa (0x459790, ebp = la vista) recorre sus celdas en dos pasadas; la 1.ª pinta el terreno, la
@@ -11015,6 +11338,13 @@ patch(0x460dfb, bytes.fromhex('6685ff0f8e9c010000'), asm(f'jmp {qb_gen:#x}', 0x4
 patch(0x461336, bytes.fromhex('516a42b980985800e8eddb0700'), asm(f'jmp {qb_name:#x}', 0x461336))
 patch(0x461876, bytes.fromhex('0fbf47068d048003c08d0c408d0489'), asm(f'jmp {qb_text:#x}', 0x461876))
 patch(0x461c80, bytes.fromhex('0fbf46068d048003c08d144080bc924bad550000740d'), asm(f'jmp {qb_fail:#x}', 0x461c80))
+# Misión «escoltar al equipo que desarma una trampa» (qt_*)
+patch(0x45f4f6, bytes.fromhex('6aff6a066a01e81ff607000fbfc083c40c83f8050f875f080000ff24851c104600'),
+      asm(f'jmp {qt_hard:#x}', 0x45f4f6))
+patch(0x461163, bytes.fromhex('4883f80b0f875b020000'), asm(f'jmp {qt_name:#x}', 0x461163))
+patch(0x461432, bytes.fromhex('0fbf47044883f80b0f87e0050000'), asm(f'jmp {qt_text:#x}', 0x461432))
+patch(0x461d0c, bytes.fromhex('6683f90b754b'), asm(f'jmp {qt_fail:#x}', 0x461d0c))
+patch(0x461fee, bytes.fromhex('668b4604663d0100756a'), asm(f'jmp {qt_arrive:#x}', 0x461fee))
 patch(0x436178, bytes.fromhex('0fbfc766bd01008d048003c08d0c40668b9489b6ac55008d0489668b80b8ac5500'),
       asm(f'jmp {qb_ailoc1:#x}', 0x436178))
 patch(0x436442, bytes.fromhex('66890b0fbfc98d0c8903c98d1c49668bbc9bb6ac55008d0c9b66893e5f668b89b8ac55005e66890a5bc3'),

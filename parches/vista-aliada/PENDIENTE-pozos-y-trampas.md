@@ -327,6 +327,16 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
   (%.20s) por el renglón de 64 del aviso. Avisos: «Your army fell into the trap Afland01!», «You have discovered the
   trap Afland01!». Sin ciudades, el aviso fijo de antes. El diálogo «Building a trap» no lo muestra (se calcula
   cuando la trampa ya está en la tabla). Probado en unicorn (prueba_pozos.py, 83 OK); en el juego, tarea 26.
-- **Misión dura «Escort trap-disarming team to Afland02»:** se cumple cuando la trampa fue detonada por un ejército
-  del jugador y después el héroe llega por tierra a una casilla vecina (volando no cuenta). Requiere estudiar el
-  generador de misiones (tipos, texto, chequeo de cumplido) — no estudiado todavía.
+- **Misión dura «Escort trap-disarming team to Afland02»: hecho (22/10/2026, 1.0.55.0).** Tipo nuevo 13 (qt_* en
+  build.py); en el registro de la misión, +6 = índice de la trampa en PO_TAB, +8 = su dueño, +0xa = 1 cuando la
+  detonó un ejército del jugador (po_fall lo marca). Generador Hard (0x45f4f6): si hay trampas candidatas (enteras,
+  descubiertas por el jugador, de otro dueño hostil según 0x461080, a distancia de rey 2..4Q+23 del héroe) la tirada
+  es 0..6 en vez de 0..5 y el 6 da esta misión; sin candidatas, la tirada del original. Solo para humanos (la IA no
+  sabría cumplirla; si toma un jugador que la tenía, la ignora sin riesgo: todos los lectores del tipo tienen default).
+  Cumplida (evento 5, 0x461fee): +0xa = 1 y el héroe a una casilla o menos de la trampa, en tierra, sin volar él ni
+  nadie del grupo que se mueve. Fracasada (evento 0, 0x461d0c): detonada sin que fuera el jugador. Nombre (0x461163)
+  «Escort trap-disarming team to Afland02»; objetivo (0x461432) «Heroe must escort a trap-disarming team to the trap
+  Afland02.»; sin ciudades, sin el nombre. El número sale de tr_id, que ahora comparte con po_msg. Premio: el de por
+  defecto. Como la IA no construye trampas, en el juego solo aparece con dos humanos en la misma PC. Probado en unicorn
+  (prueba_misiontrampa.py, 55 OK, con comparaciones contra el original donde no hay trampas que dar); en el juego,
+  tarea 27.
