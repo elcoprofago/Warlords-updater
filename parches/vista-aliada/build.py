@@ -6995,7 +6995,7 @@ vl_text:
 
 # ---- Pozos, remolinos y trampas (po_*; diseño en PENDIENTE-pozos-y-trampas.md). Tabla propia, fuera de la de ruinas
 # y de la casilla: PO_MAX registros de 8 bytes (+0 x, +2 y, +4 tipo, +5 estado, +6 máscara de quién lo descubrió,
-# +7 dueño). po_map: un byte por casilla (índice + 1, 0 = nada), rearmado desde la tabla; no se guarda.
+# +7 dueño; en pozo y remolino, +5 = cuál nombre, ver PO_NOMBRES). po_map: un byte por casilla (índice + 1, 0 = nada), rearmado desde la tabla; no se guarda.
 # En el .SAV va detrás del bloque de la Votación: 'POZO', cantidad (dword) y la tabla entera.
 PO_MAX, PO_REC = 64, 8
 PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tumba, lápida, cruz), vista por todos
@@ -7083,6 +7083,33 @@ pol_end:
 # (0x535f0c + tipo*0x58) ni agua (1) ni montaña (4), a más de 2 casillas (max |dx|,|dy|) de la capital de todo jugador
 # activo. Remolino: clase agua. Tumba (po_grave): como el pozo, pero sin mirar las capitales. pg_ok: esi = x,
 # edi = y, ebp = tipo -> ZF = 1 si sirve; preserva todo.
+# Nombres de pozos y remolinos (pedido del usuario, 21/10/2026): como las ruinas, para los avisos («Your army fell
+# into the Well of Souls!»). En +5 del registro (el estado solo lo usan las trampas): índice en la lista de su tipo,
+# que po_gen reparte sin repetir (un comienzo al azar y después correlativos). Hay tantos nombres como el tope de cada
+# tipo (16 pozos, 32 remolinos); un .SAV de antes trae 0 = el primero. La trampa y la tumba siguen con el aviso fijo.
+PO_NOMBRES = (
+    ('the Well of Souls', 'the Pit of Despair', 'the Abyss of Mor', 'the Chasm of Woe', 'the Maw of Darkness',
+     'the Sinkhole of Ash', 'the Hollow of Bones', 'the Deep of Kragg', 'the Rift of Sorrows', 'the Gorge of Shadows',
+     'the Pit of the Lost', 'the Throat of Stone', 'the Shaft of Doom', 'the Gulf of Night', 'the Grave of Giants',
+     'the Void of Ulgar'),
+    ('the Maelstrom of Kor', 'the Drowning Eye', 'the Whirl of Vash', "the Serpent's Coil", "the Sea's Maw",
+     'the Black Vortex', 'the Spiral of Lost Ships', 'the Churn of Ymir', "the Widow's Whirl", 'the Eye of the Deep',
+     'the Gyre of Thalos', 'the Sunken Mouth', 'the Grey Maelstrom', "the Kraken's Throat", 'the Whirl of Sorrow',
+     "the Mariners' Doom", 'the Vortex of Azur', 'the Swirl of Bones', 'the Hungry Tide', 'the Coil of Nereth',
+     'the Storm Eye', "the Drowned King's Gate", 'the Spinning Grave', 'the Whirl of Mists', 'the Maw of Leviathan',
+     'the Abyssal Spiral', 'the Gyre of Salt', 'the Cauldron of Waves', "the Siren's Whirl", "the Wreckers' Pool",
+     'the Weeping Vortex', "the Sea Wolf's Den"))
+assert [len(n) for n in PO_NOMBRES] == [PO_MAX // 4, PO_MAX // 2] and all(len(set(n)) == len(n) for n in PO_NOMBRES)
+po_nmt = place_data('po_nmt', struct.pack('<2I', *(place_data(f'po_nm{t}', struct.pack(f'<{len(ns)}I', *(
+    place_data(f'str_po_nm{t}_{i}', cstr_(n)) for i, n in enumerate(ns)))) for t, ns in enumerate(PO_NOMBRES))))
+po_nmask = place_data('po_nmask', struct.pack('<2I', len(PO_NOMBRES[0]) - 1, len(PO_NOMBRES[1]) - 1))
+PO_FMT = (('Your army fell into %s!', 'Your army was swallowed by %s!'),
+          ('You have discovered %s!', 'You have discovered %s!'))
+assert all(len(f % n) < 64 for fs in PO_FMT for t, f in enumerate(fs) for n in PO_NOMBRES[t])   # renglón de 0x4c2790
+po_fmtt = place_data('po_fmtt', struct.pack('<4I', *(place_data(f'str_po_fmt{i}', cstr_(f))
+                                                     for i, f in enumerate(f for fs in PO_FMT for f in fs))))
+po_nmi = place_data('po_nmi', bytes(4))
+po_buf = place_data('po_buf', bytes(64))
 PO_TRIES = 400
 po_q = place_data('po_q', bytes(4))
 po_k = place_data('po_k', bytes(4))
@@ -7195,6 +7222,15 @@ pg_tipo:
     jne pg_cnt
     add ebx, ebx
 pg_cnt:
+    push -1
+    mov eax, dword ptr [ebp*4 + {po_nmask:#x}]
+    inc eax
+    push eax
+    push 1
+    call 0x4deb20
+    add esp, 12
+    movzx eax, ax
+    mov dword ptr [{po_nmi:#x}], eax
     mov dword ptr [{po_k:#x}], {PO_TRIES}
 pg_try:
     test ebx, ebx
@@ -7223,7 +7259,10 @@ pg_try:
     mov word ptr [edx + 2], di
     mov ecx, ebp
     mov byte ptr [edx + 4], cl
-    mov byte ptr [edx + 5], 0
+    mov ecx, dword ptr [{po_nmi:#x}]
+    and ecx, dword ptr [ebp*4 + {po_nmask:#x}]
+    mov byte ptr [edx + 5], cl
+    inc dword ptr [{po_nmi:#x}]
     mov byte ptr [edx + 6], 0
     mov byte ptr [edx + 7], 0xff
     inc eax
@@ -7340,6 +7379,37 @@ po_fellt = place_data('po_fellt', struct.pack('<3I', *str_po_fell))
 str_po_disc = [place_data(f'str_po_disc{i}', cstr_(s)) for i, s in enumerate((
     'You have discovered a hidden pit!', 'You have discovered a hidden whirlpool!', 'You have discovered a hidden trap!'))]
 po_disct = place_data('po_disct', struct.pack('<3I', *str_po_disc))
+po_gent = place_data('po_gent', struct.pack('<6I', *str_po_fell, *str_po_disc))
+# Aviso: eax = tipo, edx = registro, ecx = 0 caer / 1 descubrir. Pozo y remolino con su nombre; preserva todo.
+po_msg = place('po_msg', f'''
+    pushad
+    cmp eax, {PO_TRAMPA}
+    jbe pm_t
+    xor eax, eax
+pm_t:
+    lea esi, [ecx + ecx*2]
+    add esi, eax
+    mov esi, dword ptr [esi*4 + {po_gent:#x}]
+    cmp eax, {PO_REMOLINO}
+    ja pm_show
+    movzx edx, byte ptr [edx + 5]
+    and edx, dword ptr [eax*4 + {po_nmask:#x}]
+    mov edi, dword ptr [eax*4 + {po_nmt:#x}]
+    push dword ptr [edi + edx*4]
+    lea edi, [ecx*2 + eax]
+    push dword ptr [edi*4 + {po_fmtt:#x}]
+    push {po_buf:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 12
+    mov esi, {po_buf:#x}
+pm_show:
+    push 0x14
+    push esi
+    call 0x4c2790
+    add esp, 8
+    popad
+    ret
+''')
 PO_RADIO = 1    # pedido del usuario (21/10/2026): se descubren a una casilla, no con el radio del grupo
 po_step = place('po_step', f'''
     pushad
@@ -7441,15 +7511,10 @@ pd_hit:
     pop edx
     cmp word ptr [0x560b20], bx
     jne pd_end
-    movzx eax, byte ptr [edx*8 + {PO_TAB + 4:#x}]
-    cmp eax, {PO_TRAMPA}
-    jbe pd_txt
-    xor eax, eax
-pd_txt:
-    push 0x14
-    push dword ptr [eax*4 + {po_disct:#x}]
-    call 0x4c2790
-    add esp, 8
+    lea edx, [edx*8 + {PO_TAB:#x}]
+    movzx eax, byte ptr [edx + 4]
+    mov ecx, 1
+    call {po_msg:#x}
 pd_end:
     popad
     ret
@@ -7592,14 +7657,9 @@ pf_vis:
     cmp word ptr [0x560b20], bx
     jne pf_pln
     movzx eax, byte ptr [ebp + 4]
-    cmp eax, {PO_TRAMPA}
-    jbe pf_txt
-    xor eax, eax
-pf_txt:
-    push 0x14
-    push dword ptr [eax*4 + {po_fellt:#x}]
-    call 0x4c2790
-    add esp, 8
+    mov edx, ebp
+    xor ecx, ecx
+    call {po_msg:#x}
     rdtsc
     shr eax, 8
     and eax, 1

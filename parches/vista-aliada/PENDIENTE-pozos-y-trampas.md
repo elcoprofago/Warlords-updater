@@ -304,11 +304,17 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
 
 ## Pedidos del 21/10/2026 (después de la parte 7), sin hacer
 - **Sonido de trampa:** al detonar, FX\Burst.wav + RuinDie/RuinDie2. Los sonidos son buffers de DirectSound
-  (0x4465e0 → 0x4eca00(id) en 0x5a6f50 → 0x4e6fd0 play); dos sonidos distintos se mezclan. Falta: ver si Burst ya
-  tiene id cargado (algún hechizo) y cómo agregar uno; para el desfase, un TrapDie.wav ya mezclado (Burst + grito
-  corrido unos ms) evita temporizadores.
-- **Nombres de pozos y remolinos:** como las ruinas, para los avisos («Rojan fell into the Well of Souls»). Lista de
-  nombres en el estilo del juego, asignados al crearse; van en la tabla y en la partida guardada.
+  (0x4465e0 → 0x4eca00(id) en 0x5a6f50 → 0x4e6fd0 play); dos sonidos distintos se mezclan. **Dato del usuario
+  (21/10):** Burst.wav lo sumó él, nuevo; **ningún hechizo lo usa**, así que no tiene id cargado: hay que agregarlo
+  como sonido nuevo (o un TrapDie.wav ya mezclado, Burst + grito corrido unos ms, que evita temporizadores).
+- **Nombres de pozos y remolinos: hecho (21/10/2026, 1.0.52.0).** 16 nombres de pozo y 32 de remolino (PO_NOMBRES,
+  tantos como el tope de cada tipo), en +5 del registro (el estado solo lo usan las trampas), así van en el SAV sin
+  cambiar el formato; un SAV anterior trae 0 = el primero. po_gen tira un comienzo al azar por tipo y después
+  correlativos, sin repetir. Los avisos (po_msg, sprintf [0x5a9bec]): «Your army fell into the Well of Souls!»,
+  «Your army was swallowed by the Maelstrom of Kor!», «You have discovered the Well of Souls!». El aviso del juego
+  dice «Your army», no el nombre del héroe (como antes). Trampa y tumba siguen con su texto fijo. Probado en unicorn
+  (prueba_pozos.py, 75 OK); no en el juego (va con la tarea 24). Viajan por red con la tabla cuando se haga la parte 6.
+  De paso se corrigió la prueba: el puente del mapa de juguete estaba en el byte +4 y pg_ok lo mira en +3.
 - **Nombres de trampas:** ciudad más cercana + número de dos cifras («Afland01»).
 - **Misión dura «Escort trap-disarming team to Afland02»:** se cumple cuando la trampa fue detonada por un ejército
   del jugador y después el héroe llega por tierra a una casilla vecina (volando no cuenta). Requiere estudiar el

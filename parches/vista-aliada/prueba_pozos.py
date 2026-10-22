@@ -6,6 +6,7 @@
 # Parte 3, caer: po_step (desde 0x49ce08) anota y po_fall (desde 0x4b6e9d) mata, con 0x46c470, el aviso y el sonido
 # de mentira; vuela quien diga el diccionario (0x497010 / 0x48f9a0).
 # Parte 4, descubrir: po_step (desde 0x49ce08) con el 0x4a1ce0 real (sin ruinas), que avanza el contador de pasos.
+# Nombres (21/10/2026): po_gen los reparte en +5; los avisos los arman con sprintf ([0x5a9bec], de mentira).
 # Parte 5, dibujo: po_draw (desde 0x459b95) con una vista y una celda de juguete; 0x4dd530, 0x4e4a90 y 0x4dd3f0 de
 # mentira.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
@@ -18,6 +19,7 @@ DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
 STACK, RET, FRAME, OPTS = 0x1f0000, 0x100, 0x1e0000, 0x4fae68
 MAPW, MAPH, MAPSH = 0x503e00, 0x503e02, 0x503e06
 PO_MAX, PO_REC, PO_MAPSZ, VT_MAX = 64, 8, 0x32000 // 10, 8
+SPRINTF = 0x1f8000   # dirección de mentira para [0x5a9bec]
 
 def cargar(nombre):
     pe = pefile.PE(os.path.join(DIR, nombre))
@@ -51,6 +53,10 @@ class Juego:
         self.interceptar(0x4dfd70, self.escribir, pop=8)
         self.interceptar(0x4dfd20, self.leer, pop=8)
         self.interceptar(0x4dfdc0, lambda a: self.abiertos.pop(self.mu.reg_read(UC_X86_REG_ECX), None) and 0)
+        mu.mem_write(0x5a9bec, struct.pack('<I', SPRINTF)); self.interceptar(SPRINTF, self.sprintf)   # solo %s
+    def cadena(self, a): return bytes(self.mu.mem_read(a, 256)).split(b'\0')[0]
+    def sprintf(self, a):
+        t = self.cadena(a[1]).replace(b'%s', self.cadena(a[2])); self.mu.mem_write(a[0], t + b'\0'); return len(t)
     def interceptar(self, addr, fn, pop=0):
         def g(mu, a, size, _):
             sp = mu.reg_read(UC_X86_REG_ESP)
@@ -140,8 +146,8 @@ def armar(g, agua=True, hidden=True, ruinas=10):
             if x == 10: w2 |= 0x100                     # camino
             if (x, y) == (12, 12): w2 |= 0x300          # ciudad
             w0 = t | (0x4000 if (x, y) == (14, 14) else 0)
-            st = 1 if (x, y) == (35, 15) else 0          # puente
-            mu.mem_write(casilla(x, y), struct.pack('<HHB', w0, w2, st))
+            if (x, y) == (35, 15): w2 |= 0x100           # puente: estructura 1 ([+3] & 7)
+            mu.mem_write(casilla(x, y), struct.pack('<HH', w0, w2))
     mu.mem_write(0x536b30, b'\1\1'); mu.mem_write(0x536c22, struct.pack('<h', 0))
     mu.mem_write(0x536b30 + 0x1f8, b'\0\0')               # el jugador 1 no juega
     mu.mem_write(0x537e2a, struct.pack('<h', 1)); mu.mem_write(0x537e2c, struct.pack('<hh', *CAP))
@@ -165,11 +171,17 @@ malos = []
 for s in range(40):
     g = Juego(); t = generar(g, seed=s)
     if (resumen(t) != (2, 4) or len({r[:2] for r in t}) != 6 or not all(map(valido, t)) or
-            any(r[3:] != (0, 0, 0xff) for r in t) or g.mapa() != {r[:2]: i + 1 for i, r in enumerate(t)}) :
+            any(r[4:] != (0, 0xff) for r in t) or g.mapa() != {r[:2]: i + 1 for i, r in enumerate(t)} or
+            any([r[3] for r in t if r[2] == k] != [(t0 + i) % n for i in range(len([r for r in t if r[2] == k]))]
+                for k, n in ((0, 16), (1, 32)) for t0 in [next(r[3] for r in t if r[2] == k)])):
         malos.append((s, t))
 ver('10 ruinas, 40 semillas: 2 pozos y 4 remolinos (el doble) en casillas válidas, distintas y en po_map', malos, [])
 ver('0 ruinas: 1 pozo, 2 remolinos y sigue en 0x4a103c', resumen(generar(Juego(), ruinas=0)), (1, 2))
-ver('1000 ruinas: tope de 16 pozos y 32 remolinos', resumen(generar(Juego(), ruinas=1000)), (16, 32))
+t = generar(Juego(), ruinas=1000)
+ver('1000 ruinas: tope de 16 pozos y 32 remolinos', resumen(t), (16, 32))
+ver('  con los 16 y los 32 nombres, sin repetir', [sorted(r[3] for r in t if r[2] == k) for k in (0, 1)],
+    [list(range(16)), list(range(32))])
+ver('nombres: el comienzo cambia con la partida', len({generar(Juego(), seed=s)[0][3] for s in range(20)}) > 4, True)
 ver('control: mapa sin agua: solo pozos', resumen(generar(Juego(), agua=False)), (2, 0))
 def empezar(g):
     g.mu.mem_write(STACK, struct.pack('<I', RET)); g.mu.reg_write(UC_X86_REG_ESP, STACK)
@@ -215,7 +227,12 @@ GRUPO = [(10, 10, 2, 0, 0), (10, 10, 2, 1, 0), (10, 10, 2, 0, 0)]
 r = caer(POZOS, GRUPO + [(10, 10, 3, 0, 0), (11, 10, 2, 0, 0)], [(2, 10, 10)])
 ver('pozo: mueren los 3 del grupo (héroe incluido), con 0; otro bando y otra casilla quedan', r[0], [(1, 0), (2, 0), (3, 0)])
 ver('pozo: aviso y sonido 7 en la PC del que cayó; descubierto para él', (r[1], r[2], r[3][0][4]),
-    (['Your army fell into a hidden pit!'], [7], 0x04))
+    (['Your army fell into the Well of Souls!'], [7], 0x04))
+ver('nombre: +5 = 3 del pozo y 31 del remolino', [caer([(10, 10, 0, 3, 0, 0xff)], GRUPO, [(2, 10, 10)])[1],
+    caer([(20, 10, 1, 31, 0, 0xff)], [(20, 10, 2, 0, 0)], [(2, 20, 10)])[1]],
+    [['Your army fell into the Chasm of Woe!'], ["Your army was swallowed by the Sea Wolf's Den!"]])
+ver('control: +5 fuera de la lista no se sale de ella', caer([(10, 10, 0, 0x13, 0, 0xff)], GRUPO, [(2, 10, 10)])[1],
+    ['Your army fell into the Chasm of Woe!'])
 r = caer(POZOS, GRUPO, [(2, 10, 10)], mira=1)
 ver('control: en otra PC mueren igual, sin aviso ni sonido', (r[0], r[1], r[2]), ([(1, 0), (2, 0), (3, 0)], [], []))
 r = caer(POZOS, [(10, 10, 2, 0, 1), (10, 10, 2, 0, 0)], [(2, 10, 10)])
@@ -224,7 +241,7 @@ r = caer(POZOS, [(10, 10, 2, 0, 1), (10, 10, 2, 1, 1)], [(2, 10, 10)])
 ver('solo voladores: nadie cae, no se descubre, sin aviso', (r[0], r[1], r[3][0][4]), ([], [], 0))
 r = caer(POZOS, [(20, 10, 2, 0, 0), (20, 10, 2, 0, 0), (20, 10, 2, 0, 1)], [(2, 20, 10)])
 ver('remolino: se hunde todo lo que no vuela, con 1 (como el disband)', (r[0], r[1]),
-    ([(1, 1), (2, 1)], ['Your army was swallowed by a whirlpool!']))
+    ([(1, 1), (2, 1)], ['Your army was swallowed by the Maelstrom of Kor!']))
 r = caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3)
 ver('trampa: cae hasta el dueño; queda detonada y vista por todos', (r[0], r[1], r[3][2][3:]),
     ([(1, 0)], ['Your army fell into a trap!'], (1, 0xff, 3)))
@@ -281,11 +298,11 @@ def descubrir(regs, pasos, cont=9, opc=0x30, mira=2, grupo=(0,)):
 REDRAW_ = 0x4a2170
 LEJOS = [(30, 20, 0, 0, 0, 0xff), (10, 11, 0, 0, 0, 0xff), (11, 11, 1, 0, 0, 0xff), (10, 13, 2, 0, 0, 3)]
 ver('contador 9 -> 0 < radio 1: descubre el pozo a 1 (solo el primero), aviso en su PC',
-    descubrir(LEJOS, [(2, 10, 10, 1)]), ([0, 4, 0, 0], ['You have discovered a hidden pit!'], 0))
+    descubrir(LEJOS, [(2, 10, 10, 1)]), ([0, 4, 0, 0], ['You have discovered the Well of Souls!'], 0))
 ver('control: contador 0 -> 1, no < radio 1: nada', descubrir(LEJOS, [(2, 10, 10, 1)], cont=0)[:2], ([0, 0, 0, 0], []))
 ver('el primero no visto a 1; ya visto se saltea',
     descubrir([(10, 11, 0, 0, 4, 0xff)] + LEJOS[2:], [(2, 11, 10, 1)])[:2],
-    ([4, 4, 0], ['You have discovered a hidden whirlpool!']))
+    ([4, 4, 0], ['You have discovered the Maelstrom of Kor!']))
 ver('trampa a 1: aviso de trampa', descubrir(LEJOS[3:], [(2, 10, 12, 1)])[:2], ([4], ['You have discovered a hidden trap!']))
 ver('control: a 2 no, aunque el grupo tenga radio 7', descubrir(LEJOS[3:], [(2, 10, 11, 7)])[:2], ([0], []))
 ver('control: radio del grupo 3 y contador -> 1: nada (cuenta 1, no el radio)', descubrir(LEJOS, [(2, 10, 10, 3)], cont=0)[:2], ([0] * 4, []))
@@ -299,7 +316,7 @@ ver('control: sin Discover Ruins nada (el contador avanza igual)', descubrir(LEJ
 ver('control: sin Hidden Ruins nada', descubrir(LEJOS, [(2, 10, 10, 1)], opc=0x20)[:2], ([0] * 4, []))
 ver('control: jugador inválido nada', descubrir(LEJOS, [(9, 10, 10, 1)])[:2], ([0] * 4, []))
 ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), descubre una vez (el primero sirve)',
-    descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered a hidden pit!'], 9))
+    descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered the Well of Souls!'], 9))
 print('-- parte 5: dibujo')
 PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]
 VISTA, CELDA, HOJA = 0x180000, 0x181000, 0x182000

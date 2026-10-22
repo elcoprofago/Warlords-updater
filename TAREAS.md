@@ -9,7 +9,8 @@ Sorteo están acá (tarea 18).
 1. **Tarea 25** (Hexagon con menos azar): correr la tanda (paso 4).
 2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
    **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
-3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.50.0 (remolinos, distancia y 1 de cada 5 pasos).
+3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.52.0 (remolinos, distancia, 1 de cada 5 pasos y
+   nombres), junto con la 26.
 4. **Tarea 26** (construir trampas), cuando termine la tanda de la 25.
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
@@ -19,7 +20,7 @@ Sorteo están acá (tarea 18).
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
-0. **Antes:** el parche nuevo (vista-aliada 1.0.51.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
+0. **Antes:** el parche nuevo (vista-aliada 1.0.52.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
    estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
    trampas» y lo instalo.
 1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
@@ -41,6 +42,9 @@ se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX); el remolino sigue provi
 girando). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
 **Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). DarklordAV.exe ya está armado en
 C:\Warlords3 (vista-aliada 1.0.50.0).
+**Cambio de 1.0.52.0:** cada pozo y remolino tiene **nombre** (por ejemplo «the Well of Souls», «the Maelstrom of
+Kor»), y los avisos lo dicen: «You have discovered the Well of Souls!», «Your army fell into the Well of Souls!».
+Como 1.0.52.0 todavía no está en C:\Warlords3 (ver tarea 26, paso 0), hasta entonces vas a ver los avisos viejos.
 **Cambio de 1.0.50.0:** se descubre en **1 de cada 5 pasos** (antes 1 de cada 10).
 **Cambios de 1.0.49.0 (tu prueba del 21/10):** los remolinos salen el doble que los pozos; pozos, remolinos y trampas
 se descubren solo a **una casilla** (antes, con el radio de visión del grupo); un grupo de **solo voladores no
