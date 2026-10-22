@@ -1,22 +1,23 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente.
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 28).
+`- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 25** (Hexagon con menos azar): correr la tanda (paso 4).
-2. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y, si hay un aliado de la computadora, la
-   **tarea 22** (órdenes por chat); también **Puente 7** (botón «Copiar IP»).
-3. **Tarea 24** (pozos y remolinos en el juego): repetirla con 1.0.52.0 (remolinos, distancia, 1 de cada 5 pasos y
-   nombres), junto con la 26.
-4. **Tarea 26** (construir trampas), cuando termine la tanda de la 25; después, **tarea 27** (misión de la trampa).
-5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+1. **Tarea 25** (Hexagon con menos azar): la tanda está corriendo (paso 4); no hay que hacer nada hasta que termine.
+2. Cuando termine: decime «armá el parche de trampas» (tarea 26, paso 0) y hacé, en una misma partida contra la
+   computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
+   trampa, con dos jugadores humanos).
+3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
+   (órdenes por chat) queda esperando: ver su aviso.
+4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
 
-## 27. Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
+- [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
 Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
 la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
 Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
@@ -36,13 +37,13 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
 
-## 26. Construir una trampa en el juego (21/10/2026)
+- [ ] **26.** Construir una trampa en el juego (21/10/2026)
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
 fundar una ciudad. La trampa mata una vez a cualquiera que entre (también a vos) y queda detonada. Vos y tus aliados
 con vista aliada la ven siempre; los demás no. La computadora todavía no las construye. **Solo en esta PC, no en red.**
 0. **Antes:** el parche nuevo (vista-aliada 1.0.55.0) todavía **no está en C:\Warlords3**, porque cuando lo armé
    estaba corriendo la tanda de la tarea 25 con DarklordAV.exe. Cuando la tanda termine, decime «armá el parche de
-   trampas» y lo instalo.
+   trampas» y lo instalo. Sirve también para las tareas 24 y 27.
 1. Abrí el editor de bandos (war3ed) y a una unidad barata de tu bando (no un héroe) ponele **Trap** en uno de los
    Move Bonus (tiene que aparecer en la lista, como Landing o Carrier). Guardá el bando.
 2. Empezá una partida nueva **contra la computadora** con ese bando, y comprá o juntá esa unidad.
@@ -60,37 +61,36 @@ con vista aliada la ven siempre; los demás no. La computadora todavía no las c
    explosión y el grito suenan bien juntos o preferís el grito un poco después).
 Resultado:
 
-## 24. Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
+- [ ] **24.** Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
 Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubren al pasar, matan al que cae y ahora
 se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX); el remolino sigue provisorio (la cueva de las ruinas
 girando). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
-**Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). DarklordAV.exe ya está armado en
-C:\Warlords3 (vista-aliada 1.0.50.0).
+**Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). En C:\Warlords3 está la 1.0.50.0;
+hacela con la 1.0.55.0 instalada (tarea 26, paso 0), que trae los nombres.
 **Cambio de 1.0.52.0:** cada pozo y remolino tiene **nombre** (por ejemplo «the Well of Souls», «the Maelstrom of
 Kor»), y los avisos lo dicen: «You have discovered the Well of Souls!», «Your army fell into the Well of Souls!».
-Como 1.0.52.0 todavía no está en C:\Warlords3 (ver tarea 26, paso 0), hasta entonces vas a ver los avisos viejos.
 **Cambio de 1.0.50.0:** se descubre en **1 de cada 5 pasos** (antes 1 de cada 10).
 **Cambios de 1.0.49.0 (tu prueba del 21/10):** los remolinos salen el doble que los pozos; pozos, remolinos y trampas
 se descubren solo a **una casilla** (antes, con el radio de visión del grupo); un grupo de **solo voladores no
-descubre** nada. Las trampas todavía no se pueden construir: es la parte 7 del plan, sin hacer.
+descubre** nada. Construir trampas se prueba en la tarea 26.
 1. Abrí DarklordAV.exe y empezá una partida nueva **contra la computadora**, en un mapa al azar, con **Hidden Ruins**
    activada y, en Viewing Options, **Discover hidden ruins as you pass**.
 2. Al empezar: mirá la zona de tu capital. Si en esa región tocó un pozo, tiene que verse el dibujo del pozo
    en esa casilla. Si no ves ninguno, seguí al paso 3.
 3. Mové ejércitos por tierra y barcos por el agua unos turnos. Cuando descubras uno tiene que salir el aviso «You
-   have discovered a hidden pit!» (o «whirlpool») y quedar dibujado. El remolino tiene que verse **girando**.
+   have discovered the Well of …!» (o el nombre de un remolino) y quedar dibujado. El remolino tiene que verse **girando**.
 4. Mandá a propósito un ejército barato (no voladores) a un pozo descubierto, eligiendo esa casilla como destino:
-   tiene que morir, salir «Your army fell into a hidden pit!» y sonar el grito de muerte de héroe. Además tiene que
+   tiene que morir, salir «Your army fell into the Well of …!» y sonar el grito de muerte de héroe. Además tiene que
    aparecer una tumba, lápida o cruz a 2 casillas o menos del pozo (nunca encima). Si tirás otro ejército, otra más,
    en otra casilla. Si tenés un barco
-   descartable, lo mismo con un remolino («swallowed by a whirlpool»).
+   descartable, lo mismo con un remolino («Your army was swallowed by the Maelstrom of …!»).
 5. Si podés, probá también con un grupo que tenga un **volador**: el volador tiene que sobrevivir y quedarse ahí.
 6. Guardá la partida, salí y volvé a cargarla: los pozos y remolinos descubiertos y las tumbas tienen que seguir
    dibujados.
 7. Anotá abajo qué viste (y si algún dibujo queda mal ubicado, tapa algo o parpadea).
 Resultado:
 
-## 25. IA: Hexagon con menos azar (20/10/2026)
+- [ ] **25.** IA: Hexagon con menos azar (20/10/2026)
 Las tandas 25 a 34 no alcanzaron para demostrar nada: hay demasiado azar entre partidas. Esta vez todos juegan en
 condiciones idénticas y sin ruinas ocultas.
 1. Armá un bando simple con el editor de bandos: sin maná, el mismo héroe y los mismos regulares en todos los colores
@@ -112,31 +112,18 @@ amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
    (usuario, 21/10) hecho. (Claude, 21/10) revisada: bandos iguales en los 6 colores, equipos 013|457. Seguí con el 4.
    (usuario, 21/10) corriendo con **10 partidas** por tanda en vez de 8 (60 en total, unas 18 horas).
 4. Cuando te confirme que está bien: abrí el Monitor de IA y tocá **Actualizar** (tiene que pasar a la versión
-   **1.0.10**; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
-   aparecer «(alianzas)»), Partidas: **8**, **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La
+   **1.0.10** o posterior; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
+   aparecer «(alianzas)»), Partidas: **8** (corriste 10), **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La
    bitácora tiene que decir «Bandos: hex_alianzas común» y «equipos 013|457». Son unas 15 horas; si se corta,
    **Retomar** con las que falten.
+   (Claude, 22/10) En curso: tandas 35 a 39 completas (10 partidas cada una); la 40, la última, va por la partida 7.
 
-## 23. IA: tanda A/B de alianzas en Hexagon (20/10/2026)
-En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos
-recursos, así que mide mejor si las reglas de alianzas ayudan al bloque. (Los mapas al azar no igualan las
-condiciones: descartados.)
-1. Armá una partida guardada en **Hexagon** igual que Tanda_Border_Alianzas: el mismo .PGS en todos los colores, 30
-   turnos, 2000 puntos, **Shared Cities** y **Diplomacy** activadas, y **dos equipos aliados del mismo tamaño** desde
-   el arranque (Hexagon no admite 8 bandos: repartí los que admita en dos mitades). Elegí los equipos para que las
-   dos mitades queden en posiciones equivalentes del mapa. Pasá un bando a Humano antes de guardar.
-   Guardala como **Tanda_Hex_Alianzas**.
-2. En el Monitor de IA: **Ninguna**, marcá solo **Hex_Alianzas** (tiene que aparecer «(alianzas)»), Partidas: **8**,
-   **Tandas automatizadas** con serie de **6**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
-   alternándose con la IA de prueba.
-3. Avisame cuando terminen las 6 (48 partidas; a unos 18 minutos por partida son unas 15 horas). Si una tanda se corta: **Retomar** con la serie de las que falten.
-Resultado: (Claude, 20/10) las 6 tandas (29 a 34) completas y analizadas; detalle en ia\PENDIENTE-entrenamiento-ia.md.
-
-## 22. Órdenes por chat a un aliado de la computadora (19/10/2026)
+- [ ] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
 Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
 ese aliado: los enemigos no se enteran.
-**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** (la publico cuando termine la
-tanda de la tarea 21). Tienen que tenerla todas las PC de la partida.
+**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
+**(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
+hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
 1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
 2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
 3. En la barra de chat escribí, de a uno:
@@ -152,7 +139,7 @@ tanda de la tarea 21). Tienen que tenerla todas las PC de la partida.
    (no tendría que haber visto nada).
 Resultado:
 
-## 18. Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
+- [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
 Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
 Lo que falla es cómo se ven las ventanas allá: en esta PC se actualizan bien. Hace falta saber cómo corre el juego
 en su PC. Que Nico te mande:
@@ -176,7 +163,37 @@ lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto
    la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
 
-## 1. IA: tandas de control con alianzas fijas (etapa 3, paso 2) (16/10/2026)
+- [ ] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
+Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
+1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
+   todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
+   Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
+2. En el Monitor de IA (antes «Banco de pruebas»), **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
+   (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
+3. Anotá abajo qué mapa quedó hecho, y dónde arranca cada color (cuadrantes I a IX, como en Scarpart): con eso
+   completo la columna "Posición de arranque" del cuadro.
+4. El PDF para la página del Clan: en el Monitor de IA, **Exportar PDF de un mapa…**,
+   elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
+Resultado:
+
+# Hecho
+
+- [x] **23.** IA: tanda A/B de alianzas en Hexagon (20/10/2026)
+En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos
+recursos, así que mide mejor si las reglas de alianzas ayudan al bloque. (Los mapas al azar no igualan las
+condiciones: descartados.)
+1. Armá una partida guardada en **Hexagon** igual que Tanda_Border_Alianzas: el mismo .PGS en todos los colores, 30
+   turnos, 2000 puntos, **Shared Cities** y **Diplomacy** activadas, y **dos equipos aliados del mismo tamaño** desde
+   el arranque (Hexagon no admite 8 bandos: repartí los que admita en dos mitades). Elegí los equipos para que las
+   dos mitades queden en posiciones equivalentes del mapa. Pasá un bando a Humano antes de guardar.
+   Guardala como **Tanda_Hex_Alianzas**.
+2. En el Monitor de IA: **Ninguna**, marcá solo **Hex_Alianzas** (tiene que aparecer «(alianzas)»), Partidas: **8**,
+   **Tandas automatizadas** con serie de **6**. **Nueva tanda**. La bitácora tiene que mostrar los dos equipos
+   alternándose con la IA de prueba.
+3. Avisame cuando terminen las 6 (48 partidas; a unos 18 minutos por partida son unas 15 horas). Si una tanda se corta: **Retomar** con la serie de las que falten.
+Resultado: (Claude, 20/10) las 6 tandas (29 a 34) completas y analizadas; detalle en ia\PENDIENTE-entrenamiento-ia.md.
+
+- [x] **1.** IA: tandas de control con alianzas fijas (etapa 3, paso 2) (16/10/2026)
 Mide cuánto se refugia y defiende en común la IA de hoy, antes de enseñarle nada.
 1. Armá dos partidas guardadas nuevas, igual que las del rating (el mismo .PGS X-12 en los 8 colores, 30 turnos,
    2000 puntos), pero con **Shared Cities** y **Diplomacy** activadas y estos dos equipos de 4 aliados desde el
@@ -223,22 +240,7 @@ cartel «victoria aliada»). Control completo: 16 partidas válidas, 2467 gana 9
 aliada: 0; defensas con más de un color: 0. La IA original no usa las alianzas: el paso 2 de la etapa 3 está
 cerrado. No tenés nada más que hacer en esta tarea.
 
-## 4. IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
-Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
-1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
-   todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
-   Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
-2. En el Banco de pruebas, **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
-   (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
-3. Anotá abajo qué mapa quedó hecho, y dónde arranca cada color (cuadrantes I a IX, como en Scarpart): con eso
-   completo la columna "Posición de arranque" del cuadro.
-4. El PDF para la página del Clan: en el Banco de pruebas 1.0.2 (botón Actualizar), **Exportar PDF de un mapa…**,
-   elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
-Resultado:
-
-# Resueltas
-
-## 21. [RESUELTA] IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
+- [x] **21.** IA: tanda A/B de la destreza de alianzas (etapa 3, paso 3) (18/10/2026)
 **Retomada (19/10/2026) con vista-aliada 1.0.39.0**, ya instalado en C:\Warlords3. Las tandas 22 a 24 son de
 versiones anteriores y no cuentan.
 
@@ -265,7 +267,7 @@ da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
 (Claude, 20/10) Serie completa con las tandas 27 y 28 (24 partidas): tarea terminada. Resultado: empate (12 victorias
 cada IA); detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
-## 20. [RESUELTA] Sonido del juego: volvió a faltar (17/10/2026)
+- [x] **20.** Sonido del juego: volvió a faltar (17/10/2026)
 La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
 arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
 escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al terminar cada tanda abre el juego
@@ -277,7 +279,7 @@ Si en algún caso no se oye, anotá cuál y avisame.
 Resultado: (Claude, 18/10) medido después de la tanda 21: el juego abre sin silencio. Falta que lo confirmes de oído (pasos 2 y 3).
 Resultado (usuario, 20/10/2026): cumplida.
 
-## 19. [RESUELTA] Tailscale: segunda conexión del Puente para Nico (17/10/2026)
+- [x] **19.** Tailscale: segunda conexión del Puente para Nico (17/10/2026)
 El router Movistar no deja abrir el puerto, así que si se corta el Wi-Fi del servidor el Puente sigue por
 Tailscale. Tu servidor ya escucha ahí (dirección 100.77.65.99). El Actualizador 1.0.12.0 trae la opción
 **14 TAILSCALE**, que instala y configura Tailscale. Accesos directos pasó a la 15 y Salir a la 16.
@@ -290,10 +292,9 @@ Tailscale. Tu servidor ya escucha ahí (dirección 100.77.65.99). El Actualizado
 3. Si en algún paso aparece un mensaje en rojo, Nico saca una foto y me la pasás.
    (La instalación y el inicio de sesión no se pudieron probar acá porque esta PC ya tiene Tailscale; la PC de
    Nico es la primera prueba de esa parte.)
-Resultado:
 Resultado (usuario, 20/10/2026): cumplida.
 
-## 16. [REABIERTA COMO LA 20] Sonido del juego: comprobar que volvió (17/10/2026)
+- [x] **16.** Sonido del juego: comprobar que volvió (17/10/2026) — superada por la 20, ya resuelta
 El banco de pruebas silenciaba DarklordAV.exe y Windows lo recordaba, así que también quedaba mudo en las partidas
 normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar cada partida.
 1. (Hecho: la 1.0.4 está compilada y publicada.)
@@ -301,7 +302,7 @@ normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar c
 3. Si no se oye: clic derecho en el parlante de la barra de tareas → **Abrir el mezclador de volumen** y fijate si
    DarklordAV tiene el parlante tachado. Anotá acá lo que veas.
 
-## 2. [RESUELTA] IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
+- [x] **2.** IA: probar el interruptor "Suspender al terminar" del Monitor de IA (16/10/2026)
 1. Abrí el Monitor: arriba a la derecha, a la izquierda de CPU y RAM, está el botón de MovilCode
    (al pasar el mouse dice "modo sleep"). Un clic lo prende (luz roja encendida) y otro lo apaga. Queda
    recordado para la próxima vez que abras el Monitor.
@@ -309,9 +310,9 @@ normales. Ya le borré esa marca y el Monitor de IA 1.0.4 la borra al terminar c
    Si en esos 30 segundos lo apagás, se cancela. (Con la suspensión prendida no suena la alarma.)
 3. Probalo en la primera tanda de la tarea 1 (prendé el interruptor antes de apretar Nueva tanda) y anotá si la
    PC se suspendió al terminar.
-Resultado:
+Resultado: cumplida (17/10/2026, anotado en el paso 5 de la tarea 1).
 
-## 3. [UNIDA A LA TAREA 18] Herramientas 1.0.0.1: probar en partida que el espectador no pueda volver al Warlords (16/10/2026)
+- [x] **3.** Herramientas 1.0.0.1: probar en partida que el espectador no pueda volver al Warlords (16/10/2026) — unida a la tarea 18
 Votación 1.1.3 y Sorteo 1.1.2 ya están instalados en C:\Warlords3\Herramientas de esta PC. Hace falta otra PC
 con los mismos .exe (copiá votacion.exe y sorteo.exe de esa carpeta a la misma carpeta de la otra PC).
 1. Partida por Puente Warlords entre las dos PC. Desde la anfitriona, abrí la **Votación**.
@@ -325,7 +326,7 @@ Anotá si todo anduvo; si algo falló, en qué paso y qué se vio. Con el OK, lo
 Resultado: (17/10, partida con Nico) falló el paso 2: Votación y Sorteo quedaron quietos en la pantalla inicial y no
 se cerraron solos en el paso 4. Se sigue en la tarea 18.
 
-## 17. [RESUELTA] Nico: actualizar Votación y Sorteo (17/10/2026)
+- [x] **17.** Nico: actualizar Votación y Sorteo (17/10/2026)
 El puente frenó la partida porque la PC de Nico tiene otra versión de votacion.exe y sorteo.exe (con versiones
 distintas el espectador se queda trabado, por eso el puente las compara).
 1. En la PC de Nico, abrí el Actualizador y elegí la opción **11 (Votación)** y después la **12 (Sorteo)**.
@@ -334,7 +335,7 @@ distintas el espectador se queda trabado, por eso el puente las compara).
 Resultado: (Claude: hecho; la partida del 17/10 arrancó y se jugó completa por el Puente.)
 
 
-## 5. [RESUELTA] IA: averiguar con qué se interrumpe una partida de 8 bandos en IA (13/10/2026)
+- [x] **5.** IA: averiguar con qué se interrumpe una partida de 8 bandos en IA (13/10/2026)
 1. Abrí Darklord.exe (el original) y empezá una partida con los 8 bandos manejados por la computadora.
 2. Cuando estén corriendo los turnos, apretá una sola vez la tecla **Esc** y esperá unos segundos.
    - Si aparece la ventana "Interrupt Game" (la que te dejó pausar), anotá acá: "Fue Esc".
@@ -344,7 +345,7 @@ Resultado: (Claude: hecho; la partida del 17/10 arrancó y se jugó completa por
    hiciste la primera vez). Anotá si apareció la ventana.
 Resultado: tecla tab + clic izq. o der.
 
-## 6. [RESUELTA] IA: probar el registro por turno (13/10/2026)
+- [x] **6.** IA: probar el registro por turno (13/10/2026)
 1. Abrí **DarklordAV.exe** (no el original) y empezá una partida con los 8 bandos manejados por la computadora,
    en cualquier escenario.
 2. Dejala correr unos 3 turnos completos (que todos los colores hayan jugado 3 veces) y cerrá el juego.
@@ -352,14 +353,14 @@ Resultado: tecla tab + clic izq. o der.
    No hace falta abrirlo: lo reviso yo.
 Resultado: existe
 
-## 7. [RESUELTA] IA: probar el registro de batallas (13/10/2026)
+- [x] **7.** IA: probar el registro de batallas (13/10/2026)
 1. Abrí **DarklordAV.exe** y empezá una partida con los 8 bandos manejados por la computadora.
 2. Dejala correr hasta que veas que hubo peleas (unos 8 a 10 turnos suele alcanzar) y cerrá el juego.
 3. Fijate si existe el archivo C:\Warlords3\DATA\IA_BAT.CSV. Anotá acá: "Existe" o "No existe".
    No hace falta abrirlo: lo reviso yo.
 Resultado: existe (60 batallas en 15 turnos; partida terminada, captura del Game Over compartida)
 
-## 8. [RESUELTA] IA: preparar las 3 partidas para las tandas (13/10/2026)
+- [x] **8.** IA: preparar las 3 partidas para las tandas (13/10/2026)
 Hace falta una partida guardada por escenario, en el turno 1, con los 8 bandos manejados por la computadora.
 Para cada escenario (Scarpart, Hexagon y TomeLand):
 1. Abrí **DarklordAV.exe** y empezá una partida nueva en ese escenario:
@@ -372,7 +373,7 @@ Para cada escenario (Scarpart, Hexagon y TomeLand):
    solo a Computadora los bandos que estén en Humano.
 Resultado: hecho (los mapas Hexagon y Tomeland no tienen casillas para 8 jugadores, asi que se reemplazaron por "The Boderlands" y "Kor")
 
-## 9. [RESUELTA] IA: primera tanda de prueba (después del punto anterior)
+- [x] **9.** IA: primera tanda de prueba (después del punto anterior)
 1. Con las 3 partidas guardadas, hacé doble clic en
    **F:\source\repos\actualizador-warlords\ia\tanda.bat**.
 2. El programa abre el juego, que carga solo cada partida y la juega hasta el final. Son 3 partidas seguidas.
@@ -384,14 +385,14 @@ Resultado: las 3 dieron OK. 26, 7 y 2.8 minutos respectivamente.
   (Claude: según la ventana, 26,0, 27,1 y 22,8 minutos. Cada partida hubo que arrancarla con el botón "Single Player";
   se corrigió en la versión 1.0.31.0, ver el punto siguiente.)
 
-## 10. [RESUELTA] IA: tanda sin tocar nada (14/10/2026)
+- [x] **10.** IA: tanda sin tocar nada (14/10/2026)
 1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\monitor.bat**, escribí el número del monitor donde
    querés ver el juego y Enter. Queda guardado; para cambiarlo, se vuelve a abrir monitor.bat.
 2. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y no toques nada.
 3. Cada partida tiene que empezar sola, sin apretar "Single Player", y verse en el monitor que elegiste.
 Resultado: (Claude: cumplida de hecho: las tandas 6 a 17, 96 partidas, corrieron solas con el Monitor de IA.)
 
-## 11. [RESUELTA] IA: ¿el juego se ve al abrirlo a mano? (14/10/2026)
+- [x] **11.** IA: ¿el juego se ve al abrirlo a mano? (14/10/2026)
 Desde las 2:50 de hoy, cuando lo abro yo, el juego queda en una ventana totalmente blanca, incluso el
 Darklord.exe original. Necesito saber si a vos te pasa lo mismo:
 1. Abrí el juego con el acceso directo de siempre (Darklord.exe original) y apretá "Single Player".
@@ -400,7 +401,7 @@ Darklord.exe original. Necesito saber si a vos te pasa lo mismo:
 Resultado: los dos funcionan perfectamente abiertos a mano.
   (Claude: la ventana blanca la causaba la forma en que tanda.py apretaba "Single Player"; ya se corrigió.)
 
-## 12. [RESUELTA] IA: tanda en segundo plano (14/10/2026)
+- [x] **12.** IA: tanda en segundo plano (14/10/2026)
 1. Si tenés el juego abierto, cerralo.
 2. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\tanda.bat** y seguí usando la PC normalmente.
    Al empezar cada partida el juego puede aparecer un instante adelante; en unos segundos se pasa solo al monitor
@@ -409,7 +410,7 @@ Resultado: los dos funcionan perfectamente abiertos a mano.
 4. Al terminar, anotá acá si las partidas dicen **ok** y si en algún momento el juego se quedó quieto o te molestó.
 Resultado: (Claude: cumplida de hecho: las tandas 6 a 17, 96 partidas, corrieron solas con el Monitor de IA.)
 
-## 13. [RESUELTA] IA: probar el Monitor de IA (14/10/2026)
+- [x] **13.** IA: probar el Monitor de IA (14/10/2026)
 Reemplaza a tanda.bat y monitor.bat.
 1. Hacé doble clic en **F:\source\repos\actualizador-warlords\ia\Monitor-IA.exe**.
 2. Arriba aparece la tanda 4, que quedó a medias. Apretá **Retomar**: tiene que seguir con la partida 2.
@@ -420,7 +421,7 @@ Reemplaza a tanda.bat y monitor.bat.
 Anotá acá qué funcionó, qué no, y qué te gustaría cambiar o agregar.
 Resultado: (Claude: cumplida de hecho: las tandas 6 a 17, 96 partidas, corrieron solas con el Monitor de IA.)
 
-## 14. [RESUELTA] IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
+- [x] **14.** IA: rehacer las 3 partidas de las tandas con el mismo bando en los 8 colores (14/10/2026)
 Las tandas no arman bandos: cargan las partidas guardadas Tanda_Scarpart, Tanda_Borderlands y Tanda_Kor tal
 como quedaron. Para que todos los colores jueguen con el mismo bando hay que volver a guardar esas 3 partidas.
 Para cada escenario (Scarpart, The Borderlands y Kor):
@@ -433,5 +434,5 @@ Para cada escenario (Scarpart, The Borderlands y Kor):
 3. Anotá acá qué .PGS usaste. Después la tanda se larga como siempre, con **ia\tanda.bat**.
 Resultado: nobre del bando: X-12.pgs
 
-## 15. [UNIDA A LA TAREA 1] IA: probar el registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0) (16/10/2026)
+- [x] **15.** IA: probar el registro de alianzas, refugios, puentes y convoyes (vista-aliada 1.0.33.0) (16/10/2026) — unida a la tarea 1
 Pasó a ser el paso 3 de la tarea 1.
