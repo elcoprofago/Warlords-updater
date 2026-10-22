@@ -340,3 +340,17 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
   defecto. Como la IA no construye trampas, en el juego solo aparece con dos humanos en la misma PC. Probado en unicorn
   (prueba_misiontrampa.py, 55 OK, con comparaciones contra el original donde no hay trampas que dar); en el juego,
   tarea 27.
+
+## Próximo: dibujo propio del remolino (anotado 22/10/2026)
+- Hoy el remolino es provisorio: `cueva.rotate(-90 * k)` (la cueva de RUINS\cave.PCX girada) en los cuadros 1..4
+  de la hoja RUINS\pozos.pcx; ver `cuadros = [pozo] + ...` en build.py (~l.11780). po_draw elige el cuadro con
+  1 + (fase del agua & 3), así que hacen falta **4 cuadros de 48x48** que se encadenen en ciclo.
+- Restricciones: paleta de las ruinas (`po_pal`, de cave.PCX), índice 11 transparente, colores de `po_usar`
+  (`po_color` aproxima RGB). Va siempre sobre agua: conviene que el borde funda con el agua del mapa (mirar las
+  casillas de agua 0x15 de TERRAIN\DATA para tomar sus colores y su ritmo de animación).
+- Opciones: (a) generarlo por código en build.py, como el agujero de la trampa detonada (espiral con ruido fijo,
+  rotada 90° o fase por cuadro); (b) que el usuario lo dibuje y lo deje en picts\ (como pozo.PCX), y build.py lo
+  recorte con po_dibujo. Elegir (a) salvo que el usuario quiera dibujarlo.
+- Verificar: sacar los 4 cuadros a PNG ampliados sobre una casilla de agua real y mostrárselos al usuario antes de
+  armar el parche; subir la versión de vista-aliada; la prueba en el juego entra en la tarea 24 (paso 3: «girando»).
+- Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, dibujo del remolino".
