@@ -301,3 +301,15 @@ Orden: datos + SAV → generación → caer → descubrir → dibujo → red →
 - Próximo: parte 6, red (el anfitrión manda la tabla en la transferencia inicial, suma de sincronía). Sin ella, en
   red cada PC tiene sus propios pozos; las trampas construidas sí viajan, pero sobre tablas distintas.
 Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
+
+## Pedidos del 21/10/2026 (después de la parte 7), sin hacer
+- **Sonido de trampa:** al detonar, FX\Burst.wav + RuinDie/RuinDie2. Los sonidos son buffers de DirectSound
+  (0x4465e0 → 0x4eca00(id) en 0x5a6f50 → 0x4e6fd0 play); dos sonidos distintos se mezclan. Falta: ver si Burst ya
+  tiene id cargado (algún hechizo) y cómo agregar uno; para el desfase, un TrapDie.wav ya mezclado (Burst + grito
+  corrido unos ms) evita temporizadores.
+- **Nombres de pozos y remolinos:** como las ruinas, para los avisos («Rojan fell into the Well of Souls»). Lista de
+  nombres en el estilo del juego, asignados al crearse; van en la tabla y en la partida guardada.
+- **Nombres de trampas:** ciudad más cercana + número de dos cifras («Afland01»).
+- **Misión dura «Escort trap-disarming team to Afland02»:** se cumple cuando la trampa fue detonada por un ejército
+  del jugador y después el héroe llega por tierra a una casilla vecina (volando no cuenta). Requiere estudiar el
+  generador de misiones (tipos, texto, chequeo de cumplido) — no estudiado todavía.
