@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.11'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.12'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -248,13 +248,15 @@ class Monitor(tk.Tk):
         b.imgs, b.abierta = imgs, False
         self.b_config = b
 
+        # Con self.b_config y no con b: más abajo b se reusa para otro widget y las lambdas leerían ese.
         def estado(e):
+            b = self.b_config
             if not b.abierta:
                 self.iconos[b] = imgs[e]; self.pintar_icono(b)
         b.bind('<Enter>', lambda e: estado('hover'))
         b.bind('<Leave>', lambda e: estado('normal'))
         b.bind('<ButtonPress-1>', lambda e: estado('active'))
-        b.bind('<ButtonRelease-1>', lambda e: (estado('hover'), b.abierta or self.configurar()))
+        b.bind('<ButtonRelease-1>', lambda e: (estado('hover'), self.b_config.abierta or self.configurar()))
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar(); self.v_todas = tk.StringVar()
         self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
