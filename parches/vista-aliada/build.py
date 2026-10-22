@@ -12021,8 +12021,8 @@ _SOMB, _TALLO = (40, 30, 10), (40, 110, 30)
 _lx, _ly = 15, 34   # pie de la cruz
 _lcz = [(_lx - 9 + X, _ly - 21 + Y, _lc.getpixel((5 + X * 5 // 9, 4 + Y * 12 // 22))) for X in range(18) for Y in range(22)
         if (5 + X * 5 // 9, 4 + Y * 12 // 22) in _lm]
-for x, y, _ in _lcz:
-    for d in (0, 1): _lput((x + int((_ly - y) * 0.9) + 2 + d, _ly + 1 + int((_ly - y) * 0.3)), _SOMB)
+for x, y, _ in _lcz:   # sombra de la cruz al sureste, como la de la tumba, más clara que la de los ramos
+    for d in (0, 1): _lput((x + int((_ly - y) * 0.45) + 2 + d, _ly + 1 + int((_ly - y) * 0.45)), (85, 75, 40))
 for sx, sy, fl in [(13, 36, (200, 30, 30)), (18, 38, (235, 235, 235)), (9, 37, (230, 200, 40))]:
     for k in range(9):
         _lput((sx - k, sy + k // 2 + 1), _SOMB)
