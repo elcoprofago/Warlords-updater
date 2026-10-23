@@ -72,3 +72,32 @@ devuelve lo conservado para mostrarlo. Para `Saves`, una pregunta S/N antes de d
 del aviso «reemplazará completamente el contenido» por lo que de verdad hace. Probar en una carpeta de juguete
 con `W3_JUEGO` y un zip chico, con un elemento de control de cada clase (no se pisa / se pregunta / se
 reemplaza). Después subir versión y `.\tools\compilar-actualizador.ps1 -Publicar`.
+
+## Parte B: desfase entre la opción 6 y los parches (pedido del usuario, 23/10/2026)
+
+**Problema:** `Warlords3_FULL.zip` es una foto de `C:\Warlords3` del día en que se publica; cada parche
+(opción 9) publicado después lo deja atrás. Pasó con `RANDOM\Grass` (vista-aliada 1.0.68.0): se corrigió
+republicando el zip el 23/10/2026 (5766 archivos, 320 MB, SHA-256 `CBE2534C…09E065`, verificado). Desde ese
+día `publicar-full.ps1` deja afuera toda carpeta `back` (`ITEMS`, `HERO`, `SPELL`: experimentos del usuario,
+el juego no las usa). Hoy zip y parches coinciden.
+
+**Lo que pidió el usuario:**
+1. Que **el propio actualizador** advierta qué quedó viejo (el zip de la opción 6 frente a los parches, o
+   lo instalado frente a lo publicado).
+2. Que **impida instalar la opción 9 sin haber corrido antes la 6** en esa PC.
+
+**Datos para empezar:** `TodoElJuego()` y la opción 9 en `source/Actualizador/Actualizador.cs`; las versiones
+de cada parche en `parches/parches.txt` (con `ARCHIVOS`) y en `PARCHES\<ID>.txt` de cada PC. Hay que decidir
+cómo sabe el actualizador que la 6 ya corrió (por ejemplo, una anotación en `PARCHES\` al terminar la 6, con
+la fecha/SHA del zip) y cómo compara la fecha del zip contra la de cada parche (la release `Actualizador`
+da la fecha de subida del asset). Probar en carpeta de juguete (`W3_JUEGO`, `W3_FULL_ZIP`) con control.
+
+## Parte C: qué archivos de `C:\Warlords3` se pueden borrar (pedido del usuario, 23/10/2026)
+
+Primera pasada (falta compararla contra `GOG\goggame-galaxyFileList.ini`, 3653 archivos de la instalación GOG):
+- No los usa el juego: `GOG`, `__support` (subcarpetas vacías), `unins000.*` (desinstalador), `directplay.cmd`
+  (se corre una vez), el `.lnk`, `support.ico`, las carpetas `back`.
+- Los trajo GOG pero **hacen falta**: `ddraw.dll` + `dxcfg.exe`/`dxcfg.ini` (video en Windows 10/11),
+  `winmm.dll` + `libogg/libvorbis*.dll` (música `MUSIC\Track*.ogg` en lugar del CD).
+- Del usuario, no del juego: `HERRAMIENTAS`, `PARCHES`.
+No se borró nada.
