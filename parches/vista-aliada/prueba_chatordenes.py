@@ -137,6 +137,14 @@ check('control: a un humano sigue el chat nativo (0x4ba990 del bando 0 a las má
       not orden() and msgs == [(0, (0, 1), b' hola')], (pkts, msgs))
 barra('#6 hola')
 check('control: a un bando inactivo, nada', not pkts and not msgs, (pkts, msgs))
+barra('.2 ataca a 3')
+check('«.2 ataca a 3» (punto en vez de #): la misma orden', orden() == [(0, 1, 2, 2)] and eco_ok('.2 ataca a 3'),
+      (pkts, msgs))
+barra('.3 hola')
+check('«.3 hola»: a un humano, chat nativo igual que con #', not orden() and msgs == [(0, (0, 1), b' hola')],
+      (pkts, msgs))
+barra('hola .2 ataca a 3')
+check('control: sin «#» ni «.» al principio no es orden', not orden(), (pkts, msgs))
 
 # ---------------------------------------------------------------- recepción
 PK = 0x10095000

@@ -10794,6 +10794,15 @@ co_end:
     leave
     ret
 ''')
+# La barra de chat acepta «.» además de «#» para dirigir el mensaje («.3 ataca X»): el punto se escribe sin AltGr
+# en cualquier distribución de teclado. El resto del texto lo lee igual (desde [ebp + 1]).
+ch_pfx = place('ch_pfx', '''
+    cmp byte ptr [ebp], 0x23
+    je 0x40918b
+    cmp byte ptr [ebp], 0x2e
+    je 0x40918b
+    jmp 0x409302
+''')
 # Reemplaza «jne 0x409317» en 0x4091ea (ebp = «#n...», el bando n está activo y no es humano).
 ch_ai = place('ch_ai', f'''
     pushad
@@ -11728,6 +11737,7 @@ patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
+patch(0x409181, rel(0x409181, 0x40918b - 0x409181), asm(f'jmp {ch_pfx:#x}', 0x409181))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))

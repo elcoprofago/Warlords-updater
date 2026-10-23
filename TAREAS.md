@@ -32,7 +32,7 @@ Resultado:
    largas completas, sin ensanchar la ventana.
 Resultado:
 
-- [ ] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
+- [x] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
 Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
 cursor se vuelve lupa, y con el **botón derecho** se abre un cuadro con el nombre y el tipo; en la trampa, además,
 cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada. Lo que no descubriste no muestra lupa.
@@ -68,18 +68,20 @@ Resultado:
 - [ ] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
 Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
 ese aliado: los enemigos no se enteran.
+**Desde vista-aliada 1.0.66.0** (ya instalada en C:\Warlords3, 23/10/2026) la orden puede empezar con **punto** en
+vez de «#»: `.3 ataca ...` (el punto se escribe sin AltGr). El «#» sigue valiendo.
 **Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
 **(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
 hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
 1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
 2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
 3. En la barra de chat escribí, de a uno:
-   - `#3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
-   - `#3 ataca a 5` (el número del bando enemigo; también vale su nombre);
-   - `#3 mandame refuerzos`.
+   - `.3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
+   - `.3 ataca a 5` (el número del bando enemigo; también vale su nombre);
+   - `.3 mandame refuerzos`.
    Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
    refuerzos».
-4. Escribí `#3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
+4. Escribí `.3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
    tiene que contestar «No somos aliados».
 5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
    ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
