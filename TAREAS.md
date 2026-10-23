@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 30).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 31).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 25** (Hexagon con menos azar): la tanda está corriendo (paso 4); no hay que hacer nada hasta que termine.
+1. **Tarea 30** (Hexagon con menos azar y sin ruinas): correr la serie nueva.
 2. En una misma partida contra la computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
@@ -15,6 +15,13 @@ Sorteo están acá (tarea 18).
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **30.** IA: serie en Hexagon con bandos idénticos y sin ruinas (22/10/2026)
+Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y sin guardián).
+1. Abrí el Monitor de IA: **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas automatizadas**
+   con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común» y «equipos 013|457».
+2. Avisame cuando termine: la analizo contra las tandas 35 a 40 (mismo armado, con ruinas).
+Resultado:
 
 - [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
 Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
@@ -74,7 +81,7 @@ las construye. **Solo en esta PC, no en red.**
    explosión y el grito suenan bien juntos o preferís el grito un poco después).
 Resultado: todo funciona perfecto!
 
-- [ ] **24.** Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
+- [x] **24.** Pozos, remolinos y trampas: verlos y caer en el juego (20/10/2026)
 Los pozos (en tierra) y remolinos (en el agua) ocultos ya se generan, se descubren al pasar, matan al que cae y ahora
 se dibujan. El pozo ya lleva tu dibujo (picts\pozo.PCX). Cada vez que muere un grupo en un pozo aparece al lado una tumba, una lápida o una cruz.
 **Solo en esta PC, no en red** (todavía cada PC armaría sus propios pozos). En C:\Warlords3 ya está la 1.0.56.0,
@@ -128,6 +135,8 @@ amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
    a todos el mismo .PGS). Volvé a pasar un bando a Humano y guardala con el mismo nombre. Avisame y la reviso.
    (usuario, 21/10) hecho. (Claude, 21/10) revisada: bandos iguales en los 6 colores, equipos 013|457. Seguí con el 4.
    (usuario, 21/10) corriendo con **10 partidas** por tanda en vez de 8 (60 en total, unas 18 horas).
+   (Claude, 22/10) terminada: tandas 35 a 40, 60 partidas, sobre Tanda_hex_alianzas **con las ruinas activas**
+   (la versión sin ruinas se armó después). La serie sin ruinas es la tarea 30.
 4. Cuando te confirme que está bien: abrí el Monitor de IA y tocá **Actualizar** (tiene que pasar a la versión
    **1.0.10** o posterior; sin ella la tanda se armaría mal). Después: **Ninguna**, marcá solo **hex_alianzas** (tiene que
    aparecer «(alianzas)»), Partidas: **8** (corriste 10), **Tandas automatizadas** con serie de **6**, **Nueva tanda**. La

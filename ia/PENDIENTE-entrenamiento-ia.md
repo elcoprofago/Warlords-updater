@@ -658,3 +658,6 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
   - (21/10) El usuario igualó el blanco: bandos «común», equipos 013|457 (SAV de 01:23).
   - Próximo: el usuario corre la tanda (TAREAS 25, paso 4: el usuario la lanzó con 10 partidas x 6 = 60, Monitor 1.0.10); después, analizarla
     como las 29 a 34.
+- (22/10) Corrección: esa serie ya terminó (tandas 35 a 40, 60 partidas, 1.0.50.0) y corrió sobre
+  Tanda_hex_alianzas, **con ruinas**: el _SR se armó a las 23:37 del 21/10, después. La serie sin ruinas, con los
+  mismos bandos, es TAREAS 30; comparar 35-40 (con ruinas) contra esa mide cuánto pesan las ruinas.
