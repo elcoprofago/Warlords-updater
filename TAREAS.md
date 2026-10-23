@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 32).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 33).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,13 +8,22 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 30** (Hexagon con menos azar y sin ruinas): correr la serie nueva.
-2. En una misma partida contra la computadora, la **31** (lupa sobre pozos, remolinos y trampas), la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
+2. En una misma partida contra la computadora, la **31** (lupa sobre pozos, remolinos y trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
    (órdenes por chat) queda esperando: ver su aviso.
-4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+4. **Tarea 32** (barra horizontal de la bitácora): la próxima vez que abras el Monitor.
+5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
+0. Cuando termine la tanda que está corriendo (tarea 30), avisame: compilo y publico el Monitor 1.0.13 (con la
+   tanda en curso el .exe no se puede reemplazar). Después tocá **Actualizar** en el Monitor.
+1. Abrí el Monitor de IA: el título tiene que decir «Monitor 1.0.13». Achicá la ventana a lo ancho.
+2. Debajo del texto de la bitácora tiene que haber una barra horizontal: arrastrala y tienen que verse las líneas
+   largas completas, sin ensanchar la ventana.
+Resultado:
 
 - [ ] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
 Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
@@ -36,12 +45,6 @@ Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y
 2. Avisame cuando termine: la analizo contra las tandas 35 a 40 (mismo armado, con ruinas).
 Resultado:
 
-- [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
-Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
-a) el botón de configuración nuevo, a la derecha de los semáforos, que cambia de imagen al pasar el mouse y al
-apretarlo; b) la barra verde «Serie» arriba de las de Tanda y Partida; c) el interruptor «modo sleep» un poco
-más grande. Si falta algo, decime cuál.
-
 - [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
 Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
 la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
@@ -61,6 +64,72 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
    de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
+
+- [ ] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
+Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
+ese aliado: los enemigos no se enteran.
+**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
+**(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
+hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
+1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
+2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
+3. En la barra de chat escribí, de a uno:
+   - `#3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
+   - `#3 ataca a 5` (el número del bando enemigo; también vale su nombre);
+   - `#3 mandame refuerzos`.
+   Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
+   refuerzos».
+4. Escribí `#3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
+   tiene que contestar «No somos aliados».
+5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
+   ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
+   (no tendría que haber visto nada).
+Resultado:
+
+- [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
+Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
+Lo que falla es cómo se ven las ventanas allá: en esta PC se actualizan bien. Hace falta saber cómo corre el juego
+en su PC. Que Nico te mande:
+1. El archivo **C:\Warlords3\dxcfg.ini** (abierto con el Bloc de notas, una foto alcanza).
+2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
+   direcciones del Explorador) y su texto.
+3. ~~Si el juego ocupa toda la pantalla o se ve en una ventana.~~ (Respondido 17/10: ocupa toda la pantalla, igual que en la PC del anfitrión; Nico cierra las ventanas a mano.)
+4. ~~Administrador de tareas~~: ya no hace falta, lo reemplaza el registro de abajo.
+
+**Registro de lo que hacen las ventanas (lo principal, 17/10/2026).** Votación 1.1.4 y Sorteo 1.1.3 anotan todo
+lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto quedó detenida.
+1. En la PC de Nico **y en la tuya**: abrí el Actualizador y elegí la opción **11 (Votación)** y después la
+   **12 (Sorteo)**. Al abrirlas, el título de la ventana tiene que decir **v1.1.4** (Votación) y **v1.1.3** (Sorteo).
+   (En tu PC ya están instaladas; si el Actualizador dice que no hay nada nuevo, está bien.)
+2. Jueguen una partida en red como siempre y abrí, como anfitrión, la Votación y el Sorteo; cerralos cuando
+   terminen, igual que la vez pasada.
+3. Cuando termine la partida, que Nico te mande estos dos archivos (son de texto; mandarlos como archivo, no foto):
+   **C:\Warlords3\Herramientas\votacion.log** y **C:\Warlords3\Herramientas\sorteo.log**.
+   (Si su juego está en otra carpeta, son los que están junto a votacion.exe y sorteo.exe.)
+4. Copiá los dos archivos de Nico a **F:\source\repos\actualizador-warlords\nico\** (creá la carpeta) y anotá acá
+   la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
+Resultado:
+
+- [ ] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
+Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
+1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
+   todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
+   Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
+2. En el Monitor de IA (antes «Banco de pruebas»), **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
+   (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
+3. Anotá abajo qué mapa quedó hecho, y dónde arranca cada color (cuadrantes I a IX, como en Scarpart): con eso
+   completo la columna "Posición de arranque" del cuadro.
+4. El PDF para la página del Clan: en el Monitor de IA, **Exportar PDF de un mapa…**,
+   elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
+Resultado:
+
+# Hecho
+
+- [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
+Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
+a) el botón de configuración nuevo, a la derecha de los semáforos, que cambia de imagen al pasar el mouse y al
+apretarlo; b) la barra verde «Serie» arriba de las de Tanda y Partida; c) el interruptor «modo sleep» un poco
+más grande. Si falta algo, decime cuál.
 
 - [x] **26.** Construir una trampa en el juego (21/10/2026)
 Un grupo con una unidad que tenga el bono **Trap** puede construir una trampa oculta donde está parado, al costo de
@@ -127,7 +196,7 @@ descubre** nada. Construir trampas se prueba en la tarea 26.
 7. Anotá abajo qué viste (y si algún dibujo queda mal ubicado, tapa algo o parpadea).
 Resultado:
 
-- [ ] **25.** IA: Hexagon con menos azar (20/10/2026)
+- [x] **25.** IA: Hexagon con menos azar (20/10/2026)
 Las tandas 25 a 34 no alcanzaron para demostrar nada: hay demasiado azar entre partidas. Esta vez todos juegan en
 condiciones idénticas y sin ruinas ocultas.
 1. Armá un bando simple con el editor de bandos: sin maná, el mismo héroe y los mismos regulares en todos los colores
@@ -156,66 +225,6 @@ amarillo, rojo, verde, azul y negro están vacíos. Todo lo demás es idéntico.
    bitácora tiene que decir «Bandos: hex_alianzas común» y «equipos 013|457». Son unas 15 horas; si se corta,
    **Retomar** con las que falten.
    (Claude, 22/10) En curso: tandas 35 a 39 completas (10 partidas cada una); la 40, la última, va por la partida 7.
-
-- [ ] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
-Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
-ese aliado: los enemigos no se enteran.
-**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
-**(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
-hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
-1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
-2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
-3. En la barra de chat escribí, de a uno:
-   - `#3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
-   - `#3 ataca a 5` (el número del bando enemigo; también vale su nombre);
-   - `#3 mandame refuerzos`.
-   Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
-   refuerzos».
-4. Escribí `#3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
-   tiene que contestar «No somos aliados».
-5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
-   ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
-   (no tendría que haber visto nada).
-Resultado:
-
-- [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
-Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
-Lo que falla es cómo se ven las ventanas allá: en esta PC se actualizan bien. Hace falta saber cómo corre el juego
-en su PC. Que Nico te mande:
-1. El archivo **C:\Warlords3\dxcfg.ini** (abierto con el Bloc de notas, una foto alcanza).
-2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
-   direcciones del Explorador) y su texto.
-3. ~~Si el juego ocupa toda la pantalla o se ve en una ventana.~~ (Respondido 17/10: ocupa toda la pantalla, igual que en la PC del anfitrión; Nico cierra las ventanas a mano.)
-4. ~~Administrador de tareas~~: ya no hace falta, lo reemplaza el registro de abajo.
-
-**Registro de lo que hacen las ventanas (lo principal, 17/10/2026).** Votación 1.1.4 y Sorteo 1.1.3 anotan todo
-lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto quedó detenida.
-1. En la PC de Nico **y en la tuya**: abrí el Actualizador y elegí la opción **11 (Votación)** y después la
-   **12 (Sorteo)**. Al abrirlas, el título de la ventana tiene que decir **v1.1.4** (Votación) y **v1.1.3** (Sorteo).
-   (En tu PC ya están instaladas; si el Actualizador dice que no hay nada nuevo, está bien.)
-2. Jueguen una partida en red como siempre y abrí, como anfitrión, la Votación y el Sorteo; cerralos cuando
-   terminen, igual que la vez pasada.
-3. Cuando termine la partida, que Nico te mande estos dos archivos (son de texto; mandarlos como archivo, no foto):
-   **C:\Warlords3\Herramientas\votacion.log** y **C:\Warlords3\Herramientas\sorteo.log**.
-   (Si su juego está en otra carpeta, son los que están junto a votacion.exe y sorteo.exe.)
-4. Copiá los dos archivos de Nico a **F:\source\repos\actualizador-warlords\nico\** (creá la carpeta) y anotá acá
-   la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
-Resultado:
-
-- [ ] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
-Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
-1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
-   todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
-   Tanda_Hexagon). Si el mapa tiene menos de 8 lugares, también sirve.
-2. En el Monitor de IA (antes «Banco de pruebas»), **Guardadas**: marcá solo esa partida. Partidas: **30**. **Nueva tanda**.
-   (30 partidas por mapa alcanzan, como en Scarpart; pueden ser también 5 tandas de 6.)
-3. Anotá abajo qué mapa quedó hecho, y dónde arranca cada color (cuadrantes I a IX, como en Scarpart): con eso
-   completo la columna "Posición de arranque" del cuadro.
-4. El PDF para la página del Clan: en el Monitor de IA, **Exportar PDF de un mapa…**,
-   elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
-Resultado:
-
-# Hecho
 
 - [x] **29.** Bonos ordenados en el editor y habilidad «Bridge» (22/10/2026)
 **Resultado (22/10/2026):** el editor nuevo funciona bien.
