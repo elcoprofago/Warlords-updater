@@ -661,3 +661,22 @@ las decisiones de la IA y no del armado. Las partidas Tanda_* se rehacen con los
 - (22/10) Corrección: esa serie ya terminó (tandas 35 a 40, 60 partidas, 1.0.50.0) y corrió sobre
   Tanda_hex_alianzas, **con ruinas**: el _SR se armó a las 23:37 del 21/10, después. La serie sin ruinas, con los
   mismos bandos, es TAREAS 30; comparar 35-40 (con ruinas) contra esa mide cuánto pesan las ruinas.
+
+### 23/10/2026: serie A/B sin ruinas, tandas 41 a 46 (60 partidas, Tanda_hex_alianzas_SR, 1.0.65.0, exe 1a40e8b8)
+Comparada con la 35-40 (mismo bando simple y mismos equipos 013|457, con ruinas, 1.0.50.0), que no se había
+analizado, y con la 29-34 (bando viejo, con ruinas). Script: margen de PV 013-457 por partida, separado según qué
+equipo tenía la IA de prueba (P); efecto = (margen con 013 en P - margen con 013 en O) / 2, ± error estándar.
+| serie | válidas | 013 gana | victorias P / O / empate | efecto P (PV por equipo) | refugios P |
+|---|---|---|---|---|---|
+| 29-34 (bando viejo, ruinas) | 48 | 37 | 20 / 27 / 1 | -3.2 ± 2.8 | 16 |
+| 35-40 (bando simple, ruinas) | 59 (1 colgada) | 17 | 26 / 30 / 3 | -5.0 ± 4.4 | 59 |
+| 41-46 (bando simple, sin ruinas) | 58 (2 colgadas) | 28 | 35 / 23 / 0 | +7.1 ± 3.7 | 18 |
+- Las ruinas deciden quién tiene ventaja en el mapa: con ruinas, el equipo favorecido cambia según el bando (013
+  ganó 37/48 con el viejo; 457 ganó 42/59 con el simple). Sin ruinas, Hexagon queda parejo: 28 a 30. Quitarlas sí
+  sirvió.
+- Sin ruinas, P gana 35 a 23 y +7.1 PV por equipo: es la primera vez que sale a favor, pero apenas pasa 1,9 veces
+  su error (no llega a ser concluyente) y las reglas de alianzas se activaron poco (18 refugios, 8 defensas desde
+  refugio, 2 de ciudad aliada en 58 partidas): no alcanzan para explicar 7 PV.
+- Las tres series juntas (promedio ponderado): -0.6 ± 2.0 PV. Sigue sin haber ventaja demostrada.
+- Próximo paso propuesto: repetir la 41-46 tal cual (otras 60 partidas sin ruinas, Monitor 1.0.13). Si vuelve a dar
+  a favor de P, el efecto es real; si da cerca de cero, fue azar. Es TAREAS 33.

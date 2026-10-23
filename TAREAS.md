@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 33).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 34).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 30** (Hexagon con menos azar y sin ruinas): correr la serie nueva.
+1. **Tarea 33** (repetir la serie sin ruinas): correrla.
 2. En una misma partida contra la computadora, la **31** (lupa sobre pozos, remolinos y trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
@@ -16,6 +16,14 @@ Sorteo están acá (tarea 18).
 5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **33.** IA: repetir la serie sin ruinas para confirmar (23/10/2026)
+La serie de la tarea 30 dio por primera vez ventaja a la IA de prueba, pero puede ser azar. Otra serie igual lo decide.
+1. Abrí el Monitor de IA (1.0.13): **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas
+   automatizadas** con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común»
+   y «equipos 013|457». Son unas 18 horas; si se corta, **Retomar** con las que falten.
+2. Avisame cuando termine.
+Resultado:
 
 - [ ] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
 0. Ya está: Monitor 1.0.13 compilado en `ia\Monitor-IA.exe` y publicado (23/10/2026).
@@ -35,13 +43,6 @@ cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada
 2. Lo mismo con un remolino (la lupa tiene que salir en cualquiera de sus 9 casillas) y con una trampa tuya: el
    número de explosiones que le quedan.
 3. Control: en una casilla vacía, en una ruina y en una ciudad, todo tiene que seguir como antes.
-Resultado:
-
-- [ ] **30.** IA: serie en Hexagon con bandos idénticos y sin ruinas (22/10/2026)
-Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y sin guardián).
-1. Abrí el Monitor de IA: **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas automatizadas**
-   con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común» y «equipos 013|457».
-2. Avisame cuando termine: la analizo contra las tandas 35 a 40 (mismo armado, con ruinas).
 Resultado:
 
 - [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
@@ -123,6 +124,13 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Hecho
+
+- [x] **30.** IA: serie en Hexagon con bandos idénticos y sin ruinas (22/10/2026)
+Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y sin guardián).
+1. Abrí el Monitor de IA: **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas automatizadas**
+   con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común» y «equipos 013|457».
+2. Avisame cuando termine: la analizo contra las tandas 35 a 40 (mismo armado, con ruinas).
+Resultado: (Claude, 23/10) corrió completa (tandas 41 a 46, 58 válidas). Sin ruinas el mapa queda parejo (013 gana 28 de 58). La IA de prueba gana 35 a 23 (+7,1 ± 3,7 PV por equipo): a favor, pero todavía no es concluyente. Detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
 - [x] **28.** Revisar el Monitor de IA 1.0.12 (22/10/2026)
 Abrí `ia\Monitor-IA.exe` (ya está compilado). El título tiene que decir «Monitor 1.0.12». Fijate que tenga:
