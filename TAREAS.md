@@ -8,10 +8,8 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 33** (repetir la serie sin ruinas): correrla.
-2. En una misma partida contra la computadora, la **31** (lupa sobre pozos, remolinos y trampas); después la **27** (misión de la
-   trampa, con dos jugadores humanos).
-3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
-   (órdenes por chat) queda esperando: ver su aviso.
+2. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
 4. **Tarea 32** (barra horizontal de la bitácora): la próxima vez que abras el Monitor.
 5. **Tarea 34** (ítems personalizados en mapas al azar): en tu próxima partida al azar.
 6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
@@ -21,7 +19,8 @@ Sorteo están acá (tarea 18).
 - [ ] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
 Desde vista-aliada 1.0.67.0, cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
 personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
-por partida (32 + 8 especiales), así que en cada partida sale una parte distinta.
+por partida (32 + 8 especiales), así que en cada partida sale una parte distinta. Los 8 especiales no cambian:
+solo los traen `Item1.dat` y `Item2.dat` (los últimos 8 nombres de cada uno).
 1. Abrí el juego con **DarklordAV.exe** y empezá dos partidas con mapa al azar (Random), una después de la otra.
 2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
    la lista de una partida tiene que ser distinta de la de la otra.
@@ -43,19 +42,6 @@ Resultado:
    largas completas, sin ensanchar la ventana.
 Resultado:
 
-- [x] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
-Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
-cursor se vuelve lupa, y con el **botón derecho** se abre un cuadro con el nombre y el tipo; en la trampa, además,
-cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada. Lo que no descubriste no muestra lupa.
-0. Ya está: vista-aliada 1.0.65.0 quedó instalada en C:\Warlords3 (22/10/2026).
-1. En una partida contra la computadora, sin ningún ejército elegido, pasá el mouse por un pozo que ya hayas
-   descubierto: el cursor tiene que ser la lupa. Botón derecho: cuadro con el nombre (por ejemplo «The Well of
-   Souls») y el texto del pozo.
-2. Lo mismo con un remolino (la lupa tiene que salir en cualquiera de sus 9 casillas) y con una trampa tuya: el
-   número de explosiones que le quedan.
-3. Control: en una casilla vacía, en una ruina y en una ciudad, todo tiene que seguir como antes.
-Resultado:
-
 - [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
 Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
 la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
@@ -75,29 +61,6 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
    de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
-
-- [x] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
-Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
-ese aliado: los enemigos no se enteran.
-**Desde vista-aliada 1.0.66.0** (ya instalada en C:\Warlords3, 23/10/2026) la orden puede empezar con **punto** en
-vez de «#»: `.3 ataca ...` (el punto se escribe sin AltGr). El «#» sigue valiendo.
-**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
-**(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
-hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
-1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
-2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
-3. En la barra de chat escribí, de a uno:
-   - `.3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
-   - `.3 ataca a 5` (el número del bando enemigo; también vale su nombre);
-   - `.3 mandame refuerzos`.
-   Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
-   refuerzos».
-4. Escribí `.3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
-   tiene que contestar «No somos aliados».
-5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
-   ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
-   (no tendría que haber visto nada).
-Resultado: funciona bien, pero los mensajes "pedeterminados" deben incluir otras ordenes: "dame oro" "razea x" (ciudad, puente) 
 
 - [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
 Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
@@ -137,6 +100,43 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Hecho
+
+- [x] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
+Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
+cursor se vuelve lupa, y con el **botón derecho** se abre un cuadro con el nombre y el tipo; en la trampa, además,
+cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada. Lo que no descubriste no muestra lupa.
+0. Ya está: vista-aliada 1.0.65.0 quedó instalada en C:\Warlords3 (22/10/2026).
+1. En una partida contra la computadora, sin ningún ejército elegido, pasá el mouse por un pozo que ya hayas
+   descubierto: el cursor tiene que ser la lupa. Botón derecho: cuadro con el nombre (por ejemplo «The Well of
+   Souls») y el texto del pozo.
+2. Lo mismo con un remolino (la lupa tiene que salir en cualquiera de sus 9 casillas) y con una trampa tuya: el
+   número de explosiones que le quedan.
+3. Control: en una casilla vacía, en una ruina y en una ciudad, todo tiene que seguir como antes.
+Resultado: (23/10) marcada cumplida por vos.
+
+- [x] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
+Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
+ese aliado: los enemigos no se enteran.
+**Desde vista-aliada 1.0.66.0** (ya instalada en C:\Warlords3, 23/10/2026) la orden puede empezar con **punto** en
+vez de «#»: `.3 ataca ...` (el punto se escribe sin AltGr). El «#» sigue valiendo.
+**Antes:** el actualizador (opción 9) tiene que ofrecer vista-aliada **1.0.41.0** o posterior, en todas las PC.
+**(Claude, 22/10) Esperando:** nunca la publiqué; lo publicado sigue siendo la 1.0.39.0. Y no conviene publicar la de
+hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá cuando haya una versión publicada.
+1. Partida en red (o solo en tu PC) con al menos un bando de la computadora aliado tuyo y Diplomacy activada.
+2. Mirá qué número tiene ese bando (1 a 8, en el orden de los colores de la partida). Supongamos que es el 3.
+3. En la barra de chat escribí, de a uno:
+   - `.3 ataca NOMBRE-DE-CIUDAD` (el nombre tal cual aparece en el mapa, por ejemplo una ciudad enemiga cercana);
+   - `.3 ataca a 5` (el número del bando enemigo; también vale su nombre);
+   - `.3 mandame refuerzos`.
+   Después de cada una tiene que aparecer en el chat, con el color del aliado, «Ok, ataco ...» o «Ok, te mando
+   refuerzos».
+4. Escribí `.3 hola`: tiene que contestar con la lista de órdenes. A un bando de la computadora que no es tu aliado
+   tiene que contestar «No somos aliados».
+5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
+   ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
+   (no tendría que haber visto nada).
+Resultado: funciona bien, pero los mensajes "pedeterminados" deben incluir otras ordenes: "dame oro" "razea x" (ciudad, puente)
+(Claude, 23/10) Anotado como pedido: sumar a las órdenes «dame oro» y «razeá X» (ciudad o puente).
 
 - [x] **30.** IA: serie en Hexagon con bandos idénticos y sin ruinas (22/10/2026)
 Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y sin guardián).
