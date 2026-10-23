@@ -392,7 +392,7 @@ Para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
 - Pruebas: prueba_pozos (submarina, puente, remolino en río), prueba_trampas (ciudad, ruina, agua) y prueba_misiontrampa
   (submarina fuera de las candidatas), todo OK.
 
-## Pedido del 22/10/2026 (después de 1.0.64.0): lupa y botón derecho. Nada hecho todavía
+## Pedido del 22/10/2026 (después de 1.0.64.0): lupa y botón derecho. Hecho en 1.0.65.0
 Hoy los nombres de pozos, remolinos y trampas (1.0.52.0 y 1.0.54.0) **solo salen en los avisos** al caer en ellos o
 al descubrirlos. El usuario quiere que se vean igual que en sitios, ruinas y ciudades:
 - al pasar el mouse por encima, el cursor cambia a una lupa;
@@ -404,3 +404,9 @@ Primer paso: encontrar en DarklordAV.exe dónde elige el juego el cursor de lupa
 derecho para ruinas y sitios. Después, sumar el caso de PO_TAB: el registro de esa casilla en po_map, con el bit de
 descubierto en +6.
 Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, lupa y botón derecho».
+- **Hecho (1.0.65.0):** en el decodificador de clic/cursor 0x4735c0, donde da 3 (nada, 0x473dc8), po_cur busca en
+  la casilla lo que quien mira ve dibujado (po_look, la regla de po_draw; po_find suma las 9 casillas del remolino) y
+  devuelve 0x14, el código de ruina: lupa y, con el botón derecho, la acción 0x4741d9, donde po_info abre el cuadro
+  de información 0x4c7a10 con nombre, tipo y explosiones que quedan. Ciudad, ruina y sitio siguen primero; las tumbas
+  y las minas submarinas que no se dibujan no tienen cuadro. Prueba: prueba_lupa.py, todo OK (también pozos, trampas
+  y misiontrampa). Falta la prueba en el juego: tarea 31.

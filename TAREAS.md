@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 31).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 32).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,13 +8,27 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 30** (Hexagon con menos azar y sin ruinas): correr la serie nueva.
-2. En una misma partida contra la computadora, la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
+2. En una misma partida contra la computadora, la **31** (lupa sobre pozos, remolinos y trampas), la **24** (pozos y remolinos) y la **26** (construir trampas); después la **27** (misión de la
    trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
    (órdenes por chat) queda esperando: ver su aviso.
 4. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
+Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
+cursor se vuelve lupa, y con el **botón derecho** se abre un cuadro con el nombre y el tipo; en la trampa, además,
+cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada. Lo que no descubriste no muestra lupa.
+0. Cerrá el juego (DarklordAV.exe estaba abierto y no se pudo reemplazar): la vista-aliada 1.0.65.0 se instala
+   cuando lo cierres. Si al abrirlo de nuevo no ves la lupa, avisame.
+1. En una partida contra la computadora, sin ningún ejército elegido, pasá el mouse por un pozo que ya hayas
+   descubierto: el cursor tiene que ser la lupa. Botón derecho: cuadro con el nombre (por ejemplo «The Well of
+   Souls») y el texto del pozo.
+2. Lo mismo con un remolino (la lupa tiene que salir en cualquiera de sus 9 casillas) y con una trampa tuya: el
+   número de explosiones que le quedan.
+3. Control: en una casilla vacía, en una ruina y en una ciudad, todo tiene que seguir como antes.
+Resultado:
 
 - [ ] **30.** IA: serie en Hexagon con bandos idénticos y sin ruinas (22/10/2026)
 Igual que la 25, pero sobre la guardada sin ruinas (las 47 exploradas, vacías y sin guardián).

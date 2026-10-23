@@ -8467,6 +8467,231 @@ pw_end:
     jmp 0x459b9b
 ''')
 
+# Lupa y botón derecho (pedido del usuario, 22/10/2026): como en ruinas y sitios. El decodificador de clic/cursor
+# 0x4735c0, sin grupo elegido, devuelve 0x14 en una ruina descubierta (cursor 9, la lupa, por las tablas 0x4c00f8 /
+# 0x4c00c0 de 0x4bf88d; acción 0x4741d9 de 0x473e80 = cuadro de ruinas 0x4a4980), 0x15 en un sitio (la misma lupa,
+# 0x4287d0) y 3 si no hay nada (0x473dc8). Ahí, si quien mira ([0x560b20], el de po_draw) ve dibujado un pozo,
+# remolino o trampa en la casilla, po_cur devuelve 0x14 y anota el registro en po_info_r; ciudad, ruina y sitio
+# siguen primero. En la acción 0x14, po_info abre el cuadro de información del juego, 0x4c7a10(título, texto, x, y del
+# mouse; el que usan los diálogos para el botón derecho): nombre y tipo; en la trampa, las explosiones que le quedan.
+# Con un grupo elegido el decodificador da mover, como en las ruinas. Las tumbas no tienen cuadro.
+# po_look: eax = x, edx = y -> eax = registro que quien mira ve dibujado en esa casilla, o 0 (misma regla que
+# po_draw). po_find: además, el remolino de una casilla vecina de agua (su dibujo ocupa 3x3). Preservan el resto.
+po_look = place('po_look', f'''
+    push ebx
+    push ecx
+    push edx
+    test eax, eax
+    jl pl_no
+    test edx, edx
+    jl pl_no
+    cmp ax, word ptr [0x503e00]
+    jge pl_no
+    cmp dx, word ptr [0x503e02]
+    jge pl_no
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {PO_MAPSZ}
+    jae pl_no
+    movzx eax, byte ptr [edx + {po_map:#x}]
+    test eax, eax
+    jz pl_no
+    lea ebx, [eax*8 + {PO_TAB - 8:#x}]
+    movsx edx, word ptr [0x560b20]
+    cmp edx, 8
+    jae pl_no
+    mov al, byte ptr [ebx + 4]
+    cmp al, {PO_TRAMPA}
+    ja pl_no
+    movzx ecx, byte ptr [ebx + 6]
+    bt ecx, edx
+    jc pl_vis
+    cmp al, {PO_TRAMPA}
+    jne pl_no
+    mov cl, byte ptr [ebx + 5]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
+    jae pl_vis
+    movzx ecx, byte ptr [ebx + 7]
+    cmp ecx, edx
+    je pl_vis
+    call {fogally:#x}
+    jne pl_no
+pl_vis:
+    cmp byte ptr [ebx + 4], {PO_TRAMPA}
+    jne pl_yes
+    mov eax, ebx
+    call {po_wet:#x}
+    jne pl_yes
+    mov al, byte ptr [ebx + 5]
+    test al, {TR_RECIEN}
+    jnz pl_no
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
+    jae pl_no
+pl_yes:
+    mov eax, ebx
+    jmp pl_out
+pl_no:
+    xor eax, eax
+pl_out:
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+po_fxy = place_data('po_fxy', bytes(4))   # casilla para po_wet (registro de mentira: x, y)
+po_find = place('po_find', f'''
+    push ebx
+    push esi
+    push edi
+    mov ebx, eax
+    mov edi, edx
+    call {po_look:#x}
+    test eax, eax
+    jnz pf2_out
+    mov word ptr [{po_fxy:#x}], bx
+    mov word ptr [{po_fxy + 2:#x}], di
+    mov eax, {po_fxy:#x}
+    call {po_wet:#x}
+    jne pf2_none
+    mov esi, 8
+pf2_vec:
+    movzx eax, byte ptr [esi + {po_vecs:#x}]
+    movsx edx, al
+    sar edx, 4
+    shl eax, 28
+    sar eax, 28
+    neg eax
+    add eax, ebx
+    neg edx
+    add edx, edi
+    call {po_look:#x}
+    test eax, eax
+    jz pf2_next
+    cmp byte ptr [eax + 4], {PO_REMOLINO}
+    je pf2_out
+pf2_next:
+    dec esi
+    jns pf2_vec
+pf2_none:
+    xor eax, eax
+pf2_out:
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+po_info_r = place_data('po_info_r', bytes(4))
+# En 0x473dc8 (lo que queda: código 3). [esp+0x2c] / [esp+0x2e] = casilla; 0x473d7e la escribe y devuelve 0x14.
+po_cur = place('po_cur', f'''
+    movsx eax, word ptr [esp + 0x2c]
+    movsx edx, word ptr [esp + 0x2e]
+    call {po_find:#x}
+    mov dword ptr [{po_info_r:#x}], eax
+    test eax, eax
+    jnz 0x473d7e
+    mov ax, word ptr [esp + 0x38]
+    jmp 0x473dcd
+''')
+# En 0x473d32 (antes de ciudad, ruina y sitio): el 0x14 de una ruina de verdad no es nuestro.
+po_curclr = place('po_curclr', f'''
+    mov dword ptr [{po_info_r:#x}], 0
+    test bp, bp
+    jl 0x473d76
+    jmp 0x473d37
+''')
+PI_TXT = ('A hidden pit. Any army that steps into it dies; only flyers are safe.',
+          'A whirlpool. Any ship that sails into its eye sinks with all aboard; only flyers are safe.')
+PI_TRFMT = (f'A mine. Explosions left: %d of {TR_USOS}.', f'A sea mine. Explosions left: %d of {TR_USOS}.')
+PI_SPENT = 'A spent mine: it will not explode again.'
+PI_TRAP, PI_TRNM = 'Trap %.20s%02d', 'Trap'
+assert len(PI_TRAP % ('x' * 20, 99)) < 64   # el título del cuadro se copia a 63 (0x4f0f40)
+pi_txtt = place_data('pi_txtt', struct.pack('<2I', *(place_data(f'str_pi_txt{i}', cstr_(s)) for i, s in enumerate(PI_TXT))))
+pi_trft = place_data('pi_trft', struct.pack('<2I', *(place_data(f'str_pi_trf{i}', cstr_(s)) for i, s in enumerate(PI_TRFMT))))
+str_pi_spent = place_data('str_pi_spent', cstr_(PI_SPENT))
+str_pi_trap = place_data('str_pi_trap', cstr_(PI_TRAP))
+str_pi_trnm = place_data('str_pi_trnm', cstr_(PI_TRNM))
+str_pi_s = place_data('str_pi_s', cstr_('%.63s'))
+pi_tit = place_data('pi_tit', bytes(64))
+pi_txt = place_data('pi_txt', bytes(64))
+# En 0x4741d9 (acción 0x14; [esp+0x1c] / [esp+0x20] = x, y del mouse). Vuelve por 0x4741f3, que restaura todo.
+po_info = place('po_info', f'''
+    call 0x4a2170
+    mov ebx, dword ptr [{po_info_r:#x}]
+    test ebx, ebx
+    jz 0x4741de
+    mov dword ptr [{po_info_r:#x}], 0
+    movzx ebp, byte ptr [ebx + 4]
+    cmp ebp, {PO_TRAMPA}
+    je pi_trap
+    movzx edx, byte ptr [ebx + 5]
+    and edx, dword ptr [ebp*4 + {po_nmask:#x}]
+    mov edi, dword ptr [ebp*4 + {po_nmt:#x}]
+    push dword ptr [edi + edx*4]
+    push {str_pi_s:#x}
+    push {pi_tit:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 12
+    mov al, byte ptr [{pi_tit:#x}]
+    cmp al, 0x61
+    jb pi_cap
+    cmp al, 0x7a
+    ja pi_cap
+    sub byte ptr [{pi_tit:#x}], 0x20
+pi_cap:
+    mov esi, dword ptr [ebp*4 + {pi_txtt:#x}]
+    jmp pi_show
+pi_trap:
+    mov edx, ebx
+    call {tr_id:#x}
+    test eax, eax
+    jl pi_tnone
+    push ecx
+    imul eax, eax, 0xde
+    add eax, 0x537e30
+    push eax
+    push {str_pi_trap:#x}
+    push {pi_tit:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 16
+    jmp pi_tuse
+pi_tnone:
+    push {str_pi_trnm:#x}
+    push {str_pi_s:#x}
+    push {pi_tit:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 12
+pi_tuse:
+    xor edi, edi
+    mov eax, ebx
+    call {po_wet:#x}
+    setz al
+    movzx edi, al
+    movzx ecx, byte ptr [ebx + 5]
+    and ecx, {TR_CUENTA}
+    mov esi, {str_pi_spent:#x}
+    cmp ecx, {TR_USOS}
+    jae pi_show
+    neg ecx
+    add ecx, {TR_USOS}
+    push ecx
+    push dword ptr [edi*4 + {pi_trft:#x}]
+    push {pi_txt:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 12
+    mov esi, {pi_txt:#x}
+pi_show:
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push esi
+    push {pi_tit:#x}
+    call 0x4c7a10
+    add esp, 16
+    jmp 0x4741f3
+''')
+
 # Al guardar (0x439a00), antes de cerrar el archivo: la tabla al final.
 vt_savef = place('vt_savef', f'''
     push ecx
@@ -11691,6 +11916,9 @@ patch(0x42ddc1, asm('call 0x4a1e20', 0x42ddc1), asm(f'call {po_start:#x}', 0x42d
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
+patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:#x}', 0x473d32))
+patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
+patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES
