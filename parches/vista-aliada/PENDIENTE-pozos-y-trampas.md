@@ -410,3 +410,15 @@ Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, lupa y botón derecho
   de información 0x4c7a10 con nombre, tipo y explosiones que quedan. Ciudad, ruina y sitio siguen primero; las tumbas
   y las minas submarinas que no se dibujan no tienen cuadro. Prueba: prueba_lupa.py, todo OK (también pozos, trampas
   y misiontrampa). Falta la prueba en el juego: tarea 31.
+
+### Premios de las ruinas (averiguado el 23/10/2026 en el exe original, 0x4a14f2..0x4a194c)
+- El contenido (+0x96) se sortea al armar la partida, **en partes iguales** (0x4deb20) entre los tipos de premio que
+  la ruina tiene permitidos (7 banderas en [ebp-0x146..-0x141] y [ebp-0x13c]; tabla de saltos 0x4a19d8). No hay pesos
+  ni porcentajes por tipo.
+- Ítem (contenido 3): se elige **en partes iguales** entre los ítems cargados (tabla [0x55cb72], registros de 0xd8,
+  los mismos .ITM) que todavía no están en otra ruina ni en manos de nadie (0x4427c0 y la marca [ebp-0x120]): cada
+  ítem sale **una sola vez** por partida. Si no queda ninguno, la ruina pasa a contenido 1.
+- La lista de ítems de la partida sale del ITEM.DAT del escenario (o RANDOM\<set>\ITEM.DAT / Item0-2.dat): byte de
+  cantidad + nombres en registros de 9 bytes. Los montos (oro, maná, aliados, gema del sabio) salen de Default.rul
+  (RuinGoldNormal=3d500+500, ...AGrade, etc.).
+- El juego no distingue ítems originales de personalizados: solo se diferencian por la fecha de los .ITM.
