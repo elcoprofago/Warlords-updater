@@ -334,7 +334,8 @@ class Monitor(tk.Tk):
         tf = tk.Frame(b); tf.pack(fill='both', expand=True, padx=8, pady=(4, 8))
         self.log = tk.Text(tf, height=12, font=('Consolas', 9), wrap='none')
         sb = ttk.Scrollbar(tf, command=self.log.yview); self.log['yscrollcommand'] = sb.set
-        sb.pack(side='right', fill='y'); self.log.pack(fill='both', expand=True)
+        sh = ttk.Scrollbar(tf, orient='horizontal', command=self.log.xview); self.log['xscrollcommand'] = sh.set
+        sb.pack(side='right', fill='y'); sh.pack(side='bottom', fill='x'); self.log.pack(fill='both', expand=True)
         self.protocol('WM_DELETE_WINDOW', self.salir)
         # Todo widget de la ventana principal lleva '.' en sus bindtags: cualquier cambio de tamaño o lugar repinta.
         self.pendiente = False
