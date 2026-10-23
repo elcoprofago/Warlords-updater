@@ -20,8 +20,7 @@ Sorteo están acá (tarea 18).
 Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
 cursor se vuelve lupa, y con el **botón derecho** se abre un cuadro con el nombre y el tipo; en la trampa, además,
 cuántas explosiones le quedan («Explosions left: 2 of 3») o que está gastada. Lo que no descubriste no muestra lupa.
-0. Cerrá el juego (DarklordAV.exe estaba abierto y no se pudo reemplazar): la vista-aliada 1.0.65.0 se instala
-   cuando lo cierres. Si al abrirlo de nuevo no ves la lupa, avisame.
+0. Ya está: vista-aliada 1.0.65.0 quedó instalada en C:\Warlords3 (22/10/2026).
 1. En una partida contra la computadora, sin ningún ejército elegido, pasá el mouse por un pozo que ya hayas
    descubierto: el cursor tiene que ser la lupa. Botón derecho: cuadro con el nombre (por ejemplo «The Well of
    Souls») y el texto del pozo.
