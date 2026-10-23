@@ -8,9 +8,9 @@
     <RootNamespace>Actualizador</RootNamespace>
     <AssemblyName>Actualizador</AssemblyName>
     <!-- La version del actualizador: tools\compilar-actualizador.ps1 la lee de aca. -->
-    <Version>1.0.12.0</Version>
-    <FileVersion>1.0.12.0</FileVersion>
-    <AssemblyVersion>1.0.12.0</AssemblyVersion>
+    <Version>1.0.13.0</Version>
+    <FileVersion>1.0.13.0</FileVersion>
+    <AssemblyVersion>1.0.13.0</AssemblyVersion>
     <Product>Actualizador de Warlords III</Product>
     <AssemblyTitle>Actualizador de Warlords III - Darklords Rising</AssemblyTitle>
     <Copyright>elcoprofago@gmail.com 2026</Copyright>

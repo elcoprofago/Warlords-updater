@@ -13,7 +13,10 @@ Pasos:
   3. Muestra lo que el zip publicado trae y el nuevo no: ese zip es el criterio de que es esencial,
      asi que publicar exige confirmarlo. Muestra tambien lo que se agrega.
   4. Arma dist\Warlords3_FULL.zip y comprueba que tenga exactamente los archivos elegidos.
-  5. Lo sube (reemplaza el anterior), lo vuelve a bajar y compara el SHA-256 con lo local.
+  5. Arma dist\FULL.txt: el SHA-256 del zip y la version de cada parche cuyos archivos van en el zip
+     (la anotada en <Juego>\PARCHES\<ID>.txt, que tiene que ser la de parches\parches.txt). Con eso la
+     opcion 9 sabe si esta PC corrio la opcion 6 y si el zip quedo atras de algun parche.
+  6. Sube el zip y despues FULL.txt (reemplaza los anteriores), los vuelve a bajar y compara el SHA-256.
 
 Requiere: gh autenticado.
 #>
@@ -157,28 +160,76 @@ if ($dentro.Count -ne $elegidos.Count -or @(Compare-Object $dentro $elegidos).Co
 $sha = Sha256 $zip
 Write-Host ("  {0} archivos, {1:N0} MB, SHA-256 {2}" -f $dentro.Count, ((Get-Item $zip).Length / 1MB), $sha)
 
-if ($Prueba) { Write-Host "-Prueba: no se sube nada. Resultado en dist\$Nombre" -ForegroundColor Cyan; exit 0 }
+# ---------------------------------------------------------------- 5. FULL.txt
+# Formato que lee LeerCompleto (source\Actualizador\Actualizador.cs): SHA-256 del zip y despues ID|VERSION
+# La version de cada parche se comprueba por contenido, no por <Juego>\PARCHES\<ID>.txt: publicar-parche.ps1
+# instala en C:\Warlords3 sin escribir esa anotacion. Cada archivo del parche que va en el zip tiene que ser
+# igual al del zip del parche publicado (lista y SHA de PARCHES.txt de la release).
+$lineasFull = @("# Warlords3_FULL.zip: SHA-256 y version de cada parche que trae (tools\publicar-full.ps1)", $sha)
+$verif = Join-Path $raiz 'dist\verificacion'
+New-Item -ItemType Directory -Force $verif | Out-Null
+$listaPub = Join-Path $verif 'PARCHES.txt'
+Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/$Repo/releases/download/$Release/PARCHES.txt?t=$([guid]::NewGuid().ToString('N'))" -OutFile $listaPub
+$sha256 = [Security.Cryptography.SHA256]::Create()
+foreach ($l in (Get-Content -Encoding UTF8 $listaPub | Where-Object { $_.Trim() -and -not $_.StartsWith('#') })) {
+    $c = $l.Split('|')
+    $id = $c[0].Trim(); $version = $c[1].Trim()
+    $zp = Join-Path $verif "PARCHE-$id.zip"
+    Invoke-WebRequest -UseBasicParsing -Uri "$($c[3].Trim())?t=$([guid]::NewGuid().ToString('N'))" -OutFile $zp
+    if ((Sha256 $zp) -ne $c[2].Trim()) { Falla "el zip publicado del parche $id no coincide con su SHA de PARCHES.txt" }
+    $distintos = @(); $van = 0
+    $zz = [IO.Compression.ZipFile]::OpenRead($zp)
+    try {
+        foreach ($e in ($zz.Entries | Where-Object { $_.Name })) {
+            $rel = $e.FullName -replace '/', '\'
+            if (-not $nuevo.Contains($rel)) { continue }
+            $van++
+            $s = $e.Open()
+            try { $h = [BitConverter]::ToString($sha256.ComputeHash($s)) -replace '-' } finally { $s.Dispose() }
+            if ($h -ne (Sha256 (Join-Path $base $rel))) { $distintos += $rel }
+        }
+    }
+    finally { $zz.Dispose(); Remove-Item -Force $zp }
+    if (-not $van) { continue }
+    if ($distintos.Count) {
+        $msg = "el zip trae archivos del parche $id distintos de los de la v$version publicada: $($distintos -join ', '). Instalalo en $base antes de armar el zip."
+        if ($Prueba) { Write-Host "AVISO (-Prueba, publicando cortaria aca): $msg" -ForegroundColor Yellow } else { Falla $msg }
+    }
+    $lineasFull += "$id|$version"
+}
+Remove-Item -Force $listaPub
+$full = Join-Path $raiz 'dist\FULL.txt'
+[IO.File]::WriteAllText($full, ($lineasFull -join "`r`n") + "`r`n")
+Write-Host "FULL.txt:"; $lineasFull | Select-Object -Skip 1 | ForEach-Object { Write-Host "  $_" }
+
+if ($Prueba) { Write-Host "-Prueba: no se sube nada. Resultado en dist\$Nombre y dist\FULL.txt" -ForegroundColor Cyan; exit 0 }
 
 if ($quitados.Count) {
     $r = Read-Host "El zip nuevo deja afuera $($quitados.Count) archivo(s) que hoy se reparten (lista de arriba). Publicar igual? (S/N)"
     if ($r -notmatch '^\s*s') { Write-Host 'No se publico nada.'; exit 0 }
 }
 
-# ---------------------------------------------------------------- 5. subir y verificar
-gh release upload $Release $zip --clobber -R $Repo
-if ($LASTEXITCODE) { Falla 'no se pudo subir el zip' }
-$bajado = Join-Path $raiz "dist\verificacion\$Nombre"
-New-Item -ItemType Directory -Force (Split-Path $bajado) | Out-Null
-$ok = $false
-# ?t=<aleatorio> esquiva la cache de GitHub (Cache-Control: no-cache no la esquiva; ver publicar-parche.ps1)
-for ($i = 1; $i -le 3 -and -not $ok; $i++) {
-    try {
-        Invoke-WebRequest -UseBasicParsing -Uri "${Url}?t=$([guid]::NewGuid().ToString('N'))" -OutFile $bajado
-        $ok = (Sha256 $bajado) -eq $sha
+# ---------------------------------------------------------------- 6. subir y verificar
+# Primero el zip y despues FULL.txt: mientras tanto, la opcion 6 rechaza el zip nuevo por SHA (no instala
+# nada) en vez de instalarlo y anotarle los datos del anterior.
+function SubirYVerificar($local, $url) {
+    gh release upload $Release $local --clobber -R $Repo
+    if ($LASTEXITCODE) { Falla "no se pudo subir $(Split-Path -Leaf $local)" }
+    $bajado = Join-Path $raiz "dist\verificacion\$(Split-Path -Leaf $local)"
+    New-Item -ItemType Directory -Force (Split-Path $bajado) | Out-Null
+    $ok = $false
+    # ?t=<aleatorio> esquiva la cache de GitHub (Cache-Control: no-cache no la esquiva; ver publicar-parche.ps1)
+    for ($i = 1; $i -le 3 -and -not $ok; $i++) {
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri "${url}?t=$([guid]::NewGuid().ToString('N'))" -OutFile $bajado
+            $ok = (Sha256 $bajado) -eq (Sha256 $local)
+        }
+        catch { Write-Host "  intento ${i}: $($_.Exception.Message)" }
+        if (-not $ok) { Start-Sleep -Seconds 10 }
     }
-    catch { Write-Host "  intento ${i}: $($_.Exception.Message)" }
-    if (-not $ok) { Start-Sleep -Seconds 10 }
+    Remove-Item -Force -ErrorAction SilentlyContinue $bajado
+    if (-not $ok) { Falla "lo que se baja de $url no coincide con lo subido" }
 }
-Remove-Item -Force -ErrorAction SilentlyContinue $bajado
-if (-not $ok) { Falla "lo que se baja de $Url no coincide con lo subido" }
-Write-Host "Publicado y verificado: $Nombre ($($dentro.Count) archivos)" -ForegroundColor Green
+SubirYVerificar $zip $Url
+SubirYVerificar $full "https://github.com/$Repo/releases/download/$Release/FULL.txt"
+Write-Host "Publicado y verificado: $Nombre ($($dentro.Count) archivos) y FULL.txt" -ForegroundColor Green

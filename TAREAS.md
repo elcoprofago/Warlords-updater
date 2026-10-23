@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 35).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 36).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 35** (opción 6 antes de la 9): la próxima vez que abras el Actualizador.
 1. **Tarea 33** (repetir la serie sin ruinas): correrla.
 2. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
@@ -15,6 +16,19 @@ Sorteo están acá (tarea 18).
 6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **35.** Actualizador 1.0.13.0: la opción 9 exige haber corrido la 6 (23/10/2026)
+Desde esta versión, la opción 9 (PARCHES) no deja instalar nada en una PC donde no se corrió antes la opción 6
+(ACTUALIZAR TODO EL JUEGO) con esta versión o una posterior; vale también para tu PC. Y avisa, arriba de la lista de
+parches, si hay un juego completo más nuevo que el instalado o si el juego completo publicado quedó atrás de algún parche.
+1. Abrí el Actualizador (se actualiza solo a la 1.0.13.0) y elegí **9**: tiene que decir que antes hay que instalar
+   el juego completo (opción 6).
+2. Elegí **6** y confirmá. No pisa tus bandos, escenarios propios, partidas ni opciones. Al final probablemente avise
+   «vuelve a instalarlo con la opción 9» para vista-aliada.
+3. Elegí **9**: ahora tiene que mostrar la lista, sin avisos arriba. Si vista-aliada figura como no instalado, instalalo.
+4. Abrí DarklordAV.exe y comprobá que el juego anda como siempre.
+Anotá acá lo que viste en cada paso.
+Resultado:
 
 - [ ] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
 Desde vista-aliada 1.0.68.0 (ya instalada en C:\Warlords3), cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y

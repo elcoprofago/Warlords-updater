@@ -22,6 +22,7 @@ namespace Actualizador
     ///   W3_PARCHES_URL  lista de parches en lugar de la publicada (pruebas; puede ser un archivo local)
     ///   W3_ESCRITORIO   carpeta de los accesos directos en lugar del Escritorio (pruebas)
     ///   W3_FULL_ZIP     zip local en lugar de bajar Warlords3_FULL.zip en la opcion 6 (pruebas)
+    ///   W3_FULL_TXT     FULL.txt en lugar del publicado (pruebas; puede ser un archivo local)
     /// </summary>
     sealed class Actualizador
     {
@@ -32,7 +33,7 @@ namespace Actualizador
         static readonly HttpClient http = CrearHttp();
 
         readonly Terminal t;
-        readonly string juego, herramientas, temporal, escritorio, parchesUrl, fullZip;
+        readonly string juego, herramientas, temporal, escritorio, parchesUrl, fullZip, fullTxtUrl;
 
         public Actualizador(Terminal terminal)
         {
@@ -44,6 +45,7 @@ namespace Actualizador
                          ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             parchesUrl = Environment.GetEnvironmentVariable("W3_PARCHES_URL") ?? Release + "PARCHES.txt";
             fullZip = Environment.GetEnvironmentVariable("W3_FULL_ZIP");
+            fullTxtUrl = Environment.GetEnvironmentVariable("W3_FULL_TXT") ?? Release + "FULL.txt";
         }
 
         // ================================================================== menu
@@ -197,8 +199,15 @@ namespace Actualizador
                 Aviso("Operación cancelada.");
                 return;
             }
+            var completo = await LeerCompleto();
+            if (completo == null) return;
             var archivo = fullZip ?? Path.Combine(temporal, "Warlords3_FULL.zip");
             if (fullZip == null && !await Bajar(LeerUrls("fullupdate_url.txt"), archivo)) return;
+            if (!await Verificar(archivo, completo.Sha))
+            {
+                if (fullZip == null) Borrar(archivo);
+                return;
+            }
 
             bool pisarSaves = true;
             int saves = PartidasQuePisaria(archivo);
@@ -215,8 +224,64 @@ namespace Actualizador
             foreach (var g in conservados.GroupBy(r => r.Contains('\\') ? r.Substring(0, r.IndexOf('\\')) : "(raíz)",
                          StringComparer.OrdinalIgnoreCase).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
                 Info($"Se conservaron {g.Count()} archivo(s) tuyos en {g.Key}.");
+            AnotarCompleto(completo);
             Ok("JUEGO COMPLETO ACTUALIZADO.");
         }
+
+        // FULL.txt (asset de la release "Actualizador", lo escribe tools\publicar-full.ps1 junto con el zip):
+        //   primera linea: SHA-256 de Warlords3_FULL.zip
+        //   despues, ID|VERSION de cada parche cuyos archivos trae el zip (la version que tenia quien lo armo)
+
+        sealed class Completo { public string Sha; public Dictionary<string, string> Parches; }
+
+        /// <summary>Marca de la opcion 6 en esta PC: el SHA-256 del zip que se instalo.</summary>
+        string MarcaCompleto => Path.Combine(juego, "PARCHES", "_juego-completo.txt");
+
+        async Task<Completo> LeerCompleto()
+        {
+            var f = Path.Combine(temporal, "FULL.txt");
+            if (!await Bajar(new[] { fullTxtUrl }, f, sinCache: true, mostrarArchivo: "datos del juego completo")) return null;
+            var lineas = File.ReadAllLines(f).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith("#")).ToList();
+            Borrar(f);
+            if (lineas.Count == 0)
+            {
+                Error("Los datos del juego completo (FULL.txt) están vacíos.");
+                return null;
+            }
+            return new Completo
+            {
+                Sha = lineas[0],
+                Parches = lineas.Skip(1).Select(l => l.Split('|')).Where(c => c.Length >= 2)
+                    .ToDictionary(c => c[0].Trim(), c => c[1].Trim(), StringComparer.OrdinalIgnoreCase),
+            };
+        }
+
+        /// <summary>
+        /// Despues de la opcion 6: deja la marca con el SHA del zip, y borra la marca de cada parche que el zip
+        /// acaba de pisar con otra version (quedo con archivos de dos versiones: la opcion 9 lo ofrece de nuevo).
+        /// </summary>
+        void AnotarCompleto(Completo c)
+        {
+            Directory.CreateDirectory(Path.Combine(juego, "PARCHES"));
+            File.WriteAllText(MarcaCompleto, c.Sha + "\r\n");
+            foreach (var p in c.Parches)
+            {
+                var inst = VersionInstalada(p.Key);
+                if (inst == null || inst == p.Value) continue;
+                Borrar(Path.Combine(juego, "PARCHES", p.Key + ".txt"));
+                Aviso($"El juego completo trae el parche {p.Key} v{p.Value}: vuelve a instalarlo con la opción 9.");
+            }
+        }
+
+        string ShaCompletoInstalado()
+        {
+            if (!File.Exists(MarcaCompleto)) return null;
+            try { return File.ReadLines(MarcaCompleto).FirstOrDefault()?.Trim() ?? ""; }
+            catch (IOException) { return ""; }
+        }
+
+        static int CompararVersion(string a, string b) =>
+            System.Version.TryParse(a, out var va) && System.Version.TryParse(b, out var vb) ? va.CompareTo(vb) : string.CompareOrdinal(a, b);
 
         async Task<bool> SiNo(string pregunta)
         {
@@ -527,6 +592,14 @@ namespace Actualizador
         async Task Parches()
         {
             Titulo("PARCHES");
+            var instalado = ShaCompletoInstalado();
+            if (instalado == null)
+            {
+                Error("Antes de los parches hay que instalar el juego completo (opción 6) en esta PC.");
+                Info("Los parches cambian archivos del juego: sobre una instalación vieja pueden no funcionar.");
+                await Pausa();
+                return;
+            }
             var lista = Path.Combine(temporal, "PARCHES.txt");
             if (!await Bajar(new[] { parchesUrl }, lista, sinCache: true, mostrarArchivo: "lista de parches"))
             {
@@ -534,12 +607,25 @@ namespace Actualizador
                 return;
             }
             var parches = LeerParches(lista);
+            var avisos = new List<string>();
+            var completo = await LeerCompleto();
+            if (completo == null)
+                avisos.Add("No se pudo comprobar si el juego completo está al día.");
+            else
+            {
+                if (!string.Equals(instalado, completo.Sha, StringComparison.OrdinalIgnoreCase))
+                    avisos.Add("Hay una versión más nueva del juego completo: conviene correr la opción 6 y después volver acá.");
+                foreach (var p in parches)
+                    if (completo.Parches.TryGetValue(p.Id, out var v) && CompararVersion(v, p.Version) < 0)
+                        avisos.Add($"El juego completo publicado trae {p.Id} v{v} y el parche va por v{p.Version}: avísale a quien lo publica.");
+            }
 
             while (true)
             {
                 t.Limpiar();
                 t.EscribirLinea();
                 Encabezado("PARCHES DISPONIBLES", "");
+                foreach (var a in avisos) Aviso(a);
                 if (parches.Count == 0)
                 {
                     Linea("No hay parches publicados todavía.", Paleta.Tenue);
@@ -635,7 +721,14 @@ namespace Actualizador
             var archivo = Path.Combine(temporal, $"PARCHE-{p.Id}.zip");
             if (!await Bajar(new[] { p.Url }, archivo, sinCache: true)) return null;
 
-            // El zip tiene que ser exactamente el publicado: si no coincide no se toca el juego
+            if (await Verificar(archivo, p.Sha)) return archivo;
+            Borrar(archivo);
+            return null;
+        }
+
+        /// <summary>El zip tiene que ser exactamente el publicado: si no coincide no se toca el juego.</summary>
+        async Task<bool> Verificar(string archivo, string esperado)
+        {
             string hash;
             using (new Actividad(t, "Verificando que sea el archivo publicado (SHA-256)..."))
                 hash = await Task.Run(() =>
@@ -644,14 +737,13 @@ namespace Actualizador
                     using (var sha = SHA256.Create())
                         return BitConverter.ToString(sha.ComputeHash(s)).Replace("-", "");
                 });
-            if (!string.Equals(hash, p.Sha, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(hash, esperado, StringComparison.OrdinalIgnoreCase))
             {
                 Error("El archivo descargado no coincide con el publicado. No se instala.");
-                Borrar(archivo);
-                return null;
+                return false;
             }
             Ok("Archivo verificado.");
-            return archivo;
+            return true;
         }
 
         string VersionInstalada(string id)

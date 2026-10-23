@@ -86,7 +86,17 @@ el juego no las usa). Hoy zip y parches coinciden.
    lo instalado frente a lo publicado).
 2. Que **impida instalar la opción 9 sin haber corrido antes la 6** en esa PC.
 
-**Datos para empezar:** `TodoElJuego()` y la opción 9 en `source/Actualizador/Actualizador.cs`; las versiones
+**Hecho (23/10/2026, Actualizador 1.0.13.0):** `publicar-full.ps1` publica junto al zip `FULL.txt` (SHA-256
+del zip y `ID|VERSION` de cada parche cuyos archivos van en el zip; la versión se comprueba comparando esos
+archivos contra el zip del parche publicado, porque `publicar-parche.ps1` no escribe `PARCHES\<ID>.txt` en
+`C:\Warlords3`). La opción 6 baja `FULL.txt`, rechaza un zip con otro SHA, y al terminar deja
+`PARCHES\_juego-completo.txt` con el SHA y borra la anotación de los parches que el zip pisó con otra versión.
+La opción 9 se niega sin esa marca, y avisa si el SHA instalado no es el publicado o si `FULL.txt` trae un
+parche más viejo que el de `PARCHES.txt`. Probado en carpeta de juguete (5 casos, con control) y
+`publicar-full.ps1 -Prueba` contra `C:\Warlords3` (pasa limpio) y contra un juego con un archivo del parche
+alterado (lo marca). Prueba del usuario: tarea 35.
+
+**Datos con que se empezó:** `TodoElJuego()` y la opción 9 en `source/Actualizador/Actualizador.cs`; las versiones
 de cada parche en `parches/parches.txt` (con `ARCHIVOS`) y en `PARCHES\<ID>.txt` de cada PC. Hay que decidir
 cómo sabe el actualizador que la 6 ya corrió (por ejemplo, una anotación en `PARCHES\` al terminar la 6, con
 la fecha/SHA del zip) y cómo compara la fecha del zip contra la de cada parche (la release `Actualizador`
