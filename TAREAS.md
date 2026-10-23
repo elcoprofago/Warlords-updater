@@ -17,13 +17,14 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
-Desde vista-aliada 1.0.67.0, cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
+Desde vista-aliada 1.0.68.0 (ya instalada en C:\Warlords3), cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
 personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
 por partida (32 + 8 especiales), así que en cada partida sale una parte distinta. Los 8 especiales no cambian:
-solo los traen `Item1.dat` y `Item2.dat` (los últimos 8 nombres de cada uno).
+solo los traen `Item1.dat` y `Item2.dat` (los últimos 8 nombres de cada uno). Los ítems de vuelo (con «fly» en el
+nombre: bootfly, potfly, FlyShoot) no entran al sorteo, y los quitaste también de las cuatro listas.
 1. Abrí el juego con **DarklordAV.exe** y empezá dos partidas con mapa al azar (Random), una después de la otra.
 2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
-   la lista de una partida tiene que ser distinta de la de la otra.
+   la lista de una partida tiene que ser distinta de la de la otra. No tiene que aparecer ningún ítem de vuelo.
 3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
 Resultado:
 

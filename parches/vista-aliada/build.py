@@ -10799,7 +10799,8 @@ co_end:
 # bytes): word porcentaje, 16 nombres de 9 bytes que se cargan siempre, 16 que se cargan si 1d100 <= porcentaje y 8
 # especiales (ITEM.INI). La tabla de ítems de la partida (0x55cb74, 0xd8 c/u) tiene lugar para 40 y no se agranda.
 # Tras la copia se rearman los 32 primeros con un sorteo sin repetición entre todos los ITEMS\*.ITM (originales y
-# personalizados), porcentaje 100, sin repetir los especiales.
+# personalizados), porcentaje 100, sin repetir los especiales. Quedan afuera los que tienen «fly» en el nombre
+# (ítems de vuelo: bootfly, potfly, FlyShoot...).
 ri_names = place_data('ri_names', bytes(9 * 1024))
 ri_fd = place_data('ri_fd', bytes(0x120))        # _finddata_t: nombre en +20
 ri_buf = place_data('ri_buf', bytes(0x170))
@@ -10842,7 +10843,26 @@ ri_z:
     inc ecx
     jmp ri_z
 ri_ok:
+    xor ecx, ecx
+ri_fly:
+    mov al, byte ptr [edi + ecx]
+    or al, 0x20
+    cmp al, 0x66
+    jne ri_fn
+    mov al, byte ptr [edi + ecx + 1]
+    or al, 0x20
+    cmp al, 0x6c
+    jne ri_fn
+    mov al, byte ptr [edi + ecx + 2]
+    or al, 0x20
+    cmp al, 0x79
+    je ri_skip
+ri_fn:
+    inc ecx
+    cmp ecx, 6
+    jbe ri_fly
     inc ebx
+ri_skip:
     push {ri_fd:#x}
     push esi
     call dword ptr [0x5a9b80]
@@ -12731,6 +12751,10 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS.update(NUEVOS_TIT)
+# Listas de ítems de los mapas al azar (random\Grass del repo, editadas por el usuario el 23/10/2026: sin los ítems
+# de vuelo). Con ri_go cuentan sobre todo sus 8 especiales; los 32 comunes valen en el Darklord.exe original.
+for _f in ('ITEM.DAT', 'Item0.dat', 'Item1.dat', 'Item2.dat'):
+    NUEVOS[os.path.join('RANDOM', 'Grass', _f)] = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'random', 'Grass', _f), 'rb').read()
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):

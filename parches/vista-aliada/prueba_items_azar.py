@@ -85,21 +85,24 @@ def caso(titulo, cond):
 orig = open(r'C:\Warlords3\RANDOM\Grass\Item2.dat', 'rb').read()      # con 8 especiales
 largo = open(r'C:\Warlords3\RANDOM\Grass\Item1.dat', 'rb').read()     # 446 bytes: el resto se conserva
 esp = [n for n in nombres(orig)[32:] if n]
+VUELO = ['bootfly', 'potfly', 'FlyShoot', 'GAUNTFLY', 'xfLyz']
 todos = ['pers%03d' % i for i in range(300)] + ['BOOTSPEE', 'ringpowr'] + [e.upper() for e in esp]
+con_vuelo = todos + VUELO
 
-out, tir = correr(todos, orig)
+out, tir = correr(con_vuelo, orig)
 n = nombres(out)
 caso('porcentaje 100', struct.unpack_from('<h', out)[0] == 100)
 caso('32 nombres, todos de ITEMS', all(x in todos for x in n[:32]))
+caso('ningún ítem de vuelo (fly)', not any('fly' in x.lower() for x in n[:32]))
 caso('sin repetidos', len({x.lower() for x in n[:32]}) == 32)
 caso('ninguno repite un especial', not ({x.lower() for x in n[:32]} & {e.lower() for e in esp}))
 caso('control: especiales intactos', out[2 + 32 * 9:] == orig[2 + 32 * 9:])
-caso('sorteo sin reposición (tiradas n, n-1, ...)', tir[:3] == [len(todos), len(todos) - 1, len(todos) - 2])
+caso('sorteo sin reposición (tiradas n, n-1, ...)', tir[:3] == [len(todos), len(todos) - 1, len(todos) - 2])  # los de vuelo no entran al sorteo
 caso('aparecen personalizados', any(x.startswith('pers') for x in n[:32]))
 out2, _ = correr(todos, orig, seed=2)
 caso('otra tirada, otra lista', nombres(out2)[:32] != n[:32])
 
-out, _ = correr(['aa', 'bb', 'cc'], orig)
+out, _ = correr(['aa', 'bootfly', 'bb', 'cc', 'potfly'], orig)
 caso('pocos ítems: 3 nombres y el resto vacío', nombres(out)[:3] and set(nombres(out)[:3]) == {'aa', 'bb', 'cc'}
      and out[2 + 27:2 + 32 * 9] == bytes(29 * 9))
 out, _ = correr(todos, largo)
@@ -107,6 +110,7 @@ caso('archivo de 446 bytes: cola intacta', out[362:] == largo[362:] and len(out)
 out, _ = correr(todos, orig, falla_find=True)
 caso('control: sin ITEMS, la copia queda como el original', out == orig)
 out, _ = correr(['nombrelargo9', 'x'], orig)
+caso('control: «flo» y «fy» no cuentan como vuelo', set(nombres(correr(['flojo', 'fyl', 'f'], orig)[0])[:3]) == {'flojo', 'fyl', 'f'})
 caso('nombre de más de 8 letras se corta en 8', set(nombres(out)[:2]) == {'nombrela', 'x'})
 
 print('TODO OK' if not fallas else '%d FALLAS' % len(fallas))
