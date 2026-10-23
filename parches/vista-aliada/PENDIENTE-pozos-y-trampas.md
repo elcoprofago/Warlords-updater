@@ -422,3 +422,12 @@ Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, lupa y botón derecho
   cantidad + nombres en registros de 9 bytes. Los montos (oro, maná, aliados, gema del sabio) salen de Default.rul
   (RuinGoldNormal=3d500+500, ...AGrade, etc.).
 - El juego no distingue ítems originales de personalizados: solo se diferencian por la fecha de los .ITM.
+
+## Ítems de los mapas al azar (23/10/2026, 1.0.67.0)
+
+El generador de mapas al azar (0x4ca05a) copiaba a la partida uno de `RANDOM\<set>\ITEM.DAT`/`ITEM0-2.DAT`,
+cuatro listas fijas hechas solo con ítems originales: por eso nunca salían los personalizados. Formato (cargador
+0x4a0fb0, 362 bytes): word porcentaje, 16 nombres que se cargan siempre, 16 que se cargan si 1d100 <= porcentaje y
+8 especiales (ITEM.INI). La tabla de ítems de la partida (0x55cb74) tiene lugar para 40; no se agranda. Desde
+1.0.67.0 (`ri_go`), después de la copia se reemplazan los 32 primeros por un sorteo sin repetición entre todos los
+`ITEMS\*.ITM`, con porcentaje 100 y sin repetir los especiales. Prueba: `prueba_items_azar.py`.

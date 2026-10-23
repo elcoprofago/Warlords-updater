@@ -10794,6 +10794,162 @@ co_end:
     leave
     ret
 ''')
+# Mapas al azar: el generador (0x4ca05a) copia a la carpeta de la partida uno de RANDOM\<set>\ITEM.DAT/ITEM0-2.DAT
+# (tirada 0x4deb20(1, 4, -1) sobre la tabla 0x500228), listas fijas de ítems originales. Formato (0x4a0fb0, 362
+# bytes): word porcentaje, 16 nombres de 9 bytes que se cargan siempre, 16 que se cargan si 1d100 <= porcentaje y 8
+# especiales (ITEM.INI). La tabla de ítems de la partida (0x55cb74, 0xd8 c/u) tiene lugar para 40 y no se agranda.
+# Tras la copia se rearman los 32 primeros con un sorteo sin repetición entre todos los ITEMS\*.ITM (originales y
+# personalizados), porcentaje 100, sin repetir los especiales.
+ri_names = place_data('ri_names', bytes(9 * 1024))
+ri_fd = place_data('ri_fd', bytes(0x120))        # _finddata_t: nombre en +20
+ri_buf = place_data('ri_buf', bytes(0x170))
+ri_pat = place_data('ri_pat', b'ITEMS\\*.ITM\0')
+ri_tmp = place_data('ri_tmp', bytes(4))
+ri_go = place('ri_go', f'''
+    pop eax
+    mov dword ptr [{ri_tmp:#x}], eax
+    call dword ptr [0x5a9844]
+    push dword ptr [{ri_tmp:#x}]
+    pushad
+    push {ri_fd:#x}
+    push {ri_pat:#x}
+    call dword ptr [0x5a9b84]
+    add esp, 8
+    cmp eax, -1
+    je ri_done
+    mov esi, eax
+    xor ebx, ebx
+ri_nxt:
+    cmp ebx, 1024
+    jae ri_fin
+    lea edi, [ebx + ebx*8 + {ri_names:#x}]
+    xor ecx, ecx
+ri_cp:
+    mov al, byte ptr [ecx + {ri_fd + 20:#x}]
+    cmp al, 0x2e
+    je ri_z
+    test al, al
+    je ri_z
+    cmp ecx, 8
+    jae ri_z
+    mov byte ptr [edi + ecx], al
+    inc ecx
+    jmp ri_cp
+ri_z:
+    cmp ecx, 9
+    jae ri_ok
+    mov byte ptr [edi + ecx], 0
+    inc ecx
+    jmp ri_z
+ri_ok:
+    inc ebx
+    push {ri_fd:#x}
+    push esi
+    call dword ptr [0x5a9b80]
+    add esp, 8
+    test eax, eax
+    je ri_nxt
+ri_fin:
+    push esi
+    call dword ptr [0x5a9b7c]
+    add esp, 4
+    test ebx, ebx
+    je ri_done
+    lea eax, [ebp - 0x60]
+    push 0
+    push 0x80
+    push 3
+    push 0
+    push 0
+    push 0xc0000000
+    push eax
+    call dword ptr [0x5a9810]
+    cmp eax, -1
+    je ri_done
+    mov esi, eax
+    push 0
+    push {ri_tmp:#x}
+    push 0x16a
+    push {ri_buf:#x}
+    push esi
+    call dword ptr [0x5a9814]
+    test eax, eax
+    je ri_close
+    cmp dword ptr [{ri_tmp:#x}], 0x16a
+    jne ri_close
+    mov word ptr [{ri_buf:#x}], 100
+    xor edi, edi
+ri_slot:
+    cmp edi, 32
+    jae ri_write
+    lea ebp, [edi + edi*8 + {ri_buf + 2:#x}]
+ri_pick:
+    test ebx, ebx
+    je ri_clear
+    push -1
+    push ebx
+    push 1
+    call 0x4deb20
+    add esp, 12
+    movsx eax, ax
+    dec ebx
+    lea ecx, [eax + eax*8 + {ri_names:#x}]
+    lea edx, [ebx + ebx*8 + {ri_names:#x}]
+    mov eax, dword ptr [ecx]
+    mov dword ptr [ebp], eax
+    mov eax, dword ptr [ecx + 4]
+    mov dword ptr [ebp + 4], eax
+    mov al, byte ptr [ecx + 8]
+    mov byte ptr [ebp + 8], al
+    mov eax, dword ptr [edx]
+    mov dword ptr [ecx], eax
+    mov eax, dword ptr [edx + 4]
+    mov dword ptr [ecx + 4], eax
+    mov al, byte ptr [edx + 8]
+    mov byte ptr [ecx + 8], al
+    mov ecx, {ri_buf + 2 + 32 * 9:#x}
+ri_esp:
+    cmp byte ptr [ecx], 0
+    je ri_esn
+    push ecx
+    push ecx
+    push ebp
+    call dword ptr [0x5a9be0]
+    add esp, 8
+    pop ecx
+    test eax, eax
+    je ri_pick
+ri_esn:
+    add ecx, 9
+    cmp ecx, {ri_buf + 2 + 40 * 9:#x}
+    jb ri_esp
+    inc edi
+    jmp ri_slot
+ri_clear:
+    mov dword ptr [ebp], 0
+    mov dword ptr [ebp + 4], 0
+    mov byte ptr [ebp + 8], 0
+    inc edi
+    jmp ri_slot
+ri_write:
+    push 0
+    push 0
+    push 0
+    push esi
+    call dword ptr [0x5a981c]
+    push 0
+    push {ri_tmp:#x}
+    push 0x16a
+    push {ri_buf:#x}
+    push esi
+    call dword ptr [0x5a9818]
+ri_close:
+    push esi
+    call dword ptr [0x5a97d8]
+ri_done:
+    popad
+    ret
+''')
 # La barra de chat acepta «.» además de «#» para dirigir el mensaje («.3 ataca X»): el punto se escribe sin AltGr
 # en cualquier distribución de teclado. El resto del texto lo lee igual (desde [ebp + 1]).
 ch_pfx = place('ch_pfx', '''
@@ -11737,6 +11893,7 @@ patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
+patch(0x4ca0b7, bytes.fromhex('ff1544985a00'), asm(f'call {ri_go:#x}', 0x4ca0b7) + b'\x90')   # CopyFileA del ITEM.DAT
 patch(0x409181, rel(0x409181, 0x40918b - 0x409181), asm(f'jmp {ch_pfx:#x}', 0x409181))
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))

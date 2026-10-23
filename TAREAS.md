@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 34).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 35).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,9 +13,20 @@ Sorteo están acá (tarea 18).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»). La **22**
    (órdenes por chat) queda esperando: ver su aviso.
 4. **Tarea 32** (barra horizontal de la bitácora): la próxima vez que abras el Monitor.
-5. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+5. **Tarea 34** (ítems personalizados en mapas al azar): en tu próxima partida al azar.
+6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
 
 # Pendientes
+
+- [ ] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
+Desde vista-aliada 1.0.67.0, cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
+personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
+por partida (32 + 8 especiales), así que en cada partida sale una parte distinta.
+1. Abrí el juego con **DarklordAV.exe** y empezá dos partidas con mapa al azar (Random), una después de la otra.
+2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
+   la lista de una partida tiene que ser distinta de la de la otra.
+3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
+Resultado:
 
 - [ ] **33.** IA: repetir la serie sin ruinas para confirmar (23/10/2026)
 La serie de la tarea 30 dio por primera vez ventaja a la IA de prueba, pero puede ser azar. Otra serie igual lo decide.
@@ -65,7 +76,7 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
 
-- [ ] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
+- [x] **22.** Órdenes por chat a un aliado de la computadora (19/10/2026)
 Ya se le pueden dar órdenes a un aliado de la computadora escribiendo en la barra de chat de la partida. Solo lo ve
 ese aliado: los enemigos no se enteran.
 **Desde vista-aliada 1.0.66.0** (ya instalada en C:\Warlords3, 23/10/2026) la orden puede empezar con **punto** en
@@ -86,7 +97,7 @@ hoy: trae los pozos, que todavía no están sincronizados en red. Te aviso acá 
 5. En los dos turnos siguientes del aliado, fijate si sus pilas cercanas (las que llegan en 2 turnos) van a esa
    ciudad o vienen a tu ciudad más cercana. Si en red jugaba otro humano, preguntale si vio algo de las órdenes
    (no tendría que haber visto nada).
-Resultado:
+Resultado: funciona bien, pero los mensajes "pedeterminados" deben incluir otras ordenes: "dame oro" "razea x" (ciudad, puente) 
 
 - [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
 Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
