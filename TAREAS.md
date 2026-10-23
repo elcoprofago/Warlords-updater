@@ -18,8 +18,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
-0. Cuando termine la tanda que está corriendo (tarea 30), avisame: compilo y publico el Monitor 1.0.13 (con la
-   tanda en curso el .exe no se puede reemplazar). Después tocá **Actualizar** en el Monitor.
+0. Ya está: Monitor 1.0.13 compilado en `ia\Monitor-IA.exe` y publicado (23/10/2026).
 1. Abrí el Monitor de IA: el título tiene que decir «Monitor 1.0.13». Achicá la ventana a lo ancho.
 2. Debajo del texto de la bitácora tiene que haber una barra horizontal: arrastrala y tienen que verse las líneas
    largas completas, sin ensanchar la ventana.
