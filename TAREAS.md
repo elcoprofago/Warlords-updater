@@ -1,60 +1,29 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 36).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 38).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 35** (opción 6 antes de la 9): la próxima vez que abras el Actualizador.
-2. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
-4. **Tarea 32** (barra horizontal de la bitácora): la próxima vez que abras el Monitor.
-5. **Tarea 34** (ítems personalizados en mapas al azar): en tu próxima partida al azar.
-6. **Tarea 4** (rating de posiciones): la dejaste para otro momento.
+1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
+2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
+3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
 
 # Pendientes
 
-- [ ] **37.** Comprobar que la opción 9 instala el Manual (parche vista-aliada 1.0.69.0, 24/10/2026)
-  1. En otra PC del clan, abrir el Actualizador y elegir la opción 9 → vista-aliada.
-  2. Ver que aparezca `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y que abra.
+- [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
+Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
+1. En otra PC del clan, abrí el Actualizador y elegí la opción **9** → vista-aliada.
+2. Fijate que aparezca `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y que abra.
+Resultado:
 
 - [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
   1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
   2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
 
-- [ ] **35.** Actualizador 1.0.13.0: la opción 9 exige haber corrido la 6 (23/10/2026)
-Desde esta versión, la opción 9 (PARCHES) no deja instalar nada en una PC donde no se corrió antes la opción 6
-(ACTUALIZAR TODO EL JUEGO) con esta versión o una posterior; vale también para tu PC. Y avisa, arriba de la lista de
-parches, si hay un juego completo más nuevo que el instalado o si el juego completo publicado quedó atrás de algún parche.
-1. Abrí el Actualizador (se actualiza solo a la 1.0.13.0) y elegí **9**: tiene que decir que antes hay que instalar
-   el juego completo (opción 6).
-2. Elegí **6** y confirmá. No pisa tus bandos, escenarios propios, partidas ni opciones. Al final probablemente avise
-   «vuelve a instalarlo con la opción 9» para vista-aliada.
-3. Elegí **9**: ahora tiene que mostrar la lista, sin avisos arriba. Si vista-aliada figura como no instalado, instalalo.
-4. Abrí DarklordAV.exe y comprobá que el juego anda como siempre.
-Anotá acá lo que viste en cada paso.
-Resultado:
-
-- [ ] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
-Desde vista-aliada 1.0.68.0 (ya instalada en C:\Warlords3), cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
-personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
-por partida (32 + 8 especiales), así que en cada partida sale una parte distinta. Los 8 especiales no cambian:
-solo los traen `Item1.dat` y `Item2.dat` (los últimos 8 nombres de cada uno). Los ítems de vuelo (con «fly» en el
-nombre: bootfly, potfly, FlyShoot) no entran al sorteo, y los quitaste también de las cuatro listas.
-1. Abrí el juego con **DarklordAV.exe** y empezá dos partidas con mapa al azar (Random), una después de la otra.
-2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
-   la lista de una partida tiene que ser distinta de la de la otra. No tiene que aparecer ningún ítem de vuelo.
-3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
-Resultado:
-
-- [ ] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
-0. Ya está: Monitor 1.0.13 compilado en `ia\Monitor-IA.exe` y publicado (23/10/2026).
-1. Abrí el Monitor de IA: el título tiene que decir «Monitor 1.0.13». Achicá la ventana a lo ancho.
-2. Debajo del texto de la bitácora tiene que haber una barra horizontal: arrastrala y tienen que verse las líneas
-   largas completas, sin ensanchar la ventana.
-Resultado:
 
 - [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
 Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
@@ -75,6 +44,7 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
    de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
+
 
 - [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
 Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
@@ -100,7 +70,45 @@ lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto
    la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
 
-- [ ] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
+
+# Hecho
+
+- [x] **35.** Actualizador 1.0.13.0: la opción 9 exige haber corrido la 6 (23/10/2026)
+Desde esta versión, la opción 9 (PARCHES) no deja instalar nada en una PC donde no se corrió antes la opción 6
+(ACTUALIZAR TODO EL JUEGO) con esta versión o una posterior; vale también para tu PC. Y avisa, arriba de la lista de
+parches, si hay un juego completo más nuevo que el instalado o si el juego completo publicado quedó atrás de algún parche.
+1. Abrí el Actualizador (se actualiza solo a la 1.0.13.0) y elegí **9**: tiene que decir que antes hay que instalar
+   el juego completo (opción 6).
+2. Elegí **6** y confirmá. No pisa tus bandos, escenarios propios, partidas ni opciones. Al final probablemente avise
+   «vuelve a instalarlo con la opción 9» para vista-aliada.
+3. Elegí **9**: ahora tiene que mostrar la lista, sin avisos arriba. Si vista-aliada figura como no instalado, instalalo.
+4. Abrí DarklordAV.exe y comprobá que el juego anda como siempre.
+Anotá acá lo que viste en cada paso.
+Resultado (usuario, 24/10/2026): todo funciona como lo esperado. 
+
+
+- [x] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
+Desde vista-aliada 1.0.68.0 (ya instalada en C:\Warlords3), cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
+personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
+por partida (32 + 8 especiales), así que en cada partida sale una parte distinta. Los 8 especiales no cambian:
+solo los traen `Item1.dat` y `Item2.dat` (los últimos 8 nombres de cada uno). Los ítems de vuelo (con «fly» en el
+nombre: bootfly, potfly, FlyShoot) no entran al sorteo, y los quitaste también de las cuatro listas.
+1. Abrí el juego con **DarklordAV.exe** y empezá dos partidas con mapa al azar (Random), una después de la otra.
+2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
+   la lista de una partida tiene que ser distinta de la de la otra. No tiene que aparecer ningún ítem de vuelo.
+3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
+Resultado (usuario, 24/10/2026): ahora salen loso items personalizados
+
+
+- [x] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
+0. Ya está: Monitor 1.0.13 compilado en `ia\Monitor-IA.exe` y publicado (23/10/2026).
+1. Abrí el Monitor de IA: el título tiene que decir «Monitor 1.0.13». Achicá la ventana a lo ancho.
+2. Debajo del texto de la bitácora tiene que haber una barra horizontal: arrastrala y tienen que verse las líneas
+   largas completas, sin ensanchar la ventana.
+Resultado (usuario, 24/10/2026): ya aparece la barra
+
+
+- [x] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
 1. Armá la partida guardada como la vez anterior: los 8 bandos en Computadora, sin alianzas, **el mismo .PGS en
    todos los colores**, 30 turnos. Pasá un bando a Humano y guardala como **Tanda_<mapa>** (por ejemplo
@@ -111,9 +119,7 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
    completo la columna "Posición de arranque" del cuadro.
 4. El PDF para la página del Clan: en el Monitor de IA, **Exportar PDF de un mapa…**,
    elegí el mapa y dónde guardarlo. El de Scarpart ya se puede sacar.
-Resultado:
-
-# Hecho
+Resultado (usuario, 24/10/2026): el pdf exportado se ve bien.
 
 - [x] **33.** IA: repetir la serie sin ruinas para confirmar (23/10/2026)
 La serie de la tarea 30 dio por primera vez ventaja a la IA de prueba, pero puede ser azar. Otra serie igual lo decide.
