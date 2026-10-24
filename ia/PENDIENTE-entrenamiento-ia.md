@@ -695,3 +695,27 @@ tocan la IA ni esta guardada. Mismo script que la 41-46 (reproduce su +7.1).
   prueba**, ni a favor ni en contra: con tan pocas activaciones, las reglas actuales no mueven el resultado.
 - Próximo paso: más partidas no lo van a cambiar. Lo que falta es que las reglas se activen más seguido (o probarlas
   en un mapa donde los aliados estén en contacto), antes de volver a medir.
+
+### 24/10/2026: línea de alianzas CERRADA (decisión del usuario)
+No se corren más series A/B de alianzas hasta que la IA tenga instrucciones nuevas para reconocer situaciones (por
+ejemplo, un aliado que necesita ayuda para defender una ciudad en riesgo) y actuar, sin atentar contra su propio
+objetivo de sobrevivir con el mayor puntaje u otra condición de victoria de la partida. Recién con eso se vuelve a medir.
+
+## Ronda nueva: personalidades (desde el 24/10/2026)
+Objetivo: qué perfil de personalidad gana más partidas. Todo igual salvo la personalidad: mismo bando (.PGS) en los
+8 colores, mismas armas, Hexagon, sin ruinas (sin_ruinas.py), sin alianzas, la misma IA (original) en todos los
+colores. Cada color recibe 4 puntos de personalidad que elige el usuario (ejemplos que dio: blanco = máximo poder
+de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más baratos).
+- Problema de método: en Hexagon cada color arranca en un lugar fijo, y la ubicación pesa (con alianzas, un equipo
+  ganó 37 de 48). Si la personalidad no cambia de color, «el blanco gana más» no distingue perfil de ubicación.
+  Solución: rotar los perfiles entre colores de una partida a otra (como la rotación P/O), para que cada perfil
+  pase por cada ubicación la misma cantidad de veces. Para eso hay que ubicar dónde guarda el .SAV los puntos de
+  personalidad de cada color (estructura de jugador: 0x536b30 + color*0x1f8, todavía sin mapear) y escribirlos
+  antes de cada partida, como hace sin_ruinas.py con las ruinas.
+- Para ubicarlos: una guardada del usuario con perfiles distintos y conocidos por color (TAREAS 37); se buscan
+  esos valores en los 8 bloques de jugador. Si no aparecen, comparar con una segunda guardada que cambie uno solo.
+- La IA no tiene que repartir sus propios puntos («AI Chooses Personalities» apagado), o pisaría los del usuario.
+- Próximo paso: con la guardada y la lista de perfiles de TAREAS 37, mapear los bytes y sumar a tanda.py la
+  rotación de perfiles. Si no se pudieran escribir, plan B: serie sin rotar más una serie de control con
+  personalidades iguales, para descontar el peso de cada ubicación.
+

@@ -7,12 +7,23 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+- **Tarea 37** (guardada con personalidades): cuando puedas; la ronda nueva espera a eso.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
 
 # Pendientes
+
+- [ ] **37.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
+Para la ronda nueva: todo igual en los 8 colores salvo la personalidad.
+1. Abrí el juego y empezá una partida nueva en **Hexagon** con los **8 colores** en IA, **sin alianzas**, el
+   **mismo bando** (.PGS) en todos, con **«AI Chooses Personalities» apagado** y límite de **4 puntos**.
+2. A cada color asignale sus 4 puntos según el perfil que quieras (blanco: poder de ataque; amarillo: movimiento;
+   naranja: héroes y mercenarios baratos; y los demás).
+3. Guardala en el turno 1 como **Tanda_hex_personalidad**.
+4. Anotá abajo, color por color, los puntos exactos que le diste (por ejemplo «blanco: Very Strong + Strong»).
+Resultado:
 
 - [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
 Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
