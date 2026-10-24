@@ -19,14 +19,15 @@ Sorteo están acá (tarea 18).
 - [ ] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
 En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».
 Es un falso positivo: lo corrige Microsoft, no nosotros. El envío lo hacés vos desde tu PC; tu amigo solo
-tiene que hacer los pasos 1 y 6.
-1. Pedile a tu amigo que abra **Seguridad de Windows → Protección antivirus y contra amenazas → Historial de protección**
-   y te pase el **nombre de la amenaza** (algo como `Trojan:Win32/...`), o una foto. Anotalo abajo.
+tiene que hacer el paso 6 (y el 1, si puede).
+1. Opcional: pedile a tu amigo que abra **Seguridad de Windows → Protección antivirus y contra amenazas → Historial de protección**
+   y te pase el **nombre de la amenaza** (algo como `Trojan:Win32/...`).
+   La foto de las descargas de Edge no lo muestra. Si no lo consigue, seguí igual.
 2. En tu PC, tomá el `.exe` de `F:\source\repos\actualizador-warlords\Actualizador-v.1.0.13.0.exe`.
 3. Entrá a https://www.microsoft.com/wdsi/filesubmission, iniciá sesión con tu cuenta Microsoft y elegí
    **Software developer**.
 4. Producto: **Microsoft Defender Antivirus**. Subí el `.exe`. Marcá **Incorrectly detected as malware**.
-   En «Detection name» poné el nombre del paso 1. En comentarios: «Updater for the game Warlords III, made by
+   En «Detection name» poné el nombre del paso 1, o dejalo vacío. En comentarios: «Updater for the game Warlords III, made by
    me, downloads game files from GitHub. False positive.»
 5. Anotá abajo el número de envío. Microsoft responde por mail, en general en 1 a 3 días.
 6. Cuando digan que está corregido, avisale a tu amigo que en su PC vaya a Seguridad de Windows → Actualizaciones de protección
