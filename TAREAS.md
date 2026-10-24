@@ -17,6 +17,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
+  1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
+  2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
+
 - [ ] **35.** Actualizador 1.0.13.0: la opción 9 exige haber corrido la 6 (23/10/2026)
 Desde esta versión, la opción 9 (PARCHES) no deja instalar nada en una PC donde no se corrió antes la opción 6
 (ACTUALIZAR TODO EL JUEGO) con esta versión o una posterior; vale también para tu PC. Y avisa, arriba de la lista de

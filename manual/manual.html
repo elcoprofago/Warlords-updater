@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Warlords III: Era de Alianzas — Manual de uso</title>
+<style>
+@page { size: A4; margin: 22mm 20mm 22mm 22mm;
+  @bottom-center { content: counter(page); font: 9pt Georgia, serif; color: #7a5a2a; }
+  @top-right { content: "Warlords III · Era de Alianzas · Manual de uso"; font: italic 8pt Georgia, serif; color: #9a8a6a; } }
+@page :first { margin: 0; @bottom-center { content: none; } @top-right { content: none; } }
+@page portada2 { @bottom-center { content: none; } @top-right { content: none; } }
+:root { --tinta: #2a2118; --oro: #a8741a; --sangre: #7d1d12; --pergamino: #f6efdf; --linea: #cdb88f; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font: 10.5pt/1.5 Georgia, "Times New Roman", serif; color: var(--tinta); background: #fff; }
+h1, h2, h3, h4 { font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif; color: var(--sangre); }
+h1 { page-break-before: always; font-size: 26pt; margin: 0 0 4mm; padding-bottom: 3mm; border-bottom: 2px solid var(--oro); }
+h1 .num { display: block; font-size: 11pt; letter-spacing: .35em; color: var(--oro); text-transform: uppercase; }
+h2 { font-size: 15pt; margin: 7mm 0 2mm; border-bottom: 1px solid var(--linea); padding-bottom: 1mm; break-after: avoid; }
+h3 { font-size: 12pt; margin: 5mm 0 1.5mm; color: var(--tinta); break-after: avoid; }
+p { margin: 0 0 2.5mm; text-align: justify; hyphens: auto; }
+ul, ol { margin: 0 0 3mm; padding-left: 6mm; } li { margin-bottom: 1mm; }
+code, kbd { font-family: Consolas, monospace; font-size: 9pt; background: #f1e9d6; padding: 0 1mm; border-radius: 2px; }
+kbd { border: 1px solid #b9a37a; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; break-inside: avoid; }
+th { background: var(--sangre); color: #fbecc8; text-align: left; padding: 1.5mm 2mm; font-weight: normal; letter-spacing: .03em; }
+td { padding: 1.3mm 2mm; border-bottom: 1px solid #e2d4b4; vertical-align: top; }
+tr:nth-child(even) td { background: #faf5ea; }
+.nota, .aviso, .prueba, .consejo { break-inside: avoid; margin: 3mm 0 4mm; padding: 2.5mm 4mm; border-left: 4px solid; border-radius: 0 3px 3px 0; font-size: 9.8pt; }
+.nota { background: #f3f0e6; border-color: #7a6a4a; }
+.consejo { background: #eef4e6; border-color: #4f7a2a; }
+.aviso { background: #f8e8e3; border-color: var(--sangre); }
+.prueba { background: #fbf3d9; border-color: var(--oro); }
+.nota b:first-child, .aviso b:first-child, .prueba b:first-child, .consejo b:first-child { font-variant: small-caps; letter-spacing: .05em; }
+figure { margin: 3mm 0 4mm; text-align: center; break-inside: avoid; }
+figure img { image-rendering: pixelated; }
+figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1mm; }
+.galeria { display: flex; justify-content: center; gap: 7mm; flex-wrap: wrap; align-items: flex-end; }
+.galeria figure { margin: 0; }
+.galeria img { background: #5d7a3a; border: 1px solid var(--linea); border-radius: 3px; }
+.galeria img.agua { background: #2c5f9e; }
+.dos { columns: 2; column-gap: 8mm; } .dos h3 { break-before: avoid; }
+.entrada { font-size: 11.5pt; font-style: italic; color: #4a3a28; border-left: 2px solid var(--oro); padding-left: 4mm; margin: 2mm 0 5mm; }
+
+/* Portada */
+.portada { height: 297mm; width: 210mm; background: radial-gradient(ellipse at 50% 35%, #3a1d14 0%, #1b0e0a 60%, #0c0605 100%);
+  color: #f0dcae; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; }
+.portada .marco { position: absolute; inset: 12mm; border: 1.5px solid #a8741a; outline: 1px solid #5a3a14; outline-offset: 2.5mm; }
+.portada .sup { letter-spacing: .5em; font-size: 11pt; color: #c9a25a; margin-bottom: 10mm; }
+.portada img { width: 150mm; }
+.portada .era { font-family: "Palatino Linotype", serif; font-size: 40pt; color: #f3c768; margin: 8mm 0 2mm; letter-spacing: .06em; text-shadow: 0 2px 6px #000; }
+.portada .sub { font-size: 14pt; letter-spacing: .3em; color: #d9b77a; }
+.portada .orn { color: #a8741a; font-size: 18pt; margin: 10mm 0; letter-spacing: 1em; }
+.portada .pie { position: absolute; bottom: 24mm; font-size: 9.5pt; color: #b89a6a; line-height: 1.7; }
+.portada .sello { margin-top: 6mm; display: inline-block; border: 1px solid #a8741a; color: #f3c768; padding: 1.5mm 5mm; font-size: 9pt; letter-spacing: .3em; }
+
+.creditos { page: portada2; page-break-before: always; padding-top: 150mm; font-size: 9.5pt; color: #5a4a35; }
+.creditos p { text-align: left; }
+.indice { page-break-before: always; }
+.indice h1 { page-break-before: avoid; }
+.indice ol { list-style: none; padding: 0; columns: 1; }
+.indice > ol > li { margin: 2.2mm 0; font-size: 11.5pt; font-family: "Palatino Linotype", serif; }
+.indice > ol > li > span { color: var(--oro); display: inline-block; width: 13mm; }
+.indice ol ol { padding-left: 13mm; font-size: 9.5pt; font-family: Georgia, serif; color: #5a4a35; }
+.indice ol ol li { margin: .4mm 0; }
+.estado { display: inline-block; font: 7.5pt Georgia, serif; letter-spacing: .08em; text-transform: uppercase; padding: .2mm 1.6mm; border-radius: 2px; vertical-align: middle; margin-left: 1mm; }
+.e-ok { background: #dfeccb; color: #3c5a1a; } .e-pr { background: #fbe6b0; color: #7a4f00; } .e-dev { background: #f3d2ca; color: #7d1d12; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ PORTADA -->
+<section class="portada">
+  <div class="marco"></div>
+  <div class="sup">WARLORDS III · DARKLORDS RISING</div>
+  <img src="img/titulo.png" alt="">
+  <div class="era">Era de Alianzas</div>
+  <div class="sub">MANUAL DE USO</div>
+  <div class="orn">◆ ◆ ◆</div>
+  <div style="max-width:120mm;font-style:italic;font-size:11pt;color:#cfb488">
+    El parche, el Actualizador y el banco de simulación de la IA
+  </div>
+  <div class="sello">BORRADOR DE TRABAJO</div>
+  <div class="pie">Parche vista-aliada 1.0.68.0 · Actualizador 1.0.13.0 · Monitor de IA 1.0.13<br>
+    Edición del 23 de octubre de 2026</div>
+</section>
+
+<section class="creditos">
+  <p><b>Warlords III: Era de Alianzas — Manual de uso.</b> Borrador de trabajo, edición del 23/10/2026.</p>
+  <p>Documento interno del clan. No está pensado para su distribución: describe el estado del parche a la fecha de la
+  edición, incluidas funciones que todavía están en período de prueba. Las secciones marcadas como
+  <span class="estado e-pr">en prueba</span> o <span class="estado e-dev">en desarrollo</span> pueden cambiar en las
+  próximas versiones.</p>
+  <p>Warlords III: Darklords Rising es una obra de Strategic Studies Group (1997). Este parche no reemplaza el juego
+  original: lo complementa con un ejecutable propio. Todas las marcas pertenecen a sus dueños.</p>
+  <p>Convenciones: los nombres que aparecen en pantalla en inglés se escriben tal cual (<i>Allied View</i>,
+  <i>Build Trap</i>); las teclas, como <kbd>Q</kbd>; las rutas de archivos, como <code>C:\Warlords3\DATA</code>.</p>
+</section>
+
+<!-- ============================================================ ÍNDICE -->
+<section class="indice">
+<h1>Índice</h1>
+<ol>
+  <li><span>I.</span>Bienvenida a la Era de Alianzas
+    <ol><li>Qué es el parche · Qué modifica y qué no · Novedades de un vistazo</li></ol></li>
+  <li><span>II.</span>Instalación y el Actualizador
+    <ol><li>Requisitos · El menú del Actualizador · Juego completo y parches · Herramientas · Jugar en red y Tailscale</li></ol></li>
+  <li><span>III.</span>Preparar una partida
+    <ol><li>Arrancar con DarklordAV.exe · Opciones nuevas · Sorteo de bandos · Comparador de armas</li></ol></li>
+  <li><span>IV.</span>Alianzas
+    <ol><li>Vista aliada compartida · Niebla compartida · Ciudades compartidas · Refugio · Victoria aliada</li></ol></li>
+  <li><span>V.</span>Guerra en el agua
+    <ol><li>Desembarco libre (Landing) · Convoyes (Carrier) · Cabotaje (Cabotage) · Puertos arrasados</li></ol></li>
+  <li><span>VI.</span>Puentes
+    <ol><li>Derribar · Reconstruir · Habilidad Bridge +N · Misión «derribar un puente»</li></ol></li>
+  <li><span>VII.</span>Pozos, remolinos y trampas
+    <ol><li>Peligros ocultos · Descubrir y caer · Construir trampas · Minas submarinas · Misión de escolta</li></ol></li>
+  <li><span>VIII.</span>Unidades y reglas del clan
+    <ol><li>Pilas con voladores · Bonos nuevos · Army List y las 25 reglas · El editor war3ed_av</li></ol></li>
+  <li><span>IX.</span>Diplomacia con la computadora
+    <ol><li>Órdenes por chat a un aliado de la IA</li></ol></li>
+  <li><span>X.</span>La Votación
+    <ol><li>Abrirla · Pausa mientras se vota · El resultado en el Events Report</li></ol></li>
+  <li><span>XI.</span>Mapas al azar e ítems</li>
+  <li><span>XII.</span>La inteligencia artificial
+    <ol><li>Qué aprendió la IA · Lo que todavía no hace</li></ol></li>
+  <li><span>XIII.</span>El banco de simulación de partidas
+    <ol><li>Para qué sirve · IA.INI · Tandas · Monitor de IA · Informes y PDF de posiciones</li></ol></li>
+  <li><span>XIV.</span>Programas complementarios
+    <ol><li>DarkValidator · DarkCompare · Visor PGS · Sorteo · Votación</li></ol></li>
+  <li><span>A.</span>Apéndice A — Referencia rápida</li>
+  <li><span>B.</span>Apéndice B — Archivos que instala el parche</li>
+  <li><span>C.</span>Apéndice C — Estado de las funciones</li>
+  <li><span>D.</span>Apéndice D — Glosario</li>
+</ol>
+</section>
+
+<!-- ============================================================ I -->
+<h1><span class="num">Capítulo I</span>Bienvenida a la Era de Alianzas</h1>
+<p class="entrada">Durante años, las alianzas de Warlords III fueron un acuerdo de palabra: dos bandos que no se
+atacaban y nada más. Era de Alianzas convierte la alianza en una forma de jugar: se comparte lo que se ve, se
+comparten ciudades, se derriban puentes para cortar al enemigo y el mapa esconde peligros que el equipo tiene que
+descubrir junto.</p>
+
+<h2>Qué es el parche</h2>
+<p><b>Era de Alianzas</b> (internamente, el parche <i>vista-aliada</i>) es una modificación de Warlords III:
+Darklords Rising desarrollada para las partidas del clan. Se instala con el <b>Actualizador</b> (capítulo II) y se
+juega abriendo <code>DarklordAV.exe</code>, un ejecutable nuevo que vive junto al original. El título del juego pasa a
+ser «Warlords III Era de Alianzas», con su propio logotipo en el menú principal.</p>
+
+<h2>Qué modifica y qué no</h2>
+<ul>
+  <li><b>El juego original queda intacto.</b> <code>Darklord.exe</code> y <code>DATA\War3.RES</code> solo se leen; el
+  parche crea archivos nuevos (<code>DarklordAV.exe</code>, <code>DATA\WAR3AV.RES</code> y los del Apéndice B).
+  Quien quiera jugar sin el parche abre el ejecutable de siempre.</li>
+  <li><b>Partidas guardadas.</b> Las partidas del original se cargan en el parche. Las del parche llevan datos extra
+  al final del archivo (votaciones, pozos y trampas) que el original ignora.</li>
+  <li><b>En red, todos con la misma versión.</b> Las funciones nuevas viajan por paquetes de red propios: todas las PC
+  de una partida tienen que jugar con <code>DarklordAV.exe</code> de la misma versión del parche.</li>
+  <li><b>Sin las opciones nuevas, el juego es el de siempre.</b> La vista aliada y las ciudades compartidas se activan
+  partida por partida; los bonos nuevos solo actúan en las unidades que los tienen.</li>
+</ul>
+
+<h2>Novedades de un vistazo</h2>
+<table>
+<tr><th style="width:32%">Novedad</th><th>En pocas palabras</th><th style="width:12%">Cap.</th></tr>
+<tr><td>Vista aliada compartida</td><td>Los aliados mutuos ven el mapa que explora cada uno, también con niebla.</td><td>IV</td></tr>
+<tr><td>Ciudades compartidas</td><td>Las tropas aliadas entran y se refugian en las ciudades del socio; banderas de los socios en las torres.</td><td>IV</td></tr>
+<tr><td>Landing, Carrier, Cabotage</td><td>Barcos que desembarcan en cualquier costa, convoyes de hasta 24 unidades y barcos costeros que cruzan ríos.</td><td>V</td></tr>
+<tr><td>Puentes</td><td>Derribarlos, reconstruirlos, pelear sobre ellos con el bono Bridge y misiones de héroe para volarlos.</td><td>VI</td></tr>
+<tr><td>Pozos, remolinos y trampas</td><td>Peligros ocultos que matan a quien los pisa; trampas y minas submarinas que construye el jugador.</td><td>VII</td></tr>
+<tr><td>Reglas del clan en el Army List</td><td>El juego marca las unidades que el DarklordsValidator rechazaría.</td><td>VIII</td></tr>
+<tr><td>Pilas con voladores</td><td>Una pila con algún volador admite como máximo 6 ejércitos.</td><td>VIII</td></tr>
+<tr><td>Órdenes por chat</td><td>Escribir <code>#n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>IX</td></tr>
+<tr><td>Votación, Sorteo, Comparador</td><td>Botones dentro del juego que abren las herramientas del clan en todas las PC.</td><td>III, X</td></tr>
+<tr><td>Ítems en mapas al azar</td><td>Los ítems personalizados entran en el sorteo de las ruinas.</td><td>XI</td></tr>
+<tr><td>IA mejorada</td><td>La computadora usa barcos, puentes, refugios aliados y esquiva los pozos que ve.</td><td>XII</td></tr>
+</table>
+
+<!-- ============================================================ II -->
+<h1><span class="num">Capítulo II</span>Instalación y el Actualizador</h1>
+<p class="entrada">Un solo programa mantiene al día la carpeta del juego: baja ejércitos, hechizos, héroes,
+escenarios, ítems, el juego completo, los parches y las herramientas del clan.</p>
+
+<h2>Requisitos</h2>
+<ul>
+  <li>Windows con Warlords III instalado en <code>C:\Warlords3</code> (la versión de GOG corre en ventana, lo que permite
+  que las herramientas del clan se abran encima del juego).</li>
+  <li>Conexión a Internet para bajar los paquetes.</li>
+  <li>El último <code>Actualizador-v.&lt;versión&gt;.exe</code>, publicado en la sección de lanzamientos del repositorio
+  <i>Warlords-updater</i> (lanzamiento «Ejecutable»).</li>
+</ul>
+
+<h2>El menú del Actualizador</h2>
+<p>El Actualizador tiene aspecto de terminal. Muestra un menú numerado; se escribe el número de la opción y
+<kbd>Enter</kbd>. Se pueden pedir varias a la vez separándolas con espacios (por ejemplo <code>1 2 3</code>), salvo la 6,
+que va sola.</p>
+<table>
+<tr><th style="width:8%">N.º</th><th style="width:30%">Opción</th><th>Qué hace</th></tr>
+<tr><td>1</td><td>ARMY</td><td>Baja los ejércitos (<code>ARMY</code>).</td></tr>
+<tr><td>2</td><td>SPELL</td><td>Baja los hechizos.</td></tr>
+<tr><td>3</td><td>HERO</td><td>Baja los héroes.</td></tr>
+<tr><td>4</td><td>ESCENARIOS</td><td>Baja los escenarios.</td></tr>
+<tr><td>5</td><td>ITEMS</td><td>Baja los ítems.</td></tr>
+<tr><td>6</td><td>ACTUALIZAR TODO EL JUEGO</td><td>Instala el juego completo sobre <code>C:\Warlords3</code>. No pisa lo propio de cada PC (configuración, partidas, herramientas). Va sola.</td></tr>
+<tr><td>7</td><td>VALIDATOR</td><td>DarklordsValidator, el validador de unidades del clan.</td></tr>
+<tr><td>8</td><td>PGS-VISOR</td><td>EditorPGS, visor de bandos (<code>.PGS</code>).</td></tr>
+<tr><td>9</td><td>PARCHES</td><td>Lista los parches disponibles (Era de Alianzas y el paquete de herramientas) e instala el elegido.</td></tr>
+<tr><td>10</td><td>DARKCOMPARE</td><td>Comparador de armas.</td></tr>
+<tr><td>11</td><td>VOTACIÓN</td><td>Programa de votación de la partida.</td></tr>
+<tr><td>12</td><td>SORTEO</td><td>Programa de sorteo de bandos.</td></tr>
+<tr><td>13</td><td>JUGAR EN RED</td><td>Instala o actualiza Puente Warlords y lo abre.</td></tr>
+<tr><td>14</td><td>TAILSCALE</td><td>Conexión de respaldo para jugar en red.</td></tr>
+<tr><td>15</td><td>CREAR ACCESOS DIRECTOS</td><td>Pone en el escritorio los accesos a las herramientas instaladas.</td></tr>
+<tr><td>16</td><td>SALIR</td><td></td></tr>
+</table>
+
+<h2>Juego completo y parches: el orden importa</h2>
+<ol>
+  <li><b>Primero la opción 6</b> en cada PC nueva. Deja la carpeta del juego igual a la publicada por el clan.</li>
+  <li><b>Después la opción 9</b> para instalar Era de Alianzas. Desde la versión 1.0.13.0 el Actualizador no ofrece
+  los parches si la PC no pasó antes por la opción 6.</li>
+</ol>
+<div class="aviso"><b>Atención.</b> Si el juego completo publicado es más nuevo que el que tiene la PC, el Actualizador
+lo avisa en la opción 9: conviene correr la 6 y volver. Correr la 6 después de un parche obliga a reinstalar el parche
+con la 9 (el Actualizador lo avisa).</div>
+<p>Antes de instalar un parche, el Actualizador verifica el paquete bajado. Cada parche lleva su número de versión;
+la PC recuerda cuál tiene instalada en <code>C:\Warlords3\PARCHES</code>.</p>
+
+<h2>Herramientas del clan</h2>
+<p>Las opciones 7, 8, 10, 11 y 12 dejan cada programa en <code>C:\Warlords3\HERRAMIENTAS</code>. Al actualizar no
+se pisan los archivos <code>.ini</code> que ya estén: la configuración de cada PC se conserva. Votación y Sorteo son
+los programas que abren los botones del juego (capítulos III y X).</p>
+
+<h2>Jugar en red y Tailscale</h2>
+<p><b>Opción 13.</b> Deja Puente Warlords en <code>HERRAMIENTAS\PuenteWarlords</code> y lo abre. Si ya está instalado,
+solo baja una versión nueva cuando la hay.</p>
+<p><b>Opción 14.</b> Es la conexión de respaldo del Puente. Si falta, instala Tailscale y abre en el navegador el
+inicio de sesión; después pide el enlace con el que el dueño del servidor comparte su PC y espera a que el servidor
+responda. Requiere haber instalado antes el Puente (opción 13).</p>
+
+<!-- ============================================================ III -->
+<h1><span class="num">Capítulo III</span>Preparar una partida</h1>
+
+<h2>Arrancar el juego</h2>
+<p>Abrir <code>C:\Warlords3\DarklordAV.exe</code>. El menú principal muestra el logotipo de Era de Alianzas; el resto
+de los menús es el del juego original.</p>
+
+<h2>Opciones nuevas de la partida</h2>
+<p>En <i>Customize Options</i> aparecen dos casillas nuevas:</p>
+<table>
+<tr><th style="width:26%">Casilla</th><th>Efecto</th><th style="width:30%">Requiere</th></tr>
+<tr><td><b>Allied View</b></td><td>Vista aliada compartida: los aliados mutuos comparten lo explorado (capítulo IV).</td><td><i>Diplomacy</i> activada. Tiene efecto con <i>Hidden Map</i>.</td></tr>
+<tr><td><b>Shared Cities</b></td><td>Ciudades compartidas entre aliados (capítulo IV).</td><td><i>Diplomacy</i> activada.</td></tr>
+</table>
+<p>Las dos aparecen también en el informe <i>View Game Options</i> («Shared Allied View» y «Shared Cities») para que
+todos los jugadores sepan con qué reglas se juega. Viajan con la partida guardada y por red.</p>
+<p>Los <b>pozos y remolinos</b> (capítulo VII) aparecen solo si la partida tiene activada la opción del juego
+<i>Hidden Ruins</i>.</p>
+
+<h2>Sorteo de bandos</h2>
+<figure style="float:right;margin:0 0 2mm 5mm"><img src="img/sorteo_icono.png" style="width:20mm"><figcaption>Botón Sorteo</figcaption></figure>
+<p>En la pantalla de preparación, junto al botón <i>Chat</i>, hay un botón con el ícono del Sorteo. Lo usa el
+<b>anfitrión</b>: al pulsarlo, el programa Sorteo se abre en todas las PC de la partida. El anfitrión lo opera; los
+demás lo ven como espectadores, con sus bandos marcados. Requiere que cada PC tenga instalado el paquete de
+herramientas (Actualizador, opción 9 o 12); si falta, el juego lo avisa.</p>
+
+<h2>Comparador de armas</h2>
+<figure style="float:right;margin:0 0 2mm 5mm"><img src="img/comparador_icono.png" style="width:20mm"><figcaption>Botón Comparador</figcaption></figure>
+<p>En <i>Edit Side</i>, arriba a la izquierda junto a <i>Armies</i>, un botón con el ícono de DarkCompare abre el
+comparador de armas sobre los ejércitos de la carpeta del juego. Es local: cada jugador lo abre en su PC, en cualquier
+momento, y no afecta a los demás. Si ya está abierto, trae su ventana al frente.</p>
+<div style="clear:both"></div>
+
+<!-- ============================================================ IV -->
+<h1><span class="num">Capítulo IV</span>Alianzas</h1>
+<p class="entrada">Un aliado es otro par de ojos y otra muralla. Todo lo de este capítulo vale solo entre
+<b>aliados mutuos</b>: los dos bandos tienen que haberse declarado aliados en la diplomacia del juego.</p>
+
+<h2>Vista aliada compartida</h2>
+<p>Con <i>Allied View</i> y <i>Hidden Map</i>, cada casilla que explora un bando la ven también sus aliados mutuos.
+Si la alianza se rompe, cada uno conserva solo lo que exploró por sí mismo: lo que le prestó el ex aliado vuelve a
+quedar oculto.</p>
+<h3>Niebla compartida</h3>
+<p>Con <i>Fog of War</i> activada, la niebla se despeja alrededor de las ciudades y los ejércitos propios <b>y de los
+aliados mutuos</b>. Los ejércitos invisibles siguen viéndose solo por su dueño, aliado o no.</p>
+
+<h2>Ciudades compartidas</h2>
+<p>Con <i>Shared Cities</i>, una ciudad pasa a ser compartida con los aliados mutuos de su dueño. En mapa oculto, solo
+la comparten los aliados que la exploraron con sus propios ejércitos; con el mapa visible, todos.</p>
+<ul>
+  <li><b>Banderas.</b> En el mapa, la ciudad muestra la bandera del dueño en su torre de siempre y las de hasta tres
+  socios en las otras torres.</li>
+  <li><b>Entrar.</b> Un socio mueve sus tropas a las casillas libres de la ciudad como si fuera propia.</li>
+  <li><b>Sin peleas internas.</b> Dentro de la ciudad, nadie que la comparte puede atacar a otro socio.</li>
+  <li><b>Defensa conjunta.</b> Si el enemigo ataca la ciudad, pelean todos los ejércitos que estén en ella. La ciudad
+  sigue siendo del dueño: un socio no se queda con ella.</li>
+</ul>
+<div class="consejo"><b>Consejo táctico.</b> Una pila en peligro puede <b>refugiarse</b> en la ciudad del aliado
+más cercana. La IA mejorada lo hace sola (capítulo XII).</div>
+
+<h2>Victoria aliada</h2>
+<p>Cuando solo quedan con vida bandos aliados entre sí, el juego muestra el cartel <i>«An allied victory!»</i>.</p>
+
+<!-- ============================================================ V -->
+<h1><span class="num">Capítulo V</span>Guerra en el agua</h1>
+<p class="entrada">En el juego original, todo desembarco pasa por un puerto. Era de Alianzas agrega tres bonos de
+movimiento para el barco de cada bando, que cambian por completo la guerra naval.</p>
+
+<p>Cada bando tiene un único tipo de barco (la última ranura de su lista de ejércitos). Los bonos se le ponen al barco
+en el editor de ejércitos, en cualquiera de sus cuatro casilleros de <i>Move Bonus</i>, y desde ese momento rigen para
+todo el bando. El Army List los muestra entre las habilidades de la unidad.</p>
+
+<h2>Landing — desembarco libre</h2>
+<ul>
+  <li>Las tropas embarcadas bajan en <b>cualquier costa</b>, no solo en puertos (nunca a montaña sin camino).</li>
+  <li>Para subir sigue haciendo falta un puerto.</li>
+  <li>El barco con Landing lleva <b>como máximo 5 ejércitos</b> (6 si además tiene Carrier).</li>
+  <li>Movimiento máximo del barco: <b>12</b> con Landing solo; <b>20</b> con Landing y Carrier.</li>
+</ul>
+
+<h2>Carrier — convoyes</h2>
+<ul>
+  <li>Hasta <b>tres barcos</b> en casillas vecinas forman un <b>convoy</b> de hasta 24 unidades. Para formarlo, se mueve
+  un barco cargado a la casilla de otro barco propio cuando la suma no entra en uno solo.</li>
+  <li>El convoy se mueve en fila: cada barco pasa a la casilla que dejó el de adelante.</li>
+  <li>Ataca solo el grupo que ataca; defienden todas las casillas del convoy.</li>
+  <li>Un convoy atraca <b>solo en puertos</b> (no se le aplica Landing).</li>
+  <li>Movimiento máximo del barco: <b>24</b> con Carrier solo.</li>
+</ul>
+
+<h2>Cabotage — navegación costera</h2>
+<ul>
+  <li>El barco no se aleja más de <b>2 casillas</b> de la costa, salvo para volver hacia ella.</li>
+  <li>A cambio, cruza <b>ríos y lagos angostos</b>.</li>
+</ul>
+
+<h2>Puertos arrasados</h2>
+<p>En el original, un puerto arrasado seguía sirviendo para embarcar. Ahora no: hay que reconstruirlo para volver a
+usarlo.</p>
+
+<table>
+<tr><th>Bonos del barco</th><th>Ejércitos por barco</th><th>Movimiento máximo</th><th>Desembarca</th></tr>
+<tr><td>Ninguno (original)</td><td>Tope del bando</td><td>El del barco</td><td>Solo en puertos</td></tr>
+<tr><td>Landing</td><td>5</td><td>12</td><td>Cualquier costa</td></tr>
+<tr><td>Landing + Carrier</td><td>6 (convoy de hasta 3 barcos)</td><td>20</td><td>Costa; en convoy, solo puertos</td></tr>
+<tr><td>Carrier</td><td>Tope del bando (convoy de hasta 3)</td><td>24</td><td>Solo en puertos</td></tr>
+<tr><td>Cabotage</td><td>Tope del bando</td><td>El del barco</td><td>Solo en puertos; no se aleja de la costa</td></tr>
+</table>
+
+<!-- ============================================================ VI -->
+<h1><span class="num">Capítulo VI</span>Puentes</h1>
+<p class="entrada">Un puente es un paso obligado. Ahora también es un objetivo.</p>
+
+<h2>Derribar un puente</h2>
+<ul>
+  <li>Requiere que la partida permita arrasar sitios (la opción <i>Raze</i> del juego).</li>
+  <li>El grupo tiene que estar en una casilla <b>vecina</b> al puente, no encima.</li>
+  <li>Se usa la orden de arrasar del menú de órdenes del grupo. El diálogo muestra el retrato del ariete orco.</li>
+  <li>Si hay ejércitos ajenos sobre el puente, primero hay que atacarlos.</li>
+  <li>Los ejércitos propios que quedan encima <b>caen al agua</b> (salvo los voladores y los embarcados).</li>
+  <li>Un puente derribado es agua: lo cruzan los barcos y deja de servir a las tropas de tierra.</li>
+</ul>
+
+<h2>Reconstruir</h2>
+<p>Al pie de un puente derribado, la orden <i>Build</i> lo reconstruye al <b>costo de fundar una ciudad</b> (con el
+descuento del jugador, como los sitios). El puente tiene que estar vacío.</p>
+
+<h2>Habilidad Bridge +N</h2>
+<p>Una unidad con la habilidad especial <b>Bridge +N</b> suma <b>N a su fuerza</b> cuando la batalla es sobre un
+puente en pie, ataque o defienda. No vale en puentes derribados ni para héroes. Se asigna en el editor como cualquier
+habilidad.</p>
+
+<h2>Misión «derribar un puente»</h2>
+<p>Al pedir misión (<i>Get Quest</i>, tecla <kbd>Q</kbd>) en dificultad <b>Average</b>, entre los objetivos posibles
+aparece derribar un puente enemigo o sin dueño, a la misma distancia que los sitios. Se cumple al derribarlo con el
+héroe y se premia como «Destroying an Enemy Site». Fracasa si otro lo derriba antes. La IA también recibe y cumple
+estas misiones.</p>
+
+<!-- ============================================================ VII -->
+<h1><span class="num">Capítulo VII</span>Pozos, remolinos y trampas</h1>
+<p class="entrada">«Your army fell into the Well of Souls!» — Bajo el mapa hay abismos que nadie dibujó. Quien no
+explora con cuidado los encuentra de la peor manera.</p>
+
+<div class="galeria">
+  <figure><img src="img/pozo.png"><figcaption>Pozo</figcaption></figure>
+  <figure><img src="img/remolino.png" class="agua" style="width:48mm"><figcaption>Remolino (3×3 casillas)</figcaption></figure>
+  <figure><img src="img/tumba.png"><figcaption>Tumba</figcaption></figure>
+</div>
+
+<h2>Peligros ocultos</h2>
+<p>Con la opción <i>Hidden Ruins</i>, el mapa reparte al empezar, en secreto:</p>
+<ul>
+  <li><b>Pozos</b> en tierra transitable, lejos de las capitales y fuera de caminos, ciudades y sitios.</li>
+  <li><b>Remolinos</b> en mar abierto (lejos de la costa: nunca en ríos).</li>
+</ul>
+<p>La cantidad de cada uno es el 20 % de las ruinas del mapa (mínimo uno). Cada uno tiene nombre propio (por ejemplo
+<i>Well of Souls</i> o <i>Maelstrom of Kor</i>). Al empezar, cada jugador ya conoce los que hay en la región de su
+capital.</p>
+
+<h2>Descubrir</h2>
+<p>Con <i>Discover Ruins</i>, un grupo descubre un pozo o remolino al pasar <b>a una casilla</b> de él. Una vez
+descubierto, queda dibujado para ese jugador el resto de la partida. Pasando el mouse por encima aparece la
+<b>lupa</b>; con el <b>botón derecho</b> se abre un cuadro con el nombre y el tipo.</p>
+
+<h2>Caer</h2>
+<ul>
+  <li><b>Pozo:</b> mueren todos los ejércitos que no vuelan, héroes incluidos. Los voladores se salvan y se detienen ahí.</li>
+  <li><b>Remolino:</b> hunde el barco con todo lo que lleva. Ocupa 3×3 casillas en el dibujo, pero solo mata la del
+  centro.</li>
+  <li>Suena un grito al azar (de héroe o heroína) y se avisa con el nombre del lugar.</li>
+  <li>El camino automático esquiva los peligros que el jugador ya ve. Se cae igual si el jugador elige como destino
+  esa casilla o la pisa avanzando paso a paso.</li>
+</ul>
+
+<h2>Construir trampas</h2>
+<div class="galeria">
+  <figure><img src="img/mina.png"><figcaption>Trampa (mina)</figcaption></figure>
+  <figure><img src="img/humo.png"><figcaption>Recién explotada</figcaption></figure>
+  <figure><img src="img/mina-agua.png" class="agua"><figcaption>Mina submarina</figcaption></figure>
+</div>
+<p>Las unidades con el bono de combate <b>Trap</b> (se asigna en el editor, por ejemplo a los <i>zappers</i>) pueden
+sembrar trampas:</p>
+<ol>
+  <li>Llevar el grupo hasta la casilla elegida. Vale casi cualquiera libre: tierra, camino, puente, montaña, ciudad,
+  ruina o agua.</li>
+  <li>En el menú de órdenes del grupo, elegir <b>Build Trap</b> y confirmar.</li>
+  <li>Cuesta lo mismo que <b>fundar una ciudad</b>.</li>
+</ol>
+<ul>
+  <li><b>Visibilidad:</b> la ven siempre su dueño y sus aliados con vista aliada; los demás solo si la descubren o caen.</li>
+  <li><b>Tres usos:</b> explota tres veces. Después de cada explosión se ve un agujero humeante hasta el turno siguiente
+  de quien cayó; gastada, queda a la vista de todos como agujero con humo.</li>
+  <li><b>Nombre:</b> la ciudad más cercana y un número (por ejemplo <i>Afland01</i>).</li>
+  <li><b>El dueño también cae</b> si vuelve a pisarla.</li>
+  <li><b>Mina submarina:</b> sembrada en el agua, hunde barcos como un remolino y no deja rastro al explotar.</li>
+</ul>
+<div class="nota"><b>Nota.</b> La computadora no construye trampas, pero sí esquiva las que ve.</div>
+
+<h2>Misión dura «escoltar al equipo que desarma una trampa»</h2>
+<p><span class="estado e-pr">en prueba</span> En dificultad <b>Hard</b>, si el héroe conoce una trampa enemiga
+cercana, puede salir la misión «Escort trap-disarming team to Afland02». Se cumple haciéndola explotar con un ejército
+propio y llevando al héroe, por tierra y sin volar, a una casilla o menos de ella. Fracasa si la trampa se gasta sin que
+la haya detonado el jugador. Solo la reciben jugadores humanos.</p>
+
+<!-- ============================================================ VIII -->
+<h1><span class="num">Capítulo VIII</span>Unidades y reglas del clan</h1>
+
+<h2>Pilas con voladores</h2>
+<p>Una pila que incluya al menos un volador (unidad voladora o héroe que vuela, por sí o por un objeto) admite como
+máximo <b>6 ejércitos</b>. Las pilas de más de 6 de partidas viejas no se parten: solo no pueden crecer.</p>
+
+<h2>Bonos nuevos</h2>
+<table>
+<tr><th style="width:22%">Bono</th><th style="width:22%">Dónde se pone</th><th>Efecto</th></tr>
+<tr><td>Landing</td><td>Move Bonus del barco</td><td>Desembarco libre (cap. V)</td></tr>
+<tr><td>Carrier</td><td>Move Bonus del barco</td><td>Convoyes (cap. V)</td></tr>
+<tr><td>Cabotage</td><td>Move Bonus del barco</td><td>Navegación costera (cap. V)</td></tr>
+<tr><td>Trap</td><td>Combat Bonus</td><td>Construir trampas (cap. VII)</td></tr>
+<tr><td>Bridge +N</td><td>Habilidad especial</td><td>+N de fuerza sobre puentes en pie (cap. VI)</td></tr>
+</table>
+
+<h2>Army List: las 25 reglas del clan</h2>
+<p>El Army List del juego marca las unidades que <b>DarklordsValidator</b> rechazaría según el manifiesto del clan.
+La coincidencia con el validador se comprobó sobre los 374 ejércitos de la carpeta del juego, con cero diferencias.</p>
+<p>Definiciones: <b>volador</b>, la unidad con «fly» en algún casillero de Move Bonus; <b>barco</b> (ship), la unidad de
+agua; <b>terrestre</b>, la que no es ninguna de las dos.</p>
+<table style="font-size:8.6pt">
+<tr><th style="width:6%">N.º</th><th>Regla</th></tr>
+<tr><td>1</td><td>Ningún terrestre puede tener movimiento mayor a 25.</td></tr>
+<tr><td>2</td><td>Ningún terrestre con Power «trample» puede tener movimiento mayor a 15.</td></tr>
+<tr><td>3</td><td>Ningún terrestre con Power «Siege» mayor a 2 puede tener movimiento mayor a 17.</td></tr>
+<tr><td>4</td><td>Ningún volador puede tener movimiento mayor a 40.</td></tr>
+<tr><td>5</td><td>Ningún volador con Power «trample» puede tener movimiento mayor a 20.</td></tr>
+<tr><td>6</td><td>Ningún volador con Power «Siege» mayor a 2 puede tener movimiento mayor a 22.</td></tr>
+<tr><td>7</td><td>Ningún barco puede tener movimiento mayor a 30.</td></tr>
+<tr><td>8</td><td>Ningún barco con Move Bonus «landing» puede tener movimiento mayor a 12.</td></tr>
+<tr><td>9–11</td><td>Voladores: con Strength &gt; 3 o Hits &gt; 1, costo mínimo 600, upkeep 10, 3 turnos; con Strength &gt; 6 o Hits &gt; 2, 800, 15, 4 turnos; con Strength &gt; 8 o Hits &gt; 3, 1000, 20, 5 turnos.</td></tr>
+<tr><td>12–14</td><td>Terrestres: con Strength &gt; 3 o Hits &gt; 1, costo mínimo 300, upkeep 5, 2 turnos; con Strength &gt; 6 o Hits &gt; 2, 400, 10, 3 turnos; con Strength &gt; 8 o Hits &gt; 3, 500, 15, 4 turnos.</td></tr>
+<tr><td>15–17</td><td>Voladores con Power o Combat Bonus: Cost ≥ 600 y Upkeep ≥ 10; con Power y Combat Bonus: 800 y 15; con Power mayor a 4: 1000 y 20.</td></tr>
+<tr><td>18–20</td><td>Terrestres con Power o Combat Bonus: Cost ≥ 150 y Upkeep ≥ 4; con ambos: 300 y 8; con Power mayor a 4: 500 y 12.</td></tr>
+<tr><td>21–23</td><td>Barcos con Power o Combat Bonus: Cost ≥ 400 y Upkeep ≥ 8; con ambos: 600 y 12; con Power mayor a 4: 800 y 18.</td></tr>
+<tr><td>24</td><td>Ningún barco con Move Bonus «landing» puede tener Cost menor de 1000 ni Upkeep menor a 17.</td></tr>
+<tr><td>25</td><td>Ningún barco con Move Bonus «carrier» puede tener Cost menor de 1200 ni Upkeep menor a 34.</td></tr>
+</table>
+<div class="nota"><b>Nota.</b> Si el clan cambia el manifiesto, el parche tiene que volver a armarse para que el Army
+List lo refleje.</div>
+
+<h2>El editor war3ed_av</h2>
+<p>El parche instala <code>war3ed_av.exe</code>, una versión del editor del juego cuyas listas desplegables ya ofrecen
+los bonos nuevos (<i>landing</i>, <i>carrier</i>, <i>cabotage</i>, <i>trap</i>) y la habilidad <i>Bridge</i>, sin tener que
+escribirlos a mano.</p>
+
+<!-- ============================================================ IX -->
+<h1><span class="num">Capítulo IX</span>Diplomacia con la computadora</h1>
+<p class="entrada">Un aliado manejado por la computadora ya no es un mueble: se le pueden dar órdenes.</p>
+<p>En la barra de chat del juego, un jugador humano escribe a un aliado de la computadora con el número de su bando
+(<code>#n</code>, de 1 a 8):</p>
+<table>
+<tr><th style="width:42%">Escribir</th><th>Qué hace el aliado</th></tr>
+<tr><td><code>#3 ataca Afland</code></td><td>Ataca la ciudad con ese nombre exacto.</td></tr>
+<tr><td><code>#3 ataca a 5</code> o <code>#3 ataca a NOMBRE</code></td><td>Ataca la ciudad más a mano del bando indicado (número o nombre).</td></tr>
+<tr><td><code>#3 mandame refuerzos</code></td><td>Manda tropas a la ciudad más a mano de quien da la orden.</td></tr>
+</table>
+<ul>
+  <li>No distingue mayúsculas; el verbo vale por sus cuatro primeras letras («atacá» y «ataca» son lo mismo).</li>
+  <li>La orden vale durante los <b>dos turnos siguientes</b> del aliado. La cumplen las pilas que llegan en dos turnos o
+  menos; las demás siguen su juego.</li>
+  <li>El aliado contesta por el chat, con su color, solo en la pantalla de quien dio la orden. Si no son aliados o la
+  orden no se entiende, también lo dice.</li>
+</ul>
+
+<!-- ============================================================ X -->
+<h1><span class="num">Capítulo X</span>La Votación</h1>
+<h2>Abrirla</h2>
+<p>En el menú de la partida hay una línea nueva, <b>Votacion</b>. La usa el anfitrión: el programa Votación se abre en
+todas las PC, el anfitrión como operador y los demás como espectadores.</p>
+<h2>Pausa mientras se vota</h2>
+<ul>
+  <li>Mientras la votación está abierta, la partida queda <b>en pausa</b> en todas las PC: se detiene el reloj del
+  turno y del fin de partida, y el juego ignora teclado y mouse. Un aviso en pantalla lo indica.</li>
+  <li>Si el programa deja de responder durante 60 segundos, la partida se reanuda sola.</li>
+  <li>Los turnos de la computadora siguen corriendo.</li>
+</ul>
+<h2>El resultado en el Events Report</h2>
+<p>Al cerrar o reiniciar una votación con al menos un voto, el resultado (SÍ y NO, con el escudo del bando que la abrió)
+queda en el <i>Events Report</i> de la ronda y se guarda con la partida.</p>
+
+<!-- ============================================================ XI -->
+<h1><span class="num">Capítulo XI</span>Mapas al azar e ítems</h1>
+<p>En el original, los mapas al azar solo repartían en las ruinas ítems del juego original, de cuatro listas fijas.
+Desde la versión 1.0.67.0 el parche sortea, sin repetir, entre <b>todos los ítems</b> de la carpeta
+<code>ITEMS</code>, incluidos los personalizados del clan. <span class="estado e-pr">en prueba</span></p>
+<p>Cómo reparte el juego los premios de las ruinas (sin cambios): el tipo de premio sale en partes iguales entre los
+permitidos para esa ruina; si es un ítem, en partes iguales entre los que quedan libres, y cada ítem sale una sola vez
+por partida.</p>
+
+<!-- ============================================================ XII -->
+<h1><span class="num">Capítulo XII</span>La inteligencia artificial</h1>
+<p class="entrada">La IA de Warlords III es código de 1997, sin redes neuronales: cada mejora es un cambio al programa
+que se mide con partidas reales en el banco de simulación (capítulo XIII).</p>
+<h2>Qué aprendió la IA</h2>
+<ul>
+  <li><b>Barcos con Landing y Carrier:</b> planea desembarcos en playa, parte el grupo cuando no entra en el barco y forma
+  convoyes.</li>
+  <li><b>Puentes:</b> cumple las misiones de derribar puentes y reconstruye los que necesita.</li>
+  <li><b>Pozos y trampas:</b> nunca entra en uno que ve.</li>
+  <li><b>Alianzas</b> <span class="estado e-pr">en prueba</span>: una pila amenazada se refugia en la ciudad compartida
+  de un aliado; un héroe perseguido por una misión de asesinato busca refugio; las pilas defienden las ciudades aliadas
+  amenazadas cuando las propias no lo están.</li>
+  <li><b>Órdenes del humano:</b> obedece las órdenes por chat del capítulo IX.</li>
+</ul>
+<h2>Lo que todavía no hace</h2>
+<ul>
+  <li>No construye trampas ni recibe la misión de escolta.</li>
+  <li>No elige su personalidad según el mapa ni cambia de prioridades según la fase de la partida (etapas futuras del
+  plan de entrenamiento).</li>
+</ul>
+<div class="nota"><b>Nota.</b> Las decisiones de alianzas solo actúan en los bandos que el banco de simulación pone en
+«IA de prueba». En las partidas normales, sin el archivo <code>DATA\IA.INI</code>, la computadora juega con la IA de
+siempre más las mejoras de barcos, puentes y pozos.</div>
+
+<!-- ============================================================ XIII -->
+<h1><span class="num">Capítulo XIII</span>El banco de simulación de partidas</h1>
+<p class="entrada">Para saber si un cambio mejora a la IA no alcanza con mirar una partida: hay que jugar decenas,
+sin nadie delante, y comparar.</p>
+
+<h2>Para qué sirve</h2>
+<p>El banco juega <b>tandas</b> de partidas de computadora contra computadora. En cada partida algunos colores juegan
+con la <b>IA de prueba</b> (con la mejora en estudio) y otros con la <b>original</b>; en la partida siguiente se
+invierten. Así cada color juega con cada IA la misma cantidad de veces y la ventaja de una posición no ensucia el
+resultado (comparación A/B).</p>
+
+<h2>El archivo IA.INI</h2>
+<p><code>C:\Warlords3\DATA\IA.INI</code>, sección <code>[IA]</code>, claves <code>Color0</code> a <code>Color7</code>
+con valor <code>original</code> o <code>prueba</code>. Sin ese archivo el juego no lee ni escribe nada distinto. Con
+él, el juego anota por turno y bando oro, ciudades, ejércitos y héroes (<code>IA.CSV</code>), las batallas, la
+diplomacia, los eventos (puentes, convoyes, refugios, órdenes) y el podio final.</p>
+
+<h2>Tandas</h2>
+<p>Las tandas se manejan desde el Monitor de IA (abajo) o desde la línea de comandos:</p>
+<p><code>python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands</code><br>
+<code>python ia\tanda.py seguir</code> — retoma la última tanda sin terminar.</p>
+<p>Cada partida arranca desde una partida guardada, se juega sola y termina con el <i>Game Over</i>, con la victoria
+aliada o al llegar al tope de turnos. Si se cuelga (sin turnos nuevos durante varios minutos) se anota como colgada y la
+tanda sigue. Todo queda en la base <code>ia\datos.db</code>.</p>
+<div class="consejo"><b>Menos azar.</b> <code>python ia\sin_ruinas.py &lt;guardada&gt;</code> arma una copia de la
+partida con todas las ruinas exploradas y vacías: ningún héroe saca ítems, aliados ni oro, y las diferencias entre IA se
+ven con menos partidas.</div>
+
+<h2>Monitor de IA</h2>
+<p><code>ia\Monitor-IA.exe</code> es el panel de control de las tandas. Arranca y corta tandas, muestra en vivo la
+partida en curso (turno, bandos, eventos), el consumo de la PC, avisa de un posible cuelgue, permite silenciar el
+juego y suspender la PC al terminar. Puede mostrar el juego en un monitor secundario (<code>tanda.ini</code>,
+<code>[Pantalla] preferida</code>).</p>
+
+<h2>Informes y PDF de posiciones</h2>
+<ul>
+  <li><code>python ia\informe.py [tanda]</code> — resultados por IA: puntos de victoria, ciudades, oro, partidas ganadas,
+  ataques desangrantes y, para las alianzas, refugios, defensas y qué equipo ganó.</li>
+  <li><b>Exportar PDF</b> (botón del Monitor) — cuadro de posiciones de un mapa para la sección de estadísticas del
+  clan: chances de cada posición de salida, solo con partidas comparables.</li>
+</ul>
+<div class="prueba"><b>Estado.</b> Las tandas A/B de alianzas en Hexagon (con y sin ruinas) son la serie en curso;
+falta repetir la serie sin ruinas para confirmar sus resultados.</div>
+
+<!-- ============================================================ APÉNDICES -->
+<h1><span class="num">Capítulo XIV</span>Programas complementarios</h1>
+<p class="entrada">Alrededor del juego, el clan usa cinco programas propios. Todos se instalan con el Actualizador en
+<code>C:\Warlords3\HERRAMIENTAS</code> y, al actualizarse, conservan la configuración de cada PC.</p>
+<table>
+<tr><th style="width:20%">Programa</th><th style="width:14%">Opción</th><th>Para qué sirve</th></tr>
+<tr><td>DarkValidator</td><td>7</td><td>Valida unidades contra el reglamento del clan.</td></tr>
+<tr><td>Visor PGS</td><td>8</td><td>Muestra un bando completo («foto») con puntos, Factor y validación.</td></tr>
+<tr><td>DarkCompare</td><td>10</td><td>Compara armas entre sí.</td></tr>
+<tr><td>Votación</td><td>11 (o 9, paquete herramientas)</td><td>Votaciones durante la partida.</td></tr>
+<tr><td>Sorteo</td><td>12 (o 9, paquete herramientas)</td><td>Sorteo de bandos antes de la partida.</td></tr>
+</table>
+<div class="nota"><b>Una sola validación.</b> DarkValidator es la referencia. DarkCompare y el Visor PGS usan su mismo
+código (no una copia), y el Army List del parche fue comprobado contra él: una unidad rechazada en uno se rechaza en
+todos. Las 25 reglas están en el capítulo VIII.</div>
+
+<h2>DarkValidator (DarklordsValidator)</h2>
+<ul>
+  <li>Abre una unidad (<code>.arm</code> de <code>C:\Warlords3\ARMY</code>) y dice si cumple el manifiesto del clan;
+  si no, indica qué regla incumple, con el número del manifiesto.</li>
+  <li><b>Reporte General:</b> revisa de una vez todas las unidades de la carpeta.</li>
+  <li>Se instala con <code>ValidatorSetup.exe</code> (opción 7 del Actualizador).</li>
+</ul>
+
+<h2>DarkCompare</h2>
+<ul>
+  <li>Comparador de armas de Warlords III Darklords Rising: pone unidades lado a lado y calcula el <b>Factor</b> de cada
+  una, un número que resume su valor.</li>
+  <li>Marca las unidades en infracción con la validación de DarkValidator.</li>
+  <li>Se abre desde el escritorio o desde el juego: botón del Comparador en <i>Edit Side</i> (capítulo III).</li>
+</ul>
+
+<h2>Visor PGS (EditorPGS)</h2>
+<ul>
+  <li>Visor de los bandos guardados (<code>.PGS</code> de la carpeta <code>PGS</code>). Solo lee: no modifica los archivos del juego.</li>
+  <li>Muestra la «foto» del bando: stack, maná, oro y las 20 ranuras (regulares, aliados, mercenarios, barco y héroes)
+  con la imagen de cada unidad.</li>
+  <li>Puntos del bando como los calcula el juego, contra el límite de <code>Default.rul</code>; Factor por arma y total.</li>
+  <li>Las armas en infracción se marcan en rojo; con un clic en una ranura se ve el detalle y el veredicto
+  «Aprobado» o «En infracción».</li>
+  <li><b>Guardar imagen…</b> (PNG) y <b>Exportar…</b> (CSV para Excel, una fila por bando).</li>
+</ul>
+
+<h2>Sorteo</h2>
+<ul>
+  <li>Sortea los bandos de la partida, con animación.</li>
+  <li>Desde el juego lo abre el anfitrión con el botón junto a <i>Chat</i>: se abre en todas las PC; el anfitrión lo
+  opera y los demás lo siguen como espectadores.</li>
+  <li>También puede abrirse solo, fuera del juego.</li>
+</ul>
+
+<h2>Votación</h2>
+<ul>
+  <li>Programa de votación SÍ/NO para decisiones durante la partida.</li>
+  <li>Desde el juego lo abre el anfitrión con la línea <i>Votacion</i> del menú de partida; los demás votan desde sus PC
+  y la partida queda en pausa mientras dura (capítulo X).</li>
+</ul>
+<div class="prueba"><b>Estado.</b> El modo espectador de Sorteo y Votación en las otras PC sigue en prueba: en una
+partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</div>
+
+<h1><span class="num">Apéndice A</span>Referencia rápida</h1>
+<table>
+<tr><th style="width:38%">Quiero…</th><th>Cómo</th></tr>
+<tr><td>Jugar con el parche</td><td>Abrir <code>C:\Warlords3\DarklordAV.exe</code></td></tr>
+<tr><td>Instalar o actualizar el parche</td><td>Actualizador: opción 6 (una vez por PC), después 9</td></tr>
+<tr><td>Compartir la vista con aliados</td><td><i>Customize Options</i> → <i>Allied View</i> (con Diplomacy y Hidden Map)</td></tr>
+<tr><td>Compartir ciudades</td><td><i>Customize Options</i> → <i>Shared Cities</i> (con Diplomacy)</td></tr>
+<tr><td>Pozos y remolinos en el mapa</td><td>Activar <i>Hidden Ruins</i>; para descubrirlos, <i>Discover Ruins</i></td></tr>
+<tr><td>Derribar un puente</td><td>Grupo al lado del puente → menú de órdenes → arrasar</td></tr>
+<tr><td>Reconstruir un puente</td><td>Grupo al pie del puente derribado → <i>Build</i></td></tr>
+<tr><td>Sembrar una trampa</td><td>Grupo con bono Trap en la casilla → menú de órdenes → <i>Build Trap</i></td></tr>
+<tr><td>Ver un pozo o trampa</td><td>Mouse encima (lupa) y botón derecho</td></tr>
+<tr><td>Ordenar a un aliado de la IA</td><td>Chat: <code>#n ataca CIUDAD</code>, <code>#n ataca a BANDO</code>, <code>#n mandame refuerzos</code></td></tr>
+<tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Votacion</i></td></tr>
+<tr><td>Sortear bandos</td><td>Anfitrión: botón Sorteo junto a <i>Chat</i>, en la preparación</td></tr>
+<tr><td>Comparar armas</td><td><i>Edit Side</i> → botón DarkCompare</td></tr>
+<tr><td>Pedir misión</td><td><kbd>Q</kbd> (Get Quest)</td></tr>
+</table>
+
+<h1><span class="num">Apéndice B</span>Archivos que instala el parche</h1>
+<p>Todos dentro de <code>C:\Warlords3</code>. Ninguno reemplaza un archivo del juego original.</p>
+<table style="font-size:9pt">
+<tr><th style="width:45%">Archivo</th><th>Para qué</th></tr>
+<tr><td><code>DarklordAV.exe</code></td><td>El juego con el parche</td></tr>
+<tr><td><code>war3ed_av.exe</code></td><td>El editor con los bonos nuevos</td></tr>
+<tr><td><code>DATA\WAR3AV.RES</code></td><td>Diálogos, textos, sonidos y dibujos del parche</td></tr>
+<tr><td><code>DATA\BRIDNAME.TXT</code></td><td>Nombres de los puentes</td></tr>
+<tr><td><code>TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT, trap.STT</code></td><td>Los bonos nuevos, para el editor</td></tr>
+<tr><td><code>SETS\Fantasy\sorteo.pcx, darkcomp.pcx</code></td><td>Botones de Sorteo y Comparador</td></tr>
+<tr><td><code>PICTS\startav.pcx, startav1.pcx, startav2.pcx</code></td><td>Menú principal con el logotipo, en tres resoluciones</td></tr>
+<tr><td><code>RUINS\pozos.pcx</code></td><td>Dibujos de pozos, remolinos, trampas y tumbas</td></tr>
+<tr><td><code>FX\Burst.wav</code></td><td>Explosión de una trampa</td></tr>
+<tr><td><code>RANDOM\Grass\ITEM.DAT, Item0-2.dat</code></td><td>Listas de ítems de los mapas al azar</td></tr>
+</table>
+<p>El paquete <b>herramientas</b> instala <code>Herramientas\votacion.exe</code> y <code>Herramientas\sorteo.exe</code>
+(unos 100 MB).</p>
+
+<h1><span class="num">Apéndice C</span>Estado de las funciones</h1>
+<p>Al 23/10/2026. <span class="estado e-ok">probado</span> = verificado en el juego;
+<span class="estado e-pr">en prueba</span> = funciona en las pruebas automáticas y falta confirmarlo jugando o con más
+partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
+<table>
+<tr><th>Función</th><th style="width:22%">Estado</th></tr>
+<tr><td>Vista aliada, niebla y ciudades compartidas</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Landing, Carrier, Cabotage</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Puentes: derribar, reconstruir, misión</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Habilidad Bridge +N</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Pozos, remolinos, trampas, lupa</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Misión de escolta de la trampa</td><td><span class="estado e-pr">en prueba</span></td></tr>
+<tr><td>Ítems personalizados en mapas al azar</td><td><span class="estado e-pr">en prueba</span></td></tr>
+<tr><td>Army List con las 25 reglas</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Órdenes por chat a la IA</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Votación, Sorteo y pausa</td><td><span class="estado e-pr">en prueba</span> en otras PC del clan</td></tr>
+<tr><td>IA de alianzas</td><td><span class="estado e-pr">en prueba</span> (series A/B)</td></tr>
+<tr><td>Pozos y trampas en red (misma tabla en todas las PC)</td><td><span class="estado e-dev">en desarrollo</span></td></tr>
+<tr><td>Opción 9 exige la 6 (Actualizador 1.0.13.0)</td><td><span class="estado e-pr">en prueba</span></td></tr>
+</table>
+
+<h1><span class="num">Apéndice D</span>Glosario</h1>
+<div class="dos">
+<p><b>Aliado mutuo.</b> Bando que se declaró aliado de otro y recibió la misma declaración.</p>
+<p><b>Anfitrión.</b> La PC que crea la partida en red (máquina 0). Opera la Votación y el Sorteo.</p>
+<p><b>Convoy.</b> Hasta tres barcos con Carrier, en casillas vecinas, que se mueven y defienden como uno.</p>
+<p><b>Ciudad compartida.</b> Ciudad de un bando que sus aliados mutuos pueden usar como propia para entrar y defender.</p>
+<p><b>IA de prueba.</b> La IA con las mejoras en estudio, activada por color en <code>DATA\IA.INI</code>.</p>
+<p><b>Mina submarina.</b> Trampa construida en el agua.</p>
+<p><b>Pila.</b> Grupo de ejércitos en una casilla (stack).</p>
+<p><b>Pozo.</b> Peligro oculto en tierra que mata a los ejércitos no voladores.</p>
+<p><b>Remolino.</b> Peligro oculto en mar abierto que hunde barcos.</p>
+<p><b>Tanda.</b> Serie de partidas IA contra IA del banco de simulación.</p>
+<p><b>Trampa.</b> Peligro que siembra un jugador con una unidad de bono Trap; explota tres veces.</p>
+<p><b>Vista aliada.</b> Mapa explorado compartido entre aliados mutuos.</p>
+</div>
+
+</body>
+</html>
