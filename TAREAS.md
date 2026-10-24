@@ -16,6 +16,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **37.** Comprobar que la opción 9 instala el Manual (parche vista-aliada 1.0.69.0, 24/10/2026)
+  1. En otra PC del clan, abrir el Actualizador y elegir la opción 9 → vista-aliada.
+  2. Ver que aparezca `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y que abra.
+
 - [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
   1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
   2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
