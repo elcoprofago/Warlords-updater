@@ -22,7 +22,7 @@ Para la ronda nueva: todo igual en los 8 colores salvo la personalidad.
 2. A cada color asignale sus 4 puntos según el perfil que quieras (blanco: poder de ataque; amarillo: movimiento;
    naranja: héroes y mercenarios baratos; y los demás).
 3. Guardala en el turno 1 como **Tanda_hex_personalidad**.
-4. Anotá abajo, color por color, los puntos exactos que le diste (por ejemplo «blanco: Very Strong + Strong»).
+4. Anotá abajo, color por color, los puntos exactos que le diste (por ejemplo «blanco: Very Strong + Fast»).
 Resultado:
 
 - [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
