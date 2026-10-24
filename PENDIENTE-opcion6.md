@@ -124,3 +124,8 @@ Se puede borrar sin afectar el juego (unos 8 MB en total):
 Decide el usuario (son suyos, no del juego):
 - `Scarpart.w3s` de la raíz (28/2/2026, 1,6 MB): **distinto** del de `ESCEN`; el juego carga los de `ESCEN`.
 - `DATA\IA*.CSV` e `IA.INI` (registros de las pruebas de IA), `Saves` (32, 12 MB), `Netsaves` (11, 4 MB), `Randscen`.
+
+**Borrado (23/10/2026, pedido del usuario):** `unins000.*`, `support.ico`, `GOG\`, `__support\` y las carpetas back
+(`HERO\back`, `SPELL\back`, `SCENARIO\_BACK`, `eddata\__BACK`). Quedan el `.lnk`, `directplay.cmd` y lo de «decide
+el usuario». El zip se republicó sin `support.ico` ni `eddata\__BACK` (5763 archivos), para que la opción 6 no
+los vuelva a poner; `publicar-full.ps1` ahora reconoce también `__BACK` como carpeta back.

@@ -97,7 +97,7 @@ function Incluir($rel) {
     # SCENARIO\_BACK son respaldos de quien armo el zip actual.
     if (EnCarpeta $rel 'PGS', 'SCENARIO') { return $publicado.Contains($rel) -and -not (EnCarpeta $rel 'SCENARIO\_BACK') }
     # Carpetas back (ITEMS\back, HERO\back, ...): experimentos de quien arma el zip, el juego no las usa
-    if (('\' + $rel) -match '\\_?back\\') { return $false }
+    if (('\' + $rel) -match '\\_*back\\') { return $false }
     if (EnCarpeta $rel 'Saves', 'Randscen', 'Netsaves', 'Email', 'HERRAMIENTAS', 'GOG', '__support', 'PARCHES') { return $false }
     $nombre = Split-Path -Leaf $rel
     $ext = [IO.Path]::GetExtension($rel)
