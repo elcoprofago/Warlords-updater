@@ -680,3 +680,18 @@ equipo tenía la IA de prueba (P); efecto = (margen con 013 en P - margen con 01
 - Las tres series juntas (promedio ponderado): -0.6 ± 2.0 PV. Sigue sin haber ventaja demostrada.
 - Próximo paso propuesto: repetir la 41-46 tal cual (otras 60 partidas sin ruinas, Monitor 1.0.13). Si vuelve a dar
   a favor de P, el efecto es real; si da cerca de cero, fue azar. Es TAREAS 33.
+
+### 24/10/2026: repetición sin ruinas, tandas 47 a 52 (36 partidas, Tanda_hex_alianzas_SR, 1.0.68.0, exe 59a13aea)
+TAREAS 33. Corrió con 6 partidas por tanda (no 10). Los cambios 1.0.66 a 1.0.68 (chat, ítems de mapas al azar) no
+tocan la IA ni esta guardada. Mismo script que la 41-46 (reproduce su +7.1).
+| serie | válidas | 013 gana | victorias P / O / empate | efecto P (PV por equipo) | refugios P |
+|---|---|---|---|---|---|
+| 41-46 (sin ruinas) | 58 | 28 | 35 / 23 / 0 | +7.1 ± 3.8 | 18 |
+| 47-52 (sin ruinas) | 36 | 13 | 11 / 24 / 1 | -6.3 ± 4.8 | 9 |
+| 41-52 juntas | 94 | 41 | 46 / 47 / 1 | +2.0 ± 3.0 | 27 |
+- La repetición da en contra: el +7.1 de la 41-46 fue azar. Sin ruinas el mapa sigue parejo (013 gana 41 de 94).
+- Las reglas de alianzas casi no se activan (9 refugios, 1 defensa desde refugio en 36 partidas).
+- Las cuatro series (29-34, 35-40, 41-46, 47-52), promedio ponderado: -1.4 ± 1.9 PV. **No hay ventaja de la IA de
+  prueba**, ni a favor ni en contra: con tan pocas activaciones, las reglas actuales no mueven el resultado.
+- Próximo paso: más partidas no lo van a cambiar. Lo que falta es que las reglas se activen más seguido (o probarlas
+  en un mapa donde los aliados estén en contacto), antes de volver a medir.

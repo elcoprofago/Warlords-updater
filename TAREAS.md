@@ -8,7 +8,6 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 0. **Tarea 35** (opción 6 antes de la 9): la próxima vez que abras el Actualizador.
-1. **Tarea 33** (repetir la serie sin ruinas): correrla.
 2. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 3. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
 4. **Tarea 32** (barra horizontal de la bitácora): la próxima vez que abras el Monitor.
@@ -44,14 +43,6 @@ nombre: bootfly, potfly, FlyShoot) no entran al sorteo, y los quitaste también 
 2. En cada una, abrí la lista de ítems del juego (o explorá ruinas): tienen que aparecer ítems personalizados, y
    la lista de una partida tiene que ser distinta de la de la otra. No tiene que aparecer ningún ítem de vuelo.
 3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
-Resultado:
-
-- [ ] **33.** IA: repetir la serie sin ruinas para confirmar (23/10/2026)
-La serie de la tarea 30 dio por primera vez ventaja a la IA de prueba, pero puede ser azar. Otra serie igual lo decide.
-1. Abrí el Monitor de IA (1.0.13): **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas
-   automatizadas** con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común»
-   y «equipos 013|457». Son unas 18 horas; si se corta, **Retomar** con las que falten.
-2. Avisame cuando termine.
 Resultado:
 
 - [ ] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
@@ -119,6 +110,14 @@ Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Pa
 Resultado:
 
 # Hecho
+
+- [x] **33.** IA: repetir la serie sin ruinas para confirmar (23/10/2026)
+La serie de la tarea 30 dio por primera vez ventaja a la IA de prueba, pero puede ser azar. Otra serie igual lo decide.
+1. Abrí el Monitor de IA (1.0.13): **Ninguna**, marcá solo **hex_alianzas_SR**, Partidas: **10**, **Tandas
+   automatizadas** con serie de **6**, **Nueva tanda**. La bitácora tiene que decir «Bandos: hex_alianzas_SR común»
+   y «equipos 013|457». Son unas 18 horas; si se corta, **Retomar** con las que falten.
+2. Avisame cuando termine.
+Resultado: (Claude, 24/10) corrió con 6 partidas por tanda (tandas 47 a 52, 36 válidas, parche 1.0.68.0). Esta vez la IA de prueba pierde 11 a 24 (-6,3 ± 4,8 PV por equipo): la ventaja de la 30 fue azar. Juntando las dos series sin ruinas: +2,0 ± 3,0, sin ventaja. Detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
 - [x] **31.** Lupa y botón derecho sobre pozos, remolinos y trampas (22/10/2026)
 Ahora funcionan como ruinas y sitios: al pasar el mouse por un pozo, remolino o trampa **que ya ves en el mapa**, el
