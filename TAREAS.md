@@ -1,13 +1,14 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 38).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 40).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-- **Tarea 37** (guardada con personalidades): cuando puedas; la ronda nueva espera a eso.
+- **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
+- **Tarea 38** (guardada con personalidades): cuando puedas; la ronda nueva espera a eso.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
@@ -15,7 +16,25 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **37.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
+- [ ] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
+Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus». Es un falso positivo:
+lo corrige Microsoft, no nosotros. Hacelo desde la PC donde salió el aviso.
+1. Abrí **Seguridad de Windows → Protección antivirus y contra amenazas → Historial de protección** y anotá
+   abajo el **nombre de la amenaza** (algo como `Trojan:Win32/...`).
+2. Bajá el `.exe` de la página del Ejecutable
+   (https://github.com/elcoprofago/Warlords-updater/releases/tag/Ejecutable) en esta PC, que tiene Defender
+   apagado, o tomalo de `F:\sourceeposctualizador-warlords\Actualizador-v.1.0.13.0.exe`.
+3. Entrá a https://www.microsoft.com/wdsi/filesubmission, iniciá sesión con tu cuenta Microsoft y elegí
+   **Software developer**.
+4. Producto: **Microsoft Defender Antivirus**. Subí el `.exe`. Marcá **Incorrectly detected as malware**.
+   En «Detection name» poné el nombre del paso 1. En comentarios: «Updater for the game Warlords III, made by
+   me, downloads game files from GitHub. False positive.»
+5. Anotá abajo el número de envío. Microsoft responde por mail, en general en 1 a 3 días.
+6. Cuando digan que está corregido, en la PC bloqueada: Seguridad de Windows → Actualizaciones de protección
+   → **Buscar actualizaciones**, y volvé a bajar el zip.
+Resultado:
+
+- [ ] **38.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
 Para la ronda nueva: todo igual en los 8 colores salvo la personalidad.
 1. Abrí el juego y empezá una partida nueva en **Hexagon** con los **8 colores** en IA, **sin alianzas**, el
    **mismo bando** (.PGS) en todos, con **«AI Chooses Personalities» apagado** y límite de **4 puntos**.
