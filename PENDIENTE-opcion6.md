@@ -111,3 +111,16 @@ Primera pasada (falta compararla contra `GOG\goggame-galaxyFileList.ini`, 3653 a
   `winmm.dll` + `libogg/libvorbis*.dll` (música `MUSIC\Track*.ogg` en lugar del CD).
 - Del usuario, no del juego: `HERRAMIENTAS`, `PARCHES`.
 No se borró nada.
+
+**Comparación contra la lista de GOG (23/10/2026):** `C:\Warlords3` tiene 6188 archivos; 2551 no son de GOG. Casi
+todos son contenido del clan (ARMY, HERO, ITEMS, SPELL, ESCEN, PGS, SCENARIO, MUSIC\Track01 y 21-28, SITES F*,
+SSGData, archivos de los parches) o lo que escribe el juego al jugar, y hacen falta. De GOG faltan 173: `__redist`
+(158, instaladores de DirectX/VC que GOG borra al terminar) y unos pocos sin importancia; al juego no le falta nada.
+Se puede borrar sin afectar el juego (unos 8 MB en total):
+- `unins000.dat/.exe/.ini/.msg` (desinstalador de GOG, 2,6 MB), `support.ico`, `GOG\` (0,4 MB), `__support\`
+  (4 carpetas vacías), el `.lnk` de la raíz si no se usa, `directplay.cmd` (activa DirectPlay en Windows; ya se
+  corrió en esta PC, pero hace falta en una PC nueva: conviene no borrarlo de quien arma el zip).
+- Las carpetas back: `HERO\back` (85, 3,3 MB), `SPELL\back` (46), `SCENARIO\_BACK` (86, 1,5 MB), `eddata\__BACK` (2).
+Decide el usuario (son suyos, no del juego):
+- `Scarpart.w3s` de la raíz (28/2/2026, 1,6 MB): **distinto** del de `ESCEN`; el juego carga los de `ESCEN`.
+- `DATA\IA*.CSV` e `IA.INI` (registros de las pruebas de IA), `Saves` (32, 12 MB), `Netsaves` (11, 4 MB), `Randscen`.
