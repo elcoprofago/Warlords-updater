@@ -23,7 +23,8 @@ lo corrige Microsoft, no nosotros. Hacelo desde la PC donde salió el aviso.
    abajo el **nombre de la amenaza** (algo como `Trojan:Win32/...`).
 2. Bajá el `.exe` de la página del Ejecutable
    (https://github.com/elcoprofago/Warlords-updater/releases/tag/Ejecutable) en esta PC, que tiene Defender
-   apagado, o tomalo de `F:\sourceeposctualizador-warlords\Actualizador-v.1.0.13.0.exe`.
+   apagado, o tomalo de `F:\source\repos\actualizador-warlords\Actualizador-v.1.0.13.0.exe`.
+eposctualizador-warlords\Actualizador-v.1.0.13.0.exe`.
 3. Entrá a https://www.microsoft.com/wdsi/filesubmission, iniciá sesión con tu cuenta Microsoft y elegí
    **Software developer**.
 4. Producto: **Microsoft Defender Antivirus**. Subí el `.exe`. Marcá **Incorrectly detected as malware**.
