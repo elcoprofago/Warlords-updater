@@ -12755,6 +12755,8 @@ NUEVOS.update(NUEVOS_TIT)
 # de vuelo). Con ri_go cuentan sobre todo sus 8 especiales; los 32 comunes valen en el Darklord.exe original.
 for _f in ('ITEM.DAT', 'Item0.dat', 'Item1.dat', 'Item2.dat'):
     NUEVOS[os.path.join('RANDOM', 'Grass', _f)] = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'random', 'Grass', _f), 'rb').read()
+# Manual de uso (manualuild_manual.py lo arma): va con el parche porque describe esta versión.
+NUEVOS['Manual-Era-de-Alianzas.pdf'] = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'manual', 'Manual-Era-de-Alianzas.pdf'), 'rb').read()
 
 # ---------------------------------------------------------------- escribir (solo archivos nuevos)
 for path in (OUT_EXE, OUT_RES):
