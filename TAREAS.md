@@ -8,7 +8,6 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 - **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
-- **Tarea 38** (guardada con personalidades): cuando puedas; la ronda nueva espera a eso.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
@@ -22,9 +21,9 @@ Todos actualizan antes con el Actualizador (opción del parche vista aliada).
    tiene que apuntar siempre al mismo puente, y al llegar el puente tiene que estar ahí.
 2. Elegir la opción de destruir el puente no tiene que colgar el juego.
 3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
-Resultado:
+Resultado: las trampas ahora explotan 2 veces. 
 
-- [ ] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
+- [x] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
 En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».
 Es un falso positivo: lo corrige Microsoft, no nosotros. El envío lo hacés vos desde tu PC; tu amigo solo
 tiene que hacer el paso 6.
@@ -41,16 +40,6 @@ tiene que hacer el paso 6.
 5. Anotá abajo el número de envío. Microsoft responde por mail, en general en 1 a 3 días.
 6. Cuando digan que está corregido, avisale a tu amigo que en su PC vaya a Seguridad de Windows → Actualizaciones de protección
    → **Buscar actualizaciones**, y vuelva a bajar el zip.
-Resultado:
-
-- [ ] **38.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
-Para la ronda nueva: todo igual en los 8 colores salvo la personalidad.
-1. Abrí el juego y empezá una partida nueva en **Hexagon** con los **8 colores** en IA, **sin alianzas**, el
-   **mismo bando** (.PGS) en todos, con **«AI Chooses Personalities» apagado** y límite de **4 puntos**.
-2. A cada color asignale sus 4 puntos según el perfil que quieras (blanco: poder de ataque; amarillo: movimiento;
-   naranja: héroes y mercenarios baratos; y los demás).
-3. Guardala en el turno 1 como **Tanda_hex_personalidad**.
-4. Anotá abajo, color por color, los puntos exactos que le diste (por ejemplo «blanco: Very Strong + Fast»).
 Resultado:
 
 - [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
@@ -111,6 +100,13 @@ Resultado:
 
 
 # Hecho
+
+- [x] **38.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
+Resultado: (usuario, 25/10) guardada como **Tanda_hex_perfiles** (el nombre largo no entraba): 6 colores, mismo bando,
+sin alianzas, sin ruinas ni misiones, **5 puntos** (con 4 no se podían igualar). Blanco: Very Strong + Very Fast;
+amarillo: Immovable; rojo: Legendary + Famous + Merchant + Rich; verde: Renowned + Engineer + Heroic + Rich; azul:
+Disciplined + Strong; negro: Artificer + Devout. (Claude, 25/10) los 6 perfiles están en la guardada tal cual;
+ya sé dónde se escriben (detalle en ia\PENDIENTE-entrenamiento-ia.md).
 
 - [x] **35.** Actualizador 1.0.13.0: la opción 9 exige haber corrido la 6 (23/10/2026)
 Desde esta versión, la opción 9 (PARCHES) no deja instalar nada en una PC donde no se corrió antes la opción 6

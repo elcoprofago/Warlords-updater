@@ -712,10 +712,19 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   pase por cada ubicación la misma cantidad de veces. Para eso hay que ubicar dónde guarda el .SAV los puntos de
   personalidad de cada color (estructura de jugador: 0x536b30 + color*0x1f8, todavía sin mapear) y escribirlos
   antes de cada partida, como hace sin_ruinas.py con las ruinas.
-- Para ubicarlos: una guardada del usuario con perfiles distintos y conocidos por color (TAREAS 37); se buscan
+- Para ubicarlos: una guardada del usuario con perfiles distintos y conocidos por color (TAREAS 38); se buscan
   esos valores en los 8 bloques de jugador. Si no aparecen, comparar con una segunda guardada que cambie uno solo.
 - La IA no tiene que repartir sus propios puntos («AI Chooses Personalities» apagado), o pisaría los del usuario.
-- Próximo paso: con la guardada y la lista de perfiles de TAREAS 37, mapear los bytes y sumar a tanda.py la
+- Mapeados (25/10/2026, Tanda_hex_perfiles, TAREAS 38: 6 colores, 5 puntos, sin naranja ni celeste): son 22 bits en
+  los bytes +0xc0..0xc2 del registro de jugador (little endian), uno por personalidad, en el orden de la lista del
+  clan: 0 Strong, 1 Very Strong, 2 Herculean, 3 Fast, 4 Very Fast, 5 Lightning, 6 Informed, 7 Farseeing, 8 Heroic,
+  9 Legendary, 10 Merchant, 11 Famous, 12 Renowned, 13 Disciplined, 14 Resolute, 15 Immovable, 16 Rich, 17 Opulent,
+  18 Engineer, 19 Artificer, 20 Ceremonial, 21 Devout. Los 6 colores coinciden bit a bit con lo que asignó el
+  usuario (blanco 0x12, amarillo 0x8000, rojo 0x10e00, verde 0x51100, azul 0x2001, negro 0x280000). Ojo: 10 y 11
+  (Merchant/Famous) salen del orden de la lista, no de un caso que los separe (rojo tiene los dos). Sin verificar:
+  si el juego deriva otros campos de estos bits al arrancar (+0xe2..0xe4 también cambian entre colores); la primera
+  partida con perfiles rotados tiene que mostrar en el juego el perfil escrito.
+- Próximo paso: con la guardada y la lista de perfiles de TAREAS 38, mapear los bytes y sumar a tanda.py la
   rotación de perfiles. Si no se pudieran escribir, plan B: serie sin rotar más una serie de control con
   personalidades iguales, para descontar el peso de cada ubicación.
 
