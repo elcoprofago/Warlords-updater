@@ -751,6 +751,13 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   Con 30 partidas, 10 ganadas contra 5 esperadas por azar es una diferencia probable pero no concluyente
   (p ≈ 0.03); entre los otros cinco perfiles no hay diferencia medible. Sin verificar: que el juego mostrara en
   pantalla el perfil escrito por la rotación (nadie lo miró durante la tanda).
+- Medido contra el promedio de cada lugar (cada partida cuenta, no solo las ganadas): PV del perfil menos el PV
+  medio de su lugar de salida, media ± error. Negro +6.5 ± 1.4, rojo +1.1 ± 1.4, verde -1.3 ± 0.9, azul -1.7 ± 1.1,
+  amarillo -2.2 ± 0.9, blanco -2.5 ± 1.4. Ciudades, igual orden (negro +5.4 ± 1.1). Negro supera el promedio en los
+  6 lugares (blanco 37 contra 22.9, amarillo 41.8 contra 28.3, azul 14.6 contra 9.6, negro 8.4 contra 5.1, rojo 6
+  contra 3.9, verde 4 contra 2.9) y es el que menos veces quedó eliminado. Conclusión: Artificer + Devout es mejor que los
+  otros cinco perfiles, a casi 5 errores del resto; entre los otros cinco no hay diferencias claras. No hace
+  falta el mapa parejo para esta pregunta (el usuario lo pidió solo si esta medición no aclaraba).
 
 
 ## Tandas sin alianzas: el juego alía a todas las computadoras contra el humano (25/10/2026)
