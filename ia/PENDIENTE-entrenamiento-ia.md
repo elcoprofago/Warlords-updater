@@ -734,5 +734,8 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   difiere por color (blanco y amarillo 64, rojo 119, verde, azul y negro 244): queda con la ubicación, la rotación
   lo reparte. Sin verificar: si alguna personalidad ya se aplicó a las unidades iniciales al armar la partida
   (Immovable/Strong guardados en el ejército); si fuera así, esas unidades conservan el bono del perfil original.
+- Tanda 53 (1.0.14) anulada (partidas en estado «invalida»): Tanda_hex_perfiles trae 01457 aliados en la tabla de
+  diplomacia aunque la diplomacia esté apagada, y cada partida terminó al turno 3 con victoria aliada. Desde 1.0.15
+  escribir_rotada pone guerra (1) entre todos los colores, vigentes y propuestas.
 - Próximo paso: TAREAS 41 (5 tandas de 6) y analizar por perfil.
 

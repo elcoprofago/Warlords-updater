@@ -16,12 +16,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.14, 25/10/2026)
+- [ ] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.15, 25/10/2026)
 Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
-1. Abrí el Monitor de IA: tiene que decir **1.0.14** (si dice otra, apretá Actualizar).
+1. Abrí el Monitor de IA: tiene que decir **1.0.15** (si dice otra, apretá Actualizar).
+   La 1.0.14 terminaba las partidas en el turno 3 con «victoria aliada»: la tanda 53 quedó anulada.
 2. **Ninguna**, marcá solo **hex_perfiles_SR** (tiene que aparecer «(perfiles)»), Partidas: **6**,
    **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. La bitácora tiene que mostrar en cada partida «perfiles blanco <- …»: es el perfil que recibe cada color.
+3. Las partidas no tienen que terminar con «victoria aliada». La bitácora tiene que mostrar en cada partida «perfiles blanco <- …»: es el perfil que recibe cada color.
 4. Avisame cuando termine: la analizo.
 Resultado:
 
