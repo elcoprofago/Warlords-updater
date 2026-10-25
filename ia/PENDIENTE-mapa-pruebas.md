@@ -13,7 +13,8 @@ eliminado 11 veces de 30). Con la rotación cada perfil pasa por todos los lugar
 ganar, así que cada perfil tiene en la práctica 10 oportunidades, no 30. Detalle en PENDIENTE-entrenamiento-ia.md
 («Ronda nueva: personalidades»).
 - El desnivel no viene del oro inicial: amarillo y blanco arrancan con el **menor** oro (64); rojo con 119; verde,
-  azul y negro con 244. Viene de la geografía (ciudades cercanas, vecinos, caminos). Igualar el oro lo empeoraría.
+  azul y negro con 244. ~~Viene de la geografía~~: el paso 1 mostró que el mapa es simétrico (ver abajo); la
+  diferencia está en el estado en que quedó guardada la partida.
 
 ## Lo que ya se sabe y sirve
 - La guardada se edita desde código: tanda.SAV_BLOQUES traduce direcciones de memoria a posiciones del .SAV
@@ -23,8 +24,8 @@ ganar, así que cada perfil tiene en la práctica 10 oportunidades, no 30. Detal
   armarse con el mismo mecanismo (una _SR nueva, sin tocar la original).
 - Hexagon solo admite 6 colores (blanco, amarillo, rojo, verde, azul, negro); Scarpart, Borderlands y Kor admiten 8.
 
-## Pasos (ninguno hecho todavía)
-1. Ubicar en el .SAV/exe la tabla de ciudades (dueño, posición, producción, ingreso, defensa) y el terreno.
+## Pasos
+1. **Hecho (25/10/2026, ver «Paso 1: resultado»).** Ubicar en el .SAV/exe la tabla de ciudades (dueño, posición, producción, ingreso, defensa) y el terreno.
    Probarlo primero en un caso de juguete (cambiar el dueño de una ciudad y ver el resultado en el juego).
 2. Medir el desnivel de Hexagon por lugar: ciudades e ingreso a 1, 2 y 3 turnos de marcha de cada capital.
 3. Elegir el método para emparejar: lo más simple que alcance (por ejemplo, igualar el ingreso y la defensa de las
@@ -32,3 +33,32 @@ ganar, así que cada perfil tiene en la práctica 10 oportunidades, no 30. Detal
 4. Validar el mapa con una tanda de control: el mismo perfil en todos los colores, 30 partidas. Queda parejo si
    ningún lugar se aparta claramente del promedio (hoy: amarillo 28.3 PV, verde 2.9).
 5. Recién entonces repetir la serie de personalidades sobre el mapa nuevo (tarea nueva en TAREAS.md).
+
+## Paso 1: resultado (25/10/2026)
+- Tabla de ciudades: ia\ciudades.py (lee la tabla de una guardada y `dar()` cambia el dueño). Registro 0x537e2c +
+  i*0xde, cantidad [0x537e2a]: +0 x, +2 y, +4 nombre, +0xa4 tamaño, +0xa5 dueño (8 neutral), +0xa7 ingreso,
+  +0xaa cuatro tropas producibles (9 letras cada una). Sin identificar: +0xa6, +0xa8, +0xa9, +0xce..+0xdd.
+- Terreno: bloque 0x503e58 del .SAV (0x32000 bytes) = 128 x 160 casillas de 10 bytes. Dibujado con el byte +1 se
+  ve el hexágono con simetría izquierda-derecha y arriba-abajo. Significado de cada byte sin averiguar (no hizo falta).
+- Prueba de juguete (tanda 70, partida 448, de prueba): Tanda_juguete.SAV = Tanda_hex_perfiles_SR con Green Secret,
+  Shopping y Door del verde. En el juego el verde arrancó con 4 ciudades y azul y negro (control) con 1. Editar la
+  tabla funciona.
+- **Hexagon ya es parejo de diseño**: cada color tiene las mismas 12 ciudades (Main, Secret, Door, Shopping, Haven,
+  Chest, Outpost, Hole, Corner, Gate, Ambassy, Center) con el mismo tamaño, ingreso y tropas, en lugares simétricos.
+  Blanco (122,79) y negro (4,79) son espejo exacto, y blanco ganó casi siempre y negro nunca.
+- Lo que sí distingue a los lugares, en la guardada:
+  - Se guardó **a mitad del turno 1**, con el rojo jugando ([0x537ce8] = 3): blanco y amarillo ya jugaron su turno 1
+    (tienen héroe y compraron la tropa red_scav, de ahí el oro 64), rojo compró bladerun (119) y verde, azul y negro
+    todavía no jugaron (244, sin ejércitos). Lo confirmó la prueba: en el turno 1 solo registran verde, azul y negro.
+  - El orden de turno es fijo por color (blanco, amarillo, rojo, verde, azul, negro).
+  - Green Main tiene +0xa6 = 1; las otras capitales, 3 (campo sin identificar).
+  Sin verificar cuál de estas causas pesa. Hipótesis principal: la tropa red_scav ya comprada y el arranque antes que
+  los demás.
+
+## Próximo paso (reemplaza los pasos 2 y 3)
+2. Armar la guardada pareja desde Tanda_hex_perfiles_SR: dejar las seis capitales iguales (mismas tropas, +0xa6 y
+   +0xce..+0xdd, sin red_scav ni bladerun), el oro en 244 y, si se puede, la partida al principio del turno 1 sin
+   que nadie haya jugado. Si esto último no se logra editando, guardar una partida nueva de Hexagon antes de mover.
+3. Con eso, el paso 4 (tanda de control) dice si alcanza; el orden de turno no se puede igualar y ahí se mide cuánto
+   pesa.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 2".
