@@ -7,7 +7,6 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-- **Tarea 41** (tanda de personalidades): cuando la PC esté libre unas 9 horas.
 - **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
@@ -21,16 +20,6 @@ Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explor
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
 1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
 2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
-Resultado:
-
-- [ ] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.16 y vista aliada 1.0.71.0, 25/10/2026)
-Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
-1. Abrí el Actualizador y aplicá **vista aliada 1.0.71.0**. Después abrí el Monitor de IA: tiene que decir **1.0.16** (si dice otra, apretá Actualizar).
-   Antes, el juego aliaba a todas las computadoras contra el humano, y en una tanda no hay humanos: por eso terminaba en el turno 3 con «victoria aliada». Las tandas de prueba quedaron anuladas.
-2. **Ninguna**, marcá solo **hex_perfiles_SR** (tiene que aparecer «(perfiles)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. Las partidas no tienen que terminar con «victoria aliada». La bitácora tiene que mostrar en cada partida «perfiles blanco <- …»: es el perfil que recibe cada color.
-4. Avisame cuando termine: la analizo.
 Resultado:
 
 - [ ] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026)
@@ -118,6 +107,19 @@ Resultado:
 
 
 # Hecho
+
+- [x] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.16 y vista aliada 1.0.71.0, 25/10/2026)
+Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
+1. Abrí el Actualizador y aplicá **vista aliada 1.0.71.0**. Después abrí el Monitor de IA: tiene que decir **1.0.16** (si dice otra, apretá Actualizar).
+   Antes, el juego aliaba a todas las computadoras contra el humano, y en una tanda no hay humanos: por eso terminaba en el turno 3 con «victoria aliada». Las tandas de prueba quedaron anuladas.
+2. **Ninguna**, marcá solo **hex_perfiles_SR** (tiene que aparecer «(perfiles)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Las partidas no tienen que terminar con «victoria aliada». La bitácora tiene que mostrar en cada partida «perfiles blanco <- …»: es el perfil que recibe cada color.
+4. Avisame cuando termine: la analizo.
+Resultado: (usuario, 25/10) terminó la serie: tandas 65 a 69, 30 partidas, todas válidas (30 turnos). (Claude, 25/10) gana el perfil negro
+(Artificer + Devout): 10 de 30, con más PV y una sola eliminación; los demás, entre 2 y 6. La ubicación pesa más que el
+perfil: 29 de 30 las ganó quien arrancó en el lugar amarillo o el blanco, y ahí negro ganó las 10 veces que le tocó.
+Detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
 - [x] **38.** IA: guardada de Hexagon con personalidades distintas (24/10/2026)
 Resultado: (usuario, 25/10) guardada como **Tanda_hex_perfiles** (el nombre largo no entraba): 6 colores, mismo bando,

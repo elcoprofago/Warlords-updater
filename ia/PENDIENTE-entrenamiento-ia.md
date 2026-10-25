@@ -737,7 +737,20 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
 - Tanda 53 (1.0.14) anulada (partidas en estado «invalida»): Tanda_hex_perfiles trae 01457 aliados en la tabla de
   diplomacia aunque la diplomacia esté apagada, y cada partida terminó al turno 3 con victoria aliada. Desde 1.0.15
   escribir_rotada pone guerra (1) entre todos los colores, vigentes y propuestas.
-- Próximo paso: TAREAS 41 (5 tandas de 6) y analizar por perfil.
+- Resultado (25/10/2026, TAREAS 41, tandas 65 a 69, 30 partidas válidas, 30 turnos, vista-aliada 1.0.71.0):
+  perfil (color de origen)              ganadas  PV prom  eliminado  ciudades prom  puesto prom
+  negro: Artificer + Devout                  10     18.6          1           15.5         2.87
+  rojo: Legendary + Merchant + Famous + Rich  6     13.2          7           10.5         3.53
+  verde: Heroic + Renowned + Rich + Engineer  6     10.8          7            8.9         3.70
+  amarillo: Immovable                         3     10.0          6            8.5         3.90
+  blanco: Very Strong + Very Fast             3      9.7          5            8.2         3.60
+  azul: Strong + Disciplined                  2     10.4          3            8.8         3.47
+  Por ubicación (sin importar el perfil): amarillo 18 ganadas (28.3 PV), blanco 11 (22.9), azul 1, negro, rojo y
+  verde 0 (verde eliminado 11 veces). La ubicación decide quién puede ganar; el perfil, quién gana desde ahí: negro
+  ganó las 10 partidas en que arrancó en amarillo o blanco (5 y 5), y fue 2 de 6 en cada una de las 5 tandas.
+  Con 30 partidas, 10 ganadas contra 5 esperadas por azar es una diferencia probable pero no concluyente
+  (p ≈ 0.03); entre los otros cinco perfiles no hay diferencia medible. Sin verificar: que el juego mostrara en
+  pantalla el perfil escrito por la rotación (nadie lo miró durante la tanda).
 
 
 ## Tandas sin alianzas: el juego alía a todas las computadoras contra el humano (25/10/2026)
