@@ -417,12 +417,20 @@ def nombre_perfil(bits):
 
 
 def escribir_rotada(guardada, origen):
-    """SAVES\\IA_ROTADA.SAV: la guardada con el perfil de origen[c] en cada color c (el resto, intacto)."""
+    """SAVES\\IA_ROTADA.SAV: la guardada con el perfil de origen[c] en cada color c y sin alianzas."""
     with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
         d = bytearray(f.read())
     pf = perfiles(guardada); js = jugadores(d)
     for c, o in js.items():
         d[o + PERFIL:o + PERFIL + 3] = pf[origen[c]].to_bytes(3, 'little')
+    # Todos contra todos: la guardada puede traer alianzas de otra partida armada antes aunque la diplomacia esté
+    # apagada (Tanda_hex_perfiles: 01457 aliados), y con eso el juego da victoria aliada al turno 3 (25/10/2026).
+    # Se escribe guerra (1, como en Tanda_Kor) en las vigentes y en las propuestas.
+    o = 0x6d + sum(t for _, t in SAV_BLOQUES[:3]) + 0x55ee4c - SAV_BLOQUES[3][0]
+    for x in js:
+        for y in js:
+            if x != y:
+                d[o + x * 56 + y] = d[o + x * 56 + 9 + y] = 1
     with open(os.path.join(JUEGO, 'SAVES', ROTADA + '.SAV'), 'wb') as f:
         f.write(d)
 
