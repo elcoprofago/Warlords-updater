@@ -59,7 +59,7 @@ ESQUEMA = f'''
 create table if not exists tanda (id integer primary key, inicio text, plan text, terminada integer default 0,
     parche text, exe text, bandos text, alianzas text);
 create table if not exists partida (id integer primary key, tanda integer, n integer, guardada text,
-    asignacion text, inicio text, fin text, estado text, turnos integer);
+    asignacion text, perfiles text, inicio text, fin text, estado text, turnos integer);
 create table if not exists turno (partida integer, {', '.join(c + ' integer' for c in COL_T)});
 create table if not exists batalla (partida integer, {', '.join(c + ' integer' for c in COL_B)});
 create table if not exists diplo (partida integer, {', '.join(c + ' integer' for c in COL_D)});
@@ -389,11 +389,55 @@ def equipos_de(texto):
     return [set(map(int, e)) for e in texto.split()[1].rstrip(';').split('|')]
 
 
+# Personalidades: 22 bits en +0xc0 del registro de jugador, uno por punto, en el orden del juego (Sagetext.tex);
+# hallados con Tanda_hex_perfiles (TAREAS 38) y confirmados en el exe (ia\PENDIENTE-entrenamiento-ia.md, 25/10/2026).
+PERFIL = 0xc0
+PUNTOS = ['Strong', 'Very Strong', 'Herculean', 'Fast', 'Very Fast', 'Lightning', 'Informed', 'Farseeing', 'Heroic',
+          'Legendary', 'Merchant', 'Famous', 'Renowned', 'Disciplined', 'Resolute', 'Immovable', 'Rich', 'Opulent',
+          'Engineer', 'Artificer', 'Ceremonial', 'Devout']
+# Guardada que arma cada partida con los perfiles rotados (sin "Tanda_": no aparece en la lista del Monitor).
+ROTADA = 'IA_ROTADA'
+
+
+def jugadores(d):
+    """Offsets en el .SAV del registro de cada color que juega."""
+    o = 0x6d + sum(t for _, t in SAV_BLOQUES[:3])
+    return {c: o + c * 0x1f8 for c in range(8) if d[o + c * 0x1f8 + 1]}
+
+
+def perfiles(guardada):
+    """{color: bits de personalidad} de los colores que juegan."""
+    with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
+        d = f.read()
+    return {c: int.from_bytes(d[o + PERFIL:o + PERFIL + 3], 'little') for c, o in jugadores(d).items()}
+
+
+def nombre_perfil(bits):
+    return ' + '.join(n for i, n in enumerate(PUNTOS) if bits >> i & 1) or 'ninguno'
+
+
+def escribir_rotada(guardada, origen):
+    """SAVES\\IA_ROTADA.SAV: la guardada con el perfil de origen[c] en cada color c (el resto, intacto)."""
+    with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
+        d = bytearray(f.read())
+    pf = perfiles(guardada); js = jugadores(d)
+    for c, o in js.items():
+        d[o + PERFIL:o + PERFIL + 3] = pf[origen[c]].to_bytes(3, 'little')
+    with open(os.path.join(JUEGO, 'SAVES', ROTADA + '.SAV'), 'wb') as f:
+        f.write(d)
+
+
 def plan(partidas, guardadas, alianzas_de=None):
     # Con equipos de aliados (specs\ia-alianzas-v1.md, req. 13) la IA se reparte por equipo: la primera partida de cada
     # par le da la IA de prueba a un equipo entero y la segunda al resto; de un par al siguiente de la misma guardada
     # cambia qué equipo va primero. Sin equipos, los PATRONES de siempre.
+    # Guardada con perfiles distintos (ronda de personalidades): la misma IA (original) en todos, y en la partida i
+    # cada color recibe el perfil del color que está i lugares después, así cada perfil pasa por cada ubicación.
     out = []
+    if len(guardadas) == 1 and len(set((pf := perfiles(guardadas[0])).values())) > 1:
+        cs = sorted(pf)
+        return [{'guardada': guardadas[0], 'prueba': [],
+                 'perfiles': {c: cs[(k + i) % len(cs)] for k, c in enumerate(cs)}} for i in range(partidas)]
     for i in range(partidas):
         par = i // 2
         g = guardadas[par % len(guardadas)]
@@ -410,11 +454,20 @@ def plan(partidas, guardadas, alianzas_de=None):
 
 def jugar(db, tid, n, p, a):
     asign = ''.join('P' if c in p['prueba'] else 'O' for c in range(8))
-    pid = db.execute('insert into partida (tanda, n, guardada, asignacion, inicio, estado) values (?,?,?,?,?,?)',
-                     (tid, n, p['guardada'], asign, ahora(), 'jugando')).lastrowid
+    # perfiles: {color: color de la guardada cuyo perfil recibe}; el json vuelve con claves de texto
+    origen = {int(c): o for c, o in p.get('perfiles', {}).items()}
+    pid = db.execute('insert into partida (tanda, n, guardada, asignacion, perfiles, inicio, estado) '
+                     'values (?,?,?,?,?,?,?)', (tid, n, p['guardada'], asign, json.dumps(origen) if origen else None,
+                                               ahora(), 'jugando')).lastrowid
     db.commit()
-    print(f'[{ahora()}] partida {n + 1}: {p["guardada"]}, colores con IA de prueba {p["prueba"]} ({asign})', flush=True)
-    escribir_ini(set(p['prueba']), p['guardada'])
+    if origen:
+        escribir_rotada(p['guardada'], origen)
+        print(f'[{ahora()}] partida {n + 1}: {p["guardada"]}, perfiles ' +
+              ', '.join(f'{COLORES[c]} <- {COLORES[o]}' for c, o in origen.items()), flush=True)
+    else:
+        print(f'[{ahora()}] partida {n + 1}: {p["guardada"]}, colores con IA de prueba {p["prueba"]} ({asign})',
+              flush=True)
+    escribir_ini(set(p['prueba']), ROTADA if origen else p['guardada'])
     cerrar_juego()
     proc = subprocess.Popen([os.path.join(JUEGO, EXE)], cwd=JUEGO)
     mon = monitor_configurado()
@@ -490,6 +543,8 @@ def preparar(a):
     for c in ('parche', 'exe', 'bandos', 'alianzas'):   # bases anteriores al registro de parche, bandos y alianzas
         if c not in cols:
             db.execute(f'alter table tanda add column {c} text')
+    if 'perfiles' not in [r[1] for r in db.execute('pragma table_info(partida)')]:   # bases anteriores al 25/10/2026
+        db.execute('alter table partida add column perfiles text')
     if 'colores_d' not in [r[1] for r in db.execute('pragma table_info(batalla)')]:   # bases anteriores a 1.0.33.0
         db.execute('alter table batalla add column colores_d integer')
     ver, exe = parche_actual()

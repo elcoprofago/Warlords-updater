@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.13'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.14'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -348,6 +348,13 @@ class Monitor(tk.Tk):
         self.pintar_icono(self.b_susp)
 
     @staticmethod
+    def con_perfiles(g):
+        try:
+            return len(set(tanda.perfiles(g).values())) > 1
+        except (OSError, IndexError):
+            return False
+
+    @staticmethod
     def con_alianzas(g):
         try:
             return tanda.alianzas(g).startswith('equipos')
@@ -377,7 +384,8 @@ class Monitor(tk.Tk):
         sb = ttk.Scrollbar(lf, command=lb.yview); lb['yscrollcommand'] = sb.set
         sb.pack(side='right', fill='y'); lb.pack(side='left', fill='both', expand=True)
         for i, g in enumerate(todas):
-            lb.insert('end', g.removeprefix('Tanda_') + ('  (alianzas)' if self.con_alianzas(g) else ''))
+            lb.insert('end', g.removeprefix('Tanda_') + ('  (alianzas)' if self.con_alianzas(g) else '')
+                      + ('  (perfiles)' if self.con_perfiles(g) else ''))
             if g in self.guardadas:
                 lb.selection_set(i)
         bf = ttk.Frame(v); bf.pack(fill='x', padx=8, pady=6)

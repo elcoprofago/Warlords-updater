@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 41).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 42).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+- **Tarea 41** (tanda de personalidades): cuando la PC esté libre unas 9 horas.
 - **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
@@ -14,6 +15,15 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 40** (misión de puentes y trampas de 2 explosiones), **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.14, 25/10/2026)
+Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
+1. Abrí el Monitor de IA: tiene que decir **1.0.14** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_perfiles_SR** (tiene que aparecer «(perfiles)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. La bitácora tiene que mostrar en cada partida «perfiles blanco <- …»: es el perfil que recibe cada color.
+4. Avisame cuando termine: la analizo.
+Resultado:
 
 - [ ] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026)
 Todos actualizan antes con el Actualizador (opción del parche vista aliada).

@@ -76,6 +76,34 @@ def main(tid=None):
               f'{perdidos[ia]:8} {desang[ia]:8}')
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
     alianzas(db, tid, validas, cuenta)
+    perfiles(db, validas)
+
+
+def perfiles(db, validas):
+    """Ronda de personalidades: resultado por perfil (el de cada color de la guardada), sea cual sea la ubicación."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select id, guardada, perfiles from partida where id in ({q}) and perfiles is not null',
+                       validas).fetchall()
+    if not filas:
+        return
+    import tanda
+    nombres = {}; suma = defaultdict(lambda: [0, 0, 0, 0])   # partidas, ganadas, PV, eliminado
+    for pid, g, txt in filas:
+        if g not in nombres:
+            try:
+                nombres[g] = {c: tanda.nombre_perfil(b) for c, b in tanda.perfiles(g).items()}
+            except OSError:
+                nombres[g] = {}
+        origen = {int(c): o for c, o in json.loads(txt).items()}
+        prim = [c for (c,) in db.execute('select color from resultado where partida=? and puesto=1', (pid,))]
+        for color, pv, elim in db.execute('select color, pv, eliminado_turno from resultado where partida=?', (pid,)):
+            k = (g, origen.get(color, color)); t = suma[k]
+            t[0] += 1; t[1] += prim == [color]; t[2] += pv or 0; t[3] += elim is not None
+    print('\nPersonalidades (por perfil, rotado entre ubicaciones; ganadas = único primer puesto)')
+    print(f'{"perfil (color de la guardada)":58} {"partidas":>8} {"ganadas":>7} {"PV":>6} {"elimin.":>7}')
+    for (g, o), (n, gan, pv, el) in sorted(suma.items(), key=lambda kv: (-kv[1][1], -kv[1][2])):
+        nom = f'{tanda.COLORES[o]}: {nombres[g].get(o, "?")}'
+        print(f'{nom:58} {n:8} {gan:7} {pv / n:6.1f} {el:7}')
 
 
 def equipos_de(texto):

@@ -726,7 +726,13 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   (0xb08fe, 0xb0a58). Los héroes, 8/9, mismo esquema (0x4fb2d). Coincide con Sagetext.tex y la tabla del clan. Sin verificar:
   si el juego deriva otros campos de estos bits al arrancar (+0xe2..0xe4 también cambian entre colores); la primera
   partida con perfiles rotados tiene que mostrar en el juego el perfil escrito.
-- Próximo paso: con la guardada y la lista de perfiles de TAREAS 38, mapear los bytes y sumar a tanda.py la
-  rotación de perfiles. Si no se pudieran escribir, plan B: serie sin rotar más una serie de control con
-  personalidades iguales, para descontar el peso de cada ubicación.
+- Hecho (25/10/2026, Monitor 1.0.14): con una sola guardada de perfiles distintos, tanda.plan juega todos con la
+  IA original y en la partida i le da a cada color el perfil del color i lugares después (6 partidas = una vuelta
+  completa); jugar escribe SAVES\IA_ROTADA.SAV (solo cambian los bytes +0xc0..0xc2) y la carga; partida.perfiles
+  guarda {color: color de origen del perfil}; informe.py suma ganadas y PV por perfil. Guardada:
+  Tanda_hex_perfiles_SR (sin_ruinas.py: tenía 47 ruinas aunque la opción estuviera apagada). El oro del turno 1
+  difiere por color (blanco y amarillo 64, rojo 119, verde, azul y negro 244): queda con la ubicación, la rotación
+  lo reparte. Sin verificar: si alguna personalidad ya se aplicó a las unidades iniciales al armar la partida
+  (Immovable/Strong guardados en el ejército); si fuera así, esas unidades conservan el bono del perfil original.
+- Próximo paso: TAREAS 41 (5 tandas de 6) y analizar por perfil.
 
