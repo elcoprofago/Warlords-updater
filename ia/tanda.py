@@ -441,13 +441,22 @@ def escribir_rotada(guardada, origen):
         f.write(d)
 
 
+def es_control(guardada):
+    return '_control' in guardada.lower()
+
+
 def plan(partidas, guardadas, alianzas_de=None):
     # Con equipos de aliados (specs\ia-alianzas-v1.md, req. 13) la IA se reparte por equipo: la primera partida de cada
     # par le da la IA de prueba a un equipo entero y la segunda al resto; de un par al siguiente de la misma guardada
     # cambia qué equipo va primero. Sin equipos, los PATRONES de siempre.
     # Guardada con perfiles distintos (ronda de personalidades): la misma IA (original) en todos, y en la partida i
     # cada color recibe el perfil del color que está i lugares después, así cada perfil pasa por cada ubicación.
+    # Guardada de control (nombre con "_control", ia\PENDIENTE-mapa-pruebas.md paso 4): el mismo perfil en todos los
+    # colores y la misma IA; cada color conserva el suyo y escribir_rotada solo quita las alianzas.
     out = []
+    if len(guardadas) == 1 and es_control(guardadas[0]):
+        cs = sorted(perfiles(guardadas[0]))
+        return [{'guardada': guardadas[0], 'prueba': [], 'perfiles': {c: c for c in cs}} for _ in range(partidas)]
     if len(guardadas) == 1 and len(set((pf := perfiles(guardadas[0])).values())) > 1:
         cs = sorted(pf)
         return [{'guardada': guardadas[0], 'prueba': [],

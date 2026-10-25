@@ -89,4 +89,13 @@ de prueba descartado (no quedó en el repo); las guardadas de prueba se borraron
    Hace falta una opción en tanda.py para escribir un solo perfil en todos (hoy escribir_rotada solo rota). Si la
    ventaja de blanco y amarillo sigue, viene del orden de turno o de la IA, no de los perfiles; si desaparece, el
    desnivel de la serie 65-69 es interacción entre perfiles vecinos.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 4".
+
+## Paso 4: preparado (25/10/2026)
+- Guardada **Tanda_hex_control** (solo en SAVES del juego, como las demás): Tanda_hex_perfiles_SR con Artificer +
+  Devout (el perfil del negro) en los seis colores; nada más cambiado.
+- tanda.py: una guardada con «_control» en el nombre (es_control) juega sola con la IA original en todos, cada color
+  con su propio perfil, y escribir_rotada solo quita las alianzas. Probado: plan de 30, IA_ROTADA con los seis
+  perfiles iguales y «sin alianzas»; la de perfiles sigue rotando. Monitor de IA 1.0.17 la marca «(control)».
+- Falta: que el usuario corra la tanda (TAREAS 43) y analizarla: victorias y PV promedio por color contra la serie
+  65-69 (amarillo 28.3 PV, verde 2.9).
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 4: analizar la tanda de control".
