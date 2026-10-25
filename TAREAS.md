@@ -30,25 +30,6 @@ Todos actualizan antes con el Actualizador (opción del parche vista aliada).
 3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
 Resultado: las trampas ahora explotan 2 veces. 
 
-- [x] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
-En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».
-Es un falso positivo: lo corrige Microsoft, no nosotros. El envío lo hacés vos desde tu PC; tu amigo solo
-tiene que hacer el paso 6.
-1. ~~Nombre de la amenaza~~ — hecho: **`Trojan:Script/Wacatac.H!ml`** (24/10/2026 15:50, en la PC de tu amigo).
-   El «!ml» quiere decir que lo marcó la inteligencia artificial de Defender por parecido, no una firma de virus real.
-2. En tu PC, tomá el **zip** (es lo que Defender bloqueó):
-   `F:\source
-   `F:\source\repos\actualizador-warlords\Actualizador-v.1.0.13.0.exe.zip`.
-3. Entrá a https://www.microsoft.com/wdsi/filesubmission, iniciá sesión con tu cuenta Microsoft y elegí
-   **Software developer**.
-4. Producto: **Microsoft Defender Antivirus**. Subí el zip. Marcá **Incorrectly detected as malware**.
-   En «Detection name» poné `Trojan:Script/Wacatac.H!ml`. En comentarios: «Updater for the game Warlords III, made by
-   me, downloads game files from GitHub. False positive.»
-5. Anotá abajo el número de envío. Microsoft responde por mail, en general en 1 a 3 días.
-6. Cuando digan que está corregido, avisale a tu amigo que en su PC vaya a Seguridad de Windows → Actualizaciones de protección
-   → **Buscar actualizaciones**, y vuelva a bajar el zip.
-Resultado:
-
 - [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
 Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
 1. En otra PC del clan, abrí el Actualizador y elegí la opción **9** → vista-aliada.
@@ -107,6 +88,27 @@ Resultado:
 
 
 # Hecho
+
+- [x] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
+En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».
+Es un falso positivo: lo corrige Microsoft, no nosotros. El envío lo hacés vos desde tu PC; tu amigo solo
+tiene que hacer el paso 6.
+1. ~~Nombre de la amenaza~~ — hecho: **`Trojan:Script/Wacatac.H!ml`** (24/10/2026 15:50, en la PC de tu amigo).
+   El «!ml» quiere decir que lo marcó la inteligencia artificial de Defender por parecido, no una firma de virus real.
+2. En tu PC, tomá el **zip** (es lo que Defender bloqueó):
+   `F:\source\repos\actualizador-warlords\Actualizador-v.1.0.13.0.exe.zip`.
+3. Entrá a https://www.microsoft.com/wdsi/filesubmission, iniciá sesión con tu cuenta Microsoft y elegí
+   **Software developer**.
+4. Producto: **Microsoft Defender Antivirus**. Subí el zip. Marcá **Incorrectly detected as malware**.
+   En «Detection name» poné `Trojan:Script/Wacatac.H!ml`. En comentarios: «Updater for the game Warlords III, made by
+   me, downloads game files from GitHub. False positive.»
+5. Anotá abajo el número de envío. Microsoft responde por mail, en general en 1 a 3 días.
+6. Cuando digan que está corregido, avisale a tu amigo que en su PC vaya a Seguridad de Windows → Actualizaciones de protección
+   → **Buscar actualizaciones**, y vuelva a bajar el zip.
+Resultado (25/10/2026): enviado, https://www.microsoft.com/en-us/wdsi/submission/aeea912a-5a2b-4e54-b98c-41a4bcb2c446
+  Microsoft ya no detecta nada ni en el zip ni en el .exe (en la nube y con definiciones 1.461.190.0). El
+  veredicto final de su analista figura «Pending». Paso 6 (tu amigo actualiza Defender y vuelve a bajar el zip):
+  sin confirmar.
 
 - [x] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.16 y vista aliada 1.0.71.0, 25/10/2026)
 Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
