@@ -720,8 +720,10 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   clan: 0 Strong, 1 Very Strong, 2 Herculean, 3 Fast, 4 Very Fast, 5 Lightning, 6 Informed, 7 Farseeing, 8 Heroic,
   9 Legendary, 10 Merchant, 11 Famous, 12 Renowned, 13 Disciplined, 14 Resolute, 15 Immovable, 16 Rich, 17 Opulent,
   18 Engineer, 19 Artificer, 20 Ceremonial, 21 Devout. Los 6 colores coinciden bit a bit con lo que asignó el
-  usuario (blanco 0x12, amarillo 0x8000, rojo 0x10e00, verde 0x51100, azul 0x2001, negro 0x280000). Ojo: 10 y 11
-  (Merchant/Famous) salen del orden de la lista, no de un caso que los separe (rojo tiene los dos). Sin verificar:
+  usuario (blanco 0x12, amarillo 0x8000, rojo 0x10e00, verde 0x51100, azul 0x2001, negro 0x280000). 10 y 11 (Merchant/
+  Famous) confirmados en Darklord.exe: el bit 10 solo divide un precio por 5 (80%, 0x74990), y el 11 va de a par con
+  el 12: 12 divide por 5 y 11 multiplica por 3/5 (40%), igual que los descuentos de mercenarios Famous/Renowned
+  (0xb08fe, 0xb0a58). Los héroes, 8/9, mismo esquema (0x4fb2d). Coincide con Sagetext.tex y la tabla del clan. Sin verificar:
   si el juego deriva otros campos de estos bits al arrancar (+0xe2..0xe4 también cambian entre colores); la primera
   partida con perfiles rotados tiene que mostrar en el juego el perfil escrito.
 - Próximo paso: con la guardada y la lista de perfiles de TAREAS 38, mapear los bytes y sumar a tanda.py la
