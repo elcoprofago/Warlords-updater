@@ -55,10 +55,38 @@ ganar, así que cada perfil tiene en la práctica 10 oportunidades, no 30. Detal
   Sin verificar cuál de estas causas pesa. Hipótesis principal: la tropa red_scav ya comprada y el arranque antes que
   los demás.
 
-## Próximo paso (reemplaza los pasos 2 y 3)
+## Próximo paso del paso 1 (superado: ver «Paso 2: resultado»)
 2. Armar la guardada pareja desde Tanda_hex_perfiles_SR: dejar las seis capitales iguales (mismas tropas, +0xa6 y
    +0xce..+0xdd, sin red_scav ni bladerun), el oro en 244 y, si se puede, la partida al principio del turno 1 sin
    que nadie haya jugado. Si esto último no se logra editando, guardar una partida nueva de Hexagon antes de mover.
 3. Con eso, el paso 4 (tanda de control) dice si alcanza; el orden de turno no se puede igualar y ahí se mide cuánto
    pesa.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 2".
+## Paso 2: resultado (25/10/2026) — la guardada no se puede emparejar editándola, y no hace falta
+Tandas de prueba 71 a 75 (partidas 449 a 463, de juguete, tope 1-3 turnos; no cuentan para ningún análisis). Script
+de prueba descartado (no quedó en el repo); las guardadas de prueba se borraron.
+- Lo que se probó, un cambio por guardada (bisección contra Tanda_hex_perfiles_SR):
+  - capitales copiadas de la del negro (+0xa6..+0xdd): carga y juega;
+  - oro de todos en 244: carga y juega;
+  - quitar los 3 ejércitos de jugadores (registros 68-70 de 0x54fe52 + i*0x1c, cantidad [0x54fe50] 71 -> 68; +9 =
+    0xff en los de jugador, dueño en los bits 5-8 de la palabra +0xc, 0x10 = héroe): carga y juega;
+  - cambiar [0x537ce8] (3 -> 0) o el control del rojo (+0xe2, 0xffff -> 2): **se cuelga al cargar**, cada uno solo.
+    Moviendo los dos juntos (control 0xffff al color de [0x537ce8]) carga.
+- **El rojo es el humano**: control 0xffff y [0x537ce8] = 3 en todas las guardadas de tanda (Tanda_Kor, Scarpart y
+  hasta 0001). El usuario arma las guardadas jugando con el rojo; blanco y amarillo (computadora) ya jugaron su turno 1
+  al guardar. La tanda pasa el rojo a la IA al cargar.
+- Con todo junto (y también con el turno de la cabecera, +0x50, en 0 y el negro como color en juego) el juego retoma
+  el turno 1 **después del rojo**: verde, azul y negro arrancan su turno (héroe, compra); blanco, amarillo y rojo no
+  vuelven a tener arranque de turno 1, quedan sin héroe 2-3 turnos y juntan oro sin comprar. Quedó **más** desparejo.
+  El arranque de turno no se puede rehacer editando.
+- Y la guardada original ya era pareja en lo que importa: en la partida 448 los seis colores salen del turno 1 con un
+  héroe y una compra (oro al empezar el turno 2: blanco 64, amarillo 64, rojo 119, verde 69/144, azul 114, negro 64).
+  Lo de «blanco y amarillo ya jugaron» no es ventaja: los demás juegan el mismo turno 1 enseguida.
+- Conclusión: ni el mapa (paso 1) ni el estado de la guardada explican que blanco y amarillo ganen 29 de 30. Queda el
+  orden de turno, el azar de cada partida y la interacción con los perfiles.
+
+## Próximo paso (reemplaza al anterior)
+4. Tanda de control directamente sobre Tanda_hex_perfiles_SR: **el mismo perfil en los seis colores**, 30 partidas.
+   Hace falta una opción en tanda.py para escribir un solo perfil en todos (hoy escribir_rotada solo rota). Si la
+   ventaja de blanco y amarillo sigue, viene del orden de turno o de la IA, no de los perfiles; si desaparece, el
+   desnivel de la serie 65-69 es interacción entre perfiles vecinos.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 4".
