@@ -34,4 +34,7 @@ Estudio profundo: recorrer cada función, orden y rutina del exe que interviene.
 - Commitear, y anotar en TAREAS.md la tarea de leerlo.
 
 ## Estado
-Nada empezado todavía.
+Hecho (25/10/2026): `manualnexo-ianexo.html` + `build.py` → `manual\Anexo-IA.pdf` (22 páginas). Lectura en TAREAS 42.
+Quedó sin ubicar (capítulo 16 del anexo): cómo reparte puntos «AI Chooses Personalities», qué es «Loot» (0x56219e),
+los umbrales de «media/completa» pila al atacar, la estimación de batalla y las condiciones completas del modo rendición.
+No se halló rutina de la computadora que envíe oro o soborne. Próximo paso: según lo que marque el usuario.

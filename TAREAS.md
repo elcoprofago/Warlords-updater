@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 42).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 43).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,13 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 40** (misión de puentes y trampas de 2 explosiones), **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
+Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
+computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
+1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
+2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
+Resultado:
 
 - [ ] **41.** IA: tanda de personalidades en Hexagon (Monitor de IA 1.0.16 y vista aliada 1.0.71.0, 25/10/2026)
 Cada partida cambia los perfiles de color, así cada perfil juega una vez desde cada lugar del mapa.
