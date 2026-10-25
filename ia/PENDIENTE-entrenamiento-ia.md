@@ -739,3 +739,10 @@ de ataque, amarillo = mucho movimiento, naranja = héroes y mercenarios más bar
   escribir_rotada pone guerra (1) entre todos los colores, vigentes y propuestas.
 - Próximo paso: TAREAS 41 (5 tandas de 6) y analizar por perfil.
 
+
+## Tandas sin alianzas: el juego alía a todas las computadoras contra el humano (25/10/2026)
+Con la diplomacia apagada, en el turno de cada computadora el juego llama a 0x49fec0 desde 0x4476d9: propone guerra
+a los humanos y alianza a toda computadora (+0xe2 = 2). Es del juego original. En una tanda no hay humanos, así que
+se aliaban todos y llegaba la «victoria aliada» en el turno 3 (tanda 53). vista-aliada 1.0.71.0 (ia_nodip) saltea esa
+llamada en modo tanda; probado en la tanda 64: llegó al tope sin una sola alianza ni paz. Tandas 54 a 64 anuladas
+(pruebas). Encender la diplomacia no sirve: la IA cambia relaciones a cada rato.
