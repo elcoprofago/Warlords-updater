@@ -425,12 +425,18 @@ def escribir_rotada(guardada, origen):
         d[o + PERFIL:o + PERFIL + 3] = pf[origen[c]].to_bytes(3, 'little')
     # Todos contra todos: la guardada puede traer alianzas de otra partida armada antes aunque la diplomacia esté
     # apagada (Tanda_hex_perfiles: 01457 aliados), y con eso el juego da victoria aliada al turno 3 (25/10/2026).
-    # Se escribe guerra (1, como en Tanda_Kor) en las vigentes y en las propuestas.
+    # Se escribe guerra (2; 0 aliados, 1 paz: parches\vista-aliada\build.py, DIPLO) en las vigentes y en las propuestas.
+    # Con paz (1.0.15) la IA se aliaba enseguida y seguía la victoria aliada. La fila guarda además dos tablas de
+    # palabras por color (+18 y +36) que con la alianza valen 0 y -25 y sin ella 50 y 40: si quedan, la IA vuelve a
+    # aliarse en el turno 2 aunque las relaciones digan guerra (partida 408).
     o = 0x6d + sum(t for _, t in SAV_BLOQUES[:3]) + 0x55ee4c - SAV_BLOQUES[3][0]
     for x in js:
         for y in js:
             if x != y:
-                d[o + x * 56 + y] = d[o + x * 56 + 9 + y] = 1
+                f = o + x * 56
+                d[f + y] = d[f + 9 + y] = 2
+                d[f + 18 + 2 * y:f + 20 + 2 * y] = (50).to_bytes(2, 'little')
+                d[f + 36 + 2 * y:f + 38 + 2 * y] = (40).to_bytes(2, 'little')
     with open(os.path.join(JUEGO, 'SAVES', ROTADA + '.SAV'), 'wb') as f:
         f.write(d)
 

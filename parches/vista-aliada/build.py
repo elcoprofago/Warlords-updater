@@ -11697,6 +11697,19 @@ ic_back:
     jmp 0x422381
 ''')
 
+# Tandas sin alianzas: con la diplomacia apagada, en el turno de cada bando de la computadora el juego llama a
+# 0x49fec0 (en 0x4476d9), que propone guerra a los humanos (+0xe2 = -1) y alianza a todos los bandos de la computadora
+# (+0xe2 = 2): la computadora se une contra el humano. En una tanda no queda ningún humano (ia_compu los pasa a 2), así
+# que todos se aliaban en dos turnos y el juego daba victoria aliada al turno 3 (Tanda_hex_perfiles, 25/10/2026). Si
+# la partida se cargó por [Tanda] (ia_tname no vacío) no se llama; en una partida normal sigue igual que el original.
+ia_nodip = place('ia_nodip', f'''
+    cmp byte ptr [{IA_TNAME:#x}], 0
+    jne ind_skip
+    jmp 0x49fec0
+ind_skip:
+    ret
+''')
+
 # Tandas en segundo plano: al perder el foco (CWnd::OnActivate, 0x4ed400, nState = WA_INACTIVE) el juego se pausa
 # ([obj+0x13d] = 1 vía 0x4de090) hasta recuperarlo, así que una tanda se detenía apenas el usuario usaba otra ventana.
 # Si la partida se cargó por [Tanda] (ia_tname no vacío) se saltea esa rama y el juego sigue jugando sin foco.
@@ -11943,6 +11956,7 @@ patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
 patch(0x4ed415, asm('test esi, esi; jne 0x4ed477; cmp byte ptr [0x501280], 0', 0x4ed415), asm(f'jmp {ia_bg:#x}', 0x4ed415))
+patch(0x4476d9, asm('call 0x49fec0', 0x4476d9), asm(f'call {ia_nodip:#x}', 0x4476d9))
 # Espacio libre (0x4e0770): sectores por clúster × bytes por sector × clústeres libres en 32 bits; con discos de
 # decenas de GB el producto se desborda y, según lo libre que haya, el juego avisa "You are low on disk space" al
 # arrancar y espera un clic (una tanda quedaba ahí, sin ventana del juego). Si GetDiskFreeSpaceA respondió, informa
