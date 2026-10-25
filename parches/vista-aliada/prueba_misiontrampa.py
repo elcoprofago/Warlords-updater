@@ -22,7 +22,7 @@ def load(path):
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
 ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
-PO_MAX, PO_REC, PO_TRAMPA, PO_POZO, QT, TR_USOS = 64, 8, 2, 0, 13, 3
+PO_MAX, PO_REC, PO_TRAMPA, PO_POZO, QT, TR_USOS = 64, 8, 2, 0, 13, 2
 PO_SAVE = AV[0] + AV[1].index(b'POZO' + bytes(4 + PO_MAX * PO_REC)); PO_N, PO_TAB = PO_SAVE + 4, PO_SAVE + 8
 k = AV[1].index(bytes.fromhex('6031db0fb683'))                 # po_fall: pushad; xor ebx, ebx; movzx eax, byte [ebx + po_pend]
 assert AV[1].find(bytes.fromhex('6031db0fb683'), k + 1) < 0
@@ -246,9 +246,9 @@ for nombre, traps, a, st in [('turno: trampa entera, sigue', TRAPS, 0, 0),
                              ('turno: detonada por él, sigue', DET0, 1, 0),
                              ('turno: detonada otra trampa, sigue', det(TRAPS, 8), 0, 0),
                              ('turno: explotó 1 vez por otro, le quedan usos, sigue', det(TRAPS, 0, 1), 0, 0),
-                             ('turno: explotó 2 veces por otro, le queda 1, sigue', det(TRAPS, 0, 2), 0, 0),
-                             ('turno: recién explotada (bit 7, jugador 3) con 2, sigue', det(TRAPS, 0, 0xb2), 0, 0),
-                             ('turno: recién gastada (bit 7, jugador 3), fracasa', det(TRAPS, 0, 0xb3), 0, 2)]:
+                             ('turno: explotó 2 veces por otro, gastada, fracasa', det(TRAPS, 0, 2), 0, 2),
+                             ('turno: recién explotada (bit 7, jugador 3) con 1, sigue', det(TRAPS, 0, 0xb1), 0, 0),
+                             ('turno: recién gastada (bit 7, jugador 3), fracasa', det(TRAPS, 0, 0xb2), 0, 2)]:
     b = with_quest(0, a, traps=traps)
     end = b.run(0x461a60, (0, 0, 0, 0, 0, 1))
     check(nombre, end == END and b.saved_ok() and b.status() == st, f'status={b.status()}')

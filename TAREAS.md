@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 40).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 41).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,9 +12,17 @@ Sorteo están acá (tarea 18).
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP»).
+4. En la próxima partida en red: **tarea 40** (misión de puentes y trampas de 2 explosiones), **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026)
+Todos actualizan antes con el Actualizador (opción del parche vista aliada).
+1. Con un héroe, aceptá una misión «destruir el puente…». Pasá 2 o 3 turnos: la línea naranja del minimapa
+   tiene que apuntar siempre al mismo puente, y al llegar el puente tiene que estar ahí.
+2. Elegir la opción de destruir el puente no tiene que colgar el juego.
+3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
+Resultado:
 
 - [ ] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
 En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».

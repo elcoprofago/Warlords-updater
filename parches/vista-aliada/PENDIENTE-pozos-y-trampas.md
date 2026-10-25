@@ -431,3 +431,9 @@ cuatro listas fijas hechas solo con ítems originales: por eso nunca salían los
 8 especiales (ITEM.INI). La tabla de ítems de la partida (0x55cb74) tiene lugar para 40; no se agranda. Desde
 1.0.67.0 (`ri_go`), después de la copia se reemplazan los 32 primeros por un sorteo sin repetición entre todos los
 `ITEMS\*.ITM`, con porcentaje 100 y sin repetir los especiales. Prueba: `prueba_items_azar.py`.
+
+## Dos explosiones en vez de tres (1.0.70.0, 24/10/2026)
+Pedido del usuario: el clan consideró excesivas las tres detonaciones; pasan a dos, tanto la trampa de tierra como la
+mina submarina. Solo cambia TR_USOS (3 → 2): todo lo demás lo usa. Una trampa de un .SAV anterior que ya llevaba 2
+explosiones queda gastada. Pruebas: `prueba_misiontrampa.py` ajustada a 2 usos, `prueba_pozos.py` y
+`prueba_trampas.py`: TODO OK. El Manual dice «explota dos veces».

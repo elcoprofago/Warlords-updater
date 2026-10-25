@@ -264,14 +264,14 @@ ver('trampa: cae hasta el dueño; lleva 1 explosión, recién explotada por el 3
 ver('trampa: suena Burst (sonido 56) y el grito', r[2], [('fx', 56), 7])
 ver('control: sin la opción de sonido, sin Burst', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3, snd=0)[2], [7])
 ver('control: en otra PC, la trampa no suena', caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=1)[2], [])
-for k in (1, 2):
+for k in (1,):
     t = POZOS[:2] + [(15, 15, 2, k, 0, 3)] + POZOS[3:]
     r = caer(t, [(15, 15, 2, 0, 0)], [(2, 15, 15)])
-    ver(f'trampa con {k} explosión(es): mata otra vez y suma una', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa0 | k + 1, 0x04)))
+    ver(f'trampa con {k} explosión: mata otra vez y suma una', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa0 | k + 1, 0x04)))
 r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
 ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
-ver('SAV viejo: trampa detonada (+5 = 1) mata de nuevo, le quedan 2 usos', (r[0], r[1]), ([(1, 0)], ['Your army fell into a trap!']))
+ver('SAV viejo: trampa detonada (+5 = 1) mata de nuevo, le queda 1 uso', (r[0], r[1]), ([(1, 0)], ['Your army fell into a trap!']))
 r = caer(POZOS, [(15, 15, 2, 0, 0), (15, 15, 2, 0, 1)], [(2, 15, 15)], agua=[(15, 15)])
 ver('mina submarina: se hunde lo que no vuela, con 1 (como el remolino), y suma una', (r[0], r[1], r[3][2][3]),
     ([(1, 1)], ['Your army fell into a trap!'], 0xa1))
@@ -442,7 +442,7 @@ ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[
 ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])
 ver('control: trampa de otro (no aliado): no', dibujar(en(2, d=3))[0], [])
 ver('trampa ajena descubierta: se ve', dibujar(en(2, m=0x04, d=3))[0][0][0], 5)
-ver('trampa con 1 o 2 explosiones (turno siguiente): la mina (cuadro 5)', [dibujar(en(2, k, 0x04, 3))[0][0][0] for k in (1, 2)], [5, 5])
+ver('trampa con 1 explosión (turno siguiente): la mina (cuadro 5); con 2, gastada: agujero (6)', [dibujar(en(2, k, 0x04, 3))[0][0][0] for k in (1, 2)], [5, 6])
 ver('recién explotada: agujero con humo, 6 + fase', [dibujar(en(2, 0xa1, 0x04, 3), fase=f)[0][0][0] for f in range(5)], [6, 7, 8, 9, 6])
 ver('control: recién explotada, quien no la descubrió no la ve', dibujar(en(2, 0xa1, 0x08, 3))[0], [])
 ver('gastada: agujero con humo para todos, aunque no la hayan descubierto',

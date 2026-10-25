@@ -4710,6 +4710,28 @@ qba1_bridge:
     shr eax, 7
     jmp 0x436199
 ''')
+# qb_line: la línea naranja del mapa hasta el objetivo de la misión (0x414090, caso del tipo 10 en 0x41424a) leía
+# x, y en la tabla de sitios con el código del puente como índice, fuera de la tabla: el destino salía de basura
+# que cambiaba de turno en turno (en el agua) o el juego se colgaba al aceptar la misión. Para un puente, su casilla.
+qb_line = place('qb_line', f'''
+    movsx eax, word ptr [edi + 6]
+    push 0x48
+    cmp eax, {BR_CODE:#x}
+    jge qbl_bridge
+    lea eax, [eax + eax*4]
+    add eax, eax
+    lea ecx, [eax + eax*2]
+    mov di, word ptr [ecx + ecx*4 + 0x55acb6]
+    lea eax, [ecx + ecx*4]
+    mov ax, word ptr [eax + 0x55acb8]
+    jmp 0x41426a
+qbl_bridge:
+    sub eax, {BR_CODE:#x}
+    mov edi, eax
+    and edi, 0x7f
+    shr eax, 7
+    jmp 0x41426a
+''')
 qb_ailoc2 = place('qb_ailoc2', f'''
     mov word ptr [ebx], cx
     movsx ecx, cx
@@ -7028,8 +7050,9 @@ PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tu
 # mientras lleve menos de TR_USOS; gastada, no mata ni se descubre, y queda a la vista de todos como agujero con humo
 # hasta el final (pedido del usuario, 22/10/2026). Bit 7 (TR_RECIEN): explotó y su jugador (bits 4-6) todavía no
 # empezó otro turno; mientras tanto, quien la ve, ve el agujero con humo, y después de nuevo la mina (tr_turn).
-# Un .SAV de antes trae 1 en las detonadas: les quedan 2 usos.
-TR_USOS, TR_CUENTA, TR_RECIEN = 3, 0x0f, 0x80
+# Un .SAV de antes trae 1 en las detonadas: les queda 1 uso. Desde 1.0.70.0 son 2 explosiones, no 3 (pedido del
+# usuario, 24/10/2026: tres era excesivo); una trampa que ya llevaba 2 queda gastada.
+TR_USOS, TR_CUENTA, TR_RECIEN = 2, 0x0f, 0x80
 PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
 po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
 PO_SAVELEN = 8 + PO_MAX * PO_REC
@@ -12021,6 +12044,7 @@ patch(0x460dfb, bytes.fromhex('6685ff0f8e9c010000'), asm(f'jmp {qb_gen:#x}', 0x4
 patch(0x461336, bytes.fromhex('516a42b980985800e8eddb0700'), asm(f'jmp {qb_name:#x}', 0x461336))
 patch(0x461876, bytes.fromhex('0fbf47068d048003c08d0c408d0489'), asm(f'jmp {qb_text:#x}', 0x461876))
 patch(0x461c80, bytes.fromhex('0fbf46068d048003c08d144080bc924bad550000740d'), asm(f'jmp {qb_fail:#x}', 0x461c80))
+patch(0x41424a, rel(0x41424a, 0x41426a - 0x41424a), asm(f'jmp {qb_line:#x}', 0x41424a))
 # Misión «escoltar al equipo que desarma una trampa» (qt_*)
 patch(0x45f4f6, bytes.fromhex('6aff6a066a01e81ff607000fbfc083c40c83f8050f875f080000ff24851c104600'),
       asm(f'jmp {qt_hard:#x}', 0x45f4f6))

@@ -67,6 +67,15 @@ puntaje, nivel y recompensa como las demás.
 - Sin puentes que ofrecer, el generador da exactamente lo mismo que el original. Desde 1.0.21.0 vale también para
   los jugadores de la computadora (parte D, paso 1).
 
+**Corregido en 1.0.70.0 (24/10/2026): la línea naranja y el cuelgue.** Nico reportó que con una misión de puente
+la línea naranja del mapa cambiaba de dirección cada turno y llevaba al medio del agua, y que otra vez el juego se colgó
+al elegir la misión. Causa: la función que dibuja esa línea (0x414090, caso del tipo 10 en 0x41424a) leía x, y del
+objetivo en la tabla de sitios con el código del puente como índice, fuera de la tabla: basura que cambiaba, o una
+lectura de memoria inexistente (el cuelgue). Se había revisado lo que lee el tipo 10 en el generador, el texto, el
+fracaso y la IA, pero no el dibujo. qb_line da la casilla del puente. Prueba: `prueba_lineamision.py` (contra el exe
+anterior reproduce la lectura inválida; con el arreglo, la casilla del puente, y los sitios iguales al original). Los
+demás lectores del objetivo de misión en el exe (0x41d31b, 0x4c515b y los de tipos 4, 7 y 8) solo lo comparan.
+
 **Diferencias con el plan**
 - Los textos ("Destroying a Bridge", "%s must destroy %s, near %s." y "%s must destroy %s.") van como cadenas del
   exe, igual que los demás textos de puentes, no en WAR3AV.RES.
