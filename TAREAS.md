@@ -15,7 +15,16 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **58.** Probar camo en ciudades y Día/Noche con Hidden Map (vista aliada 1.0.85.0, 26/10/2026)
+- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
+Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Avisame cuando termine: la analizo.
+
+# Hecho
+
+- [x] **58.** Probar camo en ciudades y Día/Noche con Hidden Map (vista aliada 1.0.85.0, 26/10/2026)
 Cambios: dentro de una ciudad el grupo «camo» se ve normal (la ciudad está iluminada). Y Día/Noche ya se puede
 marcar junto con Hidden Map: de noche, lo no explorado sigue negro y lo explorado se oscurece con los halos; una
 ciudad, ruina o sitio que todavía no exploraste no alumbra (para que su halo no delate dónde está).
@@ -25,15 +34,7 @@ ciudad, ruina o sitio que todavía no exploraste no alumbra (para que su halo no
    enemiga que no viste: no tiene que aparecer un halo saliendo del negro.
 4. Meté el grupo «camo» en una ciudad de noche: se tiene que ver normal; al salir, verdoso otra vez.
 5. Mirá también el minimapa y el Army Report de noche.
-
-- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
-Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
-1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
-2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. Avisame cuando termine: la analizo.
-
-# Hecho
+Resultado (26/10/2026): se ve perfecto en modo Hidden Map.
 
 - [x] **57.** Probar el camuflaje más verde (vista aliada 1.0.84.0, 26/10/2026)
 Cambio: la paleta del juego no tiene grises verdosos, así que la figura camuflada mezcla tonos de verde oscuro con
