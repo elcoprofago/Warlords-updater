@@ -1,4 +1,4 @@
-# Bono «nightmare» (pedido del usuario, 26/10/2026; hecho en vista aliada 1.0.86.0, falta la prueba en el juego: TAREAS 59)
+# Bono «nightmare» (pedido del usuario, 26/10/2026; hecho en vista aliada 1.0.86.0, cambiado en 1.0.87.0, falta la prueba en el juego: TAREAS 59)
 
 Texto del usuario: «Quiero que sumemos un nuevo bono, que permita a las unidades clase "monster" tener un plus de +2
 durante la noche (+2 de strength, hits, vs city, o habilidades especiales: ej., trample +1 a trample +3). El tipo de
@@ -36,3 +36,9 @@ ighmare.STT`).
 - Clase «monster»: Army Subtypes del registro (+0xa0, +0xa9). «vs city» se tomó como el bono de combate de la unidad.
 - Ganchos: 0x46787d (`nm_unit`, ficha de batalla y probabilidades) y 0x46907c (`nm_grp`, habilidades de grupo).
   El registro real no se toca: se usan copias (`nm_r1`, `nm_r2`). Prueba de juguete: `prueba_nightmare.py`.
+
+## Cambio del usuario (26/10/2026, vista aliada 1.0.87.0)
+
+Se anuló el bono «nighmare»: el efecto noche vale para toda unidad con clase **monster**, **demon** o **undead**,
+sin asignar nada en el editor (pedido: «así no hay que editar todas esas armas con ese bono»). Se quitó
+`nighmare.STT`. Prueba de juguete: `prueba_noche_razas.py`. En el juego: 29 tipos monster, 29 demon, 35 undead.

@@ -15,20 +15,19 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **59.** Probar el bono «nighmare» de los monstruos (vista aliada 1.0.86.0, 26/10/2026)
-Cambio: bono de movimiento nuevo **nighmare** (así, 8 letras: el editor no admite más). De noche, cada unidad cuyo
-tipo tiene ese bono **y** la clase **monster** gana +2 en una sola cosa, sorteada: fuerza, hits, su bono de combate
-(solo si tiene uno) o su habilidad especial (solo si ya tiene una, ej. trample 1 pasa a trample 3). Hay un sorteo por
-noche: dura toda esa noche, en todos los combates, y cambia la noche siguiente. De día, nada. Los héroes no.
-1. Ya está instalada en C:\Warlords3. Abrí war3ed_av.exe (si estaba abierto, cerralo y volvelo a abrir) y en
-   **Edit Army Data** elegí un tipo que tenga **monster** entre sus Army Subtypes (por ejemplo un dragón o unos
-   lobos) y poné **nighmare** en uno de sus Move Bonus. Guardá el escenario.
-2. Abrí ese escenario con DarklordAV.exe y **Day/Night** marcado.
-3. De noche, antes de atacar con esas unidades, mirá las probabilidades del combate; hacé lo mismo de día con un
-   ataque parecido: de noche tienen que dar mejor para el monstruo.
-4. Al pelear de noche, mirá la ficha de batalla: la fuerza o los hits del monstruo pueden aparecer con +2 (si el
-   sorteo cayó en su bono o su habilidad, no se ve en la ficha, solo en el resultado).
-5. Control: un tipo con **nighmare** pero sin **monster**, o un monstruo sin **nighmare**, pelea igual de día y de noche.
+- [ ] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
+Cambio: de noche, toda unidad cuyo tipo tenga la clase **monster**, **demon** o **undead** (en Edit Army Data, sus
+Army Subtypes) gana +2 en una sola cosa, sorteada: fuerza, hits, su bono de combate (solo si tiene uno) o su
+habilidad especial (solo si ya tiene una, ej. trample 1 pasa a trample 3). No hay que asignar nada en el editor.
+Hay un sorteo por noche: dura toda esa noche, en todos los combates, y cambia la noche siguiente. De día, nada.
+Los héroes no. Orcos, dragones y el resto, tampoco.
+1. Ya está instalada en C:\Warlords3. Abrí DarklordAV.exe y una partida con **Day/Night** marcado que tenga
+   demonios, no muertos o monstruos (por ejemplo Giant Wolves, Wargs, Griffons).
+2. De noche, antes de atacar con esas unidades, mirá las probabilidades del combate; hacé lo mismo de día con un
+   ataque parecido: de noche tienen que dar mejor para ellas.
+3. Al pelear de noche, mirá la ficha de batalla: la fuerza o los hits pueden aparecer con +2 (si el sorteo cayó en
+   su bono o su habilidad, no se ve en la ficha, solo en el resultado).
+4. Control: orcos o dragones pelean igual de día y de noche.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.

@@ -1,6 +1,6 @@
 # Arma war3ed_av.exe (editor de escenarios) a partir de war3ed_ssg.exe, que solo se lee. Lo llama build.py.
 # - Bonos de movimiento (Edit Army Data, diálogo 148, y Edit Hero Data, 154): no ofrece "bridge" ni "trap".
-# - Bono de combate (los mismos diálogos): no ofrece "landing", "carrier", "cabotage", "bridge", "camo" ni "nighmare"; "trap" sí.
+# - Bono de combate (los mismos diálogos): no ofrece "landing", "carrier", "cabotage", "bridge" ni "camo"; "trap" sí.
 #   Las dos listas las llena 0x428d60(combo) con todos los TERRAIN\SUBTYPE\*.STT (sin la extensión); las envolturas
 #   stt_move / stt_comb la llaman y después borran los nombres que no van (CB_FINDSTRINGEXACT, sin distinguir
 #   mayúsculas, y CB_DELETESTRING). Miembros de los combos: 0x110, 0xd4, 0x98, 0x5c movimiento; 0x14c combate
@@ -16,7 +16,7 @@ SEND = 0x48fad0      # SendMessageA (importación)
 FILL = 0x428d60      # llena el combo con los subtipos; cdecl, devuelve la cantidad
 CB_DELETESTRING, CB_FINDSTRINGEXACT = 0x144, 0x158
 MOVE_NO = ('bridge', 'trap')
-COMB_NO = ('landing', 'carrier', 'cabotage', 'bridge', 'camo', 'nighmare')
+COMB_NO = ('landing', 'carrier', 'cabotage', 'bridge', 'camo')
 CALLS = {0x41453e: 'move', 0x41454f: 'move', 0x414560: 'move', 0x41456f: 'move', 0x414580: 'comb',   # 148
          0x41d3d8: 'move', 0x41d3e9: 'move', 0x41d3fa: 'move', 0x41d409: 'move', 0x41d41a: 'comb'}   # 154
 GIANT = 0x9b6eb      # entrada de DLGINIT 148 (combo 0x458, CB_ADDSTRING) del índice 14 = código 34

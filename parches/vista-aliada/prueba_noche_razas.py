@@ -1,9 +1,9 @@
-# Prueba de juguete del bono "nighmare" (nm_kind, nm_unit en 0x46787d, nm_grp en 0x46907c) sobre el exe parcheado,
+# Prueba de juguete del efecto noche de las clases monster, demon y undead (nm_kind, nm_unit en 0x46787d, nm_grp en 0x46907c) sobre el exe parcheado,
 # en unicorn. Uso: python prueba_nightmare.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Arma registros de tipo en la tabla 0x53c410 y compara el resultado con el mismo cálculo en Python: el sorteo de la
 # noche (FNV-1a de la vuelta y los nombres), la lista de opciones de cada unidad (fuerza, hits, bono si tiene uno,
 # habilidad si tiene una que cuente) y el +2 en la ficha (+3, +4) o en una copia del registro (+0xdf, +0xe8).
-# Controles: de día, sin la opción, sin "nighmare", sin "monster", habilidad que no cuenta, y el registro real intacto.
+# Controles: de día, sin la opción, otra clase (orc, dragon), habilidad que no cuenta, y el registro real intacto.
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -58,8 +58,7 @@ def expect(r):   # 0 nada, 1 fuerza, 2 hits, 3 bono, 4 habilidad
     sh = mu.mem_read(SHOPT, 1)[0]; t = struct.unpack('<H', mu.mem_read(TURN, 2))[0]
     if not sh & 2 or t & 1: return 0
     low = lambda o: d[o:o + 9].split(b'\0')[0].lower()
-    if b'nighmare' not in [low(0xb2 + 9 * k) for k in range(4)]: return 0
-    if b'monster' not in (low(0xa0), low(0xa9)): return 0
+    if not {b'monster', b'demon', b'undead'} & {low(0xa0), low(0xa9)}: return 0
     opts = [1, 2]
     if d[0xdf] and d[0xd6] and low(0xd6) != b'none': opts.append(3)
     code, val = struct.unpack_from('<hh', d, 0xe6)
@@ -111,19 +110,21 @@ def grp(r):
     assert v == struct.unpack_from('<h', real, 0xe8)[0] + 2
     return True
 
-NM = [b'nighmare']
+NM = [b'landing']   # los bonos de movimiento ya no cuentan
 recs = {
     'solo fuerza/hits':  mkrec(1, b'Wolves', NM, [b'monster']),
-    'con bono':          mkrec(2, b'Wraiths', [b'landing', b'NigHmare'], [b'undead', b'Monster'], (b'city', 1)),
+    'con bono':          mkrec(2, b'Wraiths', [], [b'human', b'Monster'], (b'city', 1)),
     'con habilidad':     mkrec(3, b'Dragons', NM, [b'monster'], ab=(2, 1)),
     'todo':              mkrec(4, b'Demons', NM, [b'monster'], (b'vs elves', 2), (38, 3)),
     'bono none':         mkrec(5, b'Ghosts', NM, [b'monster'], (b'none', 2)),
     'hab. que no cuenta': mkrec(6, b'Spiders', NM, [b'monster'], ab=(51, 1)),
-    'sin nighmare':      mkrec(7, b'Giants', [b'landing'], [b'monster'], ab=(2, 1)),
-    'sin monster':       mkrec(8, b'Knights', NM, [b'human'], ab=(2, 1)),
-    'enemigo':           mkrec(1, b'Orcs', NM, [b'monster'], (b'city', 2), (3, 2), side=1),
+    'demon':             mkrec(7, b'Devils', [], [b'DEMON'], (b'city', 1), (2, 1)),
+    'undead':            mkrec(9, b'Skeletons', [], [b'infantry', b'undead'], ab=(3, 1)),
+    'orc':               mkrec(8, b'Orcs', NM, [b'orc', b'infantry'], ab=(2, 1)),
+    'dragon':            mkrec(10, b'Red Drag', [], [b'dragon', b'flying'], (b'city', 1), (2, 1)),
+    'enemigo':           mkrec(1, b'Imps', NM, [b'demon'], (b'city', 2), (3, 2), side=1),
 }
-NEVER = {'sin nighmare', 'sin monster'}
+NEVER = {'orc', 'dragon'}
 seen = {k: set() for k in recs}
 for turn in range(2, 80):
     setn(turn=turn)
@@ -138,6 +139,7 @@ for k in recs:
     if k in NEVER: assert seen[k] == {0}, k
 assert seen['solo fuerza/hits'] == {0, 1, 2} and seen['bono none'] == {0, 1, 2} and seen['hab. que no cuenta'] == {0, 1, 2}
 assert seen['con bono'] == {0, 1, 2, 3} and seen['con habilidad'] == {0, 1, 2, 4} and seen['todo'] == {0, 1, 2, 3, 4}
+assert seen['demon'] == {0, 1, 2, 3, 4} and seen['undead'] == {0, 1, 2, 4}
 setn(night=True, option=False)
 assert all(unit(r) == 0 and not grp(r) for r in recs.values())
 print('2) sin la opción Day/Night: nada')

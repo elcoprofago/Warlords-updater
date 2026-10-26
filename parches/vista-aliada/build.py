@@ -12783,10 +12783,10 @@ cr_show:
 ''')
 caves['crblit'] = struct.pack('<I', cam_blit) + caves['crblit'][4:]   # conserva el relleno que le sumó place()
 
-# ---------------------------------------------------------------- Bono "nighmare" (monstruos, de noche)
-# De noche (opción Day/Night, SHOPT & 2, vuelta par; con o sin Hidden Map), una unidad cuyo tipo tiene el bono de
-# movimiento "nighmare" (TERRAIN\SUBTYPE\nighmare.STT; 8 letras como máximo, nombre elegido por el usuario) y la clase
-# "monster" (Army Subtypes, uno de los dos nombres de 9 bytes en +0xa0 y +0xa9) suma +2 a una sola cosa, elegida por
+# ---------------------------------------------------------------- Efecto noche (monster, demon, undead)
+# De noche (opción Day/Night, SHOPT & 2, vuelta par; con o sin Hidden Map), una unidad cuyo tipo tiene la clase
+# "monster", "demon" o "undead" (Army Subtypes, uno de los dos nombres de 9 bytes en +0xa0 y +0xa9; sin bono que
+# asignar en el editor, pedido del usuario 26/10/2026) suma +2 a una sola cosa, elegida por
 # un sorteo por noche: fuerza, hits, su bono de combate (solo si tiene uno; suma cuando el juego lo aplica) o su habilidad
 # especial (solo si tiene una con valor que cuente en combate). Un sorteo por noche: r = nm_draw, el mismo para todas
 # las unidades; cada una toma su opción r mod n de la lista de lo que tiene (fuerza, hits, bono, habilidad).
@@ -12798,9 +12798,9 @@ caves['crblit'] = struct.pack('<I', cam_blit) + caves['crblit'][4:]   # conserva
 # valor del bono (+0xdf) o de la habilidad (+0xe8): así valen las habilidades por unidad (trample, poison, etc.),
 # Banding, "Bridge +N" (bridgeab lee el mismo puntero) y el bono de combate. Las habilidades de grupo (leadership,
 # fear, etc.) las lee 0x468440 en 0x46907c: nm_grp cambia ahí ecx por una copia con +2. El registro real no se toca.
-NIGHMARE = b'nighmare'
-nm_str = place_data('nm_str', NIGHMARE + b'\0')
 nm_monstr = place_data('nm_monstr', b'monster\0')
+nm_demstr = place_data('nm_demstr', b'demon\0')
+nm_undstr = place_data('nm_undstr', b'undead\0')
 nm_nonestr = place_data('nm_nonestr', b'none\0')
 # Habilidades con valor que cuentan en combate: por unidad (0x467885..0x467958, Banding 0x4680d5, Bridge) y de grupo
 # (tabla 0x469684 de 0x468440). Necromancy 51 no usa el valor; 53 sí.
@@ -12808,7 +12808,6 @@ NM_CODES = {1, 2, 3, 4, 5, 6, 26, 27, 28, 30, 32, 33, BRIDGE_AB, 37, 38, 39, 40,
 nm_codes = place_data('nm_codes', bytes(1 if c in NM_CODES else 0 for c in range(64)))
 nm_r1 = place_data('nm_r1', bytes(0xfc))
 nm_r2 = place_data('nm_r2', bytes(0xfc))
-nm_mb = place('nm_mb', boatbon_src('nm_mb', None, rec=True))
 nm_sub = place('nm_sub', boatbon_src('nm_sub', None, rec=True, off=0xa0, slots=2))
 nm_cbn = place('nm_cbn', boatbon_src('nm_cbn', None, rec=True, off=0xd6, slots=1))
 # nm_draw: eax = sorteo de la noche (FNV-1a de la vuelta y los nombres, con mezcla final). Preserva el resto.
@@ -12858,15 +12857,21 @@ nm_kind = place('nm_kind', f'''
     test byte ptr [{DN_TURN:#x}], 1
     jnz nk_out
     mov eax, ebx
-    mov edx, {nm_str:#x}
-    call {nm_mb:#x}
-    test eax, eax
-    jz nk_out
-    mov eax, ebx
     mov edx, {nm_monstr:#x}
     call {nm_sub:#x}
     test eax, eax
+    jnz nk_race
+    mov eax, ebx
+    mov edx, {nm_demstr:#x}
+    call {nm_sub:#x}
+    test eax, eax
+    jnz nk_race
+    mov eax, ebx
+    mov edx, {nm_undstr:#x}
+    call {nm_sub:#x}
+    test eax, eax
     jz nk_out
+nk_race:
     mov edi, 2
     xor esi, esi
     cmp byte ptr [ebx + 0xdf], 0
@@ -13820,7 +13825,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'), ('nighmare', 'Nightmare'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
