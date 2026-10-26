@@ -67,5 +67,20 @@ ya usado en build.py, «turno = [0x5032f8 + 0x30]»), +0x2a = bando del turno (0
 después llama a 0x43c620). Regla día/noche: día si la vuelta es impar, noche si es par (o al revés): falta
 confirmar con qué valor arranca (1 en la primera vuelta, se ve en el juego).
 
-**Punto 3 (la opción en el diálogo 9) sigue sin hacer.** Próximo paso: elegir el bit de SHOPT, clonar la casilla en
-el diálogo 9 como las otras del parche, deshabilitada con Hidden Map; y después el pintado (paso de 0x45a960).
+## Paso 3 — la opción en Customize Options (26/10/2026, hecho en build.py; sin probar en el juego)
+
+- Bit **0x02 de SHOPT** (byte 25 del bloque de opciones; 0x01 es Shared Cities). Viaja con el bloque: partida
+  guardada y red.
+- Casilla **id 61 «Day/Night»** (DNCHK), clonada de Fog of War, en la columna derecha de Viewing Options, debajo de
+  Hidden Map. Esa columna pasa a 5 filas de 15 píxeles (y = 102..162): See in Cities, Hidden Map, Day/Night, Fog of
+  War, Allied View.
+- **Excluyente con Hidden Map** (en vez de deshabilitarla, que el diálogo no sabe hacer sin más trabajo): marcar
+  Day/Night desmarca Hidden Map (click, `ck_dn`); marcar Hidden Map desmarca Day/Night (refresh, que el juego llama
+  después de cada clic en 0x428370 y redibuja Hidden Map en 0x42862a).
+- Todavía **no hace nada en el juego**. El pintado igual debe exigir `!(OPT & 0x10)`, por si una partida o un
+  OPTIONS.* trae los dos bits.
+
+**Falta:**
+- Pintado de la noche (paso de 0x45a960), con las tablas calculadas al cargar la paleta (paso 2). Próximo paso.
+- Fila «Day/Night» en el reporte View Game Options (diálogo 115; sus dos columnas ya tienen 8 filas).
+- Prueba en el juego (va a TAREAS cuando haya pintado: probar solo la casilla no vale la instalación).

@@ -535,12 +535,16 @@ ot_pr:
 ''')
 
 # 3) Clic en las casillas nuevas del diálogo Customize Options. eax = id - 2.
-#    59 Allied View (bit 0x80 de [0x503d02]), 60 Shared Cities (bit 1 de [SHOPT_DLG]).
+#    59 Allied View (bit 0x80 de [0x503d02]), 60 Shared Cities (bit 1 de [SHOPT_DLG]),
+#    61 Day/Night (bit 2 de [SHOPT_DLG]; marcarla desmarca Hidden Map, bit 0x10 de [0x503d02]).
 NEWCHK = 59
 SHCHK = 60
+DNCHK = 61
 click = place('click', f'''
     cmp eax, {SHCHK - 2}
     je ck_shared
+    cmp eax, {DNCHK - 2}
+    je ck_dn
     cmp eax, {NEWCHK - 2}
     jne 0x427d43
     mov eax, dword ptr [esi + 8]
@@ -566,10 +570,27 @@ ck_shared:
     and al, 1
     xor byte ptr [{SHOPT_DLG:#x}], al
     jmp ck_done
+ck_dn:
+    mov eax, dword ptr [esi + 8]
+    push 0
+    and eax, 1
+    jz ck_dn_off
+    and byte ptr [0x503d02], 0xef
+ck_dn_off:
+    shl al, 1
+    xor al, byte ptr [{SHOPT_DLG:#x}]
+    and al, 2
+    xor byte ptr [{SHOPT_DLG:#x}], al
+    jmp ck_done
 ''')
 
-# 4) Refresco del diálogo: después de la casilla Fog (id 7), poner la nueva.
+# 4) Refresco del diálogo: después de la casilla Fog (id 7), poner las nuevas. Día/noche y Hidden Map se excluyen:
+#    si Hidden Map quedó marcada (su clic no pasa por 3), día/noche se desmarca.
 refresh = place('refresh', f'''
+    test byte ptr [0x503d02], 0x10
+    jz rf_dn
+    and byte ptr [{SHOPT_DLG:#x}], 0xfd
+rf_dn:
     push dword ptr [esp + 8]
     push dword ptr [esp + 8]
     call 0x4dd000
@@ -586,6 +607,13 @@ refresh = place('refresh', f'''
     setnz al
     push eax
     push {SHCHK}
+    call 0x4dd000
+    add esp, 8
+    xor eax, eax
+    test byte ptr [{SHOPT_DLG:#x}], 2
+    setnz al
+    push eax
+    push {DNCHK}
     call 0x4dd000
     add esp, 8
     ret
@@ -633,6 +661,10 @@ init = place('init', f'''
     add esp, 8
     push 0
     push {SHCHK}
+    call 0x4dcec0
+    add esp, 8
+    push 0
+    push {DNCHK}
     call 0x4dcec0
     add esp, 8
     ret
@@ -12320,7 +12352,18 @@ struct.pack_into('<IIII', chk2, 4, SHCHK, 189, 162, 1)
 setstr(chk2, 0x1c, 16, 'Shared Cities')
 setstr(chk2, 0x2c, 64, 'Allies co-own cities (with Hidden Map: both explored)')
 setstr(chk2, 0x9c, 16, 'Shared Cities')
-new_list[9] = [chk, chk2]
+# Día/noche: en la columna de la derecha, debajo de Hidden Map; esa columna pasa a 5 filas de 15 píxeles (102 a 162).
+chk3 = bytearray(chk)
+struct.pack_into('<I', chk3, 4, DNCHK)
+struct.pack_into('<I', chk3, 0x14, 70)
+setstr(chk3, 0x1c, 16, 'Day/Night')
+setstr(chk3, 0x2c, 64, 'Every other turn is night (not with Hidden Map)')
+setstr(chk3, 0x9c, 16, 'Day/Night')
+for k, rec in enumerate([3, 6, chk3, 7, chk]):
+    y = 102 + 15 * k
+    if isinstance(rec, int): struct.pack_into('<I', res, r9[rec][0] + 0xc, y)
+    else: struct.pack_into('<I', rec, 0xc, y)
+new_list[9] = [chk, chk2, chk3]
 
 # Diálogo 115 (reporte View Game Options): fila nueva "Shared Allied View" debajo de Fog of War.
 # Las dos columnas pasan de 25 a 21 píxeles entre filas para que entren 8.
