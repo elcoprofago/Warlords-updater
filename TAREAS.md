@@ -19,11 +19,14 @@ Sorteo están acá (tarea 18).
 Ahora una trampa en tierra mata entre el 40 y el 80 % de la pila (al azar, distinto en cada explosión) y paraliza al
 resto: el grupo se frena, no se mueve más ese turno y, si su movimiento es 9 o más, tiene 5 pasos menos hasta su turno
 siguiente. La mina submarina sigue hundiendo todo.
-1. Cuando termine la tanda de la tarea 44 (con el juego cerrado), avisame: instalo y publico la 1.0.72.0.
+1. Cuando termine la tanda de la tarea 44 (con el juego cerrado), avisame: instalo y publico la 1.0.73.0 (trae también el arreglo del paso 5).
 2. Después, en una partida: poné una trampa y hacé pasar por ella una pila de 6 o más unidades que no vuelen.
    Tienen que morir algunas (entre la mitad, más o menos, y casi todas) y las que quedan, quedarse quietas.
 3. Al turno siguiente las sobrevivientes tienen que moverse normal.
 4. Que pase por la misma trampa otra pila: la segunda explosión tiene que dar otra proporción.
+5. La 1.0.73.0 trae además el arreglo de los recortes del mapa al derribar un puente (lo que anotaste en la 40):
+   derribá un puente (con misión o sin ella) y reconstruí otro. Al cerrarse los carteles, el mapa tiene que verse
+   entero, sin pedazos recortados ni pixelados, sin tener que pasar el mouse.
 Resultado:
 
 - [ ] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
@@ -107,6 +110,8 @@ Todos actualizan antes con el Actualizador (opción del parche vista aliada).
 2. Elegir la opción de destruir el puente no tiene que colgar el juego.
 3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
 Resultado: las trampas ahora explotan 2 veces. La mision se completa bien, aunque con algunos problemas de renderizado menores (parte del escenario queda con imagenes recortadas o pixeladas), que se corrigen de inmediato con el sobrevuelo del mouse en dicho sector.
+(Claude, 26/10) Causa: al derribar o reconstruir un puente, el parche dibujaba el mapa con el diálogo todavía
+abierto; al cerrarse, el diálogo reponía la imagen vieja y el juego no la repintaba. Corregido en 1.0.73.0 (tarea 45, paso 5).
 
 - [x] **43.** IA: tanda de control en Hexagon, el mismo perfil en los seis colores (Monitor de IA 1.0.17, 25/10/2026)
 Sirve para saber si blanco y amarillo ganan por el lugar o por los perfiles (en la tanda 41 ganaron 29 de 30).

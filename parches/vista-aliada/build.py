@@ -4430,6 +4430,21 @@ brb2_done:
     push eax
     jmp 0x495294
 ''')
+# Dibuja un cuadro del mapa (0x456ee0 sobre la vista 0x569588) solo si lo que está arriba es el mapa (0x4d7ed0 de
+# 0x588bd0 == 0xa, la misma condición del bucle principal en 0x49d2f7). En una partida local, arrasar y reconstruir se
+# aplican en el acto dentro del botón del diálogo, con el diálogo abierto: dibujar ahí dejaba la vista al día debajo
+# del diálogo, y al cerrarse este reponía su fondo viejo sin que el mapa lo volviera a pintar (pedazos recortados
+# hasta pasar el mouse). Con un diálogo arriba el bucle principal redibuja al volver al mapa. Usa eax, ecx, edx.
+br_mapview = place('br_mapview', f'''
+    mov ecx, 0x588bd0
+    call 0x4d7ed0
+    cmp eax, 0xa
+    jne bmv_out
+    mov ecx, 0x569588
+    call 0x456ee0
+bmv_out:
+    ret
+''')
 # Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
 # comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
 # refresca la vista y da el aviso "Razed!" / "<nombre> is in ruins!" del original al jugador humano que arrasó.
@@ -4477,8 +4492,7 @@ bra2_tile:
     push esi
     call {br_drown:#x}
     add esp, 8
-    mov ecx, 0x569588
-    call 0x456ee0
+    call {br_mapview:#x}
     pop ebp
     pop ebx
     mov di, word ptr [esp + 0x60]
@@ -6373,8 +6387,7 @@ brp_tile:
     cmp edi, esi
     jb brp_tile
     call 0x4a4f20
-    mov ecx, 0x569588
-    call 0x456ee0
+    call {br_mapview:#x}
 brp_out:
     pop edi
     pop esi

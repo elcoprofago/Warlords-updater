@@ -68,10 +68,11 @@ class Bench:
         self.stub_at = {}
         stubs = {0x4a2170: 0, 0x456ee0: 0, 0x4a4f20: 0, 0x43fd60: 0, 0x485610: 0, 0x43c240: 0, 0x4c2790: 0,
                  0x4b9550: 0, 0x4955d0: 0, 0x4d82a0: 0, 0x4d7f60: 0, 0x4a0400: 0, 0x49f900: 0, 0x43ff80: 0,
-                 0x4def30: 8, 0x440b30: 0, 0x4374a0: 0}
+                 0x4def30: 8, 0x440b30: 0, 0x4374a0: 0, 0x4d7ed0: 0}
         for va, n in stubs.items():
             mu.mem_write(va, b'\xc2' + struct.pack('<H', n) if n else b'\xc3')
         self.site = -1
+        self.top = 0xa              # lo que está arriba (0x4d7ed0 de 0x588bd0): 0xa = el mapa
         mu.mem_write(STUB, b'\xc3'); mu.mem_write(0x5a9bec, struct.pack('<I', STUB))   # sprintf
         mu.mem_write(FMT_RUINS, b'%s is in ruins!\0')
         mu.mem_write(END, b'\xf4')
@@ -119,6 +120,8 @@ class Bench:
             fname = bytes(uc.mem_read(a(0), 64)).split(b'\0')[0].decode('latin1')
             uc.mem_write(a(1), f'Name{seed:04x} Bridge'.encode() + b'\0'); uc.reg_write(UC_X86_REG_EAX, a(1))
             self.calls.append(('names', fname, reseed))
+        elif addr == 0x4d7ed0:
+            uc.reg_write(UC_X86_REG_EAX, self.top)
         elif addr == 0x4b9550:
             self.calls.append(('order', a(0) & 0xffff, a(1) & 0xffff))
         elif addr == 0x4955d0:
@@ -268,6 +271,12 @@ for nombre, code, player, armies, fliers, cond in [
     b = Bench(armies=armies); b.fliers = set(fliers)
     end = b.run(0x4d5e30, (), args=(code, player))
     check(nombre, end == END and cond(b) and b.saved_ok(4), f'calls={b.calls} t55={b.tile(5,5)} t65={b.tile(6,5)}')
+# En una partida local el derribo se aplica dentro del botón del diálogo de arrasar, con el diálogo arriba: ahí no
+# se dibuja el mapa (lo hace el bucle principal al volver), para que el diálogo no reponga encima un fondo viejo.
+b = Bench(); b.top = 0x5a
+end = b.run(0x4d5e30, (), args=(BC(5, 5), UI))
+check('arrasar: con un diálogo arriba no dibuja el mapa', end == END and razed(b, (5, 5), (6, 5)) and 'view' not in b.calls
+      and b.calls[-1] == 'graph' and b.saved_ok(4), f'calls={b.calls}')
 b = Bench()
 end = b.run(0x4d5e30, (0x4d5e35,), args=(3, UI))
 check('arrasar: sitio 3 sigue el camino original (control)', end == 0x4d5e35 and b.r('ESP') == b.esp0 - 0x58
@@ -326,6 +335,10 @@ for nombre, code, armies, ext, cond in [
     b = Bench(armies=armies, extra=ext)
     end = b.run(0x4b6610, (), args=(code, 1000, UI))
     check(nombre, end == END and cond(b) and b.saved_ok(4), f'calls={b.calls} t55={b.tile(5,5)}')
+b = Bench(armies=[(4, 5, UI, True)], extra=raze_ext); b.top = 0x5a
+end = b.run(0x4b6610, (), args=(BC(6, 5), 1000, UI))
+check('reconstruir: con un diálogo arriba no dibuja el mapa', end == END and intact(b, (5, 5), (6, 5))
+      and b.calls == [('gold', UI, -1000), 'graph'] and b.saved_ok(4), f'calls={b.calls}')
 b = Bench()
 end = b.run(0x4b6610, (0x4b6616,), args=(2, 300, UI))
 check('reconstruir: sitio 2 sigue el camino original (control)', end == 0x4b6616 and b.r('ESP') == b.esp0 - 4

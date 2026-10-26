@@ -76,6 +76,16 @@ fracaso y la IA, pero no el dibujo. qb_line da la casilla del puente. Prueba: `p
 anterior reproduce la lectura inválida; con el arreglo, la casilla del puente, y los sitios iguales al original). Los
 demás lectores del objetivo de misión en el exe (0x41d31b, 0x4c515b y los de tipos 4, 7 y 8) solo lo comparan.
 
+**Corregido en 1.0.73.0 (26/10/2026): recortes del mapa al derribar o reconstruir.** En la prueba de la tarea 40
+quedaban pedazos del mapa recortados o pixelados que se arreglaban al pasar el mouse. Causa: br_razeapply y
+br_rebapply llamaban a 0x456ee0 (un cuadro del mapa) siempre. En una partida local la orden se aplica en el acto
+(0x4b9550 -> 0x4dfab6 -> 0x4df400), dentro del botón del diálogo, con el diálogo arriba: la vista quedaba al día debajo
+de él, y al cerrarse el diálogo reponía su fondo viejo sin que el mapa lo volviera a pintar. El arrasar original de un
+sitio nunca dibuja. Ahora br_mapview dibuja solo si arriba está el mapa (0x4d7ed0 de 0x588bd0 == 0xa, la condición del
+bucle principal en 0x49d2f7). Prueba: `prueba_puentes.py`, dos casos nuevos con un diálogo arriba (fallan con 1.0.71.0).
+De paso: `REDRAW` (0x4a2170) no pide redibujar; borra [0x4fe5f8], la marca de que se puede deshacer el último
+movimiento (0x4a1fa0 la pone, 0x4a2030 la usa). El nombre de la constante en build.py es engañoso.
+
 **Diferencias con el plan**
 - Los textos ("Destroying a Bridge", "%s must destroy %s, near %s." y "%s must destroy %s.") van como cadenas del
   exe, igual que los demás textos de puentes, no en WAR3AV.RES.
