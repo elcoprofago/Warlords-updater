@@ -536,7 +536,7 @@ ot_pr:
 
 # 3) Clic en las casillas nuevas del diálogo Customize Options. eax = id - 2.
 #    59 Allied View (bit 0x80 de [0x503d02]), 60 Shared Cities (bit 1 de [SHOPT_DLG]),
-#    61 Day/Night (bit 2 de [SHOPT_DLG]; marcarla desmarca Hidden Map, bit 0x10 de [0x503d02]).
+#    61 Day/Night (bit 2 de [SHOPT_DLG]; se puede combinar con Hidden Map desde el 1.0.85.0).
 NEWCHK = 59
 SHCHK = 60
 DNCHK = 61
@@ -574,9 +574,6 @@ ck_dn:
     mov eax, dword ptr [esi + 8]
     push 0
     and eax, 1
-    jz ck_dn_off
-    and byte ptr [0x503d02], 0xef
-ck_dn_off:
     shl al, 1
     xor al, byte ptr [{SHOPT_DLG:#x}]
     and al, 2
@@ -584,13 +581,8 @@ ck_dn_off:
     jmp ck_done
 ''')
 
-# 4) Refresco del diálogo: después de la casilla Fog (id 7), poner las nuevas. Día/noche y Hidden Map se excluyen:
-#    si Hidden Map quedó marcada (su clic no pasa por 3), día/noche se desmarca.
+# 4) Refresco del diálogo: después de la casilla Fog (id 7), poner las nuevas.
 refresh = place('refresh', f'''
-    test byte ptr [0x503d02], 0x10
-    jz rf_dn
-    and byte ptr [{SHOPT_DLG:#x}], 0xfd
-rf_dn:
     push dword ptr [esp + 8]
     push dword ptr [esp + 8]
     call 0x4dd000
@@ -12031,7 +12023,7 @@ iv_back:
 ''')
 
 # ---------------------------------------------------------------- Día/noche: pintado de la noche
-# Con la opción (bit 2 de SHOPT) y sin Hidden Map, las vueltas pares ([0x5032f8 + 0x30]; la primera es la 1) son de
+# Con la opción (bit 2 de SHOPT), las vueltas pares ([0x5032f8 + 0x30]; la primera es la 1) son de
 # noche: el mapa se oscurece con DN_N niveles, cada uno una pasada del recoloreo de la niebla (0x4ee3c0 con la tabla
 # dn_tab en vez de 0x589608) con sus mismos bordes suaves (hoja 0x48, máscara de 8 vecinas -> 0x4fbfc8). El nivel de
 # una casilla es DN_MIN más su distancia a la luz más cercana menos el radio de esa luz, entre DN_MIN y DN_N (la luz
@@ -12179,7 +12171,9 @@ ds_out:
     ret
 ''')
 
-# dn_lights: estampa en la grilla todas las luces de [GX0 - DN_N - 1, GX0 + GW + DN_N + 1) x (lo mismo en y).
+# dn_lights: estampa en la grilla todas las luces de [GX0 - DN_N - 1, GX0 + GW + DN_N + 1) x (lo mismo en y). Con
+# Hidden Map, una ciudad, ruina, sitio o puente solo alumbra desde una casilla explorada por quien mira (bit 0x10 del
+# byte +3): su halo no delata lo que está bajo el negro.
 dn_lights = place('dn_lights', f'''
     pushad
     mov edi, dword ptr [{DN_GY0:#x}]
@@ -12203,6 +12197,11 @@ dl_sx:
     call {br_tile:#x}
     test eax, eax
     jz dl_sxnext
+    test byte ptr [{OPT:#x}], 0x10
+    jz dl_seen
+    test byte ptr [eax + 3], 0x10
+    jz dl_sxnext
+dl_seen:
     movzx ecx, byte ptr [eax + 3]
     and ecx, 7
     cmp ecx, 3
@@ -12266,8 +12265,6 @@ dn_pre = place('dn_pre', f'''
     xor ebx, ebx
     test byte ptr [{SHOPT:#x}], 2
     jz dp_fill
-    test byte ptr [{OPT:#x}], 0x10
-    jnz dp_fill
     test byte ptr [{DN_TURN:#x}], 1
     jnz dp_fill
     mov bl, {DN_N}
@@ -12508,8 +12505,6 @@ dn_mini = place('dn_mini', f'''
     pushad
     test byte ptr [{SHOPT:#x}], 2
     jz dm_out
-    test byte ptr [{OPT:#x}], 0x10
-    jnz dm_out
     test byte ptr [{DN_TURN:#x}], 1
     jnz dm_out
     movsx eax, word ptr [esi + 0x20]
@@ -12609,7 +12604,8 @@ dm_out:
 # ---------------------------------------------------------------- Camuflaje (bono de movimiento "camo", de noche)
 # De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla se ve en gris apagado si todas las unidades de su
 # bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo
-# sumo 8 letras). Un grupo con un héroe no se camufla. Se copia el dibujo (0x4dd530) y 0x4ee3c0 lo recolorea con los
+# sumo 8 letras). Un grupo con un héroe no se camufla, ni uno dentro de una ciudad (iluminada). Se copia el dibujo
+# (0x4dd530) y 0x4ee3c0 lo recolorea con los
 # mismos argumentos (el dibujo hace de máscara) con cam_tab: cada color pasado a un gris verdoso del tono del pasto
 # (24, 28, 15; la paleta va de 0 a 63 por canal), entre el 80 % y el 120 % según su luminancia, al índice más
 # parecido de la paleta (los índices impares, entre los verdes oscuros 48..53: la paleta no tiene gris verdoso y la
@@ -12636,6 +12632,7 @@ cam_tab = place_data('cam_tab', CAM_TAB)
 cam_hit = place_data('cam_hit', bytes(4))
 cam_rec = place('cam_rec', boatbon_src('cam_rec', camstr, rec=True))
 # cam_stack: eax = x, edx = y, ecx = bando -> eax = 1 si hay unidades de ese bando en (x, y) y todas tienen "camo".
+# En una casilla de ciudad, 0: la ciudad está iluminada (pedido del usuario, 26/10/2026).
 cam_stack = place('cam_stack', f'''
     push ebx
     push esi
@@ -12643,6 +12640,16 @@ cam_stack = place('cam_stack', f'''
     push ebp
     mov ebp, ecx
     xor ebx, ebx
+    push eax
+    call {br_tile:#x}
+    mov esi, eax
+    pop eax
+    test esi, esi
+    jz cs_end
+    movzx esi, byte ptr [esi + 3]
+    and esi, 7
+    cmp esi, 3
+    je cs_end
     mov esi, 1
 cs_loop:
     movsx ecx, word ptr [0x54fe50]
@@ -13121,7 +13128,7 @@ chk3 = bytearray(chk)
 struct.pack_into('<I', chk3, 4, DNCHK)
 struct.pack_into('<I', chk3, 0x14, 70)
 setstr(chk3, 0x1c, 16, 'Day/Night')
-setstr(chk3, 0x2c, 64, 'Every other turn is night (not with Hidden Map)')
+setstr(chk3, 0x2c, 64, 'Every other turn is night')
 setstr(chk3, 0x9c, 16, 'Day/Night')
 for k, rec in enumerate([3, 6, chk3, 7, chk]):
     y = 102 + 15 * k

@@ -5,7 +5,7 @@
 # un puente derribado en (22,12) y un ejército enemigo en (24,8). La vista es de 20x15 desde (5,5).
 # Se comparan la grilla de niveles, las celdas marcadas sucias y cada llamada al recoloreo (0x4ee3c0, stub) con el
 # mismo cálculo hecho en Python. Después: sin cambios no se ensucia nada; mover el ejército ensucia solo su entorno;
-# de día, con Hidden Map o sin la opción no se pinta nada y se ensucia lo que estaba oscuro.
+# de día o sin la opción no se pinta nada y se ensucia lo que estaba oscuro; con Hidden Map sí, con luces solo de lo explorado.
 # Minimapa (dn_mini, en 0x4114ef) de 100x125: cada fila de píxeles se recolorea (0x4ede30, stub) en tramos de igual
 # nivel, con el nivel de la casilla del mapa entero; no toca la grilla de la vista; de día no pinta, y el cambio
 # entre día y noche marca el minimapa para rearmar.
@@ -75,7 +75,8 @@ class Bench:
         self.mu.mem_write(SHOPT, bytes([2 if option else 0]))
         self.mu.mem_write(OPT, bytes([0x10 if hidden else 0]))
         self.mu.mem_write(TURN, struct.pack('<h', 4 if night else 5))
-        self.lit = night and option and not hidden
+        self.lit = night and option
+        self.hidden = hidden
 
     def hook(self, mu, addr, size, _):
         esp = mu.reg_read(UC_X86_REG_ESP)
@@ -151,10 +152,14 @@ def level(b, x, y):
         lev = min(lev, max(d - r0, 0) + lmin)
     return lev
 
+def seen(b, x, y):   # con Hidden Map, solo alumbra lo explorado (bit 0x10 del byte +3)
+    return not b.hidden or b.mu.mem_read(tile_va(x, y) + 3, 1)[0] & 0x10
+
 def lights(b):
     out = []
     for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False, MIN))
     out += [(20, 5, 0, True, MIN), (8, 22, 0, True, MIN), (5, 20, 0, True, MIN), (6, 20, 0, True, MIN)]
+    out = [l for l in out if seen(b, l[0], l[1])]
     out += [(x, y, 1, True, AMIN) for x, y, p in b.army_list if p == ME]
     return out
 
@@ -218,14 +223,14 @@ b.post(full=True); n = check_calls(b, g); print(f'3) redibujo entero: {n} pasada
 b.armies([(18, 12, ME), (24, 8, ENEMY)]); b.clear_dirty(); b.pre()
 g2 = grid(b); assert b.dirty() == changed(g, g2) and b.dirty(), 'sucias 4'
 b.post(); check_calls(b, g2, b.dirty()); print(f'4) movida: {len(b.dirty())} celdas sucias')
-# 5) de día, con Hidden Map, o sin la opción: no pinta y ensucia lo que estaba oscuro
-for kw in (dict(night=False), dict(hidden=True), dict(option=False)):
+# 5) de día o sin la opción: no pinta y ensucia lo que estaba oscuro
+for kw in (dict(night=False), dict(option=False)):
     b.set(**{'night': True, **kw}); b.clear_dirty(); b.pre()
     g3 = grid(b); assert all(v == 0 for v in g3.values())
     assert b.dirty() == changed(g2, g3), ('sucias 5', kw)
     b.post(full=True); assert b.calls == [], kw
     b.set(night=True); b.clear_dirty(); b.pre(); assert b.dirty() == changed(g3, g2); g2 = grid(b)
-print('5) día / Hidden Map / sin opción: OK')
+print('5) día / sin opción: OK')
 # 6) minimapa: tramos de igual nivel por fila, tablas compuestas, y la vista intacta
 b.set(night=True); b.pre(); g = grid(b)
 lev = [[level(b, x, y) for x in range(MW)] for y in range(MH)]
@@ -247,12 +252,21 @@ assert tabs[0] == bytes(range(256)) and all(tabs[L + 1] == bytes(tabs[1][c] for 
 assert tabs[1] != tabs[0]
 b.post(full=True); check_calls(b, g)
 print(f'6) minimapa: {len(got)} tramos de recoloreo')
-# 7) minimapa de día / Hidden Map / sin opción: nada; el cambio día<->noche lo marca para rearmar
-for kw in (dict(night=False), dict(hidden=True), dict(option=False)):
+# 7) minimapa de día / sin opción: nada; el cambio día<->noche lo marca para rearmar
+for kw in (dict(night=False), dict(option=False)):
     b.set(**{'night': True, **kw}); b.mini(); assert b.mcalls == [], kw
 b.set(night=True); b.pre()
 for night, expect in ((False, 1), (False, 0), (True, 1), (True, 0)):
     b.mu.mem_write(MINI + 0xc, struct.pack('<I', 0)); b.set(night=night); b.pre()
     assert struct.unpack('<I', b.mu.mem_read(MINI + 0xc, 4))[0] == expect, (night, expect)
-print('7) minimapa de día / Hidden Map / sin opción / marca de rearmado: OK')
+print('7) minimapa de día / sin opción / marca de rearmado: OK')
+# 8) con Hidden Map también es de noche; alumbran las ciudades y sitios explorados, no los que están bajo el negro
+def explore(x, y):
+    a = tile_va(x, y) + 3; b.mu.mem_write(a, bytes([b.mu.mem_read(a, 1)[0] | 0x10]))
+for x, y in ((10, 10), (11, 10), (10, 11), (11, 11), (8, 22)): explore(x, y)
+b.set(night=True, hidden=True); b.clear_dirty(); b.pre(); g = grid(b)
+assert g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] > MIN, 'el sitio sin explorar no debe dar luz'
+b.post(full=True); n = check_calls(b, g)
+b.mini(); assert b.mcalls
+print(f'8) Hidden Map de noche: {n} pasadas; lo no explorado no alumbra')
 print('TODO OK')

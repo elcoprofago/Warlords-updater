@@ -103,11 +103,20 @@ res3 = {k: b.draw(x, y, p, BLIT3) for k, (x, y, p) in {'camo': (12, 8, ME), 'mix
         'enemigo': (18, 8, ENEMY), 'sin': (20, 8, ME), 'vacía': (22, 9, ME)}.items()}
 print('1b) noche, 3ª pasada (globito, barra, iconos):', res3)
 assert res3 == EXP
-for night, opt, hid, name in ((False, True, False, 'día'), (True, False, False, 'sin opción'), (True, True, True, 'Hidden Map')):
+t3 = tile_va(12, 8) + 3; old3 = b.mu.mem_read(t3, 1)[0]
+b.mu.mem_write(t3, bytes([(old3 & ~7) | 3]))
+assert not b.draw(12, 8, ME) and not b.draw(12, 8, ME, BLIT3)
+b.mu.mem_write(t3, bytes([old3])); b.pre()
+print('1c) en una ciudad: normal')
+for night, opt, hid, name in ((False, True, False, 'día'), (True, False, False, 'sin opción')):
     b.set(night=night, option=opt, hidden=hid); b.pre()
     for e in (None, BLIT3):
         assert not b.draw(12, 8, ME, e) and not b.draw(18, 8, ENEMY, e), name
-print('2) día / sin opción / Hidden Map: solo la copia, sin camuflaje')
+print('2) día / sin opción: solo la copia, sin camuflaje')
+b.set(night=True, hidden=True); b.pre()
+assert b.draw(12, 8, ME) and b.draw(12, 8, ME, BLIT3)
+b.set(night=True); b.pre()
+print('2b) Hidden Map de noche: camuflado')
 
 # Army Report: el minimapa 0x414d50 llama a 0x414e50 (stub) por cada ejército que muestra.
 REP_OBJ = 0x118000

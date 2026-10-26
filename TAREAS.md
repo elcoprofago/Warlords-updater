@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 58).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 59).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,16 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **57.** Probar el camuflaje más verde (vista aliada 1.0.84.0, 26/10/2026)
-Cambio: la paleta del juego no tiene grises verdosos, así que la figura camuflada mezcla tonos de verde oscuro con
-los grises y oliva de antes; de conjunto tiene que leerse como gris verdoso, con la misma opacidad.
-1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
-2. De noche, mirá el grupo «camo»: tiene que verse más verdoso que en la 56, sin quedar moteado feo.
-3. Si queda moteado o muy verde, anotalo: se vuelve a la 1.0.83.0 o se ajusta la mezcla.
+- [ ] **58.** Probar camo en ciudades y Día/Noche con Hidden Map (vista aliada 1.0.85.0, 26/10/2026)
+Cambios: dentro de una ciudad el grupo «camo» se ve normal (la ciudad está iluminada). Y Día/Noche ya se puede
+marcar junto con Hidden Map: de noche, lo no explorado sigue negro y lo explorado se oscurece con los halos; una
+ciudad, ruina o sitio que todavía no exploraste no alumbra (para que su halo no delate dónde está).
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51.
+2. En Viewing Options marcá **Hidden Map** y **Day/Night**: las dos tienen que quedar marcadas.
+3. De noche: lo no explorado negro, lo explorado oscuro con halos. Mirá el borde de lo explorado cerca de una ciudad
+   enemiga que no viste: no tiene que aparecer un halo saliendo del negro.
+4. Meté el grupo «camo» en una ciudad de noche: se tiene que ver normal; al salir, verdoso otra vez.
+5. Mirá también el minimapa y el Army Report de noche.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
@@ -30,6 +34,14 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 3. Avisame cuando termine: la analizo.
 
 # Hecho
+
+- [x] **57.** Probar el camuflaje más verde (vista aliada 1.0.84.0, 26/10/2026)
+Cambio: la paleta del juego no tiene grises verdosos, así que la figura camuflada mezcla tonos de verde oscuro con
+los grises y oliva de antes; de conjunto tiene que leerse como gris verdoso, con la misma opacidad.
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
+2. De noche, mirá el grupo «camo»: tiene que verse más verdoso que en la 56, sin quedar moteado feo.
+3. Si queda moteado o muy verde, anotalo: se vuelve a la 1.0.83.0 o se ajusta la mezcla.
+Resultado (26/10/2026): quedó perfecto.
 
 - [x] **56.** Probar el camuflaje verdoso, corregido (vista aliada 1.0.83.0, 26/10/2026)
 Cambio: se corrigió por qué salía la mancha blanca. Ahora el grupo camuflado de noche tiene que verse en grises y

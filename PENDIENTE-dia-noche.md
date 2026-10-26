@@ -183,3 +183,20 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Tarea 56: bien de tono y opacidad; pedido: más verdoso. La paleta no tiene grises verdosos (solo grises, oliva
   162..167 y verdes saturados 48..53). `cam_tab`: los índices impares se buscan entre 48..53, los pares como en el
   1.0.83.0; la mezcla de tonos de cada figura da el gris verdoso. Si queda moteado, volver a 1.0.83.0.
+
+## Paso 14 — camo en ciudades y Día/Noche con Hidden Map (26/10/2026, vista aliada 1.0.85.0; tarea 58)
+
+- Tarea 57: perfecto. Pedido para cerrar: (1) en una ciudad el camo no tiene efecto (está iluminada): `cam_stack`
+  devuelve 0 si la casilla (`br_tile`) es de ciudad (byte +3 & 7 = 3); vale para el dibujo y el Army Report.
+- (2) ¿Día/Noche con Hidden Map? Sí. Análisis:
+  - Lo no explorado es una copia opaca negra (bit 8 de la celda) y la noche recolorea encima: negro sigue negro. No
+    se neutralizan: la noche actúa sobre lo explorado, el negro sobre lo demás.
+  - La única contradicción: una luz (ciudad, ruina, sitio, puente) bajo el negro estamparía su halo en las casillas
+    exploradas vecinas y delataría su lugar. Con Hidden Map, `dn_lights` solo toma las luces de casillas
+    exploradas por quien mira (0x1000 = byte +3 & 0x10, la copia de trabajo de lo explorado). Los ejércitos de quien
+    mira siempre están en lo explorado.
+  - El «no explorado más oscuro» del pedido original queda resuelto por el propio negro del Hidden Map.
+  - Se quitó la exclusión del diálogo (`ck_dn`, `refresh`), la condición en `dn_pre` y `dn_mini`, y «(not with Hidden
+    Map)» del texto de la casilla.
+- Pruebas: `prueba_dianoche.py` 8) (Hidden Map de noche, el sitio sin explorar no alumbra, minimapa);
+  `prueba_camuflaje.py` 1c) ciudad y 2b) Hidden Map. El diálogo no se emula: tarea 58.
