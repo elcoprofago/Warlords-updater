@@ -293,18 +293,21 @@ def fall(player, tgt=0, typ=QT, trap=0):
     x, y = TRAPS[trap][:2]
     b.mu.mem_write(0x54fe52 + 3 * 0x1c, struct.pack('<hh', x, y))
     b.mu.mem_write(0x54fe5e + 3 * 0x1c, struct.pack('<H', player << 5))
+    m = b.mu.mem_read(0x54fe62 + 3 * 0x1c, 2)   # movimiento 12 (la trampa en tierra mata o paraliza: 26/10/2026)
+    b.mu.mem_write(0x54fe62 + 3 * 0x1c, bytes([12, m[1]]))
     b.mu.mem_write(PO_PEND + player, bytes([trap + 1]))
     b.mu.mem_write(0x560b20, struct.pack('<h', 7))
     b.stops = {0x49d1a0}; b.end = None
     esp = STACK - 0x400; b.mu.reg_write(UC_X86_REG_ESP, esp)
     b.mu.emu_start(PO_FALL, 0, count=2000000)
+    if b.mu.mem_read(0x54fe65 + 3 * 0x1c, 1)[0] & 0x80: b.calls.append(('paraliza', 3))
     return b.end == 0x49d1a0 and b.r('ESP') == esp, b.quest(), b.trap(trap), b.calls
 for nombre, kw, marca in [('cae: UI en su trampa objetivo -> marca +0xa', dict(player=UI), 1),
                           ('cae: el enemigo en esa trampa -> no marca', dict(player=ENEMY), 0),
                           ('cae: UI en otra trampa -> no marca', dict(player=UI, trap=8), 0),
                           ('cae: misión de otro tipo con el mismo número -> no marca', dict(player=UI, typ=10), 0)]:
     ok, q, t, calls = fall(**kw)
-    check(nombre, ok and q[6] == marca and t[3] & 0x0f == 1 and t[3] & 0x80 and ('muere', 3) in calls, f'{q} {t} {calls}')
+    check(nombre, ok and q[6] == marca and t[3] & 0x0f == 1 and t[3] & 0x80 and (('muere', 3) in calls or ('paraliza', 3) in calls), f'{q} {t} {calls}')
 
 check('SAV: la misión activa y su estado están en el bloque guardado (0x536b30..0x5643c4)',
       0x536b30 <= 0x55edc4 and 0x55edc4 + 8 * 16 <= 0x5643c4 and 0x55ee44 + 8 <= 0x5643c4)

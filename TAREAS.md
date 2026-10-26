@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 45).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 46).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,17 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 40** (misión de puentes y trampas de 2 explosiones), **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **45.** Probar el daño nuevo de las trampas (vista aliada 1.0.72.0, 26/10/2026)
+Ahora una trampa en tierra mata entre el 40 y el 80 % de la pila (al azar, distinto en cada explosión) y paraliza al
+resto: el grupo se frena, no se mueve más ese turno y, si su movimiento es 9 o más, tiene 5 pasos menos hasta su turno
+siguiente. La mina submarina sigue hundiendo todo.
+1. Cuando termine la tanda de la tarea 44 (con el juego cerrado), avisame: instalo y publico la 1.0.72.0.
+2. Después, en una partida: poné una trampa y hacé pasar por ella una pila de 6 o más unidades que no vuelen.
+   Tienen que morir algunas (entre la mitad, más o menos, y casi todas) y las que quedan, quedarse quietas.
+3. Al turno siguiente las sobrevivientes tienen que moverse normal.
+4. Que pase por la misma trampa otra pila: la segunda explosión tiene que dar otra proporción.
+Resultado:
 
 - [ ] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
 Sirve para saber si el amarillo gana por el lugar donde arranca o por jugar segundo: en esta guardada el amarillo sale

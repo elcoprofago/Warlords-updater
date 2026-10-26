@@ -204,7 +204,7 @@ ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
-def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=()):
+def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
     g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
@@ -217,6 +217,9 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=()):
         a = 0x54fe50 + i * 0x1c
         mu.mem_write(a + 2, struct.pack('<hh', x, y)); mu.mem_write(a + 0xe, struct.pack('<H', (0x10 if h else 3) | d << 5))
         mu.mem_write(a + 0x13, b'@'); vuela[i] = v
+        if mov: mu.mem_write(a + 0x10, struct.pack('<HH', mov[i - 1] << 8, mov[i - 1] | 0x4000))
+    paradas = []
+    g.interceptar(0x485c00, lambda a: paradas.append(a[0] & 0xffff))
     mu.mem_write(0x560b20, struct.pack('<h', mira))
     muertos, avisos, sonidos = [], [], []
     def matar(a):
@@ -237,6 +240,7 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=()):
     mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.emu_start(PO_FALL, 0x49d1a0, count=1000000); assert mu.reg_read(UC_X86_REG_EIP) == 0x49d1a0
     assert mu.reg_read(UC_X86_REG_ESP) == STACK
+    if mu_out is not None: mu_out.extend([mu, paradas])
     return muertos, avisos, [s[0] for s in sonidos], g.tabla()
 POZOS = [(10, 10, 0, 0, 0, 0xff), (20, 10, 1, 0, 0, 0xff), (15, 15, 2, 0, 0, 3), (16, 16, 2, 1, 0xff, 3)]
 GRUPO = [(10, 10, 2, 0, 0), (10, 10, 2, 1, 0), (10, 10, 2, 0, 0)]
@@ -271,12 +275,44 @@ for k in (1,):
 r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
 ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
-ver('SAV viejo: trampa detonada (+5 = 1) mata de nuevo, le queda 1 uso', (r[0], r[1]), ([(1, 0)], ['Your army fell into a trap!']))
+ver('SAV viejo: trampa detonada (+5 = 1) explota de nuevo (un solo ejército: muere o queda paralizado)', (len(r[0]) <= 1, r[1]), (True, ['Your army fell into a trap!']))
 r = caer(POZOS, [(15, 15, 2, 0, 0), (15, 15, 2, 0, 1)], [(2, 15, 15)], agua=[(15, 15)])
 ver('mina submarina: se hunde lo que no vuela, con 1 (como el remolino), y suma una', (r[0], r[1], r[3][2][3]),
     ([(1, 1)], ['Your army fell into a trap!'], 0xa1))
 r = caer(POZOS, [(15, 15, 2, 0, 0)], [(2, 15, 15)], agua=[(15, 15)], puente=[(15, 15)])
 ver('control: sobre un puente es terrestre, con 0', r[0], [(1, 0)])
+print('-- trampa: daño parcial (26/10/2026)')
+def parcial(n, mov, x=15, y=15, est=0, vuelan=()):
+    out = []
+    t = POZOS[:2] + [(15, 15, 2, est, 0, 3)] + POZOS[3:]
+    r = caer(t, [(x, y, 2, 0, i in vuelan) for i in range(n)], [(2, x, y)], mov=mov, mu_out=out)
+    mu = out[0]
+    ej = [struct.unpack('<HH', mu.mem_read(0x54fe50 + i * 0x1c + 0x10, 4)) + (mu.mem_read(0x54fe65 + i * 0x1c, 1)[0],)
+          for i in range(1, n + 1)]
+    return r, ej, out[1]
+r, ej, par = parcial(10, [12] * 10)
+m = [a for a, _ in r[0]]
+vivos = [ej[i - 1] for i in range(1, 11) if i not in m]
+ver('10 en tierra: mueren entre 4 y 8, con 0', (4 <= len(m) <= 8, {k for _, k in r[0]}), (True, {0}))
+ver('  los demás: sin pasos este turno, movimiento 12 -> 7 y marca 0x80', {(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for v in vivos}, {(0, 7, 0x80)})
+ver('  el grupo se detiene (0x485c00 del 2), aviso, explosión sumada', (par, r[1], r[3][2][3] & 0xf), ([2], ['Your army fell into a trap!'], 1))
+ver('control: la misma caída da lo mismo (todas las PC)', parcial(10, [12] * 10)[0][0], r[0])
+ver('control: la segunda explosión elige distinto', parcial(10, [12] * 10, est=1)[0][0] != r[0], True)
+cuentas = set()
+for k in range(0, 3):
+    for e in range(0, 2):
+        for n in (5, 10, 20):
+            rr = parcial(n, [12] * n, est=e | k << 4)[0][0]; cuentas.add(round(100 * len(rr) / n))
+ver('varias caídas: siempre entre 40 y 80 %, y varía', (min(cuentas) >= 40, max(cuentas) <= 80, len(cuentas) > 2), (True, True, True))
+r, ej, _ = parcial(10, [6] * 10)
+ver('movimiento menor de 9: sin pasos pero no se le resta ni se marca (como el juego)',
+    {(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for i, v in enumerate(ej, 1) if i not in [a for a, _ in r[0]]}, {(0, 6, 0)})
+r, ej, _ = parcial(4, [12] * 4, vuelan=(0, 1))
+ver('voladores: ni mueren ni se paralizan; de los 2 que caen, 1 muere', (len(r[0]), [(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for v in ej[:2]]), (1, [(12, 12, 0)] * 2))
+r = caer(POZOS, [(15, 15, 2, 0, 0)] * 6, [(2, 15, 15)], agua=[(15, 15)])
+ver('control: la mina submarina sigue hundiendo todo, con 1', r[0], [(i, 1) for i in range(1, 7)])
+r = caer(POZOS, GRUPO * 2, [(2, 10, 10)])
+ver('control: el pozo sigue matando a todos', len(r[0]), 6)
 for e in (3, 0xa3):
     r = caer(POZOS[:3] + [(16, 16, 2, e, 0xff, 3)], [(16, 16, 2, 0, 0)], [(2, 16, 16)])
     ver(f'control: trampa gastada (+5 = {e:#x}) ya no mata', (r[0], r[1]), ([], []))

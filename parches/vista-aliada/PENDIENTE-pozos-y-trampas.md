@@ -437,3 +437,16 @@ Pedido del usuario: el clan consideró excesivas las tres detonaciones; pasan a 
 mina submarina. Solo cambia TR_USOS (3 → 2): todo lo demás lo usa. Una trampa de un .SAV anterior que ya llevaba 2
 explosiones queda gastada. Pruebas: `prueba_misiontrampa.py` ajustada a 2 usos, `prueba_pozos.py` y
 `prueba_trampas.py`: TODO OK. El Manual dice «explota dos veces».
+
+## Daño parcial de la trampa (26/10/2026)
+Pedido del usuario: en cada explosión, eliminar entre el 40 y el 80 % de la pila y paralizar al resto (como el bono
+Paralysis de Scorpion.arm). Hecho en build.py (tr_rand, tr_var, po_fall; versión 1.0.72.0) y probado en
+prueba_pozos.py («daño parcial») y prueba_misiontrampa.py. Solo en tierra: la mina submarina sigue hundiendo todo
+(matar parte de lo embarcado dejaría ejércitos en el agua sin barco).
+- Parálisis del juego (0x46b205..0x46b272, la del defensor; 0x46af27.. la del atacante): +0x10 &= 0x80ff (pasos que
+  quedan = 0), y si no tiene el bit 0x80 de +0x15 y (+0x12 & 0x7f) >= 9: movimiento -5 y el bit. Al empezar su turno
+  0x434f5a quita el bit y devuelve los 5. Chance en combate: BaseParalyzationChance [0x56952e] × el valor del bono.
+- Azar propio y determinista (todas las PC eligen lo mismo), como po_grave.
+- **Falta publicar:** el 26/10 el juego estaba abierto (tanda de la tarea 44) y build.py no pudo escribir
+  C:\Warlords3\DarklordAV.exe; publicar-parche.ps1 exige que lo instalado sea idéntico a lo compilado. Con el juego
+  cerrado: `python parches\vista-aliada\build.py` y `.\tools\publicar-parche.ps1 vista-aliada`. Tarea 45.

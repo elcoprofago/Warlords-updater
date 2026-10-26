@@ -7849,6 +7849,25 @@ pv_end:
     popad
     ret
 ''')
+# Daño de la trampa en tierra (pedido del usuario, 26/10/2026): en cada explosión muere entre el 40 y el 80 % de los
+# ejércitos que caen (no voladores; tr_pct al azar, redondeado) y los demás quedan paralizados como con la habilidad
+# Paralysis (0x46b205..0x46b272): sin pasos este turno (+0x11 & 0x7f = 0) y, si su movimiento (+0x12 & 0x7f) es 9 o
+# más y no lo estaban ya, 5 pasos menos y el bit 0x80 de +0x15; al empezar su turno siguiente el juego les devuelve
+# los 5 y quita el bit (0x434f5a). Quién muere: selección al azar sin reemplazo (r = azar % los que faltan; muere si
+# r < las muertes que faltan). El grupo se detiene (0x485c00). La mina submarina sigue hundiendo todo. El azar es un
+# generador propio (tr_rand) sembrado con la casilla, las explosiones, el jugador y los ejércitos que caen, no el
+# del juego: po_fall corre en todas las PC y tienen que elegir lo mismo (como po_grave).
+TR_PMIN, TR_PMAX = 40, 80
+tr_var = place_data('tr_var', bytes(16))      # +0 semilla, +4 los que faltan, +8 muertes que faltan, +0xc modo (1 = parcial)
+TR_SEED, TR_N, TR_K, TR_MODO = tr_var, tr_var + 4, tr_var + 8, tr_var + 0xc
+tr_rand = place('tr_rand', f'''
+    imul eax, dword ptr [{TR_SEED:#x}], 1103515245
+    add eax, 12345
+    mov dword ptr [{TR_SEED:#x}], eax
+    shr eax, 16
+    and eax, 0x7fff
+    ret
+''')
 po_fall = place('po_fall', f'''
     pushad
     xor ebx, ebx
@@ -7858,6 +7877,68 @@ pf_pl:
     jz pf_pln
     mov byte ptr [ebx + {po_pend:#x}], 0
     lea ebp, [eax*8 + {PO_TAB - 8:#x}]
+    mov dword ptr [{TR_MODO:#x}], 0
+    cmp byte ptr [ebp + 4], {PO_TRAMPA}
+    jne pf_go
+    mov eax, ebp
+    call {po_wet:#x}
+    je pf_go
+    movzx eax, word ptr [ebp + 2]
+    shl eax, 16
+    mov ax, word ptr [ebp]
+    movzx ecx, byte ptr [ebp + 5]
+    and ecx, {TR_CUENTA}
+    imul ecx, ecx, 0x1000193
+    xor eax, ecx
+    imul ecx, ebx, 0x9e3779b9
+    xor eax, ecx
+    mov dword ptr [{TR_SEED:#x}], eax
+    xor edi, edi
+    mov esi, 1
+pf_cn:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge pf_cnf
+    imul edx, esi, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz pf_cnn
+    mov eax, dword ptr [edx + 0x54fe52]
+    cmp eax, dword ptr [ebp]
+    jne pf_cnn
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne pf_cnn
+    mov eax, esi
+    call {isfly:#x}
+    test eax, eax
+    jnz pf_cnn
+    inc edi
+    imul eax, dword ptr [{TR_SEED:#x}], 33
+    add eax, esi
+    mov dword ptr [{TR_SEED:#x}], eax
+pf_cnn:
+    inc esi
+    jmp pf_cn
+pf_cnf:
+    test edi, edi
+    jz pf_go
+    mov dword ptr [{TR_N:#x}], edi
+    call {tr_rand:#x}
+    xor edx, edx
+    mov ecx, {TR_PMAX - TR_PMIN + 1}
+    div ecx
+    add edx, {TR_PMIN}
+    mov eax, edx
+    imul eax, edi
+    add eax, 50
+    mov ecx, 100
+    xor edx, edx
+    div ecx
+    mov dword ptr [{TR_K:#x}], eax
+    mov dword ptr [{TR_MODO:#x}], 1
+pf_go:
     xor edi, edi
     mov esi, 1
 pf_ej:
@@ -7879,6 +7960,33 @@ pf_ej:
     call {isfly:#x}
     test eax, eax
     jnz pf_ejn
+    cmp dword ptr [{TR_MODO:#x}], 0
+    je pf_todo
+    call {tr_rand:#x}
+    xor edx, edx
+    div dword ptr [{TR_N:#x}]
+    dec dword ptr [{TR_N:#x}]
+    cmp edx, dword ptr [{TR_K:#x}]
+    jae pf_para
+    dec dword ptr [{TR_K:#x}]
+    push 0
+    jmp pf_kill
+pf_para:
+    imul edx, esi, 0x1c
+    and word ptr [edx + 0x54fe60], 0x80ff
+    inc edi
+    test byte ptr [edx + 0x54fe65], 0x80
+    jnz pf_ejn
+    mov ax, word ptr [edx + 0x54fe62]
+    mov cx, ax
+    and cx, 0x7f
+    cmp cx, 9
+    jb pf_ejn
+    sub ax, 5
+    mov word ptr [edx + 0x54fe62], ax
+    or byte ptr [edx + 0x54fe65], 0x80
+    jmp pf_ejn
+pf_todo:
     push 1
     cmp byte ptr [ebp + 4], {PO_REMOLINO}
     je pf_kill
@@ -7898,6 +8006,12 @@ pf_ejn:
     inc esi
     jmp pf_ej
 pf_ejf:
+    cmp dword ptr [{TR_MODO:#x}], 0
+    je pf_cuenta
+    push ebx
+    call 0x485c00
+    add esp, 4
+pf_cuenta:
     test edi, edi
     jz pf_pln
     mov cl, bl
