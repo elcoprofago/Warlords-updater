@@ -11,7 +11,7 @@ Sorteo están acá (tarea 18).
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. En la próxima partida en red: **tarea 40** (misión de puentes y trampas de 2 explosiones), **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
+4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
 
@@ -40,14 +40,6 @@ computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICA
 1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
 2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
 Resultado:
-
-- [ ] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026)
-Todos actualizan antes con el Actualizador (opción del parche vista aliada).
-1. Con un héroe, aceptá una misión «destruir el puente…». Pasá 2 o 3 turnos: la línea naranja del minimapa
-   tiene que apuntar siempre al mismo puente, y al llegar el puente tiene que estar ahí.
-2. Elegir la opción de destruir el puente no tiene que colgar el juego.
-3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
-Resultado: las trampas ahora explotan 2 veces. 
 
 - [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
 Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
@@ -107,6 +99,14 @@ Resultado:
 
 
 # Hecho
+
+- [x] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026) — hecha el 26/10/2026
+Todos actualizan antes con el Actualizador (opción del parche vista aliada).
+1. Con un héroe, aceptá una misión «destruir el puente…». Pasá 2 o 3 turnos: la línea naranja del minimapa
+   tiene que apuntar siempre al mismo puente, y al llegar el puente tiene que estar ahí.
+2. Elegir la opción de destruir el puente no tiene que colgar el juego.
+3. Poné una trampa (de tierra y una submarina): explota 2 veces y a la tercera ya no está.
+Resultado: las trampas ahora explotan 2 veces. La mision se completa bien, aunque con algunos problemas de renderizado menores (parte del escenario queda con imagenes recortadas o pixeladas), que se corrigen de inmediato con el sobrevuelo del mouse en dicho sector.
 
 - [x] **43.** IA: tanda de control en Hexagon, el mismo perfil en los seis colores (Monitor de IA 1.0.17, 25/10/2026)
 Sirve para saber si blanco y amarillo ganan por el lugar o por los perfiles (en la tanda 41 ganaron 29 de 30).
