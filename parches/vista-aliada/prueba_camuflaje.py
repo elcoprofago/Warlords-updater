@@ -25,7 +25,7 @@ cand = [10] + [i for i in range(16, 245) if i != 187]
 CAM = bytearray(range(256))
 for i in range(256):
     if i == 11: continue
-    t = (sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) * 0.6,) * 3
+    t = tuple(o * (0.8 + 0.4 * sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) / 255) for o in (95, 110, 60))
     CAM[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
 
 class Cam(Bench):

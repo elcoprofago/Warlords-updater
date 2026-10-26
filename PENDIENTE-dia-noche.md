@@ -165,3 +165,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Tarea 53: la silueta clara salía como una mancha blanca. Ahora el camuflado vuelve a copiar el dibujo y lo
   recolorea con `cam_tab` = gris por luminancia (0,3 R + 0,59 G + 0,11 B) al 60 %: se conserva la figura, en gris
   oscuro, globito incluido (cam_blit3 sigue en la 3ª pasada).
+
+## Paso 11 — camuflaje verdoso (26/10/2026, vista aliada 1.0.82.0; tarea 55)
+
+- Tarea 54: el gris oscuro se notaba. `cam_tab` = oliva (95, 110, 60) × (0,8 + 0,4 · luminancia/255): poco contraste
+  y del tono del pasto. La paleta es de 256 colores sin transparencia real; si hiciera falta más, el próximo paso es
+  tramar (copiar solo parte de los píxeles).
