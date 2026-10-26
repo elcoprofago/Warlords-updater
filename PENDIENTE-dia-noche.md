@@ -177,3 +177,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Tarea 55: mancha blanca otra vez. Causa: `war3.pal` va de 0 a 63 por canal y las fórmulas de 1.0.80.0 y 1.0.82.0
   usaban 0..255, así que todo caía en el color más claro. Ahora oliva (24, 28, 15) y luminancia /63: sale en los
   índices 19, 20, 215, 217 (grises ~20) y 165..167 (oliva ~31, 31, 8).
+
+## Paso 13 — más verdoso (26/10/2026, vista aliada 1.0.84.0; tarea 57)
+
+- Tarea 56: bien de tono y opacidad; pedido: más verdoso. La paleta no tiene grises verdosos (solo grises, oliva
+  162..167 y verdes saturados 48..53). `cam_tab`: los índices impares se buscan entre 48..53, los pares como en el
+  1.0.83.0; la mezcla de tonos de cada figura da el gris verdoso. Si queda moteado, volver a 1.0.83.0.

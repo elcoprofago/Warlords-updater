@@ -12612,7 +12612,8 @@ dm_out:
 # sumo 8 letras). Un grupo con un héroe no se camufla. Se copia el dibujo (0x4dd530) y 0x4ee3c0 lo recolorea con los
 # mismos argumentos (el dibujo hace de máscara) con cam_tab: cada color pasado a un gris verdoso del tono del pasto
 # (24, 28, 15; la paleta va de 0 a 63 por canal), entre el 80 % y el 120 % según su luminancia, al índice más
-# parecido de la paleta: poco contraste, se confunde con el terreno (el gris oscuro del 1.0.81.0 se notaba demasiado;
+# parecido de la paleta (los índices impares, entre los verdes oscuros 48..53: la paleta no tiene gris verdoso y la
+# mezcla de tonos de la figura lo da): poco contraste, se confunde con el terreno (el gris oscuro del 1.0.81.0 se notaba demasiado;
 # el 1.0.80.0 y el 1.0.82.0 salían blancos por tomar la paleta como 0..255). Vale para todo lo que se dibuja
 # del ejército: la figura (0x459d0d vía crdraw, y 0x45a14f/0x45a18e de la 3ª pasada), el globito del color del equipo
 # (0x45a267), su barra (0x45a2ac) y los iconos de la hoja 0x38 (0x45a2cc, 0x45a34a, 0x45a3a5). El grupo que se está
@@ -12627,7 +12628,8 @@ def cam_table():
     for i in range(256):
         if i == 11: continue
         t = tuple(o * (0.8 + 0.4 * sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) / 63) for o in (24, 28, 15))
-        out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
+        pool = range(48, 54) if i % 2 else cand   # la mitad de los tonos a verde oscuro: sin gris verdoso en la paleta
+        out[i] = min(pool, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
     return bytes(out)
 CAM_TAB = cam_table()
 cam_tab = place_data('cam_tab', CAM_TAB)

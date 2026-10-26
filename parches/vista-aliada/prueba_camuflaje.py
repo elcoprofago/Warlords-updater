@@ -26,7 +26,8 @@ CAM = bytearray(range(256))
 for i in range(256):
     if i == 11: continue
     t = tuple(o * (0.8 + 0.4 * sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) / 63) for o in (24, 28, 15))
-    CAM[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
+    pool = range(48, 54) if i % 2 else cand   # la mitad de los tonos a verde oscuro: sin gris verdoso en la paleta
+    CAM[i] = min(pool, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
 
 class Cam(Bench):
     def __init__(self):

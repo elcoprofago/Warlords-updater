@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 57).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 58).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **56.** Probar el camuflaje verdoso, corregido (vista aliada 1.0.83.0, 26/10/2026)
-Cambio: se corrigió por qué salía la mancha blanca. Ahora el grupo camuflado de noche tiene que verse en grises y
-verde oliva apagados, del tono del pasto (globito incluido).
+- [ ] **57.** Probar el camuflaje más verde (vista aliada 1.0.84.0, 26/10/2026)
+Cambio: la paleta del juego no tiene grises verdosos, así que la figura camuflada mezcla tonos de verde oscuro con
+los grises y oliva de antes; de conjunto tiene que leerse como gris verdoso, con la misma opacidad.
 1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
-2. De noche, mirá el grupo «camo» desde otro jugador: tiene que costar distinguirlo del pasto o del bosque.
-3. Anotá si lo querés más o menos visible.
+2. De noche, mirá el grupo «camo»: tiene que verse más verdoso que en la 56, sin quedar moteado feo.
+3. Si queda moteado o muy verde, anotalo: se vuelve a la 1.0.83.0 o se ajusta la mezcla.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
@@ -30,6 +30,14 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 3. Avisame cuando termine: la analizo.
 
 # Hecho
+
+- [x] **56.** Probar el camuflaje verdoso, corregido (vista aliada 1.0.83.0, 26/10/2026)
+Cambio: se corrigió por qué salía la mancha blanca. Ahora el grupo camuflado de noche tiene que verse en grises y
+verde oliva apagados, del tono del pasto (globito incluido).
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
+2. De noche, mirá el grupo «camo» desde otro jugador: tiene que costar distinguirlo del pasto o del bosque.
+3. Anotá si lo querés más o menos visible.
+Resultado (26/10/2026): se ve bien, también la opacidad; pidió el gris más verdoso → tarea 57.
 
 - [x] **55.** Probar el camuflaje verdoso (vista aliada 1.0.82.0, 26/10/2026)
 Cambio: el grupo camuflado de noche ya no es gris oscuro: es un gris verdoso del tono del pasto, con poco contraste,
