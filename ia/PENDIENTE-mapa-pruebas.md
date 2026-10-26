@@ -155,6 +155,6 @@ Tandas 82 a 86 (Tanda_hex_lugar_control): 30 partidas ok, ninguna colgada. Colum
 - Tanda_hex_espejo_control = Tanda_hex_control con blanco (0) y negro (7) intercambiados (ia\intercambiar.py, sus
   lugares son espejo exacto). Prueba: tanda 87, partida 527, de prueba, tope 3: carga y juega; el negro ataca en el
   turno 3 en (109,76), junto a su capital nueva (White Main, 122,79).
-- Falta: tanda del usuario (TAREAS 45). Si el blanco sigue ganando desde el lugar del negro, pesa jugar primero; si
+- Falta: tanda del usuario (TAREAS 47). Si el blanco sigue ganando desde el lugar del negro, pesa jugar primero; si
   gana el negro, pesa el lugar. Después de esto, elegir cómo emparejar (paso 3) con los dos resultados.
 Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5'': analizar blanco contra negro".
