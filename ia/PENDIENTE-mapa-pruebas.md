@@ -121,4 +121,14 @@ Tandas 76 a 80 (Tanda_hex_control, Artificer + Devout en los seis): 25 partidas 
    que estén en ellas), de modo que el amarillo juegue primero desde el lugar del verde. Probar primero en tope de
    2-3 turnos que carga y juega; después tanda de control de 30. Si el ganador sigue al color (amarillo), pesa el
    orden; si sigue al lugar, pesa la geografía/vecindad.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5': lugar contra orden de turno".
+
+## Paso 5': preparado (25/10/2026)
+- ia\intercambiar.py arma Tanda_hex_lugar_control (solo en SAVES del juego) = Tanda_hex_control con amarillo (1) y
+  verde (4) intercambiados: dueño de sus ciudades (al empezar cada color tiene solo su capital; las demás son
+  neutrales), capital del registro de jugador (+0xf2 y +0xf4, ambos = índice de la ciudad capital) y el ejército
+  del amarillo (héroe + red_scav, registro 69) trasladado de (34,137) a (94,137). El verde no tenía ejércitos.
+- Prueba (tanda 81, partida 495, de prueba, tope 3): carga y juega; los seis con héroe al turno 2; el verde ataca en
+  el turno 3 en (44,128), junto a su capital nueva (Yellow Main, 33,137).
+- Falta: que el usuario corra la tanda (TAREAS 44) y analizarla. Lectura: si el amarillo sigue ganando (~17/25) pesa
+  el orden de turno; si gana el verde, pesa el lugar (abajo a la izquierda). Comparar con el control 76-80.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5': analizar la tanda de lugares intercambiados".
