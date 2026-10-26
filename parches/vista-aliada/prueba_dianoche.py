@@ -21,7 +21,7 @@ def jmp_target(va):
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
 DN_PRE, DN_POST, DN_MINI = jmp_target(0x459790), jmp_target(0x45aa6e), jmp_target(0x4114ef)
 
-N = 8; MIN = 1
+N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
 VX, VY, VW, VH = 5, 5, 20, 15
 ME, ENEMY = 1, 2
@@ -141,21 +141,21 @@ class Bench:
 # ---- el mismo cálculo en Python
 def level(b, x, y):
     lev = N
-    for lx, ly, r0, round_ in lights(b):
+    for lx, ly, r0, round_, lmin in lights(b):
         dx, dy = abs(x - lx), abs(y - ly)
         if round_:
             d = 0
             while dx * dx + dy * dy > d * d + d: d += 1   # raíz redondeada
         else:
             d = max(dx, dy) + min(dx, dy) // 2
-        lev = min(lev, max(d - r0, 0) + MIN)
+        lev = min(lev, max(d - r0, 0) + lmin)
     return lev
 
 def lights(b):
     out = []
-    for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False))
-    out += [(20, 5, 0, True), (8, 22, 0, True), (5, 20, 0, True), (6, 20, 0, True)]
-    out += [(x, y, 1, True) for x, y, p in b.army_list if p == ME]
+    for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False, MIN))
+    out += [(20, 5, 0, True, MIN), (8, 22, 0, True, MIN), (5, 20, 0, True, MIN), (6, 20, 0, True, MIN)]
+    out += [(x, y, 1, True, AMIN) for x, y, p in b.army_list if p == ME]
     return out
 
 def grid(b):
@@ -206,7 +206,7 @@ assert b.dirty() == changed(zero, g), 'sucias 1'
 b.post()
 n = check_calls(b, g, b.dirty())
 print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
-assert g[15 - VX, 17 - VY] == MIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
+assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
 # 2) sin cambios: nada sucio y nada que pintar

@@ -3661,6 +3661,8 @@ cd_out:
 # 0x457cd0), la dibuja como 0x459e4f dibuja ese grupo: su hoja animada [+0x60], columna de la dirección
 # (dir*0x31 + 0x81) y el mismo cuadro. Dirección: la anotada por crfollow si es esta casilla (crface o crface2); si
 # no, la del grupo [+0x50]. Sin animaciones ([0x560758]) o con la imagen 0xa4 queda el dibujo original.
+# Copia con [CRBLIT] (0x4dd530, o cam_blit del camuflaje cuando ese bloque lo pone), con los mismos argumentos.
+CRBLIT = place_data('crblit', struct.pack('<I', 0x4dd530))
 crdraw = place('crdraw', f'''
     cmp dword ptr [esp + 4], 0xa4
     je cw_go
@@ -3784,7 +3786,7 @@ cw_out:
     add esp, 0x10
     popad
 cw_go:
-    jmp 0x4dd530
+    jmp dword ptr [{CRBLIT:#x}]
 ''')
 
 # ---------------------------------------------------------------- Puentes: derribar y reconstruir
@@ -12064,20 +12066,28 @@ DN_TAB = dn_table()
 dn_tab = place_data('dn_tab', DN_TAB)
 dn_d = place_data('dn_d', bytes(DN_G * DN_G))
 dn_old = place_data('dn_old', bytes(DN_G * DN_G))
-dn_var = place_data('dn_var', bytes(4 * 19))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p, sh, base, str, last, mw, mh, row
+dn_var = place_data('dn_var', bytes(4 * 20))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p, sh, base, str, last, mw, mh, row, lmin
 (DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P, DN_SH,
- DN_BASE, DN_STR, DN_LAST, DN_MW, DN_MH, DN_ROW) = (dn_var + 4 * i for i in range(19))
+ DN_BASE, DN_STR, DN_LAST, DN_MW, DN_MH, DN_ROW, DN_LMIN) = (dn_var + 4 * i for i in range(20))
+DN_AMIN = 4    # nivel mínimo de la luz de los ejércitos: 0,82^4 ~45 % (pedido: no más del 50 %)
 # Las 8 vecinas en el orden de 0x45c8f0 (N, NE, E, SE, S, SO, O, NO), como desplazamientos en la grilla.
 dn_offs = place_data('dn_offs', struct.pack('<8i', *(dy * DN_G + dx for dx, dy in
                      zip((0, 1, 1, 1, 0, -1, -1, -1), (-1, -1, 0, 1, 1, 1, 0, -1)))))
 
-# dn_stamp: eax = x, edx = y del mapa (grilla en [DN_BASE], [DN_STR] bytes por fila; origen GX0/GY0, tamaño GW x GH), cl = radio, ch = 1 halo redondo / 0 cuadrado -> baja el nivel de las casillas de la grilla a su alcance.
+# dn_stamp: eax = x, edx = y del mapa (grilla en [DN_BASE], [DN_STR] bytes por fila; origen GX0/GY0, tamaño GW x GH), cl = radio, ch = 1 halo redondo / 0 cuadrado, bits 16..23 = nivel mínimo (0: DN_MIN) -> baja el nivel de las casillas de la grilla a su alcance.
 dn_stamp = place('dn_stamp', f'''
     pushad
     sub eax, dword ptr [{DN_GX0:#x}]
     sub edx, dword ptr [{DN_GY0:#x}]
     mov dword ptr [{DN_SX:#x}], eax
     mov dword ptr [{DN_SY:#x}], edx
+    mov ebx, ecx
+    shr ebx, 16
+    and ebx, 0xff
+    jnz ds_lm
+    mov ebx, {DN_MIN}
+ds_lm:
+    mov dword ptr [{DN_LMIN:#x}], ebx
     movzx ebx, ch
     mov dword ptr [{DN_SH:#x}], ebx
     movzx ecx, cl
@@ -12148,7 +12158,7 @@ ds_dist:
     jge ds_lev
     xor eax, eax
 ds_lev:
-    add eax, {DN_MIN}
+    add eax, dword ptr [{DN_LMIN:#x}]
     cmp eax, {DN_N}
     jge ds_xnext
     mov edx, ebx
@@ -12240,7 +12250,7 @@ dl_aloop:
     jne dl_anext
     movsx eax, word ptr [edi + 0x54fe52]
     movsx edx, word ptr [edi + 0x54fe54]
-    mov ecx, 0x101
+    mov ecx, {DN_AMIN << 16 | 0x101:#x}
     call {dn_stamp:#x}
 dl_anext:
     inc esi
@@ -12595,6 +12605,136 @@ dm_out:
     popad
     jmp 0x4114f7
 ''')
+
+# ---------------------------------------------------------------- Camuflaje (bono de movimiento "camo", de noche)
+# De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla se dibuja con un filtro gris (cam_tab: cada color
+# mezclado 40 % con un gris medio fijo al 60 %, al índice más parecido de la paleta) si todas las unidades de su
+# bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo sumo 8
+# letras). Un grupo con un héroe no se camufla. El gris cubre el dibujo entero, banderín del color del equipo incluido:
+# después de la copia de 0x4dd530, 0x4ee3c0 recolorea con los mismos argumentos, usando el mismo dibujo como máscara.
+# Solo el dibujo del ejército quieto (0x459d0d, vía crdraw); el grupo que se está moviendo (0x459e15, 0x459eea) no.
+CAMO = b'camo'
+camstr = place_data('camstr', CAMO + b'\0')
+def cam_table():
+    pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
+    rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
+    cand = [10] + [i for i in range(16, 245) if i != 187]
+    out = bytearray(range(256))
+    for i in range(256):
+        if i == 11: continue
+        t = tuple(c * 0.4 + 32 * 0.6 for c in rgb[i])
+        out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
+    return bytes(out)
+CAM_TAB = cam_table()
+cam_tab = place_data('cam_tab', CAM_TAB)
+cam_hit = place_data('cam_hit', bytes(4))
+cam_rec = place('cam_rec', boatbon_src('cam_rec', camstr, rec=True))
+# cam_stack: eax = x, edx = y, ecx = bando -> eax = 1 si hay unidades de ese bando en (x, y) y todas tienen "camo".
+cam_stack = place('cam_stack', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov ebp, ecx
+    xor ebx, ebx
+    mov esi, 1
+cs_loop:
+    movsx ecx, word ptr [0x54fe50]
+    cmp esi, ecx
+    jge cs_end
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz cs_next
+    cmp word ptr [edi + 0x54fe52], ax
+    jne cs_next
+    cmp word ptr [edi + 0x54fe54], dx
+    jne cs_next
+    movzx ecx, word ptr [edi + 0x54fe5e]
+    push ecx
+    shr ecx, 5
+    and ecx, 0xf
+    cmp ecx, ebp
+    pop ecx
+    jne cs_next
+    and ecx, 0x1f
+    cmp ecx, 16
+    jae cs_no
+    push eax
+    push edx
+    mov eax, ebp
+    shl eax, 4
+    add eax, ecx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {camstr:#x}
+    call {cam_rec:#x}
+    mov ecx, eax
+    pop edx
+    pop eax
+    test ecx, ecx
+    jz cs_no
+    inc ebx
+cs_next:
+    inc esi
+    jmp cs_loop
+cs_no:
+    xor ebx, ebx
+cs_end:
+    xor eax, eax
+    test ebx, ebx
+    setnz al
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# cam_blit: en lugar de 0x4dd530 al final de crdraw. esi = celda, ebp = vista; columna y fila de la celda en
+# [esp+0x38]/[esp+0x3a] (las del llamador 0x459790), origen de la vista en [ebp+0x28]/[ebp+0x2a].
+cam_blit = place('cam_blit', f'''
+    cmp dword ptr [{DN_ON:#x}], 0
+    jne cb_go
+    jmp 0x4dd530
+cb_go:
+    pushad
+    movsx eax, word ptr [esp + 0x58]
+    movsx edx, word ptr [ebp + 0x28]
+    add eax, edx
+    movsx edx, word ptr [esp + 0x5a]
+    movsx ecx, word ptr [ebp + 0x2a]
+    add edx, ecx
+    movzx ecx, word ptr [esi + 4]
+    and ecx, 0xf
+    call {cam_stack:#x}
+    mov dword ptr [{cam_hit:#x}], eax
+    popad
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    call 0x4dd530
+    add esp, 0x20
+    cmp dword ptr [{cam_hit:#x}], 0
+    je cb_out
+    push {cam_tab:#x}
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    push dword ptr [esp + 0x24]
+    call 0x4ee3c0
+    add esp, 0x24
+cb_out:
+    ret
+''')
+caves['crblit'] = struct.pack('<I', cam_blit) + caves['crblit'][4:]   # conserva el relleno que le sumó place()
 
 # ---------------------------------------------------------------- ícono del exe: craneo.ico (64, 32 y 16)
 # El original trae RT_GROUP_ICON 148 con dos RT_ICON de 32x32 (ids 5 y 6). .rsrc no tiene lugar libre y lo sigue
@@ -13437,7 +13577,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.

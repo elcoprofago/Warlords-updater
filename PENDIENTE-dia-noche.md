@@ -123,6 +123,22 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Sin verificar en el juego: que la marca [+0xc] alcance para que el minimapa se rearme justo al cambiar de vuelta.
   El otro minimapa (0x5020e0, clase 0x4f5060, hoja 0x6a) no se tocó.
 
+## Paso 7 — luz de los ejércitos al 50 % y bono «camo» (26/10/2026, vista aliada 1.0.78.0; tareas 50 y 51)
+
+- Luz de los ejércitos: `dn_stamp` toma el nivel mínimo de cada luz en los bits 16..23 de ecx (0 = DN_MIN). Los
+  ejércitos usan DN_AMIN = 4 (0,82^4 ~45 %; el 3 daría ~55 %): pedido «al 50 % en su punto más alto». Ciudades y
+  sitios siguen en DN_MIN. Vale también para el minimapa (usa `dn_lights`).
+- Camuflaje: bono de movimiento **camo** (`TERRAIN\SUBTYPE\camo.STT`, fuera de la lista de Combat Bonus del editor;
+  los nombres de bono tienen 8 letras como máximo, por eso no «camouflage»). De noche (DN_ON), `cam_blit` reemplaza
+  la copia final de `crdraw` (0x459d0d, ejército quieto; se engancha con el puntero CRBLIT): copia como siempre y, si
+  todas las unidades del bando de la celda en esa casilla tienen «camo» (`cam_stack`; un héroe lo impide), recolorea
+  con 0x4ee3c0 y los mismos argumentos (el mismo dibujo hace de máscara: solo cambian sus píxeles, banderín de color
+  incluido) con `cam_tab` (40 % del color + 60 % de gris medio). Elegido el gris porque «del color del terreno»
+  exigiría mezclar con el fondo de cada píxel, que la rutina de tablas del juego no hace.
+- No cubre el grupo mientras se anima su paso (0x459e15, 0x459eea): se ve normal hasta que se para.
+- Prueba: `prueba_camuflaje.py` (todo camo, mixto, héroe, enemigo, mayúsculas; de día, sin opción y con Hidden Map
+  nada; la tabla contra Python). `prueba_dianoche.py` con AMIN.
+
 **Falta:**
 - Lo no explorado más oscuro de noche: sin Hidden Map el revelado (0x441b30) no corre, así que no hay registro de
   qué está explorado; haría falta llevarlo aparte. Para más adelante.

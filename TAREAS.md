@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 50).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 52).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,15 +15,26 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **49.** Probar la noche de 8 escalones y el minimapa de noche (vista aliada 1.0.77.0, 26/10/2026)
-Cambios: la oscuridad tiene 8 escalones y el más oscuro queda al 20 % del brillo; de noche el minimapa también se
-oscurece, con los mismos halos que el mapa.
+- [ ] **50.** Probar la luz de tus ejércitos al 50 % (vista aliada 1.0.78.0, 26/10/2026)
+Cambio: de noche, la casilla de tus ejércitos y la de al lado ya no quedan casi a pleno brillo: quedan al 45 %
+(el escalón más cercano al 50 % sin pasarlo) y desde ahí se oscurecen hacia afuera. Ciudades, ruinas, sitios y
+puentes siguen como estaban.
 1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
-2. En una vuelta par (de noche): el minimapa tiene que verse oscuro, con zonas claras alrededor de tus ciudades,
-   ejércitos, ruinas, sitios y puentes, en los mismos lugares que en el mapa grande.
-3. Pasá a la vuelta siguiente (de día): el minimapa tiene que volver a verse claro. Anotá si en algún cambio de
-   vuelta quedó con el brillo de la vuelta anterior.
-4. Mové un ejército de noche: en el minimapa la zona clara tiene que seguirlo.
+2. En una vuelta par (de noche), mirá un ejército tuyo lejos de las ciudades: su halo tiene que verse más apagado
+   que el de una ciudad. En el minimapa, igual.
+3. Anotá si te gusta así o si lo querés más claro (55 %) o más oscuro.
+
+- [ ] **51.** Probar el bono «camo» (camuflaje) (vista aliada 1.0.78.0, 26/10/2026)
+Cambio: bono de movimiento nuevo **camo** (el editor muestra el nombre del archivo, y esos nombres no pueden pasar de
+8 letras: por eso «camo» y no «camouflage»). De noche, un grupo cuyas unidades tienen **todas** ese bono se dibuja
+con un filtro gris al 60 %, banderín del color del equipo incluido. De día, nada. Un grupo con un héroe, o con alguna
+unidad sin el bono, se ve normal. El grupo mientras camina (la animación del paso) se ve normal; queda gris al pararse.
+1. Abrí war3ed_av.exe (el editor; si estaba abierto, cerralo y volvelo a abrir) y en **Edit Army Data** poné
+   **camo** en uno de los Move Bonus de un tipo de unidad (por ejemplo los Scouts). Guardá el escenario.
+2. Abrí ese escenario con DarklordAV.exe y **Day/Night** marcado. Armá un grupo solo de esas unidades.
+3. De noche: ese grupo tiene que verse gris (también el banderín de color). Uno mezclado con otras unidades, no.
+4. De día: tiene que verse normal.
+5. Mirá también un grupo enemigo con ese bono, si lo hay: tiene que verse gris igual.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
@@ -33,6 +44,17 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 3. Avisame cuando termine: la analizo.
 
 # Hecho
+
+- [x] **49.** Probar la noche de 8 escalones y el minimapa de noche (vista aliada 1.0.77.0, 26/10/2026)
+Cambios: la oscuridad tiene 8 escalones y el más oscuro queda al 20 % del brillo; de noche el minimapa también se
+oscurece, con los mismos halos que el mapa.
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
+2. En una vuelta par (de noche): el minimapa tiene que verse oscuro, con zonas claras alrededor de tus ciudades,
+   ejércitos, ruinas, sitios y puentes, en los mismos lugares que en el mapa grande.
+3. Pasá a la vuelta siguiente (de día): el minimapa tiene que volver a verse claro. Anotá si en algún cambio de
+   vuelta quedó con el brillo de la vuelta anterior.
+4. Mové un ejército de noche: en el minimapa la zona clara tiene que seguirlo.
+**Resultado (26/10/2026):** bien, «es lo que quería lograr»; el minimapa reproduce bien el efecto.
 
 - [x] **48.** Probar la noche nueva (vista aliada 1.0.76.0, 26/10/2026)
 Cambios: la zona iluminada ahora también se oscurece un poco, la oscuridad tiene 6 escalones (antes 4) y el halo de

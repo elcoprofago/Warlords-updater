@@ -16,7 +16,7 @@ SEND = 0x48fad0      # SendMessageA (importación)
 FILL = 0x428d60      # llena el combo con los subtipos; cdecl, devuelve la cantidad
 CB_DELETESTRING, CB_FINDSTRINGEXACT = 0x144, 0x158
 MOVE_NO = ('bridge', 'trap')
-COMB_NO = ('landing', 'carrier', 'cabotage', 'bridge')
+COMB_NO = ('landing', 'carrier', 'cabotage', 'bridge', 'camo')
 CALLS = {0x41453e: 'move', 0x41454f: 'move', 0x414560: 'move', 0x41456f: 'move', 0x414580: 'comb',   # 148
          0x41d3d8: 'move', 0x41d3e9: 'move', 0x41d3fa: 'move', 0x41d409: 'move', 0x41d41a: 'comb'}   # 154
 GIANT = 0x9b6eb      # entrada de DLGINIT 148 (combo 0x458, CB_ADDSTRING) del índice 14 = código 34
