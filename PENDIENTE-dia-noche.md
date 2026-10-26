@@ -45,3 +45,27 @@ niebla). La noche puede salir de ahí sin dibujos nuevos para lo básico:
 3. La opción: el diálogo 9 (Customize Options) ya tiene casillas clonadas por el parche (build.py, «Diálogo 9»,
    ~l.12296, y refresh/init/report ~l.571-640); la de día/noche va igual, deshabilitada si Hidden Map está puesto.
    Falta elegir el bit (el byte 25 del bloque de opciones, SHOPT, tiene libres los bits 0x02 en adelante).
+
+## Paso 2 — las tablas de oscurecer y el contador de vueltas (26/10/2026, Darklord.exe original)
+
+**Tablas 0x589608 / 0x589708:** son parte del objeto paleta en **0x589308** (RGB 256x3 en +0, tablas en +0x300 y
++0x400). No las arma el código: las **lee del archivo `war3.pal`** (1280 bytes = 0x300 RGB + 0x100 + 0x100), en
+0x4e94d0 (llamado desde 0x4de81d). Si el archivo es más corto, las llena con 0x0a y 0x0f.
+- 0x589608 (+0x300) = **oscurecer**: en `war3.pal` deja cada color en ~50 % de su brillo (mín. 0, máx. 86 %).
+- 0x589708 (+0x400) = **aclarar**: ~1,8x (1,0 a 4,8x). La usan 0x45ccc9 y 0x45d0b8 (dibujos de 48x48 en modo 1;
+  el modo 0 de esos mismos lugares oscurece con 0x589608) y 0x4942eb.
+- La paleta es VGA de 6 bits (componentes 0..63).
+
+**Consecuencia:** las tablas nuevas (noche más oscura, escalones del halo) se pueden calcular en el parche al
+cargar la paleta, a partir del RGB de 0x589308: para cada color, el índice de la paleta más parecido a ese color
+multiplicado por un factor (p. ej. 0,35 / 0,5 / 0,7 / 0,85). Cuatro o cinco tablas de 256 bytes, en datos del parche;
+no hace falta tocar `war3.pal`. Para "lo no explorado" de noche, la tabla más oscura (o la de 0x589608 dos veces).
+
+**Contador de vueltas:** objeto de juego **0x5032f8**: palabra **+0x30 = número de vuelta** (lectura 0x420a80;
+ya usado en build.py, «turno = [0x5032f8 + 0x30]»), +0x2a = bando del turno (0x420a70). Sube en **0x4212dd**
+(`inc word [esi+0x30]`, dentro de 0x4212b0, solo cuando el indicador +0x32 de "vuelta completa" está puesto;
+después llama a 0x43c620). Regla día/noche: día si la vuelta es impar, noche si es par (o al revés): falta
+confirmar con qué valor arranca (1 en la primera vuelta, se ve en el juego).
+
+**Punto 3 (la opción en el diálogo 9) sigue sin hacer.** Próximo paso: elegir el bit de SHOPT, clonar la casilla en
+el diálogo 9 como las otras del parche, deshabilitada con Hidden Map; y después el pintado (paso de 0x45a960).
