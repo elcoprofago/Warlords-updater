@@ -25,7 +25,7 @@ cand = [10] + [i for i in range(16, 245) if i != 187]
 CAM = bytearray(range(256))
 for i in range(256):
     if i == 11: continue
-    t = tuple(c * 0.7 + 32 * 0.3 for c in rgb[i])
+    t = tuple(c * 0.55 + 160 * 0.45 for c in rgb[i])
     CAM[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
 
 class Cam(Bench):
@@ -142,5 +142,5 @@ b.set(night=False); b.pre()
 assert report() == ALL
 print('4) Army Report de día: todos')
 gray = sum(1 for i in range(256) if i != 11 and CAM[i] != i)
-print(f'5) tabla 30 %: {gray} colores cambian')
+print(f'5) tabla silueta: {gray} colores cambian')
 print('TODO OK')

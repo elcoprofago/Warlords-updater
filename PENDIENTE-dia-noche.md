@@ -154,3 +154,8 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
   0x414e1a salta a 0x414e2b (no dibuja) si es de noche, el dueño no es quien mira ni un aliado mutuo con vista
   aliada (`fogally`), y `cam_stack` da camuflado. La barra de conteo del informe no cambia (no revela posición).
 - Prueba: `prueba_camuflaje.py` (2ª y 3ª pasada, Army Report visto por cada bando, de día todos).
+
+## Paso 9 — silueta más clara (26/10/2026, vista aliada 1.0.80.0; tarea 53)
+
+- Tarea 52: el globito ya sale gris, pero el camuflado de noche no se veía (fondo oscuro + gris oscuro 32 al 30 %).
+  `cam_tab` pasa a 55 % del fondo + 45 % de gris claro 160: silueta gris clara visible.
