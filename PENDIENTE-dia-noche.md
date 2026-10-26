@@ -171,3 +171,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Tarea 54: el gris oscuro se notaba. `cam_tab` = oliva (95, 110, 60) × (0,8 + 0,4 · luminancia/255): poco contraste
   y del tono del pasto. La paleta es de 256 colores sin transparencia real; si hiciera falta más, el próximo paso es
   tramar (copiar solo parte de los píxeles).
+
+## Paso 12 — escala de la paleta (26/10/2026, vista aliada 1.0.83.0; tarea 56)
+
+- Tarea 55: mancha blanca otra vez. Causa: `war3.pal` va de 0 a 63 por canal y las fórmulas de 1.0.80.0 y 1.0.82.0
+  usaban 0..255, así que todo caía en el color más claro. Ahora oliva (24, 28, 15) y luminancia /63: sale en los
+  índices 19, 20, 215, 217 (grises ~20) y 165..167 (oliva ~31, 31, 8).

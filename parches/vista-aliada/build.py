@@ -12611,8 +12611,9 @@ dm_out:
 # bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo
 # sumo 8 letras). Un grupo con un héroe no se camufla. Se copia el dibujo (0x4dd530) y 0x4ee3c0 lo recolorea con los
 # mismos argumentos (el dibujo hace de máscara) con cam_tab: cada color pasado a un gris verdoso del tono del pasto
-# (95, 110, 60), entre el 80 % y el 120 % según su luminancia, al índice más parecido de la paleta: poco contraste,
-# se confunde con el terreno (el gris oscuro del 1.0.81.0 se notaba demasiado). Vale para todo lo que se dibuja
+# (24, 28, 15; la paleta va de 0 a 63 por canal), entre el 80 % y el 120 % según su luminancia, al índice más
+# parecido de la paleta: poco contraste, se confunde con el terreno (el gris oscuro del 1.0.81.0 se notaba demasiado;
+# el 1.0.80.0 y el 1.0.82.0 salían blancos por tomar la paleta como 0..255). Vale para todo lo que se dibuja
 # del ejército: la figura (0x459d0d vía crdraw, y 0x45a14f/0x45a18e de la 3ª pasada), el globito del color del equipo
 # (0x45a267), su barra (0x45a2ac) y los iconos de la hoja 0x38 (0x45a2cc, 0x45a34a, 0x45a3a5). El grupo que se está
 # moviendo (0x459e15, 0x459eea) no. El Army Report (minimapa 0x414d50) no muestra esos ejércitos a los demás.
@@ -12625,7 +12626,7 @@ def cam_table():
     out = bytearray(range(256))
     for i in range(256):
         if i == 11: continue
-        t = tuple(o * (0.8 + 0.4 * sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) / 255) for o in (95, 110, 60))
+        t = tuple(o * (0.8 + 0.4 * sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) / 63) for o in (24, 28, 15))
         out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
     return bytes(out)
 CAM_TAB = cam_table()
