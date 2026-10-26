@@ -131,4 +131,30 @@ Tandas 76 a 80 (Tanda_hex_control, Artificer + Devout en los seis): 25 partidas 
   el turno 3 en (44,128), junto a su capital nueva (Yellow Main, 33,137).
 - Falta: que el usuario corra la tanda (TAREAS 44) y analizarla. Lectura: si el amarillo sigue ganando (~17/25) pesa
   el orden de turno; si gana el verde, pesa el lugar (abajo a la izquierda). Comparar con el control 76-80.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5': analizar la tanda de lugares intercambiados".
+
+## Paso 5': resultado (26/10/2026) — el amarillo ganaba por el lugar
+Tandas 82 a 86 (Tanda_hex_lugar_control): 30 partidas ok, ninguna colgada. Columnas: gana / PV / eliminado.
+
+| color    | control 76-80 (25)  | amarillo y verde intercambiados (30) |
+|----------|---------------------|--------------------------------------|
+| blanco   | 8 · 23.8 · 0        | 17 · 24.5 · 0                        |
+| amarillo | 17 · 30.8 · 0       | 1 · 7.0 · 6                          |
+| rojo     | 0 · 4.2 · 6         | 0 · 3.6 · 9                          |
+| verde    | 0 · 1.7 · 12        | 6 · 13.5 · 0                         |
+| azul     | 0 · 9.6 · 0         | 5 · 12.4 · 0                         |
+| negro    | 0 · 6.1 · 5         | 3 · 14.3 · 0                         |
+
+- El amarillo, jugando segundo desde el lugar del verde, se hunde como el verde de antes (1 victoria, 6 veces
+  eliminado). Su ventaja era el lugar, no el orden de turno.
+- Pero el verde, desde el lugar del amarillo, no hereda toda la ventaja (6 de 30, no 17): el reparto se abrió (azul 5,
+  negro 3) y el blanco se queda con más. El lugar pesa con quién tiene al lado: al dejar de estar fuerte abajo a la
+  izquierda, los vecinos del amarillo (negro, rojo) cambian de suerte. Hipótesis sin verificar.
+- El blanco sigue ganando con el amarillo fuera de juego. Falta saber si es su lugar o jugar primero.
+
+## Paso 5'': blanco contra negro (preparado 26/10/2026)
+- Tanda_hex_espejo_control = Tanda_hex_control con blanco (0) y negro (7) intercambiados (ia\intercambiar.py, sus
+  lugares son espejo exacto). Prueba: tanda 87, partida 527, de prueba, tope 3: carga y juega; el negro ataca en el
+  turno 3 en (109,76), junto a su capital nueva (White Main, 122,79).
+- Falta: tanda del usuario (TAREAS 45). Si el blanco sigue ganando desde el lugar del negro, pesa jugar primero; si
+  gana el negro, pesa el lugar. Después de esto, elegir cómo emparejar (paso 3) con los dos resultados.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5'': analizar blanco contra negro".

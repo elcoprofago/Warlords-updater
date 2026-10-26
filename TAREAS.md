@@ -15,6 +15,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **45.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
+Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Avisame cuando termine: la analizo.
+
 - [ ] **46.** Probar el día y la noche (vista aliada 1.0.75.0, 26/10/2026)
 Actualizá con la opción de vista aliada y empezá una partida nueva con DarklordAV.exe. En Customize Options marcá
 **Day/Night** (columna derecha de Viewing Options): Hidden Map se tiene que desmarcar sola. Ya en el juego:
@@ -37,14 +44,6 @@ siguiente. La mina submarina sigue hundiendo todo.
    derribá un puente (con misión o sin ella) y reconstruí otro. Al cerrarse los carteles, el mapa tiene que verse
    entero, sin pedazos recortados ni pixelados, sin tener que pasar el mouse.
 Resultado:
-
-- [ ] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
-Sirve para saber si el amarillo gana por el lugar donde arranca o por jugar segundo: en esta guardada el amarillo sale
-desde el lugar del verde y el verde desde el del amarillo.
-1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
-2. **Ninguna**, marcá solo **hex_lugar_control** (tiene que aparecer «(control)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. Avisame cuando termine: la analizo.
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -111,6 +110,16 @@ Resultado:
 
 
 # Hecho
+
+- [x] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
+Sirve para saber si el amarillo gana por el lugar donde arranca o por jugar segundo: en esta guardada el amarillo sale
+desde el lugar del verde y el verde desde el del amarillo.
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_lugar_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Avisame cuando termine: la analizo.
+Hecha (26/10/2026, tandas 82 a 86, 30 partidas sin cuelgues): el amarillo, desde el lugar del verde, ganó 1 de 30
+(antes 17 de 25). Su ventaja era el lugar, no jugar segundo.
 
 - [x] **40.** Probar la misión de destruir un puente y las trampas de 2 explosiones (vista aliada 1.0.70.0, 24/10/2026) — hecha el 26/10/2026
 Todos actualizan antes con el Actualizador (opción del parche vista aliada).
