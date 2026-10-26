@@ -12042,7 +12042,7 @@ iv_back:
 # celda nunca se oscurece dos veces ni queda con la oscuridad de antes. dn_post (en 0x45aa6e, después de la niebla)
 # pinta los niveles en las mismas celdas que repintó el juego. Vistas de más de DN_MAX celdas por lado: lo que pasa
 # de DN_MAX queda de día.
-DN_N = 6
+DN_N = 8
 DN_MIN = 1
 DN_MAX = 64
 DN_G = DN_MAX + 2
@@ -12052,7 +12052,7 @@ def dn_table():
     pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
     rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
     cand = [10] + [i for i in range(16, 245) if i != 187]   # sin los colores de Windows, el 11 transparente ni el verde 187
-    f = 0.82                                                  # por nivel: la luz ~82 %, 6 niveles ~30 %; tinte azul
+    f = 0.82                                                  # por nivel: la luz ~82 %, 8 niveles ~20 %; tinte azul
     out = bytearray(range(256))
     for i in range(256):
         if i == 11: continue
@@ -12060,16 +12060,18 @@ def dn_table():
         t = (r * f * 0.92, g * f * 0.96, b * f * 1.05)
         out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
     return bytes(out)
-dn_tab = place_data('dn_tab', dn_table())
+DN_TAB = dn_table()
+dn_tab = place_data('dn_tab', DN_TAB)
 dn_d = place_data('dn_d', bytes(DN_G * DN_G))
 dn_old = place_data('dn_old', bytes(DN_G * DN_G))
-dn_var = place_data('dn_var', bytes(4 * 13))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p, sh
-DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P, DN_SH = (dn_var + 4 * i for i in range(13))
+dn_var = place_data('dn_var', bytes(4 * 19))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p, sh, base, str, last, mw, mh, row
+(DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P, DN_SH,
+ DN_BASE, DN_STR, DN_LAST, DN_MW, DN_MH, DN_ROW) = (dn_var + 4 * i for i in range(19))
 # Las 8 vecinas en el orden de 0x45c8f0 (N, NE, E, SE, S, SO, O, NO), como desplazamientos en la grilla.
 dn_offs = place_data('dn_offs', struct.pack('<8i', *(dy * DN_G + dx for dx, dy in
                      zip((0, 1, 1, 1, 0, -1, -1, -1), (-1, -1, 0, 1, 1, 1, 0, -1)))))
 
-# dn_stamp: eax = x, edx = y del mapa, cl = radio, ch = 1 halo redondo / 0 cuadrado -> baja el nivel de las casillas de la grilla a su alcance.
+# dn_stamp: eax = x, edx = y del mapa (grilla en [DN_BASE], [DN_STR] bytes por fila; origen GX0/GY0, tamaño GW x GH), cl = radio, ch = 1 halo redondo / 0 cuadrado -> baja el nivel de las casillas de la grilla a su alcance.
 dn_stamp = place('dn_stamp', f'''
     pushad
     sub eax, dword ptr [{DN_GX0:#x}]
@@ -12149,11 +12151,13 @@ ds_lev:
     add eax, {DN_MIN}
     cmp eax, {DN_N}
     jge ds_xnext
-    imul edx, ebx, {DN_G}
+    mov edx, ebx
+    imul edx, dword ptr [{DN_STR:#x}]
     add edx, esi
-    cmp byte ptr [edx + {dn_d:#x}], al
+    add edx, dword ptr [{DN_BASE:#x}]
+    cmp byte ptr [edx], al
     jbe ds_xnext
-    mov byte ptr [edx + {dn_d:#x}], al
+    mov byte ptr [edx], al
 ds_xnext:
     inc esi
     jmp ds_x
@@ -12161,6 +12165,87 @@ ds_ynext:
     inc ebx
     jmp ds_yrow
 ds_out:
+    popad
+    ret
+''')
+
+# dn_lights: estampa en la grilla todas las luces de [GX0 - DN_N - 1, GX0 + GW + DN_N + 1) x (lo mismo en y).
+dn_lights = place('dn_lights', f'''
+    pushad
+    mov edi, dword ptr [{DN_GY0:#x}]
+    sub edi, {DN_N + 1}
+dl_sy:
+    mov eax, dword ptr [{DN_GY0:#x}]
+    add eax, dword ptr [{DN_GH:#x}]
+    add eax, {DN_N + 1}
+    cmp edi, eax
+    jge dl_arm
+    mov esi, dword ptr [{DN_GX0:#x}]
+    sub esi, {DN_N + 1}
+dl_sx:
+    mov eax, dword ptr [{DN_GX0:#x}]
+    add eax, dword ptr [{DN_GW:#x}]
+    add eax, {DN_N + 1}
+    cmp esi, eax
+    jge dl_synext
+    mov eax, esi
+    mov edx, edi
+    call {br_tile:#x}
+    test eax, eax
+    jz dl_sxnext
+    movzx ecx, byte ptr [eax + 3]
+    and ecx, 7
+    cmp ecx, 3
+    je dl_city
+    cmp ecx, 2
+    je dl_site
+    cmp ecx, 4
+    je dl_site
+    cmp ecx, 1
+    jne dl_sxnext
+    call {br_kind:#x}
+    cmp eax, 1
+    jne dl_sxnext
+dl_site:
+    mov ecx, 0x100
+    jmp dl_put
+dl_city:
+    mov ecx, 1
+dl_put:
+    mov eax, esi
+    mov edx, edi
+    call {dn_stamp:#x}
+dl_sxnext:
+    inc esi
+    jmp dl_sx
+dl_synext:
+    inc edi
+    jmp dl_sy
+dl_arm:
+    movsx ebx, word ptr [0x560b20]
+    cmp ebx, 8
+    jae dl_out
+    mov esi, 1
+dl_aloop:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge dl_out
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz dl_anext
+    movzx eax, word ptr [edi + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne dl_anext
+    movsx eax, word ptr [edi + 0x54fe52]
+    movsx edx, word ptr [edi + 0x54fe54]
+    mov ecx, 0x101
+    call {dn_stamp:#x}
+dl_anext:
+    inc esi
+    jmp dl_aloop
+dl_out:
     popad
     ret
 ''')
@@ -12178,6 +12263,16 @@ dn_pre = place('dn_pre', f'''
     mov bl, {DN_N}
 dp_fill:
     mov dword ptr [{DN_ON:#x}], ebx
+    cmp ebx, dword ptr [{DN_LAST:#x}]
+    je dp_same
+    mov dword ptr [{DN_LAST:#x}], ebx
+    mov eax, dword ptr [0x57276c]
+    test eax, eax
+    jz dp_same
+    mov dword ptr [eax + 0xc], 1
+dp_same:
+    mov dword ptr [{DN_BASE:#x}], {dn_d:#x}
+    mov dword ptr [{DN_STR:#x}], {DN_G}
     mov edi, {dn_d:#x}
     mov ecx, {DN_G * DN_G}
     mov al, bl
@@ -12204,79 +12299,7 @@ dp_h:
     mov dword ptr [{DN_GY0:#x}], eax
     test ebx, ebx
     jz dp_cmp
-    mov edi, dword ptr [{DN_GY0:#x}]
-    sub edi, {DN_N + 1}
-dp_sy:
-    mov eax, dword ptr [{DN_GY0:#x}]
-    add eax, dword ptr [{DN_GH:#x}]
-    add eax, {DN_N + 1}
-    cmp edi, eax
-    jge dp_arm
-    mov esi, dword ptr [{DN_GX0:#x}]
-    sub esi, {DN_N + 1}
-dp_sx:
-    mov eax, dword ptr [{DN_GX0:#x}]
-    add eax, dword ptr [{DN_GW:#x}]
-    add eax, {DN_N + 1}
-    cmp esi, eax
-    jge dp_synext
-    mov eax, esi
-    mov edx, edi
-    call {br_tile:#x}
-    test eax, eax
-    jz dp_sxnext
-    movzx ecx, byte ptr [eax + 3]
-    and ecx, 7
-    cmp ecx, 3
-    je dp_city
-    cmp ecx, 2
-    je dp_site
-    cmp ecx, 4
-    je dp_site
-    cmp ecx, 1
-    jne dp_sxnext
-    call {br_kind:#x}
-    cmp eax, 1
-    jne dp_sxnext
-dp_site:
-    mov ecx, 0x100
-    jmp dp_put
-dp_city:
-    mov ecx, 1
-dp_put:
-    mov eax, esi
-    mov edx, edi
-    call {dn_stamp:#x}
-dp_sxnext:
-    inc esi
-    jmp dp_sx
-dp_synext:
-    inc edi
-    jmp dp_sy
-dp_arm:
-    movsx ebx, word ptr [0x560b20]
-    cmp ebx, 8
-    jae dp_cmp
-    mov esi, 1
-dp_aloop:
-    movsx eax, word ptr [0x54fe50]
-    cmp esi, eax
-    jge dp_cmp
-    imul edi, esi, 0x1c
-    test byte ptr [edi + 0x54fe63], 0x40
-    jz dp_anext
-    movzx eax, word ptr [edi + 0x54fe5e]
-    shr eax, 5
-    and eax, 0xf
-    cmp eax, ebx
-    jne dp_anext
-    movsx eax, word ptr [edi + 0x54fe52]
-    movsx edx, word ptr [edi + 0x54fe54]
-    mov ecx, 0x101
-    call {dn_stamp:#x}
-dp_anext:
-    inc esi
-    jmp dp_aloop
+    call {dn_lights:#x}
 dp_cmp:
     xor ebx, ebx
 dp_crow:
@@ -12438,6 +12461,141 @@ dq_ret:
     ret
 ''')
 
+# Minimapa de noche. El del juego ([0x57276c], clase 0x4f5028) se rearma en 0x4114d0: copia la imagen base (hoja
+# 0x2d) a la hoja 0x28 y encima dibuja los íconos; después la 0x28 va a pantalla. dn_mini (en 0x4114ef, entre los
+# dos pasos, esi = el minimapa) oscurece la 0x28 con los mismos niveles que la vista: arma una grilla del mapa entero
+# (dn_m, DN_MG bytes por fila) con dn_lights y recolorea cada tramo de una fila de píxeles con igual nivel en una sola
+# llamada a 0x4ede30 (recoloreo de un rectángulo) con la tabla compuesta del nivel (dn_mt: dn_tab aplicada L veces).
+# Píxel -> casilla como 0x411370: x * ancho del mapa / ancho del minimapa. dn_pre marca el minimapa para rearmar
+# ([+0xc] = 1) cuando cambia entre día y noche.
+DN_MG = 256
+def dn_mtables():
+    out = bytearray()
+    t = bytes(range(256))
+    for _ in range(DN_N + 1):
+        out += t
+        t = bytes(DN_TAB[c] for c in t)
+    return bytes(out)
+dn_mt = place_data('dn_mt', dn_mtables())
+dn_m = place_data('dn_m', bytes(DN_MG * DN_MG))
+
+def dn_mlev(lab):   # eax = nivel de la casilla del píxel x = esi en la fila [DN_ROW]; usa edx
+    return f'''
+    movsx eax, word ptr [0x503e00]
+    imul eax, esi
+    cdq
+    idiv dword ptr [{DN_MW:#x}]
+    cmp eax, {DN_MG - 1}
+    jbe {lab}
+    mov eax, {DN_MG - 1}
+{lab}:
+    add eax, dword ptr [{DN_ROW:#x}]
+    movzx eax, byte ptr [eax]'''
+
+dn_mini = place('dn_mini', f'''
+    mov cx, word ptr [esp + 0x2c]
+    add esp, 0x20
+    pushad
+    test byte ptr [{SHOPT:#x}], 2
+    jz dm_out
+    test byte ptr [{OPT:#x}], 0x10
+    jnz dm_out
+    test byte ptr [{DN_TURN:#x}], 1
+    jnz dm_out
+    movsx eax, word ptr [esi + 0x20]
+    mov dword ptr [{DN_MW:#x}], eax
+    movsx eax, word ptr [esi + 0x22]
+    mov dword ptr [{DN_MH:#x}], eax
+    push dword ptr [{DN_GX0:#x}]
+    push dword ptr [{DN_GY0:#x}]
+    push dword ptr [{DN_GW:#x}]
+    push dword ptr [{DN_GH:#x}]
+    push dword ptr [{DN_BASE:#x}]
+    push dword ptr [{DN_STR:#x}]
+    xor eax, eax
+    mov dword ptr [{DN_GX0:#x}], eax
+    mov dword ptr [{DN_GY0:#x}], eax
+    movsx eax, word ptr [0x503e00]
+    cmp eax, {DN_MG}
+    jle dm_w
+    mov eax, {DN_MG}
+dm_w:
+    mov dword ptr [{DN_GW:#x}], eax
+    movsx eax, word ptr [0x503e02]
+    cmp eax, {DN_MG}
+    jle dm_h
+    mov eax, {DN_MG}
+dm_h:
+    mov dword ptr [{DN_GH:#x}], eax
+    mov dword ptr [{DN_BASE:#x}], {dn_m:#x}
+    mov dword ptr [{DN_STR:#x}], {DN_MG}
+    mov edi, {dn_m:#x}
+    mov ecx, {DN_MG * DN_MG}
+    mov al, {DN_N}
+    rep stosb
+    call {dn_lights:#x}
+    pop dword ptr [{DN_STR:#x}]
+    pop dword ptr [{DN_BASE:#x}]
+    pop dword ptr [{DN_GH:#x}]
+    pop dword ptr [{DN_GW:#x}]
+    pop dword ptr [{DN_GY0:#x}]
+    pop dword ptr [{DN_GX0:#x}]
+    cmp dword ptr [{DN_MW:#x}], 0
+    jle dm_out
+    cmp dword ptr [{DN_MH:#x}], 0
+    jle dm_out
+    xor edi, edi
+dm_row:
+    cmp edi, dword ptr [{DN_MH:#x}]
+    jge dm_out
+    movsx eax, word ptr [0x503e02]
+    imul eax, edi
+    cdq
+    idiv dword ptr [{DN_MH:#x}]
+    cmp eax, {DN_MG - 1}
+    jbe dm_ty
+    mov eax, {DN_MG - 1}
+dm_ty:
+    imul eax, eax, {DN_MG}
+    add eax, {dn_m:#x}
+    mov dword ptr [{DN_ROW:#x}], eax
+    xor esi, esi
+dm_run:
+    cmp esi, dword ptr [{DN_MW:#x}]
+    jge dm_rnext
+    mov ebp, esi{dn_mlev('dm_l1')}
+    mov ebx, eax
+dm_ext:
+    inc esi
+    cmp esi, dword ptr [{DN_MW:#x}]
+    jge dm_paint{dn_mlev('dm_l2')}
+    cmp eax, ebx
+    je dm_ext
+dm_paint:
+    test ebx, ebx
+    jz dm_run
+    mov eax, ebx
+    shl eax, 8
+    add eax, {dn_mt:#x}
+    push eax
+    push 1
+    mov eax, esi
+    sub eax, ebp
+    push eax
+    push edi
+    push ebp
+    push 0x28
+    call 0x4ede30
+    add esp, 0x18
+    jmp dm_run
+dm_rnext:
+    inc edi
+    jmp dm_row
+dm_out:
+    popad
+    jmp 0x4114f7
+''')
+
 # ---------------------------------------------------------------- ícono del exe: craneo.ico (64, 32 y 16)
 # El original trae RT_GROUP_ICON 148 con dos RT_ICON de 32x32 (ids 5 y 6). .rsrc no tiene lugar libre y lo sigue
 # .reloc, así que todo lo nuevo va en .avis: un subdirectorio RT_ICON con los tres tamaños (los offsets de
@@ -12546,6 +12704,7 @@ patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {ia_vic:#x}', 0x48279
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x459790, asm('sub esp, 0x14; mov word ptr [esp + 6], 0', 0x459790), asm(f'jmp {dn_pre:#x}', 0x459790) + bytes([0x90]) * 5)
 patch(0x45aa6e, asm('pop ebp; pop edi; pop esi; pop ebx; add esp, 0x14; ret', 0x45aa6e), asm(f'jmp {dn_post:#x}', 0x45aa6e) + bytes([0xcc]) * 3)
+patch(0x4114ef, asm('mov cx, word ptr [esp + 0x2c]; add esp, 0x20', 0x4114ef), asm(f'jmp {dn_mini:#x}', 0x4114ef) + bytes([0x90]) * 3)
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))
 patch(0x427877, asm('ja 0x427d43', 0x427877), asm(f'ja {click:#x}', 0x427877))

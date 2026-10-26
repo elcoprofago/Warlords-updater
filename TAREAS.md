@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 49).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 50).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,15 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **48.** Probar la noche nueva (vista aliada 1.0.76.0, 26/10/2026)
-Cambios: la zona iluminada ahora también se oscurece un poco, la oscuridad tiene 6 escalones (antes 4) y el halo de
-tus ejércitos, ruinas, sitios y puentes es redondo; el de las ciudades sigue cuadrado.
+- [ ] **49.** Probar la noche de 8 escalones y el minimapa de noche (vista aliada 1.0.77.0, 26/10/2026)
+Cambios: la oscuridad tiene 8 escalones y el más oscuro queda al 20 % del brillo; de noche el minimapa también se
+oscurece, con los mismos halos que el mapa.
 1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
-2. En una vuelta par (de noche), mirá cerca de tus ejércitos y de una ruina o sitio: el halo tiene que verse redondo.
-3. Contame si la luz quedó bien de oscura y si el degradé se ve suave o con escalones marcados.
+2. En una vuelta par (de noche): el minimapa tiene que verse oscuro, con zonas claras alrededor de tus ciudades,
+   ejércitos, ruinas, sitios y puentes, en los mismos lugares que en el mapa grande.
+3. Pasá a la vuelta siguiente (de día): el minimapa tiene que volver a verse claro. Anotá si en algún cambio de
+   vuelta quedó con el brillo de la vuelta anterior.
+4. Mové un ejército de noche: en el minimapa la zona clara tiene que seguirlo.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
@@ -30,6 +33,14 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 3. Avisame cuando termine: la analizo.
 
 # Hecho
+
+- [x] **48.** Probar la noche nueva (vista aliada 1.0.76.0, 26/10/2026)
+Cambios: la zona iluminada ahora también se oscurece un poco, la oscuridad tiene 6 escalones (antes 4) y el halo de
+tus ejércitos, ruinas, sitios y puentes es redondo; el de las ciudades sigue cuadrado.
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
+2. En una vuelta par (de noche), mirá cerca de tus ejércitos y de una ruina o sitio: el halo tiene que verse redondo.
+3. Contame si la luz quedó bien de oscura y si el degradé se ve suave o con escalones marcados.
+Resultado (26/10/2026): pediste 8 escalones con el más oscuro al 20 % y la noche también en el minimapa; va en la 49.
 
 - [x] **46.** Probar el día y la noche (vista aliada 1.0.75.0, 26/10/2026)
 Actualizá con la opción de vista aliada y empezá una partida nueva con DarklordAV.exe. En Customize Options marcá

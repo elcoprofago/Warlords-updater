@@ -109,6 +109,20 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Halo redondo en ejércitos, ruinas, sitios y puentes: distancia euclídea redondeada (`dn_stamp`, ch = 1); las
   ciudades siguen con máx + mín / 2 (cuadrado).
 
+## Paso 6 — 8 niveles y el minimapa (26/10/2026, vista aliada 1.0.77.0; prueba en el juego: tarea 49)
+
+- 8 niveles (DN_N = 8, factor 0,82: el más oscuro ~20 %).
+- Minimapa: el del juego es [0x57276c] (clase 0x4f5028); 0x4114d0 copia la imagen base (hoja 0x2d) a la hoja 0x28,
+  dibuja los íconos encima ([vtabla+0x10]) y la 0x28 va a pantalla (0x4dd4f0 en 0x4111b0). `dn_mini` (en 0x4114ef,
+  entre la copia y los íconos) arma una grilla del mapa entero (`dn_m`, 256 por fila) con `dn_lights` (las luces,
+  separadas de `dn_pre`; `dn_stamp` ahora escribe en [DN_BASE] con [DN_STR] por fila) y recolorea cada tramo de
+  igual nivel de cada fila de píxeles con 0x4ede30 y la tabla compuesta del nivel (`dn_mt`). Píxel -> casilla como
+  0x411370. `dn_pre` pone [minimapa+0xc] = 1 cuando cambia entre día y noche, para que se rearme.
+- Prueba en emulación (`prueba_dianoche.py`, casos 6 y 7): tramos y tablas contra Python, la vista intacta, de día
+  nada, y la marca de rearmado.
+- Sin verificar en el juego: que la marca [+0xc] alcance para que el minimapa se rearme justo al cambiar de vuelta.
+  El otro minimapa (0x5020e0, clase 0x4f5060, hoja 0x6a) no se tocó.
+
 **Falta:**
 - Lo no explorado más oscuro de noche: sin Hidden Map el revelado (0x441b30) no corre, así que no hay registro de
   qué está explorado; haría falta llevarlo aparte. Para más adelante.

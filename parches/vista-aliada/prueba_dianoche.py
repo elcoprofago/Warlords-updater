@@ -6,6 +6,9 @@
 # Se comparan la grilla de niveles, las celdas marcadas sucias y cada llamada al recoloreo (0x4ee3c0, stub) con el
 # mismo cálculo hecho en Python. Después: sin cambios no se ensucia nada; mover el ejército ensucia solo su entorno;
 # de día, con Hidden Map o sin la opción no se pinta nada y se ensucia lo que estaba oscuro.
+# Minimapa (dn_mini, en 0x4114ef) de 100x125: cada fila de píxeles se recolorea (0x4ede30, stub) en tramos de igual
+# nivel, con el nivel de la casilla del mapa entero; no toca la grilla de la vista; de día no pinta, y el cambio
+# entre día y noche marca el minimapa para rearmar.
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -16,15 +19,15 @@ SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 def jmp_target(va):
     assert img[va - BASE] == 0xe9
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
-DN_PRE, DN_POST = jmp_target(0x459790), jmp_target(0x45aa6e)
+DN_PRE, DN_POST, DN_MINI = jmp_target(0x459790), jmp_target(0x45aa6e), jmp_target(0x4114ef)
 
-N = 6; MIN = 1
+N = 8; MIN = 1
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
 VX, VY, VW, VH = 5, 5, 20, 15
 ME, ENEMY = 1, 2
 SHOPT, OPT, TURN = 0x53c38c + 25, 0x53c38e, 0x5032f8 + 0x30
 STUB = 0x100000; STACK = 0x200000; END = 0x1fff00
-VIEW = 0x110000; CELLS = 0x120000; SHEET = 0x130000
+VIEW = 0x110000; CELLS = 0x120000; SHEET = 0x130000; MINI = 0x138000; MMW, MMH = 100, 125
 
 def tile_va(x, y): return ((y * 10) << SHIFT) + x * 10 + 0x503e58
 
@@ -50,7 +53,9 @@ class Bench:
         mu.mem_write(VIEW + 0x28, struct.pack('<hh', VX, VY))
         mu.mem_write(VIEW + 0x40, struct.pack('<I', CELLS))
         mu.mem_write(SHEET + 8, struct.pack('<I', 1))
-        self.calls = []
+        self.calls = []; self.mcalls = []
+        mu.mem_write(MINI + 0x20, struct.pack('<hh', MMW, MMH))
+        mu.mem_write(0x57276c, struct.pack('<I', MINI))
         mu.hook_add(UC_HOOK_CODE, self.hook)
         self.set(night=True)
 
@@ -74,7 +79,7 @@ class Bench:
 
     def hook(self, mu, addr, size, _):
         esp = mu.reg_read(UC_X86_REG_ESP)
-        if addr in (0x45979a, END):
+        if addr in (0x45979a, END, 0x4114f7):
             mu.emu_stop()
         elif addr == 0x4e4a90:
             assert struct.unpack('<I', mu.mem_read(esp + 4, 4))[0] == 0x48
@@ -84,6 +89,9 @@ class Bench:
             raise AssertionError('no debía cargar la hoja')
         elif addr == 0x4ee3c0:
             self.calls.append(struct.unpack('<9I', mu.mem_read(esp + 4, 36)))
+            self.ret(esp, 0)
+        elif addr == 0x4ede30:
+            self.mcalls.append(struct.unpack('<6I', mu.mem_read(esp + 4, 24)))
             self.ret(esp, 0)
 
     def ret(self, esp, n):
@@ -119,7 +127,30 @@ class Bench:
         assert mu.reg_read(UC_X86_REG_EBP) == 0xb0b0 and mu.reg_read(UC_X86_REG_EDI) == 0xd1d1
         assert mu.reg_read(UC_X86_REG_ESI) == 0x5151 and mu.reg_read(UC_X86_REG_EBX) == 0xbbbb
 
+    def mini(self):
+        mu = self.mu
+        self.mcalls = []
+        sp = STACK - 0x300
+        mu.mem_write(sp + 0x2c, struct.pack('<H', 0x7777))
+        mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_ESI, MINI); mu.reg_write(UC_X86_REG_EBX, 0xbbbb)
+        mu.emu_start(DN_MINI, 0, count=50_000_000)
+        assert mu.reg_read(UC_X86_REG_EIP) == 0x4114f7
+        assert mu.reg_read(UC_X86_REG_ESP) == sp + 0x20 and mu.reg_read(UC_X86_REG_CX) == 0x7777
+        assert mu.reg_read(UC_X86_REG_ESI) == MINI and mu.reg_read(UC_X86_REG_EBX) == 0xbbbb
+
 # ---- el mismo cálculo en Python
+def level(b, x, y):
+    lev = N
+    for lx, ly, r0, round_ in lights(b):
+        dx, dy = abs(x - lx), abs(y - ly)
+        if round_:
+            d = 0
+            while dx * dx + dy * dy > d * d + d: d += 1   # raíz redondeada
+        else:
+            d = max(dx, dy) + min(dx, dy) // 2
+        lev = min(lev, max(d - r0, 0) + MIN)
+    return lev
+
 def lights(b):
     out = []
     for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False))
@@ -132,16 +163,7 @@ def grid(b):
     for gy in range(-1, VH + 1):
         for gx in range(-1, VW + 1):
             if not b.lit: g[gx, gy] = 0; continue
-            lev = N
-            for lx, ly, r0, round_ in lights(b):
-                dx, dy = abs(VX + gx - lx), abs(VY + gy - ly)
-                if round_:
-                    d = 0
-                    while dx * dx + dy * dy > d * d + d: d += 1   # raíz redondeada
-                else:
-                    d = max(dx, dy) + min(dx, dy) // 2
-                lev = min(lev, max(d - r0, 0) + MIN)
-            g[gx, gy] = lev
+            g[gx, gy] = level(b, VX + gx, VY + gy)
     return g
 
 TAB = None
@@ -204,4 +226,33 @@ for kw in (dict(night=False), dict(hidden=True), dict(option=False)):
     b.post(full=True); assert b.calls == [], kw
     b.set(night=True); b.clear_dirty(); b.pre(); assert b.dirty() == changed(g3, g2); g2 = grid(b)
 print('5) día / Hidden Map / sin opción: OK')
+# 6) minimapa: tramos de igual nivel por fila, tablas compuestas, y la vista intacta
+b.set(night=True); b.pre(); g = grid(b)
+lev = [[level(b, x, y) for x in range(MW)] for y in range(MH)]
+exp = []
+for py in range(MMH):
+    row = [lev[py * MH // MMH][px * MW // MMW] for px in range(MMW)]
+    px = 0
+    while px < MMW:
+        s0 = px
+        while px < MMW and row[px] == row[s0]: px += 1
+        exp.append((s0, py, px - s0, row[s0]))
+b.mini()
+assert all(c[0] == 0x28 and c[4] == 1 for c in b.mcalls)
+mt = b.mcalls[0][5] - exp[0][3] * 256
+got = [(x, y, w, (t - mt) // 256) for sheet, x, y, w, h, t in b.mcalls]
+assert got == exp, ([e for e in got if e not in exp][:5], [e for e in exp if e not in got][:5])
+tabs = [bytes(b.mu.mem_read(mt + 256 * L, 256)) for L in range(N + 1)]
+assert tabs[0] == bytes(range(256)) and all(tabs[L + 1] == bytes(tabs[1][c] for c in tabs[L]) for L in range(N))
+assert tabs[1] != tabs[0]
+b.post(full=True); check_calls(b, g)
+print(f'6) minimapa: {len(got)} tramos de recoloreo')
+# 7) minimapa de día / Hidden Map / sin opción: nada; el cambio día<->noche lo marca para rearmar
+for kw in (dict(night=False), dict(hidden=True), dict(option=False)):
+    b.set(**{'night': True, **kw}); b.mini(); assert b.mcalls == [], kw
+b.set(night=True); b.pre()
+for night, expect in ((False, 1), (False, 0), (True, 1), (True, 0)):
+    b.mu.mem_write(MINI + 0xc, struct.pack('<I', 0)); b.set(night=night); b.pre()
+    assert struct.unpack('<I', b.mu.mem_read(MINI + 0xc, 4))[0] == expect, (night, expect)
+print('7) minimapa de día / Hidden Map / sin opción / marca de rearmado: OK')
 print('TODO OK')
