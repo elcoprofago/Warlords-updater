@@ -25,7 +25,7 @@ cand = [10] + [i for i in range(16, 245) if i != 187]
 CAM = bytearray(range(256))
 for i in range(256):
     if i == 11: continue
-    t = tuple(c * 0.55 + 160 * 0.45 for c in rgb[i])
+    t = (sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) * 0.6,) * 3
     CAM[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
 
 class Cam(Bench):
@@ -75,7 +75,7 @@ class Cam(Bench):
         if not self.calls:
             assert self.blits == [args], self.blits
             return False
-        assert self.blits == [], 'camuflado: no se copia el dibujo'
+        assert self.blits == [args], self.blits
         assert len(self.calls) == 1 and self.calls[0][:8] == args, self.calls
         tab = bytes(mu.mem_read(self.calls[0][8], 256))
         assert tab == bytes(CAM), 'tabla gris distinta del cálculo en Python'

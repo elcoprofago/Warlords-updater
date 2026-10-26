@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 54).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 55).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **53.** Probar la silueta clara del camuflaje (vista aliada 1.0.80.0, 26/10/2026)
-Cambio: el grupo camuflado de noche ya no queda casi invisible: se ve como una silueta gris clara sobre el terreno
-(globito incluido, en gris).
+- [ ] **54.** Probar el camuflaje en gris apagado (vista aliada 1.0.81.0, 26/10/2026)
+Cambio: el grupo camuflado de noche ya no es una mancha blanca: se ve la figura de siempre, con su detalle, pero
+toda en gris oscuro (globito incluido).
 1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
-2. De noche, el grupo solo de unidades «camo» tiene que distinguirse, pero apagado y gris.
-3. Anotá si lo querés más visible o menos.
+2. De noche, el grupo solo de unidades «camo» tiene que verse como una figura gris apagada, no blanca ni invisible.
+3. Anotá si lo querés más claro o más oscuro.
 4. Army Report de noche: el grupo camuflado de otro jugador no tiene que figurar; de día, sí.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
@@ -31,6 +31,15 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 3. Avisame cuando termine: la analizo.
 
 # Hecho
+
+- [x] **53.** Probar la silueta clara del camuflaje (vista aliada 1.0.80.0, 26/10/2026)
+Cambio: el grupo camuflado de noche ya no queda casi invisible: se ve como una silueta gris clara sobre el terreno
+(globito incluido, en gris).
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
+2. De noche, el grupo solo de unidades «camo» tiene que distinguirse, pero apagado y gris.
+3. Anotá si lo querés más visible o menos.
+4. Army Report de noche: el grupo camuflado de otro jugador no tiene que figurar; de día, sí.
+Resultado (26/10/2026): se veía mal, una mancha blanca → figura en gris apagado, tarea 54.
 
 - [x] **52.** Probar el camuflaje al 30 % y el Army Report (vista aliada 1.0.79.0, 26/10/2026)
 Cambio: de noche, el grupo camuflado quieto ya no se dibuja gris encima del terreno: queda una silueta al 30 %

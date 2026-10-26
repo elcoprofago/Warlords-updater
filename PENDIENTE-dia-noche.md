@@ -159,3 +159,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 
 - Tarea 52: el globito ya sale gris, pero el camuflado de noche no se veía (fondo oscuro + gris oscuro 32 al 30 %).
   `cam_tab` pasa a 55 % del fondo + 45 % de gris claro 160: silueta gris clara visible.
+
+## Paso 10 — figura en gris apagado (26/10/2026, vista aliada 1.0.81.0; tarea 54)
+
+- Tarea 53: la silueta clara salía como una mancha blanca. Ahora el camuflado vuelve a copiar el dibujo y lo
+  recolorea con `cam_tab` = gris por luminancia (0,3 R + 0,59 G + 0,11 B) al 60 %: se conserva la figura, en gris
+  oscuro, globito incluido (cam_blit3 sigue en la 3ª pasada).

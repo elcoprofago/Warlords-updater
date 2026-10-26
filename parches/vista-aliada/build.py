@@ -12607,12 +12607,12 @@ dm_out:
 ''')
 
 # ---------------------------------------------------------------- Camuflaje (bono de movimiento "camo", de noche)
-# De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla queda como silueta gris si todas las unidades de su
+# De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla se ve en gris apagado si todas las unidades de su
 # bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo
-# sumo 8 letras). Un grupo con un héroe no se camufla. En vez de copiar el dibujo (0x4dd530), 0x4ee3c0 recolorea el
-# fondo con los mismos argumentos, usando el dibujo como máscara, con cam_tab: cada color del fondo mezclado 55 % con
-# un gris claro (160) al 45 %, al índice más parecido de la paleta (una silueta gris clara: con el gris oscuro
-# del 1.0.79.0 no se veía de noche). Vale para todo lo que se dibuja
+# sumo 8 letras). Un grupo con un héroe no se camufla. Se copia el dibujo (0x4dd530) y 0x4ee3c0 lo recolorea con los
+# mismos argumentos (el dibujo hace de máscara) con cam_tab: cada color pasado a gris por su luminancia y al 60 %, al
+# índice más parecido de la paleta (conserva el detalle de la figura; la silueta gris clara del 1.0.80.0 quedaba como
+# una mancha blanca). Vale para todo lo que se dibuja
 # del ejército: la figura (0x459d0d vía crdraw, y 0x45a14f/0x45a18e de la 3ª pasada), el globito del color del equipo
 # (0x45a267), su barra (0x45a2ac) y los iconos de la hoja 0x38 (0x45a2cc, 0x45a34a, 0x45a3a5). El grupo que se está
 # moviendo (0x459e15, 0x459eea) no. El Army Report (minimapa 0x414d50) no muestra esos ejércitos a los demás.
@@ -12625,7 +12625,7 @@ def cam_table():
     out = bytearray(range(256))
     for i in range(256):
         if i == 11: continue
-        t = tuple(c * 0.55 + 160 * 0.45 for c in rgb[i])
+        t = (sum(w * c for w, c in zip((0.3, 0.59, 0.11), rgb[i])) * 0.6,) * 3
         out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
     return bytes(out)
 CAM_TAB = cam_table()
@@ -12717,6 +12717,16 @@ def cam_blit_src(n, reg):
     jne {n}_ghost
     jmp 0x4dd530
 {n}_ghost:
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    call 0x4dd530
+    add esp, 0x20
     push {cam_tab:#x}
     push dword ptr [esp + 0x24]
     push dword ptr [esp + 0x24]
