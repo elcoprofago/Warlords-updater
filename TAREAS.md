@@ -15,15 +15,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **43.** IA: tanda de control en Hexagon, el mismo perfil en los seis colores (Monitor de IA 1.0.17, 25/10/2026)
-Sirve para saber si blanco y amarillo ganan por el lugar o por los perfiles (en la tanda 41 ganaron 29 de 30).
-1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar). Vista aliada sigue en 1.0.71.0.
-2. **Ninguna**, marcá solo **hex_control** (tiene que aparecer «(control)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. La bitácora tiene que mostrar en cada partida «perfiles blanco <- blanco, amarillo <- amarillo, …» (cada uno conserva
-   el suyo, que es el mismo en todos) y ninguna «victoria aliada».
-4. Avisame cuando termine: la analizo.
-
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
@@ -97,6 +88,17 @@ Resultado:
 
 
 # Hecho
+
+- [x] **43.** IA: tanda de control en Hexagon, el mismo perfil en los seis colores (Monitor de IA 1.0.17, 25/10/2026)
+Sirve para saber si blanco y amarillo ganan por el lugar o por los perfiles (en la tanda 41 ganaron 29 de 30).
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar). Vista aliada sigue en 1.0.71.0.
+2. **Ninguna**, marcá solo **hex_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. La bitácora tiene que mostrar en cada partida «perfiles blanco <- blanco, amarillo <- amarillo, …» (cada uno conserva
+   el suyo, que es el mismo en todos) y ninguna «victoria aliada».
+4. Avisame cuando termine: la analizo.
+Hecha (25/10/2026, tandas 76 a 80): 25 partidas válidas y 5 colgadas. Con el mismo perfil en los seis colores
+ganaron otra vez solo blanco (8) y amarillo (17): el desnivel es del lugar o del orden de turno, no de los perfiles.
 
 - [x] **39.** Pedirle a Microsoft que deje de marcar el Actualizador como virus (24/10/2026)
 En la PC de tu amigo, Edge/Defender bloquea `Actualizador-v.1.0.13.0.exe.zip` con «Se ha detectado un virus».

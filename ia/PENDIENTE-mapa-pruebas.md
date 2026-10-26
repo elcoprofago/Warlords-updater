@@ -98,4 +98,27 @@ de prueba descartado (no quedó en el repo); las guardadas de prueba se borraron
   perfiles iguales y «sin alianzas»; la de perfiles sigue rotando. Monitor de IA 1.0.17 la marca «(control)».
 - Falta: que el usuario corra la tanda (TAREAS 43) y analizarla: victorias y PV promedio por color contra la serie
   65-69 (amarillo 28.3 PV, verde 2.9).
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 4: analizar la tanda de control".
+
+## Paso 4: resultado (25/10/2026) — los perfiles no explican nada
+Tandas 76 a 80 (Tanda_hex_control, Artificer + Devout en los seis): 25 partidas ok, 5 colgadas (76: 1, 79: 2, 80: 2).
+
+| color    | serie 65-69: gana / PV / elim. | control 76-80: gana / PV / elim. |
+|----------|--------------------------------|----------------------------------|
+| blanco   | 11/30 · 22.9 · 0               | 8/25 · 23.8 · 0                  |
+| amarillo | 18/30 · 28.3 · 0               | 17/25 · 30.8 · 0                 |
+| rojo     | 0/30 · 3.9 · 6                 | 0/25 · 4.2 · 6                   |
+| verde    | 0/30 · 2.9 · 11                | 0/25 · 1.7 · 12                  |
+| azul     | 1/30 · 9.6 · 3                 | 0/25 · 9.6 · 0                   |
+| negro    | 0/30 · 5.1 · 9                 | 0/25 · 6.1 · 5                   |
+
+- Con el mismo perfil en todos, el reparto es casi idéntico al de la serie: 25 de 25 para blanco y amarillo. El
+  desnivel no viene de los perfiles ni de su interacción: viene del lugar (vecinos, caminos) o del orden de turno.
+- Consecuencia: la serie 65-69 no mide personalidades. Tanda_hex_control no sirve como «mapa parejo».
+
+## Próximo paso
+5'. Separar lugar de orden de turno sin tocar el arranque de turno (que no se puede rehacer, paso 2): en una copia de
+   Tanda_hex_control, intercambiar con ciudades.dar() las 12 ciudades del amarillo con las del verde (y los ejércitos
+   que estén en ellas), de modo que el amarillo juegue primero desde el lugar del verde. Probar primero en tope de
+   2-3 turnos que carga y juega; después tanda de control de 30. Si el ganador sigue al color (amarillo), pesa el
+   orden; si sigue al lugar, pesa la geografía/vecindad.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5': lugar contra orden de turno".
