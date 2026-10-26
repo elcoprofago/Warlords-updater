@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 - [ ] **48.** Probar la noche nueva (vista aliada 1.0.76.0, 26/10/2026)
 Cambios: la zona iluminada ahora también se oscurece un poco, la oscuridad tiene 6 escalones (antes 4) y el halo de
 tus ejércitos, ruinas, sitios y puentes es redondo; el de las ciudades sigue cuadrado.
-1. Ya está instalada en C:Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe y una partida con **Day/Night** marcado.
 2. En una vuelta par (de noche), mirá cerca de tus ejércitos y de una ruina o sitio: el halo tiene que verse redondo.
 3. Contame si la luz quedó bien de oscura y si el degradé se ve suave o con escalones marcados.
 
