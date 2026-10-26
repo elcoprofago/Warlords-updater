@@ -1,4 +1,4 @@
-# Bono «nightmare» (pedido del usuario, 26/10/2026; sin empezar)
+# Bono «nightmare» (pedido del usuario, 26/10/2026; hecho en vista aliada 1.0.86.0, falta la prueba en el juego: TAREAS 59)
 
 Texto del usuario: «Quiero que sumemos un nuevo bono, que permita a las unidades clase "monster" tener un plus de +2
 durante la noche (+2 de strength, hits, vs city, o habilidades especiales: ej., trample +1 a trample +3). El tipo de
@@ -24,3 +24,15 @@ además de que cada unidad lo tenga asignado por editor.»
    misma vuelta), con el generador del juego (0x4deb20). Si la habilidad no la tiene, ¿se le da? (ej. trample +2
    a una unidad sin trample): consultar.
 5. Prueba de juguete (unicorn) y tarea en TAREAS.md.
+
+## Decisiones del usuario (26/10/2026) y cómo quedó
+
+1. Nombre: **nighmare** (`TERRAIN\SUBTYPE
+ighmare.STT`).
+2. Solo habilidades que ya tiene: el +2 va a fuerza, hits, bono de combate (si tiene uno distinto de «none») o
+   habilidad (si tiene una con valor que cuente en combate; lista `NM_CODES` en build.py).
+3. Un sorteo por noche: un único número por noche (`nm_draw`: vuelta + nombres de los tipos, igual en todas las PC y
+   al recargar), y cada unidad lo aplica a su propia lista de opciones.
+- Clase «monster»: Army Subtypes del registro (+0xa0, +0xa9). «vs city» se tomó como el bono de combate de la unidad.
+- Ganchos: 0x46787d (`nm_unit`, ficha de batalla y probabilidades) y 0x46907c (`nm_grp`, habilidades de grupo).
+  El registro real no se toca: se usan copias (`nm_r1`, `nm_r2`). Prueba de juguete: `prueba_nightmare.py`.

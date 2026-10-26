@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 59).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 60).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,21 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **59.** Probar el bono «nighmare» de los monstruos (vista aliada 1.0.86.0, 26/10/2026)
+Cambio: bono de movimiento nuevo **nighmare** (así, 8 letras: el editor no admite más). De noche, cada unidad cuyo
+tipo tiene ese bono **y** la clase **monster** gana +2 en una sola cosa, sorteada: fuerza, hits, su bono de combate
+(solo si tiene uno) o su habilidad especial (solo si ya tiene una, ej. trample 1 pasa a trample 3). Hay un sorteo por
+noche: dura toda esa noche, en todos los combates, y cambia la noche siguiente. De día, nada. Los héroes no.
+1. Ya está instalada en C:\Warlords3. Abrí war3ed_av.exe (si estaba abierto, cerralo y volvelo a abrir) y en
+   **Edit Army Data** elegí un tipo que tenga **monster** entre sus Army Subtypes (por ejemplo un dragón o unos
+   lobos) y poné **nighmare** en uno de sus Move Bonus. Guardá el escenario.
+2. Abrí ese escenario con DarklordAV.exe y **Day/Night** marcado.
+3. De noche, antes de atacar con esas unidades, mirá las probabilidades del combate; hacé lo mismo de día con un
+   ataque parecido: de noche tienen que dar mejor para el monstruo.
+4. Al pelear de noche, mirá la ficha de batalla: la fuerza o los hits del monstruo pueden aparecer con +2 (si el
+   sorteo cayó en su bono o su habilidad, no se ve en la ficha, solo en el resultado).
+5. Control: un tipo con **nighmare** pero sin **monster**, o un monstruo sin **nighmare**, pelea igual de día y de noche.
 
 - [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.

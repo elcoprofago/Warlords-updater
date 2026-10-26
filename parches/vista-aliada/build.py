@@ -12783,6 +12783,196 @@ cr_show:
 ''')
 caves['crblit'] = struct.pack('<I', cam_blit) + caves['crblit'][4:]   # conserva el relleno que le sumó place()
 
+# ---------------------------------------------------------------- Bono "nighmare" (monstruos, de noche)
+# De noche (opción Day/Night, SHOPT & 2, vuelta par; con o sin Hidden Map), una unidad cuyo tipo tiene el bono de
+# movimiento "nighmare" (TERRAIN\SUBTYPE\nighmare.STT; 8 letras como máximo, nombre elegido por el usuario) y la clase
+# "monster" (Army Subtypes, uno de los dos nombres de 9 bytes en +0xa0 y +0xa9) suma +2 a una sola cosa, elegida por
+# un sorteo por noche: fuerza, hits, su bono de combate (solo si tiene uno; suma cuando el juego lo aplica) o su habilidad
+# especial (solo si tiene una con valor que cuente en combate). Un sorteo por noche: r = nm_draw, el mismo para todas
+# las unidades; cada una toma su opción r mod n de la lista de lo que tiene (fuerza, hits, bono, habilidad).
+# r sale de la vuelta y de los nombres de los 128 tipos de los bandos (+0x90, 10 bytes): igual en todas las PC de la
+# partida, al recargarla y en todos los combates de esa noche, y distinto entre partidas con otros bandos.
+# Dónde: el armado de cada unidad de la ficha de batalla 0x467240 (lo usan la batalla, 0x469ed0, y el cálculo de
+# probabilidades, 0x464a30) toma el registro del tipo en 0x46787d ([esp+0x30], solo unidades que no son héroes);
+# nm_unit suma ahí la fuerza (ficha +3) o los hits (+4), o cambia el puntero por una copia del registro con +2 en el
+# valor del bono (+0xdf) o de la habilidad (+0xe8): así valen las habilidades por unidad (trample, poison, etc.),
+# Banding, "Bridge +N" (bridgeab lee el mismo puntero) y el bono de combate. Las habilidades de grupo (leadership,
+# fear, etc.) las lee 0x468440 en 0x46907c: nm_grp cambia ahí ecx por una copia con +2. El registro real no se toca.
+NIGHMARE = b'nighmare'
+nm_str = place_data('nm_str', NIGHMARE + b'\0')
+nm_monstr = place_data('nm_monstr', b'monster\0')
+nm_nonestr = place_data('nm_nonestr', b'none\0')
+# Habilidades con valor que cuentan en combate: por unidad (0x467885..0x467958, Banding 0x4680d5, Bridge) y de grupo
+# (tabla 0x469684 de 0x468440). Necromancy 51 no usa el valor; 53 sí.
+NM_CODES = {1, 2, 3, 4, 5, 6, 26, 27, 28, 30, 32, 33, BRIDGE_AB, 37, 38, 39, 40, 41, 42, 43, 52, 53, 54}
+nm_codes = place_data('nm_codes', bytes(1 if c in NM_CODES else 0 for c in range(64)))
+nm_r1 = place_data('nm_r1', bytes(0xfc))
+nm_r2 = place_data('nm_r2', bytes(0xfc))
+nm_mb = place('nm_mb', boatbon_src('nm_mb', None, rec=True))
+nm_sub = place('nm_sub', boatbon_src('nm_sub', None, rec=True, off=0xa0, slots=2))
+nm_cbn = place('nm_cbn', boatbon_src('nm_cbn', None, rec=True, off=0xd6, slots=1))
+# nm_draw: eax = sorteo de la noche (FNV-1a de la vuelta y los nombres, con mezcla final). Preserva el resto.
+nm_draw = place('nm_draw', f'''
+    push ecx
+    push edx
+    push esi
+    movzx eax, word ptr [{DN_TURN:#x}]
+    imul eax, eax, -0x61c88647
+    xor eax, 0x811c9dc5
+    mov esi, {0x53c410 + 0x90:#x}
+    mov ecx, 128
+nd_rec:
+    xor edx, edx
+nd_ch:
+    xor al, byte ptr [esi + edx]
+    imul eax, eax, 0x01000193
+    inc edx
+    cmp edx, 10
+    jb nd_ch
+    add esi, 0xfc
+    dec ecx
+    jnz nd_rec
+    mov edx, eax
+    shr edx, 15
+    xor eax, edx
+    imul eax, eax, 0x2c1b3c6d
+    mov edx, eax
+    shr edx, 12
+    xor eax, edx
+    pop esi
+    pop edx
+    pop ecx
+    ret
+''')
+# nm_kind: eax = registro -> eax = 0 nada, 1 fuerza, 2 hits, 3 bono de combate, 4 habilidad. Preserva el resto.
+nm_kind = place('nm_kind', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    mov ebx, eax
+    xor eax, eax
+    test byte ptr [{SHOPT:#x}], 2
+    jz nk_out
+    test byte ptr [{DN_TURN:#x}], 1
+    jnz nk_out
+    mov eax, ebx
+    mov edx, {nm_str:#x}
+    call {nm_mb:#x}
+    test eax, eax
+    jz nk_out
+    mov eax, ebx
+    mov edx, {nm_monstr:#x}
+    call {nm_sub:#x}
+    test eax, eax
+    jz nk_out
+    mov edi, 2
+    xor esi, esi
+    cmp byte ptr [ebx + 0xdf], 0
+    je nk_nob
+    cmp byte ptr [ebx + 0xd6], 0
+    je nk_nob
+    mov eax, ebx
+    mov edx, {nm_nonestr:#x}
+    call {nm_cbn:#x}
+    test eax, eax
+    jnz nk_nob
+    or esi, 1
+    inc edi
+nk_nob:
+    cmp word ptr [ebx + 0xe8], 0
+    je nk_noa
+    movzx eax, word ptr [ebx + 0xe6]
+    cmp eax, 64
+    jae nk_noa
+    cmp byte ptr [eax + {nm_codes:#x}], 0
+    je nk_noa
+    or esi, 2
+    inc edi
+nk_noa:
+    call {nm_draw:#x}
+    xor edx, edx
+    div edi
+    lea eax, [edx + 1]
+    cmp eax, 3
+    jne nk_out
+    test esi, 1
+    jnz nk_out
+    mov eax, 4
+nk_out:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# nm_unit: en lugar de "mov [esp+0x30], eax; mov ecx, [esp+0x30]" en 0x46787d (eax = registro, esi = ficha de la unidad).
+nm_unit = place('nm_unit', f'''
+    push eax
+    call {nm_kind:#x}
+    mov ecx, eax
+    pop eax
+    cmp ecx, 1
+    jne nu_h
+    add byte ptr [esi + 3], 2
+    jmp nu_out
+nu_h:
+    cmp ecx, 2
+    jne nu_c
+    add byte ptr [esi + 4], 2
+    jmp nu_out
+nu_c:
+    test ecx, ecx
+    jz nu_out
+    push esi
+    push edi
+    push ecx
+    mov esi, eax
+    mov edi, {nm_r1:#x}
+    mov ecx, 63
+    cld
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    pop ecx
+    pop edi
+    pop esi
+    mov eax, {nm_r1:#x}
+    cmp ecx, 3
+    jne nu_a
+    add byte ptr [eax + 0xdf], 2
+    jmp nu_out
+nu_a:
+    add word ptr [eax + 0xe8], 2
+nu_out:
+    mov dword ptr [esp + 0x30], eax
+    mov ecx, eax
+    jmp 0x467885
+''')
+# nm_grp: en lugar de "movsx edx, word ptr [ecx+0xe6]" en 0x46907c (ecx = registro; se vuelve a cargar en cada vuelta).
+nm_grp = place('nm_grp', f'''
+    push eax
+    mov eax, ecx
+    call {nm_kind:#x}
+    cmp eax, 4
+    jne ng_out
+    push esi
+    push edi
+    mov esi, ecx
+    mov edi, {nm_r2:#x}
+    mov ecx, 63
+    cld
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    pop edi
+    pop esi
+    mov ecx, {nm_r2:#x}
+    add word ptr [ecx + 0xe8], 2
+ng_out:
+    pop eax
+    movsx edx, word ptr [ecx + 0xe6]
+    jmp 0x469083
+''')
+
 # ---------------------------------------------------------------- ícono del exe: craneo.ico (64, 32 y 16)
 # El original trae RT_GROUP_ICON 148 con dos RT_ICON de 32x32 (ids 5 y 6). .rsrc no tiene lugar libre y lo sigue
 # .reloc, así que todo lo nuevo va en .avis: un subdirectorio RT_ICON con los tres tamaños (los offsets de
@@ -12953,6 +13143,9 @@ assert rel(0x464c3d, 0x464c51 - 0x464c3d) == asm('lea eax, [esp + 0x30]; push ea
                                                  'mov word ptr [esp + 0x1e], ax; add esp, 0xc', 0x464c3d)
 patch(0x464c3d, rel(0x464c3d, 0x464c51 - 0x464c3d), asm(f'jmp {crdef:#x}', 0x464c3d))
 patch(0x459d0d, asm('call 0x4dd530', 0x459d0d), asm(f'call {crdraw:#x}', 0x459d0d))
+patch(0x46787d, asm('mov dword ptr [esp + 0x30], eax; mov ecx, dword ptr [esp + 0x30]', 0x46787d),
+      asm(f'jmp {nm_unit:#x}', 0x46787d))
+patch(0x46907c, asm('movsx edx, word ptr [ecx + 0xe6]', 0x46907c), asm(f'jmp {nm_grp:#x}', 0x46907c))
 for va in CAM_SITES:
     patch(va, asm('call 0x4dd530', va), asm(f'call {cam_blit3:#x}', va))
 patch(0x414e1a, asm('shr bx, 5; mov ecx, dword ptr [esp + 0x10]', 0x414e1a), asm(f'jmp {cam_rep:#x}', 0x414e1a) + bytes([0x90]) * 3)
@@ -13627,7 +13820,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'), ('nighmare', 'Nightmare'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
