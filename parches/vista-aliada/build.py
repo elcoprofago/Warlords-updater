@@ -622,6 +622,7 @@ rf_dn:
 # 5) Reporte View Game Options: después de Timed Vectoring (id 0x2f), el indicador nuevo.
 NEWIND = 49
 SHIND = 51
+DNIND = 53
 report = place('report', f'''
     push dword ptr [esp + 8]
     push dword ptr [esp + 8]
@@ -643,6 +644,15 @@ rp_off:
 rp_off2:
     push eax
     push {SHIND}
+    call 0x4dd040
+    add esp, 8
+    mov eax, 0x1d
+    test byte ptr [{SHOPT:#x}], 2
+    jz rp_off3
+    mov eax, 0x1c
+rp_off3:
+    push eax
+    push {DNIND}
     call 0x4dd040
     add esp, 8
     ret
@@ -12018,6 +12028,394 @@ iv_back:
     jmp 0x482c10
 ''')
 
+# ---------------------------------------------------------------- Día/noche: pintado de la noche
+# Con la opción (bit 2 de SHOPT) y sin Hidden Map, las vueltas pares ([0x5032f8 + 0x30]; la primera es la 1) son de
+# noche: el mapa se oscurece con DN_N niveles, cada uno una pasada del recoloreo de la niebla (0x4ee3c0 con la tabla
+# dn_tab en vez de 0x589608) con sus mismos bordes suaves (hoja 0x48, máscara de 8 vecinas -> 0x4fbfc8). El nivel de
+# una casilla es su distancia (máx + mín / 2) a la luz más cercana menos el radio de esa luz, entre 0 y DN_N: luces
+# son los ejércitos de quien mira ([0x560b20], radio 1), las ciudades (1), ruinas, sitios y puentes en pie (0).
+# dn_pre (al entrar a 0x459790, ecx = la vista) arma la grilla dn_d: la vista más un borde de 1 (para las vecinas),
+# DN_G bytes por fila; de día, toda en 0. Como el mapa se repinta solo en las celdas sucias (+6 & 0x20) o enteras
+# ([vista+0x1a5]), marca sucia toda celda cuya vecindad 3x3 cambió respecto de la grilla anterior (dn_old); así una
+# celda nunca se oscurece dos veces ni queda con la oscuridad de antes. dn_post (en 0x45aa6e, después de la niebla)
+# pinta los niveles en las mismas celdas que repintó el juego. Vistas de más de DN_MAX celdas por lado: lo que pasa
+# de DN_MAX queda de día.
+DN_N = 4
+DN_MAX = 64
+DN_G = DN_MAX + 2
+DN_TURN = 0x5032f8 + 0x30
+
+def dn_table():
+    pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
+    rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
+    cand = [10] + [i for i in range(16, 245) if i != 187]   # sin los colores de Windows, el 11 transparente ni el verde 187
+    f = 0.78                                                  # por nivel; 4 niveles dejan ~37 %, con un tinte azul
+    out = bytearray(range(256))
+    for i in range(256):
+        if i == 11: continue
+        r, g, b = rgb[i]
+        t = (r * f * 0.92, g * f * 0.96, b * f * 1.05)
+        out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
+    return bytes(out)
+dn_tab = place_data('dn_tab', dn_table())
+dn_d = place_data('dn_d', bytes(DN_G * DN_G))
+dn_old = place_data('dn_old', bytes(DN_G * DN_G))
+dn_var = place_data('dn_var', bytes(4 * 12))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p
+DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P = (dn_var + 4 * i for i in range(12))
+# Las 8 vecinas en el orden de 0x45c8f0 (N, NE, E, SE, S, SO, O, NO), como desplazamientos en la grilla.
+dn_offs = place_data('dn_offs', struct.pack('<8i', *(dy * DN_G + dx for dx, dy in
+                     zip((0, 1, 1, 1, 0, -1, -1, -1), (-1, -1, 0, 1, 1, 1, 0, -1)))))
+
+# dn_stamp: eax = x, edx = y del mapa, ecx = radio -> baja el nivel de las casillas de la grilla a su alcance.
+dn_stamp = place('dn_stamp', f'''
+    pushad
+    sub eax, dword ptr [{DN_GX0:#x}]
+    sub edx, dword ptr [{DN_GY0:#x}]
+    mov dword ptr [{DN_SX:#x}], eax
+    mov dword ptr [{DN_SY:#x}], edx
+    mov dword ptr [{DN_R0:#x}], ecx
+    lea ebx, [edx - {DN_N}]
+    sub ebx, ecx
+    jge ds_y0
+    xor ebx, ebx
+ds_y0:
+    lea ebp, [edx + {DN_N}]
+    add ebp, ecx
+    cmp ebp, dword ptr [{DN_GH:#x}]
+    jl ds_yrow
+    mov ebp, dword ptr [{DN_GH:#x}]
+    dec ebp
+ds_yrow:
+    cmp ebx, ebp
+    jg ds_out
+    mov esi, dword ptr [{DN_SX:#x}]
+    sub esi, {DN_N}
+    sub esi, dword ptr [{DN_R0:#x}]
+    jge ds_x0
+    xor esi, esi
+ds_x0:
+    mov edi, dword ptr [{DN_SX:#x}]
+    add edi, {DN_N}
+    add edi, dword ptr [{DN_R0:#x}]
+    cmp edi, dword ptr [{DN_GW:#x}]
+    jl ds_x
+    mov edi, dword ptr [{DN_GW:#x}]
+    dec edi
+ds_x:
+    cmp esi, edi
+    jg ds_ynext
+    mov eax, esi
+    sub eax, dword ptr [{DN_SX:#x}]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    mov eax, ebx
+    sub eax, dword ptr [{DN_SY:#x}]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge ds_mx
+    xchg eax, ecx
+ds_mx:
+    shr ecx, 1
+    add eax, ecx
+    sub eax, dword ptr [{DN_R0:#x}]
+    jge ds_lev
+    xor eax, eax
+ds_lev:
+    cmp eax, {DN_N}
+    jge ds_xnext
+    imul edx, ebx, {DN_G}
+    add edx, esi
+    cmp byte ptr [edx + {dn_d:#x}], al
+    jbe ds_xnext
+    mov byte ptr [edx + {dn_d:#x}], al
+ds_xnext:
+    inc esi
+    jmp ds_x
+ds_ynext:
+    inc ebx
+    jmp ds_yrow
+ds_out:
+    popad
+    ret
+''')
+
+dn_pre = place('dn_pre', f'''
+    pushad
+    mov ebp, ecx
+    xor ebx, ebx
+    test byte ptr [{SHOPT:#x}], 2
+    jz dp_fill
+    test byte ptr [{OPT:#x}], 0x10
+    jnz dp_fill
+    test byte ptr [{DN_TURN:#x}], 1
+    jnz dp_fill
+    mov bl, {DN_N}
+dp_fill:
+    mov dword ptr [{DN_ON:#x}], ebx
+    mov edi, {dn_d:#x}
+    mov ecx, {DN_G * DN_G}
+    mov al, bl
+    rep stosb
+    movsx eax, word ptr [ebp + 0x20]
+    cmp eax, {DN_MAX}
+    jle dp_w
+    mov eax, {DN_MAX}
+dp_w:
+    add eax, 2
+    mov dword ptr [{DN_GW:#x}], eax
+    movsx eax, word ptr [ebp + 0x22]
+    cmp eax, {DN_MAX}
+    jle dp_h
+    mov eax, {DN_MAX}
+dp_h:
+    add eax, 2
+    mov dword ptr [{DN_GH:#x}], eax
+    movsx eax, word ptr [ebp + 0x28]
+    dec eax
+    mov dword ptr [{DN_GX0:#x}], eax
+    movsx eax, word ptr [ebp + 0x2a]
+    dec eax
+    mov dword ptr [{DN_GY0:#x}], eax
+    test ebx, ebx
+    jz dp_cmp
+    mov edi, dword ptr [{DN_GY0:#x}]
+    sub edi, {DN_N + 1}
+dp_sy:
+    mov eax, dword ptr [{DN_GY0:#x}]
+    add eax, dword ptr [{DN_GH:#x}]
+    add eax, {DN_N + 1}
+    cmp edi, eax
+    jge dp_arm
+    mov esi, dword ptr [{DN_GX0:#x}]
+    sub esi, {DN_N + 1}
+dp_sx:
+    mov eax, dword ptr [{DN_GX0:#x}]
+    add eax, dword ptr [{DN_GW:#x}]
+    add eax, {DN_N + 1}
+    cmp esi, eax
+    jge dp_synext
+    mov eax, esi
+    mov edx, edi
+    call {br_tile:#x}
+    test eax, eax
+    jz dp_sxnext
+    movzx ecx, byte ptr [eax + 3]
+    and ecx, 7
+    cmp ecx, 3
+    je dp_city
+    cmp ecx, 2
+    je dp_site
+    cmp ecx, 4
+    je dp_site
+    cmp ecx, 1
+    jne dp_sxnext
+    call {br_kind:#x}
+    cmp eax, 1
+    jne dp_sxnext
+dp_site:
+    xor ecx, ecx
+    jmp dp_put
+dp_city:
+    mov ecx, 1
+dp_put:
+    mov eax, esi
+    mov edx, edi
+    call {dn_stamp:#x}
+dp_sxnext:
+    inc esi
+    jmp dp_sx
+dp_synext:
+    inc edi
+    jmp dp_sy
+dp_arm:
+    movsx ebx, word ptr [0x560b20]
+    cmp ebx, 8
+    jae dp_cmp
+    mov esi, 1
+dp_aloop:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge dp_cmp
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz dp_anext
+    movzx eax, word ptr [edi + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, ebx
+    jne dp_anext
+    movsx eax, word ptr [edi + 0x54fe52]
+    movsx edx, word ptr [edi + 0x54fe54]
+    mov ecx, 1
+    call {dn_stamp:#x}
+dp_anext:
+    inc esi
+    jmp dp_aloop
+dp_cmp:
+    xor ebx, ebx
+dp_crow:
+    mov eax, dword ptr [{DN_GH:#x}]
+    sub eax, 2
+    cmp ebx, eax
+    jge dp_copy
+    xor edi, edi
+dp_ccol:
+    mov eax, dword ptr [{DN_GW:#x}]
+    sub eax, 2
+    cmp edi, eax
+    jge dp_crnext
+    imul esi, ebx, {DN_G}
+    add esi, edi
+    mov eax, dword ptr [esi + {dn_d:#x}]
+    xor eax, dword ptr [esi + {dn_old:#x}]
+    and eax, 0xffffff
+    jnz dp_dirty
+    mov eax, dword ptr [esi + {dn_d + DN_G:#x}]
+    xor eax, dword ptr [esi + {dn_old + DN_G:#x}]
+    and eax, 0xffffff
+    jnz dp_dirty
+    mov eax, dword ptr [esi + {dn_d + 2 * DN_G:#x}]
+    xor eax, dword ptr [esi + {dn_old + 2 * DN_G:#x}]
+    and eax, 0xffffff
+    jz dp_ccnext
+dp_dirty:
+    movsx eax, word ptr [ebp + 0x20]
+    imul eax, ebx
+    add eax, edi
+    imul eax, eax, 0x1c
+    add eax, dword ptr [ebp + 0x40]
+    or byte ptr [eax + 6], 0x20
+dp_ccnext:
+    inc edi
+    jmp dp_ccol
+dp_crnext:
+    inc ebx
+    jmp dp_crow
+dp_copy:
+    mov esi, {dn_d:#x}
+    mov edi, {dn_old:#x}
+    mov ecx, {DN_G * DN_G}
+    rep movsb
+    popad
+    sub esp, 0x14
+    mov word ptr [esp + 6], 0
+    jmp 0x45979a
+''')
+
+dn_post = place('dn_post', f'''
+    cmp dword ptr [{DN_ON:#x}], 0
+    je dq_ret
+    pushad
+    push 0x48
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz dq_out
+    cmp dword ptr [eax + 8], 0
+    jne dq_sheet
+    push 0x48
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jz dq_out
+dq_sheet:
+    mov dword ptr [{DN_R:#x}], 0
+dq_row:
+    mov eax, dword ptr [{DN_GH:#x}]
+    sub eax, 2
+    cmp dword ptr [{DN_R:#x}], eax
+    jge dq_out
+    mov dword ptr [{DN_C:#x}], 0
+dq_col:
+    mov eax, dword ptr [{DN_GW:#x}]
+    sub eax, 2
+    cmp dword ptr [{DN_C:#x}], eax
+    jge dq_rnext
+    movsx eax, word ptr [ebp + 0x20]
+    imul eax, dword ptr [{DN_R:#x}]
+    add eax, dword ptr [{DN_C:#x}]
+    imul eax, eax, 0x1c
+    add eax, dword ptr [ebp + 0x40]
+    cmp byte ptr [ebp + 0x1a5], 0
+    jne dq_go
+    test byte ptr [eax + 6], 0x20
+    jz dq_cnext
+dq_go:
+    mov cx, word ptr [eax + 8]
+    and ch, 0xfe
+    cmp ch, 0xe
+    je dq_cnext
+    mov eax, dword ptr [{DN_R:#x}]
+    inc eax
+    imul eax, eax, {DN_G}
+    add eax, dword ptr [{DN_C:#x}]
+    lea esi, [eax + {dn_d + 1:#x}]
+    mov dword ptr [{DN_P:#x}], esi
+    mov dword ptr [{DN_K:#x}], 1
+dq_lev:
+    mov esi, dword ptr [{DN_P:#x}]
+    movzx eax, byte ptr [esi]
+    cmp dword ptr [{DN_K:#x}], eax
+    jg dq_cnext
+    mov ecx, dword ptr [{DN_K:#x}]
+    xor edx, edx
+    xor edi, edi
+dq_nb:
+    mov eax, dword ptr [edi*4 + {dn_offs:#x}]
+    movzx eax, byte ptr [esi + eax]
+    cmp eax, ecx
+    jl dq_nbnext
+    bts edx, edi
+dq_nbnext:
+    inc edi
+    cmp edi, 8
+    jb dq_nb
+    movsx eax, byte ptr [edx + 0x4fbfc8]
+    test eax, eax
+    jl dq_knext
+    push {dn_tab:#x}
+    imul ecx, dword ptr [{DN_R:#x}], 0x30
+    push ecx
+    imul ecx, dword ptr [{DN_C:#x}], 0x30
+    push ecx
+    push 0x27
+    push 0x30
+    push 0x30
+    mov ecx, eax
+    shr ecx, 3
+    add ecx, 2
+    imul ecx, ecx, 0x31
+    push ecx
+    and eax, 7
+    imul eax, eax, 0x31
+    push eax
+    push 0x48
+    call 0x4ee3c0
+    add esp, 0x24
+dq_knext:
+    inc dword ptr [{DN_K:#x}]
+    jmp dq_lev
+dq_cnext:
+    inc dword ptr [{DN_C:#x}]
+    jmp dq_col
+dq_rnext:
+    inc dword ptr [{DN_R:#x}]
+    jmp dq_row
+dq_out:
+    popad
+dq_ret:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    add esp, 0x14
+    ret
+''')
+
 # ---------------------------------------------------------------- ícono del exe: craneo.ico (64, 32 y 16)
 # El original trae RT_GROUP_ICON 148 con dos RT_ICON de 32x32 (ids 5 y 6). .rsrc no tiene lugar libre y lo sigue
 # .reloc, así que todo lo nuevo va en .avis: un subdirectorio RT_ICON con los tres tamaños (los offsets de
@@ -12124,6 +12522,8 @@ patch(0x4e0799, rel(0x4e0799, 14), asm('mov esi, 0x7fffffff', 0x4e0799) + bytes(
 patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
 patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {ia_vic:#x}', 0x482790))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
+patch(0x459790, asm('sub esp, 0x14; mov word ptr [esp + 6], 0', 0x459790), asm(f'jmp {dn_pre:#x}', 0x459790) + bytes([0x90]) * 5)
+patch(0x45aa6e, asm('pop ebp; pop edi; pop esi; pop ebx; add esp, 0x14; ret', 0x45aa6e), asm(f'jmp {dn_post:#x}', 0x45aa6e) + bytes([0xcc]) * 3)
 patch(0x441933, bytes.fromhex('889c4d5c3e5000'), asm(f'jmp {mapinit:#x}', 0x441933))
 patch(0x41fb98, bytes.fromhex('0894455c3e5000'), asm(f'jmp {rect:#x}', 0x41fb98))
 patch(0x427877, asm('ja 0x427d43', 0x427877), asm(f'ja {click:#x}', 0x427877))
@@ -12366,9 +12766,9 @@ for k, rec in enumerate([3, 6, chk3, 7, chk]):
 new_list[9] = [chk, chk2, chk3]
 
 # Diálogo 115 (reporte View Game Options): fila nueva "Shared Allied View" debajo de Fog of War.
-# Las dos columnas pasan de 25 a 21 píxeles entre filas para que entren 8.
+# Las dos columnas pasan de 25 a 19 píxeles entre filas para que entren 9 (130 a 282; Timed Vectoring está en 301).
 r115 = records(res, 115)
-col1 = [(9, 23), (10, 24), (11, 25), (12, 26), (13, 27), (14, 28), ('new', 'new'), (15, 29)]
+col1 = [(9, 23), (10, 24), (11, 25), (12, 26), (13, 27), ('dn', 'dn'), (14, 28), ('new', 'new'), (15, 29)]
 col2 = [(16, 30), (17, 31), (18, 32), (19, 33), (20, 34), (21, 35), (22, 36)]
 NEWLBL = 48
 p, t = r115[14]; assert t == 0x12
@@ -12378,11 +12778,16 @@ setstr(lbl, 0x2c, 64, 'Shared Allied View')
 p, t = r115[28]; assert t == 0x11
 ind = bytearray(res[p:p + 4 + SZ[0x11]])
 struct.pack_into('<I', ind, 4, NEWIND)
+# Fila "Day/Night" debajo de Hidden Map, clonada de la nueva.
+DNLBL = 52
+lbl3 = bytearray(lbl); struct.pack_into('<I', lbl3, 4, DNLBL); setstr(lbl3, 0x2c, 64, 'Day/Night')
+ind3 = bytearray(ind); struct.pack_into('<I', ind3, 4, DNIND)
 for col in (col1, col2):
     for k, (li, ii) in enumerate(col):
-        y = 130 + 21 * k
-        if li == 'new':
-            struct.pack_into('<I', lbl, 0xc, y); struct.pack_into('<I', ind, 0xc, y - 2)
+        y = 130 + 19 * k
+        if li in ('new', 'dn'):
+            l_, i_ = (lbl, ind) if li == 'new' else (lbl3, ind3)
+            struct.pack_into('<I', l_, 0xc, y); struct.pack_into('<I', i_, 0xc, y - 2)
         else:
             struct.pack_into('<I', res, r115[li][0] + 0xc, y)
             struct.pack_into('<I', res, r115[ii][0] + 0xc, y - 2)
@@ -12395,9 +12800,9 @@ setstr(lbl2, 0x2c, 64, 'Shared Cities')
 p, t = r115[36]; assert t == 0x11
 ind2 = bytearray(res[p:p + 4 + SZ[0x11]])
 struct.pack_into('<I', ind2, 4, SHIND)
-y = 130 + 21 * len(col2)
+y = 130 + 19 * len(col2)
 struct.pack_into('<I', lbl2, 0xc, y); struct.pack_into('<I', ind2, 0xc, y - 2)
-new_list[115] = [lbl, ind, lbl2, ind2]
+new_list[115] = [lbl, ind, lbl2, ind2, lbl3, ind3]
 
 # Diálogo 35 (menú de partida): línea nueva "Votacion" (texto VOTE_TXT, zona VOTE_HOT) debajo de Chat Mode. Las 13
 # líneas pasan a 16 píxeles entre sí (de 46 a 238; el marco deja libre de 40 a 262); cada zona de clic, 4 píxeles

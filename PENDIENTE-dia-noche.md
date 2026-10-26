@@ -80,7 +80,27 @@ confirmar con qué valor arranca (1 en la primera vuelta, se ve en el juego).
 - Todavía **no hace nada en el juego**. El pintado igual debe exigir `!(OPT & 0x10)`, por si una partida o un
   OPTIONS.* trae los dos bits.
 
+Lo que faltaba (pintado y reporte) quedó en el paso 4.
+
+## Paso 4 — el pintado de la noche y el reporte (26/10/2026, vista aliada 1.0.75.0; probado en emulación, no en el juego)
+
+- **Cuándo:** opción puesta (SHOPT & 2), sin Hidden Map (OPT & 0x10) y vuelta par ([0x5032f8+0x30]). Falta confirmar
+  en el juego que la primera vuelta sea la 1 (si no, la noche cae al revés: se invierte en `dn_pre`).
+- **Tabla de noche:** calculada al compilar desde `C:\Warlords3\war3.pal` (`dn_table`): cada color al 78 % por nivel
+  con tinte azulado, al índice más parecido de la paleta. No toca `war3.pal`.
+- **Grilla de niveles** (`dn_pre`, desvío del prólogo 0x459790 del dibujo del mapa): la vista más un borde, en 0..4
+  (DN_N). La luz baja el nivel según la distancia (máx + mín/2 − radio): ciudades radio 1; ruinas, sitios y puentes
+  en pie radio 0; ejércitos de quien mira radio 1. Caminos, puentes derribados y ejércitos ajenos no alumbran.
+  Solo se marcan sucias las celdas cuyo 3x3 cambió desde el dibujo anterior (`dn_old`).
+- **Pintado** (`dn_post`, desvío del epílogo 0x45aa6e): en cada celda sucia, una pasada de 0x4ee3c0 por nivel, con
+  la máscara de vecinas tan oscuras o más y el borde de 0x4fbfc8 (las mismas formas que la niebla, así el halo sale
+  suave).
+- **Reporte View Game Options** (diálogo 115): fila «Day/Night» en la columna izquierda (filas a 19 px).
+- **Prueba:** `parchesista-aliada\prueba_dianoche.py` (unicorn, mapa de juguete): niveles, celdas sucias y cada
+  llamada al recoloreo contra el mismo cálculo en Python; sin cambios no pinta; mover un ejército ensucia solo su
+  entorno; de día, con Hidden Map o sin la opción no pinta.
+
 **Falta:**
-- Pintado de la noche (paso de 0x45a960), con las tablas calculadas al cargar la paleta (paso 2). Próximo paso.
-- Fila «Day/Night» en el reporte View Game Options (diálogo 115; sus dos columnas ya tienen 8 filas).
-- Prueba en el juego (va a TAREAS cuando haya pintado: probar solo la casilla no vale la instalación).
+- Prueba en el juego (tarea 46).
+- Lo no explorado más oscuro de noche: sin Hidden Map el revelado (0x441b30) no corre, así que no hay registro de
+  qué está explorado; haría falta llevarlo aparte. Para más adelante.

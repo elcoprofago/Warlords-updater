@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 46).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 47).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,15 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **46.** Probar el día y la noche (vista aliada 1.0.75.0, 26/10/2026)
+Actualizá con la opción de vista aliada y empezá una partida nueva con DarklordAV.exe. En Customize Options marcá
+**Day/Night** (columna derecha de Viewing Options): Hidden Map se tiene que desmarcar sola. Ya en el juego:
+  1. En el menú, View Game Options tiene que mostrar «Day/Night» marcado.
+  2. Una vuelta sí y otra no, el mapa se oscurece, con un halo de luz alrededor de tus ciudades, ruinas, sitios,
+     puentes y tus ejércitos; los ejércitos enemigos no dan luz. Anotá si la primera vuelta es de día o de noche.
+  3. Al mover un ejército de noche, la luz lo sigue sin dejar manchas ni cuadros mal pintados.
+  4. Contame si la noche se ve demasiado oscura, demasiado clara o bien.
 
 - [ ] **45.** Probar el daño nuevo de las trampas (vista aliada 1.0.72.0, 26/10/2026)
 Ahora una trampa en tierra mata entre el 40 y el 80 % de la pila (al azar, distinto en cada explosión) y paraliza al
