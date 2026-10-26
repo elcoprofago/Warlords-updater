@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 52).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 53).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,7 +15,26 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **50.** Probar la luz de tus ejércitos al 50 % (vista aliada 1.0.78.0, 26/10/2026)
+- [ ] **52.** Probar el camuflaje al 30 % y el Army Report (vista aliada 1.0.79.0, 26/10/2026)
+Cambio: de noche, el grupo camuflado quieto ya no se dibuja gris encima del terreno: queda una silueta al 30 %
+(se ve el terreno a través), y eso incluye el globito del color del equipo, su barra y sus iconos. Y el **Army
+Report** de noche ya no muestra dónde están los grupos camuflados de los demás (los tuyos y los de un aliado con
+vista aliada, sí).
+1. Ya está instalada en C:\Warlords3: abrí DarklordAV.exe con el escenario de la tarea 51 y **Day/Night** marcado.
+2. De noche: el grupo solo de unidades «camo» tiene que verse tenue, globito incluido (no del color del equipo).
+3. Abrí el **Army Report** siendo otro jugador (o con un enemigo «camo»): de noche ese grupo no tiene que figurar
+   en el mapita; de día, sí.
+
+- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
+Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Avisame cuando termine: la analizo.
+
+# Hecho
+
+- [x] **50.** Probar la luz de tus ejércitos al 50 % (vista aliada 1.0.78.0, 26/10/2026)
 Cambio: de noche, la casilla de tus ejércitos y la de al lado ya no quedan casi a pleno brillo: quedan al 45 %
 (el escalón más cercano al 50 % sin pasarlo) y desde ahí se oscurecen hacia afuera. Ciudades, ruinas, sitios y
 puentes siguen como estaban.
@@ -23,8 +42,9 @@ puentes siguen como estaban.
 2. En una vuelta par (de noche), mirá un ejército tuyo lejos de las ciudades: su halo tiene que verse más apagado
    que el de una ciudad. En el minimapa, igual.
 3. Anotá si te gusta así o si lo querés más claro (55 %) o más oscuro.
+Resultado (26/10/2026): se ve bien, queda mejor así.
 
-- [ ] **51.** Probar el bono «camo» (camuflaje) (vista aliada 1.0.78.0, 26/10/2026)
+- [x] **51.** Probar el bono «camo» (camuflaje) (vista aliada 1.0.78.0, 26/10/2026)
 Cambio: bono de movimiento nuevo **camo** (el editor muestra el nombre del archivo, y esos nombres no pueden pasar de
 8 letras: por eso «camo» y no «camouflage»). De noche, un grupo cuyas unidades tienen **todas** ese bono se dibuja
 con un filtro gris al 60 %, banderín del color del equipo incluido. De día, nada. Un grupo con un héroe, o con alguna
@@ -35,15 +55,7 @@ unidad sin el bono, se ve normal. El grupo mientras camina (la animación del pa
 3. De noche: ese grupo tiene que verse gris (también el banderín de color). Uno mezclado con otras unidades, no.
 4. De día: tiene que verse normal.
 5. Mirá también un grupo enemigo con ese bono, si lo hay: tiene que verse gris igual.
-
-- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
-Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
-1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
-2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. Avisame cuando termine: la analizo.
-
-# Hecho
+Resultado (26/10/2026): el bono funciona; el globito seguía del color del equipo y se pidió bajar a 30 % → tarea 52.
 
 - [x] **49.** Probar la noche de 8 escalones y el minimapa de noche (vista aliada 1.0.77.0, 26/10/2026)
 Cambios: la oscuridad tiene 8 escalones y el más oscuro queda al 20 % del brillo; de noche el minimapa también se

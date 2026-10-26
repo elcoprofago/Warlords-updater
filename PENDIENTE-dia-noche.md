@@ -142,3 +142,15 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 **Falta:**
 - Lo no explorado más oscuro de noche: sin Hidden Map el revelado (0x441b30) no corre, así que no hay registro de
   qué está explorado; haría falta llevarlo aparte. Para más adelante.
+
+## Paso 8 — camuflaje al 30 % y Army Report (26/10/2026, vista aliada 1.0.79.0; tarea 52)
+
+- Pedido tras la tarea 51: el globito seguía del color del equipo; camuflado al 30 %; el Army Report no tiene que
+  revelar la posición de los camuflados de noche.
+- `cam_blit_src(n, reg)` arma `cam_blit` (2ª pasada, celda en esi) y `cam_blit3` (3ª pasada, celda en edi; sitios
+  `CAM_SITES`: figura 0x45a14f/0x45a18e, globito 0x45a267, barra 0x45a2ac, iconos 0x45a2cc/0x45a34a/0x45a3a5). Si el
+  grupo está camuflado ya no copia el dibujo: solo 0x4ee3c0 con `cam_tab` = 70 % del fondo + 30 % de gris (silueta).
+- Army Report: el mapita es el minimapa 0x414d50 (modo 0x10), que dibuja los ejércitos de todos. `cam_rep` en
+  0x414e1a salta a 0x414e2b (no dibuja) si es de noche, el dueño no es quien mira ni un aliado mutuo con vista
+  aliada (`fogally`), y `cam_stack` da camuflado. La barra de conteo del informe no cambia (no revela posición).
+- Prueba: `prueba_camuflaje.py` (2ª y 3ª pasada, Army Report visto por cada bando, de día todos).

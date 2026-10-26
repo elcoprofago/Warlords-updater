@@ -12607,12 +12607,14 @@ dm_out:
 ''')
 
 # ---------------------------------------------------------------- Camuflaje (bono de movimiento "camo", de noche)
-# De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla se dibuja con un filtro gris (cam_tab: cada color
-# mezclado 40 % con un gris medio fijo al 60 %, al índice más parecido de la paleta) si todas las unidades de su
-# bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo sumo 8
-# letras). Un grupo con un héroe no se camufla. El gris cubre el dibujo entero, banderín del color del equipo incluido:
-# después de la copia de 0x4dd530, 0x4ee3c0 recolorea con los mismos argumentos, usando el mismo dibujo como máscara.
-# Solo el dibujo del ejército quieto (0x459d0d, vía crdraw); el grupo que se está moviendo (0x459e15, 0x459eea) no.
+# De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla queda visible al 30 % si todas las unidades de su
+# bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo
+# sumo 8 letras). Un grupo con un héroe no se camufla. En vez de copiar el dibujo (0x4dd530), 0x4ee3c0 recolorea el
+# fondo con los mismos argumentos, usando el dibujo como máscara, con cam_tab: cada color del fondo mezclado 70 % con
+# un gris fijo al 30 %, al índice más parecido de la paleta (una silueta gris tenue). Vale para todo lo que se dibuja
+# del ejército: la figura (0x459d0d vía crdraw, y 0x45a14f/0x45a18e de la 3ª pasada), el globito del color del equipo
+# (0x45a267), su barra (0x45a2ac) y los iconos de la hoja 0x38 (0x45a2cc, 0x45a34a, 0x45a3a5). El grupo que se está
+# moviendo (0x459e15, 0x459eea) no. El Army Report (minimapa 0x414d50) no muestra esos ejércitos a los demás.
 CAMO = b'camo'
 camstr = place_data('camstr', CAMO + b'\0')
 def cam_table():
@@ -12622,7 +12624,7 @@ def cam_table():
     out = bytearray(range(256))
     for i in range(256):
         if i == 11: continue
-        t = tuple(c * 0.4 + 32 * 0.6 for c in rgb[i])
+        t = tuple(c * 0.7 + 32 * 0.3 for c in rgb[i])
         out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
     return bytes(out)
 CAM_TAB = cam_table()
@@ -12689,13 +12691,15 @@ cs_end:
     pop ebx
     ret
 ''')
-# cam_blit: en lugar de 0x4dd530 al final de crdraw. esi = celda, ebp = vista; columna y fila de la celda en
-# [esp+0x38]/[esp+0x3a] (las del llamador 0x459790), origen de la vista en [ebp+0x28]/[ebp+0x2a].
-cam_blit = place('cam_blit', f'''
+# cam_blit(reg): en lugar de una llamada a 0x4dd530 (cdecl, 8 argumentos) del dibujo de una celda de la vista; reg =
+# celda (esi en la 2ª pasada, edi en la 3ª), ebp = vista; columna y fila de la celda en [esp+0x38]/[esp+0x3a] (las del
+# llamador 0x459790), origen de la vista en [ebp+0x28]/[ebp+0x2a].
+def cam_blit_src(n, reg):
+    return f'''
     cmp dword ptr [{DN_ON:#x}], 0
-    jne cb_go
+    jne {n}_go
     jmp 0x4dd530
-cb_go:
+{n}_go:
     pushad
     movsx eax, word ptr [esp + 0x58]
     movsx edx, word ptr [ebp + 0x28]
@@ -12703,23 +12707,15 @@ cb_go:
     movsx edx, word ptr [esp + 0x5a]
     movsx ecx, word ptr [ebp + 0x2a]
     add edx, ecx
-    movzx ecx, word ptr [esi + 4]
+    movzx ecx, word ptr [{reg} + 4]
     and ecx, 0xf
     call {cam_stack:#x}
     mov dword ptr [{cam_hit:#x}], eax
     popad
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    push dword ptr [esp + 0x20]
-    call 0x4dd530
-    add esp, 0x20
     cmp dword ptr [{cam_hit:#x}], 0
-    je cb_out
+    jne {n}_ghost
+    jmp 0x4dd530
+{n}_ghost:
     push {cam_tab:#x}
     push dword ptr [esp + 0x24]
     push dword ptr [esp + 0x24]
@@ -12731,8 +12727,38 @@ cb_go:
     push dword ptr [esp + 0x24]
     call 0x4ee3c0
     add esp, 0x24
-cb_out:
     ret
+'''
+cam_blit = place('cam_blit', cam_blit_src('cb', 'esi'))
+cam_blit3 = place('cam_blit3', cam_blit_src('cb3', 'edi'))
+CAM_SITES = (0x45a14f, 0x45a18e, 0x45a267, 0x45a2ac, 0x45a2cc, 0x45a34a, 0x45a3a5)   # 3ª pasada, con cam_blit3
+# Army Report: en 0x414e1a de 0x414d50 (ya pasados invisibilidad y niebla; bx = dueño << 5, dx = x, ax = y), de noche
+# no se dibuja el ejército camuflado (cam_stack) salvo para su dueño o un aliado mutuo con vista aliada (fogally) de
+# quien mira ([0x560b20]).
+cam_rep = place('cam_rep', f'''
+    cmp dword ptr [{DN_ON:#x}], 0
+    je cr_show
+    pushad
+    movzx ecx, bx
+    shr ecx, 5
+    movsx edx, word ptr [0x560b20]
+    cmp ecx, edx
+    je cr_vis
+    call {fogally:#x}
+    je cr_vis
+    movsx eax, word ptr [esp + 0x14]
+    movsx edx, word ptr [esp + 0x1c]
+    call {cam_stack:#x}
+    test eax, eax
+    jz cr_vis
+    popad
+    jmp 0x414e2b
+cr_vis:
+    popad
+cr_show:
+    shr bx, 5
+    mov ecx, dword ptr [esp + 0x10]
+    jmp 0x414e22
 ''')
 caves['crblit'] = struct.pack('<I', cam_blit) + caves['crblit'][4:]   # conserva el relleno que le sumó place()
 
@@ -12906,6 +12932,9 @@ assert rel(0x464c3d, 0x464c51 - 0x464c3d) == asm('lea eax, [esp + 0x30]; push ea
                                                  'mov word ptr [esp + 0x1e], ax; add esp, 0xc', 0x464c3d)
 patch(0x464c3d, rel(0x464c3d, 0x464c51 - 0x464c3d), asm(f'jmp {crdef:#x}', 0x464c3d))
 patch(0x459d0d, asm('call 0x4dd530', 0x459d0d), asm(f'call {crdraw:#x}', 0x459d0d))
+for va in CAM_SITES:
+    patch(va, asm('call 0x4dd530', va), asm(f'call {cam_blit3:#x}', va))
+patch(0x414e1a, asm('shr bx, 5; mov ecx, dword ptr [esp + 0x10]', 0x414e1a), asm(f'jmp {cam_rep:#x}', 0x414e1a) + bytes([0x90]) * 3)
 # Puentes: derribar y reconstruir (ver br_* arriba).
 for va in (0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))

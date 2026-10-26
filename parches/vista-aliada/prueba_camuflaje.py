@@ -1,16 +1,22 @@
 # Prueba de juguete del camuflaje (bono de movimiento "camo"; cam_blit, vía crdraw en 0x459d0d) sobre el exe
 # parcheado, en unicorn. Usa el banco de prueba_dianoche.py (mapa, vista y dn_pre para poner la noche).
 # Uso: python prueba_camuflaje.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
-# Cada caso dibuja el ejército quieto de una celda y compara: la copia (0x4dd530, stub) siempre, con los mismos
-# argumentos; y de noche, si todas las unidades del bando en la casilla tienen "camo", el recoloreo (0x4ee3c0, stub)
-# con esos mismos argumentos y la tabla gris (comparada con el mismo cálculo en Python).
+# Cada caso dibuja el ejército quieto de una celda (2ª pasada vía crdraw y 3ª pasada, globito, vía cam_blit3) y
+# compara: la copia (0x4dd530, stub) con los mismos argumentos; o de noche, si todas las unidades del bando en la casilla
+# tienen "camo", en su lugar el recoloreo (0x4ee3c0, stub) con esos argumentos y la tabla al 30 % (comparada con el
+# mismo cálculo en Python). Y el Army Report (0x414d50): de noche no muestra el ejército camuflado ajeno.
 # Controles: grupo mixto, grupo con héroe, unidades de otro bando en la misma casilla, de día, sin la opción.
 import os, sys, struct
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_dianoche.py'), encoding='utf-8').read()
 exec(src.split('\nb = Bench()')[0])
 
-CRDRAW = struct.unpack_from('<i', img, 0x459d0d - BASE + 1)[0] + 0x459d12
-assert img[0x459d0d - BASE] == 0xe8
+def call_target(va):
+    assert img[va - BASE] == 0xe8
+    return struct.unpack_from('<i', img, va - BASE + 1)[0] + va + 5
+CRDRAW = call_target(0x459d0d)
+SITES3 = (0x45a14f, 0x45a18e, 0x45a267, 0x45a2ac, 0x45a2cc, 0x45a34a, 0x45a3a5)
+BLIT3 = call_target(0x45a267)
+assert all(call_target(va) == BLIT3 for va in SITES3)
 TYPES = 0x53c410
 
 pal = open(r'C:\Warlords3\war3.pal', 'rb').read()
@@ -19,7 +25,7 @@ cand = [10] + [i for i in range(16, 245) if i != 187]
 CAM = bytearray(range(256))
 for i in range(256):
     if i == 11: continue
-    t = tuple(c * 0.4 + 32 * 0.6 for c in rgb[i])
+    t = tuple(c * 0.7 + 32 * 0.3 for c in rgb[i])
     CAM[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
 
 class Cam(Bench):
@@ -49,7 +55,7 @@ class Cam(Bench):
             self.mu.mem_write(a + 0x13, bytes([0x40]))
         self.army_list = [(x, y, p) for x, y, p, s in lst]
 
-    def draw(self, x, y, owner):
+    def draw(self, x, y, owner, entry=None):
         mu = self.mu
         self.blits = []; self.calls = []
         c, r = x - VX, y - VY
@@ -58,15 +64,18 @@ class Cam(Bench):
         args = (0x2f + owner, 96, 48, 48, 48, 0x27, c * 48, r * 48)
         sp = STACK - 0x400
         mu.mem_write(sp, struct.pack('<I', END) + struct.pack('<8I', *args) + bytes(0x14) + struct.pack('<hh', c, r))
-        mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_ESI, cell); mu.reg_write(UC_X86_REG_EBP, VIEW)
-        mu.reg_write(UC_X86_REG_EBX, 0xbbbb); mu.reg_write(UC_X86_REG_EDI, 0xd1d1)
-        mu.emu_start(CRDRAW, 0, count=5_000_000)
+        mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBP, VIEW)
+        cr, other = (cell, 0xd1d1) if entry is None else (0x5151, cell)   # 3ª pasada: la celda en edi
+        mu.reg_write(UC_X86_REG_ESI, cr); mu.reg_write(UC_X86_REG_EDI, other); mu.reg_write(UC_X86_REG_EBX, 0xbbbb)
+        mu.emu_start(entry or CRDRAW, 0, count=5_000_000)
         assert mu.reg_read(UC_X86_REG_EIP) == END
         assert mu.reg_read(UC_X86_REG_ESP) == sp + 4
-        assert (mu.reg_read(UC_X86_REG_ESI), mu.reg_read(UC_X86_REG_EBP)) == (cell, VIEW)
-        assert (mu.reg_read(UC_X86_REG_EBX), mu.reg_read(UC_X86_REG_EDI)) == (0xbbbb, 0xd1d1)
-        assert self.blits == [args], self.blits
-        if not self.calls: return False
+        assert (mu.reg_read(UC_X86_REG_ESI), mu.reg_read(UC_X86_REG_EBP)) == (cr, VIEW)
+        assert (mu.reg_read(UC_X86_REG_EBX), mu.reg_read(UC_X86_REG_EDI)) == (0xbbbb, other)
+        if not self.calls:
+            assert self.blits == [args], self.blits
+            return False
+        assert self.blits == [], 'camuflado: no se copia el dibujo'
         assert len(self.calls) == 1 and self.calls[0][:8] == args, self.calls
         tab = bytes(mu.mem_read(self.calls[0][8], 256))
         assert tab == bytes(CAM), 'tabla gris distinta del cálculo en Python'
@@ -87,11 +96,51 @@ b.set(night=True); b.pre()
 res = {k: b.draw(x, y, p) for k, (x, y, p) in {'camo': (12, 8, ME), 'mixto': (14, 8, ME), 'héroe': (16, 8, ME),
        'enemigo': (18, 8, ENEMY), 'sin': (20, 8, ME), 'vacía': (22, 9, ME)}.items()}
 print('1) noche:', res)
-assert res == {'camo': True, 'mixto': False, 'héroe': False, 'enemigo': True, 'sin': False, 'vacía': False}
+EXP = {'camo': True, 'mixto': False, 'héroe': False, 'enemigo': True, 'sin': False, 'vacía': False}
+assert res == EXP
+res3 = {k: b.draw(x, y, p, BLIT3) for k, (x, y, p) in {'camo': (12, 8, ME), 'mixto': (14, 8, ME), 'héroe': (16, 8, ME),
+        'enemigo': (18, 8, ENEMY), 'sin': (20, 8, ME), 'vacía': (22, 9, ME)}.items()}
+print('1b) noche, 3ª pasada (globito, barra, iconos):', res3)
+assert res3 == EXP
 for night, opt, hid, name in ((False, True, False, 'día'), (True, False, False, 'sin opción'), (True, True, True, 'Hidden Map')):
     b.set(night=night, option=opt, hidden=hid); b.pre()
-    assert not b.draw(12, 8, ME) and not b.draw(18, 8, ENEMY), name
-print('2) día / sin opción / Hidden Map: solo la copia, sin gris')
+    for e in (None, BLIT3):
+        assert not b.draw(12, 8, ME, e) and not b.draw(18, 8, ENEMY, e), name
+print('2) día / sin opción / Hidden Map: solo la copia, sin camuflaje')
+
+# Army Report: el minimapa 0x414d50 llama a 0x414e50 (stub) por cada ejército que muestra.
+REP_OBJ = 0x118000
+def report():
+    mu = b.mu; shown = []
+    def h(mu, addr, size, _):
+        if addr == 0x414e50:
+            esp = mu.reg_read(UC_X86_REG_ESP)
+            a = struct.unpack('<4i', mu.mem_read(esp + 4, 16))
+            shown.append((a[1] & 0xffff, a[2] & 0xffff, a[3] & 0xffff))
+            b.ret(esp, 0x10)
+    hh = mu.hook_add(UC_HOOK_CODE, h, begin=0x414e50, end=0x414e50)
+    sp = STACK - 0x400
+    mu.mem_write(sp, struct.pack('<II', END, 0x7777))
+    mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_ECX, REP_OBJ)
+    mu.reg_write(UC_X86_REG_EBX, 0xbbbb); mu.reg_write(UC_X86_REG_ESI, 0x5151); mu.reg_write(UC_X86_REG_EDI, 0xd1d1)
+    mu.reg_write(UC_X86_REG_EBP, 0xb0b0)
+    mu.emu_start(0x414d50, 0, count=5_000_000)
+    mu.hook_del(hh)
+    assert mu.reg_read(UC_X86_REG_EIP) == END and mu.reg_read(UC_X86_REG_ESP) == sp + 8
+    assert [mu.reg_read(r) for r in (UC_X86_REG_EBX, UC_X86_REG_ESI, UC_X86_REG_EDI, UC_X86_REG_EBP)] == [0xbbbb, 0x5151, 0xd1d1, 0xb0b0]
+    return set(shown)
+ALL = {(x, y, p) for x, y, p in b.army_list}
+b.set(night=True); b.pre()
+r = report()
+print('3) Army Report de noche (mira el bando', ME, '):', sorted(ALL - r), 'ocultos')
+assert r == ALL - {(18, 8, ENEMY)}, sorted(r)          # el enemigo todo camo se oculta; el propio camo se ve
+b.mu.mem_write(0x560b20, struct.pack('<h', ENEMY)); b.pre()
+r = report()
+assert r == ALL - {(12, 8, ME)}, sorted(r)             # visto por el otro: se oculta el de ME todo camo
+b.mu.mem_write(0x560b20, struct.pack('<h', ME))
+b.set(night=False); b.pre()
+assert report() == ALL
+print('4) Army Report de día: todos')
 gray = sum(1 for i in range(256) if i != 11 and CAM[i] != i)
-print(f'3) tabla gris: {gray} colores cambian')
+print(f'5) tabla 30 %: {gray} colores cambian')
 print('TODO OK')
