@@ -18,7 +18,7 @@ def jmp_target(va):
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
 DN_PRE, DN_POST = jmp_target(0x459790), jmp_target(0x45aa6e)
 
-N = 4
+N = 6; MIN = 1
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
 VX, VY, VW, VH = 5, 5, 20, 15
 ME, ENEMY = 1, 2
@@ -122,9 +122,9 @@ class Bench:
 # ---- el mismo cálculo en Python
 def lights(b):
     out = []
-    for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1))
-    out += [(20, 5, 0), (8, 22, 0), (5, 20, 0), (6, 20, 0)]
-    out += [(x, y, 1) for x, y, p in b.army_list if p == ME]
+    for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False))
+    out += [(20, 5, 0, True), (8, 22, 0, True), (5, 20, 0, True), (6, 20, 0, True)]
+    out += [(x, y, 1, True) for x, y, p in b.army_list if p == ME]
     return out
 
 def grid(b):
@@ -133,10 +133,14 @@ def grid(b):
         for gx in range(-1, VW + 1):
             if not b.lit: g[gx, gy] = 0; continue
             lev = N
-            for lx, ly, r0 in lights(b):
+            for lx, ly, r0, round_ in lights(b):
                 dx, dy = abs(VX + gx - lx), abs(VY + gy - ly)
-                d = max(dx, dy) + min(dx, dy) // 2 - r0
-                lev = min(lev, max(d, 0))
+                if round_:
+                    d = 0
+                    while dx * dx + dy * dy > d * d + d: d += 1   # raíz redondeada
+                else:
+                    d = max(dx, dy) + min(dx, dy) // 2
+                lev = min(lev, max(d - r0, 0) + MIN)
             g[gx, gy] = lev
     return g
 
@@ -180,9 +184,9 @@ assert b.dirty() == changed(zero, g), 'sucias 1'
 b.post()
 n = check_calls(b, g, b.dirty())
 print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
-assert g[15 - VX, 17 - VY] == 0 and g[10 - VX, 10 - VY] == 0 and g[20 - VX, 5 - VY] == 0
-assert g[24 - VX, 8 - VY] > 0, 'el ejército enemigo no debe dar luz'
-assert g[22 - VX, 17 - VY] > 0 and g[22 - VX, 12 - VY] > 0, 'camino y puente derribado no deben dar luz'
+assert g[15 - VX, 17 - VY] == MIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
+assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
+assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
 # 2) sin cambios: nada sucio y nada que pintar
 b.clear_dirty(); b.pre(); assert b.dirty() == set(), 'sucias 2'
 b.post(); assert b.calls == [], 'pintó sin celdas sucias'

@@ -100,7 +100,15 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
   llamada al recoloreo contra el mismo cálculo en Python; sin cambios no pinta; mover un ejército ensucia solo su
   entorno; de día, con Hidden Map o sin la opción no pinta.
 
+**Prueba en el juego (tarea 46):** bien; la primera vuelta es la 1 (impares de día, pares de noche).
+
+## Paso 5 — ajustes pedidos tras la prueba (26/10/2026, vista aliada 1.0.76.0; prueba en el juego: tarea 48)
+
+- La luz también se oscurece: nivel mínimo DN_MIN = 1 (82 % de brillo), y desde ahí el degradé.
+- 6 niveles (DN_N = 6, factor 0,82 por nivel: el más oscuro ~30 %).
+- Halo redondo en ejércitos, ruinas, sitios y puentes: distancia euclídea redondeada (`dn_stamp`, ch = 1); las
+  ciudades siguen con máx + mín / 2 (cuadrado).
+
 **Falta:**
-- Prueba en el juego (tarea 46).
 - Lo no explorado más oscuro de noche: sin Hidden Map el revelado (0x441b30) no corre, así que no hay registro de
   qué está explorado; haría falta llevarlo aparte. Para más adelante.

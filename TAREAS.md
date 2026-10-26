@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 47).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 49).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,14 +15,23 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **45.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
+- [ ] **48.** Probar la noche nueva (vista aliada 1.0.76.0, 26/10/2026)
+Cambios: la zona iluminada ahora también se oscurece un poco, la oscuridad tiene 6 escalones (antes 4) y el halo de
+tus ejércitos, ruinas, sitios y puentes es redondo; el de las ciudades sigue cuadrado.
+1. Actualizá con la opción de vista aliada y abrí una partida con **Day/Night** marcado.
+2. En una vuelta par (de noche), mirá cerca de tus ejércitos y de una ruina o sitio: el halo tiene que verse redondo.
+3. Contame si la luz quedó bien de oscura y si el degradé se ve suave o con escalones marcados.
+
+- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
 1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
 2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
    **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
 3. Avisame cuando termine: la analizo.
 
-- [ ] **46.** Probar el día y la noche (vista aliada 1.0.75.0, 26/10/2026)
+# Hecho
+
+- [x] **46.** Probar el día y la noche (vista aliada 1.0.75.0, 26/10/2026)
 Actualizá con la opción de vista aliada y empezá una partida nueva con DarklordAV.exe. En Customize Options marcá
 **Day/Night** (columna derecha de Viewing Options): Hidden Map se tiene que desmarcar sola. Ya en el juego:
   1. En el menú, View Game Options tiene que mostrar «Day/Night» marcado.
@@ -30,8 +39,10 @@ Actualizá con la opción de vista aliada y empezá una partida nueva con Darklo
      puentes y tus ejércitos; los ejércitos enemigos no dan luz. Anotá si la primera vuelta es de día o de noche.
   3. Al mover un ejército de noche, la luz lo sigue sin dejar manchas ni cuadros mal pintados.
   4. Contame si la noche se ve demasiado oscura, demasiado clara o bien.
+**Resultado (26/10/2026):** anda bien. Vueltas impares de día, pares de noche; sin cuadros mal pintados al mover; el
+reporte se ve bien. Pediste la luz más oscura, uno o dos escalones más y halo redondo en ejércitos y sitios: tarea 48.
 
-- [ ] **45.** Probar el daño nuevo de las trampas (vista aliada 1.0.72.0, 26/10/2026)
+- [x] **45.** Probar el daño nuevo de las trampas (vista aliada 1.0.72.0, 26/10/2026)
 Ahora una trampa en tierra mata entre el 40 y el 80 % de la pila (al azar, distinto en cada explosión) y paraliza al
 resto: el grupo se frena, no se mueve más ese turno y, si su movimiento es 9 o más, tiene 5 pasos menos hasta su turno
 siguiente. La mina submarina sigue hundiendo todo.
@@ -43,7 +54,7 @@ siguiente. La mina submarina sigue hundiendo todo.
 5. La 1.0.73.0 trae además el arreglo de los recortes del mapa al derribar un puente (lo que anotaste en la 40):
    derribá un puente (con misión o sin ella) y reconstruí otro. Al cerrarse los carteles, el mapa tiene que verse
    entero, sin pedazos recortados ni pixelados, sin tener que pasar el mouse.
-Resultado:
+Resultado: el daño nuevo por porcentajes aleatorios funciona bien. 
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -52,11 +63,11 @@ computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICA
 2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
 Resultado:
 
-- [ ] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
+- [x] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
 Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
 1. En otra PC del clan, abrí el Actualizador y elegí la opción **9** → vista-aliada.
 2. Fijate que aparezca `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y que abra.
-Resultado:
+Resultado: el manual queda instalado con el actualizador. 
 
 - [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
   1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
@@ -107,9 +118,7 @@ lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto
 4. Copiá los dos archivos de Nico a **F:\source\repos\actualizador-warlords\nico\** (creá la carpeta) y anotá acá
    la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
-
-
-# Hecho
+**Resultado (26/10/2026):** marcada como cumplida por vos en la tanda de pruebas.
 
 - [x] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
 Sirve para saber si el amarillo gana por el lugar donde arranca o por jugar segundo: en esta guardada el amarillo sale

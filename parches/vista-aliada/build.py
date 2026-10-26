@@ -12032,15 +12032,18 @@ iv_back:
 # Con la opción (bit 2 de SHOPT) y sin Hidden Map, las vueltas pares ([0x5032f8 + 0x30]; la primera es la 1) son de
 # noche: el mapa se oscurece con DN_N niveles, cada uno una pasada del recoloreo de la niebla (0x4ee3c0 con la tabla
 # dn_tab en vez de 0x589608) con sus mismos bordes suaves (hoja 0x48, máscara de 8 vecinas -> 0x4fbfc8). El nivel de
-# una casilla es su distancia (máx + mín / 2) a la luz más cercana menos el radio de esa luz, entre 0 y DN_N: luces
-# son los ejércitos de quien mira ([0x560b20], radio 1), las ciudades (1), ruinas, sitios y puentes en pie (0).
+# una casilla es DN_MIN más su distancia a la luz más cercana menos el radio de esa luz, entre DN_MIN y DN_N (la luz
+# también se oscurece un poco). Luces: las ciudades (radio 1, distancia máx + mín / 2: halo cuadrado), y con halo
+# redondo (distancia euclídea redondeada) los ejércitos de quien mira ([0x560b20], radio 1), ruinas, sitios y
+# puentes en pie (0).
 # dn_pre (al entrar a 0x459790, ecx = la vista) arma la grilla dn_d: la vista más un borde de 1 (para las vecinas),
 # DN_G bytes por fila; de día, toda en 0. Como el mapa se repinta solo en las celdas sucias (+6 & 0x20) o enteras
 # ([vista+0x1a5]), marca sucia toda celda cuya vecindad 3x3 cambió respecto de la grilla anterior (dn_old); así una
 # celda nunca se oscurece dos veces ni queda con la oscuridad de antes. dn_post (en 0x45aa6e, después de la niebla)
 # pinta los niveles en las mismas celdas que repintó el juego. Vistas de más de DN_MAX celdas por lado: lo que pasa
 # de DN_MAX queda de día.
-DN_N = 4
+DN_N = 6
+DN_MIN = 1
 DN_MAX = 64
 DN_G = DN_MAX + 2
 DN_TURN = 0x5032f8 + 0x30
@@ -12049,7 +12052,7 @@ def dn_table():
     pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
     rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
     cand = [10] + [i for i in range(16, 245) if i != 187]   # sin los colores de Windows, el 11 transparente ni el verde 187
-    f = 0.78                                                  # por nivel; 4 niveles dejan ~37 %, con un tinte azul
+    f = 0.82                                                  # por nivel: la luz ~82 %, 6 niveles ~30 %; tinte azul
     out = bytearray(range(256))
     for i in range(256):
         if i == 11: continue
@@ -12060,19 +12063,22 @@ def dn_table():
 dn_tab = place_data('dn_tab', dn_table())
 dn_d = place_data('dn_d', bytes(DN_G * DN_G))
 dn_old = place_data('dn_old', bytes(DN_G * DN_G))
-dn_var = place_data('dn_var', bytes(4 * 12))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p
-DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P = (dn_var + 4 * i for i in range(12))
+dn_var = place_data('dn_var', bytes(4 * 13))   # on, gw, gh, gx0, gy0, sx, sy, r0, r, c, k, p, sh
+DN_ON, DN_GW, DN_GH, DN_GX0, DN_GY0, DN_SX, DN_SY, DN_R0, DN_R, DN_C, DN_K, DN_P, DN_SH = (dn_var + 4 * i for i in range(13))
 # Las 8 vecinas en el orden de 0x45c8f0 (N, NE, E, SE, S, SO, O, NO), como desplazamientos en la grilla.
 dn_offs = place_data('dn_offs', struct.pack('<8i', *(dy * DN_G + dx for dx, dy in
                      zip((0, 1, 1, 1, 0, -1, -1, -1), (-1, -1, 0, 1, 1, 1, 0, -1)))))
 
-# dn_stamp: eax = x, edx = y del mapa, ecx = radio -> baja el nivel de las casillas de la grilla a su alcance.
+# dn_stamp: eax = x, edx = y del mapa, cl = radio, ch = 1 halo redondo / 0 cuadrado -> baja el nivel de las casillas de la grilla a su alcance.
 dn_stamp = place('dn_stamp', f'''
     pushad
     sub eax, dword ptr [{DN_GX0:#x}]
     sub edx, dword ptr [{DN_GY0:#x}]
     mov dword ptr [{DN_SX:#x}], eax
     mov dword ptr [{DN_SY:#x}], edx
+    movzx ebx, ch
+    mov dword ptr [{DN_SH:#x}], ebx
+    movzx ecx, cl
     mov dword ptr [{DN_R0:#x}], ecx
     lea ebx, [edx - {DN_N}]
     sub ebx, ecx
@@ -12115,16 +12121,32 @@ ds_x:
     cdq
     xor eax, edx
     sub eax, edx
+    test byte ptr [{DN_SH:#x}], 1
+    jz ds_oct
+    imul eax, eax
+    imul ecx, ecx
+    add ecx, eax
+    xor eax, eax
+ds_circ:
+    lea edx, [eax + 1]
+    imul edx, eax
+    cmp ecx, edx
+    jbe ds_dist
+    inc eax
+    jmp ds_circ
+ds_oct:
     cmp eax, ecx
     jge ds_mx
     xchg eax, ecx
 ds_mx:
     shr ecx, 1
     add eax, ecx
+ds_dist:
     sub eax, dword ptr [{DN_R0:#x}]
     jge ds_lev
     xor eax, eax
 ds_lev:
+    add eax, {DN_MIN}
     cmp eax, {DN_N}
     jge ds_xnext
     imul edx, ebx, {DN_G}
@@ -12217,7 +12239,7 @@ dp_sx:
     cmp eax, 1
     jne dp_sxnext
 dp_site:
-    xor ecx, ecx
+    mov ecx, 0x100
     jmp dp_put
 dp_city:
     mov ecx, 1
@@ -12250,7 +12272,7 @@ dp_aloop:
     jne dp_anext
     movsx eax, word ptr [edi + 0x54fe52]
     movsx edx, word ptr [edi + 0x54fe54]
-    mov ecx, 1
+    mov ecx, 0x101
     call {dn_stamp:#x}
 dp_anext:
     inc esi
