@@ -111,6 +111,9 @@ function Incluir($rel) {
     # afuera por ser .ini. En las PC de los jugadores no existen, asi que NoPisar no necesita nombrarlos.
     if ((Split-Path -Parent $rel) -eq 'DATA' -and $nombre -like 'IA*.CSV') { return $false }
     if ($ext -eq '.lnk' -or $ext -eq '.tmp') { return $false }
+    # Video: sin dxcfg.ini, SCREEN.INI y VIDEO.INI una instalacion nueva arranca con otra resolucion (ddraw.dll sin
+    # su configuracion). Van como valores iniciales: la opcion 6 no los pisa si ya existen (NoPisar, por ser .ini).
+    if ($rel -in 'dxcfg.ini', 'SCREEN.INI', 'VIDEO.INI') { return $true }
     if ($ext -eq '.ini' -and -not (EnCarpeta $rel 'CAMPAIGN', 'Ereg', 'edpicts')) { return $false }
     $true
 }
