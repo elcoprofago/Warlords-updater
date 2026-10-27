@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 65).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 66).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,16 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **65.** Arreglar la resolución en C:\Warlords con la opción 6 (27/10/2026)
+El juego completo no traía la configuración de video (dxcfg.ini, SCREEN.INI, VIDEO.INI): por eso en C:\Warlords se
+veía con otra resolución. Ya la trae; donde esos archivos existen no los toca, así que no cambia nada a nadie que
+ya tenga su juego bien.
+1. Cerrá el juego. En el Actualizador (dice «juego en C:\Warlords»), opción **6**.
+2. Abrí el juego desde el Escritorio: tiene que verse igual que el de C:\Warlords3.
+Lo demás que tiene C:Warlords3 y le falta a C:Warlords es tuyo propio (partidas de Saves, Netsaves, mapas de Randscen,
+opciones del juego, registros de pruebas), y no hace falta para jugar. Si querés tus partidas o tus opciones
+en C:\Warlords, avisame y las paso.
 
 - [ ] **64.** Instalar el juego para jugar en red en C:\Warlords, con el Actualizador (26/10/2026)
 Desde ahora C:\Warlords3 es solo para pruebas (ahí instalo yo cada versión antes de publicarla). Para jugar en red
