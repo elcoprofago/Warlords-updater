@@ -46,13 +46,6 @@ Los héroes no. Orcos, dragones y el resto, tampoco.
    su bono o su habilidad, no se ve en la ficha, solo en el resultado).
 4. Control: orcos o dragones pelean igual de día y de noche.
 
-- [ ] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
-Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
-1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
-2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
-   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
-3. Avisame cuando termine: la analizo.
-
 - [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
 partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
@@ -303,6 +296,15 @@ lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto
    la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
 Resultado:
 **Resultado (26/10/2026):** marcada como cumplida por vos en la tanda de pruebas.
+
+- [x] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
+Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
+1. Abrí el Monitor de IA: tiene que decir **1.0.17** (si dice otra, apretá Actualizar).
+2. **Ninguna**, marcá solo **hex_espejo_control** (tiene que aparecer «(control)»), Partidas: **6**,
+   **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
+3. Avisame cuando termine: la analizo.
+Hecha (27/10/2026, tandas 89 a 95, 41 partidas completas; una cortada): el blanco, desde el lugar del negro, ganó 2
+de 41 (antes 8 de 25) y quedó eliminado 4 veces; el negro, desde el del blanco, 0. Ganó el amarillo: 34 de 41.
 
 - [x] **44.** IA: tanda de control con amarillo y verde intercambiados de lugar (25/10/2026)
 Sirve para saber si el amarillo gana por el lugar donde arranca o por jugar segundo: en esta guardada el amarillo sale

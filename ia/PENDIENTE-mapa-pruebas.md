@@ -157,4 +157,30 @@ Tandas 82 a 86 (Tanda_hex_lugar_control): 30 partidas ok, ninguna colgada. Colum
   turno 3 en (109,76), junto a su capital nueva (White Main, 122,79).
 - Falta: tanda del usuario (TAREAS 47). Si el blanco sigue ganando desde el lugar del negro, pesa jugar primero; si
   gana el negro, pesa el lugar. Después de esto, elegir cómo emparejar (paso 3) con los dos resultados.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 5'': analizar blanco contra negro".
+
+## Paso 5'': resultado (27/10/2026) — manda el lugar del amarillo
+Tandas 89 a 95 (Tanda_hex_espejo_control): 41 partidas ok (88 y la última de 90, cortadas). Gana / PV / eliminado.
+
+| color    | control 76-80 (25)  | blanco y negro intercambiados (41) |
+|----------|---------------------|------------------------------------|
+| blanco   | 8 · 23.8 · 0        | 2 · 9.1 · 4                        |
+| amarillo | 17 · 30.8 · 0       | 34 · 29.5 · 0                      |
+| rojo     | 0 · 4.2 · 6         | 0 · 4.8 · 11                       |
+| verde    | 0 · 1.7 · 12        | 1 · 8.1 · 1                        |
+| azul     | 0 · 9.6 · 0         | 4 · 16.1 · 0                       |
+| negro    | 0 · 6.1 · 5         | 0 · 9.9 · 3                        |
+
+- Jugar primero no salva al blanco: desde el lugar del negro cae de 8 victorias a 2 y de 23.8 a 9.1 PV. Pesa el lugar.
+- El negro, desde el lugar del blanco, sube de 6.1 a 9.9 PV pero no gana nunca: lo que el blanco perdió se lo llevó
+  el amarillo (17/25 -> 34/41). El lugar del blanco solo valía como contrapeso del amarillo cuando lo ocupaba alguien
+  que juega antes que él; jugando último (negro) ya no le alcanza. El orden pesa, pero menos que el lugar.
+- Juntando 5' y 5'': el lugar de abajo a la izquierda (el del amarillo) es el fuerte; vale para quien lo ocupe si
+  juega temprano (amarillo: 17/25 y 34/41; el verde, cuarto, solo 6/30). El rojo pierde siempre (vecino del
+  amarillo, juega tercero).
+
+## Próximo paso
+3. Elegir cómo emparejar con estos resultados. El mapa es simétrico y los lugares no: la diferencia está en la
+   vecindad y el orden de turno, que no se cambian editando ciudades. Opciones a evaluar: medir por qué el lugar del
+   amarillo es fuerte (ciudades neutrales y caminos a 1-3 turnos, paso 2 original), o rotar los colores por lugar en
+   cada partida para que cada perfil pase por todos los lugares y todos los órdenes.
+Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 3: elegir cómo emparejar".
