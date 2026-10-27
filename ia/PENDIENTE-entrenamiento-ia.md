@@ -766,3 +766,24 @@ a los humanos y alianza a toda computadora (+0xe2 = 2). Es del juego original. E
 se aliaban todos y llegaba la «victoria aliada» en el turno 3 (tanda 53). vista-aliada 1.0.71.0 (ia_nodip) saltea esa
 llamada en modo tanda; probado en la tanda 64: llegó al tope sin una sola alianza ni paz. Tandas 54 a 64 anuladas
 (pruebas). Encender la diplomacia no sirve: la IA cambia relaciones a cada rato.
+
+### 27/10/2026: alianzas medidas contra la línea base de cada lugar (método de PENDIENTE-mapa-pruebas.md, paso 3)
+Las guardadas de alianzas no tienen tanda de control aparte, pero la serie ya la trae adentro: cada color juega la
+mitad de las partidas con la IA original y la mitad con la de prueba. Línea base = PV medio del color (lugar) con la
+IA original, en la misma guardada; medida = PV con la IA de prueba menos esa base, promediado por partida (los
+colores de una partida no son independientes), media ± error.
+
+| serie | partidas | PV de prueba contra su lugar |
+|-------|----------|------------------------------|
+| 29-34 (con ruinas) | 48 | -1.1 ± 0.5 |
+| 35-40 (con ruinas) | 59 | -1.7 ± 0.8 |
+| 41-46 (sin ruinas) | 58 | +2.4 ± 0.6 |
+| 47-52 (sin ruinas) | 36 | -2.1 ± 0.8 |
+| 29-52 juntas | 201 | -0.5 ± 0.4 |
+
+- Por color (29-52): blanco +0.1, amarillo +0.1, azul -0.9, verde -1.6, celeste -0.1, negro -0.4: ningún lugar
+  donde la IA de prueba se destaque.
+- Las series se contradicen entre sí más allá de su error (41-46 da +2.4; las otras tres, entre -1.1 y -2.1): la
+  variación de una serie a otra es mayor que el error de cada una, así que el -0.5 ± 0.4 conjunto subestima la
+  incertidumbre. Conclusión igual a la del 23/10, ahora con el método por lugar: **las reglas de alianzas no dan
+  ventaja ni desventaja medible.** La línea sigue cerrada (decisión del 24/10) hasta que haya reglas nuevas.
