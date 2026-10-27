@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 62).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 63).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,13 +15,15 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [x] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
-Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
-Un escenario que tenga «camo» en un Move Bonus deja de camuflar hasta que lo cambies.
-1. Cerrá el juego y avisame: lo instalo en C:\Warlords3 y lo publico (ahora no se puede: el juego abierto bloquea DarklordAV.exe).
-2. En el editor, abrí cada escenario que use el camuflaje, y en los Move Bonus donde decía **camo** elegí **camouflg**. Guardá.
-3. De noche, el grupo con ese bono tiene que verse verdoso como antes.
-4. Si en la lista de bonos sigue apareciendo **camo**, es el archivo viejo: podés borrar `C:\Warlords3\TERRAIN\SUBTYPE\camo.STT`.
+- [ ] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
+Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,
+bridge.STT), así todas las PC tienen la misma lista de bonos y no hay mezcla de versiones en red. El Manual trae el
+capítulo nuevo «El día y la noche» (noche, camuflaje «camouflg», monstruos) y está al día hasta esta versión.
+1. Cerrá el juego y el editor y avisame: instalo la 1.0.89.0 en C:\Warlords3 y la publico (abiertos no se puede).
+2. Abrí DarklordAV.exe una vez y cerralo. En C:\Warlords3\TERRAIN\SUBTYPE ya no tienen que estar camo.STT,
+   nighmare.STT ni bridge.STT; camouflg.STT sí.
+3. En el editor, en los Move Bonus de la lista tiene que aparecer **camouflg** y ya no **camo**.
+4. Abrí C:\Warlords3\Manual-Era-de-Alianzas.pdf, capítulo VIII «El día y la noche». Anotá lo que quieras cambiar.
 
 - [x] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
 Cambio: de noche, toda unidad cuyo tipo tenga la clase **monster**, **demon** o **undead** (en Edit Army Data, sus
@@ -56,6 +58,15 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
+Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
+Un escenario que tenga «camo» en un Move Bonus deja de camuflar hasta que lo cambies.
+1. Cerrá el juego y avisame: lo instalo en C:\Warlords3 y lo publico (ahora no se puede: el juego abierto bloquea DarklordAV.exe).
+2. En el editor, abrí cada escenario que use el camuflaje, y en los Move Bonus donde decía **camo** elegí **camouflg**. Guardá.
+3. De noche, el grupo con ese bono tiene que verse verdoso como antes.
+4. Si en la lista de bonos sigue apareciendo **camo**, es el archivo viejo: podés borrar `C:\Warlords3\TERRAIN\SUBTYPE\camo.STT`.
+Resultado (26/10/2026): marcada cumplida; la instalación, la publicación y el borrado del archivo viejo siguen en la 62.
 
 - [x] **58.** Probar camo en ciudades y Día/Noche con Hidden Map (vista aliada 1.0.85.0, 26/10/2026)
 Cambios: dentro de una ciudad el grupo «camo» se ve normal (la ciudad está iluminada). Y Día/Noche ya se puede

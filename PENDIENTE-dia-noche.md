@@ -206,3 +206,15 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Pedido: más intuitivo en el editor y el comparador. `CAMO = b'camouflg'` (8 letras, cabe en el campo de 9 con el 0),
   `TERRAIN\SUBTYPE\camouflg.STT`, `COMB_NO` del editor y `prueba_camuflaje.py` (TODO OK sobre el exe nuevo).
 - El actualizador no borra archivos: el `camo.STT` viejo queda en las instalaciones (sin efecto); tarea 61 paso 4.
+
+## Paso 16 — archivos obsoletos y Manual (26/10/2026, vista aliada 1.0.89.0; tarea 62)
+
+- Pedido: el archivo viejo se borra, y todo otro igual (versiones distintas en red). El Actualizador no borra
+  archivos y cambiarlo solo alcanzaría a quien tenga el Actualizador nuevo: los borra DarklordAV.exe al arrancar
+  (`OBSOLETOS` en build.py, antes del menú en `ia_menu`, DeleteFileA [0x5a97c0]). Lista sacada del historial de
+  parches.txt: camo.STT, nighmare.STT (1.0.86) y bridge.STT (sin uso desde 1.0.57). Prueba: `prueba_obsoletos.py`.
+- hooks/pre-commit (4): bloquea si un archivo sale de ARCHIVOS de vista-aliada sin estar en OBSOLETOS (probado:
+  bloquea sin camo.STT, pasa con la lista completa).
+- La 1.0.88.0 había quedado con camo.STT en parches.txt (el reemplazo no se aplicó); corregido en la 1.0.89.0.
+- Manual: capítulo VIII nuevo «El día y la noche» (VIII a XIV pasan a IX a XV), casilla Day/Night, bono camouflg,
+  apéndices A a D, portada 1.0.89.0 y Monitor 1.0.17. PDF verificado.
