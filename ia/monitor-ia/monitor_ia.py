@@ -69,21 +69,40 @@ class Luz:
         # Las imágenes de USBagent no traen una roja: la naranja llevada a tono rojo, con su mismo brillo.
         h, s, v = naranja.convert('HSV').split()
         roja = Image.merge('HSV', (h.point(lambda x: 0), s, v)).convert('RGBA'); roja.putalpha(naranja.getchannel('A'))
-        apagada = roja.convert('LA').convert('RGBA'); apagada.putalpha(roja.getchannel('A'))
-        self.imgs = {}
-        for k, c in (('on', roja), ('off', apagada)):
-            c.alpha_composite(marco.resize(c.size))
-            self.imgs[k] = c.resize((Medidor.TAM, Medidor.TAM), Image.LANCZOS)
+        # Apagada: la misma roja muy oscura, como una lámpara sin corriente.
+        apagada = Image.merge('HSV', (h.point(lambda x: 0), s, v.point(lambda x: x * 0.3))).convert('RGBA')
+        apagada.putalpha(naranja.getchannel('A'))
+        roja.alpha_composite(marco.resize(roja.size)); apagada.alpha_composite(marco.resize(apagada.size))
+        roja, apagada = (c.resize((Medidor.TAM, Medidor.TAM), Image.LANCZOS) for c in (roja, apagada))
+        # Encendida titila con fundido de la apagada a la viva y vuelta (un ciclo por segundo).
+        self.cuadros = [Image.blend(apagada, roja, i / (self.PASOS - 1)) for i in range(self.PASOS)]
+        self.cuadros += self.cuadros[-2:0:-1]
         self.caja = mon.caja(padre)
-        self.l_img = mon.icono(self.caja, self.imgs['off']); self.l_img.pack()
+        self.l_img = mon.icono(self.caja, apagada); self.l_img.pack()
         self.l_txt = mon.rotulo(self.caja, text='En curso', font=('Segoe UI', 7)); self.l_txt.pack()
-        self.encendida = False
+        self.encendida, self.cuadro, self.primera = False, 0, True
+
+    PASOS = 10
 
     def poner(self, si, texto):
-        if si != self.encendida:
-            self.encendida = si
-            self.mon.iconos[self.l_img] = self.imgs['on' if si else 'off']; self.mon.pintar_icono(self.l_img)
+        if si and not self.encendida:
+            self.cuadro = 0
+            self.mon.after(0, self.titilar)
+            # Suena al encenderse, salvo al abrir el Monitor con una tanda ya detenida o si la cortó el usuario.
+            if not self.primera and not (texto == 'Detenida' and self.mon.cortada_a_mano):
+                winsound.PlaySound(ALARMA, winsound.SND_FILENAME | winsound.SND_ASYNC)
+        self.encendida, self.primera = si, False
+        if not si:
+            self.mostrar(self.cuadros[0])
         self.l_txt['text'] = texto
+
+    def mostrar(self, img):
+        self.mon.iconos[self.l_img] = img; self.mon.pintar_icono(self.l_img)
+
+    def titilar(self):
+        if self.encendida:
+            self.mostrar(self.cuadros[self.cuadro % len(self.cuadros)]); self.cuadro += 1
+            self.mon.after(1000 // len(self.cuadros), self.titilar)
 
 
 def leer_config(seccion):
@@ -153,6 +172,7 @@ class Monitor(tk.Tk):
         self.retomable = False
         self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
         self.parada = (False, 'Sin tanda')   # (luz roja encendida, rótulo)
+        self.cortada_a_mano = False
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
         self.aplicar_fondo()
@@ -631,6 +651,7 @@ class Monitor(tk.Tk):
     def arrancar(self, accion):
         if self.corriendo():
             return
+        self.cortada_a_mano = False
         if accion == 'nueva' and not self.guardadas:
             return messagebox.showwarning('Nueva tanda', 'Elegí al menos una partida guardada.')
         a = SimpleNamespace(accion=accion, partidas=self.v_partidas.get(), guardadas=','.join(self.guardadas),
@@ -682,7 +703,7 @@ class Monitor(tk.Tk):
     def cortar(self):
         if self.corriendo() and messagebox.askyesno(
                 'Cortar', 'Se cierra el juego y la partida en curso se vuelve a jugar al retomar. ¿Cortar?'):
-            tanda.CORTAR.set()
+            tanda.CORTAR.set(); self.cortada_a_mano = True
             print('Cortando…')
 
     def alarma(self):
