@@ -178,9 +178,23 @@ Tandas 89 a 95 (Tanda_hex_espejo_control): 41 partidas ok (88 y la última de 90
   juega temprano (amarillo: 17/25 y 34/41; el verde, cuarto, solo 6/30). El rojo pierde siempre (vecino del
   amarillo, juega tercero).
 
-## Próximo paso
-3. Elegir cómo emparejar con estos resultados. El mapa es simétrico y los lugares no: la diferencia está en la
-   vecindad y el orden de turno, que no se cambian editando ciudades. Opciones a evaluar: medir por qué el lugar del
-   amarillo es fuerte (ciudades neutrales y caminos a 1-3 turnos, paso 2 original), o rotar los colores por lugar en
-   cada partida para que cada perfil pase por todos los lugares y todos los órdenes.
-Frase para retomar: "Seguimos con ia\PENDIENTE-mapa-pruebas.md, paso 3: elegir cómo emparejar".
+## Paso 3: decisión (27/10/2026) — no se arma un mapa parejo; se mide contra la línea base de cada lugar
+- Un mapa parejo no se puede lograr editando: el mapa ya es simétrico (paso 1), el arranque de turno no se rehace
+  (paso 2) y lo que distingue a los lugares es la vecindad y el orden de turno (5' y 5''), que son de Hexagon con 6
+  colores en orden fijo. Armar un mapa nuevo tampoco lo resuelve: con orden de turno fijo, alguien siempre juega
+  primero al lado de alguien que juega último.
+- Método para toda tanda futura que compare perfiles, PGS o IA en una guardada:
+  1. Una tanda de control por guardada (el mismo perfil/PGS/IA en todos los colores, ~25-30 partidas): da el PV
+     medio de cada lugar. Para Tanda_hex_perfiles_SR ya está (tandas 76-80).
+  2. La tanda de medición rota lo que se mide por todos los lugares (escribir_rotada).
+  3. Se compara el PV de cada partida contra el PV de control de su lugar (media ± error). Las victorias no sirven
+     como medida: solo dos lugares pueden ganar.
+- Verificado con la serie 65-69 contra el control 76-80 (antes se había medido contra el promedio de la propia
+  serie): Artificer + Devout +5.9 ± 1.3, rojo +0.5 ± 1.4, verde -1.9 ± 1.0, azul -2.3 ± 1.2, amarillo -2.7 ± 1.0,
+  blanco -3.0 ± 1.5. Mismo resultado que antes: el perfil del negro es mejor, los otros cinco no se distinguen.
+- Pasos 4 y 5 quedan reemplazados: no hay mapa que validar, y la serie de personalidades ya está medida con este
+  método. Para medir mejor entre los cinco perfiles restantes harían falta más partidas, no otro mapa.
+- Pendiente para cuando se use este método en serio: que informe.py calcule la diferencia contra el control
+  (hoy se calculó a mano con datos.db).
+
+Plan cerrado.
