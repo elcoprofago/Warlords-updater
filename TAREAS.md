@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 64).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 65).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,23 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **64.** Instalar el juego para jugar en red en C:\Warlords, con el Actualizador (26/10/2026)
+Desde ahora C:\Warlords3 es solo para pruebas (ahí instalo yo cada versión antes de publicarla). Para jugar en red
+usás C:\Warlords, actualizado con el Actualizador como el resto del clan. En esta PC el Actualizador ya apunta ahí:
+lo dice arriba del menú («juego en C:\Warlords»). A los demás jugadores no les cambia nada.
+1. Bajá y abrí el Actualizador **1.0.14.0** (bajalo de GitHub, release «Ejecutable», como siempre).
+   Arriba tiene que decir «v1.0.14.0 · juego en C:\Warlords».
+2. Opción **6** (juego completo): instala todo en C:\Warlords.
+3. Opción **9** (parches): instalá vista-aliada (1.0.89.0) y herramientas.
+4. Opción **15** (accesos directos): rehace los del Escritorio apuntando a C:\Warlords. Para jugar, usá esos.
+5. Abrí DarklordAV.exe desde el Escritorio y comprobá que arranca.
+6. Tus bandos, escenarios y partidas guardadas siguen en C:\Warlords3: si querés alguno para jugar, avisame.
+
 - [ ] **63.** Preparar capturas de las herramientas para el Manual (26/10/2026)
 El Manual va a llevar una captura de la ventana de cada una: DarkCompare (comparador), DarkValidator, Monitor de IA,
 Votación y Sorteo.
 1. Sacá una captura de cada ventana (tecla Win+Shift+S, o Impr Pant) con algo cargado, no vacía.
-2. Guardalas en F:\source
-eposctualizador-warlords\manual\img\capturas, con el nombre del programa
+2. Guardalas en F:\source\repos\actualizador-warlords\manual\img\capturas, con el nombre del programa
    (comparador.png, validator.png, monitor-ia.png, votacion.png, sorteo.png).
 3. Avisame: las pongo en su capítulo y armo el Manual de nuevo.
 
@@ -28,7 +39,7 @@ eposctualizador-warlords\manual\img\capturas, con el nombre del programa
 Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,
 bridge.STT), así todas las PC tienen la misma lista de bonos y no hay mezcla de versiones en red. El Manual trae el
 capítulo nuevo «El día y la noche» (noche, camuflaje «camouflg», monstruos) y está al día hasta esta versión.
-1. Cerrá el juego y el editor y avisame: instalo la 1.0.89.0 en C:\Warlords3 y la publico (abiertos no se puede).
+1. ~~Cerrá el juego y avisame~~: hecho, la 1.0.89.0 está instalada en C:\Warlords3 y publicada.
 2. Abrí DarklordAV.exe una vez y cerralo. En C:\Warlords3\TERRAIN\SUBTYPE ya no tienen que estar camo.STT,
    nighmare.STT ni bridge.STT; camouflg.STT sí.
 3. En el editor, en los Move Bonus de la lista tiene que aparecer **camouflg** y ya no **camo**.
