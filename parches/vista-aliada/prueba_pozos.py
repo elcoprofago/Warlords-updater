@@ -204,6 +204,10 @@ ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
+# ia_evt: empieza (alineada a 16) con cmp byte ptr [ia_on], 0, antes del push del formato '%d,...,%d\n'
+k = img.index(b'\x68' + struct.pack('<I', BASE + img.index(b'%d,%d,%d,%d,%d,%d,%d\n\0')))
+IA_EVT = BASE + next(j for j in range(k & ~15, 0, -16) if img[j:j + 2] == b'\x80\x3d')
+EVTS = []   # (tipo, jugador, x, y, n) de la última caída
 def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
@@ -234,6 +238,7 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), 
     g.interceptar(0x4eca00, lambda a: 0x1f7000 + a[0], pop=4)
     g.interceptar(0x4e6fd0, lambda a: sonidos.append((('fx', mu.reg_read(UC_X86_REG_ECX) - 0x1f7000), 0)), pop=8)
     for f in (0x441290, 0x4a2170): g.interceptar(f, lambda a: 0)
+    EVTS.clear(); g.interceptar(IA_EVT, lambda a: EVTS.append(tuple(struct.unpack('<5i', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4, 20)))))
     for j, x, y in pasos:
         mu.mem_write(STACK, struct.pack('<5I', RET, j, x & 0xffff, y & 0xffff, 1)); mu.reg_write(UC_X86_REG_ESP, STACK)
         mu.emu_start(PO_STEP, 0x4a1ce0, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == 0x4a1ce0
@@ -281,6 +286,17 @@ ver('mina submarina: se hunde lo que no vuela, con 1 (como el remolino), y suma 
     ([(1, 1)], ['Your army fell into a trap!'], 0xa1))
 r = caer(POZOS, [(15, 15, 2, 0, 0)], [(2, 15, 15)], agua=[(15, 15)], puente=[(15, 15)])
 ver('control: sobre un puente es terrestre, con 0', r[0], [(1, 0)])
+print('-- registro de la IA (ia_evt 18-20; 27/10/2026)')
+caer(POZOS, GRUPO + [(10, 10, 3, 0, 0)], [(2, 10, 10)])
+ver('pozo oculto: evento 18, jugador 2, casilla, 3 muertos', EVTS, [(18, 2, 10, 10, 3)])
+caer(POZOS[:1] + [(20, 10, 1, 0, 0x04, 0xff)] + POZOS[2:], [(20, 10, 2, 0, 0), (20, 10, 2, 0, 1)], [(2, 20, 10)])
+ver('remolino ya visto por el 2: evento 19, 1 muerto + 100', EVTS, [(19, 2, 20, 10, 101)])
+caer(POZOS[:1] + [(20, 10, 1, 0, 0x08, 0xff)] + POZOS[2:], [(20, 10, 2, 0, 0)], [(2, 20, 10)])
+ver('control: visto por otro (el 3) no cuenta como visto', EVTS, [(19, 2, 20, 10, 1)])
+caer(POZOS, [(15, 15, 3, 0, 0)], [(3, 15, 15)], mira=3)
+ver('trampa: evento 20', EVTS, [(20, 3, 15, 15, 1)])
+caer(POZOS, [(10, 10, 2, 0, 1)], [(2, 10, 10)])
+ver('control: solo voladores, nadie cae: sin evento', EVTS, [])
 print('-- trampa: daño parcial (26/10/2026)')
 def parcial(n, mov, x=15, y=15, est=0, vuelan=()):
     out = []
@@ -296,6 +312,7 @@ vivos = [ej[i - 1] for i in range(1, 11) if i not in m]
 ver('10 en tierra: mueren entre 4 y 8, con 0', (4 <= len(m) <= 8, {k for _, k in r[0]}), (True, {0}))
 ver('  los demás: sin pasos este turno, movimiento 12 -> 7 y marca 0x80', {(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for v in vivos}, {(0, 7, 0x80)})
 ver('  el grupo se detiene (0x485c00 del 2), aviso, explosión sumada', (par, r[1], r[3][2][3] & 0xf), ([2], ['Your army fell into a trap!'], 1))
+ver('  evento 20 con los muertos, no los paralizados', EVTS, [(20, 2, 15, 15, len(m))])
 ver('control: la misma caída da lo mismo (todas las PC)', parcial(10, [12] * 10)[0][0], r[0])
 ver('control: la segunda explosión elige distinto', parcial(10, [12] * 10, est=1)[0][0] != r[0], True)
 cuentas = set()

@@ -4843,6 +4843,8 @@ aibn_bridge:
 # del refugio (req. 5; n = amenaza), 14 (solo 1.0.37.0) refuerzo que se queda, 15 va a defender una ciudad aliada
 # amenazada (n = amenaza), 16 se queda en ella mientras dure la amenaza (n = amenaza).
 # Órdenes del humano (ai_ord): 17 la pila cumple la orden (x, y = ciudad, n = tipo 1 ciudad, 2 color, 3 refuerzos).
+# Pozos (po_fall): 18 cayó en un pozo, 19 en un remolino, 20 en una trampa (x, y = casilla, n = muertos + 100 si ya
+# lo veía antes del paso: error evitable).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -7560,6 +7562,11 @@ PO_SND = 56                  # el sonido siguiente al último (Dispel, 55) de la
 # que no vuela (los voladores no caen, así que no descubren), el primer registro no visto por el jugador a
 # |dx|+|dy| <= PO_RADIO (no el radio del grupo, que crece con "View" y para la computadora) queda descubierto para él, se redibuja y, en su PC, el aviso. Corre en todas las PC con los mismos datos, como las ruinas.
 po_pend = place_data('po_pend', bytes(8))
+# Registro de la IA (ia\PENDIENTE-ia-innovaciones.md, paso 1): po_step guarda en po_pvis[jugador] si el registro ya
+# era visible para él antes del paso (antes de descubrir al pasar); po_fall cuenta en po_kill los muertos y anota
+# ia_evt(18 + tipo, jugador, x, y, muertos + 100 si era visible): 18 pozo, 19 remolino, 20 trampa.
+po_pvis = place_data('po_pvis', bytes(8))
+po_kill = place_data('po_kill', bytes(4))
 str_po_fell = [place_data(f'str_po_fell{i}', cstr_(s)) for i, s in enumerate((
     'Your army fell into a hidden pit!', 'Your army was swallowed by a whirlpool!', 'Your army fell into a trap!'))]
 po_fellt = place_data('po_fellt', struct.pack('<3I', *str_po_fell))
@@ -7738,6 +7745,10 @@ po_step = place('po_step', f'''
     jae pt_end
 pt_mark:
     mov byte ptr [ebx + {po_pend:#x}], al
+    movzx ecx, byte ptr [eax*8 + {PO_TAB - 8 + 6:#x}]
+    bt ecx, ebx
+    setc cl
+    mov byte ptr [ebx + {po_pvis:#x}], cl
 pt_end:
     popad
     push dword ptr [esp + 0x10]
@@ -7989,6 +8000,7 @@ pf_cnf:
     mov dword ptr [{TR_MODO:#x}], 1
 pf_go:
     xor edi, edi
+    mov dword ptr [{po_kill:#x}], edi
     mov esi, 1
 pf_ej:
     movsx eax, word ptr [0x54fe50]
@@ -8051,6 +8063,7 @@ pf_kill:
     call 0x46c470
     add esp, 8
     inc edi
+    inc dword ptr [{po_kill:#x}]
 pf_ejn:
     inc esi
     jmp pf_ej
@@ -8063,6 +8076,20 @@ pf_ejf:
 pf_cuenta:
     test edi, edi
     jz pf_pln
+    movzx eax, byte ptr [ebx + {po_pvis:#x}]
+    imul eax, eax, 100
+    add eax, dword ptr [{po_kill:#x}]
+    push eax
+    movsx eax, word ptr [ebp + 2]
+    push eax
+    movsx eax, word ptr [ebp]
+    push eax
+    push ebx
+    movzx eax, byte ptr [ebp + 4]
+    add eax, 18
+    push eax
+    call {ia_evt:#x}
+    add esp, 0x14
     mov cl, bl
     mov al, 1
     shl al, cl

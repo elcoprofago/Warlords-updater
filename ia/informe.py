@@ -81,7 +81,28 @@ def main(tid=None):
               f'{perdidos[ia]:8} {desang[ia]:8}')
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
     alianzas(db, desde, validas, cuenta)
+    innovaciones(db, validas)
     perfiles(db, validas)
+
+
+def innovaciones(db, validas):
+    """Pozos y puentes (ia\\PENDIENTE-ia-innovaciones.md), por IA y color: caídas en pozos, remolinos y trampas que el
+    que cayó ya veía (error evitable) u ocultos, con los ejércitos muertos, y puentes derribados por criterio propio."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, color, tipo, n from evento where partida in ({q}) and tipo in (1, 18, 19, 20)',
+                       validas).fetchall()
+    if not filas:
+        print('\nInnovaciones: la tanda no registró caídas en pozos ni derribos de puentes.')
+        return
+    c = defaultdict(lambda: [0] * 5)   # caídas vistas, muertos en ellas, caídas ocultas, muertos, puentes
+    for ia, color, tipo, n in filas:
+        e = c[ia, color]
+        if tipo == 1: e[4] += 1
+        else: k = 0 if n >= 100 else 2; e[k] += 1; e[k + 1] += n % 100
+    print('\nInnovaciones (caídas en pozo, remolino o trampa: vistas = error evitable)')
+    print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7}')
+    for (ia, color), e in sorted(c.items()):
+        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (6, 7, 7, 7, 7))))
 
 
 def perfiles(db, validas):

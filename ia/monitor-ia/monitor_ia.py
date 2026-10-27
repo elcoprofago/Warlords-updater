@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.19'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.20'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -836,7 +836,8 @@ class Monitor(tk.Tk):
         bats = tanda.leer_batallas()
         evs = {}
         for r in tanda.leer(tanda.CSV_E, len(tanda.COL_E)):
-            evs[r[3]] = evs.get(r[3], 0) + 1
+            k = (r[3], r[6] >= 100) if r[3] in tanda.POZOS_EV else (r[3], None)
+            evs[k] = evs.get(k, 0) + 1
         turno = max((r[0] for r in filas), default=0)
         # Sin tope de turnos, el largo esperado sale del promedio de las partidas ya jugadas.
         largos = [p[0] for p in db.execute("select turnos from partida where turnos>0 and estado!='cortada'")]
@@ -857,7 +858,8 @@ class Monitor(tk.Tk):
                       (f'     empezó {ini[11:]}\n', 'gris'),
                       'Colores con la IA de prueba: ', (', '.join(tanda.COLORES[c] for c in prueba) + '\n', 'prueba'),
                       ('Batallas atacando: ', 'b'), (str(len(bats)), 'b'), *bt,
-                      '\nEventos: ' +(', '.join(f'{tanda.EVENTOS.get(t, t)} {k}' for t, k in sorted(evs.items()))
+                      '\nEventos: ' +(', '.join(f'{tanda.EVENTOS.get(t, t)}{"" if v is None else " visto" if v else " oculto"} {k}'
+                                                   for (t, v), k in sorted(evs.items()))
                                         or 'ninguno todavía'))
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
