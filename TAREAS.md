@@ -19,7 +19,7 @@ Sorteo están acá (tarea 18).
 - [ ] **69.** IA: guardada de Hexagon con pozos, para medir cuánto cae la IA en ellos (27/10/2026)
 Ninguna guardada de tanda tiene pozos: los pozos y remolinos se reparten solo al empezar una partida nueva con
 **Hidden Ruins**, y las de Hexagon se armaron con esa opción apagada.
-1. En DarklordAV.exe, partida nueva en **Hexagon** igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared
+1. En **C:Warlords3DarklordAV.exe** (la carpeta de pruebas: tiene la 1.0.91.0, la que registra las caídas), partida nueva en **Hexagon** igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared
    Cities, Diplomacy, equipos 013 contra 457, el bando simple en todos los colores, un color en Humano), pero con
    **Hidden Ruins activada** y, en Viewing Options, **Discover hidden ruins as you pass**.
 2. Guardala en el turno 1, sin jugar, como **Tanda_hex_pozos_control** y avisame. Yo reviso que tenga pozos.
