@@ -15,7 +15,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
+- [x] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
 Cambio: de noche, toda unidad cuyo tipo tenga la clase **monster**, **demon** o **undead** (en Edit Army Data, sus
 Army Subtypes) gana +2 en una sola cosa, sorteada: fuerza, hits, su bono de combate (solo si tiene uno) o su
 habilidad especial (solo si ya tiene una, ej. trample 1 pasa a trample 3). No hay que asignar nada en el editor.

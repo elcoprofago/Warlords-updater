@@ -11,11 +11,12 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.17'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.18'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
 AVISO_MIN = 5              # a partir de acá se avisa de un posible cuelgue
+PAUSA_SEG = 45             # segundos sin que el juego escriba sus CSV para encender la luz roja de partida parada
 IAS = {0: 'original', 1: 'prueba'}
 
 
@@ -25,7 +26,7 @@ def juego_abierto():
     return tanda.EXE.lower() in r.stdout.lower()
 
 
-# Círculo de consumo (CPU o RAM de toda la PC), con las imágenes y los cortes de semáforo de USBagent
+# Círculo de consumo (CPU de toda la PC), con las imágenes y los cortes de semáforo de USBagent
 # (tools/usbagent-hub/Controls/PerfCircle.xaml.cs): <30 % / 30-69 % / >=70 %, tres imágenes por franja.
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'assets')
 
@@ -46,6 +47,7 @@ class Medidor:
         self.l_txt = mon.rotulo(self.caja, text=f'{nombre} 0%', font=('Segoe UI', 7)); self.l_txt.pack()
 
     def poner(self, pct):
+        """CPU: imagen de la franja de semáforo y porcentaje."""
         if pct < 30:
             banda, pos = 0, pct / 30
         elif pct < 70:
@@ -55,6 +57,33 @@ class Medidor:
         i = banda * 3 + min(2, max(0, round(pos * 2)))
         self.mon.iconos[self.l_img] = self.imgs[i]; self.mon.pintar_icono(self.l_img)
         self.l_txt['text'] = f'{self.nombre} {pct:.0f}%'
+
+
+class Luz:
+    """Luz roja (mismo círculo que el medidor) encendida mientras la partida está parada: pausada en el juego,
+    esperando una acción del usuario o la tanda detenida sin terminar."""
+    def __init__(self, mon, padre):
+        self.mon = mon
+        marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
+        naranja = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
+        # Las imágenes de USBagent no traen una roja: la naranja llevada a tono rojo, con su mismo brillo.
+        h, s, v = naranja.convert('HSV').split()
+        roja = Image.merge('HSV', (h.point(lambda x: 0), s, v)).convert('RGBA'); roja.putalpha(naranja.getchannel('A'))
+        apagada = roja.convert('LA').convert('RGBA'); apagada.putalpha(roja.getchannel('A'))
+        self.imgs = {}
+        for k, c in (('on', roja), ('off', apagada)):
+            c.alpha_composite(marco.resize(c.size))
+            self.imgs[k] = c.resize((Medidor.TAM, Medidor.TAM), Image.LANCZOS)
+        self.caja = mon.caja(padre)
+        self.l_img = mon.icono(self.caja, self.imgs['off']); self.l_img.pack()
+        self.l_txt = mon.rotulo(self.caja, text='En curso', font=('Segoe UI', 7)); self.l_txt.pack()
+        self.encendida = False
+
+    def poner(self, si, texto):
+        if si != self.encendida:
+            self.encendida = si
+            self.mon.iconos[self.l_img] = self.imgs['on' if si else 'off']; self.mon.pintar_icono(self.l_img)
+        self.l_txt['text'] = texto
 
 
 def leer_config(seccion):
@@ -123,6 +152,7 @@ class Monitor(tk.Tk):
         self.serie = None   # (tandas terminadas, tandas de la serie, número de la primera) mientras corre una serie
         self.retomable = False
         self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
+        self.parada = (False, 'Sin tanda')   # (luz roja encendida, rótulo)
         self.externa = False   # tanda arrancada fuera del panel (python ia/tanda.py): solo se mira
         self.armar()
         self.aplicar_fondo()
@@ -226,9 +256,9 @@ class Monitor(tk.Tk):
         self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
         self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
         Ayuda(self.b_susp, 'modo sleep')
-        self.medidores = [Medidor(self, semaforos, 'CPU'), Medidor(self, semaforos, 'RAM')]
-        for m in self.medidores:
-            m.caja.pack(side='left', padx=8)
+        self.cpu = Medidor(self, semaforos, 'CPU'); self.cpu.caja.pack(side='left', padx=8)
+        self.luz = Luz(self, semaforos); self.luz.caja.pack(side='left', padx=8)
+        Ayuda(self.luz.l_img, 'roja: partida pausada, esperando una acción tuya o tanda detenida')
         # Botones cuadrados iluminados (como los de USBagent): encendido = se puede apretar ahora.
         botonera = self.caja(tarjeta); botonera.pack(padx=4, pady=6)
         self.b_nueva = self.boton(botonera, 'nueva', lambda: self.arrancar('nueva'))
@@ -684,8 +714,8 @@ class Monitor(tk.Tk):
         self.encender(self.b_seguir, not corre and self.retomable)
         self.encender(self.b_cortar, self.corriendo())
         self.dibujar_barras()
-        self.medidores[0].poner(psutil.cpu_percent())
-        self.medidores[1].poner(psutil.virtual_memory().percent)
+        self.cpu.poner(psutil.cpu_percent())
+        self.luz.poner(*self.parada)
         self.after(2000, self.refrescar)
 
     def dibujar_barras(self):
@@ -736,6 +766,7 @@ class Monitor(tk.Tk):
         import sqlite3
         self.externa = False
         self.retomable = False
+        self.parada = (False, 'Sin tanda')
         self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
@@ -760,6 +791,7 @@ class Monitor(tk.Tk):
         estado = ('terminada' if term else 'corriendo' if self.corriendo() else
                   'corriendo fuera del Monitor' if self.externa else 'detenida')
         self.v_tanda.set(f'Tanda {tid} ({estado}) — desde {inicio}')
+        self.parada = (True, 'Detenida') if estado == 'detenida' else (False, 'Terminada' if term else 'En curso')
         txt = f'{len(hechas)} de {total} partidas terminadas'
         if en_curso:
             txt += f' — jugando la {en_curso[0] + 1}.ª'
@@ -808,6 +840,12 @@ class Monitor(tk.Tk):
                                         or 'ninguno todavía'))
         quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
+        # El juego usa un núcleo entero aun pausado, así que la pausa se ve en los CSV: mientras juega, alguno se
+        # escribe cada ~8 s (un turno de los 8 colores tarda ~1 min); PAUSA_SEG sin cambios = partida parada.
+        csvs = [os.path.getmtime(r) for r in (tanda.CSV_T, tanda.CSV_B, tanda.CSV_D, tanda.CSV_E) if os.path.exists(r)]
+        sin_cambios = time.time() - max(csvs + [time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))])
+        if sin_cambios > PAUSA_SEG and not self.parada[0]:
+            self.parada = (True, f'Parada {sin_cambios / 60:.0f}′' if sin_cambios >= 60 else 'Parada')
         if quieto > AVISO_MIN * 60:
             self.l_cuelgue['text'] = (f'  Sin turnos nuevos hace {quieto / 60:.0f} min: posible cuelgue '
                                       f'(se corta sola a los {CUELGUE_MIN} min).  ')
