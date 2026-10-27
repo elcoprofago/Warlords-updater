@@ -122,7 +122,7 @@ $nuevo = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::Ord
 foreach ($e in $elegidos) { [void]$nuevo.Add($e) }
 Write-Host "Zip nuevo: $($nuevo.Count) archivos de $base"
 
-# OBSOLETOS de parches\<id>uild.py: archivos que instalo una version anterior y ya no van
+# OBSOLETOS de parches\<id>\build.py: archivos que instalo una version anterior y ya no van
 function Obsoletos($buildPy) {
     if (-not (Test-Path -LiteralPath $buildPy)) { return @() }
     $l = Select-String -LiteralPath $buildPy -Pattern '^OBSOLETOS = ' | Select-Object -First 1

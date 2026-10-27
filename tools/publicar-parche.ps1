@@ -87,7 +87,7 @@ foreach ($a in $archivos) {
     else { Write-Host "  $a identico a lo probado" }
 }
 
-# OBSOLETOS de parches\<id>uild.py: archivos que instalo una version anterior y ya no van
+# OBSOLETOS de parches\<id>\build.py: archivos que instalo una version anterior y ya no van
 function Obsoletos($buildPy) {
     if (-not (Test-Path -LiteralPath $buildPy)) { return @() }
     $l = Select-String -LiteralPath $buildPy -Pattern '^OBSOLETOS = ' | Select-Object -First 1
@@ -95,7 +95,7 @@ function Obsoletos($buildPy) {
     @([regex]::Matches($l.Line, "r?'([^']+)'") | ForEach-Object { $_.Groups[1].Value })
 }
 # Lo probado no puede tener restos de versiones anteriores: esa carpeta es tambien la del anfitrion.
-$restos = @(Obsoletos "parches\$Iduild.py" | Where-Object { Test-Path -LiteralPath (Join-Path $Juego $_) })
+$restos = @(Obsoletos "parches\$Id\build.py" | Where-Object { Test-Path -LiteralPath (Join-Path $Juego $_) })
 if ($restos) { Falla "quedan archivos obsoletos en ${Juego}: $($restos -join ', '). Borralos (o abri el juego una vez) y volve a publicar." }
 
 # ---------------------------------------------------------------- 4. zip
