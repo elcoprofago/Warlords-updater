@@ -25,6 +25,9 @@ lo dice arriba del menú («juego en C:\Warlords»). A los demás jugadores no l
 3. Opción **9** (parches): instalá vista-aliada (1.0.89.0) y herramientas.
 4. Opción **15** (accesos directos): rehace los del Escritorio apuntando a C:\Warlords. Para jugar, usá esos.
 5. Abrí DarklordAV.exe desde el Escritorio y comprobá que arranca.
+5b. Opción **13** (Jugar en red): instala el Puente 1.1.9.0 en C:\Warlords\HERRAMIENTAS. Abrilo: en la lista de
+   ejecutables del juego tiene que aparecer DarklordAV.exe, y al entrar a una partida tiene que abrir el de C:\Warlords
+   (el Puente ahora toma la carpeta del juego de donde está instalado).
 6. Tus bandos, escenarios y partidas guardadas siguen en C:\Warlords3: si querés alguno para jugar, avisame.
 
 - [ ] **63.** Preparar capturas de las herramientas para el Manual (26/10/2026)
