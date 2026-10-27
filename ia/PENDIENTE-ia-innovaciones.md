@@ -40,6 +40,16 @@ IA. No retroceder importa tanto como avanzar: toda regla nueva se mide también 
    criterio (puente en el camino de un enemigo hacia una ciudad propia).
 5. Después, uno por uno, los demás bonos y habilidades nuevos, con el mismo esquema: registrar, base, cambio, A/B.
 
+## Hecho
+- **Paso 1** (27/10/2026, vista-aliada 1.0.91.0, Monitor 1.0.20): po_step guarda si el registro ya era visible para
+  el que pisa (po_pvis, antes de «descubrir al pasar»); po_fall anota ia_evt 18 pozo, 19 remolino, 20 trampa, con
+  x, y = casilla y n = muertos + 100 si ya lo veía (los paralizados de la trampa no cuentan). Los derribos de puentes
+  ya estaban (evento 1, ai_brraze). informe.py tiene la sección «Innovaciones» (por IA y color: caídas vistas y
+  ocultas con sus muertos, puentes derribados); el Monitor separa «visto» y «oculto». Probado en prueba_pozos.py.
+  Sin hacer: si un puente derribado frenó a alguien (necesita seguir las pilas enemigas; se ve en el paso 4).
+  No probado en emulación: un pozo oculto que se descubre en el mismo paso en que se cae (por diseño cuenta como
+  oculto, porque po_pvis se toma antes de descubrir).
+
 ## Próximo paso
-Paso 1: ubicar en po_step (caída) cómo saber si el pozo era visible para el que cae (bit del jugador en +6 de la
-tabla po_*), y agregar el evento. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 1".
+Paso 2: tanda de línea base con la IA actual en una guardada con Hidden Ruins (pozos encendidos); contar con el
+informe las caídas vistas por color. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 2".
