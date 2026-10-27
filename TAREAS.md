@@ -15,7 +15,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
+- [x] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
 Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
 Un escenario que tenga «camo» en un Move Bonus deja de camuflar hasta que lo cambies.
 1. Cerrá el juego y avisame: lo instalo en C:\Warlords3 y lo publico (ahora no se puede: el juego abierto bloquea DarklordAV.exe).

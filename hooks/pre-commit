@@ -11,6 +11,9 @@
 # 3) BLOQUEA: cambiar lo que la opcion 6 no pisa (NoPisar, RaizPropia, DataPropia en
 #    source/Actualizador/Actualizador.cs) sin cambiar tools/publicar-full.ps1 en el mismo commit:
 #    lo que no se pisa en ninguna PC tampoco tiene que salir en el zip de quien lo arma.
+# 4) BLOQUEA: un archivo que sale de ARCHIVOS de vista-aliada en parches/parches.txt (un bono renombrado
+#    o quitado) sin estar en OBSOLETOS de parches/vista-aliada/build.py: el Actualizador no borra nada,
+#    y la copia vieja quedaria en las PC que ya lo tenian (DarklordAV.exe borra los OBSOLETOS al arrancar).
 
 version_de() {  # stdin: parches.txt; $1: ID
     tr -d '\r' | grep -v '^#' | awk -F'|' -v id="$1" '$1 == id { print $2 }'
@@ -54,5 +57,22 @@ if [ "$(git show HEAD:source/Actualizador/Actualizador.cs 2>/dev/null | bloque_n
     echo "            Actualiza Incluir en publicar-full.ps1 en este mismo commit." >&2
     fallo=1
 fi
+
+archivos_av() {  # stdin: parches.txt; un archivo por linea
+    tr -d '\r' | grep -v '^#' | awk -F'|' '$1 == "vista-aliada" { print $3 }' | tr ';' '\n' | sort -u
+}
+obsoletos=$(git show :parches/vista-aliada/build.py 2>/dev/null | tr -d '\r' | sed -n 's/^OBSOLETOS = //p')
+antes_av=$(mktemp); ahora_av=$(mktemp)
+git show HEAD:parches/parches.txt 2>/dev/null | archivos_av > "$antes_av"
+git show :parches/parches.txt 2>/dev/null | archivos_av > "$ahora_av"
+salen=$(comm -23 "$antes_av" "$ahora_av"); rm -f "$antes_av" "$ahora_av"
+for f in $salen; do
+    case "$obsoletos" in
+        *"'$f'"*) ;;
+        *) echo "pre-commit: $f sale del parche vista-aliada y no esta en OBSOLETOS de build.py." >&2
+           echo "            Agregalo ahi: DarklordAV.exe lo borra al arrancar en las PC que ya lo tienen." >&2
+           fallo=1 ;;
+    esac
+done
 
 exit $fallo

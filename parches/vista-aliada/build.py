@@ -11808,7 +11808,16 @@ ib_out:
 IA_TSEC = place_data('ia_tsec', cstr_('Tanda'))
 IA_TKEY = place_data('ia_tkey', cstr_('Partida'))
 IA_TNAME = place_data('ia_tname', bytes(64))
+# Archivos que instaló una versión anterior del parche y ya no van (un bono renombrado o quitado): en el arranque,
+# antes del menú, DeleteFileA ([0x5a97c0]) los borra de C:\Warlords3, así todas las PC quedan con los mismos bonos
+# en el editor aunque el Actualizador no borre nada. Si no están, DeleteFileA falla sin más.
+OBSOLETOS = (r'TERRAIN\SUBTYPE\camo.STT', r'TERRAIN\SUBTYPE\nighmare.STT', r'TERRAIN\SUBTYPE\bridge.STT')
+obs_strs = [place_data(f'obs{i}', cstr_(n)) for i, n in enumerate(OBSOLETOS)]
 ia_menu = place('ia_menu', f'''
+    pushad
+''' + ''.join(f'''    push {a:#x}
+    call dword ptr [0x5a97c0]
+''' for a in obs_strs) + f'''    popad
     call 0x4aab10
     pushad
     push {IA_PATH:#x}
