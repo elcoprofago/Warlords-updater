@@ -218,3 +218,11 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - La 1.0.88.0 había quedado con camo.STT en parches.txt (el reemplazo no se aplicó); corregido en la 1.0.89.0.
 - Manual: capítulo VIII nuevo «El día y la noche» (VIII a XIV pasan a IX a XV), casilla Day/Night, bono camouflg,
   apéndices A a D, portada 1.0.89.0 y Monitor 1.0.17. PDF verificado.
+
+## Paso 17 — sin restos en C:\Warlords3 (26/10/2026)
+
+- Pedido: la carpeta local es la de prueba y la del anfitrión; no puede tener archivos obsoletos.
+- `publicar-parche.ps1` y `publicar-full.ps1` se niegan si hay en C:\Warlords3 un archivo de OBSOLETOS (el juego
+  completo de la opción 6 se arma desde esa carpeta: un resto viajaría a todas las PC). Probado en juguete.
+- Barrido del historial de parches.txt contra C:\Warlords3: solo quedaba bridge.STT; borrado.
+- Pendiente aparte: capturas de las herramientas para el Manual (tarea 63; el usuario avisa).

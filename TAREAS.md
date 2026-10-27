@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 63).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 64).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,14 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **63.** Preparar capturas de las herramientas para el Manual (26/10/2026)
+El Manual va a llevar una captura de la ventana de cada una: DarkCompare (comparador), DarkValidator, Monitor de IA,
+Votación y Sorteo.
+1. Sacá una captura de cada ventana (tecla Win+Shift+S, o Impr Pant) con algo cargado, no vacía.
+2. Guardalas en F:\sourceeposctualizador-warlords\manual\img\capturas, con el nombre del programa
+   (comparador.png, validator.png, monitor-ia.png, votacion.png, sorteo.png).
+3. Avisame: las pongo en su capítulo y armo el Manual de nuevo.
 
 - [ ] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
 Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,

@@ -122,6 +122,18 @@ $nuevo = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::Ord
 foreach ($e in $elegidos) { [void]$nuevo.Add($e) }
 Write-Host "Zip nuevo: $($nuevo.Count) archivos de $base"
 
+# OBSOLETOS de parches\<id>uild.py: archivos que instalo una version anterior y ya no van
+function Obsoletos($buildPy) {
+    if (-not (Test-Path -LiteralPath $buildPy)) { return @() }
+    $l = Select-String -LiteralPath $buildPy -Pattern '^OBSOLETOS = ' | Select-Object -First 1
+    if (-not $l) { return @() }
+    @([regex]::Matches($l.Line, "r?'([^']+)'") | ForEach-Object { $_.Groups[1].Value })
+}
+# Un resto de version anterior en C:\Warlords3 viajaria a todas las PC con la opcion 6.
+$restos = @(Get-ChildItem parches -Directory | ForEach-Object { Obsoletos (Join-Path $_.FullName 'build.py') } |
+    Where-Object { $nuevo.Contains($_) })
+if ($restos) { Falla "quedan archivos obsoletos en ${base}: $($restos -join ', '). Borralos (o abri DarklordAV.exe una vez) y volve a publicar." }
+
 # ---------------------------------------------------------------- 3. comparar
 function Resumen($titulo, $lista, $color) {
     if (-not $lista.Count) { return }
