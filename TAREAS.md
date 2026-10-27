@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 67).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 68).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,12 +15,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [x] **66.** Revisar las capturas en el Manual (vista aliada 1.0.90.0, 27/10/2026)
-El Manual trae ahora la captura de cada programa: Puente Warlords (capítulo II, «Jugar en red»), Monitor de IA, y en
-el capítulo XV DarkValidator, DarkCompare, Visor PGS, Sorteo y Votación.
-1. En el Actualizador (C:\Warlords), opción **9**: instalá vista-aliada 1.0.90.0.
-2. Abrí C:\Warlords\Manual-Era-de-Alianzas.pdf y mirá cada captura: que se lea y esté en su lugar.
-3. Anotá lo que quieras cambiar (tamaño, otra captura, otro lugar).
+- [ ] **67.** Cerrar el Monitor de IA para que lo actualice (27/10/2026)
+El Monitor 1.0.19 muestra en el informe de perfiles una columna nueva, «PV contra su lugar»: el resultado de cada
+perfil comparado con el de su lugar en la tanda de control. Para compilarlo tiene que estar cerrado.
+1. Cerrá el Monitor de IA (el juego puede seguir abierto) y avisame.
 
 - [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
@@ -33,6 +31,14 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **66.** Revisar las capturas en el Manual (vista aliada 1.0.90.0, 27/10/2026)
+El Manual trae ahora la captura de cada programa: Puente Warlords (capítulo II, «Jugar en red»), Monitor de IA, y en
+el capítulo XV DarkValidator, DarkCompare, Visor PGS, Sorteo y Votación.
+1. En el Actualizador (C:\Warlords), opción **9**: instalá vista-aliada 1.0.90.0.
+2. Abrí C:\Warlords\Manual-Era-de-Alianzas.pdf y mirá cada captura: que se lea y esté en su lugar.
+3. Anotá lo que quieras cambiar (tamaño, otra captura, otro lugar).
+Cumplida (marcada por el usuario, anotada 27/10/2026).
 
 - [x] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
 Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,
