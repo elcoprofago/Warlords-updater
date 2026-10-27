@@ -19,7 +19,8 @@ Sorteo están acá (tarea 18).
 El Manual va a llevar una captura de la ventana de cada una: DarkCompare (comparador), DarkValidator, Monitor de IA,
 Votación y Sorteo.
 1. Sacá una captura de cada ventana (tecla Win+Shift+S, o Impr Pant) con algo cargado, no vacía.
-2. Guardalas en F:\sourceeposctualizador-warlords\manual\img\capturas, con el nombre del programa
+2. Guardalas en F:\source
+eposctualizador-warlords\manual\img\capturas, con el nombre del programa
    (comparador.png, validator.png, monitor-ia.png, votacion.png, sorteo.png).
 3. Avisame: las pongo en su capítulo y armo el Manual de nuevo.
 
@@ -57,9 +58,8 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
 - [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
 partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
-fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega queda rojo oscuro, como apagada. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18**, que se publica cuando termine la
-47 (ahora el Monitor está en uso y no se puede reemplazar).
-1. Cuando la 47 termine, avisame: publico la 1.0.18. Abrí el Monitor y apretá Actualizar; tiene que decir 1.0.18.
+fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega queda rojo oscuro, como apagada. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18** (publicado).
+1. Abrí el Monitor y apretá Actualizar; tiene que decir 1.0.18.
 2. Arrancá una tanda corta (Partidas: 1). Mientras juega, la luz tiene que estar rojo oscuro, quieta, con el rótulo «En curso».
 3. Pausá el juego (o dejalo esperando algo tuyo) un minuto: suena la alarma y la luz titila en rojo con «Parada».
 4. Seguí la partida: en pocos segundos vuelve a rojo oscuro quieto.
