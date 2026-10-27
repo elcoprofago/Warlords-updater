@@ -107,7 +107,7 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
   <li><span>II.</span>Instalación y el Actualizador
     <ol><li>Requisitos · El menú del Actualizador · Juego completo y parches · Herramientas · Jugar en red y Tailscale</li></ol></li>
   <li><span>III.</span>Preparar una partida
-    <ol><li>Arrancar con DarklordAV.exe · Opciones nuevas · Sorteo de bandos · Comparador de armas</li></ol></li>
+    <ol><li>Arrancar con DarklordAV.exe · Opciones nuevas · Sorteo del orden de elección · Comparador de armas</li></ol></li>
   <li><span>IV.</span>Alianzas
     <ol><li>Vista aliada compartida · Niebla compartida · Ciudades compartidas · Refugio · Victoria aliada</li></ol></li>
   <li><span>V.</span>Guerra en el agua
@@ -175,7 +175,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Día y noche</td><td>Una vuelta de día y otra de noche: oscuridad con halos de luz, tropas camufladas y monstruos más fuertes de noche.</td><td>VIII</td></tr>
 <tr><td>Reglas del clan en el Army List</td><td>El juego marca las unidades que el DarklordsValidator rechazaría.</td><td>IX</td></tr>
 <tr><td>Pilas con voladores</td><td>Una pila con algún volador admite como máximo 6 ejércitos.</td><td>IX</td></tr>
-<tr><td>Órdenes por chat</td><td>Escribir <code>#n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>X</td></tr>
+<tr><td>Órdenes por chat</td><td>Escribir <code>.n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>X</td></tr>
 <tr><td>Votación, Sorteo, Comparador</td><td>Botones dentro del juego que abren las herramientas del clan en todas las PC.</td><td>III, XI</td></tr>
 <tr><td>Ítems en mapas al azar</td><td>Los ítems personalizados entran en el sorteo de las ruinas.</td><td>XII</td></tr>
 <tr><td>IA mejorada</td><td>La computadora usa barcos, puentes, refugios aliados y esquiva los pozos que ve.</td><td>XIII</td></tr>
@@ -199,6 +199,7 @@ escenarios, ítems, el juego completo, los parches y las herramientas del clan.<
 <p>El Actualizador tiene aspecto de terminal. Muestra un menú numerado; se escribe el número de la opción y
 <kbd>Enter</kbd>. Se pueden pedir varias a la vez separándolas con espacios (por ejemplo <code>1 2 3</code>), salvo la 6,
 que va sola.</p>
+<figure class="captura"><img src="img/capturas/actualizador.png" style="width:120mm"><figcaption>El Actualizador</figcaption></figure>
 <table>
 <tr><th style="width:8%">N.º</th><th style="width:30%">Opción</th><th>Qué hace</th></tr>
 <tr><td>1</td><td>ARMY</td><td>Baja los ejércitos (<code>ARMY</code>).</td></tr>
@@ -209,10 +210,10 @@ que va sola.</p>
 <tr><td>6</td><td>ACTUALIZAR TODO EL JUEGO</td><td>Instala el juego completo sobre <code>C:\Warlords3</code>. No pisa lo propio de cada PC (configuración, partidas, herramientas). Va sola.</td></tr>
 <tr><td>7</td><td>VALIDATOR</td><td>DarklordsValidator, el validador de unidades del clan.</td></tr>
 <tr><td>8</td><td>PGS-VISOR</td><td>EditorPGS, visor de bandos (<code>.PGS</code>).</td></tr>
-<tr><td>9</td><td>PARCHES</td><td>Lista los parches disponibles (Era de Alianzas y el paquete de herramientas) e instala el elegido.</td></tr>
+<tr><td>9</td><td>PARCHES</td><td>Lista los parches disponibles (Era de Alianzas y el paquete de herramientas) e instala el elegido. El paquete de herramientas instala la carpeta <code>C:\Warlords3\HERRAMIENTAS</code> si no está, o la actualiza si ya está.</td></tr>
 <tr><td>10</td><td>DARKCOMPARE</td><td>Comparador de armas.</td></tr>
 <tr><td>11</td><td>VOTACIÓN</td><td>Programa de votación de la partida.</td></tr>
-<tr><td>12</td><td>SORTEO</td><td>Programa de sorteo de bandos.</td></tr>
+<tr><td>12</td><td>SORTEO</td><td>Sorteo del orden de elección de posiciones.</td></tr>
 <tr><td>13</td><td>JUGAR EN RED</td><td>Instala o actualiza Puente Warlords y lo abre.</td></tr>
 <tr><td>14</td><td>TAILSCALE</td><td>Conexión de respaldo para jugar en red.</td></tr>
 <tr><td>15</td><td>CREAR ACCESOS DIRECTOS</td><td>Pone en el escritorio los accesos a las herramientas instaladas.</td></tr>
@@ -264,11 +265,11 @@ todos los jugadores sepan con qué reglas se juega. Viajan con la partida guarda
 <p>Los <b>pozos y remolinos</b> (capítulo VII) aparecen solo si la partida tiene activada la opción del juego
 <i>Hidden Ruins</i>.</p>
 
-<h2>Sorteo de bandos</h2>
+<h2>Sorteo del orden de elección</h2>
 <figure style="float:right;margin:0 0 2mm 5mm"><img src="img/sorteo_icono.png" style="width:20mm"><figcaption>Botón Sorteo</figcaption></figure>
 <p>En la pantalla de preparación, junto al botón <i>Chat</i>, hay un botón con el ícono del Sorteo. Lo usa el
-<b>anfitrión</b>: al pulsarlo, el programa Sorteo se abre en todas las PC de la partida. El anfitrión lo opera; los
-demás lo ven como espectadores, con sus bandos marcados. Requiere que cada PC tenga instalado el paquete de
+<b>anfitrión</b>: al pulsarlo, el programa Sorteo se abre en todas las PC de la partida. Sortea el orden en que cada color elige su posición (una ciudad con mapa visible, un cuadrante con mapa
+oculto). El anfitrión lo opera; los demás lo ven como espectadores, con sus bandos marcados. Requiere que cada PC tenga instalado el paquete de
 herramientas (Actualizador, opción 9 o 12); si falta, el juego lo avisa.</p>
 
 <h2>Comparador de armas</h2>
@@ -544,12 +545,12 @@ escribirlos a mano.</p>
 <h1><span class="num">Capítulo X</span>Diplomacia con la computadora</h1>
 <p class="entrada">Un aliado manejado por la computadora ya no es un mueble: se le pueden dar órdenes.</p>
 <p>En la barra de chat del juego, un jugador humano escribe a un aliado de la computadora con el número de su bando
-(<code>#n</code>, de 1 a 8):</p>
+precedido de un punto (<code>.n</code>, de 1 a 8; se escribe con la tecla <kbd>.</kbd>):</p>
 <table>
 <tr><th style="width:42%">Escribir</th><th>Qué hace el aliado</th></tr>
-<tr><td><code>#3 ataca Afland</code></td><td>Ataca la ciudad con ese nombre exacto.</td></tr>
-<tr><td><code>#3 ataca a 5</code> o <code>#3 ataca a NOMBRE</code></td><td>Ataca la ciudad más a mano del bando indicado (número o nombre).</td></tr>
-<tr><td><code>#3 mandame refuerzos</code></td><td>Manda tropas a la ciudad más a mano de quien da la orden.</td></tr>
+<tr><td><code>.3 ataca Afland</code></td><td>Ataca la ciudad con ese nombre exacto.</td></tr>
+<tr><td><code>.3 ataca a 5</code> o <code>.3 ataca a NOMBRE</code></td><td>Ataca la ciudad más a mano del bando indicado (número o nombre).</td></tr>
+<tr><td><code>.3 mandame refuerzos</code></td><td>Manda tropas a la ciudad más a mano de quien da la orden.</td></tr>
 </table>
 <ul>
   <li>No distingue mayúsculas; el verbo vale por sus cuatro primeras letras («atacá» y «ataca» son lo mismo).</li>
@@ -663,8 +664,8 @@ falta repetir la serie sin ruinas para confirmar sus resultados.</div>
 <tr><td>DarkValidator</td><td>7</td><td>Valida unidades contra el reglamento del clan.</td></tr>
 <tr><td>Visor PGS</td><td>8</td><td>Muestra un bando completo («foto») con puntos, Factor y validación.</td></tr>
 <tr><td>DarkCompare</td><td>10</td><td>Compara armas entre sí.</td></tr>
-<tr><td>Votación</td><td>11 (o 9, paquete herramientas)</td><td>Votaciones durante la partida.</td></tr>
-<tr><td>Sorteo</td><td>12 (o 9, paquete herramientas)</td><td>Sorteo de bandos antes de la partida.</td></tr>
+<tr><td>Votación</td><td>11 (o 9, parches)</td><td>Votaciones durante la partida.</td></tr>
+<tr><td>Sorteo</td><td>12 (o 9, parches)</td><td>Sorteo del orden en que cada color elige su posición antes de la partida.</td></tr>
 </table>
 <div class="nota"><b>Una sola validación.</b> DarkValidator es la referencia. DarkCompare y el Visor PGS usan su mismo
 código (no una copia), y el Army List del parche fue comprobado contra él: una unidad rechazada en uno se rechaza en
@@ -702,7 +703,8 @@ todos. Las 25 reglas están en el capítulo IX.</div>
 
 <h2>Sorteo</h2>
 <ul>
-  <li>Sortea los bandos de la partida, con animación.</li>
+  <li>Sortea, con animación, el <b>orden de elección de posiciones</b>: asigna a cada color su número de turno para
+  elegir dónde empieza (una ciudad, con mapa visible, o un cuadrante, con mapa oculto). También puede usarse para sortear colores.</li>
   <li>Desde el juego lo abre el anfitrión con el botón junto a <i>Chat</i>: se abre en todas las PC; el anfitrión lo
   opera y los demás lo siguen como espectadores.</li>
   <li>También puede abrirse solo, fuera del juego.</li>

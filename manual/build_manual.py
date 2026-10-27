@@ -37,8 +37,11 @@ for n in ('sorteo_icono', 'comparador_icono'):
 
 pdf = os.path.join(AQUI, 'Manual-Era-de-Alianzas.pdf')
 html = 'file:///' + os.path.join(AQUI, 'manual.html').replace('\\', '/')
-r = subprocess.run([EDGE, '--headless', '--disable-gpu', '--no-pdf-header-footer', f'--print-to-pdf={pdf}', html],
-                   capture_output=True, text=True, timeout=120)
-if r.returncode != 0 or not os.path.exists(pdf):
+# Perfil propio: con Edge abierto, el modo sin ventana le pasa el pedido a esa instancia y no escribe el PDF.
+perfil = os.path.join(os.environ['TEMP'], 'build_manual_edge')
+antes = os.path.getmtime(pdf) if os.path.exists(pdf) else 0
+r = subprocess.run([EDGE, '--headless', '--disable-gpu', '--no-pdf-header-footer', f'--user-data-dir={perfil}',
+                    f'--print-to-pdf={pdf}', html], capture_output=True, text=True, timeout=120)
+if r.returncode != 0 or not os.path.exists(pdf) or os.path.getmtime(pdf) <= antes:
     sys.exit(f'Edge no generó el PDF (código {r.returncode}): {r.stderr}')
 print(pdf, os.path.getsize(pdf), 'bytes')
