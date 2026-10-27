@@ -36,6 +36,17 @@ Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del n
    **Tandas automatizadas** con serie de **5**, **Nueva tanda** (30 partidas, unas 9 horas).
 3. Avisame cuando termine: la analizo.
 
+- [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
+Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
+partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar) y gris mientras
+juega. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18**, que se publica cuando termine la
+47 (ahora el Monitor está en uso y no se puede reemplazar).
+1. Cuando la 47 termine, avisame: publico la 1.0.18. Abrí el Monitor y apretá Actualizar; tiene que decir 1.0.18.
+2. Arrancá una tanda corta (Partidas: 1). Mientras juega, la luz tiene que estar gris con el rótulo «En curso».
+3. Pausá el juego (o dejalo esperando algo tuyo) un minuto: la luz se pone roja con «Parada».
+4. Seguí la partida: en pocos segundos vuelve a gris.
+5. Control: apretá Cortar; la luz queda roja con «Detenida» hasta que la retomes o empieces otra.
+
 # Hecho
 
 - [x] **58.** Probar camo en ciudades y Día/Noche con Hidden Map (vista aliada 1.0.85.0, 26/10/2026)
