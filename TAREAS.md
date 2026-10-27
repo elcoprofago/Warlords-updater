@@ -27,7 +27,7 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 
 # Hecho
 
-- [x] **67.** Cerrar el Monitor de IA para que lo actualice. Hecho el 27/10/2026: cerrado; Monitor 1.0.19 compilado (falta publicarlo).
+- [x] **67.** Cerrar el Monitor de IA para que lo actualice. Hecho el 27/10/2026: cerrado; Monitor 1.0.19 compilado y publicado.
 
 - [x] **66.** Revisar las capturas en el Manual (vista aliada 1.0.90.0, 27/10/2026)
 El Manual trae ahora la captura de cada programa: Puente Warlords (capítulo II, «Jugar en red»), Monitor de IA, y en
