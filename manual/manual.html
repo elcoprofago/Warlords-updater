@@ -95,7 +95,7 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
   <p>Warlords III: Darklords Rising es una obra de Strategic Studies Group (1997). Este parche no reemplaza el juego
   original: lo complementa con un ejecutable propio. Todas las marcas pertenecen a sus dueños.</p>
   <p>Convenciones: los nombres que aparecen en pantalla en inglés se escriben tal cual (<i>Allied View</i>,
-  <i>Build Trap</i>); las teclas, como <kbd>Q</kbd>; las rutas de archivos, como <code>C:\Warlords3\DATA</code>.</p>
+  <i>Build Trap</i>); las teclas, como <kbd>Q</kbd>; las rutas de archivos, como <code>DATA\IA.INI</code> (siempre dentro de la carpeta del juego).</p>
 </section>
 
 <!-- ============================================================ ÍNDICE -->
@@ -188,7 +188,7 @@ escenarios, ítems, el juego completo, los parches y las herramientas del clan.<
 
 <h2>Requisitos</h2>
 <ul>
-  <li>Windows con Warlords III instalado en <code>C:\Warlords3</code> (la versión de GOG corre en ventana, lo que permite
+  <li>Windows con Warlords III instalado. La carpeta del juego es <code>C:\Warlords3</code> salvo que la PC tenga otra anotada; el Actualizador la muestra arriba del menú («juego en …») (la versión de GOG corre en ventana, lo que permite
   que las herramientas del clan se abran encima del juego).</li>
   <li>Conexión a Internet para bajar los paquetes.</li>
   <li>El último <code>Actualizador-v.&lt;versión&gt;.exe</code>, publicado en la sección de lanzamientos del repositorio
@@ -207,10 +207,10 @@ que va sola.</p>
 <tr><td>3</td><td>HERO</td><td>Baja los héroes.</td></tr>
 <tr><td>4</td><td>ESCENARIOS</td><td>Baja los escenarios.</td></tr>
 <tr><td>5</td><td>ITEMS</td><td>Baja los ítems.</td></tr>
-<tr><td>6</td><td>ACTUALIZAR TODO EL JUEGO</td><td>Instala el juego completo sobre <code>C:\Warlords3</code>. No pisa lo propio de cada PC (configuración, partidas, herramientas). Va sola.</td></tr>
+<tr><td>6</td><td>ACTUALIZAR TODO EL JUEGO</td><td>Instala el juego completo sobre la carpeta del juego. No pisa lo propio de cada PC (configuración, partidas, herramientas). Va sola.</td></tr>
 <tr><td>7</td><td>VALIDATOR</td><td>DarklordsValidator, el validador de unidades del clan.</td></tr>
 <tr><td>8</td><td>PGS-VISOR</td><td>EditorPGS, visor de bandos (<code>.PGS</code>).</td></tr>
-<tr><td>9</td><td>PARCHES</td><td>Lista los parches disponibles (Era de Alianzas y el paquete de herramientas) e instala el elegido. El paquete de herramientas instala la carpeta <code>C:\Warlords3\HERRAMIENTAS</code> si no está, o la actualiza si ya está.</td></tr>
+<tr><td>9</td><td>PARCHES</td><td>Lista los parches disponibles (Era de Alianzas y el paquete de herramientas) e instala el elegido. El paquete de herramientas instala la carpeta <code>HERRAMIENTAS</code> del juego si no está, o la actualiza si ya está.</td></tr>
 <tr><td>10</td><td>DARKCOMPARE</td><td>Comparador de armas.</td></tr>
 <tr><td>11</td><td>VOTACIÓN</td><td>Programa de votación de la partida.</td></tr>
 <tr><td>12</td><td>SORTEO</td><td>Sorteo del orden de elección de posiciones.</td></tr>
@@ -230,10 +230,10 @@ que va sola.</p>
 lo avisa en la opción 9: conviene correr la 6 y volver. Correr la 6 después de un parche obliga a reinstalar el parche
 con la 9 (el Actualizador lo avisa).</div>
 <p>Antes de instalar un parche, el Actualizador verifica el paquete bajado. Cada parche lleva su número de versión;
-la PC recuerda cuál tiene instalada en <code>C:\Warlords3\PARCHES</code>.</p>
+la PC recuerda cuál tiene instalada en la carpeta <code>PARCHES</code> del juego.</p>
 
 <h2>Herramientas del clan</h2>
-<p>Las opciones 7, 8, 10, 11 y 12 dejan cada programa en <code>C:\Warlords3\HERRAMIENTAS</code>. Al actualizar no
+<p>Las opciones 7, 8, 10, 11 y 12 dejan cada programa en la carpeta <code>HERRAMIENTAS</code> del juego. Al actualizar no
 se pisan los archivos <code>.ini</code> que ya estén: la configuración de cada PC se conserva. Votación y Sorteo son
 los programas que abren los botones del juego (capítulos III y XI).</p>
 
@@ -249,7 +249,7 @@ responda. Requiere haber instalado antes el Puente (opción 13).</p>
 <h1><span class="num">Capítulo III</span>Preparar una partida</h1>
 
 <h2>Arrancar el juego</h2>
-<p>Abrir <code>C:\Warlords3\DarklordAV.exe</code>. El menú principal muestra el logotipo de Era de Alianzas; el resto
+<p>Abrir <code>DarklordAV.exe</code>, en la carpeta del juego (o su acceso directo del Escritorio). El menú principal muestra el logotipo de Era de Alianzas; el resto
 de los menús es el del juego original.</p>
 
 <h2>Opciones nuevas de la partida</h2>
@@ -622,7 +622,7 @@ invierten. Así cada color juega con cada IA la misma cantidad de veces y la ven
 resultado (comparación A/B).</p>
 
 <h2>El archivo IA.INI</h2>
-<p><code>C:\Warlords3\DATA\IA.INI</code>, sección <code>[IA]</code>, claves <code>Color0</code> a <code>Color7</code>
+<p><code>DATA\IA.INI</code> de la carpeta del juego, sección <code>[IA]</code>, claves <code>Color0</code> a <code>Color7</code>
 con valor <code>original</code> o <code>prueba</code>. Sin ese archivo el juego no lee ni escribe nada distinto. Con
 él, el juego anota por turno y bando oro, ciudades, ejércitos y héroes (<code>IA.CSV</code>), las batallas, la
 diplomacia, los eventos (puentes, convoyes, refugios, órdenes) y el podio final.</p>
@@ -658,7 +658,7 @@ falta repetir la serie sin ruinas para confirmar sus resultados.</div>
 <!-- ============================================================ APÉNDICES -->
 <h1><span class="num">Capítulo XV</span>Programas complementarios</h1>
 <p class="entrada">Alrededor del juego, el clan usa cinco programas propios. Todos se instalan con el Actualizador en
-<code>C:\Warlords3\HERRAMIENTAS</code> y, al actualizarse, conservan la configuración de cada PC.</p>
+la carpeta <code>HERRAMIENTAS</code> del juego y, al actualizarse, conservan la configuración de cada PC.</p>
 <table>
 <tr><th style="width:20%">Programa</th><th style="width:14%">Opción</th><th>Para qué sirve</th></tr>
 <tr><td>DarkValidator</td><td>7</td><td>Valida unidades contra el reglamento del clan.</td></tr>
@@ -673,7 +673,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
 
 <h2>DarkValidator (DarklordsValidator)</h2>
 <ul>
-  <li>Abre una unidad (<code>.arm</code> de <code>C:\Warlords3\ARMY</code>) y dice si cumple el manifiesto del clan;
+  <li>Abre una unidad (<code>.arm</code> de la carpeta <code>ARMY</code> del juego) y dice si cumple el manifiesto del clan;
   si no, indica qué regla incumple, con el número del manifiesto.</li>
   <li><b>Reporte General:</b> revisa de una vez todas las unidades de la carpeta.</li>
   <li>Se instala con <code>ValidatorSetup.exe</code> (opción 7 del Actualizador).</li>
@@ -724,7 +724,7 @@ partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</di
 <h1><span class="num">Apéndice A</span>Referencia rápida</h1>
 <table>
 <tr><th style="width:38%">Quiero…</th><th>Cómo</th></tr>
-<tr><td>Jugar con el parche</td><td>Abrir <code>C:\Warlords3\DarklordAV.exe</code></td></tr>
+<tr><td>Jugar con el parche</td><td>Abrir <code>DarklordAV.exe</code> (acceso directo del Escritorio)</td></tr>
 <tr><td>Instalar o actualizar el parche</td><td>Actualizador: opción 6 (una vez por PC), después 9</td></tr>
 <tr><td>Compartir la vista con aliados</td><td><i>Customize Options</i> → <i>Allied View</i> (con Diplomacy y Hidden Map)</td></tr>
 <tr><td>Compartir ciudades</td><td><i>Customize Options</i> → <i>Shared Cities</i> (con Diplomacy)</td></tr>
@@ -743,7 +743,7 @@ partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</di
 </table>
 
 <h1><span class="num">Apéndice B</span>Archivos que instala el parche</h1>
-<p>Todos dentro de <code>C:\Warlords3</code>. Ninguno reemplaza un archivo del juego original.</p>
+<p>Todos dentro de la carpeta del juego. Ninguno reemplaza un archivo del juego original.</p>
 <table style="font-size:9pt">
 <tr><th style="width:45%">Archivo</th><th>Para qué</th></tr>
 <tr><td><code>DarklordAV.exe</code></td><td>El juego con el parche</td></tr>
