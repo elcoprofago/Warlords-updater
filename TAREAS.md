@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 68).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 69).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,13 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **68.** Validator y PGS-Visor abren tu juego de C:\Warlords (27/10/2026)
+Cambio: DarklordsValidator 1.0.7 y PGS-Visor 1.0.1.0 toman la carpeta del juego de donde están instalados
+(HERRAMIENTAS), como el Puente. Antes abrían siempre C:\Warlords3.
+1. Abrí el Actualizador: opción **7** y después opción **8**.
+2. Abrí Darklords Validator desde C:\Warlords\HERRAMIENTAS y tocá abrir unidad: tiene que abrir en C:\Warlords\ARMY.
+3. Abrí PGS-Visor desde la misma carpeta: la lista de bandos tiene que ser la de C:\Warlords.
 
 - [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
