@@ -216,7 +216,9 @@ Write-Host "FULL.txt:"; $lineasFull | Select-Object -Skip 1 | ForEach-Object { W
 
 if ($Prueba) { Write-Host "-Prueba: no se sube nada. Resultado en dist\$Nombre y dist\FULL.txt" -ForegroundColor Cyan; exit 0 }
 
-if ($quitados.Count) {
+# lo que sale porque esta en OBSOLETOS de algun parche es lo esperado: no se pregunta
+$obsTodos = @(Get-ChildItem parches -Directory | ForEach-Object { Obsoletos (Join-Path $_.FullName 'build.py') })
+if (@($quitados | Where-Object { $obsTodos -notcontains $_ }).Count) {
     $r = Read-Host "El zip nuevo deja afuera $($quitados.Count) archivo(s) que hoy se reparten (lista de arriba). Publicar igual? (S/N)"
     if ($r -notmatch '^\s*s') { Write-Host 'No se publico nada.'; exit 0 }
 }
