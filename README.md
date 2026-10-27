@@ -33,9 +33,9 @@ un zip con todos, que quedaba con versiones viejas):
 
 | Opción | Programa | Asset de la release Actualizador | Lo publica |
 |---|---|---|---|
-| 7 | DarklordsValidator | `DarkValidator.zip` | `toolspublicar-herramienta.ps1 DarklordsValidator` |
-| 8 | EditorPGS (PGS-VISOR) | `PGS-VISOR.zip` | `toolspublicar-herramienta.ps1 EditorPGS` |
-| 10 | DarkCompare | `DarkCompare.zip` | `toolspublicar-herramienta.ps1 DarkCompare` |
+| 7 | DarklordsValidator | `DarkValidator.zip` | `tools\publicar-herramienta.ps1 DarklordsValidator` |
+| 8 | EditorPGS (PGS-VISOR) | `PGS-VISOR.zip` | `tools\publicar-herramienta.ps1 EditorPGS` |
+| 10 | DarkCompare | `DarkCompare.zip` | `tools\publicar-herramienta.ps1 DarkCompare` |
 | 11 | Votación | parche `herramientas` | `tools\publicar-parche.ps1 herramientas` |
 | 12 | Sorteo | parche `herramientas` | `tools\publicar-parche.ps1 herramientas` |
 | 13 | Puente Warlords | `PuenteWarlords.zip` + `.txt` | `tools\publicar.ps1` de puente-warlords |
