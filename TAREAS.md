@@ -21,7 +21,7 @@ veía con otra resolución. Ya la trae; donde esos archivos existen no los toca,
 ya tenga su juego bien.
 1. Cerrá el juego. En el Actualizador (dice «juego en C:\Warlords»), opción **6**.
 2. Abrí el juego desde el Escritorio: tiene que verse igual que el de C:\Warlords3.
-Lo demás que tiene C:Warlords3 y le falta a C:Warlords es tuyo propio (partidas de Saves, Netsaves, mapas de Randscen,
+Lo demás que tiene C:\Warlords3 y le falta a C:\Warlords es tuyo propio (partidas de Saves, Netsaves, mapas de Randscen,
 opciones del juego, registros de pruebas), y no hace falta para jugar. Si querés tus partidas o tus opciones
 en C:\Warlords, avisame y las paso.
 
