@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 60).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 62).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,14 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
+Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
+Un escenario que tenga «camo» en un Move Bonus deja de camuflar hasta que lo cambies.
+1. Instalá el parche con la opción 9 del actualizador (cerrá antes el juego).
+2. En el editor, abrí cada escenario que use el camuflaje, y en los Move Bonus donde decía **camo** elegí **camouflg**. Guardá.
+3. De noche, el grupo con ese bono tiene que verse verdoso como antes.
+4. Si en la lista de bonos sigue apareciendo **camo**, es el archivo viejo: podés borrar `C:\Warlords3\TERRAIN\SUBTYPE\camo.STT`.
 
 - [x] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
 Cambio: de noche, toda unidad cuyo tipo tenga la clase **monster**, **demon** o **undead** (en Edit Army Data, sus

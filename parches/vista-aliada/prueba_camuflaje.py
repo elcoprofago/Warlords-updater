@@ -1,9 +1,9 @@
-# Prueba de juguete del camuflaje (bono de movimiento "camo"; cam_blit, vía crdraw en 0x459d0d) sobre el exe
+# Prueba de juguete del camuflaje (bono de movimiento "camouflg"; cam_blit, vía crdraw en 0x459d0d) sobre el exe
 # parcheado, en unicorn. Usa el banco de prueba_dianoche.py (mapa, vista y dn_pre para poner la noche).
 # Uso: python prueba_camuflaje.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Cada caso dibuja el ejército quieto de una celda (2ª pasada vía crdraw y 3ª pasada, globito, vía cam_blit3) y
 # compara: la copia (0x4dd530, stub) con los mismos argumentos; o de noche, si todas las unidades del bando en la casilla
-# tienen "camo", en su lugar el recoloreo (0x4ee3c0, stub) con esos argumentos y la tabla al 30 % (comparada con el
+# tienen "camouflg", en su lugar el recoloreo (0x4ee3c0, stub) con esos argumentos y la tabla al 30 % (comparada con el
 # mismo cálculo en Python). Y el Army Report (0x414d50): de noche no muestra el ejército camuflado ajeno.
 # Controles: grupo mixto, grupo con héroe, unidades de otro bando en la misma casilla, de día, sin la opción.
 import os, sys, struct
@@ -83,11 +83,11 @@ class Cam(Bench):
         return True
 
 b = Cam()
-b.bonus(ME, 3, [b'landing', b'camo'])
-b.bonus(ME, 4, [b'CaMo'])                 # sin distinguir mayúsculas
-b.bonus(ME, 5, [b'camouflage'[:8]])       # otro nombre: no vale
-b.bonus(ENEMY, 3, [b'camo'])
-b.mu.mem_write(TYPES + (ME * 16 + 16) * 0xfc + 0xb2, b'camo'.ljust(9, b'\0'))   # ranura de héroe: no se mira
+b.bonus(ME, 3, [b'landing', b'camouflg'])
+b.bonus(ME, 4, [b'CaMoUfLg'])                 # sin distinguir mayúsculas
+b.bonus(ME, 5, [b'camoufla'])       # otro nombre: no vale
+b.bonus(ENEMY, 3, [b'camouflg'])
+b.mu.mem_write(TYPES + (ME * 16 + 16) * 0xfc + 0xb2, b'camouflg'.ljust(9, b'\0'))   # ranura de héroe: no se mira
 b.units([(12, 8, ME, 3), (12, 8, ME, 4),                  # todo camo
          (14, 8, ME, 3), (14, 8, ME, 5),                  # mixto
          (16, 8, ME, 3), (16, 8, ME, 16),                 # con héroe

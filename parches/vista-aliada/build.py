@@ -12601,9 +12601,9 @@ dm_out:
     jmp 0x4114f7
 ''')
 
-# ---------------------------------------------------------------- Camuflaje (bono de movimiento "camo", de noche)
+# ---------------------------------------------------------------- Camuflaje (bono de movimiento "camouflg", de noche)
 # De noche (DN_ON, ver dn_pre), el ejército quieto de una casilla se ve en gris apagado si todas las unidades de su
-# bando en esa casilla tienen el bono de movimiento "camo" (TERRAIN\SUBTYPE\camo.STT; el nombre del bono tiene a lo
+# bando en esa casilla tienen el bono de movimiento "camouflg" (TERRAIN\SUBTYPE\camouflg.STT; el nombre del bono tiene a lo
 # sumo 8 letras). Un grupo con un héroe no se camufla, ni uno dentro de una ciudad (iluminada). Se copia el dibujo
 # (0x4dd530) y 0x4ee3c0 lo recolorea con los
 # mismos argumentos (el dibujo hace de máscara) con cam_tab: cada color pasado a un gris verdoso del tono del pasto
@@ -12614,7 +12614,7 @@ dm_out:
 # del ejército: la figura (0x459d0d vía crdraw, y 0x45a14f/0x45a18e de la 3ª pasada), el globito del color del equipo
 # (0x45a267), su barra (0x45a2ac) y los iconos de la hoja 0x38 (0x45a2cc, 0x45a34a, 0x45a3a5). El grupo que se está
 # moviendo (0x459e15, 0x459eea) no. El Army Report (minimapa 0x414d50) no muestra esos ejércitos a los demás.
-CAMO = b'camo'
+CAMO = b'camouflg'
 camstr = place_data('camstr', CAMO + b'\0')
 def cam_table():
     pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
@@ -12631,7 +12631,7 @@ CAM_TAB = cam_table()
 cam_tab = place_data('cam_tab', CAM_TAB)
 cam_hit = place_data('cam_hit', bytes(4))
 cam_rec = place('cam_rec', boatbon_src('cam_rec', camstr, rec=True))
-# cam_stack: eax = x, edx = y, ecx = bando -> eax = 1 si hay unidades de ese bando en (x, y) y todas tienen "camo".
+# cam_stack: eax = x, edx = y, ecx = bando -> eax = 1 si hay unidades de ese bando en (x, y) y todas tienen "camouflg".
 # En una casilla de ciudad, 0: la ciudad está iluminada (pedido del usuario, 26/10/2026).
 cam_stack = place('cam_stack', f'''
     push ebx
@@ -13825,7 +13825,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camo', 'Camouflage'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camouflg', 'Camouflage'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.

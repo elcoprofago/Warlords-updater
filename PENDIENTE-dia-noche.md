@@ -200,3 +200,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
     Map)» del texto de la casilla.
 - Pruebas: `prueba_dianoche.py` 8) (Hidden Map de noche, el sitio sin explorar no alumbra, minimapa);
   `prueba_camuflaje.py` 1c) ciudad y 2b) Hidden Map. El diálogo no se emula: tarea 58.
+
+## Paso 15 — «camo» pasa a llamarse «camouflg» (26/10/2026, vista aliada 1.0.88.0; tarea 61)
+
+- Pedido: más intuitivo en el editor y el comparador. `CAMO = b'camouflg'` (8 letras, cabe en el campo de 9 con el 0),
+  `TERRAIN\SUBTYPE\camouflg.STT`, `COMB_NO` del editor y `prueba_camuflaje.py` (TODO OK sobre el exe nuevo).
+- El actualizador no borra archivos: el `camo.STT` viejo queda en las instalaciones (sin efecto); tarea 61 paso 4.
