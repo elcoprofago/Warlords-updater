@@ -1,5 +1,5 @@
 # Informe de una tanda (specs\ia-destrezas-v1.md, req. 6), desde ia\datos.db.
-# Uso: python ia\informe.py [tanda]      (sin número: la última)
+# Uso: python ia\informe.py [tanda]      (sin número: la última; «65-69» junta varias tandas)
 #
 # Por IA (original / prueba), sobre las partidas terminadas (estado ok o tope):
 #   promedio por color al final de PV, ciudades, oro y ejércitos (eliminados: 0);
@@ -19,16 +19,21 @@ from collections import defaultdict
 DB = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)),
                   'datos.db')
 IAS = {0: 'original', 1: 'prueba', 2: 'valor inválido (original)'}
+# Guardada de medición -> su guardada de control (el mismo perfil en todos los colores; ia\PENDIENTE-mapa-pruebas.md,
+# paso 3). Con ella, el informe de perfiles compara el PV de cada color contra el PV medio de su lugar en el control.
+CONTROL = {'Tanda_hex_perfiles_SR': 'Tanda_hex_control'}
 
 
 def main(tid=None):
     db = sqlite3.connect(DB)
     if tid is None:
-        tid = int(sys.argv[1]) if len(sys.argv) > 1 else db.execute('select max(id) from tanda').fetchone()[0]
+        tid = sys.argv[1] if len(sys.argv) > 1 else db.execute('select max(id) from tanda').fetchone()[0]
     if tid is None:
         sys.exit('No hay tandas en la base.')
-    parts = db.execute('select id, n, guardada, asignacion, estado, turnos from partida where tanda=? order by n',
-                       (tid,)).fetchall()
+    desde, _, hasta = str(tid).partition('-')
+    desde = int(desde); hasta = int(hasta or desde)
+    parts = db.execute('select id, n, guardada, asignacion, estado, turnos from partida where tanda between ? and ? '
+                       'order by tanda, n', (desde, hasta)).fetchall()
     print(f'Tanda {tid}: {len(parts)} partidas')
     for pid, n, g, asig, est, tur in parts:
         print(f'  {n + 1:2}. {g:18} {asig}  {est:8} {tur or 0:3} turnos')
@@ -75,7 +80,7 @@ def main(tid=None):
               f'{s["ejercitos"] / c:7.1f} {gana[ia]:7} {comp_otra[ia] + comp_misma[ia]:9} {ataques[ia]:7} '
               f'{perdidos[ia]:8} {desang[ia]:8}')
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
-    alianzas(db, tid, validas, cuenta)
+    alianzas(db, desde, validas, cuenta)
     perfiles(db, validas)
 
 
@@ -88,22 +93,36 @@ def perfiles(db, validas):
         return
     import tanda
     nombres = {}; suma = defaultdict(lambda: [0, 0, 0, 0])   # partidas, ganadas, PV, eliminado
+    base = {}; dif = defaultdict(list)                       # PV medio de cada lugar en el control; PV - base
     for pid, g, txt in filas:
         if g not in nombres:
             try:
                 nombres[g] = {c: tanda.nombre_perfil(b) for c, b in tanda.perfiles(g).items()}
             except OSError:
                 nombres[g] = {}
+        if g not in base:
+            base[g] = {c: pv for c, pv in db.execute(
+                "select r.color, avg(r.pv) from resultado r join partida p on p.id = r.partida "
+                "where p.guardada = ? and p.estado in ('ok', 'tope') group by r.color", (CONTROL.get(g),))}
         origen = {int(c): o for c, o in json.loads(txt).items()}
         prim = [c for (c,) in db.execute('select color from resultado where partida=? and puesto=1', (pid,))]
         for color, pv, elim in db.execute('select color, pv, eliminado_turno from resultado where partida=?', (pid,)):
             k = (g, origen.get(color, color)); t = suma[k]
             t[0] += 1; t[1] += prim == [color]; t[2] += pv or 0; t[3] += elim is not None
+            if color in base[g]:
+                dif[k].append((pv or 0) - base[g][color])
     print('\nPersonalidades (por perfil, rotado entre ubicaciones; ganadas = único primer puesto)')
-    print(f'{"perfil (color de la guardada)":58} {"partidas":>8} {"ganadas":>7} {"PV":>6} {"elimin.":>7}')
+    print(f'{"perfil (color de la guardada)":58} {"partidas":>8} {"ganadas":>7} {"PV":>6} {"elimin.":>7} '
+          f'{"PV contra su lugar":>18}')
     for (g, o), (n, gan, pv, el) in sorted(suma.items(), key=lambda kv: (-kv[1][1], -kv[1][2])):
         nom = f'{tanda.COLORES[o]}: {nombres[g].get(o, "?")}'
-        print(f'{nom:58} {n:8} {gan:7} {pv / n:6.1f} {el:7}')
+        d = dif.get((g, o), [])
+        if len(d) > 1:
+            m = sum(d) / len(d); err = (sum((x - m) ** 2 for x in d) / (len(d) - 1) / len(d)) ** .5
+            contra = f'{m:+.1f} ± {err:.1f}'
+        else:
+            contra = 'sin control' if g not in CONTROL else '-'
+        print(f'{nom:58} {n:8} {gan:7} {pv / n:6.1f} {el:7} {contra:>18}')
 
 
 def equipos_de(texto):
