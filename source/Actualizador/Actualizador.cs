@@ -19,6 +19,8 @@ namespace Actualizador
     /// El menu y lo que hace cada opcion. Misma logica que el Actualizador.bat hasta la 1.0.0.10 (mismas
     /// direcciones, mismo PARCHES.txt, misma marca de parche instalado en &lt;juego&gt;\PARCHES\&lt;ID&gt;.txt).
     ///   W3_JUEGO        carpeta del juego en lugar de C:\Warlords3 (pruebas)
+    /// Sin W3_JUEGO, la primera linea de %LOCALAPPDATA%\Warlords3-Actualizador\juego.txt, si existe, es la carpeta
+    /// del juego: en la PC de quien arma los parches, C:\Warlords3 queda para pruebas y se juega en otra carpeta.
     ///   W3_PARCHES_URL  lista de parches en lugar de la publicada (pruebas; puede ser un archivo local)
     ///   W3_ESCRITORIO   carpeta de los accesos directos en lugar del Escritorio (pruebas)
     ///   W3_FULL_ZIP     zip local en lugar de bajar Warlords3_FULL.zip en la opcion 6 (pruebas)
@@ -38,7 +40,7 @@ namespace Actualizador
         public Actualizador(Terminal terminal)
         {
             t = terminal;
-            juego = Environment.GetEnvironmentVariable("W3_JUEGO") ?? @"C:\Warlords3";
+            juego = Environment.GetEnvironmentVariable("W3_JUEGO") ?? CarpetaConfigurada() ?? @"C:\Warlords3";
             herramientas = Path.Combine(juego, "HERRAMIENTAS");
             temporal = Path.Combine(CarpetaDescargas(), "W3Updater");
             escritorio = Environment.GetEnvironmentVariable("W3_ESCRITORIO")
@@ -46,6 +48,15 @@ namespace Actualizador
             parchesUrl = Environment.GetEnvironmentVariable("W3_PARCHES_URL") ?? Release + "PARCHES.txt";
             fullZip = Environment.GetEnvironmentVariable("W3_FULL_ZIP");
             fullTxtUrl = Environment.GetEnvironmentVariable("W3_FULL_TXT") ?? Release + "FULL.txt";
+        }
+
+        static string CarpetaConfigurada()
+        {
+            var f = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                 "Warlords3-Actualizador", "juego.txt");
+            if (!File.Exists(f)) return null;
+            var l = File.ReadAllLines(f).Select(x => x.Trim()).FirstOrDefault(x => x != "");
+            return string.IsNullOrEmpty(l) ? null : l;
         }
 
         // ================================================================== menu
