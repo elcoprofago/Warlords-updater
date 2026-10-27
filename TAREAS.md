@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 - [ ] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
 Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
 Un escenario que tenga «camo» en un Move Bonus deja de camuflar hasta que lo cambies.
-1. Instalá el parche con la opción 9 del actualizador (cerrá antes el juego).
+1. Cerrá el juego y avisame: lo instalo en C:\Warlords3 y lo publico (ahora no se puede: el juego abierto bloquea DarklordAV.exe).
 2. En el editor, abrí cada escenario que use el camuflaje, y en los Move Bonus donde decía **camo** elegí **camouflg**. Guardá.
 3. De noche, el grupo con ese bono tiene que verse verdoso como antes.
 4. Si en la lista de bonos sigue apareciendo **camo**, es el archivo viejo: podés borrar `C:\Warlords3\TERRAIN\SUBTYPE\camo.STT`.
