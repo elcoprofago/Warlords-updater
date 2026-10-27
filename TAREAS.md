@@ -15,11 +15,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **67.** Cerrar el Monitor de IA para que lo actualice (27/10/2026)
-El Monitor 1.0.19 muestra en el informe de perfiles una columna nueva, «PV contra su lugar»: el resultado de cada
-perfil comparado con el de su lugar en la tanda de control. Para compilarlo tiene que estar cerrado.
-1. Cerrá el Monitor de IA (el juego puede seguir abierto) y avisame.
-
 - [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
 partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
@@ -31,6 +26,8 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **67.** Cerrar el Monitor de IA para que lo actualice. Hecho el 27/10/2026: cerrado; Monitor 1.0.19 compilado (falta publicarlo).
 
 - [x] **66.** Revisar las capturas en el Manual (vista aliada 1.0.90.0, 27/10/2026)
 El Manual trae ahora la captura de cada programa: Puente Warlords (capítulo II, «Jugar en red»), Monitor de IA, y en

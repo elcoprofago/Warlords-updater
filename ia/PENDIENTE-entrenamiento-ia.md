@@ -781,7 +781,7 @@ colores de una partida no son independientes), media ± error.
 | 47-52 (sin ruinas) | 36 | -2.1 ± 0.8 |
 | 29-52 juntas | 201 | -0.5 ± 0.4 |
 
-- Por color (29-52): blanco +0.1, amarillo +0.1, azul -0.9, verde -1.6, celeste -0.1, negro -0.4: ningún lugar
+- Por color (29-52): blanco +0.1, amarillo +0.1, rojo -0.9, verde -1.6, azul -0.1, negro -0.4: ningún lugar
   donde la IA de prueba se destaque.
 - Las series se contradicen entre sí más allá de su error (41-46 da +2.4; las otras tres, entre -1.1 y -2.1): la
   variación de una serie a otra es mayor que el error de cada una, así que el -0.5 ± 0.4 conjunto subestima la
