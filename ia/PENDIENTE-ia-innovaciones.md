@@ -51,5 +51,9 @@ IA. No retroceder importa tanto como avanzar: toda regla nueva se mide también 
   oculto, porque po_pvis se toma antes de descubrir).
 
 ## Próximo paso
-Paso 2: tanda de línea base con la IA actual en una guardada con Hidden Ruins (pozos encendidos); contar con el
-informe las caídas vistas por color. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 2".
+Paso 2: ninguna guardada de tanda tiene pozos (revisado 27/10/2026: las de Hexagon tienen Hidden Ruins apagada, tabla
+POZO con 0; Borderlands, Kor y Scarpart son anteriores a los pozos y no traen el bloque POZO, cargan la tabla vacía).
+Los pozos se generan solo en partida nueva (po_gen), así que el usuario arma Tanda_hex_pozos_control (TAREAS 69).
+Al recibirla: verificar el bit 0x10 de [0x53c393] y la tabla tras 'POZO' (cantidad y tipos); después la tanda de 10
+y contar con informe.py las caídas vistas por color. Frase para retomar: "Seguimos con
+ia\PENDIENTE-ia-innovaciones.md, paso 2".

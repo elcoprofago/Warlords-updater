@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 69).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 70).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,12 +8,24 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 - **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
+- **Tarea 69** (guardada con pozos para la IA): cuando puedas; la línea base de pozos espera a esto.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **69.** IA: guardada de Hexagon con pozos, para medir cuánto cae la IA en ellos (27/10/2026)
+Ninguna guardada de tanda tiene pozos: los pozos y remolinos se reparten solo al empezar una partida nueva con
+**Hidden Ruins**, y las de Hexagon se armaron con esa opción apagada.
+1. En DarklordAV.exe, partida nueva en **Hexagon** igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared
+   Cities, Diplomacy, equipos 013 contra 457, el bando simple en todos los colores, un color en Humano), pero con
+   **Hidden Ruins activada** y, en Viewing Options, **Discover hidden ruins as you pass**.
+2. Guardala en el turno 1, sin jugar, como **Tanda_hex_pozos_control** y avisame. Yo reviso que tenga pozos.
+3. Cuando te confirme: Monitor de IA → **Ninguna**, marcá solo **hex_pozos_control** (tiene que aparecer
+   «(control)»), Partidas: **10**, **Nueva tanda**.
+Resultado:
 
 - [ ] **68.** Validator y PGS-Visor abren tu juego de C:\Warlords (27/10/2026)
 Cambio: DarklordsValidator 1.0.7 y PGS-Visor 1.0.1.0 toman la carpeta del juego de donde están instalados
