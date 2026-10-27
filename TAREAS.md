@@ -22,7 +22,19 @@ el capítulo XV DarkValidator, DarkCompare, Visor PGS, Sorteo y Votación.
 2. Abrí C:\Warlords\Manual-Era-de-Alianzas.pdf y mirá cada captura: que se lea y esté en su lugar.
 3. Anotá lo que quieras cambiar (tamaño, otra captura, otro lugar).
 
-- [ ] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
+- [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
+Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
+partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
+fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega queda rojo oscuro, como apagada. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18** (publicado).
+1. Abrí el Monitor y apretá Actualizar; tiene que decir 1.0.18.
+2. Arrancá una tanda corta (Partidas: 1). Mientras juega, la luz tiene que estar rojo oscuro, quieta, con el rótulo «En curso».
+3. Pausá el juego (o dejalo esperando algo tuyo) un minuto: suena la alarma y la luz titila en rojo con «Parada».
+4. Seguí la partida: en pocos segundos vuelve a rojo oscuro quieto.
+5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
+
+# Hecho
+
+- [x] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
 Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,
 bridge.STT), así todas las PC tienen la misma lista de bonos y no hay mezcla de versiones en red. El Manual trae el
 capítulo nuevo «El día y la noche» (noche, camuflaje «camouflg», monstruos) y está al día hasta esta versión.
@@ -31,6 +43,7 @@ capítulo nuevo «El día y la noche» (noche, camuflaje «camouflg», monstruos
    nighmare.STT ni bridge.STT; camouflg.STT sí.
 3. En el editor, en los Move Bonus de la lista tiene que aparecer **camouflg** y ya no **camo**.
 4. Abrí C:\Warlords3\Manual-Era-de-Alianzas.pdf, capítulo VIII «El día y la noche». Anotá lo que quieras cambiar.
+Cumplida (marcada por el usuario, anotada 27/10/2026).
 
 - [x] **59.** Probar el efecto noche de monstruos, demonios y no muertos (vista aliada 1.0.87.0, 26/10/2026)
 Cambio: de noche, toda unidad cuyo tipo tenga la clase **monster**, **demon** o **undead** (en Edit Army Data, sus
@@ -45,18 +58,7 @@ Los héroes no. Orcos, dragones y el resto, tampoco.
 3. Al pelear de noche, mirá la ficha de batalla: la fuerza o los hits pueden aparecer con +2 (si el sorteo cayó en
    su bono o su habilidad, no se ve en la ficha, solo en el resultado).
 4. Control: orcos o dragones pelean igual de día y de noche.
-
-- [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
-Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
-partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
-fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega queda rojo oscuro, como apagada. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18** (publicado).
-1. Abrí el Monitor y apretá Actualizar; tiene que decir 1.0.18.
-2. Arrancá una tanda corta (Partidas: 1). Mientras juega, la luz tiene que estar rojo oscuro, quieta, con el rótulo «En curso».
-3. Pausá el juego (o dejalo esperando algo tuyo) un minuto: suena la alarma y la luz titila en rojo con «Parada».
-4. Seguí la partida: en pocos segundos vuelve a rojo oscuro quieto.
-5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
-
-# Hecho
+Cumplida (anotada en Hecho 27/10/2026).
 
 - [x] **65.** Arreglar la resolución en C:\Warlords con la opción 6 (27/10/2026)
 El juego completo no traía la configuración de video (dxcfg.ini, SCREEN.INI, VIDEO.INI): por eso en C:\Warlords se
