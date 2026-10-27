@@ -34,6 +34,7 @@ tr:nth-child(even) td { background: #faf5ea; }
 .nota b:first-child, .aviso b:first-child, .prueba b:first-child, .consejo b:first-child { font-variant: small-caps; letter-spacing: .05em; }
 figure { margin: 3mm 0 4mm; text-align: center; break-inside: avoid; }
 figure img { image-rendering: pixelated; }
+.captura img { image-rendering: auto; border: 1px solid var(--linea); border-radius: 3px; max-width: 100%; }
 figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1mm; }
 .galeria { display: flex; justify-content: center; gap: 7mm; flex-wrap: wrap; align-items: flex-end; }
 .galeria figure { margin: 0; }
@@ -81,12 +82,12 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
     El parche, el Actualizador y el banco de simulación de la IA
   </div>
   <div class="sello">BORRADOR DE TRABAJO</div>
-  <div class="pie">Parche vista-aliada 1.0.89.0 · Actualizador 1.0.13.0 · Monitor de IA 1.0.17<br>
+  <div class="pie">Parche vista-aliada 1.0.90.0 · Actualizador 1.0.14.0 · Monitor de IA 1.0.17<br>
     Edición del 26 de octubre de 2026</div>
 </section>
 
 <section class="creditos">
-  <p><b>Warlords III: Era de Alianzas — Manual de uso.</b> Borrador de trabajo, edición del 26/10/2026.</p>
+  <p><b>Warlords III: Era de Alianzas — Manual de uso.</b> Borrador de trabajo, edición del 27/10/2026.</p>
   <p>Documento interno del clan. No está pensado para su distribución: describe el estado del parche a la fecha de la
   edición, incluidas funciones que todavía están en período de prueba. Las secciones marcadas como
   <span class="estado e-pr">en prueba</span> o <span class="estado e-dev">en desarrollo</span> pueden cambiar en las
@@ -241,6 +242,7 @@ solo baja una versión nueva cuando la hay.</p>
 <p><b>Opción 14.</b> Es la conexión de respaldo del Puente. Si falta, instala Tailscale y abre en el navegador el
 inicio de sesión; después pide el enlace con el que el dueño del servidor comparte su PC y espera a que el servidor
 responda. Requiere haber instalado antes el Puente (opción 13).</p>
+<figure class="captura"><img src="img/capturas/puente-warlords.png" style="width:110mm"><figcaption>Puente Warlords</figcaption></figure>
 
 <!-- ============================================================ III -->
 <h1><span class="num">Capítulo III</span>Preparar una partida</h1>
@@ -640,6 +642,7 @@ ven con menos partidas.</div>
 partida en curso (turno, bandos, eventos), el consumo de la PC, avisa de un posible cuelgue, permite silenciar el
 juego y suspender la PC al terminar. Puede mostrar el juego en un monitor secundario (<code>tanda.ini</code>,
 <code>[Pantalla] preferida</code>).</p>
+<figure class="captura"><img src="img/capturas/monitor-IA.png" style="width:120mm"><figcaption>Monitor de IA</figcaption></figure>
 
 <h2>Informes y PDF de posiciones</h2>
 <ul>
@@ -674,6 +677,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
   <li><b>Reporte General:</b> revisa de una vez todas las unidades de la carpeta.</li>
   <li>Se instala con <code>ValidatorSetup.exe</code> (opción 7 del Actualizador).</li>
 </ul>
+<figure class="captura"><img src="img/capturas/validator.png" style="width:130mm"><figcaption>DarkValidator</figcaption></figure>
 
 <h2>DarkCompare</h2>
 <ul>
@@ -682,6 +686,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
   <li>Marca las unidades en infracción con la validación de DarkValidator.</li>
   <li>Se abre desde el escritorio o desde el juego: botón del Comparador en <i>Edit Side</i> (capítulo III).</li>
 </ul>
+<figure class="captura"><img src="img/capturas/comparador.png" style="width:170mm"><figcaption>DarkCompare</figcaption></figure>
 
 <h2>Visor PGS (EditorPGS)</h2>
 <ul>
@@ -693,6 +698,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
   «Aprobado» o «En infracción».</li>
   <li><b>Guardar imagen…</b> (PNG) y <b>Exportar…</b> (CSV para Excel, una fila por bando).</li>
 </ul>
+<figure class="captura"><img src="img/capturas/visorPGS.png" style="width:170mm"><figcaption>Visor PGS</figcaption></figure>
 
 <h2>Sorteo</h2>
 <ul>
@@ -701,6 +707,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
   opera y los demás lo siguen como espectadores.</li>
   <li>También puede abrirse solo, fuera del juego.</li>
 </ul>
+<figure class="captura"><img src="img/capturas/sorteo.png" style="width:100mm"><figcaption>Sorteo</figcaption></figure>
 
 <h2>Votación</h2>
 <ul>
@@ -708,6 +715,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
   <li>Desde el juego lo abre el anfitrión con la línea <i>Votacion</i> del menú de partida; los demás votan desde sus PC
   y la partida queda en pausa mientras dura (capítulo XI).</li>
 </ul>
+<figure class="captura"><img src="img/capturas/votacion.png" style="width:110mm"><figcaption>Votación</figcaption></figure>
 <div class="prueba"><b>Estado.</b> El modo espectador de Sorteo y Votación en las otras PC sigue en prueba: en una
 partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</div>
 
@@ -752,7 +760,7 @@ partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</di
 (unos 100 MB).</p>
 
 <h1><span class="num">Apéndice C</span>Estado de las funciones</h1>
-<p>Al 26/10/2026. <span class="estado e-ok">probado</span> = verificado en el juego;
+<p>Al 27/10/2026. <span class="estado e-ok">probado</span> = verificado en el juego;
 <span class="estado e-pr">en prueba</span> = funciona en las pruebas automáticas y falta confirmarlo jugando o con más
 partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <table>

@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 66).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 67).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,36 +15,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **65.** Arreglar la resolución en C:\Warlords con la opción 6 (27/10/2026)
-El juego completo no traía la configuración de video (dxcfg.ini, SCREEN.INI, VIDEO.INI): por eso en C:\Warlords se
-veía con otra resolución. Ya la trae; donde esos archivos existen no los toca, así que no cambia nada a nadie que
-ya tenga su juego bien.
-Ya pasé a C:\Warlords tu configuración de video, tus partidas (Saves, Netsaves), mapas de Randscen y opciones
-del juego (27/10/2026). La opción 6 ya no hace falta.
-1. Abrí el juego desde el Escritorio: tiene que verse igual que el de C:\Warlords3 y tener tus partidas.
-
-- [ ] **64.** Instalar el juego para jugar en red en C:\Warlords, con el Actualizador (26/10/2026)
-Desde ahora C:\Warlords3 es solo para pruebas (ahí instalo yo cada versión antes de publicarla). Para jugar en red
-usás C:\Warlords, actualizado con el Actualizador como el resto del clan. En esta PC el Actualizador ya apunta ahí:
-lo dice arriba del menú («juego en C:\Warlords»). A los demás jugadores no les cambia nada.
-1. Bajá y abrí el Actualizador **1.0.14.0** (bajalo de GitHub, release «Ejecutable», como siempre).
-   Arriba tiene que decir «v1.0.14.0 · juego en C:\Warlords».
-2. Opción **6** (juego completo): instala todo en C:\Warlords.
-3. Opción **9** (parches): instalá vista-aliada (1.0.89.0) y herramientas.
-4. Opción **15** (accesos directos): rehace los del Escritorio apuntando a C:\Warlords. Para jugar, usá esos.
-5. Abrí DarklordAV.exe desde el Escritorio y comprobá que arranca.
-5b. Opción **13** (Jugar en red): instala el Puente 1.1.9.0 en C:\Warlords\HERRAMIENTAS. Abrilo: en la lista de
-   ejecutables del juego tiene que aparecer DarklordAV.exe, y al entrar a una partida tiene que abrir el de C:\Warlords
-   (el Puente ahora toma la carpeta del juego de donde está instalado).
-6. Tus bandos, escenarios y partidas guardadas siguen en C:\Warlords3: si querés alguno para jugar, avisame.
-
-- [ ] **63.** Preparar capturas de las herramientas para el Manual (26/10/2026)
-El Manual va a llevar una captura de la ventana de cada una: DarkCompare (comparador), DarkValidator, Monitor de IA,
-Votación y Sorteo.
-1. Sacá una captura de cada ventana (tecla Win+Shift+S, o Impr Pant) con algo cargado, no vacía.
-2. Guardalas en F:\source\repos\actualizador-warlords\manual\img\capturas, con el nombre del programa
-   (comparador.png, validator.png, monitor-ia.png, votacion.png, sorteo.png).
-3. Avisame: las pongo en su capítulo y armo el Manual de nuevo.
+- [ ] **66.** Revisar las capturas en el Manual (vista aliada 1.0.90.0, 27/10/2026)
+El Manual trae ahora la captura de cada programa: Puente Warlords (capítulo II, «Jugar en red»), Monitor de IA, y en
+el capítulo XV DarkValidator, DarkCompare, Visor PGS, Sorteo y Votación.
+1. En el Actualizador (C:\Warlords), opción **9**: instalá vista-aliada 1.0.90.0.
+2. Abrí C:\Warlords\Manual-Era-de-Alianzas.pdf y mirá cada captura: que se lea y esté en su lugar.
+3. Anotá lo que quieras cambiar (tamaño, otra captura, otro lugar).
 
 - [ ] **62.** Probar el borrado de archivos viejos y el Manual nuevo (vista aliada 1.0.89.0, 26/10/2026)
 Cambios: al arrancar, DarklordAV.exe borra los archivos de bonos que ya no van (camo.STT, nighmare.STT,
@@ -88,6 +64,40 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **65.** Arreglar la resolución en C:\Warlords con la opción 6 (27/10/2026)
+El juego completo no traía la configuración de video (dxcfg.ini, SCREEN.INI, VIDEO.INI): por eso en C:\Warlords se
+veía con otra resolución. Ya la trae; donde esos archivos existen no los toca, así que no cambia nada a nadie que
+ya tenga su juego bien.
+Ya pasé a C:\Warlords tu configuración de video, tus partidas (Saves, Netsaves), mapas de Randscen y opciones
+del juego (27/10/2026). La opción 6 ya no hace falta.
+1. Abrí el juego desde el Escritorio: tiene que verse igual que el de C:\Warlords3 y tener tus partidas.
+Resultado (27/10/2026): cumplida. Los archivos propios ya estaban pasados a C:\Warlords.
+
+- [x] **64.** Instalar el juego para jugar en red en C:\Warlords, con el Actualizador (26/10/2026)
+Desde ahora C:\Warlords3 es solo para pruebas (ahí instalo yo cada versión antes de publicarla). Para jugar en red
+usás C:\Warlords, actualizado con el Actualizador como el resto del clan. En esta PC el Actualizador ya apunta ahí:
+lo dice arriba del menú («juego en C:\Warlords»). A los demás jugadores no les cambia nada.
+1. Bajá y abrí el Actualizador **1.0.14.0** (bajalo de GitHub, release «Ejecutable», como siempre).
+   Arriba tiene que decir «v1.0.14.0 · juego en C:\Warlords».
+2. Opción **6** (juego completo): instala todo en C:\Warlords.
+3. Opción **9** (parches): instalá vista-aliada (1.0.89.0) y herramientas.
+4. Opción **15** (accesos directos): rehace los del Escritorio apuntando a C:\Warlords. Para jugar, usá esos.
+5. Abrí DarklordAV.exe desde el Escritorio y comprobá que arranca.
+5b. Opción **13** (Jugar en red): instala el Puente 1.1.9.0 en C:\Warlords\HERRAMIENTAS. Abrilo: en la lista de
+   ejecutables del juego tiene que aparecer DarklordAV.exe, y al entrar a una partida tiene que abrir el de C:\Warlords
+   (el Puente ahora toma la carpeta del juego de donde está instalado).
+6. Tus bandos, escenarios y partidas guardadas siguen en C:\Warlords3: si querés alguno para jugar, avisame.
+Resultado (27/10/2026): cumplida. Juego completo, parches y Puente instalados en C:\Warlords.
+
+- [x] **63.** Preparar capturas de las herramientas para el Manual (26/10/2026)
+El Manual va a llevar una captura de la ventana de cada una: DarkCompare (comparador), DarkValidator, Monitor de IA,
+Votación y Sorteo.
+1. Sacá una captura de cada ventana (tecla Win+Shift+S, o Impr Pant) con algo cargado, no vacía.
+2. Guardalas en F:\source\repos\actualizador-warlords\manual\img\capturas, con el nombre del programa
+   (comparador.png, validator.png, monitor-ia.png, votacion.png, sorteo.png).
+3. Avisame: las pongo en su capítulo y armo el Manual de nuevo.
+Resultado (27/10/2026): cumplida, con siete capturas (sumaste Puente Warlords y Visor PGS). Ya están en el Manual (vista aliada 1.0.90.0): ver la 66.
 
 - [x] **61.** Renombrar el bono de camuflaje en tus escenarios: «camo» pasa a ser «camouflg» (vista aliada 1.0.88.0, 26/10/2026)
 Cambio: el bono se llama ahora **camouflg** (8 letras, el máximo del editor), más claro en el editor y en el comparador.
