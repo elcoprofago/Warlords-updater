@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 70).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 71).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 - **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
-- **Tarea 69** (guardada con pozos para la IA): cuando puedas; la línea base de pozos espera a esto.
+- **Tarea 70** (tanda con pozos visibles): cuando la PC esté libre.
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
@@ -16,15 +16,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **69.** IA: guardada de Hexagon con pozos, para medir cuánto cae la IA en ellos (27/10/2026)
-Ninguna guardada de tanda tiene pozos: los pozos y remolinos se reparten solo al empezar una partida nueva con
-**Hidden Ruins**, y las de Hexagon se armaron con esa opción apagada.
-1. En **C:\Warlords3\DarklordAV.exe** (la carpeta de pruebas: tiene la 1.0.91.0, la que registra las caídas), partida nueva en **Hexagon** igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared
-   Cities, Diplomacy, equipos 013 contra 457, el bando simple en todos los colores, un color en Humano), pero con
-   **Hidden Ruins activada** y, en Viewing Options, **Discover hidden ruins as you pass**.
-2. Guardala en el turno 1, sin jugar, como **Tanda_hex_pozos_control** y avisame. Yo reviso que tenga pozos.
-3. Cuando te confirme: Monitor de IA → **Ninguna**, marcá solo **hex_pozos_control** (tiene que aparecer
-   «(control)»), Partidas: **10**, **Nueva tanda**.
+- [ ] **70.** IA: tanda con los pozos a la vista de todos (28/10/2026)
+En la guardada de la 69 nadie veía ningún pozo, así que no se pudo medir si la IA entra en los que ve. Armé
+**Tanda_hex_pozos_PV_control**: la misma partida, con los 9 pozos ya descubiertos por todos los colores.
+1. Monitor de IA → **Ninguna**, marcá solo **hex_pozos_PV_control** (tiene que aparecer «(control)»),
+   Partidas: **10**, **Nueva tanda**.
+2. Avisame cuando termine.
 Resultado:
 
 - [ ] **68.** Validator y PGS-Visor abren tu juego de C:\Warlords (27/10/2026)
@@ -45,6 +42,18 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **69.** IA: guardada de Hexagon con pozos, para medir cuánto cae la IA en ellos (27/10/2026)
+Ninguna guardada de tanda tiene pozos: los pozos y remolinos se reparten solo al empezar una partida nueva con
+**Hidden Ruins**, y las de Hexagon se armaron con esa opción apagada.
+1. En **C:\Warlords3\DarklordAV.exe** (la carpeta de pruebas: tiene la 1.0.91.0, la que registra las caídas), partida nueva en **Hexagon** igual que Tanda_hex_alianzas (30 turnos, 2000 puntos, Shared
+   Cities, Diplomacy, equipos 013 contra 457, el bando simple en todos los colores, un color en Humano), pero con
+   **Hidden Ruins activada** y, en Viewing Options, **Discover hidden ruins as you pass**.
+2. Guardala en el turno 1, sin jugar, como **Tanda_hex_pozos_control** y avisame. Yo reviso que tenga pozos.
+3. Cuando te confirme: Monitor de IA → **Ninguna**, marcá solo **hex_pozos_control** (tiene que aparecer
+   «(control)»), Partidas: **10**, **Nueva tanda**.
+Resultado (Claude, 28/10/2026): hecha; tandas 97 a 99 sobre Tanda_hex_pozos_control (20 partidas: 13 completas,
+6 colgadas, 1 cortada). 9 pozos, ninguno visible al empezar; solo 2 caídas, en pozos ocultos. Sigue la 70.
 
 - [x] **67.** Cerrar el Monitor de IA para que lo actualice. Hecho el 27/10/2026: cerrado; Monitor 1.0.19 compilado y publicado.
 

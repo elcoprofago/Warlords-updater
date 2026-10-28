@@ -50,10 +50,16 @@ IA. No retroceder importa tanto como avanzar: toda regla nueva se mide también 
   No probado en emulación: un pozo oculto que se descubre en el mismo paso en que se cae (por diseño cuenta como
   oculto, porque po_pvis se toma antes de descubrir).
 
+- **Paso 2, primera parte** (28/10/2026): tandas 97 a 99 sobre Tanda_hex_pozos_control (1.0.91.0, exe ddd41a96,
+  todos con la IA original, sin alianzas): 20 partidas, 13 completas (30 turnos), 6 colgadas y 1 cortada. La guardada
+  trae 9 pozos (ningún remolino ni trampa) y ninguno visible al empezar (máscara +6 = 0 en los 9). Caídas: 2, ambas
+  en pozos ocultos (t97: verde en 55,87 con 5 muertos; negro en 81,57 con 1). Vistas: 0. Lectura: con pozos que nadie
+  ve, el riesgo evitable no aparece y la línea base no mide nada; 2 caídas en 13 partidas es poco riesgo en Hexagon.
+  Las 6 colgadas (30 %) son muchas para esta serie; no se investigaron.
+- ia\pozos_vistos.py arma SAVES\<guardada>_PV[_control].SAV con todos los pozos descubiertos por los 8 colores (solo
+  cambia la máscara +6; verificado: 9 bytes distintos). Ya armada: Tanda_hex_pozos_PV_control.
+
 ## Próximo paso
-Paso 2: ninguna guardada de tanda tiene pozos (revisado 27/10/2026: las de Hexagon tienen Hidden Ruins apagada, tabla
-POZO con 0; Borderlands, Kor y Scarpart son anteriores a los pozos y no traen el bloque POZO, cargan la tabla vacía).
-Los pozos se generan solo en partida nueva (po_gen), así que el usuario arma Tanda_hex_pozos_control (TAREAS 69).
-Al recibirla: verificar el bit 0x10 de [0x53c393] y la tabla tras 'POZO' (cantidad y tipos); después la tanda de 10
-y contar con informe.py las caídas vistas por color. Frase para retomar: "Seguimos con
-ia\PENDIENTE-ia-innovaciones.md, paso 2".
+Paso 2, segunda parte: tanda de 10 sobre Tanda_hex_pozos_PV_control (TAREAS 70) y contar con informe.py las caídas
+vistas. Si siguen en 0, la IA ya los esquiva o no pasa por ahí: revisar las casillas de los 9 pozos contra los caminos
+antes de programar el paso 3. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 2".
