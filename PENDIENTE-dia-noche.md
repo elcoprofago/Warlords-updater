@@ -234,7 +234,10 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
   pozo y remolino de noche, no copia el dibujo: 0x4ee3c0 recolorea el fondo con `po_ntab` (fondo al 65 %) usando el
   dibujo de máscara, como `cam_blit`; queda una sombra de la forma, que `dn_post` oscurece después como al resto.
   Trampas y tumbas, igual que de día.
-- `po_cur`: de noche, pozo y remolino no dan lupa ni cuadro (código 3); la trampa sí.
+- Sin lupa de noche en nada (pedido siguiente, mismo día; 1.0.93.0): `po_curclr` (0x473d32), si no hay ciudad y es de noche,
+  sigue como la casilla vacía (código 3): ruinas (0x14), sitios (0x15), pozos, remolinos y trampas. La ciudad sigue
+  igual (0xc/0xd). Sin verificar en el juego: que el botón derecho pase por el mismo decodificador (así lo indica el
+  análisis del 22/10/2026).
 - Pruebas: `prueba_pozos.py` (parte 5, «de noche») y `prueba_lupa.py` («de noche»); en `prueba_lupa.py` se corrigieron
   tres textos de trampa que esperaban 3 explosiones (TR_USOS es 2). `prueba_dianoche.py` y `prueba_camuflaje.py`: TODO OK.
 

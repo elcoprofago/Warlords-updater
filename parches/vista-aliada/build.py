@@ -8733,7 +8733,7 @@ pw_end:
 # siguen primero. En la acción 0x14, po_info abre el cuadro de información del juego, 0x4c7a10(título, texto, x, y del
 # mouse; el que usan los diálogos para el botón derecho): nombre y tipo; en la trampa, las explosiones que le quedan.
 # Con un grupo elegido el decodificador da mover, como en las ruinas. Las tumbas no tienen cuadro. De noche
-# (po_night) el pozo y el remolino no dan lupa ni cuadro (pedido del usuario, 28/10/2026); la trampa sí.
+# (po_night) nada da lupa ni cuadro (ver po_curclr).
 # po_look: eax = x, edx = y -> eax = registro que quien mira ve dibujado en esa casilla, o 0 (misma regla que
 # po_draw). po_find: además, el remolino de una casilla vecina de agua (su dibujo ocupa 3x3). Preservan el resto.
 po_look = place('po_look', f'''
@@ -8848,26 +8848,23 @@ po_cur = place('po_cur', f'''
     movsx eax, word ptr [esp + 0x2c]
     movsx edx, word ptr [esp + 0x2e]
     call {po_find:#x}
-    test eax, eax
-    jz pc_set
-    cmp byte ptr [eax + 4], {PO_REMOLINO}
-    ja pc_set
-    call {po_night:#x}
-    jz pc_set
-    xor eax, eax
-pc_set:
     mov dword ptr [{po_info_r:#x}], eax
     test eax, eax
     jnz 0x473d7e
     mov ax, word ptr [esp + 0x38]
     jmp 0x473dcd
 ''')
-# En 0x473d32 (antes de ciudad, ruina y sitio): el 0x14 de una ruina de verdad no es nuestro.
+# En 0x473d32 (antes de ciudad, ruina y sitio): el 0x14 de una ruina de verdad no es nuestro. De noche (po_night)
+# no hay lupa en nada: ruinas, sitios, pozos, remolinos y trampas dan 3 (pedido del usuario, 28/10/2026); la
+# ciudad sigue con lo suyo.
 po_curclr = place('po_curclr', f'''
     mov dword ptr [{po_info_r:#x}], 0
     test bp, bp
-    jl 0x473d76
-    jmp 0x473d37
+    jge 0x473d37
+    call {po_night:#x}
+    jz 0x473d76
+    mov ax, word ptr [esp + 0x38]
+    jmp 0x473dcd
 ''')
 PI_TXT = ('A hidden pit. Any army that steps into it dies; only flyers are safe.',
           'A whirlpool. Any ship that sails into its eye sinks with all aboard; only flyers are safe.')
