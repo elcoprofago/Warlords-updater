@@ -8733,7 +8733,7 @@ pw_end:
 # siguen primero. En la acción 0x14, po_info abre el cuadro de información del juego, 0x4c7a10(título, texto, x, y del
 # mouse; el que usan los diálogos para el botón derecho): nombre y tipo; en la trampa, las explosiones que le quedan.
 # Con un grupo elegido el decodificador da mover, como en las ruinas. Las tumbas no tienen cuadro. De noche
-# (po_night) nada da lupa ni cuadro (ver po_curclr).
+# (po_night) ni ruinas, ni pozos, remolinos o trampas dan lupa (ver po_curclr); ciudades y sitios sí.
 # po_look: eax = x, edx = y -> eax = registro que quien mira ve dibujado en esa casilla, o 0 (misma regla que
 # po_draw). po_find: además, el remolino de una casilla vecina de agua (su dibujo ocupa 3x3). Preservan el resto.
 po_look = place('po_look', f'''
@@ -8845,26 +8845,28 @@ pf2_out:
 po_info_r = place_data('po_info_r', bytes(4))
 # En 0x473dc8 (lo que queda: código 3). [esp+0x2c] / [esp+0x2e] = casilla; 0x473d7e la escribe y devuelve 0x14.
 po_cur = place('po_cur', f'''
+    call {po_night:#x}
+    jnz pc_none
     movsx eax, word ptr [esp + 0x2c]
     movsx edx, word ptr [esp + 0x2e]
     call {po_find:#x}
     mov dword ptr [{po_info_r:#x}], eax
     test eax, eax
     jnz 0x473d7e
+pc_none:
     mov ax, word ptr [esp + 0x38]
     jmp 0x473dcd
 ''')
 # En 0x473d32 (antes de ciudad, ruina y sitio): el 0x14 de una ruina de verdad no es nuestro. De noche (po_night)
-# no hay lupa en nada: ruinas, sitios, pozos, remolinos y trampas dan 3 (pedido del usuario, 28/10/2026); la
-# ciudad sigue con lo suyo.
+# ruinas, pozos, remolinos y trampas no dan lupa (pedido del usuario, 28/10/2026): se salta la ruina y po_cur
+# da 3. Ciudades (encendidas) y sitios (puertos, establos, altares...) siguen con la suya.
 po_curclr = place('po_curclr', f'''
     mov dword ptr [{po_info_r:#x}], 0
     test bp, bp
     jge 0x473d37
     call {po_night:#x}
     jz 0x473d76
-    mov ax, word ptr [esp + 0x38]
-    jmp 0x473dcd
+    jmp 0x473d9f
 ''')
 PI_TXT = ('A hidden pit. Any army that steps into it dies; only flyers are safe.',
           'A whirlpool. Any ship that sails into its eye sinks with all aboard; only flyers are safe.')
