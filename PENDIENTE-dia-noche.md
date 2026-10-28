@@ -226,3 +226,15 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
   completo de la opción 6 se arma desde esa carpeta: un resto viajaría a todas las PC). Probado en juguete.
 - Barrido del historial de parches.txt contra C:\Warlords3: solo quedaba bridge.STT; borrado.
 - Pendiente aparte: capturas de las herramientas para el Manual (tarea 63; el usuario avisa).
+
+## Paso 18 — pozos y remolinos de noche (28/10/2026, vista aliada 1.0.92.0; tarea 71)
+
+- Pedido: de noche los pozos y remolinos se ven aún menos y la lupa queda desactivada.
+- `po_night` (SHOPT & 2 y vuelta par, leído en el momento: no depende de que `dn_pre` haya corrido). `pw_put`, para
+  pozo y remolino de noche, no copia el dibujo: 0x4ee3c0 recolorea el fondo con `po_ntab` (fondo al 65 %) usando el
+  dibujo de máscara, como `cam_blit`; queda una sombra de la forma, que `dn_post` oscurece después como al resto.
+  Trampas y tumbas, igual que de día.
+- `po_cur`: de noche, pozo y remolino no dan lupa ni cuadro (código 3); la trampa sí.
+- Pruebas: `prueba_pozos.py` (parte 5, «de noche») y `prueba_lupa.py` («de noche»); en `prueba_lupa.py` se corrigieron
+  tres textos de trampa que esperaban 3 explosiones (TR_USOS es 2). `prueba_dianoche.py` y `prueba_camuflaje.py`: TODO OK.
+

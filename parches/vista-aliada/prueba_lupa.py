@@ -93,9 +93,11 @@ class Juego:
         c, r = self.cuadros, self.ruinas; self.cuadros, self.ruinas = [], []
         return c, r
 
-def clic(regs, x, y, agua=(), cs=(), mira=1, **k):
-    # código del decodificador y lo que abre la acción con ese código
+def clic(regs, x, y, agua=(), cs=(), mira=1, noche=None, **k):
+    # código del decodificador y lo que abre la acción con ese código; noche = (opción Day/Night, vuelta)
     g = Juego(); g.poner(regs, agua); g.ciudades(cs); g.mu.mem_write(0x560b20, struct.pack('<h', mira))
+    if noche is not None:
+        g.mu.mem_write(0x53c38c + 25, bytes([2 if noche[0] else 0])); g.mu.mem_write(0x5032f8 + 0x30, struct.pack('<h', noche[1]))
     cod, out = g.decodificar(x, y, **k)
     return cod, out, g.accion(cod) if cod == 0x14 else None
 
@@ -121,16 +123,16 @@ ver('control: remolino no descubierto, no', clic([(11, 6, 1, 3, 0, 0xff)], 12, 7
 print('-- trampas')
 CS = [(20, 20, 'Ironhold')]
 r = clic([(3, 3, 2, 1 << 4, 0, 1)], 3, 3, cs=CS)
-ver('trampa propia, nueva: título con la ciudad y número, 3 de 3', (r[0], r[2][0][0][:2]),
-    (0x14, ('Trap Ironhold01', 'A mine. Explosions left: 3 of 3.')))
+ver('trampa propia, nueva: título con la ciudad y número, 2 de 2', (r[0], r[2][0][0][:2]),
+    (0x14, ('Trap Ironhold01', 'A mine. Explosions left: 2 of 2.')))
 r = clic([(3, 3, 2, 1 << 4 | 1, 0, 1)], 3, 3, cs=CS)
-ver('trampa propia con una explosión: 2 de 3', r[2][0][0][1], 'A mine. Explosions left: 2 of 3.')
+ver('trampa propia con una explosión: 1 de 2', r[2][0][0][1], 'A mine. Explosions left: 1 of 2.')
 r = clic([(3, 3, 2, 3, 0, 4)], 3, 3, cs=CS)
 ver('trampa gastada (de otro, la ven todos): gastada', r[2][0][0][1], 'A spent mine: it will not explode again.')
 ver('trampa de otro, sin descubrir: nada', clic([(3, 3, 2, 0, 0, 4)], 3, 3, cs=CS)[0], 3)
 ver('trampa de otro, descubierta: lupa', clic([(3, 3, 2, 0, MIO, 4)], 3, 3, cs=CS)[0], 0x14)
 r = clic([(11, 6, 2, 1, 0, 1)], 11, 6, agua=AG, cs=CS)
-ver('mina submarina propia: su texto', r[2][0][0][1], 'A sea mine. Explosions left: 2 of 3.')
+ver('mina submarina propia: su texto', r[2][0][0][1], 'A sea mine. Explosions left: 1 of 2.')
 ver('mina submarina recién explotada (no se dibuja): nada', clic([(11, 6, 2, 0x81, 0, 1)], 11, 6, agua=AG)[0], 3)
 ver('mina submarina gastada (no se dibuja): nada', clic([(11, 6, 2, 3, 0, 1)], 11, 6, agua=AG)[0], 3)
 ver('sin ciudades: título "Trap"', clic([(3, 3, 2, 0, 0, 1)], 3, 3)[2][0][0][0], 'Trap')
@@ -143,6 +145,18 @@ ver('control: casilla vacía: 3 con el lugar en pantalla', clic([(5, 7, 0, 0, MI
 g = Juego(); g.poner([(5, 7, 0, 0, MIO, 0xff)])
 g.decodificar(5, 7); g.decodificar(9, 9, ruina=1)
 ver('control: lupa de pozo y después una ruina: abre la ruina, no el pozo', g.accion(0x14), ([], [(9, 9)]))
+print('-- de noche (Day/Night, vuelta par): sin lupa en pozos y remolinos')
+ver('pozo descubierto, de noche: nada (3)', clic([(5, 7, 0, 0, MIO, 0xff)], 5, 7, noche=(1, 2))[0], 3)
+ver('remolino descubierto, de noche: nada, ni en el ojo ni en una pieza vecina',
+    [clic([(11, 6, 1, 3, MIO, 0xff)], x, y, agua=AG, noche=(1, 4))[0] for x, y in ((11, 6), (12, 7))], [3, 3])
+ver('control: trampa propia de noche: lupa', clic([(3, 3, 2, 0, 0, 1)], 3, 3, cs=CS, noche=(1, 2))[0], 0x14)
+ver('control: pozo de día (vuelta impar): lupa', clic([(5, 7, 0, 0, MIO, 0xff)], 5, 7, noche=(1, 3))[0], 0x14)
+ver('control: sin la opción, vuelta par: lupa', clic([(5, 7, 0, 0, MIO, 0xff)], 5, 7, noche=(0, 2))[0], 0x14)
+g = Juego(); g.poner([(5, 7, 0, 0, MIO, 0xff)])
+g.decodificar(5, 7)
+g.mu.mem_write(0x53c38c + 25, b''); g.mu.mem_write(0x5032f8 + 0x30, struct.pack('<h', 2))
+g.decodificar(9, 9, ruina=1)
+ver('control: la ruina de noche sigue con su cuadro', g.accion(0x14), ([], [(9, 9)]))
 g = Juego(ORIG)   # sin la tabla de pozos (fuera de su imagen)
 ver('control: el original sobre el pozo: 3', g.decodificar(5, 7)[0], 3)
 print('MAL:', mal)

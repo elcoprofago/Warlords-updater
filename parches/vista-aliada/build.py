@@ -8488,7 +8488,35 @@ PO_FRAMES = PO_MINAGUA + 1
 po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
 po_cx = place_data('po_cx', bytes(8))   # casilla (x, y) y lugar en pantalla (x, y) de la celda que se dibuja
-# pw_put: edi = cuadro de la hoja -> lo pinta en la celda; preserva ebp.
+# De noche (opción Day/Night, SHOPT & 2, vuelta par; pedido del usuario, 28/10/2026) el pozo y el remolino no se
+# copian: 0x4ee3c0 recolorea el fondo con po_ntab usando su dibujo de máscara (como cam_blit), así queda solo una
+# sombra de su forma (el fondo al 65 %), que la noche oscurece después como al resto. Trampas y tumbas, como siempre.
+def po_ntable():
+    pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
+    rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
+    cand = [10] + [i for i in range(16, 245) if i != 187]
+    out = bytearray(range(256))
+    for i in range(256):
+        if i == 11: continue
+        t = tuple(c * 0.65 for c in rgb[i])
+        out[i] = min(cand, key=lambda j: sum((a - c) ** 2 for a, c in zip(rgb[j], t)))
+    return bytes(out)
+PO_NTAB = po_ntable()
+po_ntab = place_data('po_ntab', PO_NTAB)
+# po_night: ZF = 0 de noche (Day/Night puesto y vuelta par). Solo toca eflags.
+po_night = place('po_night', f'''
+    test byte ptr [{SHOPT:#x}], 2
+    jz pn_day
+    test byte ptr [{0x5032f8 + 0x30:#x}], 1
+    jnz pn_no
+    test esp, esp
+    ret
+pn_no:
+    cmp esp, esp
+pn_day:
+    ret
+''')
+# pw_put: edi = cuadro de la hoja, ebx = registro -> lo pinta en la celda; preserva ebp.
 pw_put = place('pw_put', f'''
     cmp dword ptr [{po_nosheet:#x}], 0
     jne pp_end
@@ -8519,6 +8547,23 @@ pp_blit:
     imul edi, edi, 48
     push edi
     push {PO_FILE}
+    cmp byte ptr [ebx + 4], {PO_REMOLINO}
+    ja pp_copy
+    call {po_night:#x}
+    jz pp_copy
+    push {po_ntab:#x}
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x20]
+    call 0x4ee3c0
+    add esp, 0x44
+    jmp pp_end
+pp_copy:
     call 0x4dd530
     add esp, 0x20
 pp_end:
@@ -8687,7 +8732,8 @@ pw_end:
 # remolino o trampa en la casilla, po_cur devuelve 0x14 y anota el registro en po_info_r; ciudad, ruina y sitio
 # siguen primero. En la acción 0x14, po_info abre el cuadro de información del juego, 0x4c7a10(título, texto, x, y del
 # mouse; el que usan los diálogos para el botón derecho): nombre y tipo; en la trampa, las explosiones que le quedan.
-# Con un grupo elegido el decodificador da mover, como en las ruinas. Las tumbas no tienen cuadro.
+# Con un grupo elegido el decodificador da mover, como en las ruinas. Las tumbas no tienen cuadro. De noche
+# (po_night) el pozo y el remolino no dan lupa ni cuadro (pedido del usuario, 28/10/2026); la trampa sí.
 # po_look: eax = x, edx = y -> eax = registro que quien mira ve dibujado en esa casilla, o 0 (misma regla que
 # po_draw). po_find: además, el remolino de una casilla vecina de agua (su dibujo ocupa 3x3). Preservan el resto.
 po_look = place('po_look', f'''
@@ -8802,6 +8848,14 @@ po_cur = place('po_cur', f'''
     movsx eax, word ptr [esp + 0x2c]
     movsx edx, word ptr [esp + 0x2e]
     call {po_find:#x}
+    test eax, eax
+    jz pc_set
+    cmp byte ptr [eax + 4], {PO_REMOLINO}
+    ja pc_set
+    call {po_night:#x}
+    jz pc_set
+    xor eax, eax
+pc_set:
     mov dword ptr [{po_info_r:#x}], eax
     test eax, eax
     jnz 0x473d7e

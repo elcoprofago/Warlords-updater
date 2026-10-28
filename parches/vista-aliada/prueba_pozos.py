@@ -432,7 +432,7 @@ PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]
 VISTA, CELDA, HOJA = 0x180000, 0x181000, 0x182000
 PO_FILE = 168
 def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vista=True, cargada=True, hay=True,
-            sitio=0, agua=(), puente=()):
+            sitio=0, agua=(), puente=(), noche=None):
     # Una celda de la vista: columna/fila celda, origen de la vista, quien mira. Devuelve los dibujos de 0x4dd530
     # (hoja, x, y, ancho, alto, destino, x, y en pantalla), las cargas de la hoja y por dónde siguió.
     g = Juego(); mu = g.mu; g.poner(regs)
@@ -445,7 +445,14 @@ def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vis
     for a, b in aliados: mu.mem_write(0x55ee4c + a * 56 + b, b'\0'); mu.mem_write(0x55ee4c + b * 56 + a, b'\0')
     mu.mem_write(0x53c38e, b'\x90' if vista else b'\x10'); mu.mem_write(0x53c393, b'\x08')
     mu.mem_write(HOJA + 8, struct.pack('<I', 1 if cargada else 0))
+    if noche is not None:   # (opción Day/Night, vuelta)
+        mu.mem_write(0x53c38c + 25, bytes([2 if noche[0] else 0])); mu.mem_write(0x5032f8 + 0x30, struct.pack('<h', noche[1]))
     dibujos, cargas = [], []
+    RECOL.clear()
+    def recol(a):
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        RECOL.append(struct.unpack('<9i', mu.mem_read(sp + 4, 36)))
+    g.interceptar(0x4ee3c0, recol)
     g.interceptar(0x4e4a90, lambda a: HOJA if hay and a[0] == PO_FILE else 0, pop=4)
     def cargar(a):
         cargas.append(a[0]); mu.mem_write(HOJA + 8, struct.pack('<I', 1)); return 1
@@ -465,6 +472,7 @@ def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vis
     assert mu.reg_read(UC_X86_REG_ESP) == sp and mu.reg_read(UC_X86_REG_EBP) == VISTA
     assert mu.reg_read(UC_X86_REG_ESI) == CELDA
     return [(d[1] // 48,) + d[2:] for d in dibujos if d[0] == PO_FILE], cargas, hex(sigue)
+RECOL = []          # llamadas a 0x4ee3c0 (los 8 argumentos de 0x4dd530 y la tabla) de la última dibujar
 EN = (13, 22)       # la casilla de la celda (3, 2) con origen (10, 20); en pantalla (144, 96)
 def en(t, est=0, m=0, d=0xff): return [EN + (t, est, m, d)]
 ver('pozo visto por quien mira: cuadro 0, 48x48 en la celda, al destino 0x27; sin sitio salta al fin de la celda',
@@ -514,5 +522,21 @@ ver('hoja sin cargar: la carga una vez y dibuja', dibujar(en(0, m=0x04), cargada
 ver('control: hoja inexistente: no dibuja ni insiste', dibujar(en(0, m=0x04), hay=False)[:2], ([], []))
 ver('control: quien mira inválido: nada', dibujar(en(0, m=0xff), mira=9)[0], [])
 ver('control: casilla fuera del mapa: nada', dibujar([(45, 22, 0, 0, 0xff, 0xff)], origen=(42, 20))[0], [])
+print('-- de noche (Day/Night, vuelta par): pozo y remolino como sombra, sin copiar el dibujo')
+def sombras(): return [(r[1] // 48,) + r[2:8] for r in RECOL if r[0] == PO_FILE]
+r = dibujar(en(0, m=0x04), noche=(1, 2))
+ver('pozo de noche: ninguna copia, una sombra con su cuadro en la celda', (r[0], sombras()), ([], [(0, 0, 48, 48, 0x27, 144, 96)]))
+TAB = RECOL[0][8]
+ver('  con una tabla propia (no la de la niebla ni la de la noche del mapa)', TAB not in (0x589608, 0x589708) and TAB > BASE, True)
+dibujar(en(1, m=0x04), fase=1, agua=MAR, noche=(1, 4))
+ver('remolino de noche: sombra de la pieza del medio', (sombras(), RECOL[0][8]), ([(R0 + 9 + 4, 0, 48, 48, 0x27, 144, 96)], TAB))
+dibujar(en(1, m=0x04), celda=(4, 3), agua=MAR, noche=(1, 2))
+ver('  y de las vecinas', [s[0] for s in sombras()], [R0 + 8])
+ver('control: de día (vuelta impar) se copia como siempre, sin sombra', (dibujar(en(0, m=0x04), noche=(1, 3))[0], RECOL),
+    ([(0, 0, 48, 48, 0x27, 144, 96)], []))
+ver('control: sin la opción, vuelta par: se copia', (dibujar(en(0, m=0x04), noche=(0, 2))[0], RECOL), ([(0, 0, 48, 48, 0x27, 144, 96)], []))
+ver('control: trampa de noche: se copia como siempre', (dibujar(en(2, d=2), noche=(1, 2))[0][0][0], RECOL), (5, []))
+ver('control: tumba de noche: se copia', (dibujar(en(3, 1, 0xff), noche=(1, 2))[0][0][0], RECOL), (11, []))
+ver('control: pozo no descubierto de noche: nada', (dibujar(en(0, m=0x08), noche=(1, 2))[0], RECOL), ([], []))
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

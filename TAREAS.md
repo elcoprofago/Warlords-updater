@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 71).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 72).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,18 @@ Sorteo están acá (tarea 18).
 4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
+Cambio (vista aliada 1.0.92.0): con Day/Night, en las vueltas de noche los pozos y remolinos ya descubiertos se ven
+solo como una sombra de su forma, y al pasar el mouse no aparece la lupa ni el cuadro del botón derecho. Trampas y
+tumbas, igual que de día. Todavía no está instalado: el juego estaba abierto y no se pudo grabar en C:\Warlords3.
+1. Cerrá DarklordAV.exe y avisame: lo instalo y lo publico.
+2. Después, en una partida con **Day/Night** y **Hidden Ruins**, con un pozo o remolino ya descubierto:
+   - de día se ve como siempre y tiene lupa;
+   - de noche se ve solo una sombra tenue y no hay lupa ni cuadro;
+   - una trampa propia de noche sigue con su lupa.
+3. Decime si la sombra se ve demasiado o muy poco (se ajusta fácil).
+Resultado:
 
 - [ ] **70.** IA: tanda con los pozos a la vista de todos (28/10/2026)
 En la guardada de la 69 nadie veía ningún pozo, así que no se pudo medir si la IA entra en los que ve. Armé
