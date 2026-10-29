@@ -20,9 +20,9 @@ Sorteo están acá (tarea 18).
 Cambio (vista aliada 1.0.94.0): con Day/Night, en las vueltas de noche los pozos y remolinos ya descubiertos se ven
 solo como una sombra de su forma (trampas y tumbas, igual que de día). Y de noche no hay lupa ni cuadro del botón
 derecho en ruinas, pozos, remolinos y trampas. Las ciudades y los demás sitios (puertos, establos, altares) siguen
-con su lupa. Todavía no está instalado: el juego estaba abierto y no se pudo grabar en C:\Warlords3.
-1. Cerrá DarklordAV.exe y avisame: lo instalo y lo publico.
-2. Después, en una partida con **Day/Night** y **Hidden Ruins**, con un pozo o remolino ya descubierto:
+con su lupa. Ya instalado en C:\Warlords3 y publicado (29/10/2026).
+1. (Hecho: instalado y publicado.)
+2. En una partida con **Day/Night** y **Hidden Ruins**, con un pozo o remolino ya descubierto:
    - de día se ve como siempre y tiene lupa;
    - de noche se ve solo una sombra tenue y no hay lupa ni cuadro;
    - de noche, ni una ruina ni una trampa propia dan lupa ni cuadro (de día sí);
