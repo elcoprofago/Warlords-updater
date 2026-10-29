@@ -26,7 +26,8 @@ dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nu
    coinciden», es que falta el paso 1 en alguna de las dos.
 3. Como anfitrión abrí la Votación y el Sorteo; mirá cómo se ven en la notebook y cerralos cuando terminen.
 4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientasotacion.log** y **sorteo.log** a
-   **F:\sourceeposctualizador-warlords
+   **F:\source
+eposctualizador-warlords
 ico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
 Resultado:
 
