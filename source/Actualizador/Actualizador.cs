@@ -237,6 +237,40 @@ namespace Actualizador
                 Info($"Se conservaron {g.Count()} archivo(s) tuyos en {g.Key}.");
             AnotarCompleto(completo);
             Ok("JUEGO COMPLETO ACTUALIZADO.");
+            await DirectPlay();
+        }
+
+        // DirectPlay: caracteristica de Windows que viene desactivada; sin ella el juego no juega en red. El juego
+        // es de 32 bits: usa SysWOW64\dplayx.dll, que Windows deja solo con DirectPlay activo.
+        static bool HayDirectPlay() =>
+            File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64", "dplayx.dll"));
+
+        /// <summary>Si falta DirectPlay, ofrece activarlo con dism (pide permiso de administrador).</summary>
+        async Task DirectPlay()
+        {
+            if (HayDirectPlay()) return;
+            Aviso("Falta DirectPlay (componente de Windows): sin él el juego no juega en red.");
+            if (!await SiNo("¿Lo activo ahora? Windows pedirá permiso de administrador. ")) return;
+            var psi = new ProcessStartInfo("dism.exe", "/online /enable-feature /featurename:DirectPlay /all /norestart")
+                { UseShellExecute = true, Verb = "runas" };
+            int salida;
+            try
+            {
+                using (var p = Process.Start(psi))
+                {
+                    await Task.Run(() => p.WaitForExit());
+                    salida = p.ExitCode;
+                }
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                Aviso("No se dio el permiso de administrador: DirectPlay sigue sin activar.");
+                return;
+            }
+            // 3010: activado, falta reiniciar
+            if (salida == 3010) Ok("DirectPlay activado. Reinicia la PC antes de jugar en red.");
+            else if (HayDirectPlay()) Ok("DirectPlay activado.");
+            else Error($"No se pudo activar DirectPlay (dism devolvió {salida}).");
         }
 
         // FULL.txt (asset de la release "Actualizador", lo escribe tools\publicar-full.ps1 junto con el zip):
@@ -391,6 +425,7 @@ namespace Actualizador
             else if (instalada == null) return;   // no se pudo bajar y no hay ninguno
             else if (publicada == null) Aviso($"No se pudo ver si hay versión nueva; se abre la que tienes (v{instalada}).");
             else Info($"Tienes la última versión (v{instalada}).");
+            await DirectPlay();
             Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = true });
             Ok("Se abrió Puente Warlords.");
         }
