@@ -42,7 +42,23 @@ de GOG que el juego no necesita: se prefiere que lo resuelva el Actualizador.
   `dplayx.dll` está en SysWOW64 y no en System32; **no se midió una PC con DirectPlay apagado** (control
   pendiente: la notebook antes de activarlo ya no sirve, lo activó el usuario).
 
-## Próximo paso
+## Hecho (29/10/2026, más tarde)
+- Listado de GOG con innoextract (autorizado por el usuario). GOG trae y el zip no: `keys.w3`, `STRAT_L/S.BMP`,
+  `DATA\` `COMBAT.DAT`, `OPT101.DAT`, `OPT101.NET`, `PREF.DAT`, `netstat.txt`, `vector.txt`, `vmoveall.txt`, los
+  10 `PGS` de fábrica y `MUSIC\Track20.ogg` (falta también en `C:\Warlords3`). `AREA.DAT`, `HISTORY.DAT`,
+  `INTRO.INI`, `NET.INI`, `OPTIONS.*` no vienen en GOG: los crea el juego. El `directplay.cmd` de GOG corre el
+  mismo `dism` que `DirectPlay()`.
+- Esos 21 están en `iniciales\` (del repo) y `publicar-full.ps1` los mete en el zip desde ahí, no desde la PC.
+- Probado con el exe real (`W3_JUEGO`, `W3_FULL_ZIP`, `W3_ENTRADA='6|S|N||16'`): carpeta vacía → 5789 archivos,
+  con los 21; control con `DATA\PREF.DAT` propio → se conservó.
+- **Publicado** el zip (SHA `0099D81B…4123CD`, 5789 archivos), verificado. Por error lleva `LEEME.md` en la
+  raíz (inofensivo). Republicar sin él (`publicar-full.ps1 -QuitarIgual LEEME.md`, zip `F55A1317…` ya probado)
+  lo frenó el bloqueo automático de permisos, igual que se frenaría `compilar-actualizador.ps1 -Publicar` de la
+  1.0.15.0 (DirectPlay). Falta la autorización del usuario para publicar el zip y el Actualizador.
+- Sin verificar: que `Darklord.exe` abra en la carpeta nueva (usa `RegQueryValueExA`; no se vio qué clave).
+  Queda en TAREAS 72.
+
+## Próximo paso (original)
 Con el listado de GOG: de esa lista de 191, publicar como valor inicial los que GOG instala, **tomados del
 instalador de GOG** (no de la PC de quien arma el zip, que tiene su historial y sus opciones), y no los
 propios (`IA.INI`, `update_log.txt`, `.lnk`, `.tmp`, `desktop.ini`). `DarklordAV.exe` lo pone el parche

@@ -1,4 +1,4 @@
-<#
+﻿<#
 Arma Warlords3_FULL.zip desde C:\Warlords3 y lo publica en la release "Actualizador" de GitHub, de
 donde lo baja la opcion 6 (ACTUALIZAR TODO EL JUEGO) del actualizador.
 
@@ -23,6 +23,7 @@ Requiere: gh autenticado.
 #>
 param(
     [switch]$Prueba,
+    [string[]]$QuitarIgual = @(),   # lo que el zip nuevo deja afuera a sabiendas: no se pregunta (sesiones sin teclado)
     [string]$Juego = 'C:\Warlords3'
 )
 $ErrorActionPreference = 'Stop'
@@ -125,7 +126,7 @@ $base = (Resolve-Path -LiteralPath $Juego).Path.TrimEnd('\')
 # que ya los tienen la opcion 6 no los pisa (NoPisar), en una limpia quedan (PENDIENTE-instalacion-completa.md).
 $iniBase = Join-Path $raiz 'iniciales'
 $origen = New-Object 'Collections.Generic.Dictionary[string,string]' ([StringComparer]::OrdinalIgnoreCase)
-foreach ($f in (Get-ChildItem -LiteralPath $iniBase -Recurse -File)) { $origen[$f.FullName.Substring($iniBase.Length + 1)] = $f.FullName }
+foreach ($f in (Get-ChildItem -LiteralPath $iniBase -Recurse -File | Where-Object { $_.Extension -ne '.md' })) { $origen[$f.FullName.Substring($iniBase.Length + 1)] = $f.FullName }
 $elegidos = @(@(Get-ChildItem -LiteralPath $base -Recurse -File -Force |
     ForEach-Object { $_.FullName.Substring($base.Length + 1) } | Where-Object { -not $origen.ContainsKey($_) -and (Incluir $_) }) +
     @($origen.Keys) | Sort-Object)
@@ -230,7 +231,7 @@ if ($Prueba) { Write-Host "-Prueba: no se sube nada. Resultado en dist\$Nombre y
 
 # lo que sale porque esta en OBSOLETOS de algun parche es lo esperado: no se pregunta
 $obsTodos = @(Get-ChildItem parches -Directory | ForEach-Object { Obsoletos (Join-Path $_.FullName 'build.py') })
-if (@($quitados | Where-Object { $obsTodos -notcontains $_ }).Count) {
+if (@($quitados | Where-Object { $obsTodos -notcontains $_ -and $QuitarIgual -notcontains $_ }).Count) {
     $r = Read-Host "El zip nuevo deja afuera $($quitados.Count) archivo(s) que hoy se reparten (lista de arriba). Publicar igual? (S/N)"
     if ($r -notmatch '^\s*s') { Write-Host 'No se publico nada.'; exit 0 }
 }

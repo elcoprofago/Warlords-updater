@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 72).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 73).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,20 @@ Sorteo están acá (tarea 18).
 4. Con la notebook: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
+Cambio (Actualizador 1.0.15.0 y juego completo nuevo): la opción 6 ahora trae también los archivos originales de GOG
+que faltaban (`keys.w3`, `STRAT_L.BMP`, `STRAT_S.BMP`, los de `DATA`, los 10 bandos de fábrica y la música
+`Track20.ogg`), y si falta DirectPlay ofrece activarlo. Ya se probó en esta PC en una carpeta vacía; falta ver
+que el juego abra y juegue en red.
+1. Esperá a que el Actualizador diga **v1.0.15.0** en el título (al abrirlo se actualiza solo).
+2. En la notebook, creá una carpeta vacía, por ejemplo **C:\Prueba-W3**.
+3. Para que el Actualizador use esa carpeta: en el Explorador escribí **%LOCALAPPDATA%** en la barra, creá la
+   carpeta **Warlords3-Actualizador** (si no está) y adentro un **juego.txt** con una sola línea: `C:\Prueba-W3`.
+   Al terminar la prueba borrá ese juego.txt para volver a tu carpeta de siempre.
+4. Opción **6**. Si pregunta por DirectPlay, respondé **S** y aceptá el permiso de Windows.
+5. Abrí **Darklord.exe** de esa carpeta: tiene que llegar al menú. Después uní la notebook a una partida en red.
+Resultado:
 
 - [ ] **18.** Votación y Sorteo en red, con tu notebook como segundo jugador (29/10/2026; antes con Nico)
 Ya está comprobado que a la otra PC le llegan los votos y el cierre; lo que falla es cómo se ven las ventanas allá
