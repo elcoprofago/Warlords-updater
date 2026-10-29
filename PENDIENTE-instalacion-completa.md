@@ -58,6 +58,9 @@ de GOG que el juego no necesita: se prefiere que lo resuelva el Actualizador.
 - Sin verificar: que `Darklord.exe` abra en la carpeta nueva (usa `RegQueryValueExA`; no se vio qué clave).
   Queda en TAREAS 72.
 
+- **Publicado** (autorizado por el usuario): zip sin `LEEME.md` (SHA `F55A1317…`, 5788 archivos, el probado) y
+  Actualizador 1.0.15.0, ambos verificados bajándolos. Solo queda TAREAS 72 (prueba en la notebook).
+
 ## Próximo paso (original)
 Con el listado de GOG: de esa lista de 191, publicar como valor inicial los que GOG instala, **tomados del
 instalador de GOG** (no de la PC de quien arma el zip, que tiene su historial y sus opciones), y no los
