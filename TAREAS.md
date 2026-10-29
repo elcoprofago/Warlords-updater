@@ -12,11 +12,25 @@ Sorteo están acá (tarea 18).
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. En la próxima partida en red: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
+4. Con la notebook: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
 
-- [ ] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
+- [ ] **18.** Votación y Sorteo en red, con tu notebook como segundo jugador (29/10/2026; antes con Nico)
+Ya está comprobado que a la otra PC le llegan los votos y el cierre; lo que falla es cómo se ven las ventanas allá
+(en la PC anfitriona se ven bien). Votación 1.1.4 y Sorteo 1.1.3 anotan lo que hacen en un .log. Con la notebook no
+dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nunca se hizo.)
+1. En la notebook: Actualizador, opción **9** (parches: tiene que quedar vista-aliada **1.0.94.0**), después la
+   **11 (Votación)** y la **12 (Sorteo)**: los títulos tienen que decir **v1.1.4** y **v1.1.3**.
+2. Partida en red: esta PC de anfitrión, la notebook se une (Puente). Si el Puente dice «los archivos del juego no
+   coinciden», es que falta el paso 1 en alguna de las dos.
+3. Como anfitrión abrí la Votación y el Sorteo; mirá cómo se ven en la notebook y cerralos cuando terminen.
+4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientasotacion.log** y **sorteo.log** a
+   **F:\sourceeposctualizador-warlords
+ico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
+Resultado:
+
+- [x] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
 Cambio (vista aliada 1.0.94.0): con Day/Night, en las vueltas de noche los pozos y remolinos ya descubiertos se ven
 solo como una sombra de su forma (trampas y tumbas, igual que de día). Y de noche no hay lupa ni cuadro del botón
 derecho en ruinas, pozos, remolinos y trampas. Las ciudades y los demás sitios (puertos, establos, altares) siguen
@@ -30,22 +44,22 @@ con su lupa. Ya instalado en C:\Warlords3 y publicado (29/10/2026).
 3. Decime si la sombra se ve demasiado o muy poco (se ajusta fácil).
 Resultado:
 
-- [ ] **70.** IA: tanda con los pozos a la vista de todos (28/10/2026)
+- [x] **70.** IA: tanda con los pozos a la vista de todos (28/10/2026)
 En la guardada de la 69 nadie veía ningún pozo, así que no se pudo medir si la IA entra en los que ve. Armé
 **Tanda_hex_pozos_PV_control**: la misma partida, con los 9 pozos ya descubiertos por todos los colores.
 1. Monitor de IA → **Ninguna**, marcá solo **hex_pozos_PV_control** (tiene que aparecer «(control)»),
    Partidas: **10**, **Nueva tanda**.
 2. Avisame cuando termine.
-Resultado:
+Resultado: pude observar que algun heroe cayo en un pozo y dejo un item, los demas heroes que ven el item "en terreno" intentan levantarlo, pero caen en el pozo sin darse cuenta. (detectan el item, pero no el pozo, entiendo que si no han detectado a tiempo el pozo, siempre estara oculto, no asi el item)
 
-- [ ] **68.** Validator y PGS-Visor abren tu juego de C:\Warlords (27/10/2026)
+- [x] **68.** Validator y PGS-Visor abren tu juego de C:\Warlords (27/10/2026)
 Cambio: DarklordsValidator 1.0.7 y PGS-Visor 1.0.1.0 toman la carpeta del juego de donde están instalados
 (HERRAMIENTAS), como el Puente. Antes abrían siempre C:\Warlords3.
 1. Abrí el Actualizador: opción **7** y después opción **8**.
 2. Abrí Darklords Validator desde C:\Warlords\HERRAMIENTAS y tocá abrir unidad: tiene que abrir en C:\Warlords\ARMY.
 3. Abrí PGS-Visor desde la misma carpeta: la lista de bandos tiene que ser la de C:\Warlords.
 
-- [ ] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
+- [x] **60.** IA: probar la luz roja de partida parada del Monitor (26/10/2026, después de la 47)
 Cambio: en el Monitor de IA, el círculo de RAM ya no está; en su lugar hay una luz que se pone **roja** cuando la
 partida está parada (pausada en el juego, esperando algo tuyo, o la tanda detenida sin terminar): titila con
 fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega queda rojo oscuro, como apagada. Se enciende a los 45 segundos sin movimiento. Va en el Monitor **1.0.18** (publicado).
@@ -318,31 +332,6 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
 Resultado:
 
-
-- [ ] **18.** Votación y Sorteo en la PC de Nico: datos de su instalación (17/10/2026)
-Ya está comprobado (fotos de sus votacion.ver y sorteo.ver) que a la PC de Nico le llegan los votos y el cierre.
-Lo que falla es cómo se ven las ventanas allá: en esta PC se actualizan bien. Hace falta saber cómo corre el juego
-en su PC. Que Nico te mande:
-1. El archivo **C:\Warlords3\dxcfg.ini** (abierto con el Bloc de notas, una foto alcanza).
-2. Los archivos **OPENGL32.log** que tenía abiertos en el Bloc de notas: de qué carpeta son (foto de la barra de
-   direcciones del Explorador) y su texto.
-3. ~~Si el juego ocupa toda la pantalla o se ve en una ventana.~~ (Respondido 17/10: ocupa toda la pantalla, igual que en la PC del anfitrión; Nico cierra las ventanas a mano.)
-4. ~~Administrador de tareas~~: ya no hace falta, lo reemplaza el registro de abajo.
-
-**Registro de lo que hacen las ventanas (lo principal, 17/10/2026).** Votación 1.1.4 y Sorteo 1.1.3 anotan todo
-lo que hacen en un archivo, y si la ventana se traba anotan en qué punto exacto quedó detenida.
-1. En la PC de Nico **y en la tuya**: abrí el Actualizador y elegí la opción **11 (Votación)** y después la
-   **12 (Sorteo)**. Al abrirlas, el título de la ventana tiene que decir **v1.1.4** (Votación) y **v1.1.3** (Sorteo).
-   (En tu PC ya están instaladas; si el Actualizador dice que no hay nada nuevo, está bien.)
-2. Jueguen una partida en red como siempre y abrí, como anfitrión, la Votación y el Sorteo; cerralos cuando
-   terminen, igual que la vez pasada.
-3. Cuando termine la partida, que Nico te mande estos dos archivos (son de texto; mandarlos como archivo, no foto):
-   **C:\Warlords3\Herramientas\votacion.log** y **C:\Warlords3\Herramientas\sorteo.log**.
-   (Si su juego está en otra carpeta, son los que están junto a votacion.exe y sorteo.exe.)
-4. Copiá los dos archivos de Nico a **F:\source\repos\actualizador-warlords\nico\** (creá la carpeta) y anotá acá
-   la hora aproximada en que abriste cada programa. Tus propios .log también sirven: dejalos donde están.
-Resultado:
-**Resultado (26/10/2026):** marcada como cumplida por vos en la tanda de pruebas.
 
 - [x] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
