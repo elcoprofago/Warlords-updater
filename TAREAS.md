@@ -25,10 +25,8 @@ dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nu
 2. Partida en red: esta PC de anfitrión, la notebook se une (Puente). Si el Puente dice «los archivos del juego no
    coinciden», es que falta el paso 1 en alguna de las dos.
 3. Como anfitrión abrí la Votación y el Sorteo; mirá cómo se ven en la notebook y cerralos cuando terminen.
-4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientasotacion.log** y **sorteo.log** a
-   **F:\source
-eposctualizador-warlords
-ico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
+4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
+   **F:\source\repos\actualizador-warlords\nico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
 Resultado:
 
 - [x] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
