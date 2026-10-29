@@ -10,6 +10,7 @@ Pasos:
   2. Junta los archivos de C:\Warlords3 dejando afuera lo propio de quien lo arma (ver Incluir):
      lo mismo que la opcion 6 no pisa (NoPisar en source\Actualizador\Actualizador.cs), mas Saves.
      De PGS y SCENARIO van solo los archivos que ya trae el zip publicado (los de fabrica).
+     Suma los de iniciales\ (originales de GOG que una PC limpia necesita), tomados de ahi y no de la PC.
   3. Muestra lo que el zip publicado trae y el nuevo no: ese zip es el criterio de que es esencial,
      asi que publicar exige confirmarlo. Muestra tambien lo que se agrega.
   4. Arma dist\Warlords3_FULL.zip y comprueba que tenga exactamente los archivos elegidos.
@@ -119,8 +120,16 @@ function Incluir($rel) {
 }
 if (-not (Test-Path -LiteralPath $Juego)) { Falla "no existe $Juego" }
 $base = (Resolve-Path -LiteralPath $Juego).Path.TrimEnd('\')
-$elegidos = @(Get-ChildItem -LiteralPath $base -Recurse -File -Force |
-    ForEach-Object { $_.FullName.Substring($base.Length + 1) } | Where-Object { Incluir $_ } | Sort-Object)
+# iniciales\ (del repo): originales del instalador de GOG que Incluir deja afuera de la PC de quien arma el zip
+# (sus opciones, sus bandos) pero que una PC limpia necesita. Van tomados de iniciales\, nunca de la PC: en las PC
+# que ya los tienen la opcion 6 no los pisa (NoPisar), en una limpia quedan (PENDIENTE-instalacion-completa.md).
+$iniBase = Join-Path $raiz 'iniciales'
+$origen = New-Object 'Collections.Generic.Dictionary[string,string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($f in (Get-ChildItem -LiteralPath $iniBase -Recurse -File)) { $origen[$f.FullName.Substring($iniBase.Length + 1)] = $f.FullName }
+$elegidos = @(@(Get-ChildItem -LiteralPath $base -Recurse -File -Force |
+    ForEach-Object { $_.FullName.Substring($base.Length + 1) } | Where-Object { -not $origen.ContainsKey($_) -and (Incluir $_) }) +
+    @($origen.Keys) | Sort-Object)
+foreach ($e in $elegidos) { if (-not $origen.ContainsKey($e)) { $origen[$e] = Join-Path $base $e } }
 $nuevo = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 foreach ($e in $elegidos) { [void]$nuevo.Add($e) }
 Write-Host "Zip nuevo: $($nuevo.Count) archivos de $base"
@@ -163,7 +172,7 @@ Write-Host "Armando $zip ..."
 $z = [IO.Compression.ZipFile]::Open($zip, 'Create')
 try {
     foreach ($e in $elegidos) {
-        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($z, (Join-Path $base $e), ($e -replace '\\', '/'),
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($z, $origen[$e], ($e -replace '\\', '/'),
             [IO.Compression.CompressionLevel]::Optimal)
     }
 }
@@ -201,7 +210,7 @@ foreach ($l in (Get-Content -Encoding UTF8 $listaPub | Where-Object { $_.Trim() 
             $van++
             $s = $e.Open()
             try { $h = [BitConverter]::ToString($sha256.ComputeHash($s)) -replace '-' } finally { $s.Dispose() }
-            if ($h -ne (Sha256 (Join-Path $base $rel))) { $distintos += $rel }
+            if ($h -ne (Sha256 $origen[$rel])) { $distintos += $rel }
         }
     }
     finally { $zz.Dispose(); Remove-Item -Force $zp }

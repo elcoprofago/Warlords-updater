@@ -1,0 +1,79 @@
+// KEYS.W3
+//
+// This file contains all the keyboard shortcuts for WARLORDS III
+// CTRL+s is reserved for Screen Shots
+// (Note: This header must always be 5 lines long)
+TAB			- Next Group
+ENTER		- Leave & Select Next
+INSERT		- Defend Group
+END			- Move this Group
+a			- Move All Groups
+ESCAPE		- Deselect
+SPACE		- Group / Ungroup All
+CTRL+E		- End Turn
+0 (ZERO)	- Centre on Group
+HOME		- Centre on Capitol
+LEFT		- Scroll Map Left
+RIGHT		- Scroll Map Right
+UP			- Scroll Map Up
+DOWN		- Scroll Map Down
+NONE		- Page Map Left
+NONE		- Page Map Right
+NONE		- Page Map Up
+NONE		- Page Map Down
+NONE		- Fight Ordering
+BACKSPACE	- Disband Group
+DELETE		- Cancel Move Path
+s			- Stack Dialog
+r			- Raze City / Site
+V			- Vector Group
+z			- Search Ruin
+Q			- Get Quest
+h			- Hero Report
+H			- Hero Deeds
+L			- Hero Levels
+S			- View Spells
+I			- Sell Items
+q			- Show Quest
+A			- Army Report
+C			- City Report
+D			- Diplomacy Report
+E			- Event Report
+G			- Gold Report
+K			- Kills Report
+M			- Mana Report
+P			- Production Report
+R			- Ruins Report
+Z			- Sites Report
+S			- Spells Report
+W			- Winners Report
+/			- About Scenario
+NONE		- Army Lists
+NONE		- Hero Lists
+NONE		- Item Lists
+NONE		- Campaign Briefing
+NONE		- Campaign Intro
+NONE		- Scenario Intro
+F1			- Help
+F3			- Chat Mode
+F4			- View Options
+F5			- Set Preferences
+CTRL+G		- Resign
+?			- About Warlords III
+NONE		- Save Game
+F2			- Fast Save
+CTRL+L		- Load Game
+CTRL+N		- New Game
+CTRL+Q		- Quit		
+NONE		- EMail Statistics
+p			- Production
+v			- Vectoring
+b			- Build City / Site
+CTRL+P		- Ability Points
+CTRL+O		- Side Lists
+F8			- Chat Bar
+CTRL+V		- Easy Vectoring
+CTRL+X		- Minimize
+CTRL+U		- Undo Movement
+CTRL+C		- Clean Up Armies/Cities
+

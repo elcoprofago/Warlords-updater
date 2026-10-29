@@ -1,0 +1,8 @@
+Vectoring allows fast automatic movement of armies between cities.
+~H~
+~P~
+To create a new vector, click on the source city and drag to
+the destination city.
+~H~
+~P~
+To delete a vector, simply click on the source city.

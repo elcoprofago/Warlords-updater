@@ -1,0 +1,5 @@
+You may now move all vectors from one city to another.
+~H~
+~P~
+Click on the old city you want to move them from, 
+then click on the new city you want to move them to.
