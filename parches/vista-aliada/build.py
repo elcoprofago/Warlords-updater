@@ -13163,6 +13163,11 @@ patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f5
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
+# OnIdle (0x4ecef0): sin el foco ([0x501280] = 0, lo pone OnActivate 0x4ed400) el original no llama al tick 0x4dea40,
+# y con él se frenaban la red (0x4df3e0) y tl_idle: con la Votación o el Sorteo al frente, el anfitrión no levantaba
+# el .op ni mandaba el estado, y el espectador no escribía el .ver (prueba real 30/10/2026). Ahora el tick corre
+# siempre; el dibujo (0x4de480) y los timers siguen pausados sin foco, como en el original.
+patch(0x4ecf01, asm('jne 0x4ecf0b', 0x4ecf01), asm('jmp 0x4ecf0b', 0x4ecf01))
 patch(0x4ed415, asm('test esi, esi; jne 0x4ed477; cmp byte ptr [0x501280], 0', 0x4ed415), asm(f'jmp {ia_bg:#x}', 0x4ed415))
 patch(0x4476d9, asm('call 0x49fec0', 0x4476d9), asm(f'call {ia_nodip:#x}', 0x4476d9))
 # Espacio libre (0x4e0770): sectores por clúster × bytes por sector × clústeres libres en 32 bits; con discos de

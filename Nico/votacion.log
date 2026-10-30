@@ -38,3 +38,143 @@
 02:02:34.476 [11820] ventana mostrada hwnd=4326948
 02:02:40.154 [11820] closeEvent: la ventana se cierra
 02:02:40.164 [11820] === fin, código 0 ===
+12:50:18.396 [3892] === inicio v1.1.4 argumentos=['--espectador', '10000000'] windows=sys.getwindowsversion(major=10, minor=0, build=17763, platform=2, service_pack='') ===
+12:50:18.777 [3892] modo=espectador; creo la ventana
+12:50:19.426 [3892] ventana mostrada hwnd=2230174
+12:50:19.689 [3892] seguir: vuelta 1
+12:50:19.690 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:22.815 [3892] seguir: vuelta 11
+12:50:22.815 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:25.938 [3892] seguir: vuelta 21
+12:50:25.938 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:29.066 [3892] seguir: vuelta 31
+12:50:29.066 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:32.190 [3892] seguir: vuelta 41
+12:50:32.190 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:35.313 [3892] seguir: vuelta 51
+12:50:35.313 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:38.438 [3892] seguir: vuelta 61
+12:50:38.438 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:41.564 [3892] seguir: vuelta 71
+12:50:41.564 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:44.691 [3892] seguir: vuelta 81
+12:50:44.692 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:47.814 [3892] seguir: vuelta 91
+12:50:47.815 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:50.938 [3892] seguir: vuelta 101
+12:50:50.938 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:54.065 [3892] seguir: vuelta 111
+12:50:54.066 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:50:57.187 [3892] seguir: vuelta 121
+12:50:57.188 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:00.314 [3892] seguir: vuelta 131
+12:51:00.314 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:03.438 [3892] seguir: vuelta 141
+12:51:03.439 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:06.565 [3892] seguir: vuelta 151
+12:51:06.565 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:09.688 [3892] seguir: vuelta 161
+12:51:09.688 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:12.815 [3892] seguir: vuelta 171
+12:51:12.815 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:15.939 [3892] seguir: vuelta 181
+12:51:15.940 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:19.063 [3892] seguir: vuelta 191
+12:51:19.063 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:22.191 [3892] seguir: vuelta 201
+12:51:22.191 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:25.315 [3892] seguir: vuelta 211
+12:51:25.316 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:28.438 [3892] seguir: vuelta 221
+12:51:28.439 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:31.565 [3892] seguir: vuelta 231
+12:51:31.565 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:34.688 [3892] seguir: vuelta 241
+12:51:34.688 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:37.815 [3892] seguir: vuelta 251
+12:51:37.815 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:40.940 [3892] seguir: vuelta 261
+12:51:40.940 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:44.063 [3892] seguir: vuelta 271
+12:51:44.063 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:47.191 [3892] seguir: vuelta 281
+12:51:47.191 [3892] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:51:48.799 [3892] closeEvent: la ventana se cierra
+12:51:48.853 [3892] foco: al frente hwnd=2360328 pid=9104 hilo=9472 'Warlords III - Darklords Rising'; engancho entrada...
+12:51:48.853 [3892] foco: AttachThreadInput=True; ShowWindow...
+12:51:49.061 [3892] foco: BringWindowToTop...
+12:51:49.061 [3892] foco: SetForegroundWindow...
+12:51:49.061 [3892] foco: SetForegroundWindow=1; SetActiveWindow...
+12:51:49.061 [3892] foco: desengancho entrada...
+12:51:49.062 [3892] foco: listo
+12:51:49.084 [3892] === fin, código 0 ===
+12:55:48.223 [7580] === inicio v1.1.4 argumentos=['--espectador', '10000000'] windows=sys.getwindowsversion(major=10, minor=0, build=17763, platform=2, service_pack='') ===
+12:55:48.610 [7580] modo=espectador; creo la ventana
+12:55:49.249 [7580] ventana mostrada hwnd=723040
+12:55:49.616 [7580] seguir: vuelta 1
+12:55:49.617 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:55:52.641 [7580] seguir: vuelta 11
+12:55:52.642 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:55:55.766 [7580] seguir: vuelta 21
+12:55:55.766 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:55:58.894 [7580] seguir: vuelta 31
+12:55:58.894 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:02.018 [7580] seguir: vuelta 41
+12:56:02.018 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:05.142 [7580] seguir: vuelta 51
+12:56:05.143 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:08.267 [7580] seguir: vuelta 61
+12:56:08.267 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:11.394 [7580] seguir: vuelta 71
+12:56:11.394 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:14.518 [7580] seguir: vuelta 81
+12:56:14.518 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:17.644 [7580] seguir: vuelta 91
+12:56:17.644 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:20.767 [7580] seguir: vuelta 101
+12:56:20.767 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:23.891 [7580] seguir: vuelta 111
+12:56:23.891 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:27.016 [7580] seguir: vuelta 121
+12:56:27.016 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:30.142 [7580] seguir: vuelta 131
+12:56:30.142 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:33.269 [7580] seguir: vuelta 141
+12:56:33.269 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:36.394 [7580] seguir: vuelta 151
+12:56:36.395 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:39.519 [7580] seguir: vuelta 161
+12:56:39.520 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:42.644 [7580] seguir: vuelta 171
+12:56:42.644 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:45.767 [7580] seguir: vuelta 181
+12:56:45.768 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:48.892 [7580] seguir: vuelta 191
+12:56:48.892 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:52.016 [7580] seguir: vuelta 201
+12:56:52.016 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:55.142 [7580] seguir: vuelta 211
+12:56:55.143 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:56:58.268 [7580] seguir: vuelta 221
+12:56:58.268 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:01.391 [7580] seguir: vuelta 231
+12:57:01.392 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:04.517 [7580] seguir: vuelta 241
+12:57:04.517 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:07.643 [7580] seguir: vuelta 251
+12:57:07.644 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:10.767 [7580] seguir: vuelta 261
+12:57:10.767 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:13.891 [7580] seguir: vuelta 271
+12:57:13.891 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:17.016 [7580] seguir: vuelta 281
+12:57:17.017 [7580] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+12:57:18.082 [7580] closeEvent: la ventana se cierra
+12:57:18.134 [7580] foco: al frente hwnd=2360328 pid=9104 hilo=9472 'Warlords III - Darklords Rising'; engancho entrada...
+12:57:18.134 [7580] foco: AttachThreadInput=True; ShowWindow...
+12:57:18.166 [7580] foco: BringWindowToTop...
+12:57:18.167 [7580] foco: SetForegroundWindow...
+12:57:18.167 [7580] foco: SetForegroundWindow=1; SetActiveWindow...
+12:57:18.167 [7580] foco: desengancho entrada...
+12:57:18.167 [7580] foco: listo
+12:57:18.172 [7580] === fin, código 0 ===

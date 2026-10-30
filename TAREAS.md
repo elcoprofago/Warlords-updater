@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 75).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 76).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,35 +12,24 @@ Sorteo están acá (tarea 18).
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. Con la notebook: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
+4. Con la notebook: **tarea 75** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
 
-- [ ] **74.** Sorteo 1.1.4: ¿el juego del anfitrión levanta lo que escribe el Sorteo? (30/10/2026)
-El 1.1.4 anota en el sorteo.log del anfitrión cada estado que escribe y si el juego ya se había llevado el anterior.
-1. En **esta PC y en la notebook**: Actualizador, opción **9** (herramientas tiene que quedar **1.0.0.3**) y después
-   la **12 (Sorteo)**: el título tiene que decir **v1.1.4** en las dos.
+- [ ] **75.** Votación y Sorteo en red con vista-aliada 1.0.95.0 (30/10/2026)
+Arreglo: el juego que no tiene el foco (porque la Votación o el Sorteo están al frente) se pausaba entero, también
+la red, y por eso la notebook nunca veía los votos ni los números. Ahora sigue mandando y recibiendo. Ya probado en
+esta PC con el Sorteo al frente: el juego levantó todo lo que el Sorteo escribió.
+1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.95.0**.
 2. Partida en red: esta PC de anfitrión, la notebook se une.
-3. Como anfitrión abrí el Sorteo, sorteá una vez, esperá unos 10 segundos y cerralo. Anotá la hora.
-4. Copiá **C:\Warlords3\Herramientas\sorteo.log** de **esta PC** a
-   **F:\source\repos\actualizador-warlords\Nico\anfitrion-sorteo.log**, y el de la **notebook** a
-   **F:\source\repos\actualizador-warlords\Nico\sorteo.log** (reemplazá el viejo).
-
-- [ ] **73.** ¿El juego se queda quieto mientras la Votación o el Sorteo están al frente? (30/10/2026)
-Es para saber por qué la notebook no ve los votos (tarea 18). Se hace en **una sola PC**, sin red, en una partida
-local. Tarda 5 minutos.
-1. Abrí el Explorador en **C:\Warlords3\Herramientas** y poné la vista **Detalles** (columna «Fecha de
-   modificación»). Dejá esa ventana a un costado, donde la veas.
-2. Abrí el juego, **New Game** hasta la pantalla de preparación, y apretá el botón grande del **Sorteo** (abajo a la
-   derecha). Se abre el Sorteo encima.
-3. **Sin tocar el juego**, sorteá 2 o 3 números en el Sorteo. Mirá en el Explorador (F5 para refrescar) la hora de
-   **sorteo.ver**. Anotá: ¿cambia a cada número sorteado, o queda quieta?
-4. Ahora hacé **un clic en la ventana del juego** (que el juego quede al frente, el Sorteo sigue abierto) y esperá
-   5 segundos. F5 en el Explorador: ¿cambió la hora de **sorteo.ver**? ¿Hay un **sorteo.op** que antes no se iba?
-5. Cerrá el Sorteo y salí del juego.
+3. Como anfitrión abrí el **Sorteo** y sorteá dos o tres números: en la notebook tienen que aparecer a los pocos
+   segundos, sin cerrar nada. Cerralo.
+4. Abrí la **Votación** y marcá algunos votos: en la notebook tienen que verse al rato. Cerrala.
+5. Si algo no se ve en la notebook, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
+   **F:\source\repos\actualizador-warlords\Nico\**.
 Resultado:
 
-- [ ] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
+- [x] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
 Cambio (Actualizador 1.0.15.0 y juego completo nuevo): la opción 6 ahora trae también los archivos originales de GOG
 que faltaban (`keys.w3`, `STRAT_L.BMP`, `STRAT_S.BMP`, los de `DATA`, los 10 bandos de fábrica y la música
 `Track20.ogg`), y si falta DirectPlay ofrece activarlo. Ya se probó en esta PC en una carpeta vacía; falta ver
@@ -54,7 +43,7 @@ que el juego abra y juegue en red.
 5. Abrí **Darklord.exe** de esa carpeta: tiene que llegar al menú. Después uní la notebook a una partida en red.
 Resultado:
 
-- [ ] **18.** Votación y Sorteo en red, con tu notebook como segundo jugador (29/10/2026; antes con Nico)
+- [x] **18.** Votación y Sorteo en red, con tu notebook como segundo jugador (29/10/2026; antes con Nico)
 Ya está comprobado que a la otra PC le llegan los votos y el cierre; lo que falla es cómo se ven las ventanas allá
 (en la PC anfitriona se ven bien). Votación 1.1.4 y Sorteo 1.1.3 anotan lo que hacen en un .log. Con la notebook no
 dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nunca se hizo.)
@@ -110,6 +99,34 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **74.** Sorteo 1.1.4: ¿el juego del anfitrión levanta lo que escribe el Sorteo? (30/10/2026)
+El 1.1.4 anota en el sorteo.log del anfitrión cada estado que escribe y si el juego ya se había llevado el anterior.
+1. En **esta PC y en la notebook**: Actualizador, opción **9** (herramientas tiene que quedar **1.0.0.3**) y después
+   la **12 (Sorteo)**: el título tiene que decir **v1.1.4** en las dos.
+2. Partida en red: esta PC de anfitrión, la notebook se une.
+3. Como anfitrión abrí el Sorteo, sorteá una vez, esperá unos 10 segundos y cerralo. Anotá la hora.
+4. Copiá **C:\Warlords3\Herramientas\sorteo.log** de **esta PC** a
+   **F:\source\repos\actualizador-warlords\Nico\anfitrion-sorteo.log**, y el de la **notebook** a
+   **F:\source\repos\actualizador-warlords\Nico\sorteo.log** (reemplazá el viejo).
+Resultado (30/10/2026): llegaron los .log de la notebook. Con el Sorteo y la Votación abiertos nunca
+apareció un .ver allá; solo el «cerrado» final, igual que en el anfitrión. Causa encontrada y arreglada en
+vista-aliada 1.0.95.0 (tarea 75).
+
+- [x] **73.** ¿El juego se queda quieto mientras la Votación o el Sorteo están al frente? (30/10/2026)
+Es para saber por qué la notebook no ve los votos (tarea 18). Se hace en **una sola PC**, sin red, en una partida
+local. Tarda 5 minutos.
+1. Abrí el Explorador en **C:\Warlords3\Herramientas** y poné la vista **Detalles** (columna «Fecha de
+   modificación»). Dejá esa ventana a un costado, donde la veas.
+2. Abrí el juego, **New Game** hasta la pantalla de preparación, y apretá el botón grande del **Sorteo** (abajo a la
+   derecha). Se abre el Sorteo encima.
+3. **Sin tocar el juego**, sorteá 2 o 3 números en el Sorteo. Mirá en el Explorador (F5 para refrescar) la hora de
+   **sorteo.ver**. Anotá: ¿cambia a cada número sorteado, o queda quieta?
+4. Ahora hacé **un clic en la ventana del juego** (que el juego quede al frente, el Sorteo sigue abierto) y esperá
+   5 segundos. F5 en el Explorador: ¿cambió la hora de **sorteo.ver**? ¿Hay un **sorteo.op** que antes no se iba?
+5. Cerrá el Sorteo y salí del juego.
+Resultado (30/10/2026): no hizo falta, lo medí yo en esta PC. Sin el foco el juego se pausa a propósito y no
+levanta el .op; con el juego al frente, sí. Arreglado en vista-aliada 1.0.95.0 (tarea 75).
 
 - [x] **69.** IA: guardada de Hexagon con pozos, para medir cuánto cae la IA en ellos (27/10/2026)
 Ninguna guardada de tanda tiene pozos: los pozos y remolinos se reparten solo al empezar una partida nueva con

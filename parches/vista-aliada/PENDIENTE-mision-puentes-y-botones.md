@@ -243,6 +243,18 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
      «cerrado» y no hubo nada en Events Report. Log: `C:\Warlords3\Herramientas\sorteo.log` de la PC ALE.
      Falta el lado de la notebook (tarea 74, paso 4) solo como confirmación. **Próximo paso:** el arreglo en el
      parche (el bucle de reintento, o la ventana que no le quita el foco al juego), no en los programas.
+   - **Causa y arreglo, 30/10/2026 (vista-aliada 1.0.95.0).** La notebook (`nico\*.log`, 12:45 y 12:50) dio el
+     mismo cuadro: con el espectador al frente, nunca un `.ver`. La causa no es el reintento de DirectDraw
+     (0x4e37b0 sale si Restore falla) sino una pausa a propósito del original: OnActivate (0x4ed400) pone
+     **[0x501280] = 0** al perder el foco (OnActivateApp 0x4ed480 lo vuelve a 1) y OnIdle (0x4ecef0) solo llama al
+     tick 0x4dea40 si ese byte no es 0. Sin foco no corren ni tl_idle ni la red (0x4df3e0), en las dos puntas.
+     Medido en esta PC muestreando el EIP del hilo del juego (menú principal, que corre en ese OnIdle): al frente,
+     15 de 150 muestras dentro del tick; sin foco, ninguna. Y con un `.op` escrito a mano: sin foco queda sin
+     levantar, con el juego al frente se levanta. Arreglo: `jne` → `jmp` en 0x4ecf01 (el tick corre siempre; el
+     dibujo 0x4de480 y los timers, que también miran [0x501280], siguen pausados como en el original). Probado:
+     `.op` levantado sin foco, y Sorteo 1.1.4 `--operador` al frente: sus 11 publicaciones levantadas, ninguna
+     «seguía sin levantar»; el juego vuelve a dibujar normal al recuperar el foco. Falta la prueba en red
+     (tarea 75). Las tandas ya saltaban esa pausa por otro lado (`ia_bg`, 0x4ed415).
 
 ---
 
