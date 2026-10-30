@@ -7,22 +7,53 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-- **Tarea 39** (Defender bloquea el Actualizador): primero, ya mismo.
-- **Tarea 70** (tanda con pozos visibles): cuando la PC esté libre.
-1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
-2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
-3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. Con la notebook: **tarea 76** (el aviso de la pausa) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
+1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
 
-- [ ] **76.** El aviso de la pausa, sobre un papiro (vista-aliada 1.0.96.0, 30/10/2026)
+- [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
+Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
+computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
+1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
+2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
+Resultado:
+
+- [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
+  1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
+  2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
+
+- [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
+Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
+la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
+Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
+jugador** que **ya descubriste**. Como la computadora todavía no construye trampas, hacen falta **dos jugadores
+humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26 (paso 0 de esa tarea).
+1. Partida nueva en esta PC con **dos jugadores humanos** (A y B), con misiones de héroe activadas, incluida la
+   dificultad **Hard**.
+2. Con A, construí una trampa (como en la tarea 26) en tierra, a unas 5 a 15 casillas de donde va a andar el héroe de B.
+3. Con B, pasá al lado de la trampa hasta que salga «You have discovered the trap …».
+4. Con el héroe de B pedí misiones **Hard** en un templo varias veces (o en turnos distintos): alguna vez tiene que
+   salir «Escort trap-disarming team to Afland02» (con el nombre de esa trampa), y el texto «… must escort a
+   trap-disarming team to the trap Afland02.».
+5. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
+   caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
+6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): mientras le queden explosiones la misión
+   de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
+7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
+Resultado:
+
+# Hecho
+
+- [x] **76.** El aviso de la pausa, sobre un papiro (vista-aliada 1.0.96.0, 30/10/2026)
 Cambio: «Votacion en curso: partida en pausa» ahora va sobre el papiro de los cuadros de info (el de los pozos y
 remolinos), en letra marrón oscura. Ya se vio en esta PC; falta verlo en una partida en red.
 1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.96.0**.
 2. Partida en red; como anfitrión abrí la **Votación**.
 3. Mirá el aviso en las dos PC: ¿se lee bien? ¿tapa algo que moleste?
-Resultado:
+Resultado (30/10/2026, usuario): se ve bien.
 
 - [x] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
 Cambio (Actualizador 1.0.15.0 y juego completo nuevo): la opción 6 ahora trae también los archivos originales de GOG
@@ -92,8 +123,6 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 3. Pausá el juego (o dejalo esperando algo tuyo) un minuto: suena la alarma y la luz titila en rojo con «Parada».
 4. Seguí la partida: en pocos segundos vuelve a rojo oscuro quieto.
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
-
-# Hecho
 
 - [x] **75.** Votación y Sorteo en red con vista-aliada 1.0.95.0 (30/10/2026)
 Arreglo: el juego que no tiene el foco (porque la Votación o el Sorteo están al frente) se pausaba entero, también
@@ -362,44 +391,11 @@ siguiente. La mina submarina sigue hundiendo todo.
    entero, sin pedazos recortados ni pixelados, sin tener que pasar el mouse.
 Resultado: el daño nuevo por porcentajes aleatorios funciona bien. 
 
-- [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
-Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
-computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
-1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
-2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
-Resultado:
-
 - [x] **37.** Comprobar que la opción 9 instala el Manual (24/10/2026)
 Desde vista-aliada 1.0.69.0 (ya publicada), el parche instala también el Manual de uso.
 1. En otra PC del clan, abrí el Actualizador y elegí la opción **9** → vista-aliada.
 2. Fijate que aparezca `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y que abra.
 Resultado: el manual queda instalado con el actualizador. 
-
-- [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
-  1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
-  2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
-
-
-- [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
-Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
-la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
-Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
-jugador** que **ya descubriste**. Como la computadora todavía no construye trampas, hacen falta **dos jugadores
-humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26 (paso 0 de esa tarea).
-1. Partida nueva en esta PC con **dos jugadores humanos** (A y B), con misiones de héroe activadas, incluida la
-   dificultad **Hard**.
-2. Con A, construí una trampa (como en la tarea 26) en tierra, a unas 5 a 15 casillas de donde va a andar el héroe de B.
-3. Con B, pasá al lado de la trampa hasta que salga «You have discovered the trap …».
-4. Con el héroe de B pedí misiones **Hard** en un templo varias veces (o en turnos distintos): alguna vez tiene que
-   salir «Escort trap-disarming team to Afland02» (con el nombre de esa trampa), y el texto «… must escort a
-   trap-disarming team to the trap Afland02.».
-5. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
-   caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
-6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): mientras le queden explosiones la misión
-   de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
-7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
-Resultado:
-
 
 - [x] **47.** IA: tanda de control con blanco y negro intercambiados de lugar (26/10/2026)
 Lo mismo que la 44, ahora con el blanco (el que sigue ganando) en el lugar del negro, que es su espejo.
@@ -495,7 +491,6 @@ parches, si hay un juego completo más nuevo que el instalado o si el juego comp
 Anotá acá lo que viste en cada paso.
 Resultado (usuario, 24/10/2026): todo funciona como lo esperado. 
 
-
 - [x] **34.** Mapas al azar: que salgan también los ítems personalizados (23/10/2026)
 Desde vista-aliada 1.0.68.0 (ya instalada en C:\Warlords3), cada mapa al azar sortea sus 32 ítems entre todos los de `ITEMS` (originales y
 personalizados), en vez de usar las cuatro listas fijas de `RANDOM\Grass`. El juego no admite más de 40 ítems
@@ -508,14 +503,12 @@ nombre: bootfly, potfly, FlyShoot) no entran al sorteo, y los quitaste también 
 3. Si el juego se cierra o da error al crear el mapa, anotalo acá.
 Resultado (usuario, 24/10/2026): ahora salen loso items personalizados
 
-
 - [x] **32.** Monitor de IA: barra deslizante horizontal en la bitácora (23/10/2026)
 0. Ya está: Monitor 1.0.13 compilado en `ia\Monitor-IA.exe` y publicado (23/10/2026).
 1. Abrí el Monitor de IA: el título tiene que decir «Monitor 1.0.13». Achicá la ventana a lo ancho.
 2. Debajo del texto de la bitácora tiene que haber una barra horizontal: arrastrala y tienen que verse las líneas
    largas completas, sin ensanchar la ventana.
 Resultado (usuario, 24/10/2026): ya aparece la barra
-
 
 - [x] **4.** IA: rating de posiciones, un grupo de tandas por mapa (16/10/2026) — postergada por vos
 Reemplaza a la "etapa 2 en Scarpart": Scarpart ya está medido (32 partidas). Para cada mapa que falta:
@@ -699,7 +692,6 @@ el editor lo muestre así hay un editor nuevo, **war3ed_av.exe** (el war3ed_ssg.
    su valor; fuera del puente, o en un puente derribado, no. Los héroes no la usan.
 Resultado:
 
-
 - [x] **23.** IA: tanda A/B de alianzas en Hexagon (20/10/2026)
 En Borderlands un equipo arranca con ventaja del mapa; Hexagon da a cada bando casi la misma ubicación y los mismos
 recursos, así que mide mejor si las reglas de alianzas ayudan al bloque. (Los mapas al azar no igualan las
@@ -855,7 +847,6 @@ distintas el espectador se queda trabado, por eso el puente las compara).
 2. Volvé a armar la partida: ya no tienen que aparecer esos dos archivos en el cartel.
    (El renglón de COMBAT.DAT se arregla en el puente; hasta entonces puede seguir apareciendo.)
 Resultado: (Claude: hecho; la partida del 17/10 arrancó y se jugó completa por el Puente.)
-
 
 - [x] **5.** IA: averiguar con qué se interrumpe una partida de 8 bandos en IA (13/10/2026)
 1. Abrí Darklord.exe (el original) y empezá una partida con los 8 bandos manejados por la computadora.
