@@ -1,0 +1,61 @@
+02:24:17.561 [6508] === inicio v1.1.3 argumentos=['--espectador', '00100000'] windows=sys.getwindowsversion(major=10, minor=0, build=17763, platform=2, service_pack='') ===
+02:24:17.725 [6508] modo=espectador; creo la ventana
+02:24:18.451 [6508] seguir: vuelta 1
+02:24:18.451 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:18.452 [6508] ventana creada
+02:24:21.454 [6508] seguir: vuelta 11
+02:24:21.454 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:24.455 [6508] seguir: vuelta 21
+02:24:24.456 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:27.460 [6508] seguir: vuelta 31
+02:24:27.497 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:30.500 [6508] seguir: vuelta 41
+02:24:30.500 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:33.502 [6508] seguir: vuelta 51
+02:24:33.502 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:36.507 [6508] seguir: vuelta 61
+02:24:36.507 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:39.510 [6508] seguir: vuelta 71
+02:24:39.510 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:42.514 [6508] seguir: vuelta 81
+02:24:42.514 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:45.517 [6508] seguir: vuelta 91
+02:24:45.517 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:48.521 [6508] seguir: vuelta 101
+02:24:48.521 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:51.524 [6508] seguir: vuelta 111
+02:24:51.524 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:54.755 [6508] seguir: vuelta 121
+02:24:54.755 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:24:57.767 [6508] seguir: vuelta 131
+02:24:57.767 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:00.773 [6508] seguir: vuelta 141
+02:25:00.773 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:03.779 [6508] seguir: vuelta 151
+02:25:03.779 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:06.782 [6508] seguir: vuelta 161
+02:25:06.782 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:09.790 [6508] seguir: vuelta 171
+02:25:09.790 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:12.797 [6508] seguir: vuelta 181
+02:25:12.797 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:15.805 [6508] seguir: vuelta 191
+02:25:15.805 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:18.812 [6508] seguir: vuelta 201
+02:25:18.812 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:21.818 [6508] seguir: vuelta 211
+02:25:21.818 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:24.824 [6508] seguir: vuelta 221
+02:25:24.824 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:27.830 [6508] seguir: vuelta 231
+02:25:27.830 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:30.838 [6508] seguir: vuelta 241
+02:25:30.838 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:33.845 [6508] seguir: vuelta 251
+02:25:33.845 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:36.851 [6508] seguir: vuelta 261
+02:25:36.851 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:39.857 [6508] seguir: vuelta 271
+02:25:39.857 [6508] seguir: no pude leer sorteo.ver: FileNotFoundError(2, 'No such file or directory')
+02:25:41.874 [6508] cerrar: la ventana se cierra
+02:25:41.891 [6508] === fin ===
