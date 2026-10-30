@@ -450,3 +450,9 @@ prueba_pozos.py («daño parcial») y prueba_misiontrampa.py. Solo en tierra: la
 - **Falta publicar:** el 26/10 el juego estaba abierto (tanda de la tarea 44) y build.py no pudo escribir
   C:\Warlords3\DarklordAV.exe; publicar-parche.ps1 exige que lo instalado sea idéntico a lo compilado. Con el juego
   cerrado: `python parches\vista-aliada\build.py` y `.\tools\publicar-parche.ps1 vista-aliada`. Tarea 45.
+
+## Revisión 30/10/2026
+- Probado en el juego hace tiempo (usuario): al caer un héroe en un pozo suena el grito. Lo de «sin probar» de arriba
+  quedó viejo.
+- **Parte 6 (red) sigue sin hacer y es obligatoria** (usuario): en una partida no puede haber un mapa de pozos por PC.
+  Es el próximo trabajo del parche. Frase: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".

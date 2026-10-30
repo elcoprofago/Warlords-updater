@@ -243,3 +243,6 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 - Pruebas: `prueba_pozos.py` (parte 5, «de noche») y `prueba_lupa.py` («de noche»); en `prueba_lupa.py` se corrigieron
   tres textos de trampa que esperaban 3 explosiones (TR_USOS es 2). `prueba_dianoche.py` y `prueba_camuflaje.py`: TODO OK.
 
+
+## Revisión 30/10/2026
+Cerrado: el usuario da el efecto día/noche por terminado. Lo de oscurecer lo no explorado de noche no se hace.

@@ -108,3 +108,6 @@ a VI en la fila del medio, VII abajo a la izquierda, VIII abajo al centro, IX ab
   de los equipos.
 - Falta: compilar (`python ia\monitor-ia\build.py`) y publicar cuando termine la serie de la tarea 23 (el exe está
   en uso y actualizar corta la tanda).
+
+## Revisión 30/10/2026
+Botón de pausa: descartado por el usuario (redundante con Retomar).

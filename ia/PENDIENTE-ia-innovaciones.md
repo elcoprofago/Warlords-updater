@@ -63,3 +63,14 @@ IA. No retroceder importa tanto como avanzar: toda regla nueva se mide también 
 Paso 2, segunda parte: tanda de 10 sobre Tanda_hex_pozos_PV_control (TAREAS 70) y contar con informe.py las caídas
 vistas. Si siguen en 0, la IA ya los esquiva o no pasa por ahí: revisar las casillas de los 9 pozos contra los caminos
 antes de programar el paso 3. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 2".
+
+## Resultado del paso 2, segunda parte (tanda 105 = TAREAS 70, revisado 30/10/2026)
+Tanda_hex_pozos_PV_control: los 9 pozos descubiertos por los 8 colores. 10 partidas ok, 30 turnos, ninguna colgada.
+Caídas vistas: color 1, 2 caídas (7 muertos); color 3, 1 caída (8 muertos). Ocultas: 0. Como el pozo ya estaba
+explorado por el bando que cayó, son **errores evitables**: falla confirmada (criterio del usuario: caer en un pozo no
+explorado está bien; en uno explorado, es falla). Lo observado por el usuario: los héroes van por el ítem que dejó
+un caído y caen en el mismo pozo.
+Colgadas de tandas anteriores (30 % en 97-99): hipótesis del usuario, no medida: él sigue usando la PC durante la
+tanda y el mouse y el teclado llegan igual al juego en el otro monitor. No investigarlas por ahora.
+Próximo paso: paso 3, que la IA no entre en un pozo que su bando ya descubrió (ni para levantar un ítem).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 3".
