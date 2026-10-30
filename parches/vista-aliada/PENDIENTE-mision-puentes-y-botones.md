@@ -210,6 +210,31 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
    - Hipótesis a revisar en `0x4dd3b0`: un límite de tamaño (el de abrir mide 4 bytes; el de estado, 260) o una
      condición de envío que se cumple para la propia máquina y no para las demás. Probar primero en emulación
      mandando un 0x2a1 corto: si sale, es el tamaño.
+   - **Revisado el 30/10/2026 (sesión desde el repo Votacion): el tamaño queda descartado en el código.** Camino
+     completo, todo del original: 0x4dd3b0 → 0x4df3c0 → 0x4dfa10 (anillo de 16 ranuras de 0x168 en 0x589ab8;
+     cabecera 0xc + datos) → 0x4e6020 (búfer de pila de 352, suma xor 0x4e6d70, ranura de reenvío 0x4e6920: 32 de
+     380 bytes, datos en +0x1c, reenvío cada 3000 ms en 0x4e63a3) → IDirectPlay::Send (vtbl+0x68, a todos, flags 0).
+     Recepción: 0x4e6410 (Receive, vtbl+0x64, búfer 0x168), 0x4e6170 (secuencia por máquina en +0x19380, guarda los
+     adelantados y pide los que faltan), 0x4df8d0 → 0x4df400 → callback 0x4b69e0 (fijado en 0x452a3b), que no
+     filtra nada antes del gancho 0x4b6a22. 272 bytes entran en todos. El Puente (`Red.cs`) lleva paquetes IP
+     enteros por TCP, sin tope. Herramientas del análisis: `desa.py` / `busca.py` (capstone sobre el exe original).
+   - **Dato nuevo en `nico\sorteo.ver`:** la notebook escribió el `.ver` del Sorteo («SOR f78250a8 cerrado ...»)
+     a las 02:25:44, **3 s después** de que se cerrara la ventana del espectador (02:25:41, `nico\sorteo.log`).
+     Mientras estuvo abierta, nunca hubo `.ver`. O sea: los estados sí llegan, o al menos el último.
+   - **Hipótesis actual (sin verificar):** mientras la ventana del programa (encima de todo, con el foco) está al
+     frente, el juego no vuelve a su bucle principal, y no corre la función ociosa 0x4dea40, donde están tl_idle
+     (leer `.op`, mandar 0x2a1, escribir `.ver`) y el bombeo de la red. Candidato: al perder el foco, DirectDraw
+     da DDERR_SURFACELOST (0x887601c2) y `0x4e37b0` (y otros 15 lugares iguales, p. ej. 0x41793f) reintenta en bucle:
+     Restore (vtbl+0x6c); si falla, recrea las superficies (0x4e3790) y vuelve a probar, sin salir hasta recuperar
+     el foco. Explica también los pocos paquetes del anfitrión en el Puente (los de DirectPlay solo) y que su `.ver`
+     se escribiera al cerrar. Con 1.0.17.0 en un jugador la pausa se vio bien, pero esa pausa la dispara TL_OPEN,
+     que se procesa en el clic del menú, no en la función ociosa.
+   - **Próximo paso:** tarea 73 del TAREAS.md (una PC, partida local, Sorteo al frente: ¿se actualiza
+     `sorteo.ver`?, y control con el juego al frente). Si se confirma: que el programa no le quite el foco al juego
+     (mostrar la ventana sin activarla: Qt `WA_ShowWithoutActivating` / `WS_EX_NOACTIVATE` en el espectador, que no
+     necesita teclado), o que el gancho no dependa del bucle principal (un hilo propio para `.op`/`.ver`; el envío
+     por red sí tiene que salir del hilo del juego). El operador necesita el foco para votar: ahí hace falta lo
+     segundo, o que el bucle de reintento de 0x4e37b0 llame a tl_idle.
 
 ---
 

@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 73).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 74).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,20 @@ Sorteo están acá (tarea 18).
 4. Con la notebook: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **73.** ¿El juego se queda quieto mientras la Votación o el Sorteo están al frente? (30/10/2026)
+Es para saber por qué la notebook no ve los votos (tarea 18). Se hace en **una sola PC**, sin red, en una partida
+local. Tarda 5 minutos.
+1. Abrí el Explorador en **C:\Warlords3\Herramientas** y poné la vista **Detalles** (columna «Fecha de
+   modificación»). Dejá esa ventana a un costado, donde la veas.
+2. Abrí el juego, **New Game** hasta la pantalla de preparación, y apretá el botón grande del **Sorteo** (abajo a la
+   derecha). Se abre el Sorteo encima.
+3. **Sin tocar el juego**, sorteá 2 o 3 números en el Sorteo. Mirá en el Explorador (F5 para refrescar) la hora de
+   **sorteo.ver**. Anotá: ¿cambia a cada número sorteado, o queda quieta?
+4. Ahora hacé **un clic en la ventana del juego** (que el juego quede al frente, el Sorteo sigue abierto) y esperá
+   5 segundos. F5 en el Explorador: ¿cambió la hora de **sorteo.ver**? ¿Hay un **sorteo.op** que antes no se iba?
+5. Cerrá el Sorteo y salí del juego.
+Resultado:
 
 - [ ] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
 Cambio (Actualizador 1.0.15.0 y juego completo nuevo): la opción 6 ahora trae también los archivos originales de GOG
