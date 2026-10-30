@@ -6770,6 +6770,63 @@ pw_off:
 pw_end:
 '''
 
+# El aviso sobre un papiro (pedido del usuario, 30/10/2026: en amarillo pálido sobre el mapa no se veía). En las dos
+# llamadas de 0x4c2810 a 0x4dd1c0 (surf, x del centro del texto, y, texto; ebx = renglón): si el renglón es el del
+# aviso, antes del texto va
+# la hoja PZ_FILE (RUINS\aviso.pcx, el papiro de los cuadros de info, DLG_HELP, de PZ_W x PZ_H) centrada en el texto, y
+# el texto en marrón oscuro (PZ_INK) con sombra clara (PZ_SHADOW). Los otros renglones siguen igual.
+PZ_FILE = RAM_FILE + 4       # después de pozos.pcx (ver table_add, más abajo)
+PZ_W, PZ_H, PZ_INK, PZ_SHADOW = 340, 56, 128, 174
+pz_scroll = place('pz_scroll', f'''
+    call {pz_find:#x}
+    cmp eax, ebx
+    jne 0x4dd1c0
+    pushad
+    push {PZ_FILE}
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz ps_ink
+    cmp dword ptr [eax + 8], 0
+    jne ps_blit
+    push {PZ_FILE}
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jz ps_ink
+ps_blit:
+    mov eax, dword ptr [esp + 0x28]
+    sub eax, {PZ_W // 2}
+    jge ps_x
+    xor eax, eax
+ps_x:
+    mov edx, dword ptr [esp + 0x2c]
+    sub edx, {(PZ_H - 12) // 2}
+    jge ps_y
+    xor edx, edx
+ps_y:
+    push edx
+    push eax
+    push dword ptr [esp + 0x2c]
+    push {PZ_H}
+    push {PZ_W}
+    push 0
+    push 0
+    push {PZ_FILE}
+    call 0x4dd530
+    add esp, 0x20
+ps_ink:
+    push {PZ_SHADOW}
+    push 10
+    push 10
+    push {PZ_INK}
+    push 3
+    call 0x4dd0f0
+    add esp, 0x14
+    popad
+    jmp 0x4dd1c0
+''')
+
 # DispatchMessageA de los 6 bucles de mensajes del juego: en pausa no pasan teclas (0x100..0x109) ni botones y rueda
 # del mouse (0x201..0x20e). El movimiento del mouse sí.
 pz_disp = place('pz_disp', f'''
@@ -13366,6 +13423,8 @@ patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95
 patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:#x}', 0x473d32))
 patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
 patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))
+for _a in (0x4c2880, 0x4c28d0):
+    patch(_a, asm('call 0x4dd1c0', _a), asm(f'call {pz_scroll:#x}', _a))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
 
 # ---------------------------------------------------------------- War3.RES
@@ -13657,6 +13716,23 @@ assert henge[4:10] == b'henge\0' and struct.unpack_from('<6I', henge, 36) == (10
 struct.pack_into('<I', henge, 0, PO_FILE)
 setstr(henge, 4, 32, 'pozos')
 table_add(res, 2, PO_FILE, bytes(henge))
+# Hoja PZ_FILE = RUINS\aviso.pcx (pz_scroll), con los mismos campos: el papiro DLG_HELP (250x150, la misma paleta del
+# mapa, 11 transparente) llevado a PZ_W x PZ_H. Los rollos de los costados (45 de ancho) se achican parejo; el centro
+# se estira.
+assert PZ_FILE == PO_FILE + 1
+struct.pack_into('<I', henge, 0, PZ_FILE)
+setstr(henge, 4, 32, 'aviso')
+table_add(res, 2, PZ_FILE, bytes(henge))
+_help = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_HELP.PCX')
+assert _help.size == (250, 150) and _help.getpixel((0, 0)) == 11
+assert _help.getpalette()[:768] == Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
+assert _help.getpalette()[3 * PZ_INK:3 * PZ_INK + 3] == [47, 27, 7] and _help.getpalette()[3 * PZ_SHADOW:3 * PZ_SHADOW + 3] == [239, 231, 171]
+_e = round(45 * PZ_H / 150)
+pz_hoja = Image.new('P', (PZ_W, PZ_H), 11); pz_hoja.putpalette(_help.getpalette())
+pz_hoja.paste(_help.crop((0, 0, 45, 150)).resize((_e, PZ_H), Image.NEAREST), (0, 0))
+pz_hoja.paste(_help.crop((45, 0, 205, 150)).resize((PZ_W - 2 * _e, PZ_H), Image.NEAREST), (_e, 0))
+pz_hoja.paste(_help.crop((205, 0, 250, 150)).resize((_e, PZ_H), Image.NEAREST), (PZ_W - _e, 0))
+pcx = io.BytesIO(); pz_hoja.save(pcx, 'PCX'); PZ_PCX = pcx.getvalue()
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -14025,6 +14101,7 @@ NUEVOS[os.path.join('DATA', 'BRIDNAME.TXT')] = BRIDNAME
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
+NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS.update(NUEVOS_TIT)
 # Listas de ítems de los mapas al azar (random\Grass del repo, editadas por el usuario el 23/10/2026: sin los ítems

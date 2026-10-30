@@ -255,6 +255,11 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
      `.op` levantado sin foco, y Sorteo 1.1.4 `--operador` al frente: sus 11 publicaciones levantadas, ninguna
      «seguía sin levantar»; el juego vuelve a dibujar normal al recuperar el foco. Falta la prueba en red
      (tarea 75). Las tandas ya saltaban esa pausa por otro lado (`ia_bg`, 0x4ed415).
+   - **Prueba en red, 30/10/2026 (tarea 75): todo funciona** (apertura casi simultánea, el espectador ve todo, las
+     dos partidas pausan en el mismo punto del reloj, el reporte muestra el resultado). Único pedido: el aviso de la
+     pausa no se veía sobre el mapa. **vista-aliada 1.0.96.0:** `pz_scroll` pone debajo del renglón del aviso el
+     papiro DLG_HELP (el de los cuadros de info) achicado a 340x56 (`RUINS\aviso.pcx`) y lo escribe en marrón
+     oscuro. Visto en esta PC (partida cargada por tanda, pausa forzada en memoria). Falta verlo en red (tarea 76).
 
 ---
 

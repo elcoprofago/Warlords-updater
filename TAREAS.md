@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 76).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 77).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,21 +12,16 @@ Sorteo están acá (tarea 18).
 1. **Tarea 36** (revisar el borrador del Manual): ya la estás haciendo.
 2. **Tarea 37** (el Manual llega con la opción 9): la próxima vez que alguien del clan actualice.
 3. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-4. Con la notebook: **tarea 75** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
+4. Con la notebook: **tarea 76** (el aviso de la pausa) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
 
-- [ ] **75.** Votación y Sorteo en red con vista-aliada 1.0.95.0 (30/10/2026)
-Arreglo: el juego que no tiene el foco (porque la Votación o el Sorteo están al frente) se pausaba entero, también
-la red, y por eso la notebook nunca veía los votos ni los números. Ahora sigue mandando y recibiendo. Ya probado en
-esta PC con el Sorteo al frente: el juego levantó todo lo que el Sorteo escribió.
-1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.95.0**.
-2. Partida en red: esta PC de anfitrión, la notebook se une.
-3. Como anfitrión abrí el **Sorteo** y sorteá dos o tres números: en la notebook tienen que aparecer a los pocos
-   segundos, sin cerrar nada. Cerralo.
-4. Abrí la **Votación** y marcá algunos votos: en la notebook tienen que verse al rato. Cerrala.
-5. Si algo no se ve en la notebook, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
-   **F:\source\repos\actualizador-warlords\Nico\**.
+- [ ] **76.** El aviso de la pausa, sobre un papiro (vista-aliada 1.0.96.0, 30/10/2026)
+Cambio: «Votacion en curso: partida en pausa» ahora va sobre el papiro de los cuadros de info (el de los pozos y
+remolinos), en letra marrón oscura. Ya se vio en esta PC; falta verlo en una partida en red.
+1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.96.0**.
+2. Partida en red; como anfitrión abrí la **Votación**.
+3. Mirá el aviso en las dos PC: ¿se lee bien? ¿tapa algo que moleste?
 Resultado:
 
 - [x] **72.** El Actualizador solo deja el juego completo en una carpeta vacía (29/10/2026)
@@ -99,6 +94,22 @@ fundido entre rojo oscuro y rojo vivo y suena la alarma una vez. Mientras juega 
 5. Control: apretá Cortar; la luz titila con «Detenida», sin sonar (la cortaste vos), hasta que la retomes o empieces otra.
 
 # Hecho
+
+- [x] **75.** Votación y Sorteo en red con vista-aliada 1.0.95.0 (30/10/2026)
+Arreglo: el juego que no tiene el foco (porque la Votación o el Sorteo están al frente) se pausaba entero, también
+la red, y por eso la notebook nunca veía los votos ni los números. Ahora sigue mandando y recibiendo. Ya probado en
+esta PC con el Sorteo al frente: el juego levantó todo lo que el Sorteo escribió.
+1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.95.0**.
+2. Partida en red: esta PC de anfitrión, la notebook se une.
+3. Como anfitrión abrí el **Sorteo** y sorteá dos o tres números: en la notebook tienen que aparecer a los pocos
+   segundos, sin cerrar nada. Cerralo.
+4. Abrí la **Votación** y marcá algunos votos: en la notebook tienen que verse al rato. Cerrala.
+5. Si algo no se ve en la notebook, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
+   **F:\source\repos\actualizador-warlords\Nico\**.
+Resultado (30/10/2026, usuario): todo funciona. La Votación y el Sorteo se abren casi a la vez en las dos
+PC; el espectador ve todo lo que hace el anfitrión; las dos partidas se pausan en el mismo punto del reloj del turno,
+con el aviso previo; el reporte de eventos muestra el resultado de la votación del turno anterior. Único pedido: el
+aviso de la pausa se veía poco sobre el mapa (se arregla en la tarea 76).
 
 - [x] **74.** Sorteo 1.1.4: ¿el juego del anfitrión levanta lo que escribe el Sorteo? (30/10/2026)
 El 1.1.4 anota en el sorteo.log del anfitrión cada estado que escribe y si el juego ya se había llevado el anterior.
