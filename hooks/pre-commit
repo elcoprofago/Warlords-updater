@@ -67,6 +67,9 @@ git show HEAD:parches/parches.txt 2>/dev/null | archivos_av > "$antes_av"
 git show :parches/parches.txt 2>/dev/null | archivos_av > "$ahora_av"
 salen=$(comm -23 "$antes_av" "$ahora_av"); rm -f "$antes_av" "$ahora_av"
 for f in $salen; do
+    # Un nombre con caracteres de control no puede existir en Windows: es una errata de parches.txt, no un archivo
+    # que haya quedado en alguna PC (caso: "RUINS\aviso.pcx" escrito con \a = BEL, 30/10/2026).
+    if printf '%s' "$f" | LC_ALL=C grep -q '[[:cntrl:]]'; then continue; fi
     case "$obsoletos" in
         *"'$f'"*) ;;
         *) echo "pre-commit: $f sale del parche vista-aliada y no esta en OBSOLETOS de build.py." >&2
