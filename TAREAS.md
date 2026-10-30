@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 74).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 75).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,16 @@ Sorteo están acá (tarea 18).
 4. Con la notebook: **tarea 18** (Votación y Sorteo) y **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico).
 
 # Pendientes
+
+- [ ] **74.** Sorteo 1.1.4: ¿el juego del anfitrión levanta lo que escribe el Sorteo? (30/10/2026)
+El 1.1.4 anota en el sorteo.log del anfitrión cada estado que escribe y si el juego ya se había llevado el anterior.
+1. En **esta PC y en la notebook**: Actualizador, opción **9** (herramientas tiene que quedar **1.0.0.3**) y después
+   la **12 (Sorteo)**: el título tiene que decir **v1.1.4** en las dos.
+2. Partida en red: esta PC de anfitrión, la notebook se une.
+3. Como anfitrión abrí el Sorteo, sorteá una vez, esperá unos 10 segundos y cerralo. Anotá la hora.
+4. Copiá **C:\Warlords3\Herramientas\sorteo.log** de **esta PC** a
+   **F:\source\repos\actualizador-warlords\Nico\anfitrion-sorteo.log**, y el de la **notebook** a
+   **F:\source\repos\actualizador-warlords\Nico\sorteo.log** (reemplazá el viejo).
 
 - [ ] **73.** ¿El juego se queda quieto mientras la Votación o el Sorteo están al frente? (30/10/2026)
 Es para saber por qué la notebook no ve los votos (tarea 18). Se hace en **una sola PC**, sin red, en una partida
