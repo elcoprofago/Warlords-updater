@@ -42,7 +42,9 @@ dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nu
 4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
    **F:\source\repos\actualizador-warlords\nico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
 Resultado parcial (30/10/2026, usuario): la Votación se abre en la notebook unos segundos después, pero lo que hace
-el anfitrión con los votos de cada color nunca se ve allá. Falta el paso 4 (los .log de la notebook).
+el anfitrión con los votos de cada color nunca se ve allá. Llegó el votacion.log de la notebook (prueba de las 01:58): la orden de abrir llega,
+pero el juego de la PC anfitriona nunca manda los votos por la red. Lo medido está en
+`parches\vista-aliada\PENDIENTE-mision-puentes-y-botones.md`, parte B, punto 3. Se arregla en el parche.
 
 - [x] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
 Cambio (vista aliada 1.0.94.0): con Day/Night, en las vueltas de noche los pozos y remolinos ya descubiertos se ven

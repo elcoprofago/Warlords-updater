@@ -1,0 +1,40 @@
+01:58:22.674 [7620] === inicio v1.1.4 argumentos=['--espectador', '10000000'] windows=sys.getwindowsversion(major=10, minor=0, build=17763, platform=2, service_pack='') ===
+01:58:22.757 [7620] modo=espectador; creo la ventana
+01:58:25.606 [7620] ventana mostrada hwnd=526120
+01:58:25.861 [7620] seguir: vuelta 1
+01:58:25.861 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:28.988 [7620] seguir: vuelta 11
+01:58:28.988 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:32.112 [7620] seguir: vuelta 21
+01:58:32.112 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:35.238 [7620] seguir: vuelta 31
+01:58:35.255 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:38.360 [7620] seguir: vuelta 41
+01:58:38.360 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:41.486 [7620] seguir: vuelta 51
+01:58:41.486 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:44.612 [7620] seguir: vuelta 61
+01:58:44.613 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:47.734 [7620] seguir: vuelta 71
+01:58:47.735 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:50.860 [7620] seguir: vuelta 81
+01:58:50.861 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:53.987 [7620] seguir: vuelta 91
+01:58:53.987 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:58:57.111 [7620] seguir: vuelta 101
+01:58:57.111 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:59:00.238 [7620] seguir: vuelta 111
+01:59:00.238 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:59:03.361 [7620] seguir: vuelta 121
+01:59:03.362 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:59:06.484 [7620] seguir: vuelta 131
+01:59:06.485 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:59:09.610 [7620] seguir: vuelta 141
+01:59:09.610 [7620] seguir: no pude leer votacion.ver: FileNotFoundError(2, 'No such file or directory')
+01:59:10.341 [7620] closeEvent: la ventana se cierra
+01:59:10.378 [7620] === fin, código 0 ===
+02:02:33.347 [11820] === inicio v1.1.4 argumentos=['--operador'] windows=sys.getwindowsversion(major=10, minor=0, build=17763, platform=2, service_pack='') ===
+02:02:33.438 [11820] modo=operador; creo la ventana
+02:02:34.476 [11820] ventana mostrada hwnd=4326948
+02:02:40.154 [11820] closeEvent: la ventana se cierra
+02:02:40.164 [11820] === fin, código 0 ===

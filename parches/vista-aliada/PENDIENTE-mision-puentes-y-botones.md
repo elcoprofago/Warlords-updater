@@ -195,6 +195,21 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
 2. **Prueba real en red** (dos PC con DarklordAV.exe): no se pudo hacer acá. Lo emulado y probado: menú, botón,
    paquetes, archivos, y los dos programas con archivos simulados. Sin probar: el viaje real por la red y que la
    ventana quede encima del juego en ventana (GOG dxcfg).
+3. **Primera prueba real, 30/10/2026** (PC ALE anfitriona, notebook Elcopro por el Puente, mismo Wi-Fi): el
+   espectador no copia nada. Lo medido:
+   - El paquete de abrir (0x2a0, 4 bytes) **llega**: operador en la PC a las 01:58:16, espectador en la notebook
+     a las 01:58:22 con `--espectador 10000000`.
+   - El de estado (0x2a1, 260 bytes) **no**: el espectador repite «no pude leer votacion.ver» de 01:58:25 a
+     01:59:10 (`actualizador-warlords\nico\votacion.log`). No se cerró solo con el «cerrado»: lo cerró el usuario.
+   - En la PC anfitriona el `.ver` sí quedó escrito («VOT 9e24e068 cerrado 1 0 sssnnnnn», 01:59:03): el envío se
+     devuelve a la propia máquina, así que el `.op` se lee y el paquete se arma.
+   - El servidor del Puente (`C:\PuenteServidor\servidor.log`, conteo cada 30 s) reenvió de la PC a la notebook
+     solo 4 y 6 paquetes en las ventanas de 01:58:58 y 01:59:28. Con un `.op` cada 3 s tendrían que haber sido
+     10 o más. **El juego anfitrión no los pone en la red** (o el Puente los pierde antes de contarlos: los cuenta
+     al recibirlos de la PC, así que no).
+   - Hipótesis a revisar en `0x4dd3b0`: un límite de tamaño (el de abrir mide 4 bytes; el de estado, 260) o una
+     condición de envío que se cumple para la propia máquina y no para las demás. Probar primero en emulación
+     mandando un 0x2a1 corto: si sale, es el tamaño.
 
 ---
 
