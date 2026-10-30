@@ -41,7 +41,8 @@ dependés de que Nico mande nada. (Estaba mal marcada como cumplida el 26/10: nu
 3. Como anfitrión abrí la Votación y el Sorteo; mirá cómo se ven en la notebook y cerralos cuando terminen.
 4. Al terminar, copiá de la notebook **C:\Warlords3\Herramientas\votacion.log** y **sorteo.log** a
    **F:\source\repos\actualizador-warlords\nico\** (un pendrive sirve) y anotá la hora en que abriste cada uno.
-Resultado:
+Resultado parcial (30/10/2026, usuario): la Votación se abre en la notebook unos segundos después, pero lo que hace
+el anfitrión con los votos de cada color nunca se ve allá. Falta el paso 4 (los .log de la notebook).
 
 - [x] **71.** De noche, pozos y remolinos casi invisibles y sin lupa (28/10/2026)
 Cambio (vista aliada 1.0.94.0): con Day/Night, en las vueltas de noche los pozos y remolinos ya descubiertos se ven
