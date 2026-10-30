@@ -235,6 +235,14 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
      necesita teclado), o que el gancho no dependa del bucle principal (un hilo propio para `.op`/`.ver`; el envío
      por red sí tiene que salir del hilo del juego). El operador necesita el foco para votar: ahí hace falta lo
      segundo, o que el bucle de reintento de 0x4e37b0 llame a tl_idle.
+   - **Confirmado el 30/10/2026 con Sorteo 1.1.4** (anota cada escritura de `sorteo.op` y si el anterior seguía
+     ahí), partida real 12:45, C:\Warlords3, PC ALE anfitriona: tras el primer `.op` (12:45:04, levantado), los 33
+     siguientes, con tres sorteos completos, dicen «el anterior seguía sin levantar» hasta el cierre. El «cerrado»
+     de 12:46:21 se levanta y el `.ver` local se escribe **en ese mismo segundo**. Con el programa abierto, el juego
+     anfitrión no corre tl_idle. Votación (dos vueltas, turnos 1 y 3): mismo cuadro; el `.ver` local solo tiene el
+     «cerrado» y no hubo nada en Events Report. Log: `C:\Warlords3\Herramientas\sorteo.log` de la PC ALE.
+     Falta el lado de la notebook (tarea 74, paso 4) solo como confirmación. **Próximo paso:** el arreglo en el
+     parche (el bucle de reintento, o la ventana que no le quita el foco al juego), no en los programas.
 
 ---
 
