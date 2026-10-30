@@ -246,3 +246,9 @@ Lo que faltaba (pintado y reporte) quedó en el paso 4.
 
 ## Revisión 30/10/2026
 Cerrado: el usuario da el efecto día/noche por terminado. Lo de oscurecer lo no explorado de noche no se hace.
+
+## Paso — el nombre viejo «camo» vuelve a valer (30/10/2026, vista aliada 1.0.98.0; tarea 79)
+- Visto por el usuario en red: los Zappers no se camuflaban. `ARMY\Zappers.ARM` (y las partidas que lo copiaron)
+  traen el bono como «camo»; el paso 15 lo había reemplazado por «camouflg» y renombrar en los escenarios no alcanza
+  porque el bono también viaja en el .ARM de la unidad. `cam_stack` prueba «camouflg» y, si no, `camold` («camo»).
+  `prueba_camuflaje.py` usa «CaMo» en una de las unidades camufladas (TODO OK). Manual: una frase en «Camuflaje».

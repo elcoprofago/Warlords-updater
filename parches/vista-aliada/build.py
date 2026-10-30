@@ -12903,6 +12903,10 @@ dm_out:
 # moviendo (0x459e15, 0x459eea) no. El Army Report (minimapa 0x414d50) no muestra esos ejércitos a los demás.
 CAMO = b'camouflg'
 camstr = place_data('camstr', CAMO + b'\0')
+# El nombre de antes de 1.0.88.0 sigue valiendo: lo traen los .ARM y las partidas que ya tenían el bono (en
+# C:\Warlords3, ARMY\Zappers.ARM; el usuario lo vio en red el 30/10/2026: los Zappers no se camuflaban).
+CAMO_VIEJO = b'camo'
+camold = place_data('camold', CAMO_VIEJO + b'\0')
 def cam_table():
     pal = open(os.path.join(os.path.dirname(SRC_EXE), 'war3.pal'), 'rb').read()
     rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
@@ -12966,8 +12970,15 @@ cs_loop:
     add eax, ecx
     imul eax, eax, 0xfc
     add eax, 0x53c410
+    mov ecx, eax
     mov edx, {camstr:#x}
     call {cam_rec:#x}
+    test eax, eax
+    jnz cs_camok
+    mov eax, ecx
+    mov edx, {camold:#x}
+    call {cam_rec:#x}
+cs_camok:
     mov ecx, eax
     pop edx
     pop eax

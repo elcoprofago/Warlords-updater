@@ -84,7 +84,7 @@ class Cam(Bench):
 
 b = Cam()
 b.bonus(ME, 3, [b'landing', b'camouflg'])
-b.bonus(ME, 4, [b'CaMoUfLg'])                 # sin distinguir mayúsculas
+b.bonus(ME, 4, [b'CaMo'])                     # el nombre viejo, sin distinguir mayúsculas
 b.bonus(ME, 5, [b'camoufla'])       # otro nombre: no vale
 b.bonus(ENEMY, 3, [b'camouflg'])
 b.mu.mem_write(TYPES + (ME * 16 + 16) * 0xfc + 0xb2, b'camouflg'.ljust(9, b'\0'))   # ranura de héroe: no se mira
