@@ -7236,6 +7236,76 @@ pol_end:
     ret
 ''')
 
+# Red (parte 6). Cada PC genera sus pozos al recibir la partida nueva (0x42ceb0 -> po_gen, po_start); después el
+# anfitrión manda la partida en bloques (0x4aa0e0: 0x4aa2c0(id, cantidad, datos, largo), ids 0..8) y el receptor
+# (0x4aa340) los copia encima de lo suyo, como hace con las ruinas. Se suma el bloque PO_BLOQUE con la tabla entera:
+# el anfitrión lo manda detrás del 8 (aunque esté vacía: así el receptor vacía la suya), el receptor lo copia en
+# PO_TAB con la cantidad en PO_N y rearma po_map, y la suma de sincronía (0x4aa520) incluye cantidad y tabla.
+# Un id fuera de 0..8 el original lo pegaría detrás del bloque anterior: por eso hay que atenderlo antes.
+PO_BLOQUE = 9
+po_nsend = place('po_nsend', f'''
+    mov eax, dword ptr [{PO_N:#x}]
+    cmp eax, {PO_MAX}
+    jbe pns_ok
+    xor eax, eax
+pns_ok:
+    lea ecx, [eax*8]
+    push ecx
+    push {PO_TAB:#x}
+    push eax
+    push {PO_BLOQUE}
+    call 0x4aa2c0
+    add esp, 16
+    jmp 0x4baf20
+''')
+
+# En 0x4aa361 (cx = id de un bloque que empieza; [esp+0x14] = cantidad).
+po_nrecv = place('po_nrecv', f'''
+    cmp cx, {PO_BLOQUE}
+    jne pnr_orig
+    movsx eax, word ptr [esp + 0x14]
+    cmp eax, {PO_MAX}
+    jbe pnr_ok
+    xor eax, eax
+pnr_ok:
+    mov dword ptr [{PO_N:#x}], eax
+    mov edx, {PO_TAB:#x}
+    jmp 0x4aa3ed
+pnr_orig:
+    movsx eax, cx
+    inc eax
+    cmp eax, 9
+    ja 0x4aa3e7
+    jmp dword ptr [eax*4 + 0x4aa42c]
+''')
+
+# En 0x4aa421, después de copiar un paquete: si era de la tabla, rearma po_map.
+po_nrecvd = place('po_nrecvd', f'''
+    mov dword ptr [0x4ff03c], edx
+    cmp word ptr [0x4ff030], {PO_BLOQUE}
+    jne 0x4aa427
+    call {po_rebuild:#x}
+    jmp 0x4aa427
+''')
+
+# En 0x4aa6bf, al cerrar la suma ([esp+0x10]): cantidad y tabla con el mismo 0x4aa6d0 (xor de dwords).
+po_nsum = place('po_nsum', f'''
+    xor dword ptr [esp + 0x10], ebp
+    mov eax, dword ptr [{PO_N:#x}]
+    cmp eax, {PO_MAX}
+    jbe pnm_ok
+    xor eax, eax
+pnm_ok:
+    lea eax, [eax*8 + 4]
+    push eax
+    push {PO_N:#x}
+    call 0x4aa6d0
+    add esp, 8
+    xor dword ptr [esp + 0x10], eax
+    mov eax, dword ptr [esp + 0x10]
+    jmp 0x4aa6c7
+''')
+
 # Generación (partida nueva): al terminar de ocultar ruinas (0x4a1961, corre en toda partida nueva) se vacía la tabla
 # y, con Hidden Ruins, se reparten pozos y remolinos con el generador del juego (0x4deb20: n dados de 1..max + suma).
 # Cantidad: pozos, 20 % de las ruinas, mínimo 1, como mucho PO_MAX/4; remolinos, el doble (pedido del usuario,
@@ -8898,6 +8968,77 @@ pf2_out:
     pop esi
     pop ebx
     ret
+''')
+# La IA ante los pozos (ia\PENDIENTE-ia-innovaciones.md, paso 3; decisión del usuario del 19/10/2026): en el buscador
+# de caminos (0x4a5c40, por cada casilla vecina, en 0x4a5d34: di = x, bx = y) un pozo, remolino o trampa activa que el
+# jugador del camino ([0x58715c]) ve es intransitable: bit suyo en +6 o, en una trampa, ser su dueño o su aliado con
+# vista aliada (lo mismo que po_look, sin la excepción de dibujo de TR_RECIEN: el que la conoce sabe que sigue
+# armada). Las tumbas y las trampas gastadas no cuentan. Excepción: la ruta expresa de un humano (0x536c12 = -1) a esa
+# misma casilla (el destino del camino, [0x5878d4] / [0x5878d8]) sí llega, y cae. La computadora no tiene esa
+# excepción: nunca entra en uno que ve, tampoco por el ítem que dejó un caído. Lo usan también el mapa de distancias
+# de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
+# reemplazado (0x4a5d34..0x4a5d40).
+po_pf = place('po_pf', f'''
+    movsx eax, di
+    movsx edx, bx
+    test eax, eax
+    jl ppf_go
+    test edx, edx
+    jl ppf_go
+    cmp ax, word ptr [0x503e00]
+    jge ppf_go
+    cmp dx, word ptr [0x503e02]
+    jge ppf_go
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {PO_MAPSZ}
+    jae ppf_go
+    movzx eax, byte ptr [edx + {po_map:#x}]
+    test eax, eax
+    jz ppf_go
+    push ebx
+    lea ebx, [eax*8 + {PO_TAB - 8:#x}]
+    movsx edx, word ptr [0x58715c]
+    cmp edx, 8
+    jae ppf_pass
+    mov al, byte ptr [ebx + 4]
+    cmp al, {PO_TRAMPA}
+    ja ppf_pass
+    jne ppf_vis
+    mov cl, byte ptr [ebx + 5]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
+    jae ppf_pass
+ppf_vis:
+    movzx ecx, byte ptr [ebx + 6]
+    bt ecx, edx
+    jc ppf_seen
+    cmp al, {PO_TRAMPA}
+    jne ppf_pass
+    movzx ecx, byte ptr [ebx + 7]
+    cmp ecx, edx
+    je ppf_seen
+    call {fogally:#x}
+    jne ppf_pass
+ppf_seen:
+    pop ebx
+    imul eax, edx, {SIDE:#x}
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    jne 0x4a5e31
+    cmp di, word ptr [0x5878d4]
+    jne 0x4a5e31
+    cmp bx, word ptr [0x5878d8]
+    jne 0x4a5e31
+    jmp ppf_go
+ppf_pass:
+    pop ebx
+ppf_go:
+    movsx edx, di
+    lea eax, [edx + edx*4]
+    shl eax, 5
+    movsx ecx, bx
+    jmp 0x4a5d40
 ''')
 po_info_r = place_data('po_info_r', bytes(4))
 # En 0x473dc8 (lo que queda: código 3). [esp+0x2c] / [esp+0x2e] = casilla; 0x473d7e la escribe y devuelve 0x14.
@@ -13253,6 +13394,7 @@ patch(0x418836, asm('call 0x4dd080', 0x418836), asm(f'call {shield2:#x}', 0x4188
 patch(0x418871, bytes.fromhex('ff15ec9b5a00'), asm(f'call {ownertxt:#x}', 0x418871))
 patch(0x473c24, bytes.fromhex('66391de87c5300741c'), asm(f'jmp {decide:#x}', 0x473c24))
 patch(0x4a5d6d, bytes.fromhex('6681e1003c66c1e90a0fb7d93bda0f85b0000000'), asm(f'jmp {pathf:#x}', 0x4a5d6d))
+patch(0x4a5d34, bytes.fromhex('0fbfd78d0492c1e0050fbfcb'), asm(f'jmp {po_pf:#x}', 0x4a5d34) + bytes.fromhex('90') * 7)
 patch(0x49e42a, bytes.fromhex('f64208800f8424010000'), asm(f'jmp {stepc:#x}', 0x49e42a))
 patch(0x49d48b, bytes.fromhex('f6460880740d'), asm(f'jmp {leave:#x}', 0x49d48b))
 assert rel(0x476690, 4) == bytes.fromhex('0fbfc1c1') and rel(0x4766b4, 2) == bytes.fromhex('6641')
@@ -13417,6 +13559,11 @@ assert rel(0x439fdc, 6) == asm('lea ecx, [ebp - 0x120]', 0x439fdc)
 patch(0x43a00b, asm('push 0x564d08', 0x43a00b), asm(f'jmp {vt_loadf:#x}', 0x43a00b))
 patch(0x4a1961, rel(0x4a1961, 0x4a1971 - 0x4a1961), asm(f'jmp {po_gen:#x}', 0x4a1961))
 patch(0x42ddc1, asm('call 0x4a1e20', 0x42ddc1), asm(f'call {po_start:#x}', 0x42ddc1))
+patch(0x4aa299, asm('call 0x4baf20', 0x4aa299), asm(f'call {po_nsend:#x}', 0x4aa299))
+patch(0x4aa361, asm('movsx eax, cx; inc eax; cmp eax, 9; ja 0x4aa3e7', 0x4aa361), asm(f'jmp {po_nrecv:#x}', 0x4aa361))
+patch(0x4aa421, asm('mov dword ptr [0x4ff03c], edx', 0x4aa421), asm(f'jmp {po_nrecvd:#x}', 0x4aa421))
+patch(0x4aa6bf, asm('xor dword ptr [esp + 0x10], ebp; mov eax, dword ptr [esp + 0x10]', 0x4aa6bf),
+      asm(f'jmp {po_nsum:#x}', 0x4aa6bf))
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))

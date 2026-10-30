@@ -456,3 +456,20 @@ prueba_pozos.py («daño parcial») y prueba_misiontrampa.py. Solo en tierra: la
   quedó viejo.
 - **Parte 6 (red) sigue sin hacer y es obligatoria** (usuario): en una partida no puede haber un mapa de pozos por PC.
   Es el próximo trabajo del parche. Frase: "Seguimos con PENDIENTE-pozos-y-trampas.md, parte 6 (red)".
+
+## Parte 6, red: hecha (30/10/2026, 1.0.97.0)
+- Averiguado: la partida nueva se arma en **cada PC** al recibir su mensaje (0x4b791b -> 0x42ceb0, que llama a la
+  generación 0x4a0fb0 desde 0x42ddbc, con po_gen al final, y a po_start en 0x42ddc1). Después el anfitrión manda la
+  partida en bloques (0x4aa0e0, solo si 0x4dd3a0 = 0; 0x4aa2c0(id, cantidad, datos, largo) en paquetes de 0x100) y el
+  receptor (0x4aa340, desde 0x4b8055) copia cada bloque encima de lo suyo (ids 0..8 por la tabla 0x4aa42c; un id
+  desconocido lo pega detrás del bloque anterior). La suma de sincronía es 0x4aa520 (xor de dwords con 0x4aa6d0),
+  pedida en 0x499b12, 0x4b8066 y 0x4c0f44.
+- Hecho: po_nsend (0x4aa299, detrás del bloque 8) manda el bloque 9 = PO_N registros de PO_TAB, también vacío;
+  po_nrecv (0x4aa361) lo copia en PO_TAB con la cantidad en PO_N (más de PO_MAX: 0); po_nrecvd (0x4aa421) rearma
+  po_map después de cada paquete del 9; po_nsum (0x4aa6bf) suma PO_N y la tabla a la suma de sincronía.
+- Probado en unicorn (prueba_pozosred.py), con controles (ruinas y bloque 8 en su lugar, suma igual al original con
+  tabla vacía). En el juego: TAREAS 77 (con la notebook).
+- Supuesto sin verificar en el juego: que el mensaje de partida nueva llega a cada PC **antes** que los bloques del
+  anfitrión (si fuera al revés, po_gen vaciaría la tabla recibida; el original tendría el mismo problema con las
+  ruinas ocultas, que también se sortean en 0x4a0fb0). La tarea 77 lo comprueba.
+- Con esto el pozos-y-trampas no tiene partes pendientes.
