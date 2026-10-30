@@ -74,3 +74,17 @@ Colgadas de tandas anteriores (30 % en 97-99): hipótesis del usuario, no medida
 tanda y el mouse y el teclado llegan igual al juego en el otro monitor. No investigarlas por ahora.
 Próximo paso: paso 3, que la IA no entre en un pozo que su bando ya descubrió (ni para levantar un ítem).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 3".
+
+## Paso 3, hecho el código (30/10/2026, vista-aliada 1.0.97.0)
+po_pf (build.py, en 0x4a5d34 del buscador de caminos 0x4a5c40, por cada casilla vecina): un pozo, remolino o trampa
+activa que el jugador del camino ve (bit suyo en +6; en la trampa, también ser su dueño o aliado con vista aliada) es
+intransitable. Tumbas y trampas gastadas no cuentan. Excepción, solo para el humano: si esa casilla es el destino que
+eligió, llega y cae (decisión del 19/10/2026). La computadora no tiene excepción: tampoco entra por el ítem de un caído.
+Vale para el mapa de distancias de la IA y para sus caminos, porque usan el mismo buscador. Los voladores van por otra
+rama del buscador y no se tocan (no caen).
+Prueba emulada: parchesista-aliada\prueba_iapozos.py, 17 casos OK (incluye controles: pozo que ve otro, trampa
+gastada, tumba, fuera del mapa, destino del humano en otra casilla, y el exe original que deja pasar siempre).
+Sin verificar en partida: que la IA, sin camino al ítem, no se quede trabada intentándolo todos los turnos.
+Próximo paso: tanda A/B = TAREAS 78 (misma guardada que la tanda 105). Comparar con informe.py: caídas vistas
+(tienen que ser 0; en la 105 fueron 3) y PV (no tiene que bajar contra la 105).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 3, resultado de la tarea 78".

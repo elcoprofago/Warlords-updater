@@ -1,18 +1,28 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 78).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 79).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+1. **Tarea 78** (tanda de los pozos vistos, en esta PC).
+2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026)
+Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el
+ítem de un caído). Vos sí podés entrar a propósito, eligiendo esa casilla como destino.
+1. Actualizador: instalá vista-aliada **1.0.97.0** en C:\Warlords3.
+2. Monitor de IA → **Ninguna**, marcá solo **hex_pozos_PV_control** (la misma de la tarea 70), Partidas: **10**,
+   **Nueva tanda**.
+3. Avisame cuando termine. Si ves héroes que se quedan quietos junto a un pozo turno tras turno, anotalo acá.
+Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
