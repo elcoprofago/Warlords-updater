@@ -8,22 +8,12 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 78** (tanda de los pozos vistos, en esta PC).
-2. Con la notebook: **tarea 77** (pozos iguales en las dos PC) y **tarea 79** (Zappers camuflados), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
-
-- [ ] **79.** De noche, los Zappers tienen que camuflarse (vista-aliada 1.0.98.0, 30/10/2026)
-Lo que viste en la partida en red: los Zappers se veían normales de noche. Causa: su archivo (`ARMY\Zappers.ARM`)
-trae el bono con el nombre viejo **camo**, y desde la 1.0.88.0 el parche solo reconocía **camouflg**. Ahora valen
-los dos: no hace falta tocar ningún bando ni escenario.
-1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.98.0**.
-2. Partida (puede ser la misma de la tarea 77) con **Day/Night**: de noche, un grupo **solo de Zappers**, quieto y
-   fuera de una ciudad, tiene que verse verdoso y tenue, como en la tarea 57, mirado por otro jugador.
-3. Con un héroe en el grupo, o un ejército sin el bono, tiene que verse normal (como siempre).
-Resultado:
 
 - [ ] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el
@@ -80,6 +70,17 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **79.** De noche, los Zappers tienen que camuflarse (vista-aliada 1.0.98.0, 30/10/2026)
+Lo que viste en la partida en red: los Zappers se veían normales de noche. Causa: su archivo (`ARMY\Zappers.ARM`)
+trae el bono con el nombre viejo **camo**, y desde la 1.0.88.0 el parche solo reconocía **camouflg**. Ahora valen
+los dos: no hace falta tocar ningún bando ni escenario.
+1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.98.0**.
+2. Partida (puede ser la misma de la tarea 77) con **Day/Night**: de noche, un grupo **solo de Zappers**, quieto y
+   fuera de una ciudad, tiene que verse verdoso y tenue, como en la tarea 57, mirado por otro jugador.
+3. Con un héroe en el grupo, o un ejército sin el bono, tiene que verse normal (como siempre).
+Resultado:
+Resultado (30/10/2026): las armas camufladas se ven bien de noche.
 
 - [x] **76.** El aviso de la pausa, sobre un papiro (vista-aliada 1.0.96.0, 30/10/2026)
 Cambio: «Votacion en curso: partida en pausa» ahora va sobre el papiro de los cuadros de info (el de los pozos y
