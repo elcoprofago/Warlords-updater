@@ -102,6 +102,19 @@ Decodificador: `ia\historia.py` (`Partida.texto`). Corrido sobre los 30 .SAV: 2.
 - El tipo 0x13 (votación de vista-aliada) no está en el `switch` original: lo dibuja el parche (build.py ~7110).
   No apareció en estas partidas; queda «(tipo 19)» hasta que haga falta.
 
+## Comparación con el juego (1/11/2026, capturas del usuario de dia-noche4, rondas 1, 3, 8 y 10)
+
+- Los 26 renglones de esas rondas coinciden letra por letra con `ia\historia.py` (incluido el doble espacio de
+  «finds 4  mana crystals» y el apóstrofo de «Horn of Jahve'»). Punto 2 confirmado.
+- **Corrección:** la ronda 1 sí se muestra (11 renglones). Lo de «la ronda 1, nada» de arriba era un error de lectura
+  del código. El tope de 11 sí se ve: el renglón 12 de la ronda 1 (Peldor finds 2 mana crystals) queda afuera.
+- La lista de sucesos es la misma para todos los colores; el título es «History of Events», «Events for turn N».
+- **Minimapa:** el juego muestra uno a la izquierda, del color que consulta. En las 4 capturas el terreno visible es
+  el mismo y solo cambian los escudos de las ciudades: el terreno sería lo explorado **hoy** por ese color (sin
+  comprobar en el código) y los dueños de ciudad salen del bloque de la ronda (un byte por ciudad, ya leído).
+  Pedido del usuario: el visor tiene que poder mostrar el minimapa de cada color; si es muy complejo, se saca.
+  Para hacerlo falta ubicar en el .SAV el terreno y lo explorado por cada color (nuevo punto 3b).
+
 ## Próximo paso
 
-Punto 3 (arte del cuadro). La comparación con el juego (TAREAS 80) puede ir en paralelo.
+Punto 3 (arte del cuadro) y 3b (minimapa por color: terreno y exploración de cada color en el .SAV).

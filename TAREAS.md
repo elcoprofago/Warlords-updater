@@ -15,18 +15,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **80.** Visor de historia: ¿el texto de los sucesos es igual al del juego? (1/11/2026)
-Ya se sabe leer el «Events Report» guardado en una partida y armar cada renglón con el texto del juego. Falta
-compararlo con lo que muestra el juego en la misma partida.
-1. Abrí una consola en `F:\source\repos\actualizador-warlords` y escribí `python ia\historia.py ABN_000_29`.
-   Muestra, por ronda, el color del jugador, un número de tipo y el texto.
-2. Abrí el Warlords en C:\Warlords3, cargá la partida **ABN_000_29** y abrí el **Events Report**.
-3. Pasá por 4 o 5 rondas distintas y fijate si los renglones coinciden con los de la consola (el juego muestra
-   solo los 11 primeros de cada ronda; en la ronda 1 no muestra nada). Fijate sobre todo en los que dicen
-   «vanquished in…» o «A victory for… in…» (nombre de comarca) y «discovers…» (oro).
-4. Si alguno difiere, anotá la ronda y los dos textos.
-Resultado:
-
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
 manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
@@ -73,6 +61,10 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **80.** Visor de historia: ¿el texto de los sucesos es igual al del juego? (1/11/2026)
+Resultado (1/11/2026): capturas del History of Events de dia-noche4, rondas 1, 3, 8 y 10. Los 26 renglones
+coinciden letra por letra con `ia\historia.py`.
 
 - [x] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026; hecha el 1/11/2026)
 Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el
