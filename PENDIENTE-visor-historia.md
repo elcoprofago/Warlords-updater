@@ -144,7 +144,33 @@ Decodificador: `ia\historia.py` (`Partida.texto`). Corrido sobre los 30 .SAV: 2.
 - Código: `historia.mapa(d)` devuelve filas de (terreno, explorados).
 - Conclusión: el minimapa por color es factible; no hace falta sacarlo.
 
+## Punto 4, panel superior (1/11/2026, leído en el código de guardado 0x439a00 y medido en los 30 .SAV)
+
+Código: `historia.cabecera(d)` (también en `Partida.cabecera`).
+
+- **Nombre:** bytes 0..0x1f (el que muestra el juego; puede diferir del archivo: IA_ROTADA.SAV se llama
+  «hex_pozos_control»). 0x20..0x3f: nombre de archivo al guardar.
+- **Ronda en curso:** word en 0x603d9 (objeto 0x5032f8 +0x30, serializado por 0x420850). ABN_000_29 da 29.
+  Control: los bloques de HISTORY.DAT son siempre las rondas 1..ronda−1 (la ronda en curso va en la tabla aparte).
+  Turnos jugados = ronda − 1 completas, más la que está en curso.
+- **Condición de victoria:** word [0x560e52] (dentro del .SAV), 0..6 = textos 0x1bf de Sagetext: Last Warlord
+  Standing, Most Cities, Most Victory Points, Most Money, King of the Hill, Capture the Flag, Fortress.
+  Límite: word [0x560e50] (0 = sin límite). Con límite en turnos, el juego lo copia al tope 0x603e5 (+0x54 del
+  objeto de turno, 0x420760); si no coincide, el límite sería en minutos (textos 0x1c0) — ningún .SAV lo tiene,
+  sin comprobar.
+- **Tipo de mapa:** 0x61..0x6c: «Random» (mapa aleatorio) o el nombre de archivo del escenario («kor», «border»,
+  «Scarpart», «Hexagon»). El set (0x58, «Fantasy») va al lado.
+- **Fechas: el .SAV no guarda ninguna.** El dword +0x4c de la cabecera parecía candidato y no lo es: es un número
+  al azar 1..10000 (0x42d33e, `0x4deb20(1, 10000)`) que identifica la partida al cargarla (0x439e15). El dword
+  +0x50 del objeto de turno es el reloj del límite en minutos (0x4e33c0), tampoco una fecha. Alternativa honesta
+  para la app: «Último guardado: <fecha del archivo>» y, como inicio, nada (o «sin dato»). No se inventa.
+- **Historial ajeno, ampliado:** `Partida.ajena` ahora también salta cuando las rondas de los bloques no son
+  1..ronda−1. Aparecieron 4 casos que el control por cantidad de ciudades no veía (IA_ROTADA, Tanda_Scarpart,
+  Tanda_hex_pozos_control y _PV_control: ronda 1 con 30 bloques de otra partida del mismo mapa). Total: 15 de 30.
+- Límite conocido: si la partida es en red (word [0x503de8] = 3) el juego mete 0x8e5 bytes más antes del set y todos
+  los offsets fijos se corren. Ninguna de las 30 lo es.
+
 ## Próximo paso
 
-Punto 4 (datos del panel superior). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las
-capturas); del 3b, colores del minimapa por tipo de terreno.
+Punto 5 (la app). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las capturas);
+del 3b, colores del minimapa por tipo de terreno.

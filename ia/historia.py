@@ -14,6 +14,8 @@ JUGADORES, TAM_JUG = 0x536b34, 0x1f8       # +0 nombre
 ITEMS, TAM_ITEM = 0x55cb74, 0xd8           # +0 nombre
 ORO_ANTES, ORO_DESPUES = 0x56075f, 0x560765  # lo que rodea una cantidad de oro (MISC.DAT), 0x43ff50
 MAPA_DIM, MAPA = 0x503e00, 0x503e58        # ancho, alto, desplazamiento de fila en +6; casillas de 10 bytes
+VICTORIA, LIMITE = 0x560e52, 0x560e50      # word 0..6 (textos 0x1bf); límite de la partida (0 = sin límite)
+RONDA, TOPE = 0x603d9, 0x603e5             # objeto 0x5032f8 (0x420850): +0x30 ronda, +0x54 tope de turnos (-1 = no)
 
 
 def textos(grupo, tex=os.path.join(tanda.JUEGO, 'Sagetext.tex')):
@@ -54,6 +56,18 @@ def renglones(d):
         o += tam
 
 
+def cabecera(d):
+    """Datos del panel superior. Los primeros 0x6d bytes son 0x503da0 (0x58: nombre, archivo, +0x4c número al azar
+    1..10000 que identifica la partida), el set (9) y el mapa (0xc: «Random» o el archivo del escenario), 0x439a00.
+    El .SAV no guarda fechas: la única es la del archivo (último guardado)."""
+    lim, tope = struct.unpack_from('<h', d, offset(LIMITE))[0], struct.unpack_from('<h', d, TOPE)[0]
+    return {'nombre': _cad(d[:0x20]), 'archivo': _cad(d[0x20:0x40]), 'set': _cad(d[0x58:0x61]),
+            'mapa': _cad(d[0x61:0x6d]), 'ronda': struct.unpack_from('<h', d, RONDA)[0],
+            'victoria': textos(0x1bf)[struct.unpack_from('<h', d, offset(VICTORIA))[0]],
+            # 0x420760: con límite en turnos el juego lo copia al tope; si no, el límite es en minutos (sin comprobar)
+            'limite': None if lim <= 0 else f'{lim} turnos' if tope == lim else f'{lim} min'}
+
+
 def mapa(d):
     """Filas de casillas (terreno, explorados): terreno = byte +0 & 0x1f (0 agua, 1 llano...), explorados = byte +4,
     un bit por jugador. Es lo explorado al guardar, no por ronda: el .SAV no guarda la historia de la exploración."""
@@ -72,11 +86,14 @@ class Partida:
         self.ciudades = leer_ciudades(d)
         # Cada bloque trae un byte por ciudad: si no coincide con el mapa, el historial es de otra partida (pasa en
         # las guardadas de tandas armadas a partir de otra) y los nombres de ciudad no se pueden confiar.
-        o, fin, cant = HIST, HIST + struct.unpack_from('<I', d, HIST - 4)[0], set()
+        # También es ajeno si los bloques no son las rondas 1..(ronda en curso - 1): la ronda en curso va aparte.
+        o, fin, cant, rondas = HIST, HIST + struct.unpack_from('<I', d, HIST - 4)[0], set(), []
         while o < fin:
             cant.add(_w(d, o) - 0x48 - _w(d, o + 0x44) * 0x1c)
+            rondas.append(_w(d, o + 2))
             o += _w(d, o)
-        self.ajena = cant != {len(self.ciudades)}
+        self.cabecera = cabecera(d)
+        self.ajena = cant != {len(self.ciudades)} or rondas != list(range(1, self.cabecera['ronda']))
 
     def _va(self, va, n=0x20):
         return _cad(self.d[offset(va):offset(va) + n])
