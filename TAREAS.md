@@ -17,7 +17,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **82.** Probar el Visor de historia 1.0.0.0 (1/11/2026)
-1. Abrí `F:\sourceeposctualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de `C:\Warlords3\SAVES`.
+1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de `C:\Warlords3\SAVES`.
 2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
 3. Abrí la misma partida en el juego, Historia de sucesos: compará algunos turnos (sucesos, ciudades del minimapa).
    Los colores del terreno son aproximados; lo que importa es lo explorado y las ciudades.
