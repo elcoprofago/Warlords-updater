@@ -94,15 +94,15 @@ def innovaciones(db, validas):
     if not filas:
         print('\nInnovaciones: la tanda no registró caídas en pozos ni derribos de puentes.')
         return
-    c = defaultdict(lambda: [0] * 5)   # caídas vistas, muertos en ellas, caídas ocultas, muertos, puentes
+    c = defaultdict(lambda: [0] * 6)   # caídas vistas, muertos en ellas, caídas ocultas, muertos, puentes, por defensa
     for ia, color, tipo, n in filas:
         e = c[ia, color]
-        if tipo == 1: e[4] += 1
+        if tipo == 1: e[4] += 1; e[5] += n == 100   # n = 100: ai_brdef (paso 4 B)
         else: k = 0 if n >= 100 else 2; e[k] += 1; e[k + 1] += n % 100
     print('\nInnovaciones (caídas en pozo, remolino o trampa: vistas = error evitable)')
-    print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7}')
+    print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7} {"defensa":>7}')
     for (ia, color), e in sorted(c.items()):
-        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (6, 7, 7, 7, 7))))
+        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (6, 7, 7, 7, 7, 7))))
 
 
 def perfiles(db, validas):

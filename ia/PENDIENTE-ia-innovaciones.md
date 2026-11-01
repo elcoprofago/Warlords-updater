@@ -124,3 +124,25 @@ un puente entero sin ejércitos encima, mirar si (a) del lado de la pila hay una
 la pila está del otro lado). Prueba emulada con controles, después tanda A/B sobre una guardada con puentes y
 registro: Borderlands sin alianzas, 1.0.98.0 o posterior (la base ya medida es 0 derribos). Medir derribos y PV.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4, parte B".
+
+## Paso 4, parte B, hecho el código (1/11/2026, vista-aliada 1.0.99.0)
+ai_brdef (build.py, llamado desde ai_brraze antes de la cuenta vieja): derriba el puente junto al que terminó la pila si
+- hay una ciudad viva propia a 8 casillas o menos del puente (BRD_CITY) y el líder le queda más cerca que el puente
+  (está del lado de la pila);
+- hay un ejército vivo de un jugador en guerra (0x49c1c0; neutrales no) a 6 o menos del puente (BRD_ARMY), del otro
+  lado: el puente le queda más cerca que el líder, y la ciudad más lejos que al puente.
+Siguen valiendo los descartes de antes: líder junto al puente y no encima, nadie sobre el puente, y el puente no está en
+el camino de la pila (así nunca corta uno que la propia IA necesita). Sin temperamento, sin azar, sin mirar la ciudad
+dueña (puede cortar el propio). Evento 1 con n = 100 (la cuenta vieja anota c + s, siempre < 100); informe.py lo
+cuenta en la columna «defensa».
+Simplificación: «del otro lado» es geométrico (distancias de rey), no con el buscador de caminos con y sin el puente;
+la tanda dirá si alcanza. Ojo: la reconstrucción (ai_brrebev) no conoce el criterio nuevo, pero no repone un puente
+con un ejército hostil a menos de 15/30, así que mientras dure la amenaza no lo vuelve a poner.
+Para medir en una sola tanda: con DATA\IA.INI (tanda) solo lo usan los colores en «prueba»; sin IA.INI (partidas
+normales) vale siempre.
+Prueba emulada: prueba_iarazea.py, 89 casos OK (29 nuevos de defensa con controles: sin enemigo, sin ciudad, en paz,
+aliado, mismo lado, ciudad del otro lado, límites 6/7 y 8/9, destino del otro lado, IA original en tanda, el exe
+original; y 3000 al azar contra el modelo). Sin probar en partida.
+Próximo paso: tanda A/B = TAREAS 81 (Borderlands sin alianzas, 1.0.99.0). Comparar con informe.py: derribos por
+defensa (columna «defensa», tiene que haber), PV de prueba contra original (no tiene que bajar).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4, resultado de la tarea 81".

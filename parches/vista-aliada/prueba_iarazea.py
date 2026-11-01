@@ -6,7 +6,8 @@
 # 0x4c4a10 (se entra en 0x4c4d3a con el destino en [esp+0x38]/[esp+0x3c]) con el líder (ejército 1) donde diga el caso.
 # La decisión se compara contra un modelo en Python de la cuenta de 0x41f4b0 llevada al puente (ver ai_brraze en
 # build.py); la distancia (0x4974a0) y la hostilidad (0x49c1c0) corren de verdad. El azar (0x4deb20), el aviso a la
-# misión (0x461a60), la orden de red (0x4b9550) y la pausa (0x4275b0) van guionados y se anotan.
+# misión (0x461a60), la orden de red (0x4b9550) y la pausa (0x4275b0) van guionados y se anotan. También el criterio
+# de defensa (ai_brdef, modelo defense): ciudad propia de un lado, ejército en guerra del otro.
 import sys, math, random, struct, pefile
 from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE, UC_HOOK_MEM_READ_UNMAPPED
 from unicorn.x86_const import *
@@ -18,6 +19,19 @@ def load(path):
 AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
 ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
 NRAND = int(sys.argv[3]) if len(sys.argv) > 3 else 3000
+# ia_on: el primer cmp byte ptr [ia_on], 0 (80 3d) de ai_brraze, al que salta el call de 0x4c4d3a; ia_mode son los 8
+# bytes anteriores (place_data seguidos).
+def _ia_on():
+    base, img, _ = AV
+    assert img[0x4c4d3a - base] == 0xe8
+    f = 0x4c4d3f + struct.unpack('<i', img[0x4c4d3b - base:0x4c4d3f - base])[0] - base
+    k = img.index(bytes([0x80, 0x3d]), f, f + 0x200)
+    e = f   # push 1; call ia_evtb (el registro del evento 1; el otro push 1; call es el azar 0x4deb20)
+    while True:
+        e = img.index(bytes([0x6a, 0x01, 0xe8]), e + 1, f + 0x400)
+        t = base + e + 7 + struct.unpack('<i', img[e + 3:e + 7])[0]
+        if t != 0x4deb20: return struct.unpack('<I', img[k + 2:k + 6])[0], t
+(IA_ON, IA_EVTB) = _ia_on(); IA_MODE = IA_ON - 8
 
 W = H = 64; SHIFT = 8; LAND, WATER = 2, 3
 AI, ENEMY, FRIEND = 2, 3, 4
@@ -47,7 +61,7 @@ def tile_va(x, y): return ((y * 10) << SHIFT) + x * 10 + 0x503e58
 
 def caso(**kw):
     c = dict(cur=AI, human=False, raze=2, stack=True, alive=True, leader=(19, 10), dest=(5, 10), temp=3, flag=0, r=10,
-             dip={}, cities=[], armies=[], razed=False)
+             dip={}, cities=[], armies=[], razed=False, iaon=0, mode=0)
     c.update(kw); return c
 
 class Bench:
@@ -68,6 +82,7 @@ class Bench:
         for p in range(8): mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', 0))
         if c['human']: mu.mem_write(0x536c12 + AI * 0x1f8, struct.pack('<h', -1))
         mu.mem_write(0x53c393, bytes([c['raze']]))
+        if exe is AV: mu.mem_write(IA_ON, bytes([c['iaon']])); mu.mem_write(IA_MODE + AI, bytes([c['mode']]))
         mu.mem_write(0x560e52, struct.pack('<h', 0))
         for p in range(8): mu.mem_write(0x561ef9 + p * 0x49a, bytes([c['temp'] if p == AI else 0]))
         for q in range(9): mu.mem_write(0x55ee4c + AI * 56 + q, bytes([c['dip'].get(q, 2)]))
@@ -89,8 +104,10 @@ class Bench:
             mu.mem_write(0x54fe6c + r, struct.pack('<H', (flag << 10) | 0x8003))   # bits ajenos alrededor del grupo
         s = 0x56ea90 + AI * 0x4f0
         mu.mem_write(s, struct.pack('<hh', HERO if c['stack'] else 0, HERO if c['stack'] else 0))
-        self.r = c['r']; self.calls = []
+        self.r = c['r']; self.calls = []; self.evts = []
         for va in STUBS: mu.mem_write(va, b'\xc3')
+        self.stubs = {**STUBS, **({IA_EVTB: 'registro'} if exe is AV else {})}
+        if exe is AV: mu.mem_write(IA_EVTB, b'\xc3')
         mu.mem_write(FTOL, FTOL_CODE); mu.mem_write(0x5a9ba8, struct.pack('<I', FTOL))
         mu.mem_write(END, b'\xf4')
         mu.hook_add(UC_HOOK_CODE, self.hook)
@@ -108,11 +125,12 @@ class Bench:
     def hook(self, uc, addr, size, _):
         if addr in self.stops:
             self.end = addr; uc.emu_stop(); return
-        if addr in STUBS:
-            k = STUBS[addr]; s = self.sarg; ret = 0
+        if addr in self.stubs:
+            k = self.stubs[addr]; s = self.sarg; ret = 0
             if k == 'azar': self.calls.append((k, s(0), s(1))); ret = self.r
             elif k == 'evento': self.calls.append((k,) + tuple(s(i) for i in range(6)))
             elif k == 'orden': self.calls.append((k, s(0), s(1)))
+            elif k == 'registro': self.evts.append(tuple(self.arg(i) for i in range(4)))
             else: self.calls.append(k)
             uc.reg_write(UC_X86_REG_EAX, ret)
 
@@ -139,7 +157,7 @@ def go(c, exe=AV):
     ok = (end == (0x4c4d58 if c['stack'] else 0x4c4d68) and b.reg('ESP') == b.esp0
           and all(b.reg(k) == REGS[k] for k in ('EBX', 'ESI', 'EDI', 'EBP'))
           and b.reg('EAX') == AI * 0x4f0 and b.reg('ECX') & 0xffff == AI)   # lo que deja el código original
-    return dict(ok=ok, end=end, calls=b.calls, temp=b.mu.mem_read(0x561ef9 + AI * 0x49a, 1)[0])
+    return dict(ok=ok, end=end, calls=b.calls, evts=b.evts, temp=b.mu.mem_read(0x561ef9 + AI * 0x49a, 1)[0])
 RAZE = lambda code=PC: [('evento', 6, HERO, 0, 0, code, 1), ('orden', code, AI), 'pausa']
 def razes(g): return [c for c in g['calls'] if c != ('azar', 1, 20)]
 
@@ -147,15 +165,26 @@ def razes(g): return [c for c in g['calls'] if c != ('azar', 1, 20)]
 def kd(a, b): return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
 def edist(a, b): return int(math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2))
 def hostile(q, dip): return q != AI and (q == 8 or dip.get(q, 2) == 2)
+def bd(q): return min(kd(t, q) for t in P)
+def defense(c):
+    """ai_brdef: ciudad propia a <= 8 del lado del líder y ejército en guerra a <= 6 del otro lado."""
+    L = c['leader']
+    for x, y, alive, o in c['cities']:
+        if not alive or o != AI or bd((x, y)) > 8 or kd(L, (x, y)) >= bd((x, y)): continue
+        for xy, q in c['armies']:
+            if q == AI or q >= 8 or c['dip'].get(q, 2) != 2: continue
+            if bd(xy) <= 6 and kd(L, xy) > bd(xy) and kd((x, y), xy) > bd((x, y)): return True
+    return False
 def model(c):
     if c['cur'] != AI or c['human'] or not (c['raze'] & 6) or not c['stack'] or not c['alive']: return False
     t, flag = c['temp'], c['flag']
-    if t == 0 and flag == 0: return False
     if c['razed'] or c['leader'] in P or kd(c['leader'], P[0]) > 1 and kd(c['leader'], P[1]) > 1: return False
     if any(xy in P for xy, _ in c['armies']): return False
     sd = kd(c['leader'], c['dest'])
     for tl in P:
         if kd(tl, c['dest']) <= 1 or kd(tl, c['dest']) < sd: return False
+    if (not c['iaon'] or c['mode'] == 1) and defense(c): return True
+    if t == 0 and flag == 0: return False
     s = (-2 if t == 0 else 0) + 1
     live = [(i, ct) for i, ct in enumerate(c['cities']) if ct[2]]
     if live:
@@ -256,9 +285,46 @@ many = [(20 + dx, 13, 1, 8) for dx in range(-6, 6)] + [(20, 20, 1, ENEMY)]
 named('12 neutrales más cerca tapan a la enemiga', False, cities=many, temp=2)
 named('con 11 neutrales la enemiga entra', True, cities=many[1:], temp=2)
 
+# defensa (ai_brdef): ciudad propia al oeste, ejército enemigo al este; temperamento 0, sin bandera, sin ciudad dueña
+OWN_W = (14, 10, 1, AI); ENE_E = ((25, 10), ENEMY)
+named('defensa: propia a 6 del lado del líder, enemigo a 4 del otro lado (temp 0)', True, temp=0, cities=[OWN_W],
+      armies=[ENE_E])
+g = go(caso(temp=0, cities=[OWN_W], armies=[ENE_E]), ORIG)
+check('control: Darklord.exe original en el caso de defensa no derriba nada', g['ok'] and g['calls'] == [], g)
+named('defensa en una tanda, color con la IA de prueba', True, temp=0, cities=[OWN_W], armies=[ENE_E], iaon=1, mode=1)
+named('defensa en una tanda, color con la IA original: no', False, temp=0, cities=[OWN_W], armies=[ENE_E], iaon=1)
+named('defensa en una tanda, color con valor inválido (2): no', False, temp=0, cities=[OWN_W], armies=[ENE_E], iaon=1,
+      mode=2)
+named('en una tanda con la IA original sigue la cuenta vieja', True, cities=[ENEMY_CITY], iaon=1)
+g = go(caso(temp=0, cities=[OWN_W], armies=[ENE_E]))
+check('defensa: el evento 1 lleva n = 100', g['evts'] == [(1, AI, PC, 100)], g)
+g = go(caso(cities=[ENEMY_CITY]))
+check('cuenta vieja: el evento 1 lleva n = c + s = 6', g['evts'] == [(1, AI, PC, 6)], g)
+named('defensa sin enemigo: temp 0 no derriba', False, temp=0, cities=[OWN_W])
+named('defensa sin ciudad propia: no derriba', False, temp=0, armies=[ENE_E])
+named('defensa: azar 20 no la frena', True, temp=0, r=20, cities=[OWN_W], armies=[ENE_E])
+named('defensa: ciudad dueña propia no la frena', True, temp=0, cities=[(22, 12, 1, AI), OWN_W], armies=[ENE_E])
+named('defensa: enemigo a 6 del puente', True, temp=0, cities=[OWN_W], armies=[((27, 10), ENEMY)])
+named('defensa: enemigo a 7 del puente', False, temp=0, cities=[OWN_W], armies=[((28, 10), ENEMY)])
+named('defensa: propia a 8 del puente', True, temp=0, cities=[(12, 10, 1, AI)], armies=[ENE_E])
+named('defensa: propia a 9 del puente', False, temp=0, cities=[(11, 10, 1, AI)], armies=[ENE_E])
+named('defensa: propia muerta', False, temp=0, cities=[(14, 10, 0, AI)], armies=[ENE_E])
+named('defensa: ciudad de otro (enemiga) no cuenta', False, temp=0, cities=[(14, 10, 1, ENEMY)], armies=[ENE_E])
+named('defensa: enemigo del mismo lado que el líder', False, temp=0, cities=[OWN_W], armies=[((16, 10), ENEMY)])
+named('defensa: ciudad del otro lado', False, temp=0, cities=[(26, 10, 1, AI)], armies=[((17, 10), ENEMY)])
+named('defensa: ejército en paz (diplomacia 1)', False, temp=0, cities=[OWN_W], armies=[ENE_E], dip={ENEMY: 1})
+named('defensa: ejército aliado (diplomacia 0)', False, temp=0, cities=[OWN_W], armies=[ENE_E], dip={ENEMY: 0})
+named('defensa: ejército propio', False, temp=0, cities=[OWN_W], armies=[((25, 10), AI)])
+named('defensa: destino del otro lado (la IA lo necesita)', False, temp=0, cities=[OWN_W], armies=[ENE_E], dest=(40, 10))
+named('defensa: ejército sobre el puente', False, temp=0, cities=[OWN_W], armies=[((21, 10), ENEMY)])
+named('defensa: líder en la cabecera este, ciudad al este, enemigo al oeste', True, temp=0, leader=(22, 10),
+      dest=(60, 10), cities=[(27, 10, 1, AI)], armies=[((16, 10), ENEMY)])
+named('defensa: enemigo cerca de la ciudad propia, más que del puente', False, temp=0, cities=[(14, 4, 1, AI)],
+      armies=[((15, 2), ENEMY)])
+
 # ---- al azar contra el modelo
 rng = random.Random(1)
-bad = 0; cnt = {True: 0, False: 0}
+bad = 0; cnt = {True: 0, False: 0}; ndef = 0
 for n in range(NRAND):
     nc = rng.randrange(0, 40)
     cities = []
@@ -266,19 +332,27 @@ for n in range(NRAND):
         x, y = rng.randrange(64), rng.randrange(64)
         if (x, y) in P: x = 40
         cities.append((x, y, rng.choice([0, 1, 1, 1]), rng.choice([AI, AI, ENEMY, FRIEND, 5, 6, 8])))
+    for _ in range(rng.choice([0, 1, 2, 3])):
+        cities.append((rng.randrange(10, 32), rng.randrange(2, 19), rng.choice([0, 1, 1]), AI))
     c = caso(cur=rng.choice([AI] * 9 + [ENEMY]), human=rng.random() < .05, raze=rng.choice([2, 2, 4, 6, 0, 1]),
              stack=rng.random() > .05, alive=rng.random() > .05,
              leader=rng.choice(HEADS * 6 + [(20, 10), (21, 10), (10, 10), (18, 10)]),
              dest=(rng.randrange(64), rng.randrange(64)), temp=rng.choice([0, 0, 1, 2, 3, 4, 5]),
              flag=rng.choice([0, 0, 1, 7, 15]), r=rng.choice([1, 2, 10, 18, 19, 20]),
              dip={q: rng.choice([0, 1, 2, 2]) for q in range(8)}, cities=cities,
-             armies=[(rng.choice(P + [(30, 30), (19, 11)]), rng.choice([AI, ENEMY])) for _ in range(rng.choice([0, 0, 0, 1]))],
-             razed=rng.random() < .05)
-    g = go(c); m = model(c); cnt[m] += 1
+             armies=[(rng.choice(P + [(30, 30), (19, 11)]), rng.choice([AI, ENEMY])) for _ in range(rng.choice([0, 0, 0, 1]))]
+                    + [((rng.randrange(10, 32), rng.randrange(2, 19)), rng.choice([AI, ENEMY, ENEMY, FRIEND, 5]))
+                       for _ in range(rng.choice([0, 1, 2, 4, 6]))],
+             razed=rng.random() < .05, iaon=rng.choice([0, 0, 1]), mode=rng.choice([0, 1, 1, 2]))
+    if rng.random() < .4:   # sesgo hacia la defensa: pila de la IA junto al puente, destino lejos de un lado u otro
+        c.update(cur=AI, human=False, raze=2, stack=True, alive=True, razed=False, leader=rng.choice(HEADS),
+                 dest=(rng.choice([2, 40]), rng.randrange(64)))
+    g = go(c); m = model(c); cnt[m] += 1; ndef += m and defense(c)
     if not (g['ok'] and razes(g) == (RAZE() if m else [])):
         bad += 1
         if bad <= 5: print('DIFIERE', m, g, c)
-check(f'{NRAND} casos al azar iguales al modelo (derriba {cnt[True]}, no {cnt[False]})', bad == 0 and cnt[True] > 50,
+check(f'{NRAND} casos al azar iguales al modelo (derriba {cnt[True]}, por defensa {ndef}, no {cnt[False]})',
+      bad == 0 and cnt[True] > 50 and ndef > 20,
       f'difieren {bad}')
 
 # ---- instrumentos

@@ -4832,7 +4832,7 @@ aibn_bridge:
 # por eso el derribo no pasa por 0x4955d0, que lee el líder recién ahí.
 # ---- IA: registro de eventos (ia\PENDIENTE-entrenamiento-ia.md, etapa 3). Solo con DATA\IA.INI (ia_on, ver "IA: base
 # de pruebas"): una línea por evento en DATA\IA_EVT.CSV: turno, color, ia, tipo, x, y, n. Solo anota, no decide nada.
-# Tipos: 1 puente derribado por criterio propio (ai_brraze; n = c + s), 2 convoy ordenado (ai_conv; x, y = casilla del
+# Tipos: 1 puente derribado por criterio propio (ai_brraze; n = c + s, o 100 por defensa), 2 convoy ordenado (ai_conv; x, y = casilla del
 # barco al que se suma, n = ese ejército), 3 grupo partido al embarcar (ai_move; x, y = líder, n = soltados),
 # 4 puente reconstruido (ai_brreb; n = costo), 5 refugio (ia_turn: al empezar el turno, pilas propias en una ciudad
 # compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
@@ -5181,6 +5181,9 @@ brkd_out:
 # - hay cualquier ejército encima (no se ahoga a nadie);
 # - el destino del movimiento (argumentos de 0x4c4a10) está a 1 casilla o menos del puente (va hacia él: la misión
 #   de ai_brq o cruzarlo) o el puente le queda más cerca al destino que la pila (está por delante en el camino).
+# Si no lo descarta, primero el criterio de defensa (ai_brdef, 1/11/2026): si se cumple, derriba sin más (ni
+# temperamento ni azar ni ciudad dueña). Sin DATA\IA.INI vale siempre; en una tanda (ia_on), solo para los colores
+# con ia_mode = prueba, así la tanda compara las dos IA en la misma partida. Si no, la cuenta de 0x41f4b0:
 # Cuenta de 0x41f4b0, con el puente en lugar de la ciudad:
 #   c = temperamento [0x561ef9 + p*0x49a]; flag = grupo de la IA del líder ([+0x1a] & 0x3c00) >> 10.
 #   c = 0 y flag = 0: no. s = -2 si c = 0. +1 si flag y la ciudad dueña no es neutral. +1 siempre (un puente no
@@ -5353,9 +5356,122 @@ bs_out:
     pop ebx
     ret
 ''')
+# br_bd: eax = distancia de rey de (esi, ebp) a la casilla más cercana de las ecx de br_xy. Usa edx; preserva el resto.
+br_bd = place('br_bd', f'''
+    push ecx
+    push ebx
+    mov ebx, 0x7fffffff
+brbd_l:
+    dec ecx
+    js brbd_out
+    movsx eax, word ptr [ecx*4 + {br_xy:#x}]
+    movsx edx, word ptr [ecx*4 + {br_xy + 2:#x}]
+    call {br_kd:#x}
+    cmp eax, ebx
+    jge brbd_l
+    mov ebx, eax
+    jmp brbd_l
+brbd_out:
+    mov eax, ebx
+    pop ebx
+    pop ecx
+    ret
+''')
+# ai_brdef(n, jugador, x, y) cdecl, sobre las n casillas del puente en br_xy y el líder en (x, y) -> eax = 1 si
+# derribarlo defiende una ciudad propia (paso 4 B de ia\PENDIENTE-ia-innovaciones.md), 0 si no. Hace falta:
+# - una ciudad viva propia a 8 casillas o menos del puente (BRD_CITY) y del lado de la pila (el líder le queda más
+#   cerca que el puente);
+# - un ejército vivo de un jugador en guerra (0x49c1c0; los neutrales no cuentan) a 6 o menos del puente (BRD_ARMY),
+#   del otro lado: el puente le queda más cerca que el líder, y la ciudad, más lejos que al puente.
+# No depende del temperamento ni del azar. Distancias de rey a la casilla más cercana del puente (br_bd).
+BRD_CITY, BRD_ARMY = 8, 6
+ai_brdef = place('ai_brdef', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, 0x10
+    mov dword ptr [esp], -1
+bdf_city:
+    inc dword ptr [esp]
+    mov ebx, dword ptr [esp]
+    movsx eax, word ptr [0x537e2a]
+    cmp ebx, eax
+    jge bdf_no
+    imul ebx, ebx, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je bdf_city
+    movzx eax, byte ptr [ebx + 0x537ed1]
+    cmp eax, dword ptr [esp + 0x28]
+    jne bdf_city
+    movsx esi, word ptr [ebx + 0x537e2c]
+    movsx ebp, word ptr [ebx + 0x537e2e]
+    mov dword ptr [esp + 8], esi
+    mov dword ptr [esp + 0xc], ebp
+    mov ecx, dword ptr [esp + 0x24]
+    call {br_bd:#x}
+    cmp eax, {BRD_CITY}
+    jg bdf_city
+    mov dword ptr [esp + 4], eax
+    mov eax, dword ptr [esp + 0x2c]
+    mov edx, dword ptr [esp + 0x30]
+    call {br_kd:#x}
+    cmp eax, dword ptr [esp + 4]
+    jge bdf_city
+    xor edi, edi
+bdf_arm:
+    inc edi
+    movsx eax, word ptr [0x54fe50]
+    cmp edi, eax
+    jge bdf_city
+    imul ebx, edi, 0x1c
+    test byte ptr [ebx + 0x54fe63], 0x40
+    jz bdf_arm
+    movzx eax, word ptr [ebx + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    cmp eax, dword ptr [esp + 0x28]
+    je bdf_arm
+    cmp eax, 8
+    jge bdf_arm
+    push eax
+    call 0x49c1c0
+    add esp, 4
+    test ax, ax
+    jz bdf_arm
+    movsx esi, word ptr [ebx + 0x54fe52]
+    movsx ebp, word ptr [ebx + 0x54fe54]
+    mov ecx, dword ptr [esp + 0x24]
+    call {br_bd:#x}
+    cmp eax, {BRD_ARMY}
+    jg bdf_arm
+    mov ecx, eax
+    mov eax, dword ptr [esp + 0x2c]
+    mov edx, dword ptr [esp + 0x30]
+    call {br_kd:#x}
+    cmp eax, ecx
+    jle bdf_arm
+    mov eax, dword ptr [esp + 8]
+    mov edx, dword ptr [esp + 0xc]
+    call {br_kd:#x}
+    cmp eax, dword ptr [esp + 4]
+    jle bdf_arm
+    mov eax, 1
+    jmp bdf_out
+bdf_no:
+    xor eax, eax
+bdf_out:
+    add esp, 0x10
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
 # Locales de ai_brraze: ABZ_*.
 ABZ_CODE, ABZ_S, ABZ_P, ABZ_FLAG, ABZ_C, ABZ_N, ABZ_SD = (4 * i for i in range(7))
 ABZ_LOC = 4 * 7
+ABZ_DEF = 100   # n del evento 1 cuando derriba por defensa (ai_brdef)
 ABZ_X, ABZ_Y = ABZ_LOC + 0x20 + 4 + 0x38, ABZ_LOC + 0x20 + 4 + 0x3c
 ai_brraze = place('ai_brraze', f'''
     pushad
@@ -5383,8 +5499,6 @@ ai_brraze = place('ai_brraze', f'''
     imul ecx, ebx, 0x49a
     movzx ecx, byte ptr [ecx + 0x561ef9]
     mov dword ptr [esp + {ABZ_C:#x}], ecx
-    or eax, ecx
-    jz abz_out
     push {BR_KIND_INTACT}
     movsx eax, word ptr [edi + 0x54fe54]
     push eax
@@ -5432,6 +5546,28 @@ abz_tile:
     jl abz_out
     jmp abz_tile
 abz_owner:
+    cmp byte ptr [{IA_ON:#x}], 0
+    je abz_def
+    mov eax, dword ptr [esp + {ABZ_P:#x}]
+    cmp byte ptr [eax + {IA_MODE:#x}], 1
+    jne abz_temp
+abz_def:
+    movsx eax, word ptr [edi + 0x54fe54]
+    push eax
+    movsx eax, word ptr [edi + 0x54fe52]
+    push eax
+    push dword ptr [esp + {ABZ_P + 8:#x}]
+    push dword ptr [esp + {ABZ_N + 12:#x}]
+    call {ai_brdef:#x}
+    add esp, 0x10
+    test eax, eax
+    jz abz_temp
+    mov dword ptr [esp + {ABZ_S:#x}], {ABZ_DEF}
+    jmp abz_raze
+abz_temp:
+    mov eax, dword ptr [esp + {ABZ_FLAG:#x}]
+    or eax, dword ptr [esp + {ABZ_C:#x}]
+    jz abz_out
     push dword ptr [esp + {ABZ_FLAG:#x}]
     push dword ptr [esp + {ABZ_P + 4:#x}]
     push dword ptr [esp + {ABZ_CODE + 8:#x}]
@@ -5450,6 +5586,7 @@ abz_owner:
     mov eax, dword ptr [esp + {ABZ_S:#x}]
     cmp eax, 5
     jl abz_out
+abz_raze:
     push dword ptr [esp + {ABZ_CODE:#x}]
     call 0x4955d0
     add esp, 4
