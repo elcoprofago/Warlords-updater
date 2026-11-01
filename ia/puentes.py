@@ -1,6 +1,11 @@
-import sys, os, struct
-sys.path.insert(0, r'F:\source\repos\actualizador-warlords\ia')
+# Cuenta los puentes de una guardada (misma regla que br_kind de vista-aliada) y, para cada puente entero, la cuenta
+# de ai_brs por color al empezar (x = la ciudad dueña lo descarta). Uso: python ia\puentes.py Tanda_Borderlands ...
+# Aproxima la distancia del juego (0x4974a0) con max(|dx|, |dy|).
+import os, struct, sys
+
 import tanda
+
+
 def rd(d, va, n):
     off = 0x6d
     for b, t in tanda.SAV_BLOQUES:
