@@ -18,9 +18,13 @@ VICTORIA, LIMITE = 0x560e52, 0x560e50      # word 0..6 (textos 0x1bf); límite d
 RONDA, TOPE = 0x603d9, 0x603e5             # objeto 0x5032f8 (0x420850): +0x30 ronda, +0x54 tope de turnos (-1 = no)
 
 
-def textos(grupo, tex=os.path.join(tanda.JUEGO, 'Sagetext.tex')):
+TERRENOS = 0x535ed0                        # word cantidad; desde +6 registros de 0x58: +0 nombre, +0x10 textura
+ESCUDO = 0xa0                              # en el registro del jugador: hojas B (fondo), O y C (figuras), 9 letras c/u
+
+
+def textos(grupo, juego=tanda.JUEGO):
     """Cadenas de un grupo de Sagetext.tex: dword largo, tabla de grupos y por grupo word cantidad + dwords."""
-    with open(tex, 'rb') as f:
+    with open(os.path.join(juego, 'Sagetext.tex'), 'rb') as f:
         d = f.read()[4:]
     o = struct.unpack_from('<I', d, grupo * 4)[0]
     n = struct.unpack_from('<h', d, o)[0]
@@ -56,14 +60,40 @@ def renglones(d):
         o += tam
 
 
-def cabecera(d):
+def terrenos(d):
+    """(nombre, textura) de cada valor de terreno de la casilla: la tabla es de cada mapa (Plains, Water...).
+    La textura es TERRAIN/DATA/<textura>.PCX."""
+    o = offset(TERRENOS)
+    return [(_cad(d[o + 6 + i * 0x58:][:0x10]), _cad(d[o + 6 + i * 0x58 + 0x10:][:9]))
+            for i in range(struct.unpack_from('<h', d, o)[0])]
+
+
+def duenos(d):
+    """{ronda: dueño de cada ciudad (8 = neutral)} de cada bloque de HISTORY.DAT."""
+    o, fin, out = HIST, HIST + struct.unpack_from('<I', d, HIST - 4)[0], {}
+    while o < fin:
+        out[_w(d, o + 2)] = d[o + 0x48:o + _w(d, o) - _w(d, o + 0x44) * 0x1c]
+        o += _w(d, o)
+    return out
+
+
+def en_curso(d):
+    """(jugador, renglón) de la tabla de la ronda en curso (16 casillas detrás de HISTORY.DAT; tipo 0 = vacía)."""
+    o = HIST + struct.unpack_from('<I', d, HIST - 4)[0]
+    for k in range(16):
+        r = d[o + k * 0x1c:][:0x1c]
+        if _w(r, 0):
+            yield _w(r, 2), r
+
+
+def cabecera(d, juego=tanda.JUEGO):
     """Datos del panel superior. Los primeros 0x6d bytes son 0x503da0 (0x58: nombre, archivo, +0x4c número al azar
     1..10000 que identifica la partida), el set (9) y el mapa (0xc: «Random» o el archivo del escenario), 0x439a00.
     El .SAV no guarda fechas: la única es la del archivo (último guardado)."""
     lim, tope = struct.unpack_from('<h', d, offset(LIMITE))[0], struct.unpack_from('<h', d, TOPE)[0]
     return {'nombre': _cad(d[:0x20]), 'archivo': _cad(d[0x20:0x40]), 'set': _cad(d[0x58:0x61]),
             'mapa': _cad(d[0x61:0x6d]), 'ronda': struct.unpack_from('<h', d, RONDA)[0],
-            'victoria': textos(0x1bf)[struct.unpack_from('<h', d, offset(VICTORIA))[0]],
+            'victoria': textos(0x1bf, juego)[struct.unpack_from('<h', d, offset(VICTORIA))[0]],
             # 0x420760: con límite en turnos el juego lo copia al tope; si no, el límite es en minutos (sin comprobar)
             'limite': None if lim <= 0 else f'{lim} turnos' if tope == lim else f'{lim} min'}
 
@@ -78,10 +108,10 @@ def mapa(d):
 
 
 class Partida:
-    def __init__(self, d):
+    def __init__(self, d, juego=tanda.JUEGO):
         self.d = d
-        self.T = [textos(0xb2 + t) for t in range(0x13)]
-        self.sin_area = textos(0xa)[0]          # 0x4410a0 sin AREA.DAT
+        self.T = [textos(0xb2 + t, juego) for t in range(0x13)]
+        self.sin_area = textos(0xa, juego)[0]   # 0x4410a0 sin AREA.DAT
         self.areas = areas(d)
         self.ciudades = leer_ciudades(d)
         # Cada bloque trae un byte por ciudad: si no coincide con el mapa, el historial es de otra partida (pasa en
@@ -92,7 +122,7 @@ class Partida:
             cant.add(_w(d, o) - 0x48 - _w(d, o + 0x44) * 0x1c)
             rondas.append(_w(d, o + 2))
             o += _w(d, o)
-        self.cabecera = cabecera(d)
+        self.cabecera = cabecera(d, juego)
         self.ajena = cant != {len(self.ciudades)} or rondas != list(range(1, self.cabecera['ronda']))
 
     def _va(self, va, n=0x20):
@@ -100,6 +130,14 @@ class Partida:
 
     def jugador(self, p):
         return self._va(JUGADORES + p * TAM_JUG)
+
+    def escudo(self, p):
+        """Hojas de SHIELD que forman el escudo del jugador, de abajo arriba (fondo B, figuras O y C)."""
+        o = offset(JUGADORES + p * TAM_JUG) + ESCUDO
+        return [n for n in (_cad(self.d[o + k * 9:o + k * 9 + 9]) for k in range(3)) if n]
+
+    def juega(self, p):
+        return self.d[offset(JUGADORES - 4 + p * TAM_JUG) + 1] != 0
 
     def texto(self, r):
         t, p, par = _w(r, 0), _w(r, 2), _w(r, 4)

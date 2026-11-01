@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 82).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 83).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,8 +12,18 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
+6. **Tarea 82** (probar el Visor de historia).
 
 # Pendientes
+
+- [ ] **82.** Probar el Visor de historia 1.0.0.0 (1/11/2026)
+1. Abrí `F:\sourceeposctualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de `C:\Warlords3\SAVES`.
+2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
+3. Abrí la misma partida en el juego, Historia de sucesos: compará algunos turnos (sucesos, ciudades del minimapa).
+   Los colores del terreno son aproximados; lo que importa es lo explorado y las ciudades.
+4. Escribí un nombre de ciudad en «Buscar»: los turnos con coincidencias se marcan en dorado en la barra.
+5. Probá «Exportar PDF…» y «Exportar texto…» y abrí lo que generan.
+Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
 Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya

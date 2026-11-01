@@ -170,7 +170,17 @@ Código: `historia.cabecera(d)` (también en `Partida.cabecera`).
 - Límite conocido: si la partida es en red (word [0x503de8] = 3) el juego mete 0x8e5 bytes más antes del set y todos
   los offsets fijos se corren. Ninguna de las 30 lo es.
 
+## Punto 5: la app (1/11/2026, hecho)
+
+- Fuente: `ia/visor-historia/visor_historia.py` (VERSION en el propio archivo, a la vista en el título). Lee con
+  `ia/historia.py` (`Partida`, `cabecera`, `escudo`, `juega`).
+- Compilar: `python ia/visor-historia/build.py` → `ia/Visor-Historia.exe` (PyInstaller --onefile, ~43 MB, no va a git).
+- Panel superior con «Último guardado» = fecha del archivo; el inicio no se muestra (decisión del usuario).
+- Búsqueda con marcas doradas en la barra de rondas, exportación a PDF (fpdf) y texto, aviso rojo si el historial
+  es de otra partida. Acepta un .SAV como argumento.
+- Probado: dia-noche4, ABN_000_29, IA_ROTADA (el .exe compilado). Prueba del usuario: tarea 82.
+
 ## Próximo paso
 
-Punto 5 (la app). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las capturas);
+Según la tarea 82. Sin decidir: distribuirlo (por ejemplo como opción del Actualizador). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las capturas);
 del 3b, colores del minimapa por tipo de terreno.
