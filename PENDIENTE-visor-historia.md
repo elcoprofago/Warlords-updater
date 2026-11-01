@@ -115,6 +115,22 @@ Decodificador: `ia\historia.py` (`Partida.texto`). Corrido sobre los 30 .SAV: 2.
   Pedido del usuario: el visor tiene que poder mostrar el minimapa de cada color; si es muy complejo, se saca.
   Para hacerlo falta ubicar en el .SAV el terreno y lo explorado por cada color (nuevo punto 3b).
 
+## Punto 3, arte del cuadro (1/11/2026)
+
+- Fondo: `C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX` (620×460; el magenta es transparente).
+- Marco del minimapa: probablemente `FRAME200.PCX` o `FRAME128.PCX` del mismo set (sin comprobar cuál).
+- Escudo de cada renglón (ícono 0x69 + jugador, 0x4dd080): fondo `C:\Warlords3\SHIELD\B<color>.PCX` con la figura
+  `O<nombre>.PCX` encima (magenta transparente). Los nombres están en el registro del jugador del .SAV:
+  +0xa0 fondo (ej. «bwhite»), +0xa9 figura (ej. «oredcros»). Probado: da la cruz roja de las capturas. Cada hoja
+  trae 5 tamaños (54×38 el mayor); el renglón usa uno chico (falta medir cuál).
+- Letra: el renglón llama a 0x4dd0f0(1, 0x90, 10, 10, 1) → fuente 1. Tabla de fuentes en `DATA\War3.RES` desde
+  0x48 (entradas de 0x28: número, nombre, tamaño): 1 Arial 11, 2 Uncial ATT 20, 3 Uncial ATT 16, 4 Arial 9,
+  5 Uncial ATT 12, 6 Uncial ATT 48, 7 Arial 14. Se crean con CreateFontA (alto negativo). Los otros argumentos
+  (0x90, 10, 10, 1) quedan en +0x20a…+0x210 de 0x58d0e8; serían color y sombra (sin comprobar).
+- Títulos («History of Events», «Events for turn N»): por la apariencia de las capturas, Uncial ATT (sin ubicar
+  en el código qué número usa).
+
 ## Próximo paso
 
-Punto 3 (arte del cuadro) y 3b (minimapa por color: terreno y exploración de cada color en el .SAV).
+Punto 3b (minimapa por color: terreno y exploración de cada color en el .SAV). Pendiente menor del 3: tamaño exacto
+del escudo chico y posiciones de cada elemento (se pueden medir sobre las capturas).
