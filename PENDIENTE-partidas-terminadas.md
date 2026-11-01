@@ -22,6 +22,9 @@ partidas reales del ranking; tenerlas terminadas y separadas facilita encontrarl
 - Mover o copiar: «pasar» sugiere mover; si la partida terminada queda solo en TERMINADAS, NETSAVES queda
   limpia. Confirmar que el .SAV al terminar contiene el estado final (para el Visor).
 
+- NETSAVES guarda varios archivos por partida, uno por turno (NA_2_29.SAV, NA_2_30.SAV…). Decidir si se pasan
+  todos los de esa partida o solo el último (el último ya trae el historial completo).
+
 ## Próximo paso
 
 Punto 1.
