@@ -97,3 +97,30 @@ anotaron 3, mal contadas). El registro funcionó: la tanda anotó sus eventos 11
 Próximo paso: paso 4 (puentes): medir ai_brraze con el registro (evento 1). Ojo: en las tandas 105 y 114 no hubo
 ningún derribo de puente; hace falta una guardada con puentes. Frase para retomar:
 "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4".
+
+## Paso 4, medición (1/11/2026)
+Derribos por criterio propio (evento 1) en toda la base: **0**, en todas las guardadas con registro de eventos
+(~600 partidas desde la tanda 19). Puentes por guardada (casillas de puente entero, misma regla que br_kind, leídas
+de la grilla del .SAV con ia\puentes.py):
+- Tanda_hex_* (Hexagon): 1 casilla (17,103). Por eso 105 y 114 no podían medir nada.
+- Tanda_Border_Alianzas / Tanda_Borderlands: 13 casillas. Border_Alianzas: 69 partidas con registro y 0 derribos.
+- Tanda_Scarpart: 33; Tanda_Kor: 14 (sus tandas son de antes del registro de eventos).
+Por qué no se activa (cuenta de ai_brs aplicada a cada puente y color en la guardada inicial):
+- el temperamento c es 0 en los 8 colores, así que s arranca en -1 y solo sigue si el grupo de IA del líder (flag) no
+  es 0;
+- con Diplomacy todos empiezan en paz: la ciudad dueña no es hostil y el puente se descarta (11 de 13 en Border); los
+  2 de dueño neutral dan entre -7 y -1, lejos de 5;
+- en Scarpart, los 31 de dueño neutral dan -1 a -3 para todos los colores;
+- además exige que el puente quede atrás de la pila (no en su camino), lo que excluye justo los puentes que importan.
+Para llegar a 5 hacen falta guerra declarada y unas 3 ciudades hostiles más que propias a menos de 15 casillas.
+Conclusión: el criterio actual es inalcanzable en la práctica; afinarlo no alcanza, hay que cambiarlo.
+
+## Próximo paso (paso 4, parte B): criterio nuevo para derribar
+Idea del plan: derribar un puente que esté en el camino de un enemigo hacia una ciudad propia (defensa), sin
+depender del temperamento. Esbozo a diseñar contra el código: al terminar el movimiento de una pila de la IA junto a
+un puente entero sin ejércitos encima, mirar si (a) del lado de la pila hay una ciudad propia a pocas casillas y
+(b) del otro lado hay una pila de un jugador en guerra que, con el puente cortado, queda más lejos de esa ciudad
+(comparar distancias del buscador con y sin el puente). Nunca derribar uno que la propia IA necesita (el destino de
+la pila está del otro lado). Prueba emulada con controles, después tanda A/B sobre una guardada con puentes y
+registro: Borderlands sin alianzas, 1.0.98.0 o posterior (la base ya medida es 0 derribos). Medir derribos y PV.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4, parte B".
