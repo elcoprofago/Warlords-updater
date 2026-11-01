@@ -88,3 +88,12 @@ Sin verificar en partida: que la IA, sin camino al ítem, no se quede trabada in
 Próximo paso: tanda A/B = TAREAS 78 (misma guardada que la tanda 105). Comparar con informe.py: caídas vistas
 (tienen que ser 0; en la 105 fueron 3) y PV (no tiene que bajar contra la 105).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 3, resultado de la tarea 78".
+
+## Resultado del paso 3 (tanda 114 = TAREAS 78, revisado 1/11/2026)
+Tanda_hex_pozos_PV_control con 1.0.98.0 (exe d1bdbf67, lleva po_pf): 9 partidas válidas, 1 colgada en el turno 10.
+Caídas en pozos vistos: **0** (la tanda 105, sin po_pf, tuvo 5 con 17 muertos: colores 1 (2), 3, 4 y 7; arriba se
+anotaron 3, mal contadas). El registro funcionó: la tanda anotó sus eventos 11 y 12 como la 105. PV medio 11.5 contra
+11.8 de la 105: -0.3 ± 0.4 por partida, dentro del azar; no retrocede. Paso 3 cerrado.
+Próximo paso: paso 4 (puentes): medir ai_brraze con el registro (evento 1). Ojo: en las tandas 105 y 114 no hubo
+ningún derribo de puente; hace falta una guardada con puentes. Frase para retomar:
+"Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4".

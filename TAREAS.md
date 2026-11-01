@@ -7,7 +7,7 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 80** (visor de historia: comparar con el juego, 10 minutos) y **tarea 78** (tanda de los pozos vistos), las dos en esta PC.
+1. **Tarea 80** (visor de historia: comparar con el juego, 10 minutos), en esta PC.
 2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -25,15 +25,6 @@ compararlo con lo que muestra el juego en la misma partida.
    solo los 11 primeros de cada ronda; en la ronda 1 no muestra nada). Fijate sobre todo en los que dicen
    «vanquished in…» o «A victory for… in…» (nombre de comarca) y «discovers…» (oro).
 4. Si alguno difiere, anotá la ronda y los dos textos.
-Resultado:
-
-- [ ] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026)
-Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el
-ítem de un caído). Vos sí podés entrar a propósito, eligiendo esa casilla como destino.
-1. Actualizador: instalá vista-aliada **1.0.97.0** en C:\Warlords3.
-2. Monitor de IA → **Ninguna**, marcá solo **hex_pozos_PV_control** (la misma de la tarea 70), Partidas: **10**,
-   **Nueva tanda**.
-3. Avisame cuando termine. Si ves héroes que se quedan quietos junto a un pozo turno tras turno, anotalo acá.
 Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
@@ -82,6 +73,17 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026; hecha el 1/11/2026)
+Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el
+ítem de un caído). Vos sí podés entrar a propósito, eligiendo esa casilla como destino.
+1. Actualizador: instalá vista-aliada **1.0.97.0** en C:\Warlords3.
+2. Monitor de IA → **Ninguna**, marcá solo **hex_pozos_PV_control** (la misma de la tarea 70), Partidas: **10**,
+   **Nueva tanda**.
+3. Avisame cuando termine. Si ves héroes que se quedan quietos junto a un pozo turno tras turno, anotalo acá.
+Resultado: (Claude) tanda 114, con 1.0.98.0: 9 partidas válidas (1 colgada). **0 caídas** en pozos ya vistos;
+en la tanda 105, con la IA de antes, fueron 5 (17 muertos). El PV no bajó: 11.5 contra 11.8, una diferencia de
+-0.3 ± 0.4, dentro del azar.
 
 - [x] **79.** De noche, los Zappers tienen que camuflarse (vista-aliada 1.0.98.0, 30/10/2026)
 Lo que viste en la partida en red: los Zappers se veían normales de noche. Causa: su archivo (`ARMY\Zappers.ARM`)
