@@ -52,13 +52,13 @@ d) Panel inferior: botones "Limpiar búsqueda" y "Exportar" (PDF, y también tex
   sirve de control), +0x44 word cantidad de renglones. Después, un byte por ciudad (dueño; 73 en IA_ROTADA,
   40 en los mapas hex) y los renglones de 0x1c al final del bloque: tamaño = 0x48 + ciudades + n·0x1c, sin
   excepción en los 30 .SAV ni en el `C:\Warlords3\HISTORY.DAT` suelto (26 rondas).
-- Renglones: 4.400 leídos, todos con tipo 1..0x11, jugador 0..8 y nombre ASCII. Tipos vistos: 1–15 y 17
+- Renglones: 2.424 leídos, todos con tipo 1..0x11, jugador 0..8 y nombre ASCII. Tipos vistos: 1–15 y 17
   (el 0x10, 0x12 y 0x13 no aparecieron en estas partidas). El tipo 0 no aparece: es "casilla vacía".
 - Detrás de HISTORY.DAT: la tabla de la ronda en curso, 16 renglones de 0x1c (jugador k en las casillas 2k y
   2k+1; tipo 0 = vacía); después los 0x18 bytes de 0x4fae68 y, con vista-aliada, 'VOTA', cantidad (dword) y tabla.
 - Partidas en ronda 1 traen un solo bloque (largo 0x96…0x139).
 - Pendiente de punto 2: qué significan parámetro y las tres words según el tipo (ej. tipo 0xe: parámetro =
-  0x3c5e, w1 = jugador, w2/w3 = coordenadas, y el nombre es una ciudad).
+  0x3c5e, w1 = jugador, w2/w3 quizá coordenadas, sin comprobar; el nombre es una ciudad).
 
 ## Próximo paso
 
