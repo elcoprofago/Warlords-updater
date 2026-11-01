@@ -1,19 +1,31 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 80).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 81).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 78** (tanda de los pozos vistos, en esta PC).
+1. **Tarea 80** (visor de historia: comparar con el juego, 10 minutos) y **tarea 78** (tanda de los pozos vistos), las dos en esta PC.
 2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **80.** Visor de historia: ¿el texto de los sucesos es igual al del juego? (1/11/2026)
+Ya se sabe leer el «Events Report» guardado en una partida y armar cada renglón con el texto del juego. Falta
+compararlo con lo que muestra el juego en la misma partida.
+1. Abrí una consola en `F:\source\repos\actualizador-warlords` y escribí `python ia\historia.py ABN_000_29`.
+   Muestra, por ronda, el color del jugador, un número de tipo y el texto.
+2. Abrí el Warlords en C:\Warlords3, cargá la partida **ABN_000_29** y abrí el **Events Report**.
+3. Pasá por 4 o 5 rondas distintas y fijate si los renglones coinciden con los de la consola (el juego muestra
+   solo los 11 primeros de cada ronda; en la ronda 1 no muestra nada). Fijate sobre todo en los que dicen
+   «vanquished in…» o «A victory for… in…» (nombre de comarca) y «discovers…» (oro).
+4. Si alguno difiere, anotá la ronda y los dos textos.
+Resultado:
 
 - [ ] **78.** IA: ¿ya no cae en los pozos que ve? (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: la computadora ya no camina por un pozo, remolino o trampa que su bando descubrió (tampoco para levantar el

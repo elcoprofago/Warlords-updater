@@ -60,6 +60,48 @@ d) Panel inferior: botones "Limpiar búsqueda" y "Exportar" (PDF, y también tex
 - Pendiente de punto 2: qué significan parámetro y las tres words según el tipo (ej. tipo 0xe: parámetro =
   0x3c5e, w1 = jugador, w2/w3 quizá coordenadas, sin comprobar; el nombre es una ciudad).
 
+## Punto 2, resuelto en el código (1/11/2026); falta compararlo con el juego (TAREAS 80)
+
+Decodificador: `ia\historia.py` (`Partida.texto`). Corrido sobre los 30 .SAV: 2.424 renglones, ninguno falla.
+
+- Textos: `Sagetext.tex` (dword largo; después tabla de grupos, y por grupo word cantidad + dwords a las cadenas).
+  Tipo t usa el grupo **0xb2 + t** (0x4def30 sobre 0x589880, variante 0 o 1). En inglés, como el juego.
+- Qué va en cada hueco (`nom` = nombre[16] de +6, `par` = parámetro de +4, `p` = jugador de +2):
+
+  | tipo | texto (variante) | huecos |
+  |---|---|---|
+  | 0 | Nothing unusual happens | — |
+  | 1 | The enemy are vanquished in %s / A victory for %s in %s (si hay `nom`) | comarca `par` |
+  | 2 | The Battle of %s is won / %s captures %s (si hay `nom`) | ciudad `par` |
+  | 3 | %s receives a quest in %s | `nom`, ciudad `par` |
+  | 4 | %s completes a quest! | `nom` |
+  | 5 | %s finds %d mana crystal(s) (0 si `par`==1) | `nom`, `par` |
+  | 6 | %s discovers %s | `nom`, oro: MISC.DAT antes/después ([0x56075f]/[0x560765]) + `par`, ej. «1567gp» |
+  | 7 | %s meets a sage | `nom` |
+  | 8 | %s enlists %d ally/allies (0 si `par`==1) | `nom`, `par` |
+  | 9 | %s uncovers the %s | `nom`, ítem `par` (tabla 0x55cb74, 0xd8). Sale «the The Elven Ring», igual que el juego |
+  | 0xa | %s rises to level %d | `nom`, `par`+1 |
+  | 0xb/0xc/0xd | Peace negotiated / War declared / Alliance formed with %s | jugador `par` (0x536b34, 0x1f8) |
+  | 0xe | A hero, %s, emerges / %s emerges in %s | ciudad en (w +0x16, w +0x18) o una casilla antes en x/y (0x440be0); si no hay, la variante 0 |
+  | 0xf | %s is slain! (las dos variantes iguales) | `nom` |
+  | 0x10 | %s is disbanded! | `nom` |
+  | 0x11 | Utter defeat for %s | jugador `p` (el del renglón) |
+  | 0x12 | %s for %s! | `nom`, jugador `p` |
+
+- Comarcas (tipo 1): el juego las lee de `AREA.DAT` del disco (0x4410a0, registros de 0x22). El .SAV la lleva
+  embebida solo si la partida tiene comarcas (0x43a850, bandera [0x560774]): detrás de la tabla de la ronda en curso
+  va un dword y luego el largo + AREA.DAT. La reconoce `historia.areas` porque el largo es múltiplo de 0x22 (en las
+  18 partidas con comarcas; las 12 de tandas no tienen). Sin comarcas, el texto del grupo 0xa («Wilderness»).
+  **Suposición sin comprobar:** que al cargar una partida sin comarcas el juego no lea un AREA.DAT viejo del disco.
+- **Historial ajeno:** en 11 guardadas de tandas (Tanda_Borderlands, Tanda_Kor, Tanda_hex_*…) el HISTORY.DAT
+  embebido es de otro mapa: los bloques traen 74 o 40 dueños de ciudad y el mapa tiene 50 o 73. Pasa porque las
+  guardadas de tandas se arman a partir de otras. `Partida.ajena` lo detecta; la app tiene que avisarlo en vez de
+  mostrar nombres de ciudad equivocados.
+- Jugadores sin nombre: en mapas de 6 bandos los registros 2 y 6 están vacíos y aun así aparecen en «War declared
+  with » (Tanda_hex_alianzas). Es lo que guarda el juego, no un error de lectura.
+- El tipo 0x13 (votación de vista-aliada) no está en el `switch` original: lo dibuja el parche (build.py ~7110).
+  No apareció en estas partidas; queda «(tipo 19)» hasta que haga falta.
+
 ## Próximo paso
 
-Punto 2.
+Punto 3 (arte del cuadro). La comparación con el juego (TAREAS 80) puede ir en paralelo.
