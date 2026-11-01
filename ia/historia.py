@@ -13,6 +13,7 @@ HIST = 0x60427
 JUGADORES, TAM_JUG = 0x536b34, 0x1f8       # +0 nombre
 ITEMS, TAM_ITEM = 0x55cb74, 0xd8           # +0 nombre
 ORO_ANTES, ORO_DESPUES = 0x56075f, 0x560765  # lo que rodea una cantidad de oro (MISC.DAT), 0x43ff50
+MAPA_DIM, MAPA = 0x503e00, 0x503e58        # ancho, alto, desplazamiento de fila en +6; casillas de 10 bytes
 
 
 def textos(grupo, tex=os.path.join(tanda.JUEGO, 'Sagetext.tex')):
@@ -51,6 +52,15 @@ def renglones(d):
             r = d[o + tam - (n - k) * 0x1c:][:0x1c]
             yield ronda, _w(r, 2), r
         o += tam
+
+
+def mapa(d):
+    """Filas de casillas (terreno, explorados): terreno = byte +0 & 0x1f (0 agua, 1 llano...), explorados = byte +4,
+    un bit por jugador. Es lo explorado al guardar, no por ronda: el .SAV no guarda la historia de la exploración."""
+    w, h = struct.unpack_from('<hh', d, offset(MAPA_DIM))
+    sh, b = d[offset(MAPA_DIM) + 6], offset(MAPA)
+    return [[(d[b + ((y * 10) << sh) + x * 10] & 0x1f, d[b + ((y * 10) << sh) + x * 10 + 4]) for x in range(w)]
+            for y in range(h)]
 
 
 class Partida:

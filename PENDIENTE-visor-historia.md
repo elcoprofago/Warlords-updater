@@ -130,7 +130,21 @@ Decodificador: `ia\historia.py` (`Partida.texto`). Corrido sobre los 30 .SAV: 2.
 - Títulos («History of Events», «Events for turn N»): por la apariencia de las capturas, Uncial ATT (sin ubicar
   en el código qué número usa).
 
+## Punto 3b, minimapa por color (1/11/2026, medido en dia-noche4)
+
+- El mapa entero va en el .SAV (bloque 0x503e58, 0x32000 bytes): ancho/alto en 0x503e00/0x503e02 (80×100 en
+  dia-noche4), desplazamiento de fila en el byte 0x503e06 (casilla (x, y) = 0x503e58 + ((y·10) << sh) + x·10).
+- Terreno: byte +0 & 0x1f. Valores vistos: 0 agua, 1 llano, 3, 4, 5 (bosque, colinas, montaña; falta asignar cuál
+  es cuál y los colores exactos del minimapa del juego, que arma su imagen base en la hoja 0x2d).
+- **Explorado: byte +4, un bit por jugador** (bit p = jugador p). En dia-noche4: Crusaders 2.942 casillas, Dark Elves
+  1.931, Dwarfs y Goblins 1.463, Gnoll King 951, Magelords 785, los 2 colores ausentes 0. El dibujo de prueba da un
+  mapa coherente y la zona explorada de Crusaders es una región continua alrededor de su arranque.
+- Lo explorado es el de hoy (al guardar), no el de cada ronda: el .SAV no guarda su historia. Coincide con las
+  capturas (terreno igual en las 4 rondas; solo cambian los escudos, que salen del bloque de cada ronda).
+- Código: `historia.mapa(d)` devuelve filas de (terreno, explorados).
+- Conclusión: el minimapa por color es factible; no hace falta sacarlo.
+
 ## Próximo paso
 
-Punto 3b (minimapa por color: terreno y exploración de cada color en el .SAV). Pendiente menor del 3: tamaño exacto
-del escudo chico y posiciones de cada elemento (se pueden medir sobre las capturas).
+Punto 4 (datos del panel superior). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las
+capturas); del 3b, colores del minimapa por tipo de terreno.
