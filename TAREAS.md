@@ -12,45 +12,8 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
-6. **Tarea 84** (cómo terminó la partida): en la próxima partida en red; después, **tarea 85** (verlo en el Visor).
 
 # Pendientes
-
-- [x] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.15.0, 2/11/2026). Después de la 84.
-Cambio: en el panel de arriba del Visor hay un botón **«Resultado»**. Se activa solo si al lado del .SAV está el
-`.FIN` de la partida (las que están en `HISTORY`). El cartel imita el del juego («Game Over!», SIDE / VPs / CITIES / GOLD).
-Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eventos2» de la PC anfitriona se jugó en
-`C:\Warlords`, que tenía un DarklordAV.exe anterior: pasó a HISTORY pero sin `.FIN`. Las pruebas, en `C:\Warlords3`.
-1. Actualizá el Visor: ruedita → «Actualizar versión». Si sale «Failed to remove temporary directory» y otro cartel de
-   error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. El
-   título tiene que decir **VERSIÓN 1.0.15.0**.
-2. Abrí con «Abrir…» un .SAV de `C:\Warlords3\HISTORY` de una partida jugada con 1.0.101.0. El botón «Resultado»
-   tiene que estar activo.
-3. Partida que terminó con victoria (p. ej. «eventos03»): ventana «Resultado», el mismo cartel que mostró el juego, sin
-   botón Done: «Victory!» / «Total victory!» con la imagen del castillo, o «Game Over!» con puestos, VPs, ciudades y oro.
-4. Partida cerrada con `acuerdo:` (tarea 84, p. ej. «eventos02»): ventana «Final por acuerdo», el papiro del juego con el
-   texto en letra manuscrita negra, a la izquierda, y debajo del título, en letra chica bermellón,
-   «Terminada por acuerdo/votación al N.º turno».
-   En el panel de arriba, «Victoria:» y «Último guardado:» tienen que quedar más cerca del medio.
-5. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
-6. «Abrir…» tiene que arrancar en `HISTORY`; después de abrir una partida de otra carpeta, la próxima vez arranca ahí.
-7. El ícono del Visor (el .exe, la barra de tareas y las ventanas) es un trofeo dorado sobre un escudo rojo, con una espada entera y otra quebrada detrás (guerra, alianzas y traiciones).
-   El subtítulo «EVENTS FOR TURN …» del panel de eventos sale más chico y en dorado oscuro.
-8. La próxima vez que actualices el Visor (desde la 1.0.7.0 en adelante) no tiene que salir ningún cartel de error.
-
-- [x] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026)
-Cambio: al pasar una partida a HISTORY, el juego deja al lado un archivo `<partida>.FIN` que dice cómo terminó (podio,
-victoria aliada o acuerdo). Y para cerrar una partida de común acuerdo, cualquiera escribe en el chat
-`acuerdo: <lo que acordaron>`. El Visor lo muestra desde la 1.0.6.0 (tarea 85).
-1. En **las dos PC**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.101.0**.
-2. Partida en red corta. En la PC anfitriona escribí en el chat: `acuerdo: empate entre Rojo y Azul`.
-3. La otra PC tiene que ver ese mensaje en el chat como cualquier otro.
-4. En la PC donde lo escribiste: en `HISTORY` tienen que estar los .SAV de la partida y `<partida>.FIN`. Abrí el .FIN
-   con el Bloc de notas: dice `cierre=acuerdo`, el turno y `texto=empate entre Rojo y Azul`.
-5. Mirá la otra PC: anotá si la partida quedó en `NETSAVES` (esperado) o pasó a `HISTORY`.
-6. Si en algún momento juegan una partida hasta la victoria, abrí su .FIN: `cierre=podio` o `cierre=aliada` y una
-   línea `bando=` por bando. Anotá si los puntos coinciden con los del cartel del juego.
-Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
 Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya
@@ -107,6 +70,42 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.15.0, 2/11/2026). Después de la 84. Hecho 2/11/2026.
+Cambio: en el panel de arriba del Visor hay un botón **«Resultado»**. Se activa solo si al lado del .SAV está el
+`.FIN` de la partida (las que están en `HISTORY`). El cartel imita el del juego («Game Over!», SIDE / VPs / CITIES / GOLD).
+Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eventos2» de la PC anfitriona se jugó en
+`C:\Warlords`, que tenía un DarklordAV.exe anterior: pasó a HISTORY pero sin `.FIN`. Las pruebas, en `C:\Warlords3`.
+1. Actualizá el Visor: ruedita → «Actualizar versión». Si sale «Failed to remove temporary directory» y otro cartel de
+   error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. El
+   título tiene que decir **VERSIÓN 1.0.15.0**.
+2. Abrí con «Abrir…» un .SAV de `C:\Warlords3\HISTORY` de una partida jugada con 1.0.101.0. El botón «Resultado»
+   tiene que estar activo.
+3. Partida que terminó con victoria (p. ej. «eventos03»): ventana «Resultado», el mismo cartel que mostró el juego, sin
+   botón Done: «Victory!» / «Total victory!» con la imagen del castillo, o «Game Over!» con puestos, VPs, ciudades y oro.
+4. Partida cerrada con `acuerdo:` (tarea 84, p. ej. «eventos02»): ventana «Final por acuerdo», el papiro del juego con el
+   texto en letra manuscrita negra, a la izquierda, y debajo del título, en letra chica bermellón,
+   «Terminada por acuerdo/votación al N.º turno».
+   En el panel de arriba, «Victoria:» y «Último guardado:» tienen que quedar más cerca del medio.
+5. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
+6. «Abrir…» tiene que arrancar en `HISTORY`; después de abrir una partida de otra carpeta, la próxima vez arranca ahí.
+7. El ícono del Visor (el .exe, la barra de tareas y las ventanas) es un trofeo dorado sobre un escudo rojo, con una espada entera y otra quebrada detrás (guerra, alianzas y traiciones).
+8. El subtítulo «EVENTS FOR TURN …» del panel de eventos sale más chico y en dorado oscuro.
+9. La próxima vez que actualices el Visor (desde la 1.0.7.0 en adelante) no tiene que salir ningún cartel de error.
+
+- [x] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026). Hecho 2/11/2026.
+Cambio: al pasar una partida a HISTORY, el juego deja al lado un archivo `<partida>.FIN` que dice cómo terminó (podio,
+victoria aliada o acuerdo). Y para cerrar una partida de común acuerdo, cualquiera escribe en el chat
+`acuerdo: <lo que acordaron>`. El Visor lo muestra desde la 1.0.6.0 (tarea 85).
+1. En **las dos PC**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.101.0**.
+2. Partida en red corta. En la PC anfitriona escribí en el chat: `acuerdo: empate entre Rojo y Azul`.
+3. La otra PC tiene que ver ese mensaje en el chat como cualquier otro.
+4. En la PC donde lo escribiste: en `HISTORY` tienen que estar los .SAV de la partida y `<partida>.FIN`. Abrí el .FIN
+   con el Bloc de notas: dice `cierre=acuerdo`, el turno y `texto=empate entre Rojo y Azul`.
+5. Mirá la otra PC: anotá si la partida quedó en `NETSAVES` (esperado) o pasó a `HISTORY`.
+6. Si en algún momento juegan una partida hasta la victoria, abrí su .FIN: `cierre=podio` o `cierre=aliada` y una
+   línea `bando=` por bando. Anotá si los puntos coinciden con los del cartel del juego.
+Resultado:
 
 - [x] **83.** Partidas terminadas a la carpeta HISTORY (vista-aliada 1.0.100.0). Hecho 2/11/2026: partida en red a 4 turnos, «victoria por más puntos»; se creó HISTORY en las dos PC y la partida salió de NETSAVES en ambas.
 
