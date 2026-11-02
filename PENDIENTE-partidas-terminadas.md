@@ -117,6 +117,16 @@ Por resolver al empezar:
   ambos con pvictory.pcx, escudo, nombre, PV, ciudades y oro; «Peace Agreement» con un pergamino y el texto.
 - No es copia exacta de la pantalla del juego: no se averiguó cómo la arma 0x482d77; se usó el mismo arte.
 
+## B1, ajustes tras la primera prueba (2/11/2026, Visor 1.0.7.0)
+
+- El cartel se rehízo según la captura del juego: «Game Over!» en la barra, «<límite> turns have passed!», columnas
+  SIDE / VPs / CITIES / GOLD, escudo chico, nombre en el color del bando (negro en gris), botón Done. Sin pvictory.pcx.
+- Actualización del Visor y del Monitor de IA: el .exe relanzado heredaba las variables de PyInstaller del viejo (misma
+  ruta) y usaba su carpeta _MEI, que el viejo borraba al cerrar. Ahora se lanza con esas variables quitadas y
+  PYINSTALLER_RESET_ENVIRONMENT=1, y el .bat espera al proceso padre (el cargador). Probado con un .exe de juguete.
+- Prueba real: la partida de la anfitriona («eventos2») se jugó en C:\Warlords con un parche anterior a 1.0.101.0:
+  pasó a HISTORY sin .FIN. Falta probar con 1.0.101.0 (TAREAS 84 y 85).
+
 ## Próximo paso
 
 Nada de código pendiente en este plan: quedan las pruebas reales (TAREAS 84 y 85). Si la 84 muestra que el acuerdo

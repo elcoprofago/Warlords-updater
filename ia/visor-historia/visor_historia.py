@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.6.0'
+VERSION = '1.0.7.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -433,12 +433,16 @@ class Visor:
                 os.remove(nuevo)
             return messagebox.showerror('Actualización', f'No se instaló la actualización:\n{e}', parent=padre)
         # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
-        bat, pid = actual[:-4] + '.actualizar.bat', os.getpid()
+        bat, pid = actual[:-4] + '.actualizar.bat', os.getppid()   # el cargador de PyInstaller: sale último
         with open(bat, 'w', encoding='mbcs') as f:
             f.write('@echo off\n:espera\n'
                     f'tasklist /FI "PID eq {pid}" /NH | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto espera)\n'
                     f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
-        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW)
+        # El .exe nuevo tiene la misma ruta que este: si heredara las variables de PyInstaller se creería hijo de
+        # este proceso y usaría su carpeta _MEI, que se borra al cerrar («Failed to remove temporary directory»).
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith(('_PYI', '_MEI'))}
+        env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW, env=env)
         self.raiz.destroy()
 
     # ---- datos ----
@@ -636,9 +640,10 @@ class Visor:
             self.ronda = max(1, min(self.p.cabecera['ronda'], r))
         self.dibujar()
 
-    # ---- cómo terminó: el cuadro del fin con el arte del set (DLG_MED, escudos y pvictory.pcx) ----
-    # (el título y los rótulos en inglés, como «History of Events»: son los del juego)
+    # ---- cómo terminó: el cartel del fin con el arte del set (DLG_MED y escudos), en inglés como el juego ----
     def ver_fin(self):
+        """Como el cartel del juego al terminar (captura del 2/11/2026): título en la barra, una línea debajo, columnas
+        SIDE / VPs / CITIES / GOLD, escudo chico y nombre en el color del bando, y el botón Done."""
         fin, p = self.fin, self.p
         if not fin or not p:
             return
@@ -653,46 +658,51 @@ class Visor:
             cv.imgs.append(ImageTk.PhotoImage(im))
             cv.create_image(x, y, image=cv.imgs[-1], anchor=anchor)
 
-        def txt(x, y, s, fuente, anchor='nw', fill=TEXTO, **kw):
+        def txt(x, y, s, fuente, anchor='nw', fill='#ffffff', **kw):
             cv.create_text(x + 1, y + 1, text=s, font=fuente, fill=SOMBRA, anchor=anchor, **kw)
             cv.create_text(x, y, text=s, font=fuente, fill=fill, anchor=anchor, **kw)
         img(pcx_rgba(os.path.join(sets, 'DLG_MED.PCX')).crop((0, 0, 520, 376)), 0, 0)   # el cuadro; el resto del PCX es blanco
-        cierre, turno = fin['cierre'], fin['turno']
-        titulo = {'podio': 'Game Over', 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
-        cv.create_text(258, 26, text=titulo, font=self.f_tit, fill='#20203a')
-        sub = {'podio': 'FINAL STANDINGS', 'aliada': 'AN ALLIED VICTORY!', 'acuerdo': 'ENDED BY COMMON AGREEMENT'}
-        txt(260, 62, sub.get(cierre, '') + (f'  —  TURN {turno}' if turno else ''), self.f_sub, 'n')
+        cierre = fin['cierre']
+        limite = ''.join(c for c in str(p.cabecera['limite'] or '') if c.isdigit())   # viene como «35 turnos»
+        titulo = {'podio': 'Game Over!', 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
+        cv.create_text(258, 25, text=titulo, font=('Times New Roman', 18, 'bold'), fill='#20206a')
+        linea = {'podio': f'{limite} turns have passed!' if limite else f"Turn {fin['turno']}",
+                 'aliada': 'An allied victory!', 'acuerdo': f"Ended by common agreement — turn {fin['turno']}"}
+        txt(260, 58, linea.get(cierre, ''), ('Segoe UI', 12), 'n')
         if cierre == 'acuerdo':
             # pergamino: un rectángulo color papel con reborde dorado y el texto del acuerdo
-            cv.create_rectangle(50, 95, 470, 340, fill='#e8d8a8', outline='#c8a040', width=4)
-            cv.create_rectangle(57, 102, 463, 333, outline='#8a6a30', width=1)
-            cv.create_text(260, 118, text=fin['texto'] or '(sin texto)', width=380, anchor='n',
+            cv.create_rectangle(50, 92, 470, 315, fill='#e8d8a8', outline='#c8a040', width=4)
+            cv.create_rectangle(57, 99, 463, 308, outline='#8a6a30', width=1)
+            cv.create_text(260, 115, text=fin['texto'] or '(sin texto)', width=380, anchor='n',
                            font=('Times New Roman', 15, 'italic'), fill='#3a2a10', justify='center')
         else:
-            pv = os.path.join(sets, 'pvictory.pcx')
-            if os.path.exists(pv):
-                img(Image.open(pv).convert('RGB').resize((112, 140)), 30, 100)
-            f, fb = ('Segoe UI', 9), ('Segoe UI', 9, 'bold')
-            x0, y = 155, 95
-            for i, rot in enumerate(('', 'Bando', 'PV', 'Ciud.', 'Oro')):
-                txt((x0, x0 + 50, x0 + 192, x0 + 232, x0 + 292)[i], y, rot, fb, fill=RESALTE)
-            y += 22
+            f = ('Segoe UI', 10)
+            col = (95, 145, 330, 390, 455)   # puesto, escudo + SIDE, VPs, CITIES, GOLD (estas tres centradas)
+            y = 88
+            for x, rot in zip(col[1:], ('SIDE', 'VPs', 'CITIES', 'GOLD')):
+                txt(x, y, rot, f, 'nw' if rot == 'SIDE' else 'n')
+            y += 30
             puesto = 0
-            for b in fin['bandos'][:8]:
-                pu, k, puntos, ciudades, oro = b
+            for pu, k, puntos, ciudades, oro in fin['bandos'][:8]:
                 if pu > 0:
                     puesto = pu
                 if cierre == 'podio':
-                    txt(x0 + 4, y + 4, f'{puesto}º', fb)
+                    txt(col[0], y, str(puesto), f, 'n')
                 if k in self.escudos:
-                    img(self.escudos[k][1].resize((20, 24)), x0 + 26, y)
-                txt(x0 + 50, y + 4, p.jugador(k) if 0 <= k < 8 else '?', f)
-                txt(x0 + 192, y + 4, str(puntos), f)
-                txt(x0 + 232, y + 4, str(ciudades), f)
-                txt(x0 + 292, y + 4, str(oro), f)
+                    img(self.escudos[k][0], col[1], y + 2)
+                txt(col[1] + 20, y, p.jugador(k) if 0 <= k < 8 else '?', f,
+                    fill='#%02x%02x%02x' % (c if sum(c := self.colores.get(k, NEUTRAL)) > 200 else (120, 120, 120)))   # negro → gris
+                for x, n in zip(col[2:], (puntos, ciudades, oro)):
+                    txt(x, y, str(n), f, 'n')
                 y += 26
-        boton(v, text='Aceptar', width=10, command=v.destroy).pack(pady=6)
+        # botón Done: un rollo de papel abajo, sobre el reborde, como en el juego
+        cv.create_rectangle(215, 330, 305, 352, fill='#e8d8a8', outline='#c8a040', width=2, tags='done')
+        cv.create_text(260, 341, text='Done', font=('Times New Roman', 11), fill='#6a5a40', tags='done')
+        cv.tag_bind('done', '<Button-1>', lambda e: v.destroy())
+        cv.tag_bind('done', '<Enter>', lambda e: cv.config(cursor='hand2'))
+        cv.tag_bind('done', '<Leave>', lambda e: cv.config(cursor=''))
         v.bind('<Escape>', lambda e: v.destroy())
+        v.bind('<Return>', lambda e: v.destroy())
 
     # ---- búsqueda ----
     def al_buscar(self):

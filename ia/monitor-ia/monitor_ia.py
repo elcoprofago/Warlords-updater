@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.20'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.21'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -636,12 +636,16 @@ class Monitor(tk.Tk):
                 os.remove(nuevo)
             return messagebox.showerror('Actualización', f'No se instaló la actualización:\n{e}', parent=padre)
         # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
-        bat, pid = actual[:-4] + '.actualizar.bat', os.getpid()
+        bat, pid = actual[:-4] + '.actualizar.bat', os.getppid()   # el cargador de PyInstaller: sale último
         with open(bat, 'w', encoding='mbcs') as f:
             f.write('@echo off\n:espera\n'
                     f'tasklist /FI "PID eq {pid}" /NH | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto espera)\n'
                     f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
-        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW)
+        # El .exe nuevo tiene la misma ruta que este: si heredara las variables de PyInstaller se creería hijo de
+        # este proceso y usaría su carpeta _MEI, que se borra al cerrar («Failed to remove temporary directory»).
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith(('_PYI', '_MEI'))}
+        env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW, env=env)
         self.destroy()
 
     # ---- tanda ----

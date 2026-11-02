@@ -16,15 +16,21 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.6.0, 2/11/2026). Después de la 84.
+- [ ] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.7.0, 2/11/2026). Después de la 84.
 Cambio: en el panel de arriba del Visor hay un botón **«Cómo terminó…»**. Se activa solo si al lado del .SAV está el
-`.FIN` de la partida (las que están en `HISTORY`).
-1. Actualizá el Visor: ruedita → «Actualizar versión»; el título tiene que decir **VERSIÓN 1.0.6.0**.
-2. Abrí con «Abrir…» un .SAV de `HISTORY` de la partida de la tarea 84. El botón «Cómo terminó…» tiene que estar activo.
-3. Apretalo: tiene que salir el cuadro «Peace Agreement» con el pergamino y el texto que escribiste en el chat.
-4. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
-5. Si tenés una partida terminada con victoria: el cuadro tiene que decir «Game Over» (podio, con puestos) o
-   «Victory!» (victoria aliada), con escudos, PV, ciudades y oro. Anotá si se parece a lo que mostró el juego.
+`.FIN` de la partida (las que están en `HISTORY`). El cartel imita el del juego («Game Over!», SIDE / VPs / CITIES / GOLD).
+Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eventos2» de la PC anfitriona se jugó en
+`C:\Warlords`, que tenía un DarklordAV.exe anterior: pasó a HISTORY pero sin `.FIN`. Las pruebas, en `C:\Warlords3`.
+1. Actualizá el Visor: ruedita → «Actualizar versión». Si sale «Failed to remove temporary directory» y otro cartel de
+   error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. El
+   título tiene que decir **VERSIÓN 1.0.7.0**.
+2. Abrí con «Abrir…» un .SAV de `C:\Warlords3\HISTORY` de una partida jugada con 1.0.101.0. El botón «Cómo terminó…»
+   tiene que estar activo.
+3. Partida que terminó con victoria: tiene que salir un cartel como el del juego, con los mismos puestos, VPs, ciudades
+   y oro que mostró el juego al terminar.
+4. Partida cerrada con `acuerdo:` (tarea 84): cuadro «Peace Agreement» con el pergamino y el texto.
+5. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
+6. La próxima vez que actualices el Visor (desde la 1.0.7.0 en adelante) no tiene que salir ningún cartel de error.
 
 - [ ] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026)
 Cambio: al pasar una partida a HISTORY, el juego deja al lado un archivo `<partida>.FIN` que dice cómo terminó (podio,
