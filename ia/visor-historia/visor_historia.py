@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.7.0'
+VERSION = '1.0.8.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -170,11 +170,15 @@ class Visor:
         luces.grid(row=0, column=3, sticky='e')
         self.luces = {m: self.luz(luces, m) for m in ('Single', 'Multi')}
         self.datos = {}
+        # Los datos en una grilla propia, a lo ancho del panel: así «Victoria:» queda cerca del medio
+        dat = self.caja(sup)
+        dat.grid(row=1, column=0, columnspan=4, sticky='we')
+        dat.columnconfigure(1, minsize=230)
         for i, (clave, rot) in enumerate(DATOS):
             f, c = 1 + i // 2, 2 * (i % 2)   # rótulos al margen izquierdo, los dos primeros debajo de «Abrir…»
-            self.rotulo(sup, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(
+            self.rotulo(dat, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(
                 row=f, column=c, sticky='w', padx=(0 if c == 0 else 16, 4), pady=(8 if f == 1 else 0, 0))
-            self.datos[clave] = self.rotulo(sup, 'valor', wraplength=165, justify='left', font=('Segoe UI', 9))
+            self.datos[clave] = self.rotulo(dat, 'valor', wraplength=165, justify='left', font=('Segoe UI', 9))
             self.datos[clave].grid(row=f, column=c + 1, sticky='w', pady=(8 if f == 1 else 0, 0))
         self.aviso = self.rotulo(raiz, 'aviso', font=('Segoe UI', 9), wraplength=620, justify='left')
         # (solo ocupa lugar cuando hay aviso: ver abrir)
@@ -649,7 +653,7 @@ class Visor:
             return
         sets = os.path.join(self.juego, 'SETS', p.cabecera['set'])
         v = tk.Toplevel(self.raiz)
-        v.title('Cómo terminó'); v.transient(self.raiz); v.resizable(False, False)
+        v.title('Final por acuerdo' if fin['cierre'] == 'acuerdo' else 'Cómo terminó'); v.transient(self.raiz); v.resizable(False, False)
         cv = tk.Canvas(v, width=520, height=376, highlightthickness=0, bg='#000')
         cv.pack()
         cv.imgs = []
@@ -665,16 +669,20 @@ class Visor:
         cierre = fin['cierre']
         limite = ''.join(c for c in str(p.cabecera['limite'] or '') if c.isdigit())   # viene como «35 turnos»
         titulo = {'podio': 'Game Over!', 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
-        cv.create_text(258, 25, text=titulo, font=('Times New Roman', 18, 'bold'), fill='#20206a')
+        cv.create_text(258, 25, text=titulo, font=self.f_tit if cierre == 'acuerdo' else ('Times New Roman', 18, 'bold'),
+                       fill='#20206a')
         linea = {'podio': f'{limite} turns have passed!' if limite else f"Turn {fin['turno']}",
-                 'aliada': 'An allied victory!', 'acuerdo': f"Ended by common agreement — turn {fin['turno']}"}
+                 'aliada': 'An allied victory!', 'acuerdo': f"Terminada por acuerdo/votación al {fin['turno']}.º turno"}
         txt(260, 58, linea.get(cierre, ''), ('Segoe UI', 12), 'n')
         if cierre == 'acuerdo':
-            # pergamino: un rectángulo color papel con reborde dorado y el texto del acuerdo
-            cv.create_rectangle(50, 92, 470, 315, fill='#e8d8a8', outline='#c8a040', width=4)
-            cv.create_rectangle(57, 99, 463, 308, outline='#8a6a30', width=1)
-            cv.create_text(260, 115, text=fin['texto'] or '(sin texto)', width=380, anchor='n',
-                           font=('Times New Roman', 15, 'italic'), fill='#3a2a10', justify='center')
+            # el papiro del juego (DLG_HELP.PCX, 250x150) agrandado, con el texto en letra manuscrita, negro y a la izquierda
+            pap = os.path.join(sets, 'DLG_HELP.PCX')
+            if os.path.exists(pap):
+                img(pcx_rgba(pap).resize((440, 260), Image.LANCZOS), 260, 88, 'n')
+            else:
+                cv.create_rectangle(50, 92, 470, 315, fill='#e8d8a8', outline='#c8a040', width=4)
+            cv.create_text(140, 125, text=fin['texto'] or '(sin texto)', width=255, anchor='nw', justify='left',
+                           font=('Segoe Print', 13), fill='#000000')
         else:
             f = ('Segoe UI', 10)
             col = (95, 145, 330, 390, 455)   # puesto, escudo + SIDE, VPs, CITIES, GOLD (estas tres centradas)
