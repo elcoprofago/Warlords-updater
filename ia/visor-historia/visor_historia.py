@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.10.0'
+VERSION = '1.0.11.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -90,10 +90,20 @@ def leer_config():
     return dict(c['Fondo']) if c.has_section('Fondo') else {}
 
 
-def guardar_config(**valores):
-    c = configparser.ConfigParser(); c['Fondo'] = valores
+def guardar_config(seccion='Fondo', **valores):
+    c = configparser.ConfigParser(); c.read(CONFIG); c[seccion] = valores   # las otras secciones quedan
     with open(CONFIG, 'w') as f:
         c.write(f)
+
+
+def carpeta_abrir():
+    """Dónde arranca «Abrir…»: la última carpeta usada; si no, HISTORY (las partidas terminadas); si no, SAVES."""
+    c = configparser.ConfigParser(); c.read(CONFIG)
+    ultima = c.get('Abrir', 'carpeta', fallback='')
+    if os.path.isdir(ultima):
+        return ultima
+    return next((os.path.join(j, d) for d in ('HISTORY', 'SAVES') for j in (tanda.JUEGO, r'C:\Warlords')
+                 if os.path.isdir(os.path.join(j, d))), None)
 
 
 def version_tupla(v):
@@ -452,9 +462,7 @@ class Visor:
     # ---- datos ----
     def abrir(self, ruta=None):
         if not ruta:
-            ini = next((os.path.join(j, 'SAVES') for j in (tanda.JUEGO, r'C:\Warlords')
-                        if os.path.isdir(os.path.join(j, 'SAVES'))), None)
-            ruta = filedialog.askopenfilename(title='Abrir partida', initialdir=ini,
+            ruta = filedialog.askopenfilename(title='Abrir partida', initialdir=carpeta_abrir(),
                                               filetypes=[('Partidas de Warlords', '*.SAV'), ('Todos', '*.*')])
             if not ruta:
                 return
@@ -468,6 +476,7 @@ class Visor:
             messagebox.showerror(TITULO, f'No se pudo leer la partida:\n{ruta}\n\n{e}')
             return
         self.p, self.ruta = p, ruta
+        guardar_config('Abrir', carpeta=os.path.dirname(os.path.abspath(ruta)))
         c = p.cabecera
         self.rondas = {}
         for ronda, j, r in historia.renglones(d):
