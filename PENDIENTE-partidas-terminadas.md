@@ -127,6 +127,14 @@ Por resolver al empezar:
 - Prueba real: la partida de la anfitriona («eventos2») se jugó en C:\Warlords con un parche anterior a 1.0.101.0:
   pasó a HISTORY sin .FIN. Falta probar con 1.0.101.0 (TAREAS 84 y 85).
 
+## B1, más ajustes (2/11/2026, Visor 1.0.9.0)
+
+- Botón y ventana: «Resultado» (el acuerdo sigue en la ventana «Final por acuerdo»). Done solo en el acuerdo.
+- cierre=aliada: el juego lo usa también cuando queda un solo bando (prueba «eventos03»: Rojo eliminó a Blanco), y muestra
+  «Victory!» / «Total victory!» con pvictory.pcx enmarcada, sin tabla. El Visor hace lo mismo: «Total victory!» con un
+  solo bando= en el .FIN, «An allied victory!» con varios (este último texto no se vio en el juego todavía).
+- Subtítulo del acuerdo: Arial 10 (la de los sucesos), bermellón.
+
 ## Próximo paso
 
 Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`) y el Visor de historia 1.0.8.0

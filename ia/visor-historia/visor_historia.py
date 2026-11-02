@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.8.0'
+VERSION = '1.0.9.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -164,7 +164,7 @@ class Visor:
         # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
         # (en la misma fila del nombre, que es corto: no ensanchan la ventana más allá del cuadro del medio)
         sup.columnconfigure(3, weight=1)
-        self.b_fin = boton(sup, text='Cómo terminó…', command=self.ver_fin, state='disabled')
+        self.b_fin = boton(sup, text='Resultado', command=self.ver_fin, state='disabled')
         self.b_fin.grid(row=0, column=2, sticky='e', padx=(10, 0), pady=(0, 4))
         luces = self.caja(sup)
         luces.grid(row=0, column=3, sticky='e')
@@ -644,16 +644,17 @@ class Visor:
             self.ronda = max(1, min(self.p.cabecera['ronda'], r))
         self.dibujar()
 
-    # ---- cómo terminó: el cartel del fin con el arte del set (DLG_MED y escudos), en inglés como el juego ----
+    # ---- resultado: el cartel del fin con el arte del set (DLG_MED, escudos, pvictory.pcx), en inglés como el juego ----
     def ver_fin(self):
         """Como el cartel del juego al terminar (captura del 2/11/2026): título en la barra, una línea debajo, columnas
-        SIDE / VPs / CITIES / GOLD, escudo chico y nombre en el color del bando, y el botón Done."""
+        SIDE / VPs / CITIES / GOLD, escudo chico y nombre en el color del bando. La victoria sin Game Over, como el juego:
+        «Total victory!» (un solo bando en pie) o «An allied victory!» y la imagen pvictory.pcx enmarcada."""
         fin, p = self.fin, self.p
         if not fin or not p:
             return
         sets = os.path.join(self.juego, 'SETS', p.cabecera['set'])
         v = tk.Toplevel(self.raiz)
-        v.title('Final por acuerdo' if fin['cierre'] == 'acuerdo' else 'Cómo terminó'); v.transient(self.raiz); v.resizable(False, False)
+        v.title('Final por acuerdo' if fin['cierre'] == 'acuerdo' else 'Resultado'); v.transient(self.raiz); v.resizable(False, False)
         cv = tk.Canvas(v, width=520, height=376, highlightthickness=0, bg='#000')
         cv.pack()
         cv.imgs = []
@@ -672,8 +673,11 @@ class Visor:
         cv.create_text(258, 25, text=titulo, font=self.f_tit if cierre == 'acuerdo' else ('Times New Roman', 18, 'bold'),
                        fill='#20206a')
         linea = {'podio': f'{limite} turns have passed!' if limite else f"Turn {fin['turno']}",
-                 'aliada': 'An allied victory!', 'acuerdo': f"Terminada por acuerdo/votación al {fin['turno']}.º turno"}
-        txt(260, 58, linea.get(cierre, ''), ('Segoe UI', 12), 'n')
+                 'aliada': 'Total victory!' if len(fin['bandos']) == 1 else 'An allied victory!', 'acuerdo': f"Terminada por acuerdo/votación al {fin['turno']}.º turno"}
+        if cierre == 'acuerdo':   # la letra de los sucesos, más chica, en bermellón
+            txt(260, 60, linea[cierre], ('Arial', 10), 'n', fill='#e34234')
+        else:
+            txt(260, 58, linea.get(cierre, ''), ('Segoe UI', 12), 'n')
         if cierre == 'acuerdo':
             # el papiro del juego (DLG_HELP.PCX, 250x150) agrandado, con el texto en letra manuscrita, negro y a la izquierda
             pap = os.path.join(sets, 'DLG_HELP.PCX')
@@ -683,6 +687,12 @@ class Visor:
                 cv.create_rectangle(50, 92, 470, 315, fill='#e8d8a8', outline='#c8a040', width=4)
             cv.create_text(140, 125, text=fin['texto'] or '(sin texto)', width=255, anchor='nw', justify='left',
                            font=('Segoe Print', 13), fill='#000000')
+        elif cierre == 'aliada':
+            pv = os.path.join(sets, 'pvictory.pcx')
+            if os.path.exists(pv):
+                cv.create_rectangle(155, 89, 365, 341, outline='#c8a040', width=4)
+                cv.create_rectangle(160, 94, 360, 336, outline='#8080c0', width=1)
+                img(Image.open(pv).convert('RGB').resize((198, 240)), 161, 95)
         else:
             f = ('Segoe UI', 10)
             col = (95, 145, 330, 390, 455)   # puesto, escudo + SIDE, VPs, CITIES, GOLD (estas tres centradas)
@@ -703,12 +713,12 @@ class Visor:
                 for x, n in zip(col[2:], (puntos, ciudades, oro)):
                     txt(x, y, str(n), f, 'n')
                 y += 26
-        # botón Done: un rollo de papel abajo, sobre el reborde, como en el juego
-        cv.create_rectangle(215, 330, 305, 352, fill='#e8d8a8', outline='#c8a040', width=2, tags='done')
-        cv.create_text(260, 341, text='Done', font=('Times New Roman', 11), fill='#6a5a40', tags='done')
-        cv.tag_bind('done', '<Button-1>', lambda e: v.destroy())
-        cv.tag_bind('done', '<Enter>', lambda e: cv.config(cursor='hand2'))
-        cv.tag_bind('done', '<Leave>', lambda e: cv.config(cursor=''))
+        if cierre == 'acuerdo':   # botón Done: un rollo de papel abajo, sobre el reborde (en las victorias, no)
+            cv.create_rectangle(215, 330, 305, 352, fill='#e8d8a8', outline='#c8a040', width=2, tags='done')
+            cv.create_text(260, 341, text='Done', font=('Times New Roman', 11), fill='#6a5a40', tags='done')
+            cv.tag_bind('done', '<Button-1>', lambda e: v.destroy())
+            cv.tag_bind('done', '<Enter>', lambda e: cv.config(cursor='hand2'))
+            cv.tag_bind('done', '<Leave>', lambda e: cv.config(cursor=''))
         v.bind('<Escape>', lambda e: v.destroy())
         v.bind('<Return>', lambda e: v.destroy())
 
