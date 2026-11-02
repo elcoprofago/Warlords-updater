@@ -108,8 +108,16 @@ Por resolver al empezar:
   **Límite:** la partida pasa a HISTORY solo en la PC que lo escribió; en las otras sigue en NETSAVES. Si la prueba
   real muestra que hace falta en todas, enganchar la recepción del chat.
 
+## B1, hecho (2/11/2026, Visor de historia 1.0.6.0; probado con .FIN de prueba, falta la prueba real: TAREAS 85)
+
+- `leer_fin` busca `<nombre>.FIN` al lado del .SAV: el nombre es el del archivo sin el `_<turno>` final
+  (NA_2_29.SAV → NA_2.FIN), y si no, el nombre entero.
+- Botón «Cómo terminó…» en el panel superior (gris si no hay .FIN). Abre un cuadro con DLG_MED.PCX del set (recortado
+  a 520x376, el resto del PCX es blanco): «Game Over» con puestos (los -1 repiten el anterior), «Victory!» sin puestos,
+  ambos con pvictory.pcx, escudo, nombre, PV, ciudades y oro; «Peace Agreement» con un pergamino y el texto.
+- No es copia exacta de la pantalla del juego: no se averiguó cómo la arma 0x482d77; se usó el mismo arte.
+
 ## Próximo paso
 
-B1 (Visor): leer `HISTORY\<nombre>.FIN` al lado del .SAV y, en el panel superior, un botón que muestre el podio o el
-cartel de victoria aliada con el arte del juego, o el pergamino con el texto del acuerdo. Los colores de bando del
-.FIN son 0 a 7 como en el resto del Visor.
+Nada de código pendiente en este plan: quedan las pruebas reales (TAREAS 84 y 85). Si la 84 muestra que el acuerdo
+tiene que pasar la partida a HISTORY en todas las PC, enganchar la recepción del chat (ver B2, «Límite»).

@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.5.0'
+VERSION = '1.0.6.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -44,6 +44,32 @@ def juego_de(sav):
     """Carpeta del juego: la de arriba de SAVES si tiene Sagetext.tex; si no, la de siempre."""
     j = os.path.dirname(os.path.dirname(os.path.abspath(sav)))
     return j if os.path.exists(os.path.join(j, 'Sagetext.tex')) else tanda.JUEGO
+
+
+def leer_fin(sav):
+    """Cómo terminó la partida: HISTORY\\<nombre>.FIN que deja el parche al lado de los <nombre>_<turno>.SAV
+    (PENDIENTE-partidas-terminadas.md, B2). None si no hay."""
+    base = os.path.splitext(os.path.basename(sav))[0]
+    partes = base.rsplit('_', 1)
+    nombres = [partes[0], base] if len(partes) == 2 and partes[1].isdigit() else [base]
+    for n in nombres:
+        ruta = os.path.join(os.path.dirname(sav), n + '.FIN')
+        if os.path.exists(ruta):
+            break
+    else:
+        return None
+    fin = {'cierre': '', 'turno': '', 'bandos': [], 'texto': ''}
+    with open(ruta, encoding='mbcs', errors='replace') as f:
+        for renglon in f:
+            clave, _, valor = renglon.rstrip('\n').partition('=')
+            if clave == 'bando':
+                try:
+                    fin['bandos'].append(tuple(int(x) for x in valor.split(',')))
+                except ValueError:
+                    pass
+            elif clave in fin:
+                fin[clave] = valor
+    return fin
 
 
 def pcx_rgba(ruta):
@@ -131,13 +157,15 @@ class Visor:
         sup.pack(fill='x')
         boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, sticky='w', padx=(0, 14), pady=(0, 4))
         marco = reborde(sup)
-        marco.master.grid(row=0, column=1, columnspan=2, sticky='w', pady=(0, 4))
+        marco.master.grid(row=0, column=1, sticky='w', pady=(0, 4))
         self.d_nombre = tk.Entry(marco, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
                                  relief='flat', bd=0, width=26, state='readonly')
         self.d_nombre.pack()
         # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
         # (en la misma fila del nombre, que es corto: no ensanchan la ventana más allá del cuadro del medio)
         sup.columnconfigure(3, weight=1)
+        self.b_fin = boton(sup, text='Cómo terminó…', command=self.ver_fin, state='disabled')
+        self.b_fin.grid(row=0, column=2, sticky='e', padx=(10, 0), pady=(0, 4))
         luces = self.caja(sup)
         luces.grid(row=0, column=3, sticky='e')
         self.luces = {m: self.luz(luces, m) for m in ('Single', 'Multi')}
@@ -456,6 +484,8 @@ class Visor:
             self.aviso.pack(fill='x', padx=10, before=self.raya)
         else:
             self.aviso.pack_forget()
+        self.fin = leer_fin(ruta)
+        self.b_fin.configure(state='normal' if self.fin else 'disabled')
         self.buscar.set(self.buscar.get())   # recalcula las coincidencias
         self.ronda = max([1] + [r for r, rs in self.rondas.items() if rs])   # la última ronda con sucesos
         self.raiz.after(30, self.repintar)   # los rótulos cambiaron de tamaño: el recorte del mosaico también
@@ -605,6 +635,64 @@ class Visor:
         if self.p:
             self.ronda = max(1, min(self.p.cabecera['ronda'], r))
         self.dibujar()
+
+    # ---- cómo terminó: el cuadro del fin con el arte del set (DLG_MED, escudos y pvictory.pcx) ----
+    # (el título y los rótulos en inglés, como «History of Events»: son los del juego)
+    def ver_fin(self):
+        fin, p = self.fin, self.p
+        if not fin or not p:
+            return
+        sets = os.path.join(self.juego, 'SETS', p.cabecera['set'])
+        v = tk.Toplevel(self.raiz)
+        v.title('Cómo terminó'); v.transient(self.raiz); v.resizable(False, False)
+        cv = tk.Canvas(v, width=520, height=376, highlightthickness=0, bg='#000')
+        cv.pack()
+        cv.imgs = []
+
+        def img(im, x, y, anchor='nw'):
+            cv.imgs.append(ImageTk.PhotoImage(im))
+            cv.create_image(x, y, image=cv.imgs[-1], anchor=anchor)
+
+        def txt(x, y, s, fuente, anchor='nw', fill=TEXTO, **kw):
+            cv.create_text(x + 1, y + 1, text=s, font=fuente, fill=SOMBRA, anchor=anchor, **kw)
+            cv.create_text(x, y, text=s, font=fuente, fill=fill, anchor=anchor, **kw)
+        img(pcx_rgba(os.path.join(sets, 'DLG_MED.PCX')).crop((0, 0, 520, 376)), 0, 0)   # el cuadro; el resto del PCX es blanco
+        cierre, turno = fin['cierre'], fin['turno']
+        titulo = {'podio': 'Game Over', 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
+        cv.create_text(258, 26, text=titulo, font=self.f_tit, fill='#20203a')
+        sub = {'podio': 'FINAL STANDINGS', 'aliada': 'AN ALLIED VICTORY!', 'acuerdo': 'ENDED BY COMMON AGREEMENT'}
+        txt(260, 62, sub.get(cierre, '') + (f'  —  TURN {turno}' if turno else ''), self.f_sub, 'n')
+        if cierre == 'acuerdo':
+            # pergamino: un rectángulo color papel con reborde dorado y el texto del acuerdo
+            cv.create_rectangle(50, 95, 470, 340, fill='#e8d8a8', outline='#c8a040', width=4)
+            cv.create_rectangle(57, 102, 463, 333, outline='#8a6a30', width=1)
+            cv.create_text(260, 118, text=fin['texto'] or '(sin texto)', width=380, anchor='n',
+                           font=('Times New Roman', 15, 'italic'), fill='#3a2a10', justify='center')
+        else:
+            pv = os.path.join(sets, 'pvictory.pcx')
+            if os.path.exists(pv):
+                img(Image.open(pv).convert('RGB').resize((112, 140)), 30, 100)
+            f, fb = ('Segoe UI', 9), ('Segoe UI', 9, 'bold')
+            x0, y = 155, 95
+            for i, rot in enumerate(('', 'Bando', 'PV', 'Ciud.', 'Oro')):
+                txt((x0, x0 + 50, x0 + 192, x0 + 232, x0 + 292)[i], y, rot, fb, fill=RESALTE)
+            y += 22
+            puesto = 0
+            for b in fin['bandos'][:8]:
+                pu, k, puntos, ciudades, oro = b
+                if pu > 0:
+                    puesto = pu
+                if cierre == 'podio':
+                    txt(x0 + 4, y + 4, f'{puesto}º', fb)
+                if k in self.escudos:
+                    img(self.escudos[k][1].resize((20, 24)), x0 + 26, y)
+                txt(x0 + 50, y + 4, p.jugador(k) if 0 <= k < 8 else '?', f)
+                txt(x0 + 192, y + 4, str(puntos), f)
+                txt(x0 + 232, y + 4, str(ciudades), f)
+                txt(x0 + 292, y + 4, str(oro), f)
+                y += 26
+        boton(v, text='Aceptar', width=10, command=v.destroy).pack(pady=6)
+        v.bind('<Escape>', lambda e: v.destroy())
 
     # ---- búsqueda ----
     def al_buscar(self):

@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 85).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 86).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,14 +12,24 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
-6. **Tarea 84** (cómo terminó la partida): en la próxima partida en red.
+6. **Tarea 84** (cómo terminó la partida): en la próxima partida en red; después, **tarea 85** (verlo en el Visor).
 
 # Pendientes
+
+- [ ] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.6.0, 2/11/2026). Después de la 84.
+Cambio: en el panel de arriba del Visor hay un botón **«Cómo terminó…»**. Se activa solo si al lado del .SAV está el
+`.FIN` de la partida (las que están en `HISTORY`).
+1. Actualizá el Visor: ruedita → «Actualizar versión»; el título tiene que decir **VERSIÓN 1.0.6.0**.
+2. Abrí con «Abrir…» un .SAV de `HISTORY` de la partida de la tarea 84. El botón «Cómo terminó…» tiene que estar activo.
+3. Apretalo: tiene que salir el cuadro «Peace Agreement» con el pergamino y el texto que escribiste en el chat.
+4. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
+5. Si tenés una partida terminada con victoria: el cuadro tiene que decir «Game Over» (podio, con puestos) o
+   «Victory!» (victoria aliada), con escudos, PV, ciudades y oro. Anotá si se parece a lo que mostró el juego.
 
 - [ ] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026)
 Cambio: al pasar una partida a HISTORY, el juego deja al lado un archivo `<partida>.FIN` que dice cómo terminó (podio,
 victoria aliada o acuerdo). Y para cerrar una partida de común acuerdo, cualquiera escribe en el chat
-`acuerdo: <lo que acordaron>`. El Visor todavía no lo muestra: eso viene después.
+`acuerdo: <lo que acordaron>`. El Visor lo muestra desde la 1.0.6.0 (tarea 85).
 1. En **las dos PC**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.101.0**.
 2. Partida en red corta. En la PC anfitriona escribí en el chat: `acuerdo: empate entre Rojo y Azul`.
 3. La otra PC tiene que ver ese mensaje en el chat como cualquier otro.
