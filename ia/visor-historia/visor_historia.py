@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.9.0'
+VERSION = '1.0.10.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -713,12 +713,6 @@ class Visor:
                 for x, n in zip(col[2:], (puntos, ciudades, oro)):
                     txt(x, y, str(n), f, 'n')
                 y += 26
-        if cierre == 'acuerdo':   # botón Done: un rollo de papel abajo, sobre el reborde (en las victorias, no)
-            cv.create_rectangle(215, 330, 305, 352, fill='#e8d8a8', outline='#c8a040', width=2, tags='done')
-            cv.create_text(260, 341, text='Done', font=('Times New Roman', 11), fill='#6a5a40', tags='done')
-            cv.tag_bind('done', '<Button-1>', lambda e: v.destroy())
-            cv.tag_bind('done', '<Enter>', lambda e: cv.config(cursor='hand2'))
-            cv.tag_bind('done', '<Leave>', lambda e: cv.config(cursor=''))
         v.bind('<Escape>', lambda e: v.destroy())
         v.bind('<Return>', lambda e: v.destroy())
 

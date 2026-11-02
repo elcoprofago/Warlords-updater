@@ -129,7 +129,7 @@ Por resolver al empezar:
 
 ## B1, más ajustes (2/11/2026, Visor 1.0.9.0)
 
-- Botón y ventana: «Resultado» (el acuerdo sigue en la ventana «Final por acuerdo»). Done solo en el acuerdo.
+- Botón y ventana: «Resultado» (el acuerdo sigue en la ventana «Final por acuerdo»). Sin botón Done en ningún cartel (1.0.10.0).
 - cierre=aliada: el juego lo usa también cuando queda un solo bando (prueba «eventos03»: Rojo eliminó a Blanco), y muestra
   «Victory!» / «Total victory!» con pvictory.pcx enmarcada, sin tabla. El Visor hace lo mismo: «Total victory!» con un
   solo bando= en el .FIN, «An allied victory!» con varios (este último texto no se vio en el juego todavía).
@@ -137,7 +137,7 @@ Por resolver al empezar:
 
 ## Próximo paso
 
-Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`) y el Visor de historia 1.0.9.0
+Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`) y el Visor de historia 1.0.10.0
 (`python iaisor-historia\publicar.py`): ya commiteados; el 2/11 no se pudo porque los dos .exe (ia\Monitor-IA.exe,
 ia\Visor-Historia.exe) estaban abiertos y la compilación no puede reemplazarlos.
 
