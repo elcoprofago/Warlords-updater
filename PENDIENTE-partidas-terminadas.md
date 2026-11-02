@@ -49,6 +49,22 @@ Consecuencia para el punto 2: al detectar el fin, alcanza con mover los `NETSAVE
 (nombre en [0x503da0]) a `HISTORY\`; no hace falta un guardado propio si el último autoguardado ya es del turno final
 (a verificar: si el fin se detecta antes o después del autoguardado de ese turno).
 
+## Punto 2, hecho (2/11/2026, vista-aliada 1.0.100.0; probado emulado con prueba_historia.py, falta la prueba real)
+
+- hi_govic (en 0x482790, si [0x571760] ≠ 0) y hi_gofin (en 0x482fd6, Game Over) llaman a hi_fin antes de los
+  registros de las tandas (ia_vic / ia_fin, que siguen igual).
+- hi_fin recuerda el nombre de la partida (hi_name) y llama a hi_mover: crea `HISTORY\` y, para los turnos 0 a
+  [0x503328] + 1, copia `NETSAVES\<nombre>_<t>.SAV` a `HISTORY\` (pisando) y borra el original solo si la copia salió.
+- Orden autoguardado ↔ detección: no hizo falta averiguarlo. hi_auto envuelve el autoguardado (0x4aa0a6): después de
+  guardar, si la partida es la de hi_name (sin distinguir mayúsculas), vuelve a llamar a hi_mover. Cubre los dos
+  órdenes y además los turnos que se jueguen después de una victoria aliada.
+- Se decidió **mover** (copiar y borrar) y **todos** los turnos que haya en NETSAVES (son pocos: el juego ya borra
+  los viejos según [0x503df4]).
+- Solo partidas en red (NETSAVES): en una partida de un jugador no hay autoguardados; el .SAV lo guarda el usuario
+  con el nombre que quiere, y queda en SAVES.
+
 ## Próximo paso
 
-Punto 2: ver el orden autoguardado ↔ detección de fin en el turno final, y escribir el parche.
+Punto 3 (red): con la prueba real (TAREAS 83), ver qué pasa en la PC que no es anfitriona. Según el código, el
+autoguardado lo hace solo el anfitrión ([0x4ff010] = 0); hi_mover no toca el estado del juego, así que no puede
+desincronizar. Si la otra PC también tiene NETSAVES con esa partida, se pasa igual (la victoria se detecta en todas).

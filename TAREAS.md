@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 83).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 84).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,8 +13,19 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
 6. **Tarea 82** (probar el Visor de historia).
+7. **Tarea 83** (partidas terminadas a HISTORY): en la próxima partida en red que termine con victoria.
 
 # Pendientes
+
+- [ ] **83.** Partidas terminadas a la carpeta HISTORY (vista-aliada 1.0.100.0, 2/11/2026)
+1. Instalá el parche 1.0.100.0 con la opción 9 del Actualizador.
+2. Jugá con DarklordAV.exe una partida en red hasta que el juego anuncie la victoria (el podio de Game Over o el cartel
+   «Victory! / An allied victory!»). Lo más rápido: un mapa chico, dos bandos, uno abandona aliándose o pierde todo.
+3. En la PC anfitriona, mirá la carpeta del juego: tiene que existir `HISTORY` con los archivos `<partida>_<turno>.SAV`
+   de esa partida, y en `NETSAVES` ya no tienen que estar. Las otras partidas de `NETSAVES` quedan donde estaban.
+4. Si después de la victoria aliada siguen jugando, los turnos nuevos también tienen que ir apareciendo en `HISTORY`.
+5. Mirá también la carpeta del juego en la otra PC y anotá si tiene `NETSAVES` con esa partida y si se pasó a `HISTORY`.
+6. Abrí el último .SAV de `HISTORY` con el Visor de historia: tiene que mostrar la partida hasta el turno final.
 
 - [ ] **82.** Probar el Visor de historia 1.0.4.0 (1/11/2026)
 1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking

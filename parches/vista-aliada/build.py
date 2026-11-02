@@ -12446,6 +12446,98 @@ iv_back:
     jmp 0x482c10
 ''')
 
+# Partidas terminadas (PENDIENTE-partidas-terminadas.md): cuando el juego detecta la victoria (podio de Game Over en
+# 0x482fd6 o cartel de victoria aliada en 0x482790 con [0x571760] ≠ 0) pasa los autoguardados de esa partida
+# (NETSAVES\<nombre>_<turno>.SAV, nombre base en [0x503da0], turnos 0 a [0x503328] + 1) a HISTORY\, que crea si falta.
+# Copia (CopyFileA, pisando) y borra el original solo si la copia salió: si el archivo ya estaba en HISTORY no se pierde
+# nada. Como no se sabe si el autoguardado del turno final (0x4397f0, solo en el anfitrión, 0x4aa0a6) va antes o
+# después de la detección, recuerda el nombre (hi_name) y después de cada autoguardado de esa misma partida vuelve a
+# pasar los archivos: así también siguen yendo a HISTORY los turnos que se jueguen tras la victoria aliada. No toca el
+# estado del juego (solo archivos de esta PC), así que en red no desincroniza; en los clientes no hay autoguardados y
+# no pasa nada.
+HI_NAME = place_data('hi_name', bytes(0x48))   # [0x503da0] llega hasta 0x503de8
+HI_DIR = place_data('hi_dir', cstr_('HISTORY'))
+HI_SRC = place_data('hi_src', cstr_('NETSAVES\%s_%d.SAV'))
+HI_DST = place_data('hi_dst', cstr_('HISTORY\%s_%d.SAV'))
+HI_FS = place_data('hi_fs', cstr_('%s'))
+HI_BUF = place_data('hi_buf', bytes(2 * 160))   # origen y destino (el nombre ocupa hasta 0x48)
+CREATEDIR, COPYF = 0x5a9824, 0x5a9844
+hi_mover = place('hi_mover', f'''
+    pushad
+    cmp byte ptr [0x503da0], 0
+    je hm_out
+    push 0
+    push {HI_DIR:#x}
+    call dword ptr [{CREATEDIR:#x}]
+    movsx ebx, word ptr [0x503328]
+    inc ebx
+hm_loop:
+    test ebx, ebx
+    jl hm_out
+    push ebx
+    push 0x503da0
+    push {HI_SRC:#x}
+    push {HI_BUF:#x}
+    call dword ptr [{SPRINTF:#x}]
+    push ebx
+    push 0x503da0
+    push {HI_DST:#x}
+    push {HI_BUF + 160:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0x20
+    push 0
+    push {HI_BUF + 160:#x}
+    push {HI_BUF:#x}
+    call dword ptr [{COPYF:#x}]
+    test eax, eax
+    jz hm_next
+    push {HI_BUF:#x}
+    call dword ptr [{DELF:#x}]
+hm_next:
+    dec ebx
+    jmp hm_loop
+hm_out:
+    popad
+    ret
+''')
+hi_fin = place('hi_fin', f'''
+    pushad
+    push 0x503da0
+    push {HI_FS:#x}
+    push {HI_NAME:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    popad
+    jmp {hi_mover:#x}
+''')
+hi_gofin = place('hi_gofin', f'''
+    call {hi_fin:#x}
+    jmp {ia_fin:#x}
+''')
+hi_govic = place('hi_govic', f'''
+    cmp byte ptr [0x571760], 0
+    je hv_go
+    call {hi_fin:#x}
+hv_go:
+    jmp {ia_vic:#x}
+''')
+hi_auto = place('hi_auto', f'''
+    call 0x4397f0
+    pushad
+    cmp byte ptr [{HI_NAME:#x}], 0
+    je ha_out
+    push 0x503da0
+    push {HI_NAME:#x}
+    call dword ptr [{STRICMP:#x}]
+    add esp, 8
+    test eax, eax
+    jnz ha_out
+    call {hi_mover:#x}
+ha_out:
+    popad
+    ret
+''')
+
 # ---------------------------------------------------------------- Día/noche: pintado de la noche
 # Con la opción (bit 2 de SHOPT), las vueltas pares ([0x5032f8 + 0x30]; la primera es la 1) son de
 # noche: el mapa se oscurece con DN_N niveles, cada uno una pasada del recoloreo de la niebla (0x4ee3c0 con la tabla
@@ -13521,8 +13613,9 @@ patch(0x4476d9, asm('call 0x49fec0', 0x4476d9), asm(f'call {ia_nodip:#x}', 0x447
 # arrancar y espera un clic (una tanda quedaba ahí, sin ventana del juego). Si GetDiskFreeSpaceA respondió, informa
 # 2 GB, lo máximo que entra.
 patch(0x4e0799, rel(0x4e0799, 14), asm('mov esi, 0x7fffffff', 0x4e0799) + bytes([0x90]) * 9)
-patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {ia_fin:#x}', 0x482fd6))
-patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {ia_vic:#x}', 0x482790))
+patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {hi_gofin:#x}', 0x482fd6))
+patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {hi_govic:#x}', 0x482790))
+patch(0x4aa0a6, asm('call 0x4397f0', 0x4aa0a6), asm(f'call {hi_auto:#x}', 0x4aa0a6))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x459790, asm('sub esp, 0x14; mov word ptr [esp + 6], 0', 0x459790), asm(f'jmp {dn_pre:#x}', 0x459790) + bytes([0x90]) * 5)
 patch(0x45aa6e, asm('pop ebp; pop edi; pop esi; pop ebx; add esp, 0x14; ret', 0x45aa6e), asm(f'jmp {dn_post:#x}', 0x45aa6e) + bytes([0xcc]) * 3)
