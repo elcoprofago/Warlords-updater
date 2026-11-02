@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 84).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 85).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,8 +12,23 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
+6. **Tarea 84** (cómo terminó la partida): en la próxima partida en red.
 
 # Pendientes
+
+- [ ] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026)
+Cambio: al pasar una partida a HISTORY, el juego deja al lado un archivo `<partida>.FIN` que dice cómo terminó (podio,
+victoria aliada o acuerdo). Y para cerrar una partida de común acuerdo, cualquiera escribe en el chat
+`acuerdo: <lo que acordaron>`. El Visor todavía no lo muestra: eso viene después.
+1. En **las dos PC**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.101.0**.
+2. Partida en red corta. En la PC anfitriona escribí en el chat: `acuerdo: empate entre Rojo y Azul`.
+3. La otra PC tiene que ver ese mensaje en el chat como cualquier otro.
+4. En la PC donde lo escribiste: en `HISTORY` tienen que estar los .SAV de la partida y `<partida>.FIN`. Abrí el .FIN
+   con el Bloc de notas: dice `cierre=acuerdo`, el turno y `texto=empate entre Rojo y Azul`.
+5. Mirá la otra PC: anotá si la partida quedó en `NETSAVES` (esperado) o pasó a `HISTORY`.
+6. Si en algún momento juegan una partida hasta la victoria, abrí su .FIN: `cierre=podio` o `cierre=aliada` y una
+   línea `bando=` por bando. Anotá si los puntos coinciden con los del cartel del juego.
+Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
 Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya

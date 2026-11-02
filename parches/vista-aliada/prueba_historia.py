@@ -1,5 +1,6 @@
 # Prueba de hi_mover / hi_fin / hi_gofin / hi_govic / hi_auto (partidas terminadas a HISTORY\), con el código
-# parcheado real emulado sobre una carpeta de juguete (PENDIENTE-partidas-terminadas.md).
+# parcheado real emulado sobre una carpeta de juguete (PENDIENTE-partidas-terminadas.md). También HISTORY\<nombre>.FIN
+# (cómo terminó: podio, victoria aliada o «acuerdo: <texto>» del chat, parte B).
 # Uso: python prueba_historia.py C:\Warlords3\DarklordAV.exe   (las rutinas se ubican por los parches del exe)
 # Las funciones de Windows y de la biblioteca de C (sprintf, CopyFileA, DeleteFileA, CreateDirectoryA, _stricmp) y el
 # autoguardado 0x4397f0 se reemplazan por equivalentes en Python sobre una carpeta temporal.
@@ -44,6 +45,16 @@ def f_mkdir():
     if os.path.isdir(p): return 0
     os.mkdir(p); return 1
 def f_stricmp(): return int(cstr(arg(0)).lower() != cstr(arg(1)).lower())
+archivos = {}
+def f_fopen():
+    h = 0x1000 + len(archivos); archivos[h] = (ruta(cstr(arg(0))), []); return h
+def f_fprintf():
+    fmt = cstr(arg(1)); vals = []; k = 2
+    for t in re.findall(r'%([sd])', fmt):
+        vals.append(cstr(arg(k)) if t == 's' else struct.unpack('<i', struct.pack('<I', arg(k)))[0]); k += 1
+    archivos[arg(0)][1].append(re.sub(r'%[sd]', '{}', fmt).format(*vals)); return 0
+def f_fclose():
+    p, t = archivos.pop(arg(0)); open(p.replace(chr(92), os.sep), 'w').write(''.join(t)); return 0
 def f_autoguardado():   # como 0x4397f0: NETSAVES\<nombre>_<turno>.SAV
     t = struct.unpack('<h', mu.mem_read(0x503328, 2))[0]
     open(ruta(f'NETSAVES\\{cstr(0x503da0)}_{t}.SAV'.replace('\\', os.sep)), 'w').write(f'turno {t}')
@@ -59,6 +70,8 @@ def stub(iat, fn, pops):
     return a
 stub(0x5a9bec, f_sprintf, 0); stub(0x5a9844, f_copy, 12); stub(0x5a97c0, f_del, 4)
 stub(0x5a9824, f_mkdir, 8); stub(0x5a9be0, f_stricmp, 0)
+stub(0x5a9bdc, f_fopen, 0); stub(0x5a9bf4, f_fprintf, 0); stub(0x5a9be4, f_fclose, 0)
+pv = stub(None, lambda: 0, 0); mu.mem_write(0x440840, b'\xe9' + struct.pack('<i', pv - 0x440845))
 auto = stub(None, f_autoguardado, 0)
 mu.mem_write(0x4397f0, b'\xe9' + struct.pack('<i', auto - 0x4397f5))
 def al_ejecutar(uc, a, n, _):
@@ -70,9 +83,10 @@ def destino(va, op):   # destino de un call/jmp rel32 en va
     b = mu.mem_read(va, 5); assert b[0] == op, hex(va)
     return (va + 5 + struct.unpack('<i', bytes(b[1:]))[0]) & 0xffffffff
 HI_GOFIN, HI_GOVIC, HI_AUTO = destino(0x482fd6, 0xe9), destino(0x482790, 0xe8), destino(0x4aa0a6, 0xe8)
-HI_FIN = destino(HI_GOFIN, 0xe8); IA_FIN = destino(HI_GOFIN + 5, 0xe9)
+HI_FIN = destino(HI_GOFIN, 0xe8); IA_FIN = destino(HI_GOFIN + 10, 0xe9)
+CH_PFX = destino(0x409181, 0xe9)
 # ia_fin/ia_vic (registros de tandas) no se prueban acá: se los corta en su entrada
-IA_VIC = destino(HI_GOVIC + 0xe, 0xe9)
+IA_VIC = destino(HI_GOVIC + 0x1c, 0xe9)
 
 def correr(addr, stop=FIN):
     sp = STK + 0x80000 - 4; mu.mem_write(sp, struct.pack('<I', FIN))
@@ -88,6 +102,9 @@ def estado(tag):
 def poner(nombre, turno, victoria=0):
     mu.mem_write(0x503da0, nombre.encode() + b'\0'); mu.mem_write(0x503328, struct.pack('<h', turno))
     mu.mem_write(0x571760, bytes([victoria]))
+def fin(n):
+    p = ruta(f'HISTORY/{n}.FIN')
+    return open(p).read() if os.path.isfile(p) else None
 def en(c, *a): return set(os.listdir(ruta(c))) >= set(a) if os.path.isdir(ruta(c)) else False
 def no_en(c, *a): return not (set(os.listdir(ruta(c))) & set(a)) if os.path.isdir(ruta(c)) else True
 
@@ -100,12 +117,18 @@ open(ruta('HISTORY.DAT'), 'w').write('control')
 
 print('1. Victoria aliada (cartel) en el turno 29 de NA_2, autoguardado del turno todavía no hecho')
 poner('NA_2', 29, victoria=1)
+mu.mem_write(0x57175c, b'\0')
+for b, (vivo, ciu, pts, oro) in enumerate([(1, 12, 300, 450), (0, 0, 0, 0), (1, 7, 210, 90)] + [(0, 0, 0, 0)] * 5):
+    mu.mem_write(0x536b30 + b * 0x1f8, bytes([vivo, vivo])); mu.mem_write(0x536c14 + b * 0x1f8, struct.pack('<i', oro))
+    mu.mem_write(0x536b20 + 2 * b, struct.pack('<h', ciu)); mu.mem_write(0x5643c8 + 2 * b, struct.pack('<h', pts))
 correr(HI_GOVIC, IA_VIC)
 estado('  después del cartel')
 check(en('HISTORY', 'NA_2_27.SAV', 'NA_2_28.SAV', 'NA_2_29.SAV'), 'los tres turnos de NA_2 pasaron a HISTORY')
 check(no_en('NETSAVES', 'NA_2_27.SAV', 'NA_2_28.SAV', 'NA_2_29.SAV'), 'y ya no están en NETSAVES')
 check(en('NETSAVES', 'OTRA_5.SAV', 'OTRA_6.SAV', 'NA_2_X.SAV'), 'control: la otra partida y NA_2_X siguen en NETSAVES')
 check(os.path.isfile(ruta('HISTORY.DAT')), 'control: HISTORY.DAT intacto')
+print('    NA_2.FIN:', repr(fin('NA_2')))
+check(fin('NA_2') == 'cierre=aliada\nturno=29\nbando=0,0,300,12,450\nbando=0,2,210,7,90\n', 'NA_2.FIN: victoria aliada, bandos 0 y 2 (el 1 no juega)')
 
 print('2. Autoguardado del turno 29 después del cartel (mismo turno, el archivo ya estaba en HISTORY)')
 correr(HI_AUTO)
@@ -128,11 +151,40 @@ check(en('NETSAVES', 'OTRA_5.SAV', 'OTRA_6.SAV', 'OTRA_7.SAV'), 'OTRA sigue en N
 
 print('6. Game Over (podio) de OTRA en el turno 7')
 poner('OTRA', 7)
+E = STK + 0x90000
+mu.mem_write(E - 0xe, struct.pack('<h', 3))
+for k, (col, pue, pts, ciu, oro) in enumerate([(4, 1, 500, 20, 1000), (1, 2, 320, 9, 80), (6, -1, 320, 9, 70)]):
+    mu.mem_write(E - 0x24 + 2 * k, struct.pack('<h', col)); mu.mem_write(E - 0x5c + 2 * k, struct.pack('<h', pue))
+    mu.mem_write(E - 0x3c + 2 * k, struct.pack('<h', pts)); mu.mem_write(E - 0x4c + 2 * k, struct.pack('<h', ciu))
+    mu.mem_write(E - 0x7c + 4 * k, struct.pack('<i', oro))
 correr(HI_GOFIN, IA_FIN)
 estado('  después del podio')
 check(en('HISTORY', 'OTRA_5.SAV', 'OTRA_6.SAV', 'OTRA_7.SAV') and no_en('NETSAVES', 'OTRA_5.SAV', 'OTRA_6.SAV', 'OTRA_7.SAV'),
       'OTRA pasó entera a HISTORY')
 check(en('NETSAVES', 'NA_2_X.SAV'), 'control: NA_2_X sigue en NETSAVES')
+
+print('    OTRA.FIN:', repr(fin('OTRA')))
+check(fin('OTRA') == 'cierre=podio\nturno=7\nbando=1,4,500,20,1000\nbando=2,1,320,9,80\nbando=-1,6,320,9,70\n',
+      'OTRA.FIN: podio en orden, con el empate (-1)')
+
+print('7. Acuerdo por chat en TRATO, turno 12, sin victoria')
+for t in (11, 12): open(ruta(f'NETSAVES/TRATO_{t}.SAV'), 'w').write(f'turno {t}')
+poner('TRATO', 12)
+TXT = STK + 0xa0000
+def chat(texto):
+    mu.mem_write(TXT, texto.encode('latin1') + b'\0')
+    sp = STK + 0x80000 - 4; mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBP, TXT)
+    mu.emu_start(CH_PFX, 0x409302, count=5_000_000)
+chat('Acuerdo:  empate, Rojo y Azul comparten el 1er puesto')
+print('    TRATO.FIN:', repr(fin('TRATO')))
+check(fin('TRATO') == 'cierre=acuerdo\nturno=12\ntexto=empate, Rojo y Azul comparten el 1er puesto\n', 'TRATO.FIN con el texto')
+check(en('HISTORY', 'TRATO_11.SAV', 'TRATO_12.SAV') and no_en('NETSAVES', 'TRATO_11.SAV', 'TRATO_12.SAV'), 'TRATO pasó a HISTORY')
+check(mu.reg_read(UC_X86_REG_EIP) == 0x409302, 'el mensaje sigue al chat normal')
+
+print('8. Control: chat común en otra partida no toca nada')
+open(ruta('NETSAVES/LIBRE_3.SAV'), 'w').write('control'); poner('LIBRE', 3)
+chat('hola, acuerdo: no')
+check(en('NETSAVES', 'LIBRE_3.SAV') and fin('LIBRE') is None, 'LIBRE sigue en NETSAVES, sin .FIN')
 
 shutil.rmtree(JUEGO)
 print('RESULTADO:', 'TODO OK' if ok else 'HAY FALLAS')

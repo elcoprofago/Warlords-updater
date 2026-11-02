@@ -11571,15 +11571,6 @@ ri_done:
     popad
     ret
 ''')
-# La barra de chat acepta «.» además de «#» para dirigir el mensaje («.3 ataca X»): el punto se escribe sin AltGr
-# en cualquier distribución de teclado. El resto del texto lo lee igual (desde [ebp + 1]).
-ch_pfx = place('ch_pfx', '''
-    cmp byte ptr [ebp], 0x23
-    je 0x40918b
-    cmp byte ptr [ebp], 0x2e
-    je 0x40918b
-    jmp 0x409302
-''')
 # Reemplaza «jne 0x409317» en 0x4091ea (ebp = «#n...», el bando n está activo y no es humano).
 ch_ai = place('ch_ai', f'''
     pushad
@@ -12510,16 +12501,196 @@ hi_fin = place('hi_fin', f'''
     popad
     jmp {hi_mover:#x}
 ''')
+# Cómo terminó (parte B): al pasar la partida a HISTORY\ escribe HISTORY\<nombre>.FIN, texto que lee el Visor:
+#   cierre=podio | aliada | acuerdo
+#   turno=<turno>
+#   bando=<puesto>,<color>,<PV>,<ciudades>,<oro>   uno por bando, en el orden del podio (puesto -1 = empatado con el
+#                                                  anterior); en la victoria aliada, puesto 0 y orden de color
+#   texto=<lo escrito>                             solo en el acuerdo
+# El acuerdo lo deja cualquier jugador escribiendo en el chat «acuerdo: <texto>» (el mensaje se manda igual a todos);
+# la partida pasa a HISTORY\ en esa PC aunque el juego no haya detectado victoria.
+HI_FIN_N = place_data('hi_fin_n', cstr_(r'HISTORY\%s.FIN'))
+HI_W = place_data('hi_w', cstr_('w'))
+HI_HDR = place_data('hi_hdr', cstr_('cierre=%s\nturno=%d\n'))
+HI_BFMT = place_data('hi_bfmt', cstr_('bando=%d,%d,%d,%d,%d\n'))
+HI_TFMT = place_data('hi_tfmt', cstr_('texto=%s\n'))
+HI_K_POD = place_data('hi_k_pod', cstr_('podio'))
+HI_K_ALI = place_data('hi_k_ali', cstr_('aliada'))
+HI_K_ACU = place_data('hi_k_acu', cstr_('acuerdo'))
+HI_K_CHAT = place_data('hi_k_chat', cstr_('acuerdo:'))
+# hi_wfin(tipo) cdecl -> eax = FILE* con el encabezado escrito, o 0. Preserva ebx esi edi ebp.
+hi_wfin = place('hi_wfin', f'''
+    push esi
+    push 0x503da0
+    push {HI_FIN_N:#x}
+    push {HI_BUF:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    push {HI_W:#x}
+    push {HI_BUF:#x}
+    call dword ptr [{FOPEN:#x}]
+    add esp, 8
+    test eax, eax
+    jz hw_out
+    mov esi, eax
+    movsx eax, word ptr [0x503328]
+    push eax
+    push dword ptr [esp + 0xc]
+    push {HI_HDR:#x}
+    push esi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x10
+    mov eax, esi
+hw_out:
+    pop esi
+    ret
+''')
+# Podio: ebp = marco de 0x482d77 (mismos datos que ia_fin).
+hi_wpod = place('hi_wpod', f'''
+    pushad
+    cmp byte ptr [0x503da0], 0
+    je hp_out
+    push {HI_K_POD:#x}
+    call {hi_wfin:#x}
+    add esp, 4
+    test eax, eax
+    jz hp_out
+    mov edi, eax
+    xor ebx, ebx
+hp_loop:
+    cmp bx, word ptr [ebp - 0xe]
+    jge hp_close
+    push dword ptr [ebp + ebx*4 - 0x7c]
+    movsx eax, word ptr [ebp + ebx*2 - 0x4c]
+    push eax
+    movsx eax, word ptr [ebp + ebx*2 - 0x3c]
+    push eax
+    movsx eax, word ptr [ebp + ebx*2 - 0x24]
+    push eax
+    movsx eax, word ptr [ebp + ebx*2 - 0x5c]
+    push eax
+    push {HI_BFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x1c
+    inc ebx
+    jmp hp_loop
+hp_close:
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+hp_out:
+    popad
+    ret
+''')
+# Victoria aliada: los bandos en juego como ia_vic (PV de 0x440840).
+hi_wali = place('hi_wali', f'''
+    pushad
+    cmp byte ptr [0x503da0], 0
+    je ha2_out
+    call 0x440840
+    push {HI_K_ALI:#x}
+    call {hi_wfin:#x}
+    add esp, 4
+    test eax, eax
+    jz ha2_out
+    mov edi, eax
+    xor ebx, ebx
+ha2_loop:
+    imul esi, ebx, 0x1f8
+    cmp byte ptr [esi + 0x536b30], 0
+    je ha2_next
+    cmp byte ptr [esi + 0x536b31], 0
+    je ha2_next
+    push dword ptr [esi + 0x536c14]
+    movsx eax, word ptr [ebx*2 + 0x536b20]
+    push eax
+    movsx eax, word ptr [ebx*2 + 0x5643c8]
+    push eax
+    push ebx
+    push 0
+    push {HI_BFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0x1c
+ha2_next:
+    inc ebx
+    cmp ebx, 8
+    jb ha2_loop
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+ha2_out:
+    popad
+    ret
+''')
+# hi_acu(texto) cdecl: «acuerdo: <texto>» del chat (texto = lo que sigue a «acuerdo:», sin espacios al principio).
+hi_acu = place('hi_acu', f'''
+    pushad
+    cmp byte ptr [0x503da0], 0
+    je hc_out
+    call {hi_fin:#x}
+    push {HI_K_ACU:#x}
+    call {hi_wfin:#x}
+    add esp, 4
+    test eax, eax
+    jz hc_out
+    mov edi, eax
+    mov esi, dword ptr [esp + 0x24]
+hc_sp:
+    cmp byte ptr [esi], 0x20
+    jne hc_wr
+    inc esi
+    jmp hc_sp
+hc_wr:
+    push esi
+    push {HI_TFMT:#x}
+    push edi
+    call dword ptr [{FPRINTF:#x}]
+    add esp, 0xc
+    push edi
+    call dword ptr [{FCLOSE:#x}]
+    add esp, 4
+hc_out:
+    popad
+    ret
+''')
 hi_gofin = place('hi_gofin', f'''
     call {hi_fin:#x}
+    call {hi_wpod:#x}
     jmp {ia_fin:#x}
 ''')
 hi_govic = place('hi_govic', f'''
     cmp byte ptr [0x571760], 0
     je hv_go
     call {hi_fin:#x}
+    cmp byte ptr [0x57175c], 0
+    jne hv_go
+    call {hi_wali:#x}
 hv_go:
     jmp {ia_vic:#x}
+''')
+# La barra de chat acepta «.» además de «#» para dirigir el mensaje («.3 ataca X»): el punto se escribe sin AltGr
+# en cualquier distribución de teclado. El resto del texto lo lee igual (desde [ebp + 1]).
+ch_pfx = place('ch_pfx', f'''
+    pushad
+    push {HI_K_CHAT:#x}
+    push ebp
+    call {ch_pre:#x}
+    add esp, 8
+    test eax, eax
+    jz cx_no
+    lea eax, [ebp + 8]
+    push eax
+    call {hi_acu:#x}
+    add esp, 4
+cx_no:
+    popad
+    cmp byte ptr [ebp], 0x23
+    je 0x40918b
+    cmp byte ptr [ebp], 0x2e
+    je 0x40918b
+    jmp 0x409302
 ''')
 hi_auto = place('hi_auto', f'''
     call 0x4397f0

@@ -89,6 +89,27 @@ Por resolver al empezar:
   por pedido del usuario.
 - Dibujo del cuadro en el Visor: tomar el arte del juego (como ya hace con DLG_BIG y el minimapa).
 
+## B2, hecho (2/11/2026, vista-aliada 1.0.101.0; probado emulado con prueba_historia.py, falta la prueba real)
+
+- Dónde queda el dato: `HISTORY\<nombre>.FIN`, texto, al lado de los .SAV. Se descartó recalcular desde el .SAV.
+  Formato:
+  ```
+  cierre=podio | aliada | acuerdo
+  turno=<turno>
+  bando=<puesto>,<color>,<PV>,<ciudades>,<oro>   (uno por bando; podio en su orden, puesto -1 = empatado con el
+                                                  anterior; aliada: puesto 0, en orden de color)
+  texto=<lo escrito>                             (solo acuerdo)
+  ```
+- Podio: hi_wpod (mismos datos que ia_fin). Victoria aliada: hi_wali (como ia_vic, PV de 0x440840; no si hay Game
+  Over). Lo escribe cada PC que detecta el fin (todas, según el punto 3).
+- Acuerdo: en el chat, «acuerdo: <texto>» (sin distinguir mayúsculas). ch_pfx lo detecta en la PC que lo escribe,
+  llama a hi_acu (hi_fin + .FIN) y el mensaje sigue al chat normal, así los demás lo leen. Lo puede escribir cualquier
+  jugador, no solo el anfitrión (no hay forma confirmada de saber quién es el anfitrión: [0x4ff010] sin verificar).
+  **Límite:** la partida pasa a HISTORY solo en la PC que lo escribió; en las otras sigue en NETSAVES. Si la prueba
+  real muestra que hace falta en todas, enganchar la recepción del chat.
+
 ## Próximo paso
 
-Parte B: decidir dónde queda el dato (.FIN o .SAV) y empezar por B2 (el juego lo escribe), después B1.
+B1 (Visor): leer `HISTORY\<nombre>.FIN` al lado del .SAV y, en el panel superior, un botón que muestre el podio o el
+cartel de victoria aliada con el arte del juego, o el pergamino con el texto del acuerdo. Los colores de bando del
+.FIN son 0 a 7 como en el resto del Visor.
