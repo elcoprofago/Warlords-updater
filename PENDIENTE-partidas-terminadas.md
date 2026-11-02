@@ -137,9 +137,8 @@ Por resolver al empezar:
 
 ## Próximo paso
 
-Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`) y el Visor de historia 1.0.10.0
-(`python iaisor-historia\publicar.py`): ya commiteados; el 2/11 no se pudo porque los dos .exe (ia\Monitor-IA.exe,
-ia\Visor-Historia.exe) estaban abiertos y la compilación no puede reemplazarlos.
+Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`): ya commiteado; el 2/11 no se pudo porque
+Monitor-IA.exe estaba abierto y la compilación no puede reemplazarlo. (El Visor 1.0.10.0 ya está publicado.)
 
 
 Nada de código pendiente en este plan: quedan las pruebas reales (TAREAS 84 y 85). Si la 84 muestra que el acuerdo
