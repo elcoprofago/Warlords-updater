@@ -210,3 +210,9 @@ del 3b, colores del minimapa por tipo de terreno.
 A la derecha del nombre, dos luces del semáforo del Monitor de IA (circle_09 + marco, 26 px, tono amarillo anaranjado;
 apagada = brillo × 0,3). Se encienden según el byte 0x48 del .SAV: 0 → Single; 1 (correo) o 2 (red) → Multi; 3 (sin
 identificar) → ninguna. Las partidas de ranking guardadas en SAVES (ABN_*) dicen 0 y encienden Single.
+
+## 1.0.3.0 — ajustes de diseño
+
+Rótulos en blanco crema (#f5ecd0) en el tema oscuro, para no confundirse con las luces. Luces más brillantes (×1,3;
+apagada ×0,4), mismo tono. Nombre más corto (26) y datos en letra 9 con corte de línea: la ventana vuelve al ancho del
+cuadro del medio. Subtítulo en Arial 13 negrita. Buscador, ◀ ▶ y «Limpiar» pasan al panel inferior, a la izquierda.

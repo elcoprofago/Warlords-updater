@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.2.0'
+VERSION = '1.0.3.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -107,7 +107,7 @@ class Visor:
         self.f_ren = tkfont.Font(family='Arial', size=11)
         fams = set(tkfont.families())
         self.f_tit = tkfont.Font(family='Uncial ATT' if 'Uncial ATT' in fams else 'Times New Roman', size=18)
-        self.f_sub = tkfont.Font(family='Arial', size=14)   # la letra de los renglones, más grande y en mayúsculas
+        self.f_sub = tkfont.Font(family='Arial', size=13, weight='bold')   # la letra de los renglones, más grande y en mayúsculas
         self.fondo_v = tk.Label(raiz, bd=0)
         self.fondo_v.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -117,35 +117,28 @@ class Visor:
         sup.pack(fill='x')
         boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, rowspan=3, padx=(0, 14))
         self.d_nombre = tk.Entry(sup, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
-                                 relief='solid', bd=1, width=44, state='readonly')
-        self.d_nombre.grid(row=0, column=1, columnspan=4, sticky='w', pady=(0, 4))
+                                 relief='solid', bd=1, width=26, state='readonly')
+        self.d_nombre.grid(row=0, column=1, columnspan=2, sticky='w', pady=(0, 4))
         # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
-        sup.columnconfigure(5, weight=1)
+        # (en la misma fila del nombre, que es corto: no ensanchan la ventana más allá del cuadro del medio)
+        sup.columnconfigure(4, weight=1)
         luces = self.caja(sup)
-        luces.grid(row=0, column=5, rowspan=2, sticky='ne')
+        luces.grid(row=0, column=3, columnspan=2, sticky='e')
         self.luces = {m: self.luz(luces, m) for m in ('Single', 'Multi')}
         self.datos = {}
         for i, (clave, rot) in enumerate(DATOS):
             f, c = 1 + i // 2, 1 + 2 * (i % 2)
-            self.rotulo(sup, 'etiqueta', text=rot).grid(row=f, column=c, sticky='w', padx=(0 if c == 1 else 24, 4))
-            self.datos[clave] = self.rotulo(sup, 'valor')
+            self.rotulo(sup, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(row=f, column=c, sticky='w', padx=(0 if c == 1 else 16, 4))
+            self.datos[clave] = self.rotulo(sup, 'valor', wraplength=165, justify='left', font=('Segoe UI', 9))
             self.datos[clave].grid(row=f, column=c + 1, sticky='w')
         self.aviso = self.rotulo(raiz, 'aviso', font=('Segoe UI', 9), wraplength=620, justify='left')
         self.aviso.pack(fill='x', padx=10)
 
-        # Buscador, separado del panel superior
+        # Coincidencias de la búsqueda (el buscador está en el panel inferior)
         tk.Frame(raiz, bg='#444', height=1).pack(fill='x', padx=10, pady=(4, 6))
         bus = self.caja(raiz)
         bus.configure(padx=10)
         bus.pack(fill='x')
-        self.rotulo(bus, 'etiqueta', text='Buscar:').pack(side='left')
-        self.buscar = tk.StringVar()
-        self.buscar.trace_add('write', lambda *_: self.al_buscar())
-        e = tk.Entry(bus, textvariable=self.buscar, width=24, font=('Segoe UI', 10))
-        e.pack(side='left', padx=6)
-        e.bind('<Return>', lambda _: self.saltar(1))
-        boton(bus, text='◀', width=3, command=lambda: self.saltar(-1)).pack(side='left')
-        boton(bus, text='▶', width=3, command=lambda: self.saltar(1)).pack(side='left', padx=(2, 8))
         self.d_coinc = self.rotulo(bus, 'valor', width=1)   # ancho fijo: no estira la ventana
         self.d_coinc.pack(side='left', fill='x', expand=True)
 
@@ -164,7 +157,15 @@ class Visor:
         inf = self.caja(raiz)
         inf.configure(padx=10, pady=10)
         inf.pack(fill='x')
-        boton(inf, text='Limpiar búsqueda', command=lambda: self.buscar.set('')).pack(side='left')
+        self.rotulo(inf, 'etiqueta', text='Buscar:').pack(side='left')
+        self.buscar = tk.StringVar()
+        self.buscar.trace_add('write', lambda *_: self.al_buscar())
+        e = tk.Entry(inf, textvariable=self.buscar, width=18, font=('Segoe UI', 10))
+        e.pack(side='left', padx=6)
+        e.bind('<Return>', lambda _: self.saltar(1))
+        boton(inf, text='◀', width=3, command=lambda: self.saltar(-1)).pack(side='left')
+        boton(inf, text='▶', width=3, command=lambda: self.saltar(1)).pack(side='left', padx=(2, 6))
+        boton(inf, text='Limpiar', command=lambda: self.buscar.set('')).pack(side='left')
         self.armar_ruedita(inf)
         boton(inf, text='Exportar PDF…', command=self.exportar_pdf).pack(side='right', padx=6)
         self.aplicar_fondo()
@@ -190,7 +191,7 @@ class Visor:
         """Colores de rótulos, datos y avisos según el fondo sea claro u oscuro."""
         if 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2] > 140:
             return {'etiqueta': '#8a4b00', 'valor': '#0b3d91', 'aviso': '#b00000'}
-        return {'etiqueta': '#f0b040', 'valor': '#9fd3ff', 'aviso': '#ff7070'}
+        return {'etiqueta': '#f5ecd0', 'valor': '#9fd3ff', 'aviso': '#ff7070'}
 
     def aplicar_fondo(self):
         c = leer_config()
@@ -248,8 +249,8 @@ class Visor:
         base = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
         h, s, v = base.convert('HSV').split()
         imgs = {}
-        for estado, brillo in (('on', 1), ('off', 0.3)):   # apagada: la misma muy oscura, lámpara sin corriente
-            c = Image.merge('HSV', (h.point(lambda x: 28), s, v.point(lambda x: x * brillo))).convert('RGBA')
+        for estado, brillo in (('on', 1.3), ('off', 0.4)):   # encendida más brillante; apagada: la misma oscura
+            c = Image.merge('HSV', (h.point(lambda x: 28), s, v.point(lambda x: min(255, x * brillo)))).convert('RGBA')
             c.putalpha(base.getchannel('A'))
             c.alpha_composite(marco.resize(c.size))
             imgs[estado] = c.resize((26, 26), Image.LANCZOS)
