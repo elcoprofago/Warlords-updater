@@ -180,6 +180,26 @@ Código: `historia.cabecera(d)` (también en `Partida.cabecera`).
   es de otra partida. Acepta un .SAV como argumento.
 - Probado: dia-noche4, ABN_000_29, IA_ROTADA (el .exe compilado). Prueba del usuario: tarea 82.
 
+## 1.0.1.0: observaciones del usuario (1/11/2026)
+
+- Rótulos al pie de la barra ya no se cortan (barra de 46 px). Subtítulo «EVENTS FOR TURN n» en Arial 14, la letra
+  de los renglones, en mayúsculas (también en el PDF).
+- Sin «Exportar texto»: en su lugar la ruedita del Monitor de IA (imágenes de `ia/monitor-ia/assets`, empaquetadas):
+  fondo color liso o textura en mosaico (`Visor-Historia.ini` junto al .exe) y «Actualizar versión».
+- Actualización: lee `Visor-Historia.version` de la release Actualizador de Warlords-updater, baja
+  `Visor-Historia.exe` y le pregunta la versión (`--version`) antes de reemplazarse. Se publica con
+  `python ia/visor-historia/publicar.py` (todavía no publicado).
+- Nombre de la partida en un cuadro blanco; rótulos en dorado/marrón y datos en celeste/azul según el fondo.
+- Botones con naranja suave al pasar el mouse.
+
+## Un jugador o multijugador (1/11/2026)
+
+El byte **0x48** del .SAV es el modo de la partida ([0x503de8], lo fija 0x42d323 al empezar):
+0 = un jugador (guarda en SAVES), 1 = por correo (EMAIL\*.EML), 2 = en red (NETSAVES), 3 = sin identificar (se fija
+si [0x4fb698] ≠ 0; guarda en SAVES). Medido en C:\Warlords y C:\Warlords3: todos los de NETSAVES dicen 2 y todos los
+de SAVES dicen 0, salvo ABN_000_29 y ABN_001-FIN (ranking, en SAVES) que dicen 0. El byte 0x54 ([0x503df4]) es otra
+cosa: cuántos turnos viejos conserva NETSAVES. Todavía no se muestra en el Visor.
+
 ## Próximo paso
 
 Según la tarea 82. Sin decidir: distribuirlo (por ejemplo como opción del Actualizador). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las capturas);

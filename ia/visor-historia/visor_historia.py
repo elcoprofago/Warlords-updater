@@ -1,19 +1,21 @@
 # Visor de historia: el "Events Report" de una partida guardada (.SAV), con el arte del juego, línea de tiempo por
-# ronda, buscador y exportación a PDF o texto (PENDIENTE-visor-historia.md). Lee todo con ia\historia.py y toma el arte
-# (fondo, escudos, texturas, fuentes) de la carpeta del juego donde está el .SAV. Se empaqueta con build.py.
-import ctypes, os, sys, time
+# ronda, buscador y exportación a PDF (PENDIENTE-visor-historia.md). Lee todo con ia\historia.py y toma el arte
+# (fondo, escudos, texturas, fuentes) de la carpeta del juego donde está el .SAV. Se empaqueta con build.py y se
+# publica con publicar.py; la ruedita (configuración) elige el fondo y busca actualizaciones, como en el Monitor de IA.
+import configparser, ctypes, json, os, subprocess, sys, time, urllib.request
 import tkinter as tk
 import tkinter.font as tkfont
-from tkinter import filedialog, messagebox
+from tkinter import colorchooser, filedialog, messagebox
 from PIL import Image, ImageTk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.0.0'
+VERSION = '1.0.1.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
+HOVER = '#ffd8a8'                      # naranja suave de los botones con el mouse encima
 COLOR = {'white': (250, 250, 250), 'yellow': (240, 220, 40), 'orange': (240, 140, 30), 'red': (220, 30, 30),
          'green': (40, 180, 40), 'blue': (40, 80, 230), 'cyan': (60, 210, 230), 'black': (40, 40, 40)}
 NEUTRAL = (150, 150, 150)
@@ -22,6 +24,15 @@ TIT_Y, SUB_Y = 28, 72
 MINI = (28, 95, 200, 240)              # x, y, ancho y alto máximos del minimapa
 ESC_Y = 350                            # fila de escudos para elegir el color del minimapa
 REN_X, REN_Y, REN_ALTO = 245, 98, 20   # 16 renglones como máximo por ronda (2 por jugador)
+# Actualizaciones: Visor-Historia.exe y Visor-Historia.version (el número, en texto) en la release Actualizador.
+RELEASE = 'https://api.github.com/repos/elcoprofago/Warlords-updater/releases/tags/Actualizador'
+EXE, MARCA = 'Visor-Historia.exe', 'Visor-Historia.version'
+CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
+CONFIG = os.path.join(CARPETA, 'Visor-Historia.ini')
+# La ruedita es la del Monitor de IA: en el .exe va adentro (build.py); desde el código se lee de monitor-ia\assets.
+ASSETS = os.path.join(getattr(sys, '_MEIPASS', ''), 'assets') if getattr(sys, 'frozen', False) else \
+    os.path.join(os.path.dirname(CARPETA), 'monitor-ia', 'assets')
+DATOS = (('turnos', 'Turnos jugados:'), ('victoria', 'Victoria:'), ('mapa', 'Mapa:'), ('guardado', 'Último guardado:'))
 
 
 def juego_de(sav):
@@ -43,6 +54,40 @@ def pcx_rgba(ruta):
     return rgba
 
 
+def leer_config():
+    c = configparser.ConfigParser(); c.read(CONFIG)
+    return dict(c['Fondo']) if c.has_section('Fondo') else {}
+
+
+def guardar_config(**valores):
+    c = configparser.ConfigParser(); c['Fondo'] = valores
+    with open(CONFIG, 'w') as f:
+        c.write(f)
+
+
+def version_tupla(v):
+    return tuple(int(x) for x in v.split('.'))
+
+
+def version_de(exe):
+    """La versión que trae adentro un Visor-Historia.exe (se la pregunta con --version; lo usa también publicar.py)."""
+    marca = exe + '.version'
+    subprocess.run([exe, '--version', marca], timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
+    with open(marca) as f:
+        v = f.read().strip()
+    os.remove(marca)
+    return v
+
+
+def boton(padre, **kw):
+    """Botón con naranja suave mientras el mouse está encima."""
+    b = tk.Button(padre, cursor='hand2', **kw)
+    normal = b.cget('bg')
+    b.bind('<Enter>', lambda e: b.configure(bg=HOVER, activebackground=HOVER), add='+')
+    b.bind('<Leave>', lambda e: b.configure(bg=normal, activebackground=normal), add='+')
+    return b
+
+
 def fuente_privada(ruta):
     """Registra una TTF solo para este proceso, para que Tk la vea por su nombre."""
     try:
@@ -55,50 +100,55 @@ class Visor:
     def __init__(self, raiz):
         self.raiz, self.p, self.ronda, self.color = raiz, None, 1, 0
         self.coinc, self.imgs = [], []
+        self.cajas, self.rotulos, self.fotos = [], [], {}
+        self.mosaico, self.base, self.tinta = None, FONDO, self.tintas((27, 27, 27))
         raiz.title(TITULO)
-        raiz.configure(bg=FONDO)
         raiz.resizable(False, False)
         self.f_ren = tkfont.Font(family='Arial', size=11)
         fams = set(tkfont.families())
         self.f_tit = tkfont.Font(family='Uncial ATT' if 'Uncial ATT' in fams else 'Times New Roman', size=18)
-        self.f_sub = tkfont.Font(family=self.f_tit.cget('family'), size=13)
-        lbl = dict(bg=FONDO, fg='#e8e8e8', font=('Segoe UI', 10), anchor='w')
+        self.f_sub = tkfont.Font(family='Arial', size=14)   # la letra de los renglones, más grande y en mayúsculas
+        self.fondo_v = tk.Label(raiz, bd=0)
+        self.fondo_v.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Panel superior
-        sup = tk.Frame(raiz, bg=FONDO, padx=10, pady=8)
+        # Panel superior: el nombre en un cuadro blanco; rótulos y datos en dos colores
+        sup = self.caja(raiz)
+        sup.configure(padx=10, pady=8)
         sup.pack(fill='x')
-        tk.Button(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, rowspan=3, padx=(0, 14))
-        self.d_nombre = tk.Label(sup, **{**lbl, 'font': ('Segoe UI', 13, 'bold')})
-        self.d_nombre.grid(row=0, column=1, columnspan=2, sticky='w')
-        self.d_turnos, self.d_victoria = tk.Label(sup, **lbl), tk.Label(sup, **lbl)
-        self.d_mapa, self.d_guardado = tk.Label(sup, **lbl), tk.Label(sup, **lbl)
-        self.d_turnos.grid(row=1, column=1, sticky='w', padx=(0, 30))
-        self.d_victoria.grid(row=1, column=2, sticky='w')
-        self.d_mapa.grid(row=2, column=1, sticky='w', padx=(0, 30))
-        self.d_guardado.grid(row=2, column=2, sticky='w')
-        self.aviso = tk.Label(raiz, bg=FONDO, fg='#ff7070', font=('Segoe UI', 9), wraplength=620, justify='left')
+        boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, rowspan=3, padx=(0, 14))
+        self.d_nombre = tk.Entry(sup, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
+                                 relief='solid', bd=1, width=44, state='readonly')
+        self.d_nombre.grid(row=0, column=1, columnspan=4, sticky='w', pady=(0, 4))
+        self.datos = {}
+        for i, (clave, rot) in enumerate(DATOS):
+            f, c = 1 + i // 2, 1 + 2 * (i % 2)
+            self.rotulo(sup, 'etiqueta', text=rot).grid(row=f, column=c, sticky='w', padx=(0 if c == 1 else 24, 4))
+            self.datos[clave] = self.rotulo(sup, 'valor')
+            self.datos[clave].grid(row=f, column=c + 1, sticky='w')
+        self.aviso = self.rotulo(raiz, 'aviso', font=('Segoe UI', 9), wraplength=620, justify='left')
         self.aviso.pack(fill='x', padx=10)
 
         # Buscador, separado del panel superior
         tk.Frame(raiz, bg='#444', height=1).pack(fill='x', padx=10, pady=(4, 6))
-        bus = tk.Frame(raiz, bg=FONDO, padx=10)
+        bus = self.caja(raiz)
+        bus.configure(padx=10)
         bus.pack(fill='x')
-        tk.Label(bus, text='Buscar:', **{**lbl, 'anchor': 'e'}).pack(side='left')
+        self.rotulo(bus, 'etiqueta', text='Buscar:').pack(side='left')
         self.buscar = tk.StringVar()
         self.buscar.trace_add('write', lambda *_: self.al_buscar())
         e = tk.Entry(bus, textvariable=self.buscar, width=24, font=('Segoe UI', 10))
         e.pack(side='left', padx=6)
         e.bind('<Return>', lambda _: self.saltar(1))
-        tk.Button(bus, text='◀', width=3, command=lambda: self.saltar(-1)).pack(side='left')
-        tk.Button(bus, text='▶', width=3, command=lambda: self.saltar(1)).pack(side='left', padx=(2, 8))
-        self.d_coinc = tk.Label(bus, **lbl, width=1)   # ancho fijo: no estira la ventana
+        boton(bus, text='◀', width=3, command=lambda: self.saltar(-1)).pack(side='left')
+        boton(bus, text='▶', width=3, command=lambda: self.saltar(1)).pack(side='left', padx=(2, 8))
+        self.d_coinc = self.rotulo(bus, 'valor', width=1)   # ancho fijo: no estira la ventana
         self.d_coinc.pack(side='left', fill='x', expand=True)
 
         # Panel principal: el cuadro y la línea de tiempo
         self.cv = tk.Canvas(raiz, width=620, height=460, bg=FONDO, highlightthickness=0)
         self.cv.pack(padx=10, pady=(8, 0))
         self.cv.bind('<Button-1>', self.clic_cuadro)
-        self.barra = tk.Canvas(raiz, width=620, height=34, bg=FONDO, highlightthickness=0)
+        self.barra = tk.Canvas(raiz, width=620, height=46, bg=FONDO, highlightthickness=0)
         self.barra.pack(padx=10, pady=(4, 0))
         self.barra.bind('<Button-1>', self.clic_barra)
         self.barra.bind('<B1-Motion>', self.clic_barra)
@@ -106,12 +156,206 @@ class Visor:
         raiz.bind('<Right>', lambda _: self.ir(self.ronda + 1))
 
         # Panel inferior
-        inf = tk.Frame(raiz, bg=FONDO, padx=10, pady=10)
+        inf = self.caja(raiz)
+        inf.configure(padx=10, pady=10)
         inf.pack(fill='x')
-        tk.Button(inf, text='Limpiar búsqueda', command=lambda: self.buscar.set('')).pack(side='left')
-        tk.Button(inf, text='Exportar texto…', command=self.exportar_texto).pack(side='right')
-        tk.Button(inf, text='Exportar PDF…', command=self.exportar_pdf).pack(side='right', padx=6)
+        boton(inf, text='Limpiar búsqueda', command=lambda: self.buscar.set('')).pack(side='left')
+        self.armar_ruedita(inf)
+        boton(inf, text='Exportar PDF…', command=self.exportar_pdf).pack(side='right', padx=6)
+        self.aplicar_fondo()
+
+    # ---- fondo: color liso o textura en mosaico, como en el Monitor de IA; se guarda en Visor-Historia.ini ----
+    # Cada caja y cada rótulo lleva de imagen el recorte del mosaico que cae en su lugar: se ve continuo.
+    def caja(self, padre):
+        f = tk.Frame(padre, bd=0, highlightthickness=0)
+        fondo = tk.Label(f, bd=0, highlightthickness=0)
+        fondo.place(x=0, y=0, relwidth=1, relheight=1)
+        self.cajas.append((f, fondo))
+        return f
+
+    def rotulo(self, padre, tipo, **kw):
+        kw.setdefault('font', ('Segoe UI', 10, 'bold') if tipo == 'etiqueta' else ('Segoe UI', 10))
+        l = tk.Label(padre, bd=0, highlightthickness=0, padx=0, pady=0, compound='center', anchor='w', **kw)
+        l.tipo = tipo
+        self.rotulos.append(l)
+        return l
+
+    @staticmethod
+    def tintas(rgb):
+        """Colores de rótulos, datos y avisos según el fondo sea claro u oscuro."""
+        if 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2] > 140:
+            return {'etiqueta': '#8a4b00', 'valor': '#0b3d91', 'aviso': '#b00000'}
+        return {'etiqueta': '#f0b040', 'valor': '#9fd3ff', 'aviso': '#ff7070'}
+
+    def aplicar_fondo(self):
+        c = leer_config()
+        tipo, color, ruta = c.get('tipo', 'color'), c.get('color', FONDO), c.get('textura', '')
+        if tipo == 'textura' and os.path.exists(ruta):
+            t = Image.open(ruta).convert('RGB')
+            self.mosaico = Image.new('RGB', (1000, 1100))
+            for x in range(0, 1000, t.width):
+                for y in range(0, 1100, t.height):
+                    self.mosaico.paste(t, (x, y))
+            rgb = t.resize((1, 1), Image.BOX).getpixel((0, 0))   # color medio de la textura
+        else:
+            self.mosaico = None
+            rgb = tuple(v // 257 for v in self.raiz.winfo_rgb(color))
+        self.base, self.tinta = '#%02x%02x%02x' % rgb, self.tintas(rgb)
+        self.raiz.after(30, self.repintar)
+
+    def recorte(self, w, tam=None):
+        """El pedazo de mosaico que queda detrás del widget w (None si no hay textura o w no está a la vista)."""
+        if self.mosaico is None or not w.winfo_ismapped():
+            return None
+        x, y = w.winfo_rootx() - self.raiz.winfo_rootx(), w.winfo_rooty() - self.raiz.winfo_rooty()
+        ancho, alto = tam or (w.winfo_width(), w.winfo_height())
+        return None if ancho < 2 or alto < 2 else self.mosaico.crop((x, y, x + ancho, y + alto))
+
+    def foto_de(self, w, img):
+        self.fotos[w] = ImageTk.PhotoImage(img) if img is not None else ''
+        return self.fotos[w]
+
+    def repintar(self):
+        self.raiz.update_idletasks()
+        self.raiz.configure(bg=self.base)
+        self.fondo_v.configure(bg=self.base, image=self.foto_de(self.fondo_v, self.recorte(self.fondo_v)))
+        for f, fondo in self.cajas:
+            f.configure(bg=self.base)
+            fondo.configure(image=self.foto_de(fondo, self.recorte(f)), bg=self.base)
+        for l in self.rotulos:
+            l.configure(image=self.foto_de(l, self.recorte(l)), bg=self.base, fg=self.tinta[l.tipo])
+        for cv in (self.cv, self.barra):
+            cv.configure(bg=self.base)
+        self.pintar_ruedita()
         self.dibujar()
+
+    def fondo_canvas(self, cv):
+        """El mosaico detrás de un canvas, como primer dibujo."""
+        r = self.recorte(cv, (int(cv['width']), int(cv['height'])))
+        if r is not None:
+            self.imgs.append(ImageTk.PhotoImage(r))
+            cv.create_image(0, 0, image=self.imgs[-1], anchor='nw')
+
+    # ---- ruedita: normal, hover con el mouse encima, active mientras se aprieta, disabled con la ventana abierta ----
+    def armar_ruedita(self, padre):
+        self.r_imgs = {e: Image.open(os.path.join(ASSETS, f'menu_settings_{e}.png')).convert('RGBA')
+                       .resize((28, 28), Image.LANCZOS) for e in ('normal', 'hover', 'active', 'disabled')}
+        self.r_estado, self.r_abierta = 'normal', False
+        r = self.ruedita = tk.Label(padre, bd=0, highlightthickness=0, cursor='hand2')
+        r.pack(side='right')
+
+        def estado(e):
+            if not self.r_abierta:
+                self.r_estado = e
+                self.pintar_ruedita()
+        r.bind('<Enter>', lambda e: estado('hover'))
+        r.bind('<Leave>', lambda e: estado('normal'))
+        r.bind('<ButtonPress-1>', lambda e: estado('active'))
+        r.bind('<ButtonRelease-1>', lambda e: (estado('hover'), self.r_abierta or self.configurar()))
+
+    def pintar_ruedita(self):
+        img = self.r_imgs[self.r_estado]
+        base = self.recorte(self.ruedita, img.size)
+        base = base.convert('RGBA') if base is not None else Image.new('RGBA', img.size, self.base)
+        base.alpha_composite(img)
+        self.ruedita.configure(image=self.foto_de(self.ruedita, base), bg=self.base)
+
+    def configurar(self):
+        c = leer_config()
+        v = tk.Toplevel(self.raiz)
+        v.title('Configuración'); v.transient(self.raiz); v.grab_set(); v.resizable(False, False)
+        self.r_abierta, self.r_estado = True, 'disabled'
+        self.ruedita['cursor'] = 'arrow'
+        self.pintar_ruedita()
+
+        def cerrada(e):
+            if e.widget is v and self.ruedita.winfo_exists():
+                self.r_abierta, self.r_estado = False, 'normal'
+                self.ruedita['cursor'] = 'hand2'
+                self.pintar_ruedita()
+        v.bind('<Destroy>', cerrada)
+        v.geometry(f'+{self.raiz.winfo_rootx() + self.raiz.winfo_width() - 400}+{self.raiz.winfo_rooty() + 380}')
+        tipo = tk.StringVar(value=c.get('tipo', 'color'))
+        color = tk.StringVar(value=c.get('color', FONDO))
+        ruta = tk.StringVar(value=c.get('textura', ''))
+        fr = tk.Frame(v, padx=12, pady=10)
+        fr.pack(fill='both')
+        tk.Label(fr, text='Fondo de la ventana:', font=('Segoe UI', 10, 'bold')).grid(row=0, column=0, columnspan=3,
+                                                                                    sticky='w')
+        tk.Radiobutton(fr, text='Color liso', variable=tipo, value='color').grid(row=1, column=0, sticky='w')
+        muestra = tk.Label(fr, width=4, bg=color.get(), relief='solid', bd=1)
+        muestra.grid(row=2, column=0, sticky='w', padx=(22, 0))
+
+        def elegir_color():
+            r = colorchooser.askcolor(color.get(), parent=v)[1]
+            if r:
+                color.set(r); muestra['bg'] = r; tipo.set('color')
+        boton(fr, text='Elegir color...', command=elegir_color).grid(row=2, column=1, sticky='w', padx=6)
+        tk.Radiobutton(fr, text='Textura (imagen en mosaico)', variable=tipo, value='textura') \
+            .grid(row=3, column=0, columnspan=3, sticky='w', pady=(8, 0))
+        tk.Entry(fr, textvariable=ruta, width=34, state='readonly').grid(row=4, column=0, columnspan=2, sticky='w',
+                                                                         padx=(22, 0))
+
+        def examinar():
+            r = filedialog.askopenfilename(parent=v, title='Imagen para la textura',
+                                           filetypes=[('Imágenes', '*.png *.jpg *.jpeg *.bmp *.gif')])
+            if r:
+                ruta.set(os.path.normpath(r)); tipo.set('textura')
+        boton(fr, text='Examinar...', command=examinar).grid(row=4, column=2, padx=6)
+
+        def aceptar():
+            if tipo.get() == 'textura' and not os.path.exists(ruta.get()):
+                return messagebox.showwarning('Configuración', 'Elegí una imagen para la textura.', parent=v)
+            guardar_config(tipo=tipo.get(), color=color.get(), textura=ruta.get())
+            self.aplicar_fondo()
+            v.destroy()
+        tk.Label(fr, text='Actualización:', font=('Segoe UI', 10, 'bold')).grid(row=5, column=0, columnspan=3,
+                                                                              sticky='w', pady=(12, 0))
+        tk.Label(fr, text=f'Versión instalada: {VERSION}').grid(row=6, column=0, columnspan=2, sticky='w')
+        boton(fr, text='Actualizar versión', command=lambda: self.actualizar(v)).grid(row=6, column=2, padx=6)
+        bf = tk.Frame(fr)
+        bf.grid(row=7, column=0, columnspan=3, sticky='e', pady=(12, 0))
+        boton(bf, text='Aceptar', width=10, command=aceptar).pack(side='left', padx=4)
+        boton(bf, text='Cancelar', width=10, command=v.destroy).pack(side='left')
+
+    # ---- actualización desde la release Actualizador ----
+    def actualizar(self, padre):
+        if not getattr(sys, 'frozen', False):
+            return messagebox.showinfo('Actualización', 'Corriendo desde el código: se actualiza con git.', parent=padre)
+        try:
+            with urllib.request.urlopen(RELEASE, timeout=15) as r:
+                assets = {a['name']: a['browser_download_url'] for a in json.load(r)['assets']}
+            if EXE not in assets or MARCA not in assets:
+                raise RuntimeError(f'la release no trae {EXE} y {MARCA}')
+            with urllib.request.urlopen(assets[MARCA], timeout=15) as r:
+                nueva = r.read().decode().strip()
+        except Exception as e:
+            return messagebox.showerror('Actualización', f'No se pudo consultar GitHub:\n{e}', parent=padre)
+        if version_tupla(nueva) <= version_tupla(VERSION):
+            return messagebox.showinfo('Actualización', f'Ya tenés la última versión ({VERSION}).', parent=padre)
+        if not messagebox.askyesno('Actualización', f'Hay una versión nueva: {nueva} (tenés {VERSION}).\n'
+                                   '¿Bajarla e instalarla? El Visor se cierra y se vuelve a abrir.', parent=padre):
+            return
+        actual = sys.executable
+        nuevo = actual[:-4] + '.nuevo.exe'
+        try:
+            urllib.request.urlretrieve(assets[EXE], nuevo)
+            # Lo bajado tiene que ser lo que anuncia la marca: se le pregunta la versión al .exe.
+            interna = version_de(nuevo)
+            if interna != nueva:
+                raise RuntimeError(f'se anunció la {nueva} y el .exe trae adentro la {interna}')
+        except Exception as e:
+            if os.path.exists(nuevo):
+                os.remove(nuevo)
+            return messagebox.showerror('Actualización', f'No se instaló la actualización:\n{e}', parent=padre)
+        # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
+        bat, pid = actual[:-4] + '.actualizar.bat', os.getpid()
+        with open(bat, 'w', encoding='mbcs') as f:
+            f.write('@echo off\n:espera\n'
+                    f'tasklist /FI "PID eq {pid}" /NH | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto espera)\n'
+                    f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
+        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW)
+        self.raiz.destroy()
 
     # ---- datos ----
     def abrir(self, ruta=None):
@@ -140,17 +384,21 @@ class Visor:
         self.duenos = historia.duenos(d)
         self.duenos[c['ronda']] = bytes(ci['dueño'] for ci in p.ciudades)
         self.color = next((k for k in range(8) if p.juega(k)), 0)
-        self.d_nombre['text'] = c['nombre']
-        self.d_turnos['text'] = f"Turnos jugados: {c['ronda'] - 1}  (ronda {c['ronda']} en curso)"
-        self.d_victoria['text'] = 'Victoria: ' + c['victoria'] + (f", límite {c['limite']}" if c['limite'] else '')
-        self.d_mapa['text'] = 'Mapa: ' + ('aleatorio' if c['mapa'] == 'Random' else f"escenario «{c['mapa']}»") \
+        self.d_nombre.configure(state='normal')
+        self.d_nombre.delete(0, 'end')
+        self.d_nombre.insert(0, c['nombre'])
+        self.d_nombre.configure(state='readonly')
+        self.datos['turnos']['text'] = f"{c['ronda'] - 1}  (ronda {c['ronda']} en curso)"
+        self.datos['victoria']['text'] = c['victoria'] + (f", límite {c['limite']}" if c['limite'] else '')
+        self.datos['mapa']['text'] = ('aleatorio' if c['mapa'] == 'Random' else f"escenario «{c['mapa']}»") \
             + f"  ({c['set']})"
-        self.d_guardado['text'] = 'Último guardado: ' + time.strftime('%d/%m/%Y %H:%M', time.localtime(os.path.getmtime(ruta)))
+        self.datos['guardado']['text'] = time.strftime('%d/%m/%Y %H:%M', time.localtime(os.path.getmtime(ruta)))
         self.aviso['text'] = ('Aviso: el historial guardado en esta partida es de otra partida (pasa con las guardadas '
                               'armadas a partir de otra). Los sucesos y nombres de ciudad no corresponden a este mapa.'
                               if p.ajena else '')
-        self.al_buscar()
-        self.ir(max([1] + [r for r, rs in self.rondas.items() if rs]))   # la última ronda con sucesos
+        self.buscar.set(self.buscar.get())   # recalcula las coincidencias
+        self.ronda = max([1] + [r for r, rs in self.rondas.items() if rs])   # la última ronda con sucesos
+        self.raiz.after(30, self.repintar)   # los rótulos cambiaron de tamaño: el recorte del mosaico también
 
     def cargar_arte(self, p):
         j, c = self.juego, p.cabecera
@@ -191,14 +439,15 @@ class Visor:
     def dibujar(self):
         cv, self.imgs = self.cv, []
         cv.delete('all')
+        self.fondo_canvas(cv)
         if not self.p:
-            cv.create_text(310, 230, text='Abrí una partida guardada (.SAV) con «Abrir…»', fill='#aaa',
+            cv.create_text(310, 230, text='Abrí una partida guardada (.SAV) con «Abrir…»', fill=self.tinta['valor'],
                            font=('Segoe UI', 12))
             self.dibujar_barra()
             return
         cv.create_image(0, 0, image=self.foto(self.fondo), anchor='nw')
         cv.create_text(310, TIT_Y, text='History of Events', font=self.f_tit, fill='#20203a')
-        self.texto_sombra(REN_X + 175, SUB_Y, f'Events for turn {self.ronda}', self.f_sub, 'n')
+        self.texto_sombra(REN_X + 175, SUB_Y, f'EVENTS FOR TURN {self.ronda}', self.f_sub, 'n')
         self.dibujar_minimapa()
         clave = self.buscar.get().strip().lower()
         y = REN_Y
@@ -266,6 +515,7 @@ class Visor:
     def dibujar_barra(self):
         b = self.barra
         b.delete('all')
+        self.fondo_canvas(b)
         if not self.p:
             return
         n = self.p.cabecera['ronda']
@@ -274,10 +524,11 @@ class Visor:
         for r in sorted({r for r, _ in self.coinc}):
             b.create_line(x(r), 6, x(r), 22, fill=RESALTE, width=2)
         b.create_oval(x(self.ronda) - 7, 7, x(self.ronda) + 7, 21, fill='#c8a040', outline='#000')
-        b.create_text(20, 30, text='1', fill='#aaa', font=('Segoe UI', 8))
-        b.create_text(600, 30, text=str(n), fill='#aaa', font=('Segoe UI', 8))
-        b.create_text(310, 30, text=f'Ronda {self.ronda} de {n}' + (' (en curso)' if self.ronda == n else ''),
-                      fill='#ddd', font=('Segoe UI', 8))
+        f = ('Segoe UI', 9)
+        b.create_text(20, 34, text='1', fill=self.tinta['valor'], font=f)
+        b.create_text(600, 34, text=str(n), fill=self.tinta['valor'], font=f)
+        b.create_text(310, 34, text=f'Ronda {self.ronda} de {n}' + (' (en curso)' if self.ronda == n else ''),
+                      fill=self.tinta['etiqueta'], font=f)
 
     def clic_barra(self, e):
         if self.p:
@@ -309,35 +560,18 @@ class Visor:
     # ---- exportar ----
     def renglones_export(self):
         c = self.p.cabecera
-        enc = [c['nombre'], self.d_turnos['text'], self.d_victoria['text'], self.d_mapa['text'],
-               self.d_guardado['text']] + ([self.aviso['text']] if self.aviso['text'] else [])
+        enc = [c['nombre']] + [f"{rot} {self.datos[k]['text']}" for k, rot in DATOS] \
+            + ([self.aviso['text']] if self.aviso['text'] else [])
         cuerpo = []
         for r in range(1, c['ronda'] + 1):
             cuerpo.append((r, [(self.p.jugador(j) if j < 8 else '', s) for j, s in self.rondas.get(r, [])]))
         return enc, cuerpo
 
-    def destino(self, ext, tipo):
-        if not self.p:
-            return None
-        return filedialog.asksaveasfilename(title='Exportar', defaultextension=ext,
-                                            initialfile=self.p.cabecera['nombre'] + ext,
-                                            filetypes=[(tipo, '*' + ext)])
-
-    def exportar_texto(self):
-        ruta = self.destino('.txt', 'Texto')
-        if not ruta:
-            return
-        enc, cuerpo = self.renglones_export()
-        with open(ruta, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(enc) + '\n')
-            for r, rs in cuerpo:
-                f.write(f'\nEvents for turn {r}\n')
-                for j, s in rs or [('', self.p.T[0][0])]:
-                    f.write(f'  {j + ": " if j else ""}{s}\n')
-        messagebox.showinfo(TITULO, f'Exportado:\n{ruta}')
-
     def exportar_pdf(self):
-        ruta = self.destino('.pdf', 'PDF')
+        if not self.p:
+            return
+        ruta = filedialog.asksaveasfilename(title='Exportar', defaultextension='.pdf',
+                                            initialfile=self.p.cabecera['nombre'] + '.pdf', filetypes=[('PDF', '*.pdf')])
         if not ruta:
             return
         from fpdf import FPDF
@@ -361,8 +595,8 @@ class Visor:
             pdf.multi_cell(0, 5, s, new_x='LMARGIN', new_y='NEXT')
         for r, rs in cuerpo:
             pdf.ln(3)
-            pdf.set_font(tit, '', 12)
-            pdf.cell(0, 7, f'Events for turn {r}', new_x='LMARGIN', new_y='NEXT')
+            pdf.set_font('ui', 'B', 12)
+            pdf.cell(0, 7, f'EVENTS FOR TURN {r}', new_x='LMARGIN', new_y='NEXT')
             pdf.set_font('ui', '', 10)
             for j, s in rs or [('', self.p.T[0][0])]:
                 pdf.cell(42, 5, j)
@@ -372,6 +606,10 @@ class Visor:
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[1] == '--version':   # lo usa la actualización para verificar lo bajado
+        with open(sys.argv[2], 'w') as f:
+            f.write(VERSION)
+        sys.exit()
     fuente_privada(os.path.join(tanda.JUEGO, 'FONTS', 'UNCIAL.TTF'))
     raiz = tk.Tk()
     v = Visor(raiz)

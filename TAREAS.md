@@ -16,14 +16,17 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **82.** Probar el Visor de historia 1.0.0.0 (1/11/2026)
+- [ ] **82.** Probar el Visor de historia 1.0.1.0 (1/11/2026)
 1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking
    (carpeta SAVES del Warlords actualizado, no la de Warlords3: ahí están las de prueba).
 2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
 3. Abrí la misma partida en el juego, Historia de sucesos: compará algunos turnos (sucesos, ciudades del minimapa).
    Los colores del terreno son aproximados; lo que importa es lo explorado y las ciudades.
 4. Escribí un nombre de ciudad en «Buscar»: los turnos con coincidencias se marcan en dorado en la barra.
-5. Probá «Exportar PDF…» y «Exportar texto…» y abrí lo que generan.
+5. Probá «Exportar PDF…» y abrí lo que genera.
+6. Pasá el mouse por los botones: se ponen naranja suave.
+7. Ruedita (abajo a la derecha): elegí «Textura», una imagen cualquiera, Aceptar; el fondo de la ventana pasa a
+   mosaico. Volvé a «Color liso» y probá otro color. Al cerrar y abrir el visor tiene que recordar lo elegido.
 Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
