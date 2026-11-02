@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.4.0'
+VERSION = '1.0.5.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -101,6 +101,15 @@ def fuente_privada(ruta):
         pass
 
 
+
+def reborde(padre):
+    """Reborde de los cuadros de texto como el del minimapa: dorado ancho por fuera y una línea negra por dentro.
+    Devuelve el marco interior (donde va el cuadro); el exterior, que se ubica, es su .master."""
+    oro = tk.Frame(padre, bg='#c8a040', padx=3, pady=3)
+    negro = tk.Frame(oro, bg='#000000', padx=1, pady=1)
+    negro.pack()
+    return negro
+
 class Visor:
     def __init__(self, raiz):
         self.raiz, self.p, self.ronda, self.color = raiz, None, 1, 0
@@ -121,9 +130,11 @@ class Visor:
         sup.configure(padx=10, pady=8)
         sup.pack(fill='x')
         boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, sticky='w', padx=(0, 14), pady=(0, 4))
-        self.d_nombre = tk.Entry(sup, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
-                                 relief='solid', bd=1, width=26, state='readonly')
-        self.d_nombre.grid(row=0, column=1, columnspan=2, sticky='w', pady=(0, 4))
+        marco = reborde(sup)
+        marco.master.grid(row=0, column=1, columnspan=2, sticky='w', pady=(0, 4))
+        self.d_nombre = tk.Entry(marco, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
+                                 relief='flat', bd=0, width=26, state='readonly')
+        self.d_nombre.pack()
         # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
         # (en la misma fila del nombre, que es corto: no ensanchan la ventana más allá del cuadro del medio)
         sup.columnconfigure(3, weight=1)
@@ -167,8 +178,10 @@ class Visor:
         self.rotulo(inf, 'etiqueta', text='Buscar:').pack(side='left')
         self.buscar = tk.StringVar()
         self.buscar.trace_add('write', lambda *_: self.al_buscar())
-        e = tk.Entry(inf, textvariable=self.buscar, width=18, font=('Segoe UI', 10))
-        e.pack(side='left', padx=6)
+        marco = reborde(inf)
+        marco.master.pack(side='left', padx=6)
+        e = tk.Entry(marco, textvariable=self.buscar, width=18, font=('Segoe UI', 10), relief='flat', bd=0)
+        e.pack()
         e.bind('<Return>', lambda _: self.saltar(1))
         boton(inf, text='◀', width=3, command=lambda: self.saltar(-1)).pack(side='left')
         boton(inf, text='▶', width=3, command=lambda: self.saltar(1)).pack(side='left', padx=(2, 6))
