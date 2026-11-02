@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.11.0'
+VERSION = '1.0.12.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -503,6 +503,9 @@ class Visor:
             self.aviso.pack_forget()
         self.fin = leer_fin(ruta)
         self.b_fin.configure(state='normal' if self.fin else 'disabled')
+        if self.medalla:
+            self.b_fin.img = ImageTk.PhotoImage(self.medalla.resize((22, 22), Image.LANCZOS))
+            self.b_fin.configure(image=self.b_fin.img, compound='left', padx=4)
         self.buscar.set(self.buscar.get())   # recalcula las coincidencias
         self.ronda = max([1] + [r for r, rs in self.rondas.items() if rs])   # la última ronda con sucesos
         self.raiz.after(30, self.repintar)   # los rótulos cambiaron de tamaño: el recorte del mosaico también
@@ -510,6 +513,11 @@ class Visor:
     def cargar_arte(self, p):
         j, c = self.juego, p.cabecera
         self.fondo = pcx_rgba(os.path.join(j, 'SETS', c['set'], 'DLG_BIG.PCX'))
+        # La medalla de cinta roja de ICONS.PCX (casilla de 34x34): botón «Resultado» e ícono de su ventana
+        try:
+            self.medalla = Image.open(os.path.join(j, 'SETS', c['set'], 'ICONS.PCX')).convert('RGB').crop((102, 34, 136, 68))
+        except OSError:
+            self.medalla = None
         self.escudos, self.colores = {}, {}
         for k in range(9):
             hojas = p.escudo(k) if k < 8 else []
@@ -664,6 +672,9 @@ class Visor:
         sets = os.path.join(self.juego, 'SETS', p.cabecera['set'])
         v = tk.Toplevel(self.raiz)
         v.title('Final por acuerdo' if fin['cierre'] == 'acuerdo' else 'Resultado'); v.transient(self.raiz); v.resizable(False, False)
+        if self.medalla:
+            v.icono = ImageTk.PhotoImage(self.medalla)
+            v.iconphoto(False, v.icono)
         cv = tk.Canvas(v, width=520, height=376, highlightthickness=0, bg='#000')
         cv.pack()
         cv.imgs = []
