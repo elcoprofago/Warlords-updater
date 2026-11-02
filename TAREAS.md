@@ -13,19 +13,8 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
 6. **Tarea 82** (probar el Visor de historia).
-7. **Tarea 83** (partidas terminadas a HISTORY): en la próxima partida en red que termine con victoria.
 
 # Pendientes
-
-- [ ] **83.** Partidas terminadas a la carpeta HISTORY (vista-aliada 1.0.100.0, 2/11/2026)
-1. Instalá el parche 1.0.100.0 con la opción 9 del Actualizador.
-2. Jugá con DarklordAV.exe una partida en red hasta que el juego anuncie la victoria (el podio de Game Over o el cartel
-   «Victory! / An allied victory!»). Lo más rápido: un mapa chico, dos bandos, uno abandona aliándose o pierde todo.
-3. En la PC anfitriona, mirá la carpeta del juego: tiene que existir `HISTORY` con los archivos `<partida>_<turno>.SAV`
-   de esa partida, y en `NETSAVES` ya no tienen que estar. Las otras partidas de `NETSAVES` quedan donde estaban.
-4. Si después de la victoria aliada siguen jugando, los turnos nuevos también tienen que ir apareciendo en `HISTORY`.
-5. Mirá también la carpeta del juego en la otra PC y anotá si tiene `NETSAVES` con esa partida y si se pasó a `HISTORY`.
-6. Abrí el último .SAV de `HISTORY` con el Visor de historia: tiene que mostrar la partida hasta el turno final.
 
 - [ ] **82.** Probar el Visor de historia 1.0.4.0 (1/11/2026)
 1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking
@@ -99,6 +88,8 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **83.** Partidas terminadas a la carpeta HISTORY (vista-aliada 1.0.100.0). Hecho 2/11/2026: partida en red a 4 turnos, «victoria por más puntos»; se creó HISTORY en las dos PC y la partida salió de NETSAVES en ambas.
 
 - [x] **80.** Visor de historia: ¿el texto de los sucesos es igual al del juego? (1/11/2026)
 Resultado (1/11/2026): capturas del History of Events de dia-noche4, rondas 1, 3, 8 y 10. Los 26 renglones

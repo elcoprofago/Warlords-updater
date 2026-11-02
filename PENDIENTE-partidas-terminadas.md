@@ -63,8 +63,32 @@ Consecuencia para el punto 2: al detectar el fin, alcanza con mover los `NETSAVE
 - Solo partidas en red (NETSAVES): en una partida de un jugador no hay autoguardados; el .SAV lo guarda el usuario
   con el nombre que quiere, y queda en SAVES.
 
+## Punto 3, resuelto por la prueba real (2/11/2026, TAREAS 83)
+
+Partida en red a 4 turnos, «victoria por más puntos»: HISTORY se creó en **las dos** PC y la partida salió de NETSAVES
+en ambas. O sea, la otra PC también autoguarda, y la victoria se detecta en todas.
+
+## Parte B (pedido del 2/11/2026): ver cómo terminó la partida
+
+**B1. Visor:** en el panel superior, un botón o enlace que abra el cuadro de victoria tal como lo muestra el juego al
+terminar (podio de Game Over o cartel de victoria aliada). Si la partida se cerró de común acuerdo, en su lugar
+un pergamino con el texto del acuerdo, como cuadro de mensaje o ventana.
+
+**B2. Juego (DarklordAV.exe), no el Visor:** un mecanismo para que el anfitrión deje constancia de que la partida
+se cerró de común acuerdo (texto libre y/o opciones). El Visor solo lo lee, no lo edita.
+
+Por resolver al empezar:
+- Dónde queda el dato. Propuesta: el juego escribe, al pasar la partida a HISTORY, un archivo de texto
+  `HISTORY\<nombre>.FIN` con el tipo de cierre (podio / victoria aliada / acuerdo), el turno y, en el podio, lo que
+  ia_fin ya tiene a mano (orden, puesto, color, PV, ciudades, oro por bando); en el acuerdo, el texto. El Visor lo
+  busca al lado del .SAV. Alternativa: averiguar si el .SAV final ya trae todo lo del podio (los PV los calcula
+  0x440840) y que el Visor lo recalcule; descartarla si no es exacta.
+- Cómo lo dispara el anfitrión en B2: ver si alcanza con una orden en el chat (ya existe el mecanismo de órdenes,
+  ch_order / ch_pfx, p. ej. «acuerdo: <texto>») o si hace falta un cuadro propio. Al consignarlo, la partida
+  también pasa a HISTORY (hi_fin), aunque el juego no haya detectado victoria: así se amplía lo decidido en el punto 2
+  por pedido del usuario.
+- Dibujo del cuadro en el Visor: tomar el arte del juego (como ya hace con DLG_BIG y el minimapa).
+
 ## Próximo paso
 
-Punto 3 (red): con la prueba real (TAREAS 83), ver qué pasa en la PC que no es anfitriona. Según el código, el
-autoguardado lo hace solo el anfitrión ([0x4ff010] = 0); hi_mover no toca el estado del juego, así que no puede
-desincronizar. Si la otra PC también tiene NETSAVES con esa partida, se pasa igual (la victoria se detecta en todas).
+Parte B: decidir dónde queda el dato (.FIN o .SAV) y empezar por B2 (el juego lo escribe), después B1.
