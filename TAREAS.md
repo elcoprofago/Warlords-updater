@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 86).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 87).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -11,17 +11,18 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
+5. **Tarea 86** (tanda de puentes con diagnóstico): al terminar la tanda 120.
 
 # Pendientes
 
-- [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
-Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya
-(antes no lo hacía nunca: en ~600 partidas, 0 derribos). En la tanda lo usan solo los colores con la IA de prueba,
-así se compara con la de siempre en las mismas partidas.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.99.0** en C:\Warlords3.
-2. Monitor de IA → **Ninguna**, marcá solo **Borderlands** (no Border_Alianzas), Partidas: **10**, **Nueva tanda**.
-3. Avisame cuando termine. Si ves un puente que se cae solo con un ejército enemigo cerca, anotá el turno.
+- [ ] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.102.0, 2/11/2026)
+Cambio: en las tandas, cada vez que una pila de la computadora termina junto a un puente y no lo corta, el juego anota
+el motivo. No cambia cómo juega: solo mide.
+1. Dejá terminar la tanda que está corriendo (la 120) y avisame: tengo que instalar y publicar la 1.0.102.0 con la PC
+   libre (si la instalo durante una tanda, la tanda ya no se puede retomar).
+2. Cuando te avise que está publicada: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.102.0**.
+3. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
+4. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
@@ -70,6 +71,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
+Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya
+(antes no lo hacía nunca: en ~600 partidas, 0 derribos). En la tanda lo usan solo los colores con la IA de prueba,
+así se compara con la de siempre en las mismas partidas.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.99.0** en C:\Warlords3.
+2. Monitor de IA → **Ninguna**, marcá solo **Borderlands** (no Border_Alianzas), Partidas: **10**, **Nueva tanda**.
+3. Avisame cuando termine. Si ves un puente que se cae solo con un ejército enemigo cerca, anotá el turno.
+Resultado: hecho 2/11/2026. Tandas 117 a 119 (25 partidas válidas; la 119 se cortó porque se instaló la 1.0.101.0 a mitad de tanda): **ningún derribo**, ni de la IA de prueba. Hubo guerra en las 25. Sigue la tarea 86, que mide por qué no se activa.
 
 - [x] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.15.0, 2/11/2026). Después de la 84. Hecho 2/11/2026.
 Cambio: en el panel de arriba del Visor hay un botón **«Resultado»**. Se activa solo si al lado del .SAV está el

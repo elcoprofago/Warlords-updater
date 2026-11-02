@@ -175,6 +175,20 @@ def defense(c):
             if q == AI or q >= 8 or c['dip'].get(q, 2) != 2: continue
             if bd(xy) <= 6 and kd(L, xy) > bd(xy) and kd((x, y), xy) > bd((x, y)): return True
     return False
+def city_side(c):
+    """ai_brdef encontró una ciudad propia a <= 8 del lado del líder (aunque falte el enemigo)."""
+    L = c['leader']
+    return any(alive and o == AI and bd((x, y)) <= 8 and kd(L, (x, y)) < bd((x, y)) for x, y, alive, o in c['cities'])
+def diag(c):
+    """n del evento 21 (diagnóstico, solo en tandas) o None si no se anota."""
+    if not c['iaon'] or c['cur'] != AI or c['human'] or not (c['raze'] & 6) or not c['stack'] or not c['alive']: return None
+    if c['razed'] or c['leader'] in P or kd(c['leader'], P[0]) > 1 and kd(c['leader'], P[1]) > 1: return None
+    if any(xy in P for xy, _ in c['armies']): return 1
+    sd = kd(c['leader'], c['dest'])
+    if any(kd(tl, c['dest']) <= 1 or kd(tl, c['dest']) < sd for tl in P): return 2
+    if c['mode'] != 1: return 3
+    if defense(c): return None
+    return 5 if city_side(c) else 4
 def model(c):
     if c['cur'] != AI or c['human'] or not (c['raze'] & 6) or not c['stack'] or not c['alive']: return False
     t, flag = c['temp'], c['flag']
@@ -324,7 +338,7 @@ named('defensa: enemigo cerca de la ciudad propia, más que del puente', False, 
 
 # ---- al azar contra el modelo
 rng = random.Random(1)
-bad = 0; cnt = {True: 0, False: 0}; ndef = 0
+bad = 0; cnt = {True: 0, False: 0}; ndef = 0; badd = 0; cntd = {n: 0 for n in (None, 1, 2, 3, 4, 5)}
 for n in range(NRAND):
     nc = rng.randrange(0, 40)
     cities = []
@@ -348,12 +362,18 @@ for n in range(NRAND):
         c.update(cur=AI, human=False, raze=2, stack=True, alive=True, razed=False, leader=rng.choice(HEADS),
                  dest=(rng.choice([2, 40]), rng.randrange(64)))
     g = go(c); m = model(c); cnt[m] += 1; ndef += m and defense(c)
+    dn = diag(c); cntd[dn] += 1
+    if [e for e in g['evts'] if e[0] == 21] != ([] if dn is None else [(21, AI, PC, dn)]):
+        badd += 1
+        if badd <= 5: print('DIAG DIFIERE', dn, g['evts'], c)
     if not (g['ok'] and razes(g) == (RAZE() if m else [])):
         bad += 1
         if bad <= 5: print('DIFIERE', m, g, c)
 check(f'{NRAND} casos al azar iguales al modelo (derriba {cnt[True]}, por defensa {ndef}, no {cnt[False]})',
       bad == 0 and cnt[True] > 50 and ndef > 20,
       f'difieren {bad}')
+check(f'evento 21 (diagnóstico) igual al modelo en los {NRAND} casos (por n: {cntd})',
+      badd == 0 and all(cntd[n] > 10 for n in (1, 2, 3, 4, 5)), f'difieren {badd}')
 
 # ---- instrumentos
 b = Bench(caso())

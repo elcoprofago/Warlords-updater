@@ -15,15 +15,30 @@
 # anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
 # Botón del Comparador (ícono de DarkCompare en Edit Side): cada PC abre su Herramientas\DarkCompare.exe; su dibujo es
 # SETS\Fantasy\darkcomp.pcx.
-# Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
+# Uso: python build.py [carpeta_salida] [--aunque-tanda]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
 import keystone, capstone
 
 SRC_EXE = r'C:\Warlords3\Darklord.exe'
 SRC_RES = r'C:\Warlords3\DATA\War3.RES'
-OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+AUNQUE_TANDA = '--aunque-tanda' in sys.argv
+_args = [a for a in sys.argv[1:] if a != '--aunque-tanda']
+OUT_DIR = _args[0] if _args else r'C:\Warlords3'
 if OUT_DIR.startswith('-'):
-    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto C:\\Warlords3)')
+    sys.exit('Uso: python build.py [carpeta_salida] [--aunque-tanda]   (por defecto C:\\Warlords3)')
+# Una tanda sin terminar se juega entera con el mismo exe (ia\tanda.py se niega a retomarla si cambió): compilar
+# encima de C:\Warlords3 la deja sin poder seguir (pasó el 2/11/2026 con la tanda 119). Para probar, compilar en otra
+# carpeta; --aunque-tanda solo si la tanda ya no importa.
+if os.path.normcase(os.path.abspath(OUT_DIR)) == os.path.normcase(r'C:\Warlords3') and not AUNQUE_TANDA:
+    import sqlite3
+    _db = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'ia', 'datos.db')
+    if os.path.exists(_db):
+        _r = sqlite3.connect(_db).execute('select id, terminada, parche from tanda order by id desc').fetchone()
+        if _r and not _r[1]:
+            print(f'La tanda {_r[0]} (vista-aliada {_r[2]}) no terminó: compilar en C:\\Warlords3 le cambia el exe y '
+                  'ya no se puede retomar. Compilar en otra carpeta (python build.py <carpeta>) o, si la tanda ya '
+                  'no importa, agregar --aunque-tanda.', file=sys.stderr)
+            sys.exit(2)
 OUT_EXE = os.path.join(OUT_DIR, 'DarklordAV.exe')
 OUT_RES = os.path.join(OUT_DIR, 'DATA', 'WAR3AV.RES')
 RES_NAME = b'DATA\\WAR3AV.RES'
@@ -5384,14 +5399,16 @@ brbd_out:
 # - un ejército vivo de un jugador en guerra (0x49c1c0; los neutrales no cuentan) a 6 o menos del puente (BRD_ARMY),
 #   del otro lado: el puente le queda más cerca que el líder, y la ciudad, más lejos que al puente.
 # No depende del temperamento ni del azar. Distancias de rey a la casilla más cercana del puente (br_bd).
+# Con eax = 0, edx = 1 si hubo una ciudad que cumplía (faltó el enemigo) y 0 si no (diagnóstico, evento 21).
 BRD_CITY, BRD_ARMY = 8, 6
 ai_brdef = place('ai_brdef', f'''
     push ebx
     push esi
     push edi
     push ebp
-    sub esp, 0x10
+    sub esp, 0x14
     mov dword ptr [esp], -1
+    mov dword ptr [esp + 0x10], 0
 bdf_city:
     inc dword ptr [esp]
     mov ebx, dword ptr [esp]
@@ -5402,22 +5419,23 @@ bdf_city:
     cmp byte ptr [ebx + 0x537ed0], 0
     je bdf_city
     movzx eax, byte ptr [ebx + 0x537ed1]
-    cmp eax, dword ptr [esp + 0x28]
+    cmp eax, dword ptr [esp + 0x2c]
     jne bdf_city
     movsx esi, word ptr [ebx + 0x537e2c]
     movsx ebp, word ptr [ebx + 0x537e2e]
     mov dword ptr [esp + 8], esi
     mov dword ptr [esp + 0xc], ebp
-    mov ecx, dword ptr [esp + 0x24]
+    mov ecx, dword ptr [esp + 0x28]
     call {br_bd:#x}
     cmp eax, {BRD_CITY}
     jg bdf_city
     mov dword ptr [esp + 4], eax
-    mov eax, dword ptr [esp + 0x2c]
-    mov edx, dword ptr [esp + 0x30]
+    mov eax, dword ptr [esp + 0x30]
+    mov edx, dword ptr [esp + 0x34]
     call {br_kd:#x}
     cmp eax, dword ptr [esp + 4]
     jge bdf_city
+    mov dword ptr [esp + 0x10], 1
     xor edi, edi
 bdf_arm:
     inc edi
@@ -5430,7 +5448,7 @@ bdf_arm:
     movzx eax, word ptr [ebx + 0x54fe5e]
     and eax, 0x1e0
     shr eax, 5
-    cmp eax, dword ptr [esp + 0x28]
+    cmp eax, dword ptr [esp + 0x2c]
     je bdf_arm
     cmp eax, 8
     jge bdf_arm
@@ -5441,13 +5459,13 @@ bdf_arm:
     jz bdf_arm
     movsx esi, word ptr [ebx + 0x54fe52]
     movsx ebp, word ptr [ebx + 0x54fe54]
-    mov ecx, dword ptr [esp + 0x24]
+    mov ecx, dword ptr [esp + 0x28]
     call {br_bd:#x}
     cmp eax, {BRD_ARMY}
     jg bdf_arm
     mov ecx, eax
-    mov eax, dword ptr [esp + 0x2c]
-    mov edx, dword ptr [esp + 0x30]
+    mov eax, dword ptr [esp + 0x30]
+    mov edx, dword ptr [esp + 0x34]
     call {br_kd:#x}
     cmp eax, ecx
     jle bdf_arm
@@ -5459,9 +5477,10 @@ bdf_arm:
     mov eax, 1
     jmp bdf_out
 bdf_no:
+    mov edx, dword ptr [esp + 0x10]
     xor eax, eax
 bdf_out:
-    add esp, 0x10
+    add esp, 0x14
     pop ebp
     pop edi
     pop esi
@@ -5472,6 +5491,7 @@ bdf_out:
 ABZ_CODE, ABZ_S, ABZ_P, ABZ_FLAG, ABZ_C, ABZ_N, ABZ_SD = (4 * i for i in range(7))
 ABZ_LOC = 4 * 7
 ABZ_DEF = 100   # n del evento 1 cuando derriba por defensa (ai_brdef)
+ABZ_DIAG = 21   # evento de diagnóstico (solo en tandas): puente junto al líder que no derribó; n = por qué (ver ia_evt)
 ABZ_X, ABZ_Y = ABZ_LOC + 0x20 + 4 + 0x38, ABZ_LOC + 0x20 + 4 + 0x3c
 ai_brraze = place('ai_brraze', f'''
     pushad
@@ -5526,7 +5546,7 @@ ai_brraze = place('ai_brraze', f'''
     call {br_armies:#x}
     add esp, 8
     test edx, edx
-    jnz abz_out
+    jnz abz_d1
     movsx esi, word ptr [esp + {ABZ_X:#x}]
     movsx ebp, word ptr [esp + {ABZ_Y:#x}]
     movsx eax, word ptr [edi + 0x54fe52]
@@ -5541,16 +5561,26 @@ abz_tile:
     movsx edx, word ptr [ecx*4 + {br_xy + 2:#x}]
     call {br_kd:#x}
     cmp eax, 1
-    jle abz_out
+    jle abz_d2
     cmp eax, dword ptr [esp + {ABZ_SD:#x}]
-    jl abz_out
+    jl abz_d2
     jmp abz_tile
 abz_owner:
     cmp byte ptr [{IA_ON:#x}], 0
     je abz_def
     mov eax, dword ptr [esp + {ABZ_P:#x}]
     cmp byte ptr [eax + {IA_MODE:#x}], 1
-    jne abz_temp
+    je abz_def
+    cmp byte ptr [{IA_ON:#x}], 0
+    je abz_d3
+    push 3
+    push dword ptr [esp + {ABZ_CODE + 4:#x}]
+    push dword ptr [esp + {ABZ_P + 8:#x}]
+    push {ABZ_DIAG}
+    call {ia_evtb:#x}
+    add esp, 0x10
+abz_d3:
+    jmp abz_temp
 abz_def:
     movsx eax, word ptr [edi + 0x54fe54]
     push eax
@@ -5561,7 +5591,19 @@ abz_def:
     call {ai_brdef:#x}
     add esp, 0x10
     test eax, eax
-    jz abz_temp
+    jnz abz_dok
+    add edx, 4
+    cmp byte ptr [{IA_ON:#x}], 0
+    je abz_d45
+    push edx
+    push dword ptr [esp + {ABZ_CODE + 4:#x}]
+    push dword ptr [esp + {ABZ_P + 8:#x}]
+    push {ABZ_DIAG}
+    call {ia_evtb:#x}
+    add esp, 0x10
+abz_d45:
+    jmp abz_temp
+abz_dok:
     mov dword ptr [esp + {ABZ_S:#x}], {ABZ_DEF}
     jmp abz_raze
 abz_temp:
@@ -5597,6 +5639,21 @@ abz_raze:
     push dword ptr [esp + {ABZ_CODE + 4:#x}]
     push dword ptr [esp + {ABZ_P + 8:#x}]
     push 1
+    call {ia_evtb:#x}
+    add esp, 0x10
+    jmp abz_out
+abz_d1:
+    mov eax, 1
+    jmp abz_dg
+abz_d2:
+    mov eax, 2
+abz_dg:
+    cmp byte ptr [{IA_ON:#x}], 0
+    je abz_out
+    push eax
+    push dword ptr [esp + {ABZ_CODE + 4:#x}]
+    push dword ptr [esp + {ABZ_P + 8:#x}]
+    push {ABZ_DIAG}
     call {ia_evtb:#x}
     add esp, 0x10
 abz_out:

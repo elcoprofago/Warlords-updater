@@ -82,6 +82,7 @@ def main(tid=None):
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
     alianzas(db, desde, validas, cuenta)
     innovaciones(db, validas)
+    candidatos(db, validas)
     perfiles(db, validas)
 
 
@@ -103,6 +104,23 @@ def innovaciones(db, validas):
     print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7} {"defensa":>7}')
     for (ia, color), e in sorted(c.items()):
         print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (6, 7, 7, 7, 7, 7))))
+
+
+DIAG = {1: 'ejército encima', 2: 'en el camino de la pila', 3: 'IA original (sin defensa)',
+        4: 'sin ciudad propia cerca', 5: 'ciudad propia, sin enemigo del otro lado'}
+
+
+def candidatos(db, validas):
+    """Evento 21 (desde 1.0.102.0, solo en tandas): cada vez que una pila de la IA terminó junto a un puente entero y
+    no lo derribó, por qué. Sirve para ver qué condición de ai_brdef no se cumple nunca."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, n, count(*) from evento where partida in ({q}) and tipo = 21 group by ia, n',
+                       validas).fetchall()
+    if not filas:
+        return
+    print('\nPuentes junto a una pila de la IA que no se derribaron (evento 21), por motivo')
+    for ia, n, k in sorted(filas):
+        print(f'{IAS.get(ia, ia):28} {DIAG.get(n, n):45} {k:6}')
 
 
 def perfiles(db, validas):
