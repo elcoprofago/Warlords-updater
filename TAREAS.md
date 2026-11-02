@@ -22,7 +22,7 @@ Cambio: en el panel de arriba del Visor hay un botón **«Cómo terminó…»**.
 Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eventos2» de la PC anfitriona se jugó en
 `C:\Warlords`, que tenía un DarklordAV.exe anterior: pasó a HISTORY pero sin `.FIN`. Las pruebas, en `C:\Warlords3`.
 1. Actualizá el Visor: ruedita → «Actualizar versión». Si sale «Failed to remove temporary directory» y otro cartel de
-   error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. 
+   error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. El
    título tiene que decir **VERSIÓN 1.0.8.0**.
 2. Abrí con «Abrir…» un .SAV de `C:\Warlords3\HISTORY` de una partida jugada con 1.0.101.0. El botón «Cómo terminó…»
    tiene que estar activo.
@@ -556,7 +556,7 @@ tiene que hacer el paso 6.
 6. Cuando digan que está corregido, avisale a tu amigo que en su PC vaya a Seguridad de Windows → Actualizaciones de protección
    → **Buscar actualizaciones**, y vuelva a bajar el zip.
 Resultado (25/10/2026): enviado, https://www.microsoft.com/en-us/wdsi/submission/aeea912a-5a2b-4e54-b98c-41a4bcb2c446
-  Microsoft ya no detecta nada ni en el zip ni en el .exe (en la nube y con definiciones 1.461.190.0). 
+  Microsoft ya no detecta nada ni en el zip ni en el .exe (en la nube y con definiciones 1.461.190.0). El
   veredicto final de su analista figura «Pending». Paso 6 (tu amigo actualiza Defender y vuelve a bajar el zip):
   sin confirmar.
 
@@ -884,7 +884,7 @@ da igual (lo nuevo no actúa en estas partidas), queda anotado en la base.
 cada IA); detalle en ia\PENDIENTE-entrenamiento-ia.md.
 
 - [x] **20.** Sonido del juego: volvió a faltar (17/10/2026)
-La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. 
+La partida en red del 17/10 se jugó sin sonido: la tanda del paso 7 de la tarea 1 lo volvió a dejar silenciado. El
 arreglo de la 1.0.4 (borrar la marca del registro) no servía: Windows la guarda en su memoria y la vuelve a
 escribir. Lo medí en esta PC y el Monitor de IA 1.0.5 lo hace de otra forma: al terminar cada tanda abre el juego
 unos 8 segundos, le quita el silencio y lo cierra. Ya le devolví el sonido a tu juego.
