@@ -216,3 +216,11 @@ identificar) → ninguna. Las partidas de ranking guardadas en SAVES (ABN_*) dic
 Rótulos en blanco crema (#f5ecd0) en el tema oscuro, para no confundirse con las luces. Luces más brillantes (×1,3;
 apagada ×0,4), mismo tono. Nombre más corto (26) y datos en letra 9 con corte de línea: la ventana vuelve al ancho del
 cuadro del medio. Subtítulo en Arial 13 negrita. Buscador, ◀ ▶ y «Limpiar» pasan al panel inferior, a la izquierda.
+
+## 1.0.4.0 — panel superior y minimapa
+
+«Abrir…» en la fila del nombre; rótulos de datos al margen izquierdo, debajo. El aviso de historial ajeno solo ocupa
+lugar cuando hay aviso (antes dejaba un renglón vacío). Luces en rojo claro brillante (el tono anterior quedó en la memoria).
+Minimapa: colores por nombre de terreno tomados de STRAT_L.BMP (agua 8,140,232). El valor de terreno «Forest» no
+aparece en las casillas: los bosques de los mapas aleatorios son el adorno del byte +6 (72 y 96 alternados en manchas
+sobre llano). Es una suposición por la forma; se verifica en la tarea 82, paso 9.

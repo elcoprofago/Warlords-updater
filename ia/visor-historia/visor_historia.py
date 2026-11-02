@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.3.0'
+VERSION = '1.0.4.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -21,6 +21,11 @@ COLOR = {'white': (250, 250, 250), 'yellow': (240, 220, 40), 'orange': (240, 140
 NEUTRAL = (150, 150, 150)
 # Cuadro DLG_BIG (620x460): título en la barra de arriba, minimapa a la izquierda y renglones a la derecha.
 TIT_Y, SUB_Y = 28, 72
+# Colores de terreno del minimapa, tomados del mapa estratégico del juego (STRAT_L.BMP); el primero que coincide
+TERRENO_COL = (('water', (8, 140, 232)), ('forest', (0, 128, 16)), ('mount', (110, 110, 110)), ('hill', (156, 156, 156)),
+               ('marsh', (76, 112, 72)), ('desert', (212, 196, 124)), ('sand', (212, 196, 124)), ('ice', (230, 240, 250)),
+               ('snow', (230, 240, 250)), ('road', (148, 92, 0)), ('plain', (136, 136, 44)))
+BOSQUE = (0, 128, 16)                   # árboles dibujados sobre el llano (byte +6 de la casilla: historia.mapa)
 MINI = (28, 95, 200, 240)              # x, y, ancho y alto máximos del minimapa
 ESC_Y = 350                            # fila de escudos para elegir el color del minimapa
 REN_X, REN_Y, REN_ALTO = 245, 98, 20   # 16 renglones como máximo por ronda (2 por jugador)
@@ -115,27 +120,29 @@ class Visor:
         sup = self.caja(raiz)
         sup.configure(padx=10, pady=8)
         sup.pack(fill='x')
-        boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, rowspan=3, padx=(0, 14))
+        boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, sticky='w', padx=(0, 14), pady=(0, 4))
         self.d_nombre = tk.Entry(sup, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
                                  relief='solid', bd=1, width=26, state='readonly')
         self.d_nombre.grid(row=0, column=1, columnspan=2, sticky='w', pady=(0, 4))
         # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
         # (en la misma fila del nombre, que es corto: no ensanchan la ventana más allá del cuadro del medio)
-        sup.columnconfigure(4, weight=1)
+        sup.columnconfigure(3, weight=1)
         luces = self.caja(sup)
-        luces.grid(row=0, column=3, columnspan=2, sticky='e')
+        luces.grid(row=0, column=3, sticky='e')
         self.luces = {m: self.luz(luces, m) for m in ('Single', 'Multi')}
         self.datos = {}
         for i, (clave, rot) in enumerate(DATOS):
-            f, c = 1 + i // 2, 1 + 2 * (i % 2)
-            self.rotulo(sup, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(row=f, column=c, sticky='w', padx=(0 if c == 1 else 16, 4))
+            f, c = 1 + i // 2, 2 * (i % 2)   # rótulos al margen izquierdo, los dos primeros debajo de «Abrir…»
+            self.rotulo(sup, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(
+                row=f, column=c, sticky='w', padx=(0 if c == 0 else 16, 4), pady=(8 if f == 1 else 0, 0))
             self.datos[clave] = self.rotulo(sup, 'valor', wraplength=165, justify='left', font=('Segoe UI', 9))
-            self.datos[clave].grid(row=f, column=c + 1, sticky='w')
+            self.datos[clave].grid(row=f, column=c + 1, sticky='w', pady=(8 if f == 1 else 0, 0))
         self.aviso = self.rotulo(raiz, 'aviso', font=('Segoe UI', 9), wraplength=620, justify='left')
-        self.aviso.pack(fill='x', padx=10)
+        # (solo ocupa lugar cuando hay aviso: ver abrir)
 
         # Coincidencias de la búsqueda (el buscador está en el panel inferior)
-        tk.Frame(raiz, bg='#444', height=1).pack(fill='x', padx=10, pady=(4, 6))
+        self.raya = tk.Frame(raiz, bg='#444', height=1)
+        self.raya.pack(fill='x', padx=10, pady=(0, 4))
         bus = self.caja(raiz)
         bus.configure(padx=10)
         bus.pack(fill='x')
@@ -249,8 +256,8 @@ class Visor:
         base = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
         h, s, v = base.convert('HSV').split()
         imgs = {}
-        for estado, brillo in (('on', 1.3), ('off', 0.4)):   # encendida más brillante; apagada: la misma oscura
-            c = Image.merge('HSV', (h.point(lambda x: 28), s, v.point(lambda x: min(255, x * brillo)))).convert('RGBA')
+        for estado, brillo in (('on', 1.3), ('off', 0.4)):   # encendida brillante; apagada: la misma oscura
+            c = Image.merge('HSV', (h.point(lambda x: 0), s.point(lambda x: x * 0.8), v.point(lambda x: min(255, x * brillo)))).convert('RGBA')
             c.putalpha(base.getchannel('A'))
             c.alpha_composite(marco.resize(c.size))
             imgs[estado] = c.resize((26, 26), Image.LANCZOS)
@@ -432,6 +439,10 @@ class Visor:
         self.aviso['text'] = ('Aviso: el historial guardado en esta partida es de otra partida (pasa con las guardadas '
                               'armadas a partir de otra). Los sucesos y nombres de ciudad no corresponden a este mapa.'
                               if p.ajena else '')
+        if p.ajena:
+            self.aviso.pack(fill='x', padx=10, before=self.raya)
+        else:
+            self.aviso.pack_forget()
         self.buscar.set(self.buscar.get())   # recalcula las coincidencias
         self.ronda = max([1] + [r for r, rs in self.rondas.items() if rs])   # la última ronda con sucesos
         self.raiz.after(30, self.repintar)   # los rótulos cambiaron de tamaño: el recorte del mosaico también
@@ -451,9 +462,14 @@ class Visor:
                     esc.alpha_composite(pcx_rgba(ruta))
             self.escudos[k] = (esc.crop((33, 1, 44, 15)), esc.crop((1, 1, 32, 37)))   # 11x14 y 31x36
             self.colores[k] = COLOR.get(hojas[0][1:].lower(), NEUTRAL)
-        # Color de cada terreno del mapa: el promedio de su textura (no es la paleta exacta del minimapa del juego)
+        # Color de cada terreno del mapa: el del mapa estratégico del juego (STRAT_L.BMP) según el nombre del terreno;
+        # los que no están ahí, el promedio de su textura
         self.tcol = []
-        for _, tex in historia.terrenos(p.d):
+        for nombre, tex in historia.terrenos(p.d):
+            col = next((c for k, c in TERRENO_COL if k in nombre.lower()), None)
+            if col:
+                self.tcol.append(col)
+                continue
             ruta = os.path.join(j, 'TERRAIN', 'DATA', tex + '.PCX')
             try:
                 im = Image.open(ruta).convert('RGB').resize((32, 32))
@@ -514,8 +530,9 @@ class Visor:
             px = im.load()
             for y in range(h):
                 for x in range(w):
-                    t, ex = m[y][x]
-                    px[x, y] = (self.tcol[t] if t < len(self.tcol) else (90, 90, 90)) if ex & bit else (0, 0, 0)
+                    t, ex, adorno = m[y][x]
+                    col = BOSQUE if adorno in (72, 96) else self.tcol[t] if t < len(self.tcol) else (90, 90, 90)
+                    px[x, y] = col if ex & bit else (0, 0, 0)
             self.mini[self.color] = im.resize((round(w * esc), round(h * esc)), Image.NEAREST)
         im = self.mini[self.color]
         x0, y0 = MINI[0] + (MINI[2] - im.width) // 2, MINI[1]

@@ -100,11 +100,14 @@ def cabecera(d, juego=tanda.JUEGO):
 
 
 def mapa(d):
-    """Filas de casillas (terreno, explorados): terreno = byte +0 & 0x1f (0 agua, 1 llano...), explorados = byte +4,
-    un bit por jugador. Es lo explorado al guardar, no por ronda: el .SAV no guarda la historia de la exploración."""
+    """Filas de casillas (terreno, explorados, adorno): terreno = byte +0 & 0x1f, índice de la tabla terrenos(),
+    explorados = byte +4, un bit por jugador; adorno = byte +6, lo dibujado encima del terreno (72 y 96, en manchas
+    alternadas sobre llano: árboles, supuesto por su forma; no verificado contra el juego). Es lo explorado al guardar,
+    no por ronda: el .SAV no guarda la historia de la exploración."""
     w, h = struct.unpack_from('<hh', d, offset(MAPA_DIM))
     sh, b = d[offset(MAPA_DIM) + 6], offset(MAPA)
-    return [[(d[b + ((y * 10) << sh) + x * 10] & 0x1f, d[b + ((y * 10) << sh) + x * 10 + 4]) for x in range(w)]
+    return [[(d[b + ((y * 10) << sh) + x * 10] & 0x1f, d[b + ((y * 10) << sh) + x * 10 + 4],
+              d[b + ((y * 10) << sh) + x * 10 + 6]) for x in range(w)]
             for y in range(h)]
 
 

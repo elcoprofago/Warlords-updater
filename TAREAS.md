@@ -16,7 +16,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **82.** Probar el Visor de historia 1.0.3.0 (1/11/2026)
+- [ ] **82.** Probar el Visor de historia 1.0.4.0 (1/11/2026)
 1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking
    (carpeta SAVES del Warlords actualizado, no la de Warlords3: ahí están las de prueba).
 2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
@@ -29,6 +29,8 @@ Sorteo están acá (tarea 18).
    mosaico. Volvé a «Color liso» y probá otro color. Al cerrar y abrir el visor tiene que recordar lo elegido.
 8. Luces arriba a la derecha: con una partida de un jugador se enciende «Single»; con una de NETSAVES, «Multi».
    (Las del ranking guardadas en SAVES encienden «Single»: el juego las guarda así.)
+9. Minimapa: compará con el mapa de la misma partida en el juego. El agua es celeste, los cerros grises y los
+   bosques verdes. Anotá si alguna mancha verde no es bosque en el juego, o si falta algún bosque.
 Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
