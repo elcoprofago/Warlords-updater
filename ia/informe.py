@@ -111,7 +111,7 @@ DIAG = {1: 'ejército encima', 2: 'en el camino de la pila', 3: 'IA original (si
 
 
 def candidatos(db, validas):
-    """Evento 21 (desde 1.0.102.0, solo en tandas): cada vez que una pila de la IA terminó junto a un puente entero y
+    """Evento 21 (desde 1.0.103.0, solo en tandas): cada vez que una pila de la IA terminó junto a un puente entero y
     no lo derribó, por qué. Sirve para ver qué condición de ai_brdef no se cumple nunca."""
     q = ','.join('?' * len(validas))
     filas = db.execute(f'select ia, n, count(*) from evento where partida in ({q}) and tipo = 21 group by ia, n',

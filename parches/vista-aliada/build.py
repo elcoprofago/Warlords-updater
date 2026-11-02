@@ -15,30 +15,15 @@
 # anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
 # Botón del Comparador (ícono de DarkCompare en Edit Side): cada PC abre su Herramientas\DarkCompare.exe; su dibujo es
 # SETS\Fantasy\darkcomp.pcx.
-# Uso: python build.py [carpeta_salida] [--aunque-tanda]   (por defecto C:\Warlords3; crea DATA\ si falta)
+# Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
 import struct, sys, os
 import keystone, capstone
 
 SRC_EXE = r'C:\Warlords3\Darklord.exe'
 SRC_RES = r'C:\Warlords3\DATA\War3.RES'
-AUNQUE_TANDA = '--aunque-tanda' in sys.argv
-_args = [a for a in sys.argv[1:] if a != '--aunque-tanda']
-OUT_DIR = _args[0] if _args else r'C:\Warlords3'
+OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
 if OUT_DIR.startswith('-'):
-    sys.exit('Uso: python build.py [carpeta_salida] [--aunque-tanda]   (por defecto C:\\Warlords3)')
-# Una tanda sin terminar se juega entera con el mismo exe (ia\tanda.py se niega a retomarla si cambió): compilar
-# encima de C:\Warlords3 la deja sin poder seguir (pasó el 2/11/2026 con la tanda 119). Para probar, compilar en otra
-# carpeta; --aunque-tanda solo si la tanda ya no importa.
-if os.path.normcase(os.path.abspath(OUT_DIR)) == os.path.normcase(r'C:\Warlords3') and not AUNQUE_TANDA:
-    import sqlite3
-    _db = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'ia', 'datos.db')
-    if os.path.exists(_db):
-        _r = sqlite3.connect(_db).execute('select id, terminada, parche from tanda order by id desc').fetchone()
-        if _r and not _r[1]:
-            print(f'La tanda {_r[0]} (vista-aliada {_r[2]}) no terminó: compilar en C:\\Warlords3 le cambia el exe y '
-                  'ya no se puede retomar. Compilar en otra carpeta (python build.py <carpeta>) o, si la tanda ya '
-                  'no importa, agregar --aunque-tanda.', file=sys.stderr)
-            sys.exit(2)
+    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto C:\\Warlords3)')
 OUT_EXE = os.path.join(OUT_DIR, 'DarklordAV.exe')
 OUT_RES = os.path.join(OUT_DIR, 'DATA', 'WAR3AV.RES')
 RES_NAME = b'DATA\\WAR3AV.RES'

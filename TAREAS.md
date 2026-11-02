@@ -11,16 +11,16 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 86** (tanda de puentes con diagnóstico): al terminar la tanda 120.
+5. **Tarea 86** (tanda de puentes con diagnóstico): ya.
 
 # Pendientes
 
-- [ ] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.102.0, 2/11/2026)
+- [ ] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.103.0, 2/11/2026)
 Cambio: en las tandas, cada vez que una pila de la computadora termina junto a un puente y no lo corta, el juego anota
 el motivo. No cambia cómo juega: solo mide.
-1. Dejá terminar la tanda que está corriendo (la 120) y avisame: tengo que instalar y publicar la 1.0.102.0 con la PC
-   libre (si la instalo durante una tanda, la tanda ya no se puede retomar).
-2. Cuando te avise que está publicada: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.102.0**.
+1. Cortá la tanda que está corriendo (la 122: repite una medición que ya se hizo, no suma) con el botón del Monitor
+   y cerrá el juego; avisame: instalo y publico la 1.0.103.0 (con el juego abierto no se puede).
+2. Cuando te avise que está publicada: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.103.0**.
 3. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
 4. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
 Resultado:

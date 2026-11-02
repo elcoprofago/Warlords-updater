@@ -155,19 +155,22 @@ prueba. No es por falta de guerra: hubo guerra declarada en las 25 (primera entr
 color-color en guerra a lo largo de las partidas). El registro funcionó (eventos 11 y 12). PV prueba 7.2 contra
 original 6.2: como el criterio nunca se activó, esa diferencia es puro azar entre colores de la misma IA (sirve de
 calibración: ±1 PV con 25 partidas no significa nada).
-Para que no vuelva a cortarse una tanda: build.py se niega a compilar en C:\Warlords3 si la última tanda de
-ia\datos.db no terminó (salida 2; compilar en otra carpeta o --aunque-tanda). Probado: bloquea con la tanda 120 en
-curso y compila en otra carpeta.
+Corrección (usuario, 2/11/2026): la 119 la cortó él (pruebas en red del Visor), y con varias sesiones a la vez
+instalar parches va a seguir pasando. La guarda que se había puesto en build.py (no compilar en C:\Warlords3 con
+una tanda sin terminar) se quitó: frenaba instalaciones legítimas. Una tanda cortada se reemplaza por una nueva.
+Hueco encontrado: tanda.py anota como versión la de parches.txt del repo, no la instalada (el exe no la lleva), así
+que las tandas 121 y 122 quedaron como 1.0.102.0 con el exe c1d0822c de la 1.0.101.0 (se subió parches.txt antes de
+instalar). Corregidas a mano en datos.db; el hash del exe sigue siendo el dato confiable.
 
-## Paso 4 C: diagnóstico (vista-aliada 1.0.102.0, 2/11/2026; enumerar antes de cambiar el criterio)
+## Paso 4 C: diagnóstico (vista-aliada 1.0.103.0; la 1.0.102.0 no se publicó, 2/11/2026; enumerar antes de cambiar el criterio)
 Evento 21, solo en tandas (ia_on): una pila de la IA terminó junto a un puente entero y no lo derribó; x, y = puente,
 n = por qué: 1 ejército encima, 2 el puente está en el camino de la pila, 3 color con la IA original, 4 (prueba) sin
 ciudad propia a <= 8 del lado de la pila, 5 (prueba) con ciudad pero sin ejército en guerra a <= 6 del otro lado.
 ai_brdef devuelve en edx si encontró la ciudad. informe.py lo cuenta («Puentes junto a una pila de la IA que no se
 derribaron»). Prueba emulada: prueba_iarazea.py, el evento 21 igual al modelo en los 3000 casos al azar, con cada n
 más de 10 veces y sin evento fuera de tandas; las decisiones de derribo, iguales que antes.
-Estado: commiteado; **sin instalar ni publicar** (la tanda 120 corre con la 1.0.101.0 y la guarda de build.py lo impide).
-Próximo paso, cuando la tanda 120 termine: python parches\vista-aliada\build.py (en C:\Warlords3), prueba_iarazea.py
+Estado: commiteado; **sin instalar ni publicar** (la tanda 122 corría con la 1.0.101.0; no suma: cortarla).
+Próximo paso, con el juego cerrado: python parches\vista-aliada\build.py (en C:\Warlords3), prueba_iarazea.py
 contra lo instalado, tools\publicar-parche.ps1 vista-aliada, y avisar al usuario para la tarea 86. Con su resultado:
 si el motivo dominante es 1 o 2, una pila casi nunca para junto a un puente sin cruzarlo, y el criterio tiene que mirar
 desde otro lugar (por ejemplo, desde una ciudad propia amenazada, mandar una pila al puente); si es 4 o 5, ajustar
