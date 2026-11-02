@@ -12,26 +12,8 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 81** (tanda de puentes): cuando la PC esté libre.
-6. **Tarea 82** (probar el Visor de historia).
 
 # Pendientes
-
-- [ ] **82.** Probar el Visor de historia 1.0.4.0 (1/11/2026)
-1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking
-   (carpeta SAVES del Warlords actualizado, no la de Warlords3: ahí están las de prueba).
-2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
-3. Abrí la misma partida en el juego, Historia de sucesos: compará algunos turnos (sucesos, ciudades del minimapa).
-   Los colores del terreno son aproximados; lo que importa es lo explorado y las ciudades.
-4. Escribí un nombre de ciudad en «Buscar» (abajo a la izquierda): los turnos con coincidencias se marcan en dorado en la barra.
-5. Probá «Exportar PDF…» y abrí lo que genera.
-6. Pasá el mouse por los botones: se ponen naranja suave.
-7. Ruedita (abajo a la derecha): elegí «Textura», una imagen cualquiera, Aceptar; el fondo de la ventana pasa a
-   mosaico. Volvé a «Color liso» y probá otro color. Al cerrar y abrir el visor tiene que recordar lo elegido.
-8. Luces arriba a la derecha: con una partida de un jugador se enciende «Single»; con una de NETSAVES, «Multi».
-   (Las del ranking guardadas en SAVES encienden «Single»: el juego las guarda así.)
-9. Minimapa: compará con el mapa de la misma partida en el juego. El agua es celeste, los cerros grises y los
-   bosques verdes. Anotá si alguna mancha verde no es bosque en el juego, o si falta algún bosque.
-Resultado:
 
 - [ ] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
 Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya
@@ -90,6 +72,23 @@ Resultado:
 # Hecho
 
 - [x] **83.** Partidas terminadas a la carpeta HISTORY (vista-aliada 1.0.100.0). Hecho 2/11/2026: partida en red a 4 turnos, «victoria por más puntos»; se creó HISTORY en las dos PC y la partida salió de NETSAVES en ambas.
+
+- [x] **82.** Probar el Visor de historia 1.0.4.0 (1/11/2026)
+1. Abrí `F:\source\repos\actualizador-warlords\ia\Visor-Historia.exe` y con «Abrir…» elegí un .SAV de una partida real del ranking
+   (carpeta SAVES del Warlords actualizado, no la de Warlords3: ahí están las de prueba).
+2. Arriba: nombre, turnos, victoria, mapa y «Último guardado» tienen que coincidir con la partida.
+3. Abrí la misma partida en el juego, Historia de sucesos: compará algunos turnos (sucesos, ciudades del minimapa).
+   Los colores del terreno son aproximados; lo que importa es lo explorado y las ciudades.
+4. Escribí un nombre de ciudad en «Buscar» (abajo a la izquierda): los turnos con coincidencias se marcan en dorado en la barra.
+5. Probá «Exportar PDF…» y abrí lo que genera.
+6. Pasá el mouse por los botones: se ponen naranja suave.
+7. Ruedita (abajo a la derecha): elegí «Textura», una imagen cualquiera, Aceptar; el fondo de la ventana pasa a
+   mosaico. Volvé a «Color liso» y probá otro color. Al cerrar y abrir el visor tiene que recordar lo elegido.
+8. Luces arriba a la derecha: con una partida de un jugador se enciende «Single»; con una de NETSAVES, «Multi».
+   (Las del ranking guardadas en SAVES encienden «Single»: el juego las guarda así.)
+9. Minimapa: compará con el mapa de la misma partida en el juego. El agua es celeste, los cerros grises y los
+   bosques verdes. Anotá si alguna mancha verde no es bosque en el juego, o si falta algún bosque.
+Resultado (2/11/2026): tildada por el usuario, sin observaciones anotadas.
 
 - [x] **80.** Visor de historia: ¿el texto de los sucesos es igual al del juego? (1/11/2026)
 Resultado (1/11/2026): capturas del History of Events de dia-noche4, rondas 1, 3, 8 y 10. Los 26 renglones
