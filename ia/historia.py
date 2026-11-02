@@ -89,10 +89,11 @@ def en_curso(d):
 def cabecera(d, juego=tanda.JUEGO):
     """Datos del panel superior. Los primeros 0x6d bytes son 0x503da0 (0x58: nombre, archivo, +0x4c número al azar
     1..10000 que identifica la partida), el set (9) y el mapa (0xc: «Random» o el archivo del escenario), 0x439a00.
-    El .SAV no guarda fechas: la única es la del archivo (último guardado)."""
+    El .SAV no guarda fechas: la única es la del archivo (último guardado). Modo (+0x48, [0x503de8], 0x42d323): 0 un
+    jugador, 1 por correo, 2 en red, 3 sin identificar."""
     lim, tope = struct.unpack_from('<h', d, offset(LIMITE))[0], struct.unpack_from('<h', d, TOPE)[0]
     return {'nombre': _cad(d[:0x20]), 'archivo': _cad(d[0x20:0x40]), 'set': _cad(d[0x58:0x61]),
-            'mapa': _cad(d[0x61:0x6d]), 'ronda': struct.unpack_from('<h', d, RONDA)[0],
+            'mapa': _cad(d[0x61:0x6d]), 'modo': d[0x48], 'ronda': struct.unpack_from('<h', d, RONDA)[0],
             'victoria': textos(0x1bf, juego)[struct.unpack_from('<h', d, offset(VICTORIA))[0]],
             # 0x420760: con límite en turnos el juego lo copia al tope; si no, el límite es en minutos (sin comprobar)
             'limite': None if lim <= 0 else f'{lim} turnos' if tope == lim else f'{lim} min'}

@@ -204,3 +204,9 @@ cosa: cuántos turnos viejos conserva NETSAVES. Todavía no se muestra en el Vis
 
 Según la tarea 82. Sin decidir: distribuirlo (por ejemplo como opción del Actualizador). Pendientes menores: del 3, tamaño del escudo chico y posiciones (medir sobre las capturas);
 del 3b, colores del minimapa por tipo de terreno.
+
+## 1.0.2.0 — luces Single / Multi
+
+A la derecha del nombre, dos luces del semáforo del Monitor de IA (circle_09 + marco, 26 px, tono amarillo anaranjado;
+apagada = brillo × 0,3). Se encienden según el byte 0x48 del .SAV: 0 → Single; 1 (correo) o 2 (red) → Multi; 3 (sin
+identificar) → ninguna. Las partidas de ranking guardadas en SAVES (ABN_*) dicen 0 y encienden Single.

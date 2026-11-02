@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.1.0'
+VERSION = '1.0.2.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -29,7 +29,7 @@ RELEASE = 'https://api.github.com/repos/elcoprofago/Warlords-updater/releases/ta
 EXE, MARCA = 'Visor-Historia.exe', 'Visor-Historia.version'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Visor-Historia.ini')
-# La ruedita es la del Monitor de IA: en el .exe va adentro (build.py); desde el código se lee de monitor-ia\assets.
+# La ruedita y las luces son las del Monitor de IA: en el .exe va adentro (build.py); desde el código se lee de monitor-ia\assets.
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', ''), 'assets') if getattr(sys, 'frozen', False) else \
     os.path.join(os.path.dirname(CARPETA), 'monitor-ia', 'assets')
 DATOS = (('turnos', 'Turnos jugados:'), ('victoria', 'Victoria:'), ('mapa', 'Mapa:'), ('guardado', 'Último guardado:'))
@@ -119,6 +119,11 @@ class Visor:
         self.d_nombre = tk.Entry(sup, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
                                  relief='solid', bd=1, width=44, state='readonly')
         self.d_nombre.grid(row=0, column=1, columnspan=4, sticky='w', pady=(0, 4))
+        # Luces «Single» y «Multi» a la derecha del nombre, según el modo guardado en la partida
+        sup.columnconfigure(5, weight=1)
+        luces = self.caja(sup)
+        luces.grid(row=0, column=5, rowspan=2, sticky='ne')
+        self.luces = {m: self.luz(luces, m) for m in ('Single', 'Multi')}
         self.datos = {}
         for i, (clave, rot) in enumerate(DATOS):
             f, c = 1 + i // 2, 1 + 2 * (i % 2)
@@ -227,6 +232,7 @@ class Visor:
         for cv in (self.cv, self.barra):
             cv.configure(bg=self.base)
         self.pintar_ruedita()
+        self.pintar_luces()
         self.dibujar()
 
     def fondo_canvas(self, cv):
@@ -235,6 +241,35 @@ class Visor:
         if r is not None:
             self.imgs.append(ImageTk.PhotoImage(r))
             cv.create_image(0, 0, image=self.imgs[-1], anchor='nw')
+
+    # ---- luces: el círculo del semáforo del Monitor de IA (mismo tamaño, 26 px), en amarillo anaranjado ----
+    def luz(self, padre, nombre):
+        marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
+        base = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
+        h, s, v = base.convert('HSV').split()
+        imgs = {}
+        for estado, brillo in (('on', 1), ('off', 0.3)):   # apagada: la misma muy oscura, lámpara sin corriente
+            c = Image.merge('HSV', (h.point(lambda x: 28), s, v.point(lambda x: x * brillo))).convert('RGBA')
+            c.putalpha(base.getchannel('A'))
+            c.alpha_composite(marco.resize(c.size))
+            imgs[estado] = c.resize((26, 26), Image.LANCZOS)
+        f = self.caja(padre)
+        f.pack(side='left', padx=(10, 0))
+        l = tk.Label(f, bd=0, highlightthickness=0)
+        l.pack()
+        l.imgs, l.estado = imgs, 'off'
+        self.rotulo(f, 'etiqueta', text=nombre, font=('Segoe UI', 7, 'bold')).pack()
+        return l
+
+    def pintar_luces(self):
+        modo = self.p.cabecera['modo'] if self.p else None
+        for nombre, l in self.luces.items():
+            l.estado = 'on' if (nombre == 'Single' and modo == 0) or (nombre == 'Multi' and modo in (1, 2)) else 'off'
+            img = l.imgs[l.estado]
+            base = self.recorte(l, img.size)
+            base = base.convert('RGBA') if base is not None else Image.new('RGBA', img.size, self.base)
+            base.alpha_composite(img)
+            l.configure(image=self.foto_de(l, base), bg=self.base)
 
     # ---- ruedita: normal, hover con el mouse encima, active mientras se aprieta, disabled con la ventana abierta ----
     def armar_ruedita(self, padre):
