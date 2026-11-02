@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.14.0'
+VERSION = '1.0.15.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -162,7 +162,7 @@ class Visor:
         self.f_ren = tkfont.Font(family='Arial', size=11)
         fams = set(tkfont.families())
         self.f_tit = tkfont.Font(family='Uncial ATT' if 'Uncial ATT' in fams else 'Times New Roman', size=18)
-        self.f_sub = tkfont.Font(family='Arial', size=13, weight='bold')   # la letra de los renglones, más grande y en mayúsculas
+        self.f_sub = tkfont.Font(family='Arial', size=10, weight='bold')   # la letra de los renglones, en mayúsculas
         self.fondo_v = tk.Label(raiz, bd=0)
         self.fondo_v.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -549,9 +549,9 @@ class Visor:
         self.imgs.append(f)
         return f
 
-    def texto_sombra(self, x, y, s, fuente, anchor='nw'):
+    def texto_sombra(self, x, y, s, fuente, anchor='nw', color=TEXTO):
         self.cv.create_text(x + 1, y + 1, text=s, font=fuente, fill=SOMBRA, anchor=anchor)
-        self.cv.create_text(x, y, text=s, font=fuente, fill=TEXTO, anchor=anchor)
+        self.cv.create_text(x, y, text=s, font=fuente, fill=color, anchor=anchor)
 
     def dibujar(self):
         cv, self.imgs = self.cv, []
@@ -564,7 +564,7 @@ class Visor:
             return
         cv.create_image(0, 0, image=self.foto(self.fondo), anchor='nw')
         cv.create_text(310, TIT_Y, text='History of Events', font=self.f_tit, fill='#20203a')
-        self.texto_sombra(REN_X + 175, SUB_Y, f'EVENTS FOR TURN {self.ronda}', self.f_sub, 'n')
+        self.texto_sombra(REN_X + 175, SUB_Y, f'EVENTS FOR TURN {self.ronda}', self.f_sub, 'n', '#8b6914')
         self.dibujar_minimapa()
         clave = self.buscar.get().strip().lower()
         y = REN_Y
