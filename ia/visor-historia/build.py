@@ -1,6 +1,6 @@
 # Empaqueta el Visor de historia en ia\Visor-Historia.exe. El arte y los textos los toma del juego al abrir un .SAV;
-# la ruedita de configuración y las luces van adentro, tomadas de ia\monitor-ia\assets, y la medalla del ícono
-# (medalla.png y medalla.ico, sacadas de SETS\Fantasy\ICONS.PCX del juego).
+# la ruedita de configuración y las luces van adentro, tomadas de ia\monitor-ia\assets, y el ícono
+# (medalla.png y medalla.ico: trofeo sobre escudo con una espada entera y otra quebrada, dibujados por icono.py).
 # Uso: python ia\visor-historia\build.py
 import os, subprocess, sys, tempfile
 

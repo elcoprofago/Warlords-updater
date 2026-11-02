@@ -16,14 +16,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.13.0, 2/11/2026). Después de la 84.
+- [ ] **85.** Ver en el Visor cómo terminó la partida (Visor de historia 1.0.14.0, 2/11/2026). Después de la 84.
 Cambio: en el panel de arriba del Visor hay un botón **«Resultado»**. Se activa solo si al lado del .SAV está el
 `.FIN` de la partida (las que están en `HISTORY`). El cartel imita el del juego («Game Over!», SIDE / VPs / CITIES / GOLD).
 Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eventos2» de la PC anfitriona se jugó en
 `C:\Warlords`, que tenía un DarklordAV.exe anterior: pasó a HISTORY pero sin `.FIN`. Las pruebas, en `C:\Warlords3`.
 1. Actualizá el Visor: ruedita → «Actualizar versión». Si sale «Failed to remove temporary directory» y otro cartel de
    error (es el defecto de la versión vieja, corregido en la 1.0.7.0), cerralos y abrí el Visor de nuevo a mano. El
-   título tiene que decir **VERSIÓN 1.0.13.0**.
+   título tiene que decir **VERSIÓN 1.0.14.0**.
 2. Abrí con «Abrir…» un .SAV de `C:\Warlords3\HISTORY` de una partida jugada con 1.0.101.0. El botón «Resultado»
    tiene que estar activo.
 3. Partida que terminó con victoria (p. ej. «eventos03»): ventana «Resultado», el mismo cartel que mostró el juego, sin
@@ -34,7 +34,7 @@ Ojo: el `.FIN` lo escribe solo el parche 1.0.101.0 o posterior. La partida «eve
    En el panel de arriba, «Victoria:» y «Último guardado:» tienen que quedar más cerca del medio.
 5. Abrí un .SAV de `SAVES` o `NETSAVES`: el botón tiene que quedar gris.
 6. «Abrir…» tiene que arrancar en `HISTORY`; después de abrir una partida de otra carpeta, la próxima vez arranca ahí.
-7. El ícono del Visor (el .exe, la barra de tareas y las ventanas) es la medalla de cinta roja del juego.
+7. El ícono del Visor (el .exe, la barra de tareas y las ventanas) es un trofeo dorado sobre un escudo rojo, con una espada entera y otra quebrada detrás (guerra, alianzas y traiciones).
 8. La próxima vez que actualices el Visor (desde la 1.0.7.0 en adelante) no tiene que salir ningún cartel de error.
 
 - [ ] **84.** Cómo terminó la partida: archivo .FIN y «acuerdo:» por chat (vista-aliada 1.0.101.0, 2/11/2026)
