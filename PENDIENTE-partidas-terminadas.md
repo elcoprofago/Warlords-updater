@@ -129,5 +129,9 @@ Por resolver al empezar:
 
 ## Próximo paso
 
+Publicar el Monitor de IA 1.0.21 (`python ia\monitor-ia\publicar.py`): ya commiteado; el 2/11 no se pudo porque
+Monitor-IA.exe estaba abierto y no deja reemplazar el .exe.
+
+
 Nada de código pendiente en este plan: quedan las pruebas reales (TAREAS 84 y 85). Si la 84 muestra que el acuerdo
 tiene que pasar la partida a HISTORY en todas las PC, enganchar la recepción del chat (ver B2, «Límite»).
