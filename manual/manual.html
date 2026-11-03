@@ -131,6 +131,8 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
     <ol><li>Para qué sirve · IA.INI · Tandas · Monitor de IA · Informes y PDF de posiciones</li></ol></li>
   <li><span>XV.</span>Programas complementarios
     <ol><li>DarkValidator · DarkCompare · Visor PGS · Sorteo · Votación</li></ol></li>
+  <li><span>XVI.</span>El Visor de historia
+    <ol><li>Abrir una partida · Recorrer las rondas · Buscar · Resultado y exportación · Configuración</li></ol></li>
   <li><span>A.</span>Apéndice A — Referencia rápida</li>
   <li><span>B.</span>Apéndice B — Archivos que instala el parche</li>
   <li><span>C.</span>Apéndice C — Estado de las funciones</li>
@@ -727,6 +729,53 @@ todos. Las 25 reglas están en el capítulo IX.</div>
 <div class="prueba"><b>Estado.</b> El modo espectador de Sorteo y Votación en las otras PC sigue en prueba: en una
 partida del 12/10/2026 la ventana del espectador quedó tapada por el juego.</div>
 
+<!-- ============================================================ XVI -->
+<h1><span class="num">Capítulo XVI</span>El Visor de historia</h1>
+<p class="entrada">El Visor de historia abre una partida guardada (<code>.SAV</code>) y muestra su <i>Events Report</i>
+—la «History of Events» del juego— con el mismo arte, ronda por ronda, con buscador y exportación a PDF. Solo lee:
+no modifica la partida.</p>
+<figure class="captura"><img src="img/capturas/visorEventos.jpg" style="width:120mm"><figcaption>Visor de historia</figcaption></figure>
+
+<h2>Abrir una partida</h2>
+<ul>
+  <li><b>Abrir…</b> busca primero en la carpeta <code>HISTORY</code> del juego, donde el parche deja las partidas
+  terminadas; si no existe, en <code>SAVES</code>. Después recuerda la última carpeta usada.</li>
+  <li>Arriba quedan el nombre de la partida, los <b>turnos jugados</b>, la condición de <b>victoria</b>, el tipo de
+  <b>mapa</b> (aleatorio o con nombre) y la fecha del <b>último guardado</b>.</li>
+  <li>Las luces <b>Single</b> y <b>Multi</b> indican si la partida fue de un jugador o en red.</li>
+</ul>
+
+<h2>Recorrer las rondas</h2>
+<ul>
+  <li>La barra deslizante del pie elige la ronda; el cuadro muestra sus sucesos con el escudo de cada bando, igual que
+  en el juego.</li>
+  <li>A la izquierda, el <b>minimapa</b> con los dueños de las ciudades en esa ronda. Con un clic en un escudo de abajo
+  se elige el bando que se destaca en el minimapa.</li>
+  <li>Como en el juego, por ronda quedan registrados a lo sumo dos sucesos por jugador: el Visor no puede mostrar más
+  que eso.</li>
+</ul>
+
+<h2>Buscar</h2>
+<ul>
+  <li>Con pocas letras en <b>Buscar</b> (un héroe, una ciudad, un bando) se resaltan todas sus apariciones.</li>
+  <li><b>◀</b> y <b>▶</b> (o Enter) saltan a la ronda anterior o siguiente donde aparece, y esas rondas quedan marcadas en dorado
+  sobre la barra; <b>Limpiar</b> borra la
+  búsqueda.</li>
+</ul>
+
+<h2>Resultado y exportación</h2>
+<ul>
+  <li><b>Resultado</b> muestra cómo terminó la partida, con el cartel del juego («Victory!», o «Game Over!» con
+  puestos, puntos, ciudades y oro), o el papiro con el texto si se cerró por acuerdo o votación. Se activa solo en las
+  partidas de <code>HISTORY</code> jugadas con el parche 1.0.101.0 o posterior; en las demás queda gris.</li>
+  <li><b>Exportar PDF…</b> guarda la historia completa, ronda por ronda, con el nombre de la partida.</li>
+</ul>
+
+<h2>Configuración y actualizaciones</h2>
+<p>La ruedita de abajo a la derecha elige el fondo de la ventana (color liso o textura) y tiene el botón
+<b>Actualizar versión</b>, que baja la última publicada. La versión está siempre en el título de la ventana.</p>
+
+<!-- ============================================================ APÉNDICE A -->
 <h1><span class="num">Apéndice A</span>Referencia rápida</h1>
 <table>
 <tr><th style="width:38%">Quiero…</th><th>Cómo</th></tr>
