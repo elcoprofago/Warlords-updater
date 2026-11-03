@@ -254,14 +254,17 @@ puestos contra el control. Si salen 0 eventos, primero confirmar que el juego to
 barco en una partida cargada tiene que mostrar Landing/Carrier) antes de concluir nada sobre ai_conv.
 
 Resultado de la tarea 89 (tandas 127-128, 1.0.106.0, 20 partidas ok): evento 3 (grupo partido) 62 veces en 17
-partidas, así que el juego toma los bonos de la guardada. Evento 2 (convoy): 0. No hay control de la misma versión
+partidas, así que el juego toma los bonos de la guardada. Evento 2 (convoy ordenado por ai_conv): 0. Corrección:
+el evento 2 no cuenta los convoyes que crlink forma solo cuando cualquier movimiento choca con un barco propio lleno;
+el usuario vio al amarillo usar convoyes varias veces en una partida. Se agregó el evento 25 (1.0.108.0). No hay control de la misma versión
 (las Scarpart/Kor de datos.db son de 1.0.32.0), así que el PV no se compara todavía.
-Diagnóstico agregado en 1.0.107.0: evento 24 en ai_conv, una vez por movimiento de un grupo embarcado con "Carrier"
+Diagnóstico agregado en 1.0.107.0 (sigue en 1.0.108.0): evento 24 en ai_conv, una vez por movimiento de un grupo embarcado con "Carrier"
 que no armó convoy; n = 1 ya en convoy, 2 ya enlazado, 3 con "Landing" y sin puerto a 2 casillas del destino,
 4 sin barco propio vecino que vaya cerca del mismo destino, 5 lo hubo pero la suma entraba en un stack.
 Lectura previa del código: el convoy exige dos grupos ya embarcados, en casillas de agua vecinas, yendo a menos de 2
 casillas del mismo destino y que no quepan en un stack; como ai_move parte el grupo antes de embarcar, lo que sobra
 queda en tierra y casi nunca hay un segundo barco al lado. Si domina el motivo 4, el arreglo es que el resto soltado
 por ai_move embarque en otro barco y se sume (convoy desde el muelle), en vez de esperar a que coincidan.
+Evento 25 (1.0.108.0): crlink formó un enlace nuevo (x, y = casilla a la que se sumó), por cualquier vía.
 Tanda pedida: TAREAS 90 (serie de 2 x 10 con Scarpart, Kor, Scarpart_CR y Kor_CR: las dos primeras son el control).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 90".

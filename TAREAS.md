@@ -15,11 +15,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **90.** IA: ¿por qué no arma convoyes? (vista-aliada 1.0.107.0, 3/11/2026)
-Cambio: en la tarea 89 la computadora nunca juntó dos barcos en un convoy. La 1.0.107.0 anota, solo en las tandas,
-por qué no lo hizo cada vez que pudo. Las guardadas sin convoy (Scarpart y Kor) entran para comparar con la misma
+- [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
+Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el
+juego arma solo, como los del amarillo que viste, no se anotaban. La 1.0.108.0 anota, solo en las tandas, todo
+convoy que se forme y, cada vez que la rutina nueva pudo armar uno y no lo hizo, por qué. Las guardadas sin convoy (Scarpart y Kor) entran para comparar con la misma
 versión.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.107.0**.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.108.0**.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá
    **serie de 2**, **Nueva tanda**.
 3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
@@ -81,8 +82,9 @@ guardada traía ese barco; ahora se va a ver si lo hace y si le conviene.
 3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 Resultado: (Claude, 3/11/2026: tandas 127 y 128, 20 partidas. El juego sí tomó los bonos: la computadora partió 62
-veces un grupo que no entraba en el barco, cosa que antes nunca había pasado. Pero no armó **ningún** convoy. Se
-agregó un diagnóstico en la 1.0.107.0 para saber por qué: tarea 90.)
+veces un grupo que no entraba en el barco, cosa que antes nunca había pasado. La rutina nueva no ordenó ningún
+convoy; los que se arman solos (el usuario vio al amarillo usarlos varias veces) no se contaban. Se miden en la
+1.0.108.0: tarea 90.)
 
 - [x] **88.** Construir un camino en el juego (vista-aliada 1.0.106.0, 3/11/2026)
 Cambio: un grupo con una unidad que tenga el bono de movimiento **Build** puede poner un camino en la casilla donde

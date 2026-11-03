@@ -3190,6 +3190,8 @@ mv_stubs = [(va, orig, place(f'bmv_{va:x}', stub.replace('BMV', f'{bmvcap:#x}').
 # que tengan enlazado) suman hasta 3 casillas, enlaza S con D sumando el enlace al que ya tenga cada una (S y D son
 # puntas: un convoy de 2 casillas solo tiene puntas) y borra los destinos de D. Las dos cosas terminan como el código
 # 1 (llegó: 0x485e30(p, -1, -1) y 0x49c960(p, 1)), sin el aviso de stack lleno. Si suman más, el aviso de siempre.
+# ia_evt se define más abajo: crlink la llama por este puntero, que se llena después de ia_evt (evento 25).
+CREVT = place_data('crevt', bytes(4))
 crlink = place('crlink', f'''
     cmp word ptr [esi], 4
     jne crl_orig
@@ -3277,6 +3279,13 @@ crl_d:
     mov eax, esi
     mov edx, edi
     call {crscan:#x}
+    push 0
+    push edi
+    push esi
+    push ebp
+    push 25
+    call dword ptr [{CREVT:#x}]
+    add esp, 0x14
 crl_done:
     add esp, 8
     popad
@@ -5133,6 +5142,8 @@ ie_out:
 ie_ret:
     ret
 ''')
+caves['crevt'] = ia_evt.to_bytes(4, 'little') + caves['crevt'][4:]   # (conserva el relleno de alineación); puntero de crlink (evento 25)
+
 # ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
 ia_evtb = place('ia_evtb', f'''
     push eax

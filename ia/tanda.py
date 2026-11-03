@@ -54,7 +54,7 @@ COL_E = ['turno', 'color', 'ia', 'tipo', 'x', 'y', 'n']
 # Tipos de evento (build.py, ia_evt).
 EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo partido al embarcar',
            4: 'puente reconstruido', 5: 'refugio en ciudad aliada', 6: 'puente derribado (misión)',
-           18: 'caída en pozo', 19: 'caída en remolino', 20: 'caída en trampa', 24: 'convoy no armado (diagnóstico)'}
+           18: 'caída en pozo', 19: 'caída en remolino', 20: 'caída en trampa', 24: 'convoy no armado (diagnóstico)', 25: 'convoy formado (cualquier vía)'}
 POZOS_EV = (18, 19, 20)   # n = muertos + 100 si el que cayó ya lo veía (error evitable)
 
 ESQUEMA = f'''
