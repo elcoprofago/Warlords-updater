@@ -32,7 +32,7 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   movimiento no son bits sino **nombres de 9 bytes en 4 ranuras** (registro de unidad +0xb2,
   igual en el .ARM y en memoria, 0x53c410 + (bando*16 + ranura)*0xfc). «build» entra como un
   bono más, igual que «camouflg», «carrier», «cabotage», «landing» y «trap»: un
-  `TERRAIN\SUBTYPEuild.STT` (sumarlo a `STTS` en build.py, para que war3ed_ssg lo ofrezca) y
+  `TERRAIN\SUBTYPEbuild.STT` (sumarlo a `STTS` en build.py, para que war3ed_ssg lo ofrezca) y
   la comprobación por nombre con `Unit.TieneMoveBonus`. No existe hoy ningún `build.STT`.
 - Ranuras libres (379 .ARM de `C:\Warlords3\ARMY`): solo 5 unidades tienen las 4 ranuras
   ocupadas (FU_gob, goblins, half_bra, half_thi, MC_NazKl); ninguna es candidata.
