@@ -20,8 +20,9 @@ Cambio: armé dos guardadas nuevas, **Scarpart_CR** y **Kor_CR**, iguales a Scar
 bandos con los bonos **Landing** y **Carrier**. En 648 partidas la computadora nunca armó un convoy porque ninguna
 guardada traía ese barco; ahora se va a ver si lo hace y si le conviene.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.106.0** (no hace falta instalar nada nuevo).
-2. Monitor de IA → **Ninguna**, marcá solo **Scarpart_CR** y **Kor_CR**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
+2. Monitor de IA → **Ninguna**, marcá solo **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá **serie de 2**,
+   **Nueva tanda** (dos tandas de 10, una tras otra).
+3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
