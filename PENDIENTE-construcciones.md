@@ -17,7 +17,19 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía.
 3. **Camino.** Cada casilla cuesta en oro en proporción a lo que cuesta transitar ese terreno:
    la casilla más cara es la de montaña.
 
+4. **Quién construye.** Solo construyen las unidades que tienen un bono nuevo de movimiento,
+   «build». Lo tienen pocas unidades, los constructores. El constructor coloca el camino casilla
+   por casilla y cada casilla se paga en el momento. Se construye hasta donde alcance el oro.
+   Falta decidir si los puentes también los hace un constructor (lo natural) y si convertir
+   una ciudad en puerto lo necesita (no parece hacer falta).
+
 ## Primer paso técnico (sin hacer)
+
+- Ver si el campo de habilidades de las unidades tiene un bit libre para «build», o si hay que
+  reutilizar uno que no se use. Nombre corto por el límite de letras: «build».
+- Ver qué unidades de los ejércitos (army) llevarían el bono.
+- La IA: en la primera etapa usa los caminos que encuentra pero no construye. Enseñarle a
+  construir queda para otra tanda.
 
 Medir en DarklordAV.exe:
 
