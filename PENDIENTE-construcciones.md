@@ -1,6 +1,6 @@
 # PENDIENTE — Construcciones del jugador (puertos, puentes, caminos)
 
-Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medido el formato del bono (ver abajo).
+Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; mediciones terminadas, diseño de la implementación al final.
 
 ## Descartado
 
@@ -122,6 +122,59 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   ventana (su tamaño no está en el .RES; lo lee 0x4dd900 → 0x4ed760(6, …), sin ubicar). Texto
   de 10 px de alto: sin superposición.
 
-Mediciones del exe: **terminadas**. Siguiente: diseño de la implementación (etapa 1, humanos):
-el bono `build.STT`, la orden «Build» con su paquete de red, camino y puente por casilla con su
-precio según la tabla de terrenos, y la conversión de ciudad en puerto.
+Mediciones del exe: **terminadas**.
+
+## Diseño de la implementación, etapa 1 (humanos) — 3/11/2026
+
+Sigue punto por punto el precedente de la trampa (build.py, «Construir trampas»): renglón del
+diálogo 34, confirmación con el diálogo de reconstruir, paquete de red propio que cada PC vuelve a
+comprobar antes de cobrar y aplicar. La IA no construye (punto 5).
+
+**A. Bono «build».** `('build', 'Build')` en `STTS`. Rutina `hasbuild` (como `reccomb`, pero sobre
+los bonos de movimiento: `off=0xb2`, `slots=4`): ¿algún ejército del grupo, no héroe, lo tiene?
+El parche no edita .ARM: el bono se asigna a Dwarf Sappers y Peasants con war3ed_ssg (va a
+TAREAS.md cuando esté publicado).
+
+**B. Renglón «Build».** `BD_TXT, BD_HOT = 0x19, 0x1a`, renglón 13 del diálogo 34; los 13 renglones
+pasan a 15 px desde y=53 (medido: entra). `bd_check` desde `br_menu`, como `tr_check`: lo habilita
+si el grupo tiene `hasbuild`, el bando es humano y hay algún candidato (C). Paquete
+`BD_PKT = 0x2a4` (libre: los usados son 0x2a2 y 0x2a3): bando, x, y, clase (camino/puente),
+dirección, largo. `bd_recv` repite todas las comprobaciones, cobra y aplica.
+
+**C. Qué se construye y dónde.** Un constructor no puede pararse en montaña ni en agua, así que la
+orden no actúa solo sobre su casilla:
+1. su casilla, si es tierra sin estructura → **camino** ahí;
+2. si no, las 4 vecinas en orden N, E, S, O: una **montaña** sin camino → camino en esa vecina
+   (así se abre un paso: camino, avanzar, camino…); un **agua/lava** desde la orilla → **puente**
+   en línea recta en esa dirección, de 1 a 8 casillas de clase agua sin estructura, que termine
+   en tierra (si no llega a tierra en 8, no es candidato).
+Con varios candidatos se ofrecen uno por uno con el diálogo de confirmar («Road north: 40 gold?»,
+«Bridge east, 3 tiles: 270 gold?»); «No» pasa al siguiente. Un solo renglón, como pide el punto 7.
+
+**D. Precio.** Una constante `BD_UNIT` (oro por punto de paso) y el costo de paso de la tabla de
+terrenos en ejecución (palabra +0x12): camino = paso × `BD_UNIT`; montaña, que tiene 0, usa un paso
+fijo `BD_MNT = 10` (la más cara, punto 3); puente = paso del agua/lava por casilla × `BD_UNIT` ×
+`BD_BRX` (agua toma paso fijo 9, como la lava, si la tabla da 0; la lava × 1,5 encima). El puente se
+cobra **entero o nada** (medio puente no sirve); el camino, casilla por casilla hasta donde alcance
+el oro (punto 4). Valores iniciales a calibrar contra el costo de reconstruir (0x4b65e0) al probar.
+
+**E. Aplicar.** Lo mismo que `br_rebapply`: estructura 1, pieza de dibujo, 0x4a4f20, refrescar.
+Camino: pieza recta según la vecindad (se recalculan también las 4 vecinas con camino, para que
+empalmen). Puente: punta + medios (3,4)/(3,5) + punta. Se guarda solo: vive en la grilla del mapa,
+que ya va en el .SAV y en la sincronización del Puente.
+
+**F. Puentes largos en derribar/reconstruir.** `br_comp` y `br_xy` pasan a recorrer la tira recta
+hasta 8 casillas (hoy 1-2), y `br_stubtab` se renombra como tramo medio. Hace falta para que los
+puentes nuevos se derriben y reconstruyan enteros, y para la IA (meta 9, `ai_brrebev`).
+
+**G. Puerto (última fase, falta una medición).** Sin constructor; renglón en el menú de la ciudad
+propia costera. Va a la tabla de sitios del juego (compatible con editor y .SAV) y, si está llena
+(tope 50), se niega con aviso: el margen de 2-6 alcanza para algo caro y raro, y una tabla propia
+obligaría a reescribir todo lo que lee sitios. **Falta medir** cómo hacer desaparecer una ciudad sin
+borrar su registro (los índices de ciudad se usan en todos lados): candidata, ciudad arrasada
+(`[+8] & 0x80`) + una marca propia que la oculte y impida reconstruirla, y las 3 casillas sobrantes
+a estructura 0.
+
+**Orden de trabajo:** A+B+C.1 (camino en la propia casilla, se prueba en red) → C.2 montaña → F →
+puente → G.
+
