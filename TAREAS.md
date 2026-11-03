@@ -37,15 +37,6 @@ construye. Puentes, pasos de montaña y la conversión de ciudad en puerto viene
 8. Guardá, salí y volvé a cargar: los caminos nuevos tienen que seguir ahí.
 Resultado:
 
-- [ ] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.105.0, 2/11/2026)
-Cambio: la computadora (solo la IA de prueba en las tandas) ahora busca los puentes por donde un enemigo en guerra
-puede llegar a una ciudad suya, y manda una pila a cortarlo. Antes esperaba a pasar por casualidad junto al puente, y
-eso casi nunca ocurría (tarea 86).
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.105.0**.
-2. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
 manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
@@ -92,6 +83,16 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.105.0, 2/11/2026)
+Cambio: la computadora (solo la IA de prueba en las tandas) ahora busca los puentes por donde un enemigo en guerra
+puede llegar a una ciudad suya, y manda una pila a cortarlo. Antes esperaba a pasar por casualidad junto al puente, y
+eso casi nunca ocurría (tarea 86).
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.105.0**.
+2. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
+Resultado: (Claude, 3/11/2026: tandas 124 a 126, 30 partidas: la computadora cortó 51 puentes para defender sus
+ciudades, antes 0; los puntos no bajaron. Cumplida.)
+
 - [x] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.103.0, 2/11/2026)
 Cambio: en las tandas, cada vez que una pila de la computadora termina junto a un puente y no lo corta, el juego anota
 el motivo. No cambia cómo juega: solo mide.
