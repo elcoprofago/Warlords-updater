@@ -185,7 +185,7 @@ puente → G.
   menú de órdenes (13 renglones a 15 px), paquete 0x2a4, camino en la casilla del líder con piezas según vecinos.
   Prueba de juguete: `parches/vista-aliada/prueba_caminos.py` (MAL: 0). Todas las demás pruebas dan igual que
   la versión anterior (se ajustó el seguimiento de la cadena de recepción en prueba_trampas y prueba_chatordenes).
-- **Próximo paso:** cuando termine la tanda de la tarea 87 y el juego esté cerrado, compilar en C:\Warlords3 y
+- **Próximo paso:** (1.0.111.0 publicada: flecha roja de mvarrow en el diálogo del camino; el «build» de la torre sigue sin ubicarse, tarea 92 pide captura) cuando termine la tanda de la tarea 87 y el juego esté cerrado, compilar en C:\Warlords3 y
   `tools\publicar-parche.ps1 vista-aliada`; luego tarea 88 del usuario. Después C.2 (montaña).
 - **Hecho (3/11/2026):** publicada la 1.0.106.0; tarea 88 cumplida: los caminos se construyen y se ven bien.
   La versión vigente es la 1.0.108.0 (agrega solo registros de IA para el convoy).
@@ -203,5 +203,5 @@ puente → G.
   prueba_caminos.py: MAL 0; las demás pruebas dan igual que la 1.0.108.0.
 - **Publicada la 1.0.110.0 (3/11/2026)**: C.2 + botón de la torre «Build» → «Rebuild» (diálogos 39 y 41,
   RES_TEXTS). Los «Darklords.exe» que parecían la tanda eran otro programa (cliente YIIOT): la serie no corría.
-- **Próximo paso:** F (puentes largos en derribar/reconstruir) y el puente nuevo sobre agua (C, punto 8); luego G.
+- **Próximo paso:** (1.0.111.0 publicada: flecha roja de mvarrow en el diálogo del camino; el «build» de la torre sigue sin ubicarse, tarea 92 pide captura) F (puentes largos en derribar/reconstruir) y el puente nuevo sobre agua (C, punto 8); luego G.
   Tarea 91 del usuario: paso de montaña.

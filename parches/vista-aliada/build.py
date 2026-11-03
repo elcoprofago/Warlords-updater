@@ -4166,8 +4166,10 @@ BD_MNT = 10
 bd_vars = place_data('bd_vars', bytes(12))
 BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
 bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
-bd_dirtxt = [place_data(f'bd_dlgtxt{i}', cstr_('Building a road ' + d)) for i, d in enumerate(('north', 'east', 'south', 'west'))]
-bd_txttab = place_data('bd_txttab', struct.pack('<5I', *bd_dirtxt, bd_dlgtxt))
+# Flecha roja recta de PICTS\mvarrow.pcx (archivo 163 de la tabla de War3.RES, celdas de 32x32) por dirección N, E,
+# S, O: la dibuja br_rebdraw en el recuadro de imagen del diálogo, en vez de nombrar la dirección (pedido del usuario).
+BD_ARROW_FILE = 163
+bd_arrows = place_data('bd_arrows', struct.pack('<8H', 0, 128, 64, 192, 128, 0, 192, 64))
 bd_dxy = place_data('bd_dxy', bytes([0, 0xff, 1, 0, 0, 1, 0xff, 0]))
 # Pieza de camino (fila*8 + columna de la hoja) por vecinos con estructura 1: N 1, E 2, S 4, O 8. Medido en los .SAV
 # de 5 mapas (hoja 0): los caminos no empalman con ciudades ni sitios, solo con caminos y puentes.
@@ -7163,6 +7165,28 @@ brd2_ret:
 br_rebdraw = place('br_rebdraw', f'''
     cmp dword ptr [esp + 4], 4
     jne 0x4b64e3
+    cmp word ptr [0x587e5c], {BD_MARK:#x}
+    jne brw_site
+    movzx eax, byte ptr [{BD_DIR:#x}]
+    cmp eax, 4
+    jae 0x4b64e3
+    mov ecx, dword ptr [esp + 0xc]
+    add ecx, 8
+    push ecx
+    mov ecx, dword ptr [esp + 0xc]
+    add ecx, 8
+    push ecx
+    push 32
+    push 32
+    movzx ecx, word ptr [eax*4 + {bd_arrows + 2:#x}]
+    push ecx
+    movzx ecx, word ptr [eax*4 + {bd_arrows:#x}]
+    push ecx
+    push {BD_ARROW_FILE}
+    call 0x4dd590
+    add esp, 0x1c
+    ret
+brw_site:
     cmp word ptr [0x587e5c], {BR_CODE:#x}
     jge 0x4b64e3
     jmp 0x4b64a7
@@ -7196,12 +7220,7 @@ brx_trap:
     jmp 0x4b6516
 brx_road:
     push 0
-    movzx eax, byte ptr [{BD_DIR:#x}]
-    cmp eax, 4
-    jbe brx_rt
-    mov eax, 4
-brx_rt:
-    mov eax, dword ptr [eax*4 + {bd_txttab:#x}]
+    mov eax, {bd_dlgtxt:#x}
     jmp 0x4b6516
 ''')
 # Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.

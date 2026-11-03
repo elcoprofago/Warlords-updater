@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 92).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 93).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -9,7 +9,7 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 91** (paso de montaña y botón «Rebuild»): ya.
+3. **Tarea 92** (flecha en el diálogo del camino y captura del «build» de la torre): ya.
 4. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
    esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -17,21 +17,15 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **91.** Abrir un paso de montaña con un camino (vista-aliada 1.0.110.0, 3/11/2026)
-Cambio: un grupo con una unidad con el bono **Build** que no pueda poner camino donde está parado (porque ya hay
-camino) puede ponerlo en una **montaña vecina** (arriba, derecha, abajo o izquierda). Con camino, la montaña se
-cruza. Precio: la mitad de lo que cuesta fundar una ciudad, por casilla. Así se abre un paso: camino, avanzar,
-camino…
-1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada tiene que quedar
-   **1.0.110.0**. Fijate que el botón de la torre (reconstruir ciudades) ahora diga **Rebuild** y se lea entero.
-2. Partida **contra la computadora** con el bando que tiene **Build** en Dwarf Sappers y Peasants (tarea 88).
-3. Llevá el grupo hasta el pie de una montaña y poné un camino donde está parado (como en la 88).
-4. Abrí el menú de órdenes: **Build Road** tiene que seguir encendido. Elegilo: tiene que salir «Building a road
-   north» (o east, south, west: la dirección de la montaña) con el precio.
-5. Si hay más de una montaña al lado, decí **No** y volvé a elegir **Build Road**: tiene que ofrecer la siguiente
-   dirección.
-6. Aceptá: el camino tiene que aparecer **sobre la montaña**, el oro bajar en ese precio, y el grupo tiene que
-   poder **entrar** en esa casilla. Seguí 2 o 3 casillas montaña adentro: el camino tiene que verse continuo.
+- [ ] **92.** Flecha en el diálogo del camino; dónde dice «build» la torre (vista-aliada 1.0.111.0, 3/11/2026)
+Cambio: el diálogo «Building a road» muestra una **flecha roja** (del propio juego) hacia la montaña elegida, en
+vez de la palabra north/east/south/west. Cuando el camino va donde está parado el grupo, no hay flecha.
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.111.0**.
+2. Repetí la 91 (camino en montaña vecina): en el diálogo tiene que verse la flecha apuntando a la montaña; con
+   **No** y otro **Build Road**, la flecha tiene que girar a la montaña siguiente.
+3. El «build» de la torre: no encuentro ningún otro texto «Build» que el juego muestre (el que tenía el archivo
+   ya dice «Rebuild»). Sacá una **captura de pantalla** donde se vea ese «build» y guardala en
+   `F:\source\repos\actualizador-warlords\captura-build.png`; con eso lo ubico.
 Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)

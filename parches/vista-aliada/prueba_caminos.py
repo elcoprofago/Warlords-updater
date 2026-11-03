@@ -61,7 +61,7 @@ class Juego:
     def interceptar(self, addr, fn, pop=0):
         def g(mu, a, size, _):
             sp = mu.reg_read(UC_X86_REG_ESP)
-            ret, *args = struct.unpack('<5I', mu.mem_read(sp, 20))
+            ret, *args = struct.unpack('<9I', mu.mem_read(sp, 36))
             mu.reg_write(UC_X86_REG_EAX, (fn(args) or 0) & 0xffffffff)
             mu.reg_write(UC_X86_REG_ESP, sp + 4 + pop); mu.reg_write(UC_X86_REG_EIP, ret)
         self.mu.hook_add(UC_HOOK_CODE, g, begin=addr, end=addr)
@@ -132,7 +132,18 @@ def texto(d):
     _, que, fmt, nombre = g.llamadas[0]
     return que, bytes(mu.mem_read(fmt, 32)).split(b'\0')[0], nombre
 ver('br_rebtxt con BD_MARK en la casilla del líder: "Building a road"', texto(4), (5, b'Building a road', 0))
-ver('  hacia el este: "Building a road east"', texto(1), (5, b'Building a road east', 0))
+ver('  hacia el este: el mismo texto (la dirección va con flecha)', texto(1), (5, b'Building a road', 0))
+def flecha(d, marca=None):
+    g = Juego(); mu = g.mu
+    mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK if marca is None else marca)); mu.mem_write(BD_DIR, bytes([d]))
+    g.anotar(0x4dd590, '4dd590', 7)
+    g.correr(0x4b64a0, RET, struct.pack('<IIII', RET, 4, 100, 200))
+    return [c[1:] for c in g.llamadas]
+ver('flecha norte: mvarrow (0,128) 32x32 centrada', flecha(0), [(163, 0, 128, 32, 32, 108, 208)])
+ver('flecha este', flecha(1), [(163, 64, 192, 32, 32, 108, 208)])
+ver('flecha sur', flecha(2), [(163, 128, 0, 32, 32, 108, 208)])
+ver('flecha oeste', flecha(3), [(163, 192, 64, 32, 32, 108, 208)])
+ver('casilla propia: sin dibujo', flecha(4), [])
 ver('  BD_DIR inválido: el texto común', texto(0xff), (5, b'Building a road', 0))
 def enviar(indice):
     g = Juego(); mu = g.mu
