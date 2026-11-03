@@ -189,6 +189,7 @@ puente → G.
   `tools\publicar-parche.ps1 vista-aliada`; luego tarea 88 del usuario. Después C.2 (montaña).
 - **Hecho (3/11/2026):** publicada la 1.0.106.0; tarea 88 cumplida: los caminos se construyen y se ven bien.
   La versión vigente es la 1.0.108.0 (agrega solo registros de IA para el convoy).
-- **Próximo paso: C.2** (paso de montaña), después el puente nuevo sobre agua y el puerto. Ojo: si la tanda de la
-  tarea 90 está corriendo, no compilar en C:\Warlords3 (build.py escribe ahí) hasta que termine.
+- **Próximo paso: C.2** (paso de montaña), después el puente nuevo sobre agua y el puerto. El usuario dejó la tanda
+  de la tarea 90 sin arrancar porque esto tiene prioridad: se puede compilar en C:\Warlords3. La tarea 90 tendrá que
+  correrse con la versión que resulte (sigue trayendo los eventos 24 y 25).
   Frase para retomar: "Seguimos con PENDIENTE-construcciones.md, paso C.2".
