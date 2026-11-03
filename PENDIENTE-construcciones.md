@@ -54,10 +54,37 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
 - Hallazgo al pasar: `Zappers.ARM` todavía tiene el nombre viejo «camo» (ya contemplado en
   build.py, ver CAMO).
 
-Siguiente: medir en DarklordAV.exe:
+8. **Puente sobre lava: el triple que uno sobre agua** (pedido del usuario, 3/11/2026). Agua =
+   triple de una ciudad, lava = 9 veces una ciudad. Se distingue por el tipo de terreno de la
+   casilla (`lava`, tipo 10 en Tanda_Kor; su clase es 1, igual que el agua).
 
-- cómo se marca una casilla como camino o puente (se parte de lo que ya usan ai_brdefev y
-  prueba_iareconstruye para derribar y reconstruir puentes);
-- si una montaña admite camino y qué costo de movimiento queda;
-- cómo se representa un puerto y si existe un estado de "ciudad desactivada";
-- cómo se da la orden en la interfaz: un menú nuevo o reutilizar el botón de reconstruir.
+## Mediciones en Darklord.exe (3/11/2026)
+
+- **Camino y puente son lo mismo en la casilla:** estructura 1 (`[+3] & 7`; registro de 10 B,
+  grilla 0x503e58). Sobre tierra es camino; sobre clase agua sin edificio (`palabra 0 & 0x4000`)
+  es puente. Poner uno = estructura 1 + elegir la pieza de dibujo (`[+8]`: hoja `0x21 + (&0xf)`,
+  pieza `(>>5) & 0x1f`) + `0x4a4f20` (rehace el grafo) + refrescar la vista; es lo que ya hace
+  `br_rebapply` en build.py al reconstruir un puente.
+- **Montaña con camino: transitable, costo 1.** El grafo de pasos (0x4a4f90) pone costo 1 a
+  toda casilla con estructura 1, sea cual sea el terreno (0x4a50b3), y la clase 4 (montaña)
+  solo se corta si no hay camino (0x4a52c3). Costo de paso de cada terreno: palabra +0x12 de
+  la tabla de terrenos (0x535ef8 + tipo*0x58); clase en +0x14. En Tanda_Kor: plains 2,
+  hills 5, marsh 5, desert 2, ice 3, lava 9, road 1; mntns **0 = intransitable** (clase 4).
+  Para el precio del camino la montaña no tiene costo de paso que sirva de base: hay que
+  fijarle uno (el más caro, como se acordó). La tabla viene del juego de terrenos del mapa,
+  así que el precio se calcula de la tabla en ejecución, no con números fijos.
+- **Puerto:** es un *sitio* (tipo 4, estructura 4), no un bit suelto. Tabla de sitios en
+  0x55acb6, registros de 0x96 B (x +0, y +2, nombre +4, tipo +0x94, arrasado +0x95), contador
+  en 0x55acb4, **tope 50** (el editor compara con 0x32; la tabla termina en 0x55ca02). La
+  grilla 0x582158 marca el punto de embarque con 0xc0. Un puerto nuevo = un sitio nuevo:
+  falta medir cuántos sitios usan los mapas del clan, para saber cuánto margen queda.
+- **«Ciudad desactivada» ya existe:** ciudad arrasada = estructura 3 con `[+8] & 0x80`
+  (ciudad muerta, reconstruible). Para el puerto no sirve tal cual: la ciudad tiene que
+  desaparecer (3 de sus 4 casillas vuelven a terreno común, decisión 6).
+- **Orden en la interfaz:** hay precedente exacto. «Build Trap» es un renglón nuevo del
+  diálogo 34 (menú de órdenes del grupo, 0x1f en el código; build.py `TR_TXT`/`TR_HOT`,
+  `tr_check` desde `br_menu`), confirma con el diálogo de reconstruir y viaja por red como
+  paquete propio (`TR_PKT`). «Build» sería un renglón más igual a ese, con su paquete.
+
+Siguiente: contar los sitios de los mapas del clan (margen hasta 50) y medir si el diálogo 34
+admite un renglón más sin agrandar la ventana.
