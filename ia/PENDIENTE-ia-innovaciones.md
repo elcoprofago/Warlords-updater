@@ -198,3 +198,20 @@ Próximo paso: tarea 87 (tanda Borderlands de 10). Mirar: eventos 22 (¿se elige
 (¿por qué no?) y los PV de prueba contra original. Si se elige mucho y no se llega, revisar la cabecera; si se derriba
 y el PV baja, el valor 100 es demasiado alto. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md,
 resultado del paso 4 D".
+
+## Resultado del paso 4 D (tandas 124 a 126 = TAREAS 87 y dos más, revisado 3/11/2026)
+Borderlands sin alianzas, exe 13fcb17c (1.0.105.0) en las tres; la 125 y la 126 figuran como 1.0.106.0 por el hueco
+ya conocido de tanda.py (anota parches.txt del repo, no lo instalado), pero el exe es el mismo. 30 partidas válidas,
+todas de 30 turnos.
+- Derribos por defensa: **51** (14 + 21 + 16), todos de la IA de prueba y en 7 de los 8 colores. Antes del 4 D: 0.
+- Evento 22 (elige ir): 133 veces sobre 78 puentes-color distintos; de esos, 51 terminaron derribados, en general en
+  1 a 3 turnos desde la primera elección. Los 27 restantes no llegaron, pero ninguno por fallar al llegar (evento 23:
+  0 con ejército encima, 0 sin amenaza): la pila cambió de meta, murió o se acabó la partida (varios eligen en el
+  turno 28-30). La cabecera funciona; no hace falta revisarla.
+- PV prueba 6.8 contra original 6.0 (+0.8 por color; por tanda +1.4, +0.2, +0.9). Dentro de la calibración de ±1
+  de la tarea 81, así que no se lee como mejora, pero **no retrocede**: el valor 100 no es demasiado alto.
+- Sin medir: si cada derribo frenó al enemigo (hueco del paso 1, sigue abierto).
+Conclusión: paso 4 cerrado. En partidas normales (sin IA.INI) ai_brdefev ya vale para toda computadora, así que no hay
+nada que pasar de «prueba» a todos.
+Próximo paso: paso 5 del plan (relevar los bonos de movimiento y habilidades nuevos que la IA usa o ignora).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5".
