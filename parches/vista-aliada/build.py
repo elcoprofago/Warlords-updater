@@ -5086,6 +5086,9 @@ aibn_bridge:
 # lo veía antes del paso: error evitable). 21 (ai_brraze) puente entero junto a la pila que no derribó (n = motivo).
 # Defensa (paso 4 D): 22 eligió ir a derribar un puente que amenaza una ciudad propia (ai_brdefev; n = costo),
 # 23 llegó y no lo derribó (ai_brreb; n = 1 ejército encima, 2 ya no hay amenaza).
+# Convoy (paso 5.1): 24 grupo embarcado con "Carrier" que no armó convoy (ai_conv; x, y = destino; n = 1 ya está en un
+# convoy, 2 ya enlazado, 3 tiene "Landing" y no hay puerto a 2 casillas del destino, 4 ningún barco propio vecino
+# que vaya cerca del mismo destino, 5 lo hubo pero la suma entraba en un stack).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -5965,8 +5968,9 @@ aim_out:
     ret
 ''')
 # ai_conv: ebx = jugador, esi = x, edi = y (destino del grupo). Preserva todo. Locales: CV_*.
-CV_X, CV_Y, CV_LX, CV_LY, CV_NEED, CV_K, CV_NX, CV_NY = (4 * i for i in range(8))
-CV_LOC = 4 * 8
+CV_X, CV_Y, CV_LX, CV_LY, CV_NEED, CV_K, CV_NX, CV_NY, CV_WHY = (4 * i for i in range(9))
+CV_LOC = 4 * 9
+CV_DIAG = 24   # evento de diagnóstico (solo en tandas): grupo con "Carrier" embarcado que no armó convoy; n = por qué
 ai_conv = place('ai_conv', f'''
     pushad
     sub esp, {CV_LOC:#x}
@@ -5979,8 +5983,9 @@ ai_conv = place('ai_conv', f'''
     imul ebp, ebx, 0x4f0
     test byte ptr [ebp + 0x56eaaa], 8
     jz cv_out
+    mov dword ptr [esp + {CV_WHY:#x}], 1
     cmp word ptr [ebp + 0x56eaac], 2
-    je cv_out
+    je cv_diag
     movsx eax, word ptr [ebp + 0x56ea90]
     test eax, eax
     jz cv_out
@@ -5990,8 +5995,9 @@ ai_conv = place('ai_conv', f'''
     mov dword ptr [esp + {CV_LX:#x}], esi
     mov dword ptr [esp + {CV_LY:#x}], edi
     call {crconv:#x}
+    mov dword ptr [esp + {CV_WHY:#x}], 2
     test eax, eax
-    jnz cv_out
+    jnz cv_diag
     imul eax, ebx, 0x1f8
     movsx ecx, word ptr [eax + 0x536c08]
     mov eax, ebx
@@ -6019,8 +6025,10 @@ cv_py:
     inc esi
     cmp esi, 2
     jle cv_px
-    jmp cv_out
+    mov dword ptr [esp + {CV_WHY:#x}], 3
+    jmp cv_diag
 cv_need:
+    mov dword ptr [esp + {CV_WHY:#x}], 4
     movsx eax, word ptr [ebp + 0x56eaa8]
     sub ecx, eax
     mov dword ptr [esp + {CV_NEED:#x}], ecx
@@ -6078,6 +6086,7 @@ cv_found:
     call 0x4411b0
     add esp, 0xc
     movsx eax, ax
+    mov dword ptr [esp + {CV_WHY:#x}], 5
     cmp eax, dword ptr [esp + {CV_NEED:#x}]
     jle cv_nbnext
     push dword ptr [esp + {CV_NY:#x}]
@@ -6105,6 +6114,14 @@ cv_nbnext:
     inc dword ptr [esp + {CV_K:#x}]
     cmp dword ptr [esp + {CV_K:#x}], 8
     jb cv_nb
+cv_diag:
+    push dword ptr [esp + {CV_WHY:#x}]
+    push dword ptr [esp + {CV_Y + 4:#x}]
+    push dword ptr [esp + {CV_X + 8:#x}]
+    push ebx
+    push {CV_DIAG}
+    call {ia_evt:#x}
+    add esp, 0x14
 cv_out:
     add esp, {CV_LOC:#x}
     popad
