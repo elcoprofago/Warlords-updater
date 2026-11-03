@@ -54,9 +54,13 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
 - Hallazgo al pasar: `Zappers.ARM` todavía tiene el nombre viejo «camo» (ya contemplado en
   build.py, ver CAMO).
 
-8. **Puente sobre lava: el triple que uno sobre agua** (pedido del usuario, 3/11/2026). Agua =
-   triple de una ciudad, lava = 9 veces una ciudad. Se distingue por el tipo de terreno de la
-   casilla (`lava`, tipo 10 en Tanda_Kor; su clase es 1, igual que el agua).
+8. **Puente nuevo: se paga por casilla, como el camino** (3/11/2026; reemplaza el «triple de una
+   ciudad» del punto 2 y el «lava = triple que agua», que salía 9 veces una ciudad: inviable).
+   Reconstruir un puente derribado sigue siendo en bloque, a precio fijo; un puente nuevo es una
+   tira de casillas, de **hasta 8**, y cada una se paga según su terreno (fácil, mediano o
+   difícil), con la misma regla que el camino. La lava, más difícil que el agua, cuesta más por
+   casilla. Se distingue por el tipo de terreno (`lava`, tipo 10 en Tanda_Kor; clase 1, igual que
+   el agua). Así se pueden cruzar lagos y brazos de mar, no solo ríos angostos.
 
 ## Mediciones en Darklord.exe (3/11/2026)
 
@@ -85,6 +89,12 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   diálogo 34 (menú de órdenes del grupo, 0x1f en el código; build.py `TR_TXT`/`TR_HOT`,
   `tr_check` desde `br_menu`), confirma con el diálogo de reconstruir y viaja por red como
   paquete propio (`TR_PKT`). «Build» sería un renglón más igual a ese, con su paquete.
+
+- **Puentes largos (punto 8), a medir:** el código de derribar/reconstruir supone puentes de
+  1 o 2 casillas (`br_comp`, `br_xy`, y las piezas de dibujo: mitades izquierda/derecha y
+  arriba/abajo, y la de una casilla). Uno de 3 a 8 necesita una pieza de tramo medio y que
+  derribar/reconstruir recorra la tira entera. Hay que buscar si el juego de terrenos ya trae
+  la pieza de medio.
 
 Siguiente: contar los sitios de los mapas del clan (margen hasta 50) y medir si el diálogo 34
 admite un renglón más sin agrandar la ventana.
