@@ -26,6 +26,17 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
 5. **Etapas.** Primero, construir queda reservado a los jugadores humanos; la IA usa los caminos
    y puentes que encuentra, pero no construye. Enseñarle a construir se verá más adelante.
 
+## Decisiones del 3/11/2026
+
+6. **Puerto nuevo: una sola casilla**, como los puertos actuales, con miniatura propia rediseñada
+   (los dibujos de puerto tradicionales no muestran que ahí hubo una ciudad). Las otras tres
+   casillas de la ciudad vuelven a ser terreno común. Motivo: reusa la lógica y el código de los
+   puertos que ya existen, y no abre una ciudad-puerto de 4 casillas vulnerable.
+7. **Orden de construir: un comando nuevo**, aparte de «rebuild» (reconstruir ya existe y
+   mezclarlos se prestaría a confusión), siguiendo el precedente de «trap». Un solo renglón en el
+   menú de órdenes de la unidad con el bono «build»: sobre tierra pone **road**, sobre agua
+   **bridge**; el juego decide por la casilla elegida.
+
 ## Primer paso técnico (sin hacer)
 
 - ~~Bit libre para «build»~~ **Medido el 3/11/2026: no hace falta ningún bit.** Los bonos de
