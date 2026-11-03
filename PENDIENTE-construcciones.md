@@ -115,5 +115,13 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   cuando la tabla está llena, o llevar los puertos nuevos en una tabla propia del parche (como
   los pozos y trampas), que no tenga ese tope. A decidir al diseñar el puerto.
 
-Siguiente: medir si el diálogo 34
-admite un renglón más sin agrandar la ventana.
+- **Renglón «Build» en el menú de órdenes: entra.** Medido el 3/11/2026 en War3.RES: el
+  diálogo 34 original tiene su último renglón en y=235 (separación 18-19); el parche lo dejó en
+  12 renglones a 16 px (último, «Build Trap», en 229). Con 13 renglones a **15 px** desde 53 el
+  último queda en 233, dentro de lo que el original ya ocupaba: no hace falta agrandar la
+  ventana (su tamaño no está en el .RES; lo lee 0x4dd900 → 0x4ed760(6, …), sin ubicar). Texto
+  de 10 px de alto: sin superposición.
+
+Mediciones del exe: **terminadas**. Siguiente: diseño de la implementación (etapa 1, humanos):
+el bono `build.STT`, la orden «Build» con su paquete de red, camino y puente por casilla con su
+precio según la tabla de terrenos, y la conversión de ciudad en puerto.
