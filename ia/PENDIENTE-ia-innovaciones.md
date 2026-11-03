@@ -244,3 +244,12 @@ Orden propuesto (por riesgo observado y porque el código ya existe):
 4. Noche: atacar de noche con monster/demon/undead (oportunidad; poco peso).
 Próximo paso: 5.1, la guardada con Carrier. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md,
 paso 5.1".
+
+## Paso 5.1: guardadas con convoy (3/11/2026)
+`ia\convoy.py <guardada>` escribe `<guardada>_CR.SAV` con "Landing" y "Carrier" en los bonos de movimiento del barco
+(registro 15) de los 8 bandos; verificado releyendo el archivo (104 bytes cambiados, 13 por bando). Hechas:
+Tanda_Scarpart_CR y Tanda_Kor_CR; el control son las partidas de Tanda_Scarpart y Tanda_Kor de datos.db.
+Tanda pedida al usuario: TAREAS 89 (10 partidas). Al volver: contar eventos 2 y 3 por partida y comparar PV y
+puestos contra el control. Si salen 0 eventos, primero confirmar que el juego tomó los bonos de la guardada (el
+barco en una partida cargada tiene que mostrar Landing/Carrier) antes de concluir nada sobre ai_conv.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 89".
