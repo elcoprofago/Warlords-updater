@@ -175,3 +175,10 @@ contra lo instalado, tools\publicar-parche.ps1 vista-aliada, y avisar al usuario
 si el motivo dominante es 1 o 2, una pila casi nunca para junto a un puente sin cruzarlo, y el criterio tiene que mirar
 desde otro lugar (por ejemplo, desde una ciudad propia amenazada, mandar una pila al puente); si es 4 o 5, ajustar
 las distancias 8/6. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4 C".
+
+Resultado (tanda 123, 1.0.103.0, 10 partidas Borderlands, 2/11/2026): 0 derribos. Evento 21: 12 en total, todos
+n = 2 (el puente era el camino de la pila: 7 original, 5 prueba); ningún 1, 4 ni 5. Conclusión: las pilas de la IA
+casi nunca quedan junto a un puente salvo para cruzarlo, así que un criterio que parte de "pila junto a puente" no
+puede disparar. Próximo paso (4 D): partir de la ciudad propia amenazada (enemigo en guerra del otro lado de un
+puente a <= 6, ciudad a <= 8) y mandar una pila a ese puente para derribarlo. Frase para retomar:
+"Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4 D".

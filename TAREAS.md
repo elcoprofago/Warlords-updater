@@ -11,19 +11,8 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 86** (tanda de puentes con diagnóstico): ya.
 
 # Pendientes
-
-- [ ] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.103.0, 2/11/2026)
-Cambio: en las tandas, cada vez que una pila de la computadora termina junto a un puente y no lo corta, el juego anota
-el motivo. No cambia cómo juega: solo mide.
-1. Cortá la tanda que está corriendo (la 122: repite una medición que ya se hizo, no suma) con el botón del Monitor
-   y cerrá el juego; avisame: instalo y publico la 1.0.103.0 (con el juego abierto no se puede).
-2. Cuando te avise que está publicada: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.103.0**.
-3. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
-4. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
@@ -71,6 +60,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **86.** IA: ¿por qué no corta puentes? (vista-aliada 1.0.103.0, 2/11/2026)
+Cambio: en las tandas, cada vez que una pila de la computadora termina junto a un puente y no lo corta, el juego anota
+el motivo. No cambia cómo juega: solo mide.
+1. Cortá la tanda que está corriendo (la 122: repite una medición que ya se hizo, no suma) con el botón del Monitor
+   y cerrá el juego; avisame: instalo y publico la 1.0.103.0 (con el juego abierto no se puede).
+2. Cuando te avise que está publicada: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.103.0**.
+3. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
+4. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
+Resultado: 2/11/2026, tanda 123: 10 partidas válidas, 0 derribos. Solo 12 veces una pila quedó junto a un puente sin cortarlo, y las 12 el puente era su camino (motivo 2).
 
 - [x] **81.** IA: ¿corta puentes para defenderse? (vista-aliada 1.0.99.0, 1/11/2026)
 Cambio: la computadora ahora derriba un puente cuando un enemigo en guerra está por cruzarlo hacia una ciudad suya
