@@ -193,3 +193,14 @@ puente → G.
   de la tarea 90 sin arrancar porque esto tiene prioridad: se puede compilar en C:\Warlords3. La tarea 90 tendrá que
   correrse con la versión que resulte (sigue trayendo los eventos 24 y 25).
   Frase para retomar: "Seguimos con PENDIENTE-construcciones.md, paso C.2".
+- **C.2 implementado (3/11/2026) en vista-aliada 1.0.109.0, sin publicar** (la serie de la tarea 90 estaba
+  corriendo y build.py escribe en C:\Warlords3). Si la casilla del líder no admite camino, una montaña vecina sin
+  estructura sí (`bd_okm`, paso fijo `BD_MNT = 10`: precio = ciudad × 10 / 20). `bd_check` enciende el renglón si
+  hay algún destino; el destino lo elige `bd_pick` **al hacer clic** (no al habilitar: 0x4b0660 se llama desde 8
+  lugares, incluido el hover), rotando N, E, S, O si el líder no se movió, así «No» + otro clic pasa a la
+  siguiente. Destino en `bd_vars` (BD_X, BD_Y, BD_DIR); el paquete y el costo usan BD_X/BD_Y (la trampa sigue con
+  TR_X/TR_Y). Texto del diálogo con la dirección. `bd_recv` acepta tierra o montaña (`bd_any`).
+  prueba_caminos.py: MAL 0; las demás pruebas dan igual que la 1.0.108.0.
+- **Próximo paso:** cuando termine la serie de la tarea 90 (Darklords.exe cerrado), `python parches\vista-aliada\build.py`
+  (instala en C:\Warlords3) y `tools\publicar-parche.ps1 vista-aliada`; luego tarea 91. Después: F (puentes
+  largos en derribar/reconstruir) y el puente nuevo sobre agua.

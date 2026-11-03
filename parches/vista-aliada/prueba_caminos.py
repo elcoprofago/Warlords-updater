@@ -3,7 +3,7 @@
 # Menú: br_menu -> tr_check -> bd_check, que deja BD_FLAG. Costo: 0x4b65e0(BD_MARK, jugador) con br_cost.
 # Diálogo: br_rebtxt con BD_MARK; tr_send arma BD_PKT. Red: bd_recv (desde 0x4b6a22) con un paquete de juguete.
 # Mapa de juguete: x >= 30 agua; (20..22, *) montaña; (25, *) colinas; columna x = 10 camino de la hoja 0.
-# Controles: sin el bono, héroe, "build" como bono de combate, agua, montaña, ya hay camino, ciudad, edificio, no
+# Paso C.2: montaña vecina (bd_pick rota N, E, S, O con cada clic). Controles: sin el bono, héroe, "build" como bono de combate, agua, montaña, ya hay camino, ciudad, edificio, no
 # es su turno; en la red: otra máquina, sin oro, bando de la computadora, casilla no apta.
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
@@ -20,6 +20,12 @@ assert img[BR_MENU - BASE:BR_MENU - BASE + 2] == b'\xc6\x05' and img[BR_MENU - B
 TR_FLAG, BD_FLAG = d32(BR_MENU + 2), d32(BR_MENU + 9)
 TR_X, TR_Y = TR_FLAG + 2, TR_FLAG + 4
 TR_SEND = dest(0x4b6236)
+_i = img.index(b'\xb9\xa4\x02\x00\x00\xba', TR_SEND - BASE)
+assert _i < TR_SEND - BASE + 0x40
+BD_X = d32(BASE + _i + 6); BD_Y, BD_LX, BD_LY, BD_DIR = BD_X + 2, BD_X + 4, BD_X + 6, BD_X + 8
+TR_CLICK = dest(0x4b0487)
+_j = img.index(b'\x85\xc0\x0f\x84', TR_CLICK - BASE)
+BD_PICK = dest(BASE + _j - 5)
 BD_RECV = dest(0x4b6a22, 2)
 assert img[BD_RECV - BASE] == 0x3d and d32(BD_RECV + 1) == 0x2a4 + 8
 BD_MARK, BD_PKT = 0x7ffe, 0x2a4
@@ -98,8 +104,10 @@ ver('control: "Build" como bono de combate no vale', menu([(3, 'Build', [])]), 0
 ver('control: solo un héroe con "Build"', menu([(0x10, '', ['Build'])]), 0)
 ver('control: "Builder" no es "Build"', menu([(3, '', ['Builder'])]), 0)
 ver('control: agua', menu(B, x=33), 0)
-ver('control: montaña', menu(B, x=21), 0)
-ver('control: ya hay camino', menu(B, x=10), 0)
+ver('control: montaña sin montaña vecina libre (pared de 3 con camino a los lados)', menu(B, x=21, prep=lambda g: [g.setb(x, y, 3, 0x19) for x in (20, 22) for y in (6, 7, 8)] + [g.setb(21, y, 3, 0x19) for y in (6, 8)]), 0)
+ver('C.2: parado en camino junto a la montaña: se puede', menu(B, x=19, prep=lambda g: g.setb(19, 7, 3, 0x19)), 1)
+ver('C.2: (volador) sobre montaña con montañas alrededor: se puede', menu(B, x=21), 1)
+ver('control C.2: en camino lejos de montañas', menu(B, x=10), 0)
 ver('control: ciudad (estructura 3)', menu(B, prep=lambda g: g.setb(5, 7, 3, 0x1b)), 0)
 ver('control: edificio (palabra 0 & 0x4000)', menu(B, prep=lambda g: g.mu.mem_write(casilla(5, 7), struct.pack('<H', 0x4000))), 0)
 ver('control: no es su turno', menu(B, turno=1), 0)
@@ -107,31 +115,56 @@ ver('control: no es su turno', menu(B, turno=1), 0)
 print('-- costo: 0x4b65e0(BD_MARK, jugador)')
 def costo(x, y, indice=BD_MARK):
     g = Juego(); mu = g.mu
-    mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    mu.mem_write(BD_X, struct.pack('<hh', x, y))
     g.correr(0x4b65e0, RET, struct.pack('<3I', RET, indice, 0))
     return struct.unpack('<h', struct.pack('<I', mu.reg_read(UC_X86_REG_EAX))[:2])[0]
 ver('llanura (paso 2): 200 * 2 / 20 = 20', costo(5, 7), 20)
 ver('colinas (paso 5): 50', costo(25, 7), 50)
+ver('C.2 montaña (paso fijo 10): 100', costo(21, 7), 100)
 ver('control: un puente (BR_CODE) sigue costando una ciudad', costo(5, 7, 0x2000), CIUDAD)
 
 print('-- diálogo: texto y envío')
-g = Juego(); mu = g.mu
-mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK))
-g.anotar(0x4dd260, '4dd260', 3)
-g.correr(0x4b64f0, 0x4b651e, struct.pack('<I', RET))
-_, que, fmt, nombre = g.llamadas[0]
-ver('br_rebtxt con BD_MARK: "Building a road"', (que, bytes(mu.mem_read(fmt, 32)).split(b'\0')[0], nombre), (5, b'Building a road', 0))
+def texto(d):
+    g = Juego(); mu = g.mu
+    mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK)); mu.mem_write(BD_DIR, bytes([d]))
+    g.anotar(0x4dd260, '4dd260', 3)
+    g.correr(0x4b64f0, 0x4b651e, struct.pack('<I', RET))
+    _, que, fmt, nombre = g.llamadas[0]
+    return que, bytes(mu.mem_read(fmt, 32)).split(b'\0')[0], nombre
+ver('br_rebtxt con BD_MARK en la casilla del líder: "Building a road"', texto(4), (5, b'Building a road', 0))
+ver('  hacia el este: "Building a road east"', texto(1), (5, b'Building a road east', 0))
+ver('  BD_DIR inválido: el texto común', texto(0xff), (5, b'Building a road', 0))
 def enviar(indice):
     g = Juego(); mu = g.mu
-    mu.mem_write(TR_X, struct.pack('<hh', 5, 7))
+    mu.mem_write(TR_X, struct.pack('<hh', 3, 4)); mu.mem_write(BD_X, struct.pack('<hh', 5, 7))
     g.anotar(0x4b9ce0, 'reconstruir', 3)
     paquetes = []
     g.interceptar(0x4dd3b0, lambda a: paquetes.append((a[0], struct.unpack('<4h', mu.mem_read(a[1], 8)), a[2])))
     g.correr(TR_SEND, RET, struct.pack('<4I', RET, indice, 20, 0xabcd0002))
     return paquetes, [l for l in g.llamadas if l[0] == 'reconstruir'], mu.reg_read(UC_X86_REG_ESP) == STACK + 4
 ver('tr_send con BD_MARK: BD_PKT (bando, x, y, 0)', enviar(BD_MARK), ([(BD_PKT, (2, 5, 7, 0), 8)], [], True))
-ver('control: la trampa sigue mandando 0x2a3', enviar(0x7fff)[0][0][0], 0x2a3)
+ver('control: la trampa sigue mandando 0x2a3 con la casilla del líder', enviar(0x7fff)[0][0][:2], (0x2a3, (2, 3, 4, 0)))
 ver('control: un sitio sigue a 0x4b9ce0', enviar(4), ([], [('reconstruir', 4, 20, 0xabcd0002)], True))
+
+print('-- C.2: bd_pick (cada clic ofrece el siguiente destino)')
+def picks(x, y, n, prep=None, moverse=None):
+    g = Juego(); mu = g.mu
+    if prep: prep(g)
+    mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    r = []
+    for i in range(n):
+        if moverse and i == moverse[0]: mu.mem_write(TR_X, struct.pack('<hh', *moverse[1]))
+        g.correr(BD_PICK, RET, struct.pack('<I', RET))
+        ok = mu.reg_read(UC_X86_REG_EAX)
+        r.append((ok, *struct.unpack('<hh', mu.mem_read(BD_X, 4)), mu.mem_read(BD_DIR, 1)[0]) if ok else (0,))
+    return r
+ver('líder en llanura libre: siempre su casilla', picks(5, 7, 2), [(1, 5, 7, 4)] * 2)
+ver('volador sobre montaña: N, E, S, O y vuelve a N', picks(21, 7, 5),
+    [(1, 21, 6, 0), (1, 22, 7, 1), (1, 21, 8, 2), (1, 20, 7, 3), (1, 21, 6, 0)])
+cam19 = lambda g: g.setb(19, 7, 3, 0x19)
+ver('en camino junto a la montaña: solo el este, una y otra vez', picks(19, 7, 2, cam19), [(1, 20, 7, 1)] * 2)
+ver('  se mueve: empieza de nuevo por el norte', picks(21, 7, 2, moverse=(1, (21, 12))), [(1, 21, 6, 0), (1, 21, 11, 0)])
+ver('control: en camino lejos de montañas, nada', picks(10, 7, 1), [(0,)])
 
 print('-- red: bd_recv')
 PKT = 0x150000
@@ -178,7 +211,10 @@ ver('control: lo manda otra máquina', nada(maquina=0), ([], [], 0))
 ver('control: no alcanza el oro', nada(oro=19), ([], [], 0))
 ver('control: bando de la computadora', nada(humano=False), ([], [], 0))
 ver('control: bando fuera de rango', nada(p=9), ([], [], 0))
-ver('control: montaña', nada(x=21), ([], [], 0))
+g, c = recibir(x=21)
+ver('C.2: camino en montaña: cobra 100, estructura 1, pieza (0,1)', (c, pieza(g, 21, 7)), ([(2, -100)], (1, 0, 1, 0)))
+ver('control: montaña sin oro suficiente', nada(x=21, oro=99), ([], [], 0))
+ver('control: montaña con camino (no cobra dos veces)', nada(x=21, prep=lambda g: g.setb(21, 7, 3, 0x19)), ([], [], 1))
 ver('control: agua', nada(x=33), ([], [], 0))
 ver('control: ya hay camino (no cobra dos veces)', nada(x=10), ([], [], 1))
 ver('control: otro paquete sigue a tr_recv sin tocar nada', nada(tipo=0x2a3), ([], [], 0))

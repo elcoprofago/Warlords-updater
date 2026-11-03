@@ -4154,12 +4154,21 @@ tr_dlgtxt = place_data('tr_dlgtxt', cstr_('Building a trap'))
 # ni agua 1 ni montaña 4), sin estructura ni edificio. Renglón BD_TXT / BD_HOT del menú de órdenes, confirma con el
 # diálogo de reconstruir (BD_MARK) y viaja como BD_PKT (bando, x, y); cada PC vuelve a comprobar, cobra y lo pone.
 # Precio: costo de fundar una ciudad * costo de paso del terreno (tabla de terrenos en ejecución) / BD_DIV, mínimo 1.
+# Paso C.2: si la casilla del líder no admite camino, una montaña vecina sin estructura (N, E, S, O) sí, con paso fijo
+# BD_MNT (la montaña tiene 0 en la tabla). Con varias, cada clic en el renglón ofrece la siguiente (bd_pick): el «No»
+# del diálogo y otro clic pasan a la otra. El destino elegido va en BD_X / BD_Y, y BD_DIR (0-3, 4 = la del líder).
 BUILD = b'build'
 buildstr = place_data('buildstr', BUILD + b'\0')
 BD_MARK = 0x7ffe
 BD_FLAG = tr_vars + 6
 BD_DIV = 20
+BD_MNT = 10
+bd_vars = place_data('bd_vars', bytes(12))
+BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
 bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
+bd_dirtxt = [place_data(f'bd_dlgtxt{i}', cstr_('Building a road ' + d)) for i, d in enumerate(('north', 'east', 'south', 'west'))]
+bd_txttab = place_data('bd_txttab', struct.pack('<5I', *bd_dirtxt, bd_dlgtxt))
+bd_dxy = place_data('bd_dxy', bytes([0, 0xff, 1, 0, 0, 1, 0xff, 0]))
 # Pieza de camino (fila*8 + columna de la hoja) por vecinos con estructura 1: N 1, E 2, S 4, O 8. Medido en los .SAV
 # de 5 mapas (hoja 0): los caminos no empalman con ciudades ni sitios, solo con caminos y puentes.
 BD_PIECES = [1, 26, 25, 16, 27, 2, 8, 6, 24, 17, 1, 3, 9, 5, 4, 0]
@@ -4190,6 +4199,109 @@ bdo_no:
 bdo_out:
     pop edx
     pop ecx
+    ret
+''')
+# bd_okm: eax = x, edx = y -> eax = BD_MNT si es montaña (clase 4) sin estructura ni edificio, 0 si no.
+bd_okm = place('bd_okm', f'''
+    push ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz bdk_no
+    test byte ptr [eax + 3], 7
+    jnz bdk_no
+    movzx ecx, word ptr [eax]
+    test ecx, 0x4000
+    jnz bdk_no
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 4
+    jne bdk_no
+    mov eax, {BD_MNT}
+    jmp bdk_out
+bdk_no:
+    xor eax, eax
+bdk_out:
+    pop ecx
+    ret
+''')
+# bd_any: eax = x, edx = y -> eax = costo de paso si ahí se puede poner un camino (tierra o montaña), 0 si no.
+bd_any = place('bd_any', f'''
+    push eax
+    call {bd_ok:#x}
+    test eax, eax
+    jz bdy_m
+    add esp, 4
+    ret
+bdy_m:
+    pop eax
+    jmp {bd_okm:#x}
+''')
+# bd_pick (desde el clic; TR_X / TR_Y = líder): elige el destino. La casilla del líder si admite camino; si no, la
+# montaña vecina siguiente a la última ofrecida (si el líder no se movió), en orden N, E, S, O. Deja BD_X, BD_Y,
+# BD_DIR; eax = 0 si no hay ninguna. Preserva el resto.
+bd_pick = place('bd_pick', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    movsx edi, word ptr [{TR_X:#x}]
+    movsx ebp, word ptr [{TR_Y:#x}]
+    mov eax, edi
+    mov edx, ebp
+    call {bd_ok:#x}
+    test eax, eax
+    jz bpk_nb
+    mov word ptr [{BD_X:#x}], di
+    mov word ptr [{BD_Y:#x}], bp
+    mov byte ptr [{BD_DIR:#x}], 4
+    jmp bpk_lpos
+bpk_nb:
+    xor esi, esi
+    cmp word ptr [{BD_LX:#x}], di
+    jne bpk_go
+    cmp word ptr [{BD_LY:#x}], bp
+    jne bpk_go
+    movzx esi, byte ptr [{BD_DIR:#x}]
+    inc esi
+    cmp esi, 4
+    jbe bpk_go
+    xor esi, esi
+bpk_go:
+    mov ecx, 4
+bpk_l:
+    and esi, 3
+    movsx eax, byte ptr [esi*2 + {bd_dxy:#x}]
+    movsx edx, byte ptr [esi*2 + {bd_dxy + 1:#x}]
+    add eax, edi
+    add edx, ebp
+    mov ebx, eax
+    call {bd_okm:#x}
+    test eax, eax
+    jnz bpk_hit
+    inc esi
+    dec ecx
+    jnz bpk_l
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    xor eax, eax
+    jmp bpk_out
+bpk_hit:
+    mov word ptr [{BD_X:#x}], bx
+    mov word ptr [{BD_Y:#x}], dx
+    mov eax, esi
+    mov byte ptr [{BD_DIR:#x}], al
+bpk_lpos:
+    mov word ptr [{BD_LX:#x}], di
+    mov word ptr [{BD_LY:#x}], bp
+    mov eax, 1
+bpk_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
     ret
 ''')
 # bd_price: eax = costo de paso -> eax = precio en oro. Preserva el resto.
@@ -4347,7 +4459,7 @@ bda_nb:
 bdn_r:
     ret
 ''')
-# bd_check (desde tr_check; edi = x, ebp = y del líder): BD_FLAG = 1 si la casilla admite camino y el grupo del bando
+# bd_check (desde tr_check; edi = x, ebp = y del líder): BD_FLAG = 1 si la casilla (o una montaña vecina) admite camino y el grupo del bando
 # en turno tiene un ejército con "build". Preserva todo.
 bd_check = place('bd_check', f'''
     pushad
@@ -4359,7 +4471,21 @@ bd_check = place('bd_check', f'''
     mov edx, ebp
     call {bd_ok:#x}
     test eax, eax
-    jz bk_out
+    jnz bk_pos
+    xor esi, esi
+bk_nb:
+    movsx eax, byte ptr [esi*2 + {bd_dxy:#x}]
+    movsx edx, byte ptr [esi*2 + {bd_dxy + 1:#x}]
+    add eax, edi
+    add edx, ebp
+    call {bd_okm:#x}
+    test eax, eax
+    jnz bk_pos
+    inc esi
+    cmp esi, 4
+    jb bk_nb
+    jmp bk_out
+bk_pos:
     imul ebx, ebx, 0x4f0
     movsx ecx, word ptr [ebx + 0x56eaa8]
 bk_army:
@@ -7070,7 +7196,12 @@ brx_trap:
     jmp 0x4b6516
 brx_road:
     push 0
-    mov eax, {bd_dlgtxt:#x}
+    movzx eax, byte ptr [{BD_DIR:#x}]
+    cmp eax, 4
+    jbe brx_rt
+    mov eax, 4
+brx_rt:
+    mov eax, dword ptr [eax*4 + {bd_txttab:#x}]
     jmp 0x4b6516
 ''')
 # Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.
@@ -7085,9 +7216,9 @@ br_cost = place('br_cost', f'''
 brc_road:
     push eax
     push edx
-    movsx eax, word ptr [{TR_X:#x}]
-    movsx edx, word ptr [{TR_Y:#x}]
-    call {bd_ok:#x}
+    movsx eax, word ptr [{BD_X:#x}]
+    movsx edx, word ptr [{BD_Y:#x}]
+    call {bd_any:#x}
     call {bd_price:#x}
     mov esi, eax
     pop edx
@@ -12402,6 +12533,9 @@ tc_trap:
 tc_road:
     cmp byte ptr [{BD_FLAG:#x}], 0
     je 0x4b0496
+    call {bd_pick:#x}
+    test eax, eax
+    jz 0x4b0496
     mov ecx, 0x588bd0
     call 0x4d7d70
     mov word ptr [0x587e5c], {BD_MARK:#x}
@@ -12413,18 +12547,20 @@ tc_road:
 # OK del diálogo (reemplaza «call 0x4b9ce0(índice, costo, jugador)» en 0x4b6236).
 tr_send = place('tr_send', f'''
     mov ecx, {TR_PKT:#x}
+    mov edx, {TR_X:#x}
     cmp word ptr [esp + 4], {TR_MARK:#x}
     je ts_go
     mov ecx, {BD_PKT:#x}
+    mov edx, {BD_X:#x}
     cmp word ptr [esp + 4], {BD_MARK:#x}
     jne 0x4b9ce0
 ts_go:
     sub esp, 8
     mov ax, word ptr [esp + 0x14]
     mov word ptr [esp], ax
-    mov ax, word ptr [{TR_X:#x}]
+    mov ax, word ptr [edx]
     mov word ptr [esp + 2], ax
-    mov ax, word ptr [{TR_Y:#x}]
+    mov ax, word ptr [edx + 2]
     mov word ptr [esp + 4], ax
     mov word ptr [esp + 6], 0
     mov eax, esp
@@ -12511,7 +12647,7 @@ bd_recv = place('bd_recv', f'''
     movsx esi, word ptr [esi + 0xe]
     mov eax, esi
     mov edx, edi
-    call {bd_ok:#x}
+    call {bd_any:#x}
     test eax, eax
     jz bv_x
     call {bd_price:#x}
