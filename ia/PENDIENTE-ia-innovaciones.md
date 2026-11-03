@@ -183,7 +183,7 @@ puede disparar. Próximo paso (4 D): partir de la ciudad propia amenazada (enemi
 puente a <= 6, ciudad a <= 8) y mandar una pila a ese puente para derribarlo. Frase para retomar:
 "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4 D".
 
-## Paso 4 D, hecho el código (vista-aliada 1.0.104.0, 2/11/2026)
+## Paso 4 D, hecho el código (vista-aliada 1.0.105.0; la 1.0.104.0, igual, no se publicó; 2/11/2026)
 - ai_brdefev (desde ai_brrebev, evaluador de metas de cada pila; solo IA de prueba en tandas): recorre los puentes
   enteros sin ejércitos encima; para cada uno toma la cabecera más barata (br_head) y prueba ai_brdef con el líder
   parado ahí. Elige el más barato que cumpla y lo pone como candidato a meta 9 con valor 100 (gana a cualquier

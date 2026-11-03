@@ -12742,8 +12742,8 @@ iv_back:
 # no pasa nada.
 HI_NAME = place_data('hi_name', bytes(0x48))   # [0x503da0] llega hasta 0x503de8
 HI_DIR = place_data('hi_dir', cstr_('HISTORY'))
-HI_SRC = place_data('hi_src', cstr_('NETSAVES\%s_%d.SAV'))
-HI_DST = place_data('hi_dst', cstr_('HISTORY\%s_%d.SAV'))
+HI_SRC = place_data('hi_src', cstr_(r'NETSAVES\%s_%d.SAV'))
+HI_DST = place_data('hi_dst', cstr_(r'HISTORY\%s_%d.SAV'))
 HI_FS = place_data('hi_fs', cstr_('%s'))
 HI_BUF = place_data('hi_buf', bytes(2 * 160))   # origen y destino (el nombre ocupa hasta 0x48)
 CREATEDIR, COPYF = 0x5a9824, 0x5a9844

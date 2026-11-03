@@ -128,7 +128,7 @@ DEFNO = {1: 'ejército encima al llegar', 2: 'ya no había amenaza al llegar'}
 
 
 def defensa(db, validas):
-    """Paso 4 D (desde 1.0.104.0, solo en tandas): evento 22, la IA eligió ir a derribar un puente que amenaza una
+    """Paso 4 D (desde 1.0.105.0, solo en tandas): evento 22, la IA eligió ir a derribar un puente que amenaza una
     ciudad propia (n = costo del viaje); evento 23, llegó y no lo derribó (n = motivo). Los que sí derribó son el
     evento 1 con n = 101."""
     q = ','.join('?' * len(validas))

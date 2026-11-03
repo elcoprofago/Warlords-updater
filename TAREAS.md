@@ -14,11 +14,11 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.104.0, 2/11/2026)
+- [ ] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.105.0, 2/11/2026)
 Cambio: la computadora (solo la IA de prueba en las tandas) ahora busca los puentes por donde un enemigo en guerra
 puede llegar a una ciudad suya, y manda una pila a cortarlo. Antes esperaba a pasar por casualidad junto al puente, y
 eso casi nunca ocurría (tarea 86).
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.104.0**.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.105.0**.
 2. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
 3. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
