@@ -108,5 +108,12 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   de mapa que usan piezas de camino sobre el agua (Scarpart (43,15): (1,0)-(1,6)-(1,7)), hechos
   a mano en el editor; no hace falta imitarlos.
 
-Siguiente: contar los sitios de los mapas del clan (margen hasta 50) y medir si el diálogo 34
+- **Sitios usados (3/11/2026, .SAV de `C:\Warlords3\Saves`; la tabla se halló por su
+  contador + registros de 0x96 válidos):** Kor 16, Borderlands 20, hex 44, Scarpart 46,
+  Scar_Alianzas 48. **Margen en los mapas grandes: 2 a 6 lugares.** Con la tabla del juego, en
+  Scar_Alianzas solo entrarían 2 puertos nuevos. Opciones: negar la conversión con un aviso
+  cuando la tabla está llena, o llevar los puertos nuevos en una tabla propia del parche (como
+  los pozos y trampas), que no tenga ese tope. A decidir al diseñar el puerto.
+
+Siguiente: medir si el diálogo 34
 admite un renglón más sin agrandar la ventana.
