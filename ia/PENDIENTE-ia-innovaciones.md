@@ -215,3 +215,32 @@ Conclusión: paso 4 cerrado. En partidas normales (sin IA.INI) ai_brdefev ya val
 nada que pasar de «prueba» a todos.
 Próximo paso: paso 5 del plan (relevar los bonos de movimiento y habilidades nuevos que la IA usa o ignora).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5".
+
+## Paso 5: relevamiento (3/11/2026)
+Fuentes: los bloques de build.py de cada bono, la tabla evento de datos.db (648 partidas) y los registros de unidad
+de los bandos de las 15 guardadas Tanda_*.SAV (0x383f5, 8 x 16 x 0xfc: bonos de movimiento +0xb2, combate +0xd6,
+habilidad +0xe6) y su byte de opciones (0x53c3a5, & 2 = día/noche).
+
+| Innovación | ¿La IA la usa? | ¿Está en las tandas? |
+|---|---|---|
+| Landing (desembarco) | Sí, sola: su mapa de distancias y sus caminos usan el mismo buscador. ai_move parte el grupo que no entra (evento 3) | Ningún bando |
+| Cabotage | Sí, solo: el buscador quita las casillas lejos de la costa | Barcos de los 8 bandos en Border_Alianzas y Scar_Alianzas |
+| Carrier (convoy) | Código hecho (ai_conv, evento 2), pero **0 eventos 2 y 0 eventos 3 en 648 partidas** | **Ningún bando**: nunca se midió. El usuario vio el 19/10 que la IA lo maneja mal |
+| Bridge +N | Pasivo (suma si la batalla cae en un puente); la IA no busca pelear ahí | Ningún bando |
+| Trap (construir trampa) | No («La IA no la usa», build.py) | 12 unidades en las guardadas hex |
+| build (construir camino) | No (etapa 1 de PENDIENTE-construcciones: solo humanos); usa los caminos que haya | Ningún bando |
+| camouflg | Sin efecto entre computadoras: solo cambia el dibujo y el Army Report; la IA lee los ejércitos de la memoria | 6 unidades en hex_pozos (nombre viejo «camo»), con día/noche |
+| Efecto noche (monster, demon, undead) | Pasivo: suma +2 en la batalla; la IA no elige atacar de noche | Día/noche solo en hex_pozos y hex_pozos_PV |
+| Reconstruir puentes (meta 9) | Código hecho (ai_brrebev) | **0 eventos 4 en 648 partidas** |
+
+Lectura: lo pasivo (Landing, Cabotage, Bridge +N, noche) la IA lo aprovecha sin decidir nada. Las tres cosas con
+código de IA que nunca se vieron funcionar son el convoy (Carrier), partir el grupo al embarcar y reconstruir
+puentes; las dos primeras porque ninguna tanda las ofrece. Trap y build: la IA no las tiene.
+Orden propuesto (por riesgo observado y porque el código ya existe):
+1. **Carrier**: armar una guardada de tanda en un mapa con mar (Scarpart o Kor) con barco Landing + Carrier en los 8
+   bandos (como pozos_vistos.py, solo los bonos del registro 15) y medir eventos 2 y 3 y PV contra la base.
+2. Reconstruir puentes: por qué el evento 4 nunca sale (enumerar con un diagnóstico, como el 21 del paso 4 C).
+3. Trap: programar que la IA la use (oportunidad nueva).
+4. Noche: atacar de noche con monster/demon/undead (oportunidad; poco peso).
+Próximo paso: 5.1, la guardada con Carrier. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md,
+paso 5.1".
