@@ -14980,6 +14980,10 @@ RES_TEXTS = [  # (diálogo, id, tipo, desplazamiento, tamaño, original, nuevo)
     (8, 35, 0x15, 0x40, 64, 'Begin playing Warlords 3', f'Begin playing {GAME}'),
     (54, 7, 0x15, 0x40, 64, 'Exit Warlords 3', f'Exit {GAME}'),
     (126, 3, 0x15, 0x40, 64, 'Quit from Warlords 3', f'Quit from {GAME}'),
+    # Botón de la torre (reconstruir ciudades y sitios), en las dos barras: «Rebuild», para no confundirlo con
+    # «Build Road» del menú de órdenes (pedido del usuario, 3/11/2026). Campo de 16 bytes.
+    (39, 19, 3, 0x20, 16, 'Build', 'Rebuild'),
+    (41, 2, 3, 0x20, 16, 'Build', 'Rebuild'),
 ]
 for did, cid, typ, off, size, old, new in RES_TEXTS:
     p, t = records(res, did)[cid]

@@ -17,13 +17,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **91.** Abrir un paso de montaña con un camino (vista-aliada 1.0.109.0, 3/11/2026)
+- [ ] **91.** Abrir un paso de montaña con un camino (vista-aliada 1.0.110.0, 3/11/2026)
 Cambio: un grupo con una unidad con el bono **Build** que no pueda poner camino donde está parado (porque ya hay
 camino) puede ponerlo en una **montaña vecina** (arriba, derecha, abajo o izquierda). Con camino, la montaña se
 cruza. Precio: la mitad de lo que cuesta fundar una ciudad, por casilla. Así se abre un paso: camino, avanzar,
 camino…
 1. **Esperá a que termine la serie de la tarea 90.** Después, Actualizador, opción **9**: vista-aliada tiene que
-   quedar **1.0.109.0**.
+   quedar **1.0.110.0**.
 2. Partida **contra la computadora** con el bando que tiene **Build** en Dwarf Sappers y Peasants (tarea 88).
 3. Llevá el grupo hasta el pie de una montaña y poné un camino donde está parado (como en la 88).
 4. Abrí el menú de órdenes: **Build Road** tiene que seguir encendido. Elegilo: tiene que salir «Building a road

@@ -193,8 +193,8 @@ puente → G.
   de la tarea 90 sin arrancar porque esto tiene prioridad: se puede compilar en C:\Warlords3. La tarea 90 tendrá que
   correrse con la versión que resulte (sigue trayendo los eventos 24 y 25).
   Frase para retomar: "Seguimos con PENDIENTE-construcciones.md, paso C.2".
-- **C.2 implementado (3/11/2026) en vista-aliada 1.0.109.0, sin publicar** (la serie de la tarea 90 estaba
-  corriendo y build.py escribe en C:\Warlords3). Si la casilla del líder no admite camino, una montaña vecina sin
+- **C.2 implementado (3/11/2026) en vista-aliada 1.0.109.0** (sin publicar; se publicó como 1.0.110.0, que suma
+  «Rebuild» en el botón de la torre). Si la casilla del líder no admite camino, una montaña vecina sin
   estructura sí (`bd_okm`, paso fijo `BD_MNT = 10`: precio = ciudad × 10 / 20). `bd_check` enciende el renglón si
   hay algún destino; el destino lo elige `bd_pick` **al hacer clic** (no al habilitar: 0x4b0660 se llama desde 8
   lugares, incluido el hover), rotando N, E, S, O si el líder no se movió, así «No» + otro clic pasa a la
