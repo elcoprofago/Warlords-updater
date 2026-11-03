@@ -83,6 +83,7 @@ def main(tid=None):
     alianzas(db, desde, validas, cuenta)
     innovaciones(db, validas)
     candidatos(db, validas)
+    defensa(db, validas)
     perfiles(db, validas)
 
 
@@ -98,7 +99,7 @@ def innovaciones(db, validas):
     c = defaultdict(lambda: [0] * 6)   # caídas vistas, muertos en ellas, caídas ocultas, muertos, puentes, por defensa
     for ia, color, tipo, n in filas:
         e = c[ia, color]
-        if tipo == 1: e[4] += 1; e[5] += n == 100   # n = 100: ai_brdef (paso 4 B)
+        if tipo == 1: e[4] += 1; e[5] += n in (100, 101)   # n = 100: ai_brdef (paso 4 B); 101: fue a derribarlo (4 D)
         else: k = 0 if n >= 100 else 2; e[k] += 1; e[k + 1] += n % 100
     print('\nInnovaciones (caídas en pozo, remolino o trampa: vistas = error evitable)')
     print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7} {"defensa":>7}')
@@ -121,6 +122,32 @@ def candidatos(db, validas):
     print('\nPuentes junto a una pila de la IA que no se derribaron (evento 21), por motivo')
     for ia, n, k in sorted(filas):
         print(f'{IAS.get(ia, ia):28} {DIAG.get(n, n):45} {k:6}')
+
+
+DEFNO = {1: 'ejército encima al llegar', 2: 'ya no había amenaza al llegar'}
+
+
+def defensa(db, validas):
+    """Paso 4 D (desde 1.0.104.0, solo en tandas): evento 22, la IA eligió ir a derribar un puente que amenaza una
+    ciudad propia (n = costo del viaje); evento 23, llegó y no lo derribó (n = motivo). Los que sí derribó son el
+    evento 1 con n = 101."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, tipo, n from evento where partida in ({q}) and tipo in (22, 23)'
+                       f' union all select ia, 1, n from evento where partida in ({q}) and tipo = 1 and n = 101',
+                       validas + validas).fetchall()
+    if not filas:
+        return
+    c = defaultdict(lambda: [0, 0, 0, 0, 0])   # elegidos, costo total, derribados, ejército encima, sin amenaza
+    for ia, tipo, n in filas:
+        e = c[ia]
+        if tipo == 22: e[0] += 1; e[1] += n
+        elif tipo == 1: e[2] += 1
+        elif n in (1, 2): e[2 + n] += 1
+    print('\nIr a derribar un puente que amenaza una ciudad propia (eventos 22, 23 y 1 con n = 101)')
+    print(f'{"IA":28} {"elegidos":>8} {"costo medio":>11} {"derribados":>10} {DEFNO[1]:>25} {DEFNO[2]:>29}')
+    for ia, e in sorted(c.items()):
+        m = f'{e[1] / e[0]:.1f}' if e[0] else '-'
+        print(f'{IAS.get(ia, ia):28} {e[0]:8} {m:>11} {e[2]:10} {e[3]:25} {e[4]:29}')
 
 
 def perfiles(db, validas):

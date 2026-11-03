@@ -24,6 +24,20 @@ def load(path):
 AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
 ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
 NRAND = int(sys.argv[3]) if len(sys.argv) > 3 else 600
+# ia_on: el primer cmp byte ptr [ia_on], 0 (80 3d) de ai_brraze, al que salta el call de 0x4c4d3a; ia_mode son los 8
+# bytes anteriores; ia_evtb, el del evento 1 de ai_brraze (lo mismo que prueba_iarazea.py).
+def _ia_on():
+    base, img, _ = AV
+    assert img[0x4c4d3a - base] == 0xe8
+    f = 0x4c4d3f + struct.unpack('<i', img[0x4c4d3b - base:0x4c4d3f - base])[0] - base
+    k = img.index(bytes([0x80, 0x3d]), f, f + 0x200)
+    e = f
+    while True:
+        e = img.index(bytes([0x6a, 0x01, 0xe8]), e + 1, f + 0x400)
+        t = base + e + 7 + struct.unpack('<i', img[e + 3:e + 7])[0]
+        if t != 0x4deb20: return struct.unpack('<I', img[k + 2:k + 6])[0], t
+(IA_ON, IA_EVTB) = _ia_on(); IA_MODE = IA_ON - 8
+BRDV_VAL, BRDV_RAZED, EV_PROP, EV_NO = 100, 101, 22, 23     # los de build.py (paso 4 D)
 
 W = H = 64; SHIFT = 8; LAND, WATER, MOUNT = 2, 3, 5
 AI, ENEMY, FRIEND = 2, 3, 4
@@ -38,7 +52,7 @@ GRID = 0x300000; PLAN = 0x30c000
 SPRINTF = STUB + 0x200; FTOL = STUB + 0x100
 STUBS = {0x41e580: 'legal', 0x497a90: 'enemigo', 0x41d640: 'opa', 0x41ec20: 'opb', 0x4deb20: 'azar',
          0x4057a0: 'descuento', 0x4374a0: 'nombre', SPRINTF: 'sprintf', 0x427520: 'registro', 0x4275b0: 'pausa',
-         0x4973f0: 'meta', 0x40d2b0: 'mover', 0x4b9ce0: 'reponer', 0x40d230: 'fin'}
+         0x4973f0: 'meta', 0x40d2b0: 'mover', 0x4b9ce0: 'reponer', 0x40d230: 'fin', 0x4b9550: 'derribar'}
 F_LINE, F_BEST = 0x4f9edc, 0x4f9e7c
 NAME = 'Belgor Bridge'
 
@@ -61,7 +75,7 @@ def kd(a, b): return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
 
 def caso(**kw):
     c = dict(bridges={'A': 'razed'}, stack=(10, 10), gold=1000, disc=0, temp=3, r=3, dip={}, cities=[], armies=[],
-             legal=None, enemy={}, opp={}, unreach=set(), mount={}, road=set(), mpass=0, move='ok', plan9=False)
+             legal=None, enemy={}, opp={}, unreach=set(), mount={}, road=set(), mpass=0, move='ok', plan9=False, iaon=0, mode=1)
     c.update(kw); return c
 
 class Bench:
@@ -70,7 +84,12 @@ class Bench:
         mu = self.mu = Uc(UC_ARCH_X86, UC_MODE_32)
         mu.mem_map(base, size); mu.mem_write(base, img[:size])
         mu.mem_map(STUB, 0x10000); mu.mem_map(STACK - 0x10000, 0x10000); mu.mem_map(GRID, 0x10000)
-        self.c = c
+        self.c = c; self.evts = []
+        if exe is AV:
+            mu.mem_write(IA_ON, bytes([c['iaon']])); mu.mem_write(IA_MODE + AI, bytes([c['mode']]))
+            mu.mem_write(IA_EVTB, b'\xc3')
+            mu.hook_add(UC_HOOK_CODE, lambda uc, a, z, _: self.evts.append(tuple(self.arg(i) for i in range(4))),
+                        begin=IA_EVTB, end=IA_EVTB)
         mu.mem_write(0x503e00, struct.pack('<HH', W, H)); mu.mem_write(0x503e06, bytes([SHIFT]))
         for t, cls in ((LAND, 0), (WATER, 1), (MOUNT, 4)):
             mu.mem_write(0x535f0c + t * 0x58, struct.pack('<H', cls))
@@ -103,7 +122,7 @@ class Bench:
             r = a * 0x1c
             mu.mem_write(0x54fe52 + r, struct.pack('<hh', x, y))
             mu.mem_write(0x54fe5e + r, struct.pack('<H', owner << 5))
-            mu.mem_write(0x54fe63 + r, bytes([0x40]))
+            mu.mem_write(0x54fe63 + r, bytes([0 if a in c.get('dead', ()) else 0x40]))
         # mapa de caminos de la IA (0x4a65d0): costo kd + 1 desde la pila, 0 (sin camino) en las casillas del caso
         mu.mem_write(0x4fe670 + AI, bytes([1])); mu.mem_write(0x587168 + AI * 4, struct.pack('<I', GRID))
         g = bytearray(128 * 160 * 2)
@@ -156,6 +175,7 @@ class Bench:
             if m == 'die': uc.mem_write(0x54fe63 + HERO * 0x1c, bytes([0]))
             ret = 0 if m == 'fail' else 1
         elif k == 'reponer': self.calls.append((k, s(0), s(1), s(2)))
+        elif k == 'derribar': self.calls.append((k, s(0), s(1)))
         else: self.calls.append(k)
         uc.reg_write(UC_X86_REG_EAX, ret)
 
@@ -186,7 +206,7 @@ def ev(c, exe=AV):
     b = Bench(c, exe)
     end = b.run(0x41e290, struct.pack('<Iii', END, *c['stack']), REGS, ())
     ok = end == END and b.reg('ESP') == b.esp0 + 4 and saved(b)
-    return dict(ok=ok, table=b.table(), lines=b.lines, calls=b.calls)
+    return dict(ok=ok, table=b.table(), lines=b.lines, calls=b.calls, evts=b.evts)
 
 # ---- modelo del evaluador
 def tdiv(a, b): q = abs(a) // abs(b); return q if (a >= 0) == (b > 0) else -q
@@ -228,6 +248,36 @@ def heads(c, tiles):
                 else: key = 0x10000 + kd(c['stack'], h)
                 out[h] = key
     return out
+def brdef(c, tiles, ld):
+    """ai_brdef con el líder en ld."""
+    bd = lambda q: min(kd(q, t) for t in tiles)
+    arm = [(c['stack'], AI, HERO)] + [(xy, o, 2 + i) for i, (xy, o) in enumerate(c['armies'])]
+    for x, y, alive, o in c['cities']:
+        ct = (x, y)
+        if not alive or o != AI or bd(ct) > 8 or kd(ld, ct) >= bd(ct): continue
+        for xy, o2, a in arm:
+            if a in c.get('dead', set()) or o2 == AI or o2 >= 8 or c['dip'].get(o2, 2) != 2: continue
+            if bd(xy) > 6 or kd(ld, xy) <= bd(xy) or kd(xy, ct) <= bd(ct): continue
+            return True
+    return False
+def model_def(c):
+    """ai_brdefev: (código, costo), None, o 'amb' si el resultado depende de qué cabecera empatada elija br_head."""
+    if c['iaon'] and c['mode'] != 1: return None
+    best = None; bc = 0x7fffffff
+    occ = {c['stack']} | {xy for i, (xy, _) in enumerate(c['armies']) if 2 + i not in c.get('dead', set())}
+    for k in sorted((k for k, st in c['bridges'].items() if st == 'intact'), key=lambda k: BC(*BRIDGES[k][0])):
+        tl = BRIDGES[k]
+        if any(t in occ for t in tl): continue
+        hk = heads(c, tl)
+        if not hk: continue
+        d = min(hk.values())
+        if d >= 0x10000: continue
+        d = max(d, 1)
+        if d >= bc: continue
+        r = {brdef(c, tl, h) for h, v in hk.items() if v == min(hk.values())}
+        if len(r) > 1: return 'amb'
+        if r.pop(): best, bc = BC(*tl[0]), d
+    return (best, bc) if best is not None else None
 def model_ev(c):
     lim = 15 if c['temp'] == 0 else 30
     best = [-1, -1, -1]                         # valor, costo, índice
@@ -263,6 +313,10 @@ def model_ev(c):
     if best[2] >= 0x2000: lines.append(('mejor', 1, best[1], NAME))
     elif best[2] >= 0: lines.append(('mejor', 1, best[1], f'Ciudad{best[2]}'))
     table = (best[2], best[1], 1) if best[2] >= 0 else (0x777, 0x777, 0x777)
+    dv = model_def(c)
+    if dv == 'amb': return 'amb', lines
+    if dv:
+        return (dv[0], dv[1], BRDV_VAL), [ln for ln in lines if ln[0] != 'mejor']
     return table, lines
 
 res = []
@@ -376,7 +430,11 @@ check(f'control: sin puentes derribados, {nc} casos al azar iguales al original 
       f'iguales {same}')
 
 # ---- al azar contra el modelo
-bad = 0; cnt = {'puente': 0, 'ciudad': 0, 'nada': 0}
+bad = 0; cnt = {'puente': 0, 'ciudad': 0, 'nada': 0}; ndef = namb = 0
+def cerca(t, r):
+    while True:
+        xy = (t[0] + rng.randint(-r, r), t[1] + rng.randint(-r, r))
+        if xy not in ALLB and 0 <= xy[0] < 64 and 0 <= xy[1] < 64: return xy
 for n in range(NRAND):
     br = {k: rng.choice(['razed', 'razed', 'intact', None]) for k in BRIDGES}
     br = {k: v for k, v in br.items() if v}
@@ -396,13 +454,28 @@ for n in range(NRAND):
              unreach={h for h in near + [ct[:2] for ct in cities] if rng.random() < .3},
              mount={h: rng.choice([MOUNT, WATER]) for h in near if rng.random() < .15},
              road={h for h in near if rng.random() < .1}, mpass=rng.choice([0, 0, 1]))
+    if rng.random() < .75:   # paso 4 D: ciudad propia y ejército en guerra cerca de un puente
+        kb = rng.choice(list(BRIDGES)); t = rng.choice(BRIDGES[kb])
+        if rng.random() < .8: c['bridges'] = {**c['bridges'], kb: 'intact'}; c["legal"] = set() if rng.random() < .3 else c["legal"]
+        ct = cerca(t, 9); en = cerca((2 * t[0] - ct[0], 2 * t[1] - ct[1]), 2)   # en general, del otro lado
+        c['cities'] = c['cities'] + [ct + (rng.choice([1, 1, 1, 0]), rng.choice([AI, AI, AI, ENEMY]))]
+        c['legal'] = c['legal'] | {len(c['cities']) - 1}
+        c['armies'] = [a for a in c['armies'] if rng.random() < .3] + [(en, rng.choice([ENEMY, ENEMY, ENEMY, FRIEND, 8, AI]))]
+        c['dip'] = {**c['dip'], ENEMY: rng.choice([2, 2, 2, 1])}
+        c['dead'] = {2 + len(c['armies']) - 1} if rng.random() < .1 else set()
+        c['iaon'] = rng.choice([0, 0, 1]); c['mode'] = rng.choice([0, 1, 1])
+        c['stack'] = rng.choice([c['stack'], cerca(ct, 3), cerca(ct, 3), cerca(t, 12)])
+        c['enemy'] = {**c['enemy'], **{ct[:2]: 99 for ct in c['cities'][-1:]}}
     g = ev(c); t, lines = model_ev(c)
+    if t == 'amb': namb += 1; continue
+    if t[2] == BRDV_VAL: ndef += 1
     cnt['nada' if t[0] == 0x777 else 'puente' if t[0] >= 0x2000 else 'ciudad'] += 1
     if not (g['ok'] and g['table'] == t and g['lines'] == lines):
         bad += 1
         if bad <= 3: print('DIFIERE', t, lines, g, c)
-check(f'{NRAND} casos al azar iguales al modelo (puente {cnt["puente"]}, ciudad {cnt["ciudad"]}, nada {cnt["nada"]})',
-      bad == 0 and min(cnt.values()) > NRAND // 20, f'difieren {bad}')
+check(f'{NRAND} casos al azar iguales al modelo (puente {cnt["puente"]}, de ellos defensa {ndef}, ciudad {cnt["ciudad"]}, '
+      f'nada {cnt["nada"]}; {namb} con cabeceras empatadas que deciden, sin comparar)',
+      bad == 0 and min(cnt.values()) > NRAND // 20 and ndef > NRAND // 50 and namb < NRAND // 10, f'difieren {bad}')
 
 # ---- la meta 9: 0x40dbf0(código)
 def goal(c, code=CA, exe=AV, stops=()):
@@ -448,6 +521,64 @@ for code in (0, 5, 0x1fff):
         st.append((end, b.reg('ESP') - b.esp0, b.reg('EAX'), saved(b), bytes(b.mu.mem_read(b.reg('ESP'), 12)), b.calls))
     check(f'meta 9 con ciudad {code:#x}: llega a 0x40dbf8 igual que el original', st[0] == st[1] and st[0][0] == 0x40dbf8,
           st)
+
+# ---- paso 4 D: puente entero que defiende una ciudad propia (ai_brdefev en el evaluador, ai_brreb en la meta 9)
+# Puente A (20,10)-(21,10); ciudad propia en (16,10) (a 4 del puente, al oeste), enemigo en (24,10) (a 3, al este).
+D = dict(bridges={'A': 'intact'}, cities=[(16, 10, 1, AI)], armies=[((24, 10), ENEMY)])
+def dcase(**kw): return {**D, **kw}
+def nd(nombre, esperado, **kw):
+    g = named('defensa: ' + nombre, esperado, **dcase(**kw)); return g
+g = nd('base: la pila del lado de la ciudad lo propone, valor 100', (CA, 10, BRDV_VAL))
+check('defensa: sin la línea de "es el mejor" ni eventos fuera de tandas', g['lines'] == [] and g['evts'] == [], g)
+g = ev(caso(**D), ORIG)
+check('defensa: control, el original no lo considera', g['ok'] and g['table'] == (0x777,) * 3, g)
+nd('sin enemigo', None, armies=[])
+nd('enemigo en paz', None, dip={ENEMY: 1})
+nd('enemigo muerto', None, dead={2})
+nd('ejército neutral', None, armies=[((24, 10), 8)])
+nd('ejército propio', None, armies=[((24, 10), AI)])
+nd('enemigo del mismo lado que la ciudad', None, armies=[((14, 10), ENEMY)])
+nd('ciudad ajena', None, cities=[(16, 10, 1, ENEMY)])
+nd('ciudad muerta (y no legal para reconstruir)', None, cities=[(16, 10, 0, AI)], legal=set())
+nd('ciudad a 8', (CA, 10, BRDV_VAL), cities=[(12, 10, 1, AI)])
+nd('ciudad a 9', None, cities=[(11, 10, 1, AI)])
+nd('enemigo a 6', (CA, 10, BRDV_VAL), armies=[((27, 10), ENEMY)])
+nd('enemigo a 7', None, armies=[((28, 10), ENEMY)])
+nd('enemigo sobre el puente', None, armies=[(PA[1], ENEMY)])
+nd('ejército propio sobre el puente, enemigo al este', None, armies=[(PA[0], AI), ((24, 10), ENEMY)])
+nd('pila del otro lado (del enemigo): su cabecera no defiende', None, stack=(40, 10))
+nd('al revés: ciudad al este, enemigo al oeste, pila al este', (CA, 19, BRDV_VAL), stack=(40, 10),
+   cities=[(25, 10, 1, AI)], armies=[((16, 10), ENEMY)])
+nd('sin camino a ninguna cabecera', None, unreach={(x, y) for x in range(64) for y in range(64)})
+nd('tanda, color con la IA original', None, iaon=1, mode=0)
+g = nd('tanda, color en prueba: lo propone y anota el evento 22', (CA, 10, BRDV_VAL), iaon=1, mode=1)
+check('defensa: evento 22 (n = costo)', g['evts'] == [(EV_PROP, AI, CA, 10)], g['evts'])
+PB = BRIDGES['B']
+nd('le gana a un puente derribado para reponer', (CA, 10, BRDV_VAL), bridges={'A': 'intact', 'B': 'razed'},
+   opp={PB[0]: (3, 3)})
+named('control: sin la amenaza, se repone el otro', (BC(*PB[0]), 30, 1),
+      **dcase(bridges={'A': 'intact', 'B': 'razed'}, opp={PB[0]: (3, 3)}, armies=[]))
+
+def g9d(nombre, want, evts=None, plan=None, **kw):
+    c = caso(**dcase(**kw)); b, end = goal(c)
+    ok = end == END and b.reg('ESP') == b.esp0 + 4 and saved(b) and b.reg('EAX') & 0xffff == 0
+    ok = ok and (evts is None or b.evts == evts) and (plan is None or b.plan() == plan)
+    check(f'meta 9 defensa: {nombre}', ok and b.calls == want, f'{b.calls} {b.evts} {b.plan()} fin {end and hex(end)}')
+    return b
+RAZE = [('derribar', CA, AI), 'pausa', 'fin']
+g9d('en la cabecera: lo derriba (evento 1, n = 101)', RAZE, [(1, AI, CA, BRDV_RAZED)], (0, 0), stack=(19, 10), plan9=True)
+g9d('lejos: va a la cabecera y lo derriba', [('meta', 7, 0, 19, 9), ('mover', 19, 9)] + RAZE,
+    [(1, AI, CA, BRDV_RAZED)], (0, 0))
+g9d('no llega: deja la meta 9 en el plan', [('meta', 7, 0, 19, 9), ('mover', 19, 9)], [], (9, 0), move='fail')
+g9d('llegó muerto', [('meta', 7, 0, 19, 9), ('mover', 19, 9)], [], move='die')
+g9d('ya no hay amenaza: limpia la meta sin gastar la pila', [], [], (0, 0), stack=(19, 10), plan9=True, armies=[])
+g9d('ídem en tanda: evento 23, n = 2', [], [(EV_NO, AI, CA, 2)], (0, 0), stack=(19, 10), plan9=True, armies=[],
+    iaon=1)
+g9d('alguien encima al llegar: evento 23, n = 1', [], [(EV_NO, AI, CA, 1)], (0, 0), stack=(19, 10), plan9=True,
+    armies=[((24, 10), ENEMY), (PA[1], ENEMY)], iaon=1)
+c = caso(**dcase(stack=(19, 10))); b, end = goal(c, BC(*PA[1]))
+check('meta 9 defensa: con el código de la otra casilla derriba con ese código',
+      end == END and b.calls == [('derribar', BC(*PA[1]), AI), 'pausa', 'fin'], b.calls)
 
 # ---- nombres en los textos de la meta 9
 def nm(start, stop, frame, code, exe=AV):

@@ -182,3 +182,19 @@ casi nunca quedan junto a un puente salvo para cruzarlo, así que un criterio qu
 puede disparar. Próximo paso (4 D): partir de la ciudad propia amenazada (enemigo en guerra del otro lado de un
 puente a <= 6, ciudad a <= 8) y mandar una pila a ese puente para derribarlo. Frase para retomar:
 "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 4 D".
+
+## Paso 4 D, hecho el código (vista-aliada 1.0.104.0, 2/11/2026)
+- ai_brdefev (desde ai_brrebev, evaluador de metas de cada pila; solo IA de prueba en tandas): recorre los puentes
+  enteros sin ejércitos encima; para cada uno toma la cabecera más barata (br_head) y prueba ai_brdef con el líder
+  parado ahí. Elige el más barato que cumpla y lo pone como candidato a meta 9 con valor 100 (gana a cualquier
+  ciudad muerta). Evento 22 (n = costo).
+- ai_brreb (ejecutor de meta 9): si el puente está entero, va a la cabecera; al llegar vuelve a mirar: si sigue
+  entero, sin ejércitos y con la amenaza, lo derriba (0x4b9550; evento 1 con n = 101). Si no, evento 23 (n = 1 ejército
+  encima, 2 sin amenaza) y la pila queda libre ese turno (no se le da el turno por terminado).
+- informe.py: tabla «Ir a derribar un puente que amenaza una ciudad propia»; la columna «defensa» suma n = 100 y 101.
+- Prueba emulada: prueba_iareconstruye.py (casos 4 D, 600 al azar contra el modelo, con más de 12 de defensa);
+  prueba_iarazea y prueba_iapuente siguen igual. Las tres, TODO OK contra lo instalado.
+Próximo paso: tarea 87 (tanda Borderlands de 10). Mirar: eventos 22 (¿se elige?), 1 n = 101 (¿se derriba?), 23
+(¿por qué no?) y los PV de prueba contra original. Si se elige mucho y no se llega, revisar la cabecera; si se derriba
+y el PV baja, el valor 100 es demasiado alto. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md,
+resultado del paso 4 D".

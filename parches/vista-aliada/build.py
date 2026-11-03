@@ -4832,7 +4832,7 @@ aibn_bridge:
 # por eso el derribo no pasa por 0x4955d0, que lee el líder recién ahí.
 # ---- IA: registro de eventos (ia\PENDIENTE-entrenamiento-ia.md, etapa 3). Solo con DATA\IA.INI (ia_on, ver "IA: base
 # de pruebas"): una línea por evento en DATA\IA_EVT.CSV: turno, color, ia, tipo, x, y, n. Solo anota, no decide nada.
-# Tipos: 1 puente derribado por criterio propio (ai_brraze; n = c + s, o 100 por defensa), 2 convoy ordenado (ai_conv; x, y = casilla del
+# Tipos: 1 puente derribado por criterio propio (ai_brraze; n = c + s, o 100 por defensa, 101 si fue a derribarlo: ai_brreb), 2 convoy ordenado (ai_conv; x, y = casilla del
 # barco al que se suma, n = ese ejército), 3 grupo partido al embarcar (ai_move; x, y = líder, n = soltados),
 # 4 puente reconstruido (ai_brreb; n = costo), 5 refugio (ia_turn: al empezar el turno, pilas propias en una ciudad
 # compartida de otro; x, y = ciudad, n = ejércitos), 6 puente derribado por misión (ai_brq).
@@ -4844,7 +4844,9 @@ aibn_bridge:
 # amenazada (n = amenaza), 16 se queda en ella mientras dure la amenaza (n = amenaza).
 # Órdenes del humano (ai_ord): 17 la pila cumple la orden (x, y = ciudad, n = tipo 1 ciudad, 2 color, 3 refuerzos).
 # Pozos (po_fall): 18 cayó en un pozo, 19 en un remolino, 20 en una trampa (x, y = casilla, n = muertos + 100 si ya
-# lo veía antes del paso: error evitable).
+# lo veía antes del paso: error evitable). 21 (ai_brraze) puente entero junto a la pila que no derribó (n = motivo).
+# Defensa (paso 4 D): 22 eligió ir a derribar un puente que amenaza una ciudad propia (ai_brdefev; n = costo),
+# 23 llegó y no lo derribó (ai_brreb; n = 1 ejército encima, 2 ya no hay amenaza).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -6110,6 +6112,138 @@ brh_end:
     pop ebx
     ret
 ''')
+# ai_brdefev(sx, sy) cdecl (paso 4 D de ia\PENDIENTE-ia-innovaciones.md, 2/11/2026): el puente entero que conviene
+# derribar para defender una ciudad propia, para la pila en (sx, sy) del jugador [0x4fb0ec]. Parte de la ciudad, no
+# de la pila: recorre los puentes enteros (cada uno una vez, por su código canónico) y se queda con el de cabecera
+# más barata (br_head) entre los que cumplen:
+# - nadie encima (br_armies), y cabecera con camino (costo < 0x10000; la casilla de la pila cuenta 1);
+# - ai_brdef con el líder parado en esa cabecera: ciudad propia a <= 8 del puente de ese lado, ejército en guerra a
+#   <= 6 del otro lado (así la cabecera elegida queda del lado de la ciudad).
+# En una tanda (ia_on), solo para los colores en prueba. -> eax = código o -1, edx = costo. Anota el evento 22
+# (n = costo) cuando lo propone. ai_brrebev lo pone en la tabla de la meta 9 con valor BRDV_VAL, que le gana a casi
+# todo (el selector 0x41f2c5 suma 1, +4 con costo <= 10 y +2 más con <= 20; el original usa +0x64 para lo urgente);
+# ai_brreb, al llegar a la cabecera, vuelve a mirar y lo derriba (evento 1 con n = BRDV_RAZED).
+BRDV_VAL = 100
+BRDV_RAZED = 101   # n del evento 1: derribado por la meta 9 de defensa
+BRDV_EVPROP = 22   # evento: el evaluador propone un puente de defensa (n = costo)
+BRDV_EVNO = 23     # evento: la pila llegó a la cabecera y no lo derribó (n = motivo)
+BRDV_ARMIES, BRDV_GONE = 1, 2   # motivos del evento 23: alguien encima; ya no cumple ai_brdef
+BDV_X, BDV_Y, BDV_BEST, BDV_COST, BDV_N = (4 * i for i in range(5))
+BDV_LOC = 4 * 5
+BDV_ARG = BDV_LOC + 0x14
+ai_brdefev = place('ai_brdefev', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    sub esp, {BDV_LOC:#x}
+    mov dword ptr [esp + {BDV_BEST:#x}], -1
+    mov dword ptr [esp + {BDV_COST:#x}], 0x7fffffff
+    cmp byte ptr [{IA_ON:#x}], 0
+    je bdv_go
+    movsx eax, word ptr [0x4fb0ec]
+    cmp byte ptr [eax + {IA_MODE:#x}], 1
+    jne bdv_out
+bdv_go:
+    mov dword ptr [esp + {BDV_Y:#x}], 0
+bdv_row:
+    movsx eax, word ptr [0x503e02]
+    cmp dword ptr [esp + {BDV_Y:#x}], eax
+    jge bdv_end
+    cmp dword ptr [esp + {BDV_Y:#x}], 160
+    jge bdv_end
+    mov dword ptr [esp + {BDV_X:#x}], 0
+bdv_col:
+    movsx eax, word ptr [0x503e00]
+    cmp dword ptr [esp + {BDV_X:#x}], eax
+    jge bdv_rownext
+    cmp dword ptr [esp + {BDV_X:#x}], 128
+    jge bdv_rownext
+    mov eax, dword ptr [esp + {BDV_X:#x}]
+    mov edx, dword ptr [esp + {BDV_Y:#x}]
+    call {br_tile:#x}
+    test eax, eax
+    jz bdv_next
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_INTACT}
+    jne bdv_next
+    mov ebx, dword ptr [esp + {BDV_Y:#x}]
+    shl ebx, 7
+    add ebx, dword ptr [esp + {BDV_X:#x}]
+    add ebx, {BR_CODE:#x}
+    push ebx
+    call {br_canon:#x}
+    add esp, 4
+    cmp eax, ebx
+    jne bdv_next
+    push {BR_KIND_INTACT}
+    push ebx
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz bdv_next
+    mov dword ptr [esp + {BDV_N:#x}], eax
+    push -1
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    test edx, edx
+    jnz bdv_next
+    push dword ptr [esp + {BDV_ARG + 4:#x}]
+    push dword ptr [esp + {BDV_ARG + 4:#x}]
+    push dword ptr [esp + {BDV_N + 8:#x}]
+    call {br_head:#x}
+    add esp, 0xc
+    cmp eax, 0x10000
+    jge bdv_next
+    test eax, eax
+    jnz bdv_c
+    inc eax
+bdv_c:
+    cmp eax, dword ptr [esp + {BDV_COST:#x}]
+    jge bdv_next
+    mov esi, eax
+    movsx eax, word ptr [{br_hxy + 2:#x}]
+    push eax
+    movsx eax, word ptr [{br_hxy:#x}]
+    push eax
+    movsx eax, word ptr [0x4fb0ec]
+    push eax
+    push dword ptr [esp + {BDV_N + 0xc:#x}]
+    call {ai_brdef:#x}
+    add esp, 0x10
+    test eax, eax
+    jz bdv_next
+    mov dword ptr [esp + {BDV_COST:#x}], esi
+    mov dword ptr [esp + {BDV_BEST:#x}], ebx
+bdv_next:
+    inc dword ptr [esp + {BDV_X:#x}]
+    jmp bdv_col
+bdv_rownext:
+    inc dword ptr [esp + {BDV_Y:#x}]
+    jmp bdv_row
+bdv_end:
+    cmp dword ptr [esp + {BDV_BEST:#x}], 0
+    jl bdv_out
+    cmp byte ptr [{IA_ON:#x}], 0
+    je bdv_out
+    push dword ptr [esp + {BDV_COST:#x}]
+    push dword ptr [esp + {BDV_BEST + 4:#x}]
+    movsx eax, word ptr [0x4fb0ec]
+    push eax
+    push {BRDV_EVPROP}
+    call {ia_evtb:#x}
+    add esp, 0x10
+bdv_out:
+    mov eax, dword ptr [esp + {BDV_BEST:#x}]
+    mov edx, dword ptr [esp + {BDV_COST:#x}]
+    add esp, {BDV_LOC:#x}
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
 # ai_brrebev: candidatos de puente para la meta 9, al final del evaluador de ciudades muertas (0x41e290, en 0x41e4eb,
 # con su marco: [+0x12] límite, [+0x14] mejor valor, [+0x18] su costo, [+0x1c] su ciudad; x, y de la pila en
 # [+0x2c], [+0x30]). Recorre los puentes derribados (cada uno una vez, desde su casilla menor) con la misma cuenta que
@@ -6290,6 +6424,19 @@ rbe_rownext:
     inc dword ptr [esp + {EV_Y:#x}]
     jmp rbe_row
 rbe_end:
+    push dword ptr [esp + {EV_SY:#x}]
+    push dword ptr [esp + {EV_SX + 4:#x}]
+    call {ai_brdefev:#x}
+    add esp, 8
+    test eax, eax
+    jl rbe_nodef
+    mov word ptr [0x5032e6], ax
+    mov word ptr [0x5032e8], dx
+    mov word ptr [0x5032ea], {BRDV_VAL}
+    add esp, {EV_LOC:#x}
+    popad
+    jmp 0x41e563
+rbe_nodef:
     movsx eax, word ptr [esp + {EVF + 0x1c:#x}]
     cmp eax, {BR_CODE:#x}
     jl rbe_city
@@ -6352,7 +6499,7 @@ arb_bridge:
     call {br_comp:#x}
     add esp, 8
     test eax, eax
-    jz arb_ret0
+    jz arb_intact
     movsx ecx, word ptr [edi + 0x54fe54]
     push ecx
     movsx ecx, word ptr [edi + 0x54fe52]
@@ -6427,11 +6574,116 @@ arb_here:
     push 0x7d0
     call 0x4275b0
     add esp, 4
+arb_end:
     mov eax, dword ptr [0x5020d4]
     xor ecx, ecx
     mov word ptr [eax + 6], cx
     mov word ptr [eax + 8], cx
     call 0x40d230
+    jmp arb_ret0
+arb_intact:
+    movsx eax, word ptr [esp + 0x14]
+    push {BR_KIND_INTACT}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz arb_ret0
+    movsx ecx, word ptr [edi + 0x54fe54]
+    push ecx
+    movsx ecx, word ptr [edi + 0x54fe52]
+    push ecx
+    push eax
+    call {br_head:#x}
+    add esp, 0xc
+    cmp eax, 0x7fffffff
+    je arb_ret0
+    test eax, eax
+    jz arb_dhere
+    movsx esi, word ptr [{br_hxy:#x}]
+    movsx ebx, word ptr [{br_hxy + 2:#x}]
+    push ebx
+    push esi
+    push 0
+    push 7
+    call 0x4973f0
+    add esp, 0x10
+    mov eax, dword ptr [0x5020d4]
+    mov word ptr [eax + 6], 9
+    mov word ptr [eax + 8], 0
+    push ebx
+    push esi
+    call 0x40d2b0
+    add esp, 8
+    test ax, ax
+    jz arb_ret0
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz arb_ret0
+    cmp word ptr [edi + 0x54fe52], si
+    jne arb_ret0
+    cmp word ptr [edi + 0x54fe54], bx
+    jne arb_ret0
+arb_dhere:
+    movsx eax, word ptr [esp + 0x14]
+    push {BR_KIND_INTACT}
+    push eax
+    call {br_comp:#x}
+    add esp, 8
+    test eax, eax
+    jz arb_clr
+    mov ebp, eax
+    push -1
+    push eax
+    call {br_armies:#x}
+    add esp, 8
+    mov ecx, {BRDV_ARMIES}
+    test edx, edx
+    jnz arb_dno
+    movsx eax, word ptr [edi + 0x54fe54]
+    push eax
+    movsx eax, word ptr [edi + 0x54fe52]
+    push eax
+    movsx eax, word ptr [0x4fb0ec]
+    push eax
+    push ebp
+    call {ai_brdef:#x}
+    add esp, 0x10
+    mov ecx, {BRDV_GONE}
+    test eax, eax
+    jz arb_dno
+    movsx ebx, word ptr [0x4fb0ec]
+    push ebx
+    movsx eax, word ptr [esp + 0x18]
+    push eax
+    call 0x4b9550
+    add esp, 8
+    push {BRDV_RAZED}
+    movsx eax, word ptr [esp + 0x18]
+    push eax
+    push ebx
+    push 1
+    call {ia_evtb:#x}
+    add esp, 0x10
+    push 0x7d0
+    call 0x4275b0
+    add esp, 4
+    jmp arb_end
+arb_dno:
+    cmp byte ptr [{IA_ON:#x}], 0
+    je arb_clr
+    push ecx
+    movsx eax, word ptr [esp + 0x18]
+    push eax
+    movsx eax, word ptr [0x4fb0ec]
+    push eax
+    push {BRDV_EVNO}
+    call {ia_evtb:#x}
+    add esp, 0x10
+arb_clr:
+    mov eax, dword ptr [0x5020d4]
+    xor ecx, ecx
+    mov word ptr [eax + 6], cx
+    mov word ptr [eax + 8], cx
 arb_ret0:
     xor eax, eax
     pop ebp

@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 87).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 88).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,15 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.104.0, 2/11/2026)
+Cambio: la computadora (solo la IA de prueba en las tandas) ahora busca los puentes por donde un enemigo en guerra
+puede llegar a una ciudad suya, y manda una pila a cortarlo. Antes esperaba a pasar por casualidad junto al puente, y
+eso casi nunca ocurría (tarea 86).
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.104.0**.
+2. Monitor de IA → **Ninguna**, marcá solo **Borderlands**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre la tanda, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
