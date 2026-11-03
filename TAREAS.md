@@ -9,7 +9,7 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 91** (paso de montaña), cuando termine la serie de la tarea 90.
+3. **Tarea 91** (paso de montaña y botón «Rebuild»): ya.
 4. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
    esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -22,8 +22,8 @@ Cambio: un grupo con una unidad con el bono **Build** que no pueda poner camino 
 camino) puede ponerlo en una **montaña vecina** (arriba, derecha, abajo o izquierda). Con camino, la montaña se
 cruza. Precio: la mitad de lo que cuesta fundar una ciudad, por casilla. Así se abre un paso: camino, avanzar,
 camino…
-1. **Esperá a que termine la serie de la tarea 90.** Después, Actualizador, opción **9**: vista-aliada tiene que
-   quedar **1.0.110.0**.
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada tiene que quedar
+   **1.0.110.0**. Fijate que el botón de la torre (reconstruir ciudades) ahora diga **Rebuild** y se lea entero.
 2. Partida **contra la computadora** con el bando que tiene **Build** en Dwarf Sappers y Peasants (tarea 88).
 3. Llevá el grupo hasta el pie de una montaña y poné un camino donde está parado (como en la 88).
 4. Abrí el menú de órdenes: **Build Road** tiene que seguir encendido. Elegilo: tiene que salir «Building a road

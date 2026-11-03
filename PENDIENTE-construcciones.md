@@ -201,6 +201,7 @@ puente → G.
   siguiente. Destino en `bd_vars` (BD_X, BD_Y, BD_DIR); el paquete y el costo usan BD_X/BD_Y (la trampa sigue con
   TR_X/TR_Y). Texto del diálogo con la dirección. `bd_recv` acepta tierra o montaña (`bd_any`).
   prueba_caminos.py: MAL 0; las demás pruebas dan igual que la 1.0.108.0.
-- **Próximo paso:** cuando termine la serie de la tarea 90 (Darklords.exe cerrado), `python parches\vista-aliada\build.py`
-  (instala en C:\Warlords3) y `tools\publicar-parche.ps1 vista-aliada`; luego tarea 91. Después: F (puentes
-  largos en derribar/reconstruir) y el puente nuevo sobre agua.
+- **Publicada la 1.0.110.0 (3/11/2026)**: C.2 + botón de la torre «Build» → «Rebuild» (diálogos 39 y 41,
+  RES_TEXTS). Los «Darklords.exe» que parecían la tanda eran otro programa (cliente YIIOT): la serie no corría.
+- **Próximo paso:** F (puentes largos en derribar/reconstruir) y el puente nuevo sobre agua (C, punto 8); luego G.
+  Tarea 91 del usuario: paso de montaña.
