@@ -11,7 +11,7 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 88** (construir caminos): después de que termine la tanda de la 87.
+5. **Tarea 88** (construir caminos): ya está publicada la 1.0.106.0.
 
 # Pendientes
 
@@ -20,8 +20,6 @@ Cambio: un grupo con una unidad que tenga el bono de movimiento **Build** puede 
 está parado, pagando en oro según el terreno (llanura barata, colinas más cara). No se puede en agua, montaña, ni
 donde ya hay camino, ciudad o sitio. El camino empalma solo con los caminos y puentes vecinos. La computadora no
 construye. Puentes, pasos de montaña y la conversión de ciudad en puerto vienen después.
-0. **Esperá a que termine la tanda de la 87** y avisame: recién ahí instalo la 1.0.106.0 en C:\Warlords3 y la
-   publico (hoy el juego de la tanda está abierto ahí).
 1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.106.0**.
 2. Abrí el editor **war3ed_av.exe** → Edit Army Data, y a **Dwarf Sappers** y a **Peasants** de tu bando ponéles
    **Build** en un **Move Bonus** libre. Guardá el bando.
