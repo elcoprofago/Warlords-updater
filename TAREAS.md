@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 90).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 91).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -9,19 +9,19 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 89** (tanda de convoyes): cuando la PC esté libre.
+3. **Tarea 90** (tanda de convoyes con diagnóstico): cuando la PC esté libre.
 4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
 
-- [ ] **89.** IA: ¿usa los barcos de convoy? (paso 5.1 de PENDIENTE-ia-innovaciones, 3/11/2026)
-Cambio: armé dos guardadas nuevas, **Scarpart_CR** y **Kor_CR**, iguales a Scarpart y Kor pero con el barco de los 8
-bandos con los bonos **Landing** y **Carrier**. En 648 partidas la computadora nunca armó un convoy porque ninguna
-guardada traía ese barco; ahora se va a ver si lo hace y si le conviene.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.106.0** (no hace falta instalar nada nuevo).
-2. Monitor de IA → **Ninguna**, marcá solo **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá **serie de 2**,
-   **Nueva tanda** (dos tandas de 10, una tras otra).
+- [ ] **90.** IA: ¿por qué no arma convoyes? (vista-aliada 1.0.107.0, 3/11/2026)
+Cambio: en la tarea 89 la computadora nunca juntó dos barcos en un convoy. La 1.0.107.0 anota, solo en las tandas,
+por qué no lo hizo cada vez que pudo. Las guardadas sin convoy (Scarpart y Kor) entran para comparar con la misma
+versión.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.107.0**.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá
+   **serie de 2**, **Nueva tanda**.
 3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
@@ -71,6 +71,19 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **89.** IA: ¿usa los barcos de convoy? (paso 5.1 de PENDIENTE-ia-innovaciones, 3/11/2026)
+Cambio: armé dos guardadas nuevas, **Scarpart_CR** y **Kor_CR**, iguales a Scarpart y Kor pero con el barco de los 8
+bandos con los bonos **Landing** y **Carrier**. En 648 partidas la computadora nunca armó un convoy porque ninguna
+guardada traía ese barco; ahora se va a ver si lo hace y si le conviene.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.106.0** (no hace falta instalar nada nuevo).
+2. Monitor de IA → **Ninguna**, marcá solo **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá **serie de 2**,
+   **Nueva tanda** (dos tandas de 10, una tras otra).
+3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
+Resultado: (Claude, 3/11/2026: tandas 127 y 128, 20 partidas. El juego sí tomó los bonos: la computadora partió 62
+veces un grupo que no entraba en el barco, cosa que antes nunca había pasado. Pero no armó **ningún** convoy. Se
+agregó un diagnóstico en la 1.0.107.0 para saber por qué: tarea 90.)
+
 - [x] **88.** Construir un camino en el juego (vista-aliada 1.0.106.0, 3/11/2026)
 Cambio: un grupo con una unidad que tenga el bono de movimiento **Build** puede poner un camino en la casilla donde
 está parado, pagando en oro según el terreno (llanura barata, colinas más cara). No se puede en agua, montaña, ni

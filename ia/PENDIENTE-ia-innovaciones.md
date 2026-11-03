@@ -252,4 +252,16 @@ Tanda_Scarpart_CR y Tanda_Kor_CR; el control son las partidas de Tanda_Scarpart 
 Tanda pedida al usuario: TAREAS 89 (serie de 2 tandas de 10). Al volver: contar eventos 2 y 3 por partida y comparar PV y
 puestos contra el control. Si salen 0 eventos, primero confirmar que el juego tomó los bonos de la guardada (el
 barco en una partida cargada tiene que mostrar Landing/Carrier) antes de concluir nada sobre ai_conv.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 89".
+
+Resultado de la tarea 89 (tandas 127-128, 1.0.106.0, 20 partidas ok): evento 3 (grupo partido) 62 veces en 17
+partidas, así que el juego toma los bonos de la guardada. Evento 2 (convoy): 0. No hay control de la misma versión
+(las Scarpart/Kor de datos.db son de 1.0.32.0), así que el PV no se compara todavía.
+Diagnóstico agregado en 1.0.107.0: evento 24 en ai_conv, una vez por movimiento de un grupo embarcado con "Carrier"
+que no armó convoy; n = 1 ya en convoy, 2 ya enlazado, 3 con "Landing" y sin puerto a 2 casillas del destino,
+4 sin barco propio vecino que vaya cerca del mismo destino, 5 lo hubo pero la suma entraba en un stack.
+Lectura previa del código: el convoy exige dos grupos ya embarcados, en casillas de agua vecinas, yendo a menos de 2
+casillas del mismo destino y que no quepan en un stack; como ai_move parte el grupo antes de embarcar, lo que sobra
+queda en tierra y casi nunca hay un segundo barco al lado. Si domina el motivo 4, el arreglo es que el resto soltado
+por ai_move embarque en otro barco y se sume (convoy desde el muelle), en vez de esperar a que coincidan.
+Tanda pedida: TAREAS 90 (serie de 2 x 10 con Scarpart, Kor, Scarpart_CR y Kor_CR: las dos primeras son el control).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 90".
