@@ -85,6 +85,24 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **91.** Abrir un paso de montaña con un camino (vista-aliada 1.0.110.0, 3/11/2026)
+Cambio: un grupo con una unidad con el bono **Build** que no pueda poner camino donde está parado (porque ya hay
+camino) puede ponerlo en una **montaña vecina** (arriba, derecha, abajo o izquierda). Con camino, la montaña se
+cruza. Precio: la mitad de lo que cuesta fundar una ciudad, por casilla. Así se abre un paso: camino, avanzar,
+camino…
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada tiene que quedar
+   **1.0.110.0**. Fijate que el botón de la torre (reconstruir ciudades) ahora diga **Rebuild** y se lea entero.
+2. Partida **contra la computadora** con el bando que tiene **Build** en Dwarf Sappers y Peasants (tarea 88).
+3. Llevá el grupo hasta el pie de una montaña y poné un camino donde está parado (como en la 88).
+4. Abrí el menú de órdenes: **Build Road** tiene que seguir encendido. Elegilo: tiene que salir «Building a road
+   north» (o east, south, west: la dirección de la montaña) con el precio.
+5. Si hay más de una montaña al lado, decí **No** y volvé a elegir **Build Road**: tiene que ofrecer la siguiente
+   dirección.
+6. Aceptá: el camino tiene que aparecer **sobre la montaña**, el oro bajar en ese precio, y el grupo tiene que
+   poder **entrar** en esa casilla. Seguí 2 o 3 casillas montaña adentro: el camino tiene que verse continuo.
+Resultado (3/11/2026): el camino sobre montaña alta funciona bien y el diálogo se entiende. Pedido: flechas en vez
+de las palabras (hecho en la tarea 92). El botón de la torre **sigue diciendo «build»** (ver tarea 92).
+
 - [x] **89.** IA: ¿usa los barcos de convoy? (paso 5.1 de PENDIENTE-ia-innovaciones, 3/11/2026)
 Cambio: armé dos guardadas nuevas, **Scarpart_CR** y **Kor_CR**, iguales a Scarpart y Kor pero con el barco de los 8
 bandos con los bonos **Landing** y **Carrier**. En 648 partidas la computadora nunca armó un convoy porque ninguna
