@@ -69,7 +69,10 @@ if ($etiquetaLocal -or $etiquetaRemota) { Falla "la etiqueta $etiqueta ya existe
 $build = Join-Path $raiz "dist\$Id"
 if (Test-Path $build) { Remove-Item -Recurse -Force $build }
 New-Item -ItemType Directory -Force $build | Out-Null
-python "parches\$Id\build.py" $build
+# Los avisos de Python van a stderr y con 'Stop' PowerShell 5.1 los toma como error: la falla la dice el codigo de salida.
+$ErrorActionPreference = 'Continue'
+python -W ignore "parches\$Id\build.py" $build
+$ErrorActionPreference = 'Stop'
 if ($LASTEXITCODE) { Falla "build.py termino con codigo $LASTEXITCODE" }
 
 $generados = Get-ChildItem -Recurse -File $build | ForEach-Object { $_.FullName.Substring($build.Length + 1) }
