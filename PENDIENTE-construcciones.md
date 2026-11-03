@@ -93,8 +93,9 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
 - **Puentes largos (punto 8), a medir:** el código de derribar/reconstruir supone puentes de
   1 o 2 casillas (`br_comp`, `br_xy`, y las piezas de dibujo: mitades izquierda/derecha y
   arriba/abajo, y la de una casilla). Uno de 3 a 8 necesita una pieza de tramo medio y que
-  derribar/reconstruir recorra la tira entera. Hay que buscar si el juego de terrenos ya trae
-  la pieza de medio.
+  derribar/reconstruir recorra la tira entera. **El juego ya trae la pieza de medio y también
+  curvas** (dato del usuario, 3/11/2026: las vio en las herramientas y materiales del editor de
+  escenarios). Falta ubicar sus números de pieza en la hoja de dibujo (`[+8]`).
 
 Siguiente: contar los sitios de los mapas del clan (margen hasta 50) y medir si el diálogo 34
 admite un renglón más sin agrandar la ventana.
