@@ -1,6 +1,6 @@
 # PENDIENTE — Construcciones del jugador (puertos, puentes, caminos)
 
-Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía.
+Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medido el formato del bono (ver abajo).
 
 ## Descartado
 
@@ -28,11 +28,22 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía.
 
 ## Primer paso técnico (sin hacer)
 
-- Ver si el campo de habilidades de las unidades tiene un bit libre para «build», o si hay que
-  reutilizar uno que no se use. Nombre corto por el límite de letras: «build».
-- Ver qué unidades de los ejércitos (army) llevarían el bono.
+- ~~Bit libre para «build»~~ **Medido el 3/11/2026: no hace falta ningún bit.** Los bonos de
+  movimiento no son bits sino **nombres de 9 bytes en 4 ranuras** (registro de unidad +0xb2,
+  igual en el .ARM y en memoria, 0x53c410 + (bando*16 + ranura)*0xfc). «build» entra como un
+  bono más, igual que «camouflg», «carrier», «cabotage», «landing» y «trap»: un
+  `TERRAIN\SUBTYPEuild.STT` (sumarlo a `STTS` en build.py, para que war3ed_ssg lo ofrezca) y
+  la comprobación por nombre con `Unit.TieneMoveBonus`. No existe hoy ningún `build.STT`.
+- Ranuras libres (379 .ARM de `C:\Warlords3\ARMY`): solo 5 unidades tienen las 4 ranuras
+  ocupadas (FU_gob, goblins, half_bra, half_thi, MC_NazKl); ninguna es candidata.
+- Unidades que llevarían el bono (candidatas por nombre, todas con ranuras libres):
+  **Dwarf Sappers** (`Dwarfsap.ARM`, hoy «hills») y **Peasants** (`peasants.ARM`, sin bonos)
+  como constructores; posibles también Siege Engines (`siegeeng`, `FU_siege`) y Gnomes
+  (`SH_Gnome`, `FU_gnome`). Propuesta: Dwarf Sappers y Peasants, para que sean pocas.
+- Hallazgo al pasar: `Zappers.ARM` todavía tiene el nombre viejo «camo» (ya contemplado en
+  build.py, ver CAMO).
 
-Medir en DarklordAV.exe:
+Siguiente: medir en DarklordAV.exe:
 
 - cómo se marca una casilla como camino o puente (se parte de lo que ya usan ai_brdefev y
   prueba_iareconstruye para derribar y reconstruir puentes);
