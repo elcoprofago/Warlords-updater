@@ -95,7 +95,18 @@ Diseño acordado con el usuario el 2-3/11/2026. Nada implementado todavía; medi
   arriba/abajo, y la de una casilla). Uno de 3 a 8 necesita una pieza de tramo medio y que
   derribar/reconstruir recorra la tira entera. **El juego ya trae la pieza de medio y también
   curvas** (dato del usuario, 3/11/2026: las vio en las herramientas y materiales del editor de
-  escenarios). Falta ubicar sus números de pieza en la hoja de dibujo (`[+8]`).
+  escenarios). **Medido el 3/11/2026** en las 4 hojas de caminos (`TERRAIN\DATA\road0`, `road1`,
+  `o_road`, `x_road`, 8×4 piezas de 48; todas con las piezas de puente en el mismo lugar) y en
+  los .SAV: pieza = `(fila, columna)` con fila `([+8] >> 8) & 3`, columna `([+8] >> 5) & 7`.
+  - horizontal: punta izquierda (1,6), **tramo medio (3,4)**, punta derecha (1,7);
+  - vertical: punta de arriba (2,7), **tramo medio (3,5)**, punta de abajo (2,6).
+  Prueba: Tanda_Kor tiene dos puentes verticales de 3 casillas armados (2,7)-(3,5)-(2,6). La
+  pieza que build.py llama «de una casilla» (`br_stubtab` 3*8+4 y 3*8+5) es en realidad el
+  tramo medio. Un puente de 8 = punta + 6 medios + punta.
+  **Curvas de puente no hay** en esas hojas: las curvas (los anillos de las filas 1 y 2) y los
+  cruces son de camino. Un puente nuevo va en línea recta, horizontal o vertical. Hay puentes
+  de mapa que usan piezas de camino sobre el agua (Scarpart (43,15): (1,0)-(1,6)-(1,7)), hechos
+  a mano en el editor; no hace falta imitarlos.
 
 Siguiente: contar los sitios de los mapas del clan (margen hasta 50) y medir si el diálogo 34
 admite un renglón más sin agrandar la ventana.
