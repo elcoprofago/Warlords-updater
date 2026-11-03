@@ -4140,8 +4140,247 @@ TR_FLAG, TR_X, TR_Y, TR_CHKP = tr_vars, tr_vars + 2, tr_vars + 4, place_data('tr
 # le pone el costo de fundar una ciudad; br_rebtxt le pone su texto y tr_send la manda por red.
 TR_MARK = 0x7fff
 tr_dlgtxt = place_data('tr_dlgtxt', cstr_('Building a trap'))
+# ---- Construir caminos (PENDIENTE-construcciones.md, diseño A-E; paso C.1). Un grupo con un ejército (no héroe)
+# cuyo registro tiene el bono de movimiento "build" pone un camino en la casilla del líder: tierra (clase de terreno
+# ni agua 1 ni montaña 4), sin estructura ni edificio. Renglón BD_TXT / BD_HOT del menú de órdenes, confirma con el
+# diálogo de reconstruir (BD_MARK) y viaja como BD_PKT (bando, x, y); cada PC vuelve a comprobar, cobra y lo pone.
+# Precio: costo de fundar una ciudad * costo de paso del terreno (tabla de terrenos en ejecución) / BD_DIV, mínimo 1.
+BUILD = b'build'
+buildstr = place_data('buildstr', BUILD + b'\0')
+BD_MARK = 0x7ffe
+BD_FLAG = tr_vars + 6
+BD_DIV = 20
+bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
+# Pieza de camino (fila*8 + columna de la hoja) por vecinos con estructura 1: N 1, E 2, S 4, O 8. Medido en los .SAV
+# de 5 mapas (hoja 0): los caminos no empalman con ciudades ni sitios, solo con caminos y puentes.
+BD_PIECES = [1, 26, 25, 16, 27, 2, 8, 6, 24, 17, 1, 3, 9, 5, 4, 0]
+bd_piecetab = place_data('bd_piecetab', bytes(BD_PIECES))
+# bd_ok: eax = x, edx = y -> eax = costo de paso del terreno si ahí se puede poner un camino, 0 si no. Preserva el resto.
+bd_ok = place('bd_ok', f'''
+    push ecx
+    push edx
+    call {br_tile:#x}
+    test eax, eax
+    jz bdo_no
+    test byte ptr [eax + 3], 7
+    jnz bdo_no
+    movzx ecx, word ptr [eax]
+    test ecx, 0x4000
+    jnz bdo_no
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    movzx edx, word ptr [ecx + 0x535f0c]
+    cmp edx, 1
+    je bdo_no
+    cmp edx, 4
+    je bdo_no
+    movzx eax, word ptr [ecx + 0x535f0a]
+    jmp bdo_out
+bdo_no:
+    xor eax, eax
+bdo_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# bd_price: eax = costo de paso -> eax = precio en oro. Preserva el resto.
+bd_price = place('bd_price', f'''
+    push ecx
+    push edx
+    movsx ecx, word ptr [0x56950e]
+    imul eax, ecx
+    cdq
+    mov ecx, {BD_DIV}
+    idiv ecx
+    test eax, eax
+    jg bdp_out
+    mov eax, 1
+bdp_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# bd_mask: eax = x, edx = y -> eax = vecinos con estructura 1 (N 1, E 2, S 4, O 8). Preserva el resto.
+bd_mask = place('bd_mask', f'''
+    push ebx
+    push ecx
+    push esi
+    push edi
+    mov esi, eax
+    mov edi, edx
+    xor ebx, ebx
+    lea eax, [esi]
+    lea edx, [edi - 1]
+    mov cl, 1
+    call bdm_one
+    lea eax, [esi + 1]
+    lea edx, [edi]
+    mov cl, 2
+    call bdm_one
+    lea eax, [esi]
+    lea edx, [edi + 1]
+    mov cl, 4
+    call bdm_one
+    lea eax, [esi - 1]
+    lea edx, [edi]
+    mov cl, 8
+    call bdm_one
+    mov eax, ebx
+    pop edi
+    pop esi
+    pop ecx
+    pop ebx
+    ret
+bdm_one:
+    call {br_tile:#x}
+    test eax, eax
+    jz bdm_r
+    mov al, byte ptr [eax + 3]
+    and al, 7
+    cmp al, 1
+    jne bdm_r
+    or bl, cl
+bdm_r:
+    ret
+''')
+# bd_fix: eax = x, edx = y. Si es camino de tierra de la hoja 0, le pone la pieza según sus vecinos. Preserva todo.
+bd_fix = place('bd_fix', f'''
+    pushad
+    mov esi, eax
+    mov edi, edx
+    call {br_tile:#x}
+    test eax, eax
+    jz bdf_out
+    mov ebx, eax
+    mov al, byte ptr [ebx + 3]
+    and al, 7
+    cmp al, 1
+    jne bdf_out
+    test byte ptr [ebx + 8], 0xf
+    jnz bdf_out
+    movzx ecx, word ptr [ebx]
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    je bdf_out
+    mov eax, esi
+    mov edx, edi
+    call {bd_mask:#x}
+    movzx eax, byte ptr [eax + {bd_piecetab:#x}]
+    shl eax, 5
+    movzx edx, word ptr [ebx + 8]
+    and edx, 0x801f
+    or eax, edx
+    mov word ptr [ebx + 8], ax
+bdf_out:
+    popad
+    ret
+''')
+# bd_apply: eax = x, edx = y. Pone el camino (estructura 1, hoja 0, con el bit 0x10 de un vecino de la hoja 0) y
+# acomoda su pieza y la de sus 4 vecinos. No rehace el grafo ni la vista. Preserva todo.
+bd_apply = place('bd_apply', f'''
+    pushad
+    mov esi, eax
+    mov edi, edx
+    call {br_tile:#x}
+    test eax, eax
+    jz bda_out
+    mov ebx, eax
+    xor ebp, ebp
+    lea eax, [esi]
+    lea edx, [edi - 1]
+    call bda_nb
+    lea eax, [esi + 1]
+    lea edx, [edi]
+    call bda_nb
+    lea eax, [esi]
+    lea edx, [edi + 1]
+    call bda_nb
+    lea eax, [esi - 1]
+    lea edx, [edi]
+    call bda_nb
+    mov word ptr [ebx + 8], bp
+    mov al, byte ptr [ebx + 3]
+    and al, 0xf8
+    or al, 1
+    mov byte ptr [ebx + 3], al
+    mov eax, esi
+    mov edx, edi
+    call {bd_fix:#x}
+    lea eax, [esi]
+    lea edx, [edi - 1]
+    call {bd_fix:#x}
+    lea eax, [esi + 1]
+    lea edx, [edi]
+    call {bd_fix:#x}
+    lea eax, [esi]
+    lea edx, [edi + 1]
+    call {bd_fix:#x}
+    lea eax, [esi - 1]
+    lea edx, [edi]
+    call {bd_fix:#x}
+bda_out:
+    popad
+    ret
+bda_nb:
+    call {br_tile:#x}
+    test eax, eax
+    jz bdn_r
+    mov cl, byte ptr [eax + 3]
+    and cl, 7
+    cmp cl, 1
+    jne bdn_r
+    movzx ecx, word ptr [eax + 8]
+    test cl, 0xf
+    jnz bdn_r
+    and ecx, 0x10
+    or ebp, ecx
+bdn_r:
+    ret
+''')
+# bd_check (desde tr_check; edi = x, ebp = y del líder): BD_FLAG = 1 si la casilla admite camino y el grupo del bando
+# en turno tiene un ejército con "build". Preserva todo.
+bd_check = place('bd_check', f'''
+    pushad
+    mov byte ptr [{BD_FLAG:#x}], 0
+    movsx ebx, word ptr [0x537ce8]
+    cmp ebx, 8
+    jae bk_out
+    mov eax, edi
+    mov edx, ebp
+    call {bd_ok:#x}
+    test eax, eax
+    jz bk_out
+    imul ebx, ebx, 0x4f0
+    movsx ecx, word ptr [ebx + 0x56eaa8]
+bk_army:
+    dec ecx
+    js bk_out
+    movsx eax, word ptr [ebx + ecx*2 + 0x56ea94]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 15
+    ja bk_army
+    shr eax, 5
+    and eax, 0xf
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {buildstr:#x}
+    call {recbon:#x}
+    test eax, eax
+    jz bk_army
+    mov byte ptr [{BD_FLAG:#x}], 1
+bk_out:
+    popad
+    ret
+''')
 br_menu = place('br_menu', f'''
     mov byte ptr [{TR_FLAG:#x}], 0
+    mov byte ptr [{BD_FLAG:#x}], 0
     test bl, bl
     jnz brm_out
     test bp, bp
@@ -6779,6 +7018,8 @@ br_rebtxt = place('br_rebtxt', f'''
     movsx eax, word ptr [0x587e5c]
     cmp eax, {TR_MARK:#x}
     je brx_trap
+    cmp eax, {BD_MARK:#x}
+    je brx_road
     cmp eax, {BR_CODE:#x}
     jl brx_site
     push 0
@@ -6799,13 +7040,30 @@ brx_trap:
     push 0
     mov eax, {tr_dlgtxt:#x}
     jmp 0x4b6516
+brx_road:
+    push 0
+    mov eax, {bd_dlgtxt:#x}
+    jmp 0x4b6516
 ''')
 # Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.
 br_cost = place('br_cost', f'''
+    cmp word ptr [esp + 8], {BD_MARK:#x}
+    je brc_road
     mov si, word ptr [0x569510]
     cmp word ptr [esp + 8], {BR_CODE:#x}
     jl 0x4b65ec
     mov si, word ptr [0x56950e]
+    jmp 0x4b65ec
+brc_road:
+    push eax
+    push edx
+    movsx eax, word ptr [{TR_X:#x}]
+    movsx edx, word ptr [{TR_Y:#x}]
+    call {bd_ok:#x}
+    call {bd_price:#x}
+    mov esi, eax
+    pop edx
+    pop eax
     jmp 0x4b65ec
 ''')
 # Aplicación de reconstruir (0x4b6610(índice, costo, jugador), en todas las máquinas). Para un puente: vuelve a
@@ -11976,12 +12234,16 @@ trapstr = place_data('trapstr', TRAP + b'\0')
 reccomb = place('reccomb', boatbon_src('reccomb', None, rec=True, off=0xd6, slots=1))
 TR_TXT, TR_HOT = 0x17, 0x18
 TR_PKT = 0x2a3
+BD_TXT, BD_HOT = 0x19, 0x1a
+BD_PKT = 0x2a4
+bd_menutxt = place_data('bd_menutxt', cstr_('Build Road'))
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
 # Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
 tr_check = place('tr_check', f'''
     pushad
     mov word ptr [{TR_X:#x}], di
     mov word ptr [{TR_Y:#x}], bp
+    call {bd_check:#x}
     cmp dword ptr [{PO_N:#x}], {PO_MAX}
     jae tk_out
     mov esi, edi
@@ -12029,6 +12291,13 @@ tr_init = place('tr_init', f'''
     push {TR_HOT:#x}
     call 0x4dcec0
     add esp, 8
+    cmp byte ptr [{BD_FLAG:#x}], 1
+    sbb eax, eax
+    and eax, 2
+    push eax
+    push {BD_HOT:#x}
+    call 0x4dcec0
+    add esp, 8
     mov ecx, 0x588bd0
     jmp 0x4affc7
 ''')
@@ -12040,7 +12309,28 @@ tr_hover = place('tr_hover', f'''
     push {TR_TXT:#x}
     call 0x4dd240
     add esp, 8
+    push {bd_menutxt:#x}
+    push {BD_TXT:#x}
+    call 0x4dd240
+    add esp, 8
 th_col:
+    push 0
+    push 0
+    cmp esi, {BD_HOT:#x}
+    jne bh_en
+    push 0xf
+    jmp bh_set
+bh_en:
+    cmp byte ptr [{BD_FLAG:#x}], 0
+    je bh_dis
+    push 0x5c
+    jmp bh_set
+bh_dis:
+    push 0x56
+bh_set:
+    push {BD_TXT:#x}
+    call 0x4dd2b0
+    add esp, 0x10
     push 0
     push 0
     cmp esi, {TR_HOT:#x}
@@ -12065,6 +12355,8 @@ th_set:
 tr_click = place('tr_click', f'''
     cmp eax, {TR_HOT:#x}
     je tc_trap
+    cmp eax, {BD_HOT:#x}
+    je tc_road
     sub eax, 0xb
     cmp eax, 0xb
     ja 0x4b0496
@@ -12079,11 +12371,26 @@ tc_trap:
     pop edi
     pop esi
     ret
+tc_road:
+    cmp byte ptr [{BD_FLAG:#x}], 0
+    je 0x4b0496
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    mov word ptr [0x587e5c], {BD_MARK:#x}
+    call 0x4b6180
+    pop edi
+    pop esi
+    ret
 ''')
 # OK del diálogo (reemplaza «call 0x4b9ce0(índice, costo, jugador)» en 0x4b6236).
 tr_send = place('tr_send', f'''
+    mov ecx, {TR_PKT:#x}
     cmp word ptr [esp + 4], {TR_MARK:#x}
+    je ts_go
+    mov ecx, {BD_PKT:#x}
+    cmp word ptr [esp + 4], {BD_MARK:#x}
     jne 0x4b9ce0
+ts_go:
     sub esp, 8
     mov ax, word ptr [esp + 0x14]
     mov word ptr [esp], ax
@@ -12095,7 +12402,7 @@ tr_send = place('tr_send', f'''
     mov eax, esp
     push 8
     push eax
-    push {TR_PKT:#x}
+    push ecx
     call 0x4dd3b0
     add esp, 0x14
     ret
@@ -12152,6 +12459,50 @@ tr_recv = place('tr_recv', f'''
     call {po_rebuild:#x}
     call {REDRAW:#x}
 tv_x:
+    popad
+    jmp 0x4b85bb
+''')
+# Recepción del camino (antes que tr_recv; paquete como el de la trampa: +6 máquina, +0xc bando, x, y).
+bd_recv = place('bd_recv', f'''
+    cmp eax, {BD_PKT + 8:#x}
+    jne {tr_recv:#x}
+    pushad
+    movsx ebx, word ptr [esi + 0xc]
+    cmp ebx, 8
+    jae bv_x
+    imul eax, ebx, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je bv_x
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    jne bv_x
+    movzx ecx, byte ptr [eax + {SIDE_MACHINE:#x}]
+    movsx edx, word ptr [esi + 6]
+    cmp ecx, edx
+    jne bv_x
+    movsx edi, word ptr [esi + 0x10]
+    movsx esi, word ptr [esi + 0xe]
+    mov eax, esi
+    mov edx, edi
+    call {bd_ok:#x}
+    test eax, eax
+    jz bv_x
+    call {bd_price:#x}
+    mov ebp, eax
+    imul eax, ebx, {SIDE:#x}
+    cmp ebp, dword ptr [eax + 0x536c14]
+    jg bv_x
+    neg ebp
+    push ebp
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    mov eax, esi
+    mov edx, edi
+    call {bd_apply:#x}
+    call 0x4a4f20
+    call {REDRAW:#x}
+    call {br_mapview:#x}
+bv_x:
     popad
     jmp 0x4b85bb
 ''')
@@ -14224,7 +14575,7 @@ assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
 patch(0x46e892, asm('ja 0x46ed83', 0x46e892), asm(f'ja {tl_setclick:#x}', 0x46e892))
 assert rel(0x46ed83, 7) == bytes.fromhex('6633c05d5f5e5b')
 assert rel(0x4b6a16, 12) == bytes.fromhex('0fbf460483c0083d11020000')
-patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {tr_recv:#x}', 0x4b6a22))
+patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {bd_recv:#x}', 0x4b6a22))
 # Construir trampas (tr_*)
 patch(0x4affc2, asm('mov ecx, 0x588bd0', 0x4affc2), asm(f'jmp {tr_init:#x}', 0x4affc2))
 patch(0x4b0450, asm('mov ecx, 0x588bd0', 0x4b0450), asm(f'jmp {tr_hover:#x}', 0x4b0450))
@@ -14405,22 +14756,27 @@ new_list[35] = [vtxt, vhot]
 # Los 12 renglones pasan a 16 píxeles entre sí desde el primero (53); cada zona de clic, 2 píxeles por encima de su
 # texto y de 16 de alto, conserva su x y su ancho.
 r34 = records(res, 34)
-ORD = [(0x15, 0x16)] + [(k, k + 10) for k in range(1, 11)] + [('new', 'new')]
-assert sorted(i for pair in ORD if pair[0] != 'new' for i in pair) == sorted(r34)
+ORD = [(0x15, 0x16)] + [(k, k + 10) for k in range(1, 11)] + [('new', 'new'), ('bd', 'bd')]
+assert sorted(i for pair in ORD if pair[0] not in ('new', 'bd') for i in pair) == sorted(r34)
 p, t = r34[10]; assert t == 0x13
 ttxt = bytearray(res[p:p + 4 + SZ[0x13]])
 struct.pack_into('<I', ttxt, 4, TR_TXT)
 p, t = r34[20]; assert t == 3
 thot = bytearray(res[p:p + 4 + SZ[3]])
 struct.pack_into('<I', thot, 4, TR_HOT)
+btxt, bhot = bytearray(ttxt), bytearray(thot)
+struct.pack_into('<I', btxt, 4, BD_TXT)
+struct.pack_into('<I', bhot, 4, BD_HOT)
+NEWREC = {'new': (ttxt, thot), 'bd': (btxt, bhot)}
+# Con «Build Road» (PENDIENTE-construcciones.md) son 13 renglones a 15 píxeles: el último en 233.
 for k, (ti, hi) in enumerate(ORD):
-    y = 53 + 16 * k
-    buf, o = (ttxt, 0) if ti == 'new' else (res, r34[ti][0])
+    y = 53 + 15 * k
+    buf, o = (NEWREC[ti][0], 0) if ti in NEWREC else (res, r34[ti][0])
     struct.pack_into('<I', buf, o + 0xc, y)
-    buf, o = (thot, 0) if hi == 'new' else (res, r34[hi][0])
+    buf, o = (NEWREC[hi][1], 0) if hi in NEWREC else (res, r34[hi][0])
     struct.pack_into('<I', buf, o + 0xc, y - 2)
-    struct.pack_into('<I', buf, o + 0x1c, 16)
-new_list[34] = [ttxt, thot]
+    struct.pack_into('<I', buf, o + 0x1c, 15)
+new_list[34] = [ttxt, thot, btxt, bhot]
 
 # Diálogo 7 (preparación): botón COIN clonado de Chat (id 80, butt_std en (436,80)), en SORTEO_X/Y y de
 # SORTEO_W x SORTEO_H; su dibujo es el ícono de Sorteo, en (0,0) de la hoja SORTEO_FILE (más abajo).
@@ -14848,7 +15204,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camouflg', 'Camouflage'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camouflg', 'Camouflage'), ('build', 'Build'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.

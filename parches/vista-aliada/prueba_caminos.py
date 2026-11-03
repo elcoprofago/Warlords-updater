@@ -1,0 +1,187 @@
+# Prueba de juguete de construir caminos (bd_* de build.py, paso C.1 de PENDIENTE-construcciones.md), en unicorn.
+# Uso: python prueba_caminos.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Menú: br_menu -> tr_check -> bd_check, que deja BD_FLAG. Costo: 0x4b65e0(BD_MARK, jugador) con br_cost.
+# Diálogo: br_rebtxt con BD_MARK; tr_send arma BD_PKT. Red: bd_recv (desde 0x4b6a22) con un paquete de juguete.
+# Mapa de juguete: x >= 30 agua; (20..22, *) montaña; (25, *) colinas; columna x = 10 camino de la hoja 0.
+# Controles: sin el bono, héroe, "build" como bono de combate, agua, montaña, ya hay camino, ciudad, edificio, no
+# es su turno; en la red: otra máquina, sin oro, bando de la computadora, casilla no apta.
+import os, sys, struct, pefile
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
+from unicorn.x86_const import *
+
+DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+STACK, RET = 0x1f0000, 0x100
+pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))
+BASE, img = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
+def d32(va): return struct.unpack_from('<I', img, va - BASE)[0]
+def dest(va, n=1): return va + n + 4 + struct.unpack_from('<i', img, va - BASE + n)[0]
+BR_MENU = dest(0x4b0a1c)
+assert img[BR_MENU - BASE:BR_MENU - BASE + 2] == b'\xc6\x05' and img[BR_MENU - BASE + 7:BR_MENU - BASE + 9] == b'\xc6\x05'
+TR_FLAG, BD_FLAG = d32(BR_MENU + 2), d32(BR_MENU + 9)
+TR_X, TR_Y = TR_FLAG + 2, TR_FLAG + 4
+TR_SEND = dest(0x4b6236)
+BD_RECV = dest(0x4b6a22, 2)
+assert img[BD_RECV - BASE] == 0x3d and d32(BD_RECV + 1) == 0x2a4 + 8
+BD_MARK, BD_PKT = 0x7ffe, 0x2a4
+CIUDAD = 200                      # costo de fundar una ciudad ([0x56950e]); precio = CIUDAD * paso / 20
+# tipo de terreno: (clase, costo de paso)
+TERR = {0: (2, 2), 1: (1, 0), 2: (4, 0), 3: (3, 5)}
+
+mal = 0
+def ver(nombre, r, esperado):
+    global mal
+    ok = r == esperado
+    mal += not ok
+    print('OK ' if ok else 'MAL', nombre, '->', r)
+
+def casilla(x, y): return 0x503e58 + ((y * 10) << 6) + x * 10
+class Juego:
+    def __init__(self):
+        mu = self.mu = Uc(UC_ARCH_X86, UC_MODE_32)
+        size = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
+        mu.mem_map(BASE, size); mu.mem_write(BASE, img[:size])
+        mu.mem_map(0, 0x1000); mu.mem_map(0x100000, 0x100000)
+        mu.mem_write(0x503e00, struct.pack('<hh', 40, 30)); mu.mem_write(0x503e06, b'\6')
+        for t, (c, paso) in TERR.items():
+            mu.mem_write(0x535f0a + t * 0x58, struct.pack('<hh', paso, c))
+        for y in range(30):
+            for x in range(40):
+                t = 1 if x >= 30 else 2 if 20 <= x <= 22 else 3 if x == 25 else 0
+                est = 1 if x == 10 else 0
+                mu.mem_write(casilla(x, y), struct.pack('<HBBxxxxH', t, 1, 0x18 | est, 0x91 if not est else 0))
+        mu.mem_write(0x537e2a, struct.pack('<h', 0))
+        mu.mem_write(0x56950e, struct.pack('<h', CIUDAD))
+        self.llamadas = []
+    def interceptar(self, addr, fn, pop=0):
+        def g(mu, a, size, _):
+            sp = mu.reg_read(UC_X86_REG_ESP)
+            ret, *args = struct.unpack('<5I', mu.mem_read(sp, 20))
+            mu.reg_write(UC_X86_REG_EAX, (fn(args) or 0) & 0xffffffff)
+            mu.reg_write(UC_X86_REG_ESP, sp + 4 + pop); mu.reg_write(UC_X86_REG_EIP, ret)
+        self.mu.hook_add(UC_HOOK_CODE, g, begin=addr, end=addr)
+    def anotar(self, addr, nombre, n, pop=0):
+        self.interceptar(addr, lambda a: self.llamadas.append((nombre, *[v & 0xffffffff for v in a[:n]])), pop)
+    def tile(self, x, y): return bytes(self.mu.mem_read(casilla(x, y), 10))
+    def setp8(self, x, y, v): self.mu.mem_write(casilla(x, y) + 8, struct.pack('<H', v))
+    def setb(self, x, y, off, v): self.mu.mem_write(casilla(x, y) + off, bytes([v]))
+    def correr(self, start, stop, pila, regs=()):
+        mu = self.mu
+        mu.mem_write(STACK, pila); mu.reg_write(UC_X86_REG_ESP, STACK)
+        for r, v in regs: mu.reg_write(r, v)
+        mu.emu_start(start, stop, count=2000000)
+        assert mu.reg_read(UC_X86_REG_EIP) == stop, hex(mu.reg_read(UC_X86_REG_EIP))
+
+print('-- menú: bd_check desde br_menu')
+def menu(ejs, x=5, y=7, turno=0, p=0, prep=None):
+    g = Juego(); mu = g.mu
+    if prep: prep(g)
+    mu.mem_write(0x537ce8, struct.pack('<h', p))
+    for i, (ranura, comb, bonos) in enumerate(ejs, 1):
+        a = 0x54fe50 + i * 0x1c
+        mu.mem_write(a + 2, struct.pack('<hh', x, y)); mu.mem_write(a + 0xe, struct.pack('<H', ranura | p << 5))
+        if ranura < 16:
+            rec = 0x53c410 + ((p << 4) + ranura) * 0xfc
+            mu.mem_write(rec + 0xb2, b''.join(b.encode().ljust(9, b'\0') for b in bonos).ljust(36, b'\0'))
+            mu.mem_write(rec + 0xd6, comb.encode().ljust(9, b'\0'))
+        mu.mem_write(p * 0x4f0 + 0x56ea94 + (i - 1) * 2, struct.pack('<h', i))
+    mu.mem_write(p * 0x4f0 + 0x56eaa8, struct.pack('<h', len(ejs)))
+    mu.mem_write(BD_FLAG, b'\x07')
+    g.correr(BR_MENU, RET, bytes(4 * 4 + 0x14) + struct.pack('<I', RET),
+             [(UC_X86_REG_ESI, 0x150000), (UC_X86_REG_EBX, turno), (UC_X86_REG_EBP, 1)])
+    return mu.mem_read(BD_FLAG, 1)[0]
+B = [(3, '', ['Build'])]
+ver('unidad con "Build" en llanura libre: se puede', menu(B), 1)
+ver('  "BUILD" en la tercera ranura, en el segundo ejército', menu([(2, '', ['Landing']), (4, '', ['hills', 'x', 'BUILD'])]), 1)
+ver('  jugador 5, en colinas', menu(B, x=25, p=5), 1)
+ver('control: sin el bono', menu([(3, '', ['Landing'])]), 0)
+ver('control: "Build" como bono de combate no vale', menu([(3, 'Build', [])]), 0)
+ver('control: solo un héroe con "Build"', menu([(0x10, '', ['Build'])]), 0)
+ver('control: "Builder" no es "Build"', menu([(3, '', ['Builder'])]), 0)
+ver('control: agua', menu(B, x=33), 0)
+ver('control: montaña', menu(B, x=21), 0)
+ver('control: ya hay camino', menu(B, x=10), 0)
+ver('control: ciudad (estructura 3)', menu(B, prep=lambda g: g.setb(5, 7, 3, 0x1b)), 0)
+ver('control: edificio (palabra 0 & 0x4000)', menu(B, prep=lambda g: g.mu.mem_write(casilla(5, 7), struct.pack('<H', 0x4000))), 0)
+ver('control: no es su turno', menu(B, turno=1), 0)
+
+print('-- costo: 0x4b65e0(BD_MARK, jugador)')
+def costo(x, y, indice=BD_MARK):
+    g = Juego(); mu = g.mu
+    mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    g.correr(0x4b65e0, RET, struct.pack('<3I', RET, indice, 0))
+    return struct.unpack('<h', struct.pack('<I', mu.reg_read(UC_X86_REG_EAX))[:2])[0]
+ver('llanura (paso 2): 200 * 2 / 20 = 20', costo(5, 7), 20)
+ver('colinas (paso 5): 50', costo(25, 7), 50)
+ver('control: un puente (BR_CODE) sigue costando una ciudad', costo(5, 7, 0x2000), CIUDAD)
+
+print('-- diálogo: texto y envío')
+g = Juego(); mu = g.mu
+mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK))
+g.anotar(0x4dd260, '4dd260', 3)
+g.correr(0x4b64f0, 0x4b651e, struct.pack('<I', RET))
+_, que, fmt, nombre = g.llamadas[0]
+ver('br_rebtxt con BD_MARK: "Building a road"', (que, bytes(mu.mem_read(fmt, 32)).split(b'\0')[0], nombre), (5, b'Building a road', 0))
+def enviar(indice):
+    g = Juego(); mu = g.mu
+    mu.mem_write(TR_X, struct.pack('<hh', 5, 7))
+    g.anotar(0x4b9ce0, 'reconstruir', 3)
+    paquetes = []
+    g.interceptar(0x4dd3b0, lambda a: paquetes.append((a[0], struct.unpack('<4h', mu.mem_read(a[1], 8)), a[2])))
+    g.correr(TR_SEND, RET, struct.pack('<4I', RET, indice, 20, 0xabcd0002))
+    return paquetes, [l for l in g.llamadas if l[0] == 'reconstruir'], mu.reg_read(UC_X86_REG_ESP) == STACK + 4
+ver('tr_send con BD_MARK: BD_PKT (bando, x, y, 0)', enviar(BD_MARK), ([(BD_PKT, (2, 5, 7, 0), 8)], [], True))
+ver('control: la trampa sigue mandando 0x2a3', enviar(0x7fff)[0][0][0], 0x2a3)
+ver('control: un sitio sigue a 0x4b9ce0', enviar(4), ([], [('reconstruir', 4, 20, 0xabcd0002)], True))
+
+print('-- red: bd_recv')
+PKT = 0x150000
+def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, tipo=BD_PKT, prep=None):
+    g = Juego(); mu = g.mu
+    if prep: prep(g)
+    s = 0x536b30 + p * 0x1f8
+    mu.mem_write(s, b'\1'); mu.mem_write(s + 3, bytes([1]))
+    mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
+    mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<i', oro))
+    mu.mem_write(PKT + 6, struct.pack('<h', maquina)); mu.mem_write(PKT + 0xc, struct.pack('<4h', p, x, y, 0))
+    cobros = []
+    g.interceptar(0x43fd60, lambda a: cobros.append((a[0] & 0xffff, struct.unpack('<i', struct.pack('<I', a[1]))[0])))
+    g.interceptar(0x4a4f20, lambda a: g.llamadas.append('grafo'))
+    g.interceptar(0x4a2170, lambda a: g.llamadas.append('redibujo'))
+    g.interceptar(0x4d7ed0, lambda a: 0)
+    fin = 0x4b85bb if tipo == BD_PKT else dest(BD_RECV + 5, 2)
+    g.correr(BD_RECV, fin, struct.pack('<I', RET), [(UC_X86_REG_EAX, tipo + 8), (UC_X86_REG_ESI, PKT)])
+    return g, cobros
+def pieza(g, x, y):
+    t = g.tile(x, y); v = struct.unpack('<H', t[8:10])[0]
+    return t[3] & 7, (v >> 8) & 3, (v >> 5) & 7, v & 0x1f
+g, c = recibir()
+ver('camino suelto en llanura: cobra 20, estructura 1, pieza horizontal (0,1), hoja 0', (c, pieza(g, 5, 7)), ([(2, -20)], (1, 0, 1, 0)))
+ver('  conserva los otros bits de la casilla (byte 3 = 0x19) y rehace grafo y vista', (g.tile(5, 7)[3], g.llamadas), (0x19, ['grafo', 'redibujo']))
+g, c = recibir(x=11, prep=lambda g: [g.setp8(10, y, 0x10 | (2 << 5)) for y in range(30)])
+ver('al lado de la columna de camino: nueva = solo O (3,0) con el bit 0x10 del vecino',
+    pieza(g, 11, 7), (1, 3, 0, 0x10))
+ver('  la vecina pasa a N+E+S (0,6); las de arriba y abajo quedan N+S (0,2)',
+    [pieza(g, 10, y)[1:3] for y in (6, 7, 8)], [(0, 2), (0, 6), (0, 2)])
+def hoja1(g):
+    for y in range(30): g.setp8(10, y, 1 | (2 << 5))
+g, c = recibir(x=11, prep=hoja1)
+ver('control: un vecino de otra hoja no se toca y no presta su hoja', (pieza(g, 10, 7), pieza(g, 11, 7)), ((1, 0, 2, 1), (1, 3, 0, 0)))
+def puente(g):
+    g.setb(30, 7, 3, 0x19); g.setp8(30, 7, (1 << 8) | (6 << 5))
+g, c = recibir(x=29, prep=puente)
+ver('junto a un puente: empalma (solo E, (3,1)) y el puente no se toca', (pieza(g, 29, 7), pieza(g, 30, 7)), ((1, 3, 1, 0), (1, 1, 6, 0)))
+ver('justo con el oro del costo', recibir(oro=20)[1], [(2, -20)])
+def nada(**kw):
+    g, c = recibir(**kw)
+    return c, g.llamadas, g.tile(kw.get('x', 5), kw.get('y', 7))[3] & 7
+ver('control: lo manda otra máquina', nada(maquina=0), ([], [], 0))
+ver('control: no alcanza el oro', nada(oro=19), ([], [], 0))
+ver('control: bando de la computadora', nada(humano=False), ([], [], 0))
+ver('control: bando fuera de rango', nada(p=9), ([], [], 0))
+ver('control: montaña', nada(x=21), ([], [], 0))
+ver('control: agua', nada(x=33), ([], [], 0))
+ver('control: ya hay camino (no cobra dos veces)', nada(x=10), ([], [], 1))
+ver('control: otro paquete sigue a tr_recv sin tocar nada', nada(tipo=0x2a3), ([], [], 0))
+
+print('MAL:', mal)
+sys.exit(1 if mal else 0)

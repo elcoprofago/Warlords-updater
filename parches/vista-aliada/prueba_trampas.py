@@ -24,6 +24,8 @@ TR_FLAG = d32(BR_MENU + 2)
 TR_X, TR_Y = TR_FLAG + 2, TR_FLAG + 4
 TR_SEND = dest(0x4b6236)
 TR_RECV = dest(0x4b6a22, 2)
+if img[TR_RECV - BASE] == 0x3d and d32(TR_RECV + 1) == 0x2a4 + 8:   # bd_recv (caminos) va antes y le pasa lo demás
+    TR_RECV = dest(TR_RECV + 5, 2)
 TR_MARK = 0x7fff
 CIUDAD = 15                       # costo de fundar una ciudad ([0x56950e])
 

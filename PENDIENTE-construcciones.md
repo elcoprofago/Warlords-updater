@@ -178,3 +178,12 @@ a estructura 0.
 **Orden de trabajo:** A+B+C.1 (camino en la propia casilla, se prueba en red) → C.2 montaña → F →
 puente → G.
 
+
+## Estado — 3/11/2026
+
+- **A+B+C.1 implementado** en vista-aliada 1.0.106.0 (sin publicar): bono `build`, renglón «Build Road» en el
+  menú de órdenes (13 renglones a 15 px), paquete 0x2a4, camino en la casilla del líder con piezas según vecinos.
+  Prueba de juguete: `parches/vista-aliada/prueba_caminos.py` (MAL: 0). Todas las demás pruebas dan igual que
+  la versión anterior (se ajustó el seguimiento de la cadena de recepción en prueba_trampas y prueba_chatordenes).
+- **Próximo paso:** cuando termine la tanda de la tarea 87 y el juego esté cerrado, compilar en C:\Warlords3 y
+  `tools\publicar-parche.ps1 vista-aliada`; luego tarea 88 del usuario. Después C.2 (montaña).

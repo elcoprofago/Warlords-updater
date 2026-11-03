@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 88).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 89).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -11,8 +11,31 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+5. **Tarea 88** (construir caminos): después de que termine la tanda de la 87.
 
 # Pendientes
+
+- [ ] **88.** Construir un camino en el juego (vista-aliada 1.0.106.0, 3/11/2026)
+Cambio: un grupo con una unidad que tenga el bono de movimiento **Build** puede poner un camino en la casilla donde
+está parado, pagando en oro según el terreno (llanura barata, colinas más cara). No se puede en agua, montaña, ni
+donde ya hay camino, ciudad o sitio. El camino empalma solo con los caminos y puentes vecinos. La computadora no
+construye. Puentes, pasos de montaña y la conversión de ciudad en puerto vienen después.
+0. **Esperá a que termine la tanda de la 87** y avisame: recién ahí instalo la 1.0.106.0 en C:\Warlords3 y la
+   publico (hoy el juego de la tanda está abierto ahí).
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.106.0**.
+2. Abrí el editor **war3ed_av.exe** → Edit Army Data, y a **Dwarf Sappers** y a **Peasants** de tu bando ponéles
+   **Build** en un **Move Bonus** libre. Guardá el bando.
+3. Empezá una partida **contra la computadora** con ese bando y juntá un grupo con Dwarf Sappers o Peasants.
+4. Llevalo a una llanura sin camino y abrí el menú de órdenes del grupo: el último renglón, **Build Road**, tiene que
+   estar encendido. Fijate también que **todos los renglones del menú se lean bien, sin encimarse** (ahora son 13).
+5. Elegilo: tiene que salir «Building a road» con el precio; aceptá. El camino tiene que aparecer bajo el grupo, el
+   oro bajar en ese precio, y el grupo moverse más rápido por ahí.
+6. Hacé un tramo de 3 o 4 casillas, con una curva y pegado a un camino que ya exista: tiene que verse **continuo**,
+   sin cortes ni piezas que no empalmen.
+7. Controles: sobre un camino, en una ciudad, en un barco y con un grupo **sin** esas unidades, Build Road tiene que
+   estar apagado.
+8. Guardá, salí y volvé a cargar: los caminos nuevos tienen que seguir ahí.
+Resultado:
 
 - [ ] **87.** IA: ¿va a cortar el puente que amenaza su ciudad? (vista-aliada 1.0.105.0, 2/11/2026)
 Cambio: la computadora (solo la IA de prueba en las tandas) ahora busca los puentes por donde un enemigo en guerra

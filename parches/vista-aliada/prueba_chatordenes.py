@@ -20,6 +20,8 @@ def rva(va): return va - 0x400000
 assert img[rva(0x4b6a22):rva(0x4b6a22) + 2] == b'\x0f\x87'
 OR_RECV = 0x4b6a28 + struct.unpack_from('<i', img, rva(0x4b6a24))[0]
 # desde 1.0.51.0 el «ja» va primero a tr_recv (cmp eax, 0x2ab / jne or_recv): se sigue la cadena
+if img[rva(OR_RECV)] == 0x3d and struct.unpack_from('<I', img, rva(OR_RECV) + 1)[0] == 0x2ac:  # bd_recv (camino) delante
+    OR_RECV = OR_RECV + 11 + struct.unpack_from('<i', img, rva(OR_RECV) + 7)[0]
 if img[rva(OR_RECV)] == 0x3d and struct.unpack_from('<I', img, rva(OR_RECV) + 1)[0] == 0x2ab:
     OR_RECV = OR_RECV + 11 + struct.unpack_from('<i', img, rva(OR_RECV) + 7)[0]
 assert img[rva(OR_RECV) + 5:rva(OR_RECV) + 7] == b'\x0f\x85', 'or_recv no empieza con cmp eax / jne tl_recv'
