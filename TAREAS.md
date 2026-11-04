@@ -9,23 +9,12 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 95** (precio del camino según el terreno): ya.
-4. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
+3. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
    esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
-
-- [ ] **95.** Precio del camino según el terreno (vista-aliada 1.0.116.0, 3/11/2026)
-Cambio: cada casilla cuesta una fracción fija de lo que **ese bando** paga por fundar una ciudad: **25 %** en
-montaña, **15 %** en colinas, desierto, hielo/nieve y piso de mazmorra, **5 %** en los demás terrenos. Los
-atributos que abaratan la ciudad (como Artificer) abaratan el camino en la misma proporción.
-1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.116.0**.
-2. Mirá cuánto le cuesta a tu bando fundar una ciudad (Rebuild City/Site) y pedí caminos: en montaña tiene que
-   costar la cuarta parte; en colinas, 15 %; en llanura o bosque, 5 %. Al aceptar, el oro baja eso mismo.
-3. Repetilo con un bando **con Artificer** y otro **sin Artificer**: el del Artificer tiene que pagar menos.
-Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
 Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el
@@ -84,6 +73,16 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **95.** Precio del camino según el terreno (vista-aliada 1.0.116.0, 3/11/2026)
+Cambio: cada casilla cuesta una fracción fija de lo que **ese bando** paga por fundar una ciudad: **25 %** en
+montaña, **15 %** en colinas, desierto, hielo/nieve y piso de mazmorra, **5 %** en los demás terrenos. Los
+atributos que abaratan la ciudad (como Artificer) abaratan el camino en la misma proporción.
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.116.0**.
+2. Mirá cuánto le cuesta a tu bando fundar una ciudad (Rebuild City/Site) y pedí caminos: en montaña tiene que
+   costar la cuarta parte; en colinas, 15 %; en llanura o bosque, 5 %. Al aceptar, el oro baja eso mismo.
+3. Repetilo con un bando **con Artificer** y otro **sin Artificer**: el del Artificer tiene que pagar menos.
+Resultado (3/11/2026, partida roads02): rojo con Artificer, blanco con Engineering y azul sin nada pagaron cada
+uno un precio distinto por casilla de camino en montaña. Sin cuelgues.
 - [x] **94.** Camino en montaña a un cuarto del precio de una ciudad (vista-aliada 1.0.113.0, 3/11/2026)
 1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.113.0**.
 2. Con el mismo bando de antes (ciudad a 800 con Artificer), pedí un camino en una montaña vecina: el diálogo
