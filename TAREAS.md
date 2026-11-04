@@ -17,7 +17,7 @@ Sorteo están acá (tarea 18).
 - [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
   - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
   - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
-  - Para volver a consultarlo: abrir una consola en `F:\sourceeposctualizador-warlords\creditos` y
+  - Para volver a consultarlo: abrir una consola en `F:\source\repos\actualizador-warlords\creditos` y
     escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
   - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
