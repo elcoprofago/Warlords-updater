@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.21'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.22'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -212,6 +212,11 @@ class Monitor(tk.Tk):
         else:
             cuerpo.pack(fill='both', expand=True, before=cuerpo.pie)
         flecha['text'] = '▶' if plegar else '▼'
+        if caja is self.p_tanda:
+            if plegar:
+                self.reloj.pack(fill='x', before=cuerpo.pie); self.after(50, self.dibujar_reloj)
+            else:
+                self.reloj.pack_forget()
         if caja is self.p_bitacora:   # plegada, la bitácora deja de absorber el alto sobrante
             caja.pack_configure(fill='x', expand=False) if plegar else caja.pack_configure(fill='both', expand=True)
         self.update_idletasks()
@@ -312,10 +317,23 @@ class Monitor(tk.Tk):
         self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
         self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
         fp = self.caja(f); fp.pack(anchor='w', padx=8, pady=(2, 0))
-        for i, (txt, var) in enumerate((('Parche de esta tanda: ', self.v_parche), ('Todas las tandas: ', self.v_todas))):
-            self.rotulo(fp, text=txt).grid(row=i, column=0, sticky='nw')
-            self.rotulo(fp, textvariable=var, font=('Consolas', 9), justify='left', anchor='w',
-                        wraplength=330).grid(row=i, column=1, sticky='w')
+        self.rotulo(fp, text='Parche de esta tanda: ').grid(row=0, column=0, sticky='nw')
+        self.rotulo(fp, textvariable=self.v_parche, font=('Consolas', 9), justify='left', anchor='w',
+                    wraplength=330).grid(row=0, column=1, sticky='w')
+        # Todas las tandas: la lista crece con cada tanda, así que va en un recuadro de alto fijo con barra.
+        self.rotulo(fp, text='Todas las tandas: ').grid(row=1, column=0, sticky='nw')
+        ft = tk.Frame(fp); ft.grid(row=1, column=1, sticky='w')
+        self.t_todas = tk.Text(ft, height=4, width=48, font=('Consolas', 9), wrap='word', bd=0, padx=4, pady=2,
+                               bg='#0d1512', fg='#d8e4de', highlightthickness=1, highlightbackground='#3f8f6a')
+        sb = ttk.Scrollbar(ft, command=self.t_todas.yview); self.t_todas['yscrollcommand'] = sb.set
+        self.t_todas.pack(side='left'); sb.pack(side='left', fill='y')
+        self.t_todas.configure(state='disabled')
+        self.v_todas.trace_add('write', lambda *_: self.poner_todas())
+        # Con el panel plegado, en su lugar se ve grande el tiempo que lleva la serie de tandas.
+        self.p_tanda = caja
+        self.reloj = tk.Canvas(caja, height=64, bd=0, highlightthickness=0)
+        self.reloj_desde = self.reloj_hasta = None
+        self.latir()
         fila = self.caja(f); fila.pack(anchor='w', **pad)
         self.rotulo(fila, text='Partidas:').grid(row=0, column=0, sticky='w')
         self.v_partidas = tk.IntVar(value=6)
@@ -550,6 +568,41 @@ class Monitor(tk.Tk):
             c.configure(fg=self.tinta, activeforeground=self.tinta)
         for l in self.iconos:
             self.pintar_icono(l)
+        self.dibujar_reloj()
+
+    def latir(self):
+        self.dibujar_reloj(); self.after(1000, self.latir)
+
+    def poner_todas(self):
+        txt = self.v_todas.get()
+        t = self.t_todas
+        if t.get('1.0', 'end-1c') == txt:
+            return
+        arriba = t.yview()[1] >= 0.999   # si se estaba viendo el final, seguir mostrándolo
+        t.configure(state='normal'); t.delete('1.0', 'end'); t.insert('end', txt.replace(' · ', '\n'))
+        t.configure(state='disabled')
+        if arriba:
+            t.see('end')
+
+    def dibujar_reloj(self):
+        """Cronómetro de la serie (Arial Black blanco con sombra oscura) sobre el fondo de la ventana."""
+        c = getattr(self, 'reloj', None)
+        if c is None or not c.winfo_ismapped():
+            return
+        c.delete('all')
+        c.configure(bg=self.base)
+        img = self.recorte(c)
+        if img is not None:
+            c.create_image(0, 0, image=self.foto(c, img), anchor='nw')
+        if self.reloj_desde is None:
+            txt = '--:--:--'
+        else:
+            s = int(max(0, (self.reloj_hasta or time.time()) - self.reloj_desde))
+            txt = f'{s // 3600:02d}:{s // 60 % 60:02d}:{s % 60:02d}'
+        x, y = c.winfo_width() // 2, c.winfo_height() // 2
+        fuente = ('Arial Black', 34)
+        c.create_text(x + 3, y + 3, text=txt, font=fuente, fill='#111111')
+        c.create_text(x, y, text=txt, font=fuente, fill='white')
 
     def configurar(self):
         from tkinter import colorchooser, filedialog
@@ -739,6 +792,7 @@ class Monitor(tk.Tk):
         self.encender(self.b_seguir, not corre and self.retomable)
         self.encender(self.b_cortar, self.corriendo())
         self.dibujar_barras()
+        self.dibujar_reloj()
         self.cpu.poner(psutil.cpu_percent())
         self.luz.poner(*self.parada)
         self.after(2000, self.refrescar)
@@ -826,6 +880,17 @@ class Monitor(tk.Tk):
             fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
+        # Cronómetro: desde el inicio de la primera tanda de la serie (o de esta, si no hay serie) hasta ahora,
+        # o hasta la última partida terminada si ya no corre.
+        t0 = self.serie[2] if self.serie else tid
+        desde = db.execute('select inicio from tanda where id=?', (t0,)).fetchone()
+        a_seg = lambda f: time.mktime(time.strptime(f, '%Y-%m-%d %H:%M:%S'))
+        self.reloj_desde = a_seg(desde[0]) if desde and desde[0] else None
+        if self.corriendo() or self.externa:
+            self.reloj_hasta = None
+        else:
+            fin = db.execute('select max(fin) from partida where tanda between ? and ?', (t0, tid)).fetchone()[0]
+            self.reloj_hasta = a_seg(fin) if fin else self.reloj_desde
         self.progreso[0] = ('Tanda', len(hechas) / total if total else 0, f'P{len(hechas)}/{total}', bool(term))
         actual, todas = self.parches(db, tid); self.v_parche.set(actual); self.v_todas.set(todas)
 
