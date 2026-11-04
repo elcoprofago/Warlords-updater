@@ -9030,6 +9030,22 @@ pwt_no:
     popad
     ret
 ''')
+# po_urb: eax = registro -> ZF = 0 si su casilla es de una ciudad (bit 0x8000 de la celda). Preserva todo menos
+# eflags. En una ciudad la trampa explota una sola vez y no se apila (pedido del usuario, 4/11/2026: la lupa no se
+# puede consultar ahí, la abre antes el cuadro de la ciudad).
+po_urb = place('po_urb', f'''
+    pushad
+    movsx esi, word ptr [eax]
+    movsx edi, word ptr [eax + 2]
+    mov cl, byte ptr [0x503e06]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    test word ptr [eax + edx*2 + 0x503e58], 0x8000
+    popad
+    ret
+''')
 pg_ok = place('pg_ok', f'''
     pushad
     test esi, esi
@@ -9859,6 +9875,14 @@ pf_trap:
     mov al, byte ptr [ebp + 5]
     and al, {TR_CUENTA | TR_DOBLE}
     inc al
+    push eax
+    mov eax, ebp
+    call {po_urb:#x}
+    pop eax
+    jz pf_tsum
+    mov al, {TR_USOS}
+    jmp pf_tcnt
+pf_tsum:
     mov ah, al
     and ah, {TR_CUENTA}
     cmp ah, {TR_USOS}
@@ -10806,10 +10830,17 @@ pi_tuse:
     add ecx, {TR_USOS}
     push {TR_USOS}
     test byte ptr [ebx + 5], {TR_DOBLE}
-    jz pi_t1
+    jz pi_tc
     add ecx, {TR_USOS}
     add dword ptr [esp], {TR_USOS}
     add edi, 2
+    jmp pi_t1
+pi_tc:
+    mov eax, ebx
+    call {po_urb:#x}
+    jz pi_t1
+    mov ecx, 1
+    mov dword ptr [esp], 1
 pi_t1:
     push ecx
     push dword ptr [edi*4 + {pi_trft:#x}]
@@ -13248,6 +13279,8 @@ tr_stk = place('tr_stk', f'''
     movzx ecx, byte ptr [eax + 7]
     cmp ecx, ebx
     jne tsk_no
+    call {po_urb:#x}
+    jnz tsk_no
     mov cl, byte ptr [eax + 5]
     test cl, {TR_DOBLE}
     jnz tsk_no

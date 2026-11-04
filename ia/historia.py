@@ -145,6 +145,11 @@ class Partida:
 
     def texto(self, r):
         t, p, par = _w(r, 0), _w(r, 2), _w(r, 4)
+        if t == 0x13:                           # votación de vista-aliada (sin texto en Sagetext.tex): SÍ y NO
+            quien = f' (la abrió {self.jugador(p)})' if 0 <= p < 8 else ''
+            return f'Votación: {_w(r, 0x16)} por el SÍ y {_w(r, 0x18)} por el NO{quien}.'
+        if not 0 <= t < len(self.T):
+            return f'(tipo {t})'
         nom, s = _cad(r[6:0x16]), self.T[t]
         ciudad = lambda i: self.ciudades[i]['nombre'] if 0 <= i < len(self.ciudades) else f'(ciudad {i})'
         if t == 0:
@@ -178,7 +183,7 @@ class Partida:
             return s[0] % self.jugador(p)
         if t == 0x12:
             return s[0] % (nom, self.jugador(p))
-        return f'(tipo {t})'                    # 0x13: votación de vista-aliada, sin texto en Sagetext.tex
+        return f'(tipo {t})'
 
 
 if __name__ == '__main__':

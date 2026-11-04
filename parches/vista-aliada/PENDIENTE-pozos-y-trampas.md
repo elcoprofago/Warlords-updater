@@ -554,3 +554,7 @@ Dos fallas, arregladas en 1.0.125.0:
    con el mismo po_mark que po_step; po_fall la detona en el mismo lote. Efecto aparte: también detona al entrar a
    una ciudad propia que tenga una trampa enemiga sembrada antes de conquistarla (es la misma casilla).
 Pruebas: prueba_pozos (pasadas 1 y 2, paso 7). Falta verlo en el juego: tarea 104.
+
+## 1.0.126.0 (4/11/2026)
+- En una ciudad la trampa explota una sola vez (se gasta, aunque fuera doble) y no se puede apilar (`po_urb`, bit 0x8000 de la casilla). La lupa muestra «1 of 1». Motivo: al conquistar sale la ventana de producción y no se podían consultar las explosiones restantes.
+- Visor de historia 1.0.16.0: los eventos de votación (tipo 0x13) hacían fallar la apertura de roads02.sav.

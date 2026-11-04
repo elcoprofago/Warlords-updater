@@ -210,13 +210,15 @@ PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
 k = img.index(b'\x68' + struct.pack('<I', BASE + img.index(b'%d,%d,%d,%d,%d,%d,%d\n\0')))
 IA_EVT = BASE + next(j for j in range(k & ~15, 0, -16) if img[j:j + 2] == b'\x80\x3d')
 EVTS = []   # (tipo, jugador, x, y, n) de la última caída
-def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None, bend=()):
+def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None, bend=(), urb=()):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
     g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
     for i, r in enumerate(regs): mu.mem_write(PO_MAP + (r[1] << 6) + r[0], bytes([i + 1]))
     mu.mem_write(0x535f0c + AGUA * 0x58, struct.pack('<h', 1))
     for x, y in agua: mu.mem_write(casilla(x, y), struct.pack('<HH', AGUA, 0x100 if (x, y) in puente else 0))
+    for x, y in urb:   # casilla de ciudad (bit 0x8000 de la celda)
+        w = struct.unpack('<H', mu.mem_read(casilla(x, y), 2))[0]; mu.mem_write(casilla(x, y), struct.pack('<H', w | 0x8000))
     mu.mem_write(0x54fe50, struct.pack('<h', len(ejs) + 1))
     vuela = {}
     for i, (x, y, d, h, v) in enumerate(ejs, 1):
@@ -298,6 +300,9 @@ for k in (1,):
 for e, fin in ((0x08, 0xa9), (0x09, 0xa0)):
     r = caer(POZOS[:2] + [(15, 15, 2, e, 0, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
     ver(f'doble (+5 = {e:#x}): explota y queda en {fin:#x}', (r[0], r[3][2][3]), ([(1, 0)], fin))
+for e in (0x00, 0x08):   # en una ciudad explota una sola vez (pedido del 4/11/2026), aunque fuera doble
+    r = caer(POZOS[:2] + [(15, 15, 2, e, 0, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15, 'ciudad')], urb=[(15, 15)])
+    ver(f'ciudad (+5 = {e:#x}): explota y queda gastada (0xa2)', (r[0], r[3][2][3]), ([(1, 0)], 0xa2))
 r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
 ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])

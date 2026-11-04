@@ -79,9 +79,11 @@ class Juego:
         assert mu.reg_read(UC_X86_REG_EIP) == stop, hex(mu.reg_read(UC_X86_REG_EIP))
 
 print('-- menú: tr_check desde br_menu')
-def menu(ejs, x=5, y=7, turno=0, regs=(), p=0):
+def menu(ejs, x=5, y=7, turno=0, regs=(), p=0, urb=()):
     # ejs: (ranura, bono de combate, bonos de movimiento) del grupo de p; el primero es el líder, en (x, y).
     g = Juego(); mu = g.mu; g.poner(regs)
+    for ux, uy in urb:   # casilla de ciudad (bit 0x8000 de la celda)
+        w = struct.unpack('<H', mu.mem_read(casilla(ux, uy), 2))[0]; mu.mem_write(casilla(ux, uy), struct.pack('<H', w | 0x8000))
     mu.mem_write(0x537ce8, struct.pack('<h', p))
     for i, (ranura, comb, bonos) in enumerate(ejs, 1):
         a = 0x54fe50 + i * 0x1c
@@ -117,6 +119,9 @@ ver('apilar: sobre su trampa activa se puede', menu([(3, 'Trap', [])], regs=[(5,
 ver('  con una explosión y la tabla llena', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 1, 0)] + [(1, 1, 0, 0, 0, 0xff)] * (PO_MAX - 1))[0], 1)
 ver('control: ya es doble (tope 2)', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 8, 1, 0)])[0], 0)
 ver('control: trampa de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 1)])[0], 0)
+ver('ciudad: no se apila (pedido del 4/11/2026: una sola trampa por casilla de ciudad)',
+    menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 0)], urb=[(5, 7)])[0], 0)
+ver('  pero sembrar la primera en una ciudad, sí', menu([(3, 'Trap', [])], urb=[(5, 7)])[0], 1)
 ver('control: un pozo en otra casilla no molesta', menu([(3, 'Trap', [])], regs=[(6, 7, 0, 0, 0, 0xff)])[0], 1)
 
 print('-- diálogo: texto y envío')
