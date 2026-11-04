@@ -331,7 +331,7 @@ class Monitor(tk.Tk):
         self.v_todas.trace_add('write', lambda *_: self.poner_todas())
         # Con el panel plegado, en su lugar se ve grande el tiempo que lleva la serie de tandas.
         self.p_tanda = caja
-        self.reloj = tk.Canvas(caja, height=64, bd=0, highlightthickness=0)
+        self.reloj = tk.Canvas(caja, height=110, bd=0, highlightthickness=0)
         self.reloj_desde = self.reloj_hasta = None
         self.latir()
         fila = self.caja(f); fila.pack(anchor='w', **pad)
@@ -600,8 +600,8 @@ class Monitor(tk.Tk):
             s = int(max(0, (self.reloj_hasta or time.time()) - self.reloj_desde))
             txt = f'{s // 3600:02d}:{s // 60 % 60:02d}:{s % 60:02d}'
         x, y = c.winfo_width() // 2, c.winfo_height() // 2
-        fuente = ('Arial Black', 34)
-        c.create_text(x + 3, y + 3, text=txt, font=fuente, fill='#111111')
+        fuente = ('Arial Black', 68)
+        c.create_text(x + 5, y + 5, text=txt, font=fuente, fill='#111111')
         c.create_text(x, y, text=txt, font=fuente, fill='white')
 
     def configurar(self):
