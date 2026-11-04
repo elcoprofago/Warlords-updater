@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 105).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 106).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,17 +14,16 @@ Sorteo están acá (tarea 18).
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
-8. **Tarea 104** (trampa en una ciudad: se ve y explota al conquistarla): junto con la 101, en la misma partida de prueba.
+8. **Tarea 105** (trampa en una ciudad: una sola explosión; Visor con roads02): junto con la 101, en la misma partida de prueba.
 
 # Pendientes
 
-- [ ] **104.** Trampa en una ciudad: se ve encima y explota al conquistarla (vista-aliada 1.0.125.0, 4/11/2026)
-Cambios: la trampa se dibuja encima de la ciudad (debajo de los ejércitos). Y el ejército que gana una ciudad y entra
-a la casilla de la trampa la hace explotar en ese momento.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.125.0**.
-2. Abrí **roads02.sav** (Warlords3): ¿se ve la mina sobre la ciudad roja?
-3. Repetí el ataque del héroe azul: al ganar y entrar a la casilla, ¿explota enseguida?
-4. Control: una trampa en el campo se ve como antes, y los ejércitos parados sobre ella se ven encima de la mina.
+- [ ] **105.** Trampa en una ciudad: una sola explosión, sin apilar; Visor abre roads02 (vista-aliada 1.0.126.0, Visor de historia 1.0.16.0, 4/11/2026)
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.126.0**.
+2. Abrí **roads02.sav** (Warlords3) y repetí el ataque a la ciudad roja con la trampa: al conquistarla explota una vez y la trampa desaparece.
+3. Sembrá una trampa en una ciudad propia y quedate encima: «Build Trap» tiene que quedar desactivado (no se apila).
+4. Control: en el campo se siguen apilando dos.
+5. Visor de historia: tiene que decir **VERSIÓN 1.0.16.0** y abrir **roads02.sav** (muestra las votaciones).
 Resultado:
 
 - [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
@@ -108,6 +107,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **104.** Trampa en una ciudad: se ve encima y explota al conquistarla (vista-aliada 1.0.125.0, 4/11/2026)
+Cambios: la trampa se dibuja encima de la ciudad (debajo de los ejércitos). Y el ejército que gana una ciudad y entra
+a la casilla de la trampa la hace explotar en ese momento.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.125.0**.
+2. Abrí **roads02.sav** (Warlords3): ¿se ve la mina sobre la ciudad roja?
+3. Repetí el ataque del héroe azul: al ganar y entrar a la casilla, ¿explota enseguida?
+4. Control: una trampa en el campo se ve como antes, y los ejércitos parados sobre ella se ven encima de la mina.
+Resultado (4/11/2026): explotó al conquistar y paralizó al atacante; se vio el humo. Las demás explosiones no se podían consultar → en 1.0.126.0 la ciudad tiene una sola (tarea 105).
 
 - [x] **103.** Trampas: más baratas, apiladas de a dos y dentro de ciudades (vista-aliada 1.0.124.0, 4/11/2026)
 Cambios: la trampa cuesta la cuarta parte de fundar una ciudad (menos si un héroe tuyo abarata las ciudades). Parado
