@@ -24,6 +24,7 @@ _i = img.index(b'\xb9\xa4\x02\x00\x00\xba', TR_SEND - BASE)
 assert _i < TR_SEND - BASE + 0x40
 BD_X = d32(BASE + _i + 6); BD_Y, BD_LX, BD_LY, BD_DIR = BD_X + 2, BD_X + 4, BD_X + 6, BD_X + 8
 BD_PW = BD_X + 10
+BD_HASB = BD_X + 12                # bd_check lo pone en 1 si el grupo tiene constructor
 TR_CLICK = dest(0x4b0487)
 _j = img.index(b'\x85\xc0\x0f\x84', TR_CLICK - BASE)
 BD_PICK = dest(BASE + _j - 5)
@@ -181,6 +182,7 @@ print('-- C.2: bd_pick (cada clic ofrece el siguiente destino)')
 def picks(x, y, n, prep=None, moverse=None):
     g = Juego(); mu = g.mu
     if prep: prep(g)
+    mu.mem_write(BD_HASB, b'')
     mu.mem_write(TR_X, struct.pack('<hh', x, y))
     r = []
     for i in range(n):
@@ -267,6 +269,7 @@ ver('control: en camino frente al mar abierto: no', menu(B, x=29, y=7, prep=lamb
 ver('control: 9 casillas de agua no llegan: no', menu(B, x=29, y=20, prep=lago), 0)
 def picks_pw(x, y, n, prep):
     g = Juego(); mu = g.mu; prep(g)
+    mu.mem_write(BD_HASB, b'')
     mu.mem_write(TR_X, struct.pack('<hh', x, y))
     r = []
     for i in range(n):
@@ -284,8 +287,8 @@ def costo_pw(x, y, pw):
     mu.mem_write(BD_X, struct.pack('<hh', x, y)); mu.mem_write(BD_PW, struct.pack('<H', pw))
     g.correr(0x4b65e0, RET, struct.pack('<III', RET, BD_MARK, 0))
     return mu.reg_read(UC_X86_REG_EAX) & 0xffff
-ver('costo: puente de 4 sobre agua = 4 x 15 % de 200 = 120', costo_pw(30, 15, 0x101), 120)
-ver('costo: lava de 1 = 25 % = 50', costo_pw(31, 25, 0x101), 50)
+ver('costo: puente de 4 sobre agua = 4 x 30 % de 200 = 240', costo_pw(30, 15, 0x101), 240)
+ver('costo: lava de 1 = 60 % = 120', costo_pw(31, 25, 0x101), 120)
 def texto_pw():
     g = Juego(); mu = g.mu
     mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK)); mu.mem_write(BD_DIR, b'\1'); mu.mem_write(BD_PW, struct.pack('<H', 0x101))
@@ -302,22 +305,22 @@ def enviar_pw():
     return paquetes
 ver('envío: BD_PKT con 0x101 (puente al este)', enviar_pw(), [(BD_PKT, (2, 30, 15, 0x101))])
 g, c = recibir(x=30, y=15, pw=0x101, oro=500, prep=lago)
-ver('red: puente de 4 al este: cobra 120, punta (1,6) + medios (3,4) + punta (1,7)',
+ver('red: puente de 4 al este: cobra 240, punta (1,6) + medios (3,4) + punta (1,7)',
     (c, [pieza(g, x, 15)[:3] for x in range(30, 34)], g.llamadas),
-    ([(2, -120)], [(1, 1, 6), (1, 3, 4), (1, 3, 4), (1, 1, 7)], ['grafo', 'redibujo']))
+    ([(2, -240)], [(1, 1, 6), (1, 3, 4), (1, 3, 4), (1, 1, 7)], ['grafo', 'redibujo']))
 ver('  el camino de la orilla oeste empalma (solo E)', pieza(g, 29, 15)[:3], (1, 3, 1))
 g, c = recibir(x=31, y=3, pw=0x102, oro=500, prep=lago)
-ver('red: vertical de 3 al sur: (2,7) (3,5) (2,6), cobra 90', (c, [pieza(g, 31, y)[:3] for y in (3, 4, 5)]),
-    ([(2, -90)], [(1, 2, 7), (1, 3, 5), (1, 2, 6)]))
+ver('red: vertical de 3 al sur: (2,7) (3,5) (2,6), cobra 180', (c, [pieza(g, 31, y)[:3] for y in (3, 4, 5)]),
+    ([(2, -180)], [(1, 2, 7), (1, 3, 5), (1, 2, 6)]))
 g, c = recibir(x=33, y=15, pw=0x103, oro=500, prep=lambda g: (lago(g), g.setb(34, 15, 3, 0x19)))
 ver('red: el mismo lago desde el este (oeste): (1,7) en 33 ... (1,6) en 30', [pieza(g, x, 15)[:3] for x in (30, 31, 33)],
     [(1, 1, 6), (1, 3, 4), (1, 1, 7)])
 g, c = recibir(x=31, y=25, pw=0x101, oro=500, prep=lago)
-ver('red: lava de una casilla: tramo medio (3,4), cobra 50', (c, pieza(g, 31, 25)[:3]), ([(2, -50)], (1, 3, 4)))
+ver('red: lava de una casilla: tramo medio (3,4), cobra 120', (c, pieza(g, 31, 25)[:3]), ([(2, -120)], (1, 3, 4)))
 def nada_pw(x, y, pw, oro=500, prep=lago):
     g, c = recibir(x=x, y=y, pw=pw, oro=oro, prep=prep)
     return c, g.llamadas, [g.tile(xx, y)[3] & 7 for xx in range(30, 34)]
-ver('control: no alcanza el oro (119)', nada_pw(30, 15, 0x101, oro=119), ([], [], [0, 0, 0, 0]))
+ver('control: no alcanza el oro (239)', nada_pw(30, 15, 0x101, oro=239), ([], [], [0, 0, 0, 0]))
 ver('control: 9 de agua no llegan', nada_pw(30, 20, 0x101), ([], [], [0, 0, 0, 0]))
 ver('control: mar abierto', nada_pw(30, 7, 0x101), ([], [], [0, 0, 0, 0]))
 ver('control: empieza en agua (la de atrás también es agua)', nada_pw(31, 15, 0x101), ([], [], [0, 0, 0, 0]))

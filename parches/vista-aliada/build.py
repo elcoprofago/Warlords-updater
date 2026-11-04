@@ -4168,16 +4168,17 @@ BD_DIV = 20
 # "Hill", "Dese", "Ice", "Snow", "Floo"), 5 % en los demás. No depende del costo de paso del terreno.
 BD_EASY, BD_HARD = 1, 3
 BD_MNT = 5                                  # un cuarto de lo que cuesta fundar una ciudad (pedido del usuario)
-bd_vars = place_data('bd_vars', bytes(12))
+bd_vars = place_data('bd_vars', bytes(16))
 BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
-BD_POS, BD_PW = bd_vars + 9, bd_vars + 10   # posición en la rotación (0 = la del líder, 1-4 = N, E, S, O); 0 camino, 0x100|dir puente
+BD_POS, BD_PW = bd_vars + 9, bd_vars + 10   # posición en la rotación (0 = la del líder, 1-4 = N, E, S, O, 5 = puerto); 0 camino, 0x100|dir puente, 0x8000|ciudad puerto
+BD_HASB = bd_vars + 12                      # 1 si el grupo tiene un ejército con «build» (camino y puente lo piden; el puerto no)
 bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
 bd_brtxt = place_data('bd_brtxt', cstr_('Building a bridge'))
 # Puente nuevo (punto 8): tira recta de 1 a BD_BRMAX casillas de clase agua sin estructura, edificio ni puente
 # derribado, que sale de la orilla (la casilla del líder, que no es agua) y termina en una casilla que no es agua.
 # Por casilla: BD_BRW veinteavos del costo de fundar una ciudad sobre agua, BD_BRL sobre lava (nombre del tipo de
 # terreno "Lava"/"lava"). Se cobra entero o nada. En BD_X/BD_Y va la primera casilla de agua y en BD_DIR la dirección.
-BD_BRMAX, BD_BRW, BD_BRL = 8, 3, 5
+BD_BRMAX, BD_BRW, BD_BRL = 8, 6, 12             # 30 % sobre agua, 60 % sobre lava (pedido del usuario, tarea 96)
 _pw = lambda r, c: (r << 8) | (c << 5)
 # Pieza por dirección (N, E, S, O): primera casilla, última, tramo medio (y puente de una casilla).
 bd_brtab = place_data('bd_brtab', struct.pack('<12H', _pw(2, 6), _pw(2, 7), _pw(3, 5),  _pw(1, 6), _pw(1, 7), _pw(3, 4),
@@ -4592,10 +4593,277 @@ bba_skip:
     popad
     ret
 ''')
+# ---- Puerto nuevo (PENDIENTE-construcciones.md, paso G). Un grupo cualquiera (sin constructor) parado en una ciudad
+# propia, viva, de un bando que tiene otra ciudad viva, la convierte en puerto si hay lugar en la tabla de sitios (tope
+# 50) y alguna de las 8 casillas que rodean sus 4 por los lados es agua o lava libre (sin estructura, edificio ni puente
+# derribado). Medido en 40 .SAV: los puertos del juego están siempre en el agua, junto a la costa; así que las 4
+# casillas de la ciudad vuelven a ser terreno común y el puerto va en esa casilla de agua. La ciudad queda como una
+# arrasada de dueño 8 (0x46a3a0) con la marca +0xdd = 1, que ninguna instrucción del exe usa: pt_cityat la saltea en
+# 0x440be0 (ciudad en la casilla) y pt_ai9 en el evaluador de la meta 9 (no se ofrece reconstruirla). Es el destino 5
+# de bd_pick (BD_PW = 0x8000 | ciudad, BD_X/BD_Y = casilla del puerto). Precio: PT_FRAC veinteavos de una ciudad.
+PT_FRAC = 40
+PT_HIDE = CITIES + 0xdd
+pt_ring = place_data('pt_ring', bytes(b & 0xff for b in (0, -1, 1, -1, 2, 0, 2, 1, 0, 2, 1, 2, -1, 0, -1, 1)))
+pt_name = place_data('pt_name', b'Port \0\0\0')
+bd_pttxt = place_data('bd_pttxt', cstr_('City into a port'))
+# 0x440be0 en 0x440c26 (ebx = ciudad * 0xde, coincidió la x): la ciudad marcada no está en ninguna casilla.
+pt_cityat = place('pt_cityat', f'''
+    cmp byte ptr [ebx + {PT_HIDE:#x}], 0
+    jne 0x440c3f
+    mov cx, word ptr [ebx + 0x537e2e]
+    jmp 0x440c2d
+''')
+# Evaluador de la meta 9 (0x41e290, en 0x41e30a; eax = ciudad * 0xde): la marcada no es una ciudad muerta a reconstruir.
+pt_ai9 = place('pt_ai9', f'''
+    cmp byte ptr [eax + {PT_HIDE:#x}], 0
+    jne 0x41e4d8
+    cmp byte ptr [eax + 0x537ed0], 0
+    jmp 0x41e311
+''')
+# pt_okw: eax = x, edx = y -> eax = casilla si ahí puede ir el puerto (clase 1 sin estructura, edificio ni puente
+# derribado), 0 si no. Preserva el resto.
+pt_okw = place('pt_okw', f'''
+    push ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz pw_no
+    test byte ptr [eax + 3], 7
+    jnz pw_no
+    test byte ptr [eax + 9], 0x80
+    jnz pw_no
+    movzx ecx, word ptr [eax]
+    test ecx, 0x4000
+    jnz pw_no
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    je pw_out
+pw_no:
+    xor eax, eax
+pw_out:
+    pop ecx
+    ret
+''')
+# pt_water: ecx = ciudad -> eax = x, edx = y de la casilla del puerto (la primera libre de pt_ring), eax = -1 si no hay.
+# Preserva el resto.
+pt_water = place('pt_water', f'''
+    push ebx
+    push ecx
+    push esi
+    imul esi, ecx, 0xde
+    xor ebx, ebx
+pwt_l:
+    movsx eax, byte ptr [ebx*2 + {pt_ring:#x}]
+    movsx edx, byte ptr [ebx*2 + {pt_ring + 1:#x}]
+    movsx ecx, word ptr [esi + {CITIES:#x}]
+    add eax, ecx
+    movsx ecx, word ptr [esi + {CITIES + 2:#x}]
+    add edx, ecx
+    push eax
+    call {pt_okw:#x}
+    test eax, eax
+    pop eax
+    jnz pwt_out
+    inc ebx
+    cmp ebx, 8
+    jb pwt_l
+    or eax, -1
+pwt_out:
+    pop esi
+    pop ecx
+    pop ebx
+    ret
+''')
+# pt_ok: ecx = ciudad, ebx = bando -> eax = 1 si se puede convertir (existe, no marcada, viva, del bando, el bando tiene
+# otra ciudad viva, hay lugar en la tabla de sitios y una casilla de agua para el puerto), 0 si no. Preserva el resto.
+pt_ok = place('pt_ok', f'''
+    push edx
+    push esi
+    test ecx, ecx
+    jl pok_no
+    movsx edx, word ptr [0x537e2a]
+    cmp ecx, edx
+    jge pok_no
+    imul esi, ecx, 0xde
+    cmp byte ptr [esi + {PT_HIDE:#x}], 0
+    jne pok_no
+    cmp byte ptr [esi + 0x537ed0], 0
+    je pok_no
+    movzx eax, byte ptr [esi + 0x537ed1]
+    cmp eax, ebx
+    jne pok_no
+    cmp word ptr [0x55acb4], 50
+    jge pok_no
+pok_l:
+    dec edx
+    js pok_no
+    cmp edx, ecx
+    je pok_l
+    imul esi, edx, 0xde
+    cmp byte ptr [esi + {PT_HIDE:#x}], 0
+    jne pok_l
+    cmp byte ptr [esi + 0x537ed0], 0
+    je pok_l
+    movzx eax, byte ptr [esi + 0x537ed1]
+    cmp eax, ebx
+    jne pok_l
+    call {pt_water:#x}
+    cmp eax, -1
+    je pok_no
+    mov eax, 1
+    jmp pok_out
+pok_no:
+    xor eax, eax
+pok_out:
+    pop esi
+    pop edx
+    ret
+''')
+# pt_lead: eax = x, edx = y del líder, ebx = bando -> eax = ciudad que se puede convertir, -1 si no. Preserva el resto.
+pt_lead = place('pt_lead', f'''
+    push ecx
+    push edx
+    push edx
+    push eax
+    call 0x440be0
+    add esp, 8
+    movsx ecx, ax
+    call {pt_ok:#x}
+    test eax, eax
+    mov eax, ecx
+    jnz ptl_out
+    or eax, -1
+ptl_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# pt_apply: ecx = ciudad, eax = x, edx = y del puerto. La arrasa sin mensajes ni historia (+0xa4 = 0, 0x46a3a0 dueño
+# 8), la marca, pone sus 4 casillas como terreno común (estructura 0, palabra 1 baja 0, +8 copiada de la primera
+# casilla de tierra común del anillo, o 0), el puerto en el agua (palabra 0 dueño 8 | 0x4000, estructura 4, +8 = 0x20:
+# sitio tipo 0, dibujo 2, el más usado en los .SAV) y su sitio «Port <ciudad>» (tipo 0), y avisa (0x46a120, 0x441290).
+# No rehace el grafo ni la vista. Preserva todo.
+pt_apply = place('pt_apply', f'''
+    pushad
+    mov ebp, ecx
+    imul esi, ecx, 0xde
+    add esi, {CITIES:#x}
+    push edx
+    push eax
+    mov byte ptr [esi + 0xa4], 0
+    push 8
+    push ebp
+    call 0x46a3a0
+    add esp, 8
+    mov byte ptr [esi + 0xdd], 1
+    xor edi, edi
+    xor ebx, ebx
+pa_tl:
+    movsx eax, byte ptr [ebx*2 + {pt_ring:#x}]
+    movsx edx, byte ptr [ebx*2 + {pt_ring + 1:#x}]
+    movsx ecx, word ptr [esi]
+    add eax, ecx
+    movsx ecx, word ptr [esi + 2]
+    add edx, ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz pa_tn
+    test byte ptr [eax + 3], 7
+    jnz pa_tn
+    cmp byte ptr [eax + 2], 0
+    jne pa_tn
+    movzx ecx, word ptr [eax]
+    test ecx, 0x4000
+    jnz pa_tn
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    je pa_tn
+    movzx edi, word ptr [eax + 8]
+    jmp pa_four
+pa_tn:
+    inc ebx
+    cmp ebx, 8
+    jb pa_tl
+pa_four:
+    xor ebx, ebx
+pa_fl:
+    mov eax, ebx
+    and eax, 1
+    movsx ecx, word ptr [esi]
+    add eax, ecx
+    mov edx, ebx
+    shr edx, 1
+    movsx ecx, word ptr [esi + 2]
+    add edx, ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz pa_fn
+    and word ptr [eax], 0xbfff
+    and byte ptr [eax + 3], 0xf8
+    mov byte ptr [eax + 2], 0
+    mov word ptr [eax + 8], di
+pa_fn:
+    inc ebx
+    cmp ebx, 4
+    jb pa_fl
+    pop eax
+    pop edx
+    push edx
+    push eax
+    call {br_tile:#x}
+    test eax, eax
+    jz pa_site
+    mov cx, word ptr [eax]
+    and cx, 0xc3ff
+    or cx, 0x6000
+    mov word ptr [eax], cx
+    mov cl, byte ptr [eax + 3]
+    and cl, 0xf8
+    or cl, 4
+    mov byte ptr [eax + 3], cl
+    mov byte ptr [eax + 2], 0
+    mov word ptr [eax + 8], 0x20
+pa_site:
+    movsx eax, word ptr [0x55acb4]
+    inc word ptr [0x55acb4]
+    imul edi, eax, 0x96
+    add edi, 0x55acb6
+    push edi
+    xor eax, eax
+    mov ecx, 0x96
+    rep stosb
+    pop edi
+    pop eax
+    pop edx
+    mov word ptr [edi], ax
+    mov word ptr [edi + 2], dx
+    mov eax, dword ptr [{pt_name:#x}]
+    mov dword ptr [edi + 4], eax
+    mov al, byte ptr [{pt_name + 4:#x}]
+    mov byte ptr [edi + 8], al
+    xor ecx, ecx
+pa_nm:
+    mov al, byte ptr [esi + ecx + 4]
+    test al, al
+    jz pa_nmx
+    mov byte ptr [edi + ecx + 9], al
+    inc ecx
+    cmp ecx, 10
+    jb pa_nm
+pa_nmx:
+    push ebp
+    call 0x46a120
+    add esp, 4
+    call 0x441290
+    popad
+    ret
+''')
 # bd_pick (desde el clic; TR_X / TR_Y = líder): elige el destino, rotando por la casilla del líder (camino) y las
 # 4 vecinas N, E, S, O (montaña: camino; agua: puente, bd_brscan). Si el líder no se movió, sigue después de la
 # última ofrecida, así el «No» del diálogo y otro clic pasan a la siguiente. Deja BD_X, BD_Y, BD_DIR (4 = la del
-# líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto.
+# líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto. Las posiciones 0-4 piden BD_HASB; la 5 es el
+# puerto (pt_lead: ciudad propia del líder), con BD_DIR = 0xff (sin flecha).
 bd_pick = place('bd_pick', f'''
     push ebx
     push ecx
@@ -4612,13 +4880,17 @@ bd_pick = place('bd_pick', f'''
     jne bpk_go
     movzx esi, byte ptr [{BD_POS:#x}]
     inc esi
-    cmp esi, 5
+    cmp esi, 6
     jb bpk_go
     xor esi, esi
 bpk_go:
-    mov ebx, 5
+    mov ebx, 6
 bpk_l:
     mov word ptr [{BD_PW:#x}], 0
+    cmp esi, 5
+    je bpk_port
+    cmp byte ptr [{BD_HASB:#x}], 0
+    je bpk_nx
     test esi, esi
     jnz bpk_nb
     mov eax, edi
@@ -4651,9 +4923,27 @@ bpk_nb:
     or eax, 0x100
     mov word ptr [{BD_PW:#x}], ax
     jmp bpk_hit
+bpk_port:
+    push ebx
+    movsx ebx, word ptr [0x537ce8]
+    mov eax, edi
+    mov edx, ebp
+    call {pt_lead:#x}
+    pop ebx
+    cmp eax, -1
+    je bpk_nx
+    mov ecx, eax
+    or eax, 0x8000
+    mov word ptr [{BD_PW:#x}], ax
+    call {pt_water:#x}
+    mov word ptr [{BD_X:#x}], ax
+    mov word ptr [{BD_Y:#x}], dx
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    jmp bpk_hit
 bpk_nx:
+    mov word ptr [{BD_PW:#x}], 0
     inc esi
-    cmp esi, 5
+    cmp esi, 6
     jb bpk_nw
     xor esi, esi
 bpk_nw:
@@ -4678,14 +4968,39 @@ bpk_out:
     pop ebx
     ret
 ''')
-# bd_check (desde tr_check; edi = x, ebp = y del líder): BD_FLAG = 1 si la casilla (o una montaña vecina) admite camino y el grupo del bando
-# en turno tiene un ejército con "build". Preserva todo.
+# bd_check (desde tr_check; edi = x, ebp = y del líder): BD_HASB = 1 si el grupo del bando en turno tiene un ejército
+# con "build"; BD_FLAG = 1 si con eso hay camino o puente posible, o (con o sin constructor) el líder está en una ciudad
+# que se puede convertir en puerto (pt_lead). Preserva todo.
 bd_check = place('bd_check', f'''
     pushad
     mov byte ptr [{BD_FLAG:#x}], 0
+    mov byte ptr [{BD_HASB:#x}], 0
     movsx ebx, word ptr [0x537ce8]
     cmp ebx, 8
     jae bk_out
+    imul esi, ebx, 0x4f0
+    movsx ecx, word ptr [esi + 0x56eaa8]
+bk_army:
+    dec ecx
+    js bk_port
+    movsx eax, word ptr [esi + ecx*2 + 0x56ea94]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 15
+    ja bk_army
+    shr eax, 5
+    and eax, 0xf
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {buildstr:#x}
+    call {recbon:#x}
+    test eax, eax
+    jz bk_army
+    mov byte ptr [{BD_HASB:#x}], 1
     mov eax, edi
     mov edx, ebp
     call {bd_ok:#x}
@@ -4711,30 +5026,13 @@ bk_nb:
     inc esi
     cmp esi, 4
     jb bk_nb
-    jmp bk_out
+bk_port:
+    mov eax, edi
+    mov edx, ebp
+    call {pt_lead:#x}
+    cmp eax, -1
+    je bk_out
 bk_pos:
-    imul ebx, ebx, 0x4f0
-    movsx ecx, word ptr [ebx + 0x56eaa8]
-bk_army:
-    dec ecx
-    js bk_out
-    movsx eax, word ptr [ebx + ecx*2 + 0x56ea94]
-    imul eax, eax, 0x1c
-    movzx eax, word ptr [eax + 0x54fe5e]
-    mov edx, eax
-    and edx, 0x1f
-    cmp edx, 15
-    ja bk_army
-    shr eax, 5
-    and eax, 0xf
-    shl eax, 4
-    add eax, edx
-    imul eax, eax, 0xfc
-    add eax, 0x53c410
-    mov edx, {buildstr:#x}
-    call {recbon:#x}
-    test eax, eax
-    jz bk_army
     mov byte ptr [{BD_FLAG:#x}], 1
 bk_out:
     popad
@@ -7448,6 +7746,9 @@ brx_road:
     mov eax, {bd_dlgtxt:#x}
     cmp word ptr [{BD_PW:#x}], 0
     je 0x4b6516
+    mov eax, {bd_pttxt:#x}
+    test word ptr [{BD_PW:#x}], 0x8000
+    jnz 0x4b6516
     mov eax, {bd_brtxt:#x}
     jmp 0x4b6516
 ''')
@@ -7470,6 +7771,10 @@ brc_road:
     call {bd_any:#x}
     jmp brc_pr
 brc_bridge:
+    mov eax, {PT_FRAC}
+    test word ptr [{BD_PW:#x}], 0x8000
+    jnz brc_pr
+    movsx eax, word ptr [{BD_X:#x}]
     movzx ecx, byte ptr [{BD_PW:#x}]
     call {bd_brscan:#x}
 brc_pr:
@@ -12687,7 +12992,7 @@ TR_TXT, TR_HOT = 0x17, 0x18
 TR_PKT = 0x2a3
 BD_TXT, BD_HOT = 0x19, 0x1a
 BD_PKT = 0x2a4
-bd_menutxt = place_data('bd_menutxt', cstr_('Road/Bridge'))
+bd_menutxt = place_data('bd_menutxt', cstr_('Build'))
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
 # Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
 tr_check = place('tr_check', f'''
@@ -12943,6 +13248,8 @@ bd_recv = place('bd_recv', f'''
     movzx ebp, word ptr [esi + 0x12]
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
+    test ebp, 0x8000
+    jnz bv_pt
     test ebp, 0x100
     jnz bv_br
     mov eax, esi
@@ -12993,6 +13300,37 @@ bv_br:
     mov eax, esi
     mov edx, edi
     call {bd_brapply:#x}
+    jmp bv_redo
+bv_pt:
+    mov ecx, ebp
+    and ecx, 0x7fff
+    call {pt_ok:#x}
+    test eax, eax
+    jz bv_x
+    call {pt_water:#x}
+    cmp eax, esi
+    jne bv_x
+    cmp edx, edi
+    jne bv_x
+    push ecx
+    mov eax, {PT_FRAC}
+    mov ecx, ebx
+    call {bd_price:#x}
+    pop ecx
+    mov ebp, eax
+    imul eax, ebx, {SIDE:#x}
+    cmp ebp, dword ptr [eax + 0x536c14]
+    jg bv_x
+    neg ebp
+    push ecx
+    push ebp
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    pop ecx
+    mov eax, esi
+    mov edx, edi
+    call {pt_apply:#x}
     jmp bv_redo
 bv_xp:
     pop ecx
@@ -15051,6 +15389,9 @@ patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_
 patch(0x4c4bce, asm('call 0x49c4b0', 0x4c4bce), asm(f'call {ai_move:#x}', 0x4c4bce))
 # La IA reconstruye puentes (meta 9: ai_brrebev, ai_brreb, ai_brname9*)
 patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm(f'jmp {ai_brrebev:#x}', 0x41e4eb))
+# Puerto nuevo: la ciudad convertida (+0xdd) no está en ninguna casilla ni es reconstruible (pt_*)
+patch(0x440c26, asm('mov cx, word ptr [ebx + 0x537e2e]', 0x440c26), asm(f'jmp {pt_cityat:#x}', 0x440c26))
+patch(0x41e30a, asm('cmp byte ptr [eax + 0x537ed0], 0', 0x41e30a), asm(f'jmp {pt_ai9:#x}', 0x41e30a))
 patch(0x40dbf0, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brreb:#x}', 0x40dbf0))
 patch(0x40ce24, asm('movsx eax, word ptr [esp + 0x1e]; lea edx, [eax + eax*8]; lea eax, [eax + edx*4];'
                     'lea ecx, [eax + eax*2]; lea edx, [ecx*2 + 0x537e30]', 0x40ce24),

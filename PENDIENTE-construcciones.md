@@ -216,7 +216,7 @@ puente → G.
     (punta + medios + punta con `bd_brtab`, y `bd_fix` en los caminos de las dos orillas). `bd_pick` rota ahora por
     5 destinos: la casilla del líder (camino) y N, E, S, O (montaña → camino; agua → puente). `BD_PW` = 0 camino,
     0x100 | dir puente; viaja en la palabra libre del paquete 0x2a4 (+0x12) y `bd_recv` vuelve a medir con
-    `bd_brscan` antes de cobrar. Precio por casilla: `BD_BRW` = 3 veinteavos (15 %) agua, `BD_BRL` = 5 (25 %) lava,
+    `bd_brscan` antes de cobrar. Precio por casilla: `BD_BRW` = 3 veinteavos (15 %) agua, `BD_BRL` = 5 (25 %) lava (desde la 1.0.118.0: 6 y 12, 30 % y 60 %),
     entero o nada. Renglón del menú: «Road/Bridge»; diálogo «Building a bridge» con la flecha.
   - Caso no cubierto: un puente nuevo pegado de costado a otro puente se une con él para derribar (la inundación
     de `br_comp` va por los 4 lados). Raro; si molesta, limitar la inundación a la línea recta.
@@ -277,6 +277,31 @@ con el mismo desplazamiento que `prueba_emulada.py` (el bloque 0x536b30, de 0x2d
    las 4 casillas, la meta 9 no la ofrece, sitio nuevo y 0x582158 = 0xc0; control: una ciudad arrasada común
    sigue siendo reconstruible.
 
-**Próximo paso:** ubicar el diálogo/menú de la ciudad propia (dónde va el renglón) y medir el terreno de las
-casillas liberadas; después implementar 1-4 y 6. Frase para retomar: "Seguimos con PENDIENTE-construcciones.md,
-paso G, implementación".
+### G implementado (3/11/2026, vista-aliada 1.0.118.0)
+
+Cambios respecto del diseño de arriba:
+- **Sin diálogo ni paquete nuevos.** El menú de la ciudad es el mismo menú de órdenes del grupo (diálogo 34,
+  donde está Raze). El renglón de construir pasó a llamarse **«Build»** y el puerto es el **destino 5** de la
+  rotación de `bd_pick` (0 líder, 1-4 N/E/S/O, 5 puerto). Camino y puente siguen pidiendo un ejército con «build»
+  (`BD_HASB`, que deja `bd_check`); el puerto no. Viaja en el paquete 0x2a4 con `BD_PW = 0x8000 | ciudad` y x, y
+  de la casilla del puerto. Texto del diálogo: «City into a port».
+- **Las 4 casillas de la ciudad vuelven a ser comunes y el puerto va en el agua**, como todos los puertos de los
+  .SAV: la primera casilla libre del anillo de 8 vecinas (`pt_ring`) de clase agua/lava, sin estructura, edificio
+  ni puente derribado (`pt_water`). Casilla del puerto: palabra 0 dueño 8 | 0x4000, estructura 4, +8 = 0x20. Las 4
+  casillas: sin 0x4000, estructura 0, palabra 1 baja 0, +8 copiado de la primera casilla de tierra común del anillo
+  (o 0). **Abierto:** cómo se ven en el juego (tarea 97).
+- `pt_ok` exige además que el bando tenga **otra ciudad viva** (no se puede eliminar a sí mismo).
+- Precio `PT_FRAC` = 40 veinteavos (el doble del costo de ciudad del bando, con su rebaja, vía `bd_price`).
+- Miniatura propia (decisión 6) sin hacer: usa el dibujo del puerto común.
+- Ganchos: 0x440c26 → `pt_cityat` (la marcada no está en ninguna casilla), 0x41e30a → `pt_ai9` (la meta 9 la
+  saltea). `pt_apply` no manda mensajes ni evento de historia.
+- Prueba: `prueba_puerto.py`, MAL 0 (menú, rotación, costo, texto, envío, conversión completa y 9 controles, más
+  la arrasada común que sigue siendo reconstruible). prueba_caminos.py ajustada (BD_HASB y precios del puente).
+- En la misma versión: puente nuevo a **30 % agua / 60 % lava** por casilla (`BD_BRW` 6, `BD_BRL` 12), pedido
+  del usuario en la tarea 96.
+- Pruebas que ya fallaban en la 1.0.117.0 (comprobado compilando HEAD aparte): prueba_iaalianzas.py (2 fallas del
+  evento 12), prueba_ariete.py y prueba_botones.py (cuentan archivos de recursos).
+
+**Próximo paso:** resultado de la tarea 97. Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
+de `pt_apply`. Etapa 2 (la IA convierte ciudades) y miniatura propia, solo si el usuario lo pide. Frase para
+retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tarea 97".
