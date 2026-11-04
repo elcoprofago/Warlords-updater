@@ -7,38 +7,19 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
-2. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
-
-- [ ] **107.** Monitor de IA 1.0.22: actualizarlo cuando termine la tanda en curso (4/11/2026)
-  - No se pudo publicar porque el Monitor estaba abierto corriendo la tanda 131.
-  - Cuando termine: cerrar el Monitor y avisarme «publicá el Monitor 1.0.22».
-  - Después, abrirlo y tocar Actualizar. Ver que la lista «Todas las tandas» tenga barra para bajar, y que al
-    plegar el panel Tanda (flechita ▼) aparezca grande el cronómetro de la serie.
 
 - [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
   - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
   - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
-  - Para volver a consultarlo: abrir una consola en `F:\source
-eposctualizador-warlords\creditos` y
+  - Para volver a consultarlo: abrir una consola en `F:\sourceeposctualizador-warlords\creditos` y
     escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
   - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
-
-- [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
-Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
-desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
-arman los bandos de verdad. La misma serie mide además por qué la computadora nunca reconstruye un puente
-derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
-6. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.121.0** o posterior.
-7. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
-   **serie de 2**, **Nueva tanda**.
-8. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -72,6 +53,31 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
+Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
+desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
+arman los bandos de verdad. La misma serie mide además por qué la computadora nunca reconstruye un puente
+derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
+6. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.121.0** o posterior.
+7. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
+   **serie de 2**, **Nueva tanda**.
+8. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
+Resultado: (Claude, 4/11/2026: tandas 131 y 132 con la 1.0.128.0, 20 partidas.
+Puentes: la computadora casi nunca reconstruye porque **no le alcanza el oro**: reconstruir cuesta lo mismo que
+fundar una ciudad (800 en esas partidas) y la computadora suele tener unas 150 monedas; solo el 4 % de los turnos
+llega a 800. De 818 veces en que tenía un puente derribado a mano, 770 fueron por el oro. Las dos veces que pasó
+todos los controles, una lo reconstruyó (la primera reconstrucción registrada). El puente que viste destruir al
+héroe blanco (partida de Kor de la segunda serie, turnos 18 y 21) fue el criterio nuevo de defensa: derribar un
+puente que amenaza una ciudad propia.
+Convoyes: con Carrier solo, la computadora armó 2 convoyes (antes, ninguno). Se analiza aparte.)
+
+- [x] **107.** Monitor de IA 1.0.22: actualizarlo cuando termine la tanda en curso (4/11/2026)
+  - No se pudo publicar porque el Monitor estaba abierto corriendo la tanda 131.
+  - Cuando termine: cerrar el Monitor y avisarme «publicá el Monitor 1.0.22».
+  - Después, abrirlo y tocar Actualizar. Ver que la lista «Todas las tandas» tenga barra para bajar, y que al
+    plegar el panel Tanda (flechita ▼) aparezca grande el cronómetro de la serie.
+  Resultado: (Claude, 4/11/2026) publicado el Monitor de IA 1.0.22.
+
 
 - [x] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le

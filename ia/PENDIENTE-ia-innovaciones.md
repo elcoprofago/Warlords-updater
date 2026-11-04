@@ -308,3 +308,16 @@ menor que 100) y medir PV. Si domina un motivo de 26, ajustar ese filtro (el 4, 
 sospechoso: el puente se derribó justamente porque había enemigos cerca). Contar con
 `select n, count(*) from evento where tipo = 26 group by n` y `tipo in (4, 27)`.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.2".
+
+Resultado del paso 5.2 (tandas 131-132, vista-aliada 1.0.128.0, 20 partidas ok, Scarpart/Kor y sus _CA):
+- Evento 26: 818 sobre 20 puentes distintos. n = 2 (falta oro) 770 (94 %), 3 (sin camino) 32, 4 (enemigo cerca) 16;
+  1, 5, 6: 0. Igual en IA original y de prueba.
+- Oro de la computadora en esos turnos: mediana 148, p90 305; reconstruir cuesta lo de fundar una ciudad
+  ([0x56950e], 800 en estas partidas). Solo el 3,9 % de los turnos-color vivos de la IA tiene >= 800.
+- Evento 27: 2 (los dos únicos que pasaron todo); uno terminó en evento 4 (tanda 131, partida 8, turno 9, costo 800):
+  la primera reconstrucción registrada. La hipótesis del valor 1 queda sin apoyo: con oro, se elige y se ejecuta.
+- Lo que el usuario vio (héroe blanco derribando un puente, tanda 132, partida n = 8, Kor): color 0, evento 1 n = 101
+  en los turnos 18 y 21, precedidos de eventos 22: el criterio de defensa del paso 4 D.
+Lectura: la IA no reconstruye porque gasta el oro en producción cada turno y nunca junta 800. No es una falla del
+código. Cambiarlo es una decisión de juego (abaratar reconstruir, o que la IA ahorre para un puente que le abre
+camino); se le planteó al usuario. Mientras no decida, paso 5.2 cerrado.
