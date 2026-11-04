@@ -506,3 +506,21 @@ veneno, a la maldición y a la parálisis (además, la parálisis exige movimien
 tienen el bit 0x20** (ni pasos a 0, ni -5, ni marca); siguen pudiendo morir. Probado en prueba_pozos.py («bendecidos
 por un altar» y el control del grupo mezclado). Como la bendición ocurre antes de la explosión en el mismo paso, un
 grupo que entra a un altar con trampa sobrevive sin paralizarse. En el juego: tarea 101.
+
+## Pedidos del 4/11/2026 (después de 1.0.123.0): pendientes
+Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, pedidos del 4/11».
+1. **Costo:** hoy cada trampa cuesta lo de una ciudad ([0x56950e], br_cost con TR_MARK). Bajarlo al **25 %** del costo
+   de una ciudad, y **más aún** si el jugador tiene la ingeniería (bono artificer / engineering; averiguar cuánto
+   descuenta hoy la ingeniería en ciudades/puentes y aplicar el mismo criterio sobre ese 25 %). Revisar también el texto
+   del diálogo y la regla de que el OK se apaga si no alcanza el oro.
+2. **Ubicación:** hoy la casilla tiene que estar libre de ciudad (tr_check / tr_send). Permitir sembrarla **dentro de
+   una ciudad**, en cualquiera de sus cuatro casillas, una o varias. Averiguar qué pasa al pisarla un defensor que ya
+   está adentro, al entrar un atacante (el combate de la ciudad va antes o después de po_step/po_fall) y con el dibujo
+   (la ciudad tapa la trampa: po_draw y la lupa).
+3. **Varias trampas en la misma casilla:** el usuario quiere saber si se puede, y si se puede sin romper nada
+   («sin que muera el soldado»), habilitarlo. Hoy pz_map guarda un registro por casilla y tr_check exige «sin otro
+   pozo». Averiguar: si el mapa admite apilar (contador en el registro en vez de registros repetidos), qué hace
+   po_fall con dos (¿explota una por paso o todas?), y si el que siembra puede pararse sobre su propia trampa sin
+   detonarla (hoy no cae al salir; sí si vuelve a pisarla).
+Ojo: los cambios de costo y ubicación tocan la orden de red (tr_send / tr_recv): las dos PC tienen que tener la misma
+versión.

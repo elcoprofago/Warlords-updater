@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
-2. **Tarea 102** («Acerca de», un minuto) y **tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
+2. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
 3. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -16,15 +16,6 @@ Sorteo están acá (tarea 18).
 7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
 
 # Pendientes
-
-- [ ] **102.** «Acerca de» legible, otra vez (vista-aliada 1.0.123.0, 4/11/2026)
-Cambio: en la 1.0.120.0 los datos del parche salían encimados y oscuros. Ahora cada renglón va completo y centrado
-en la letra clara de los créditos: «Patch vista-aliada 1.0.123.0, Nov 4, 2026», «Credits: @elCoprofago» y
-«Anthropic Claude, 2026».
-1. Actualizá vista-aliada a la 1.0.123.0 (opción del Actualizador).
-2. Abrí DarklordAV.exe → botón del disquete → «Acerca de».
-3. ¿Los tres renglones se leen claros, sin encimarse con otro texto? Si no, sacá una captura.
-Resultado:
 
 - [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
 Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,
@@ -107,6 +98,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **102.** «Acerca de» legible, otra vez (vista-aliada 1.0.123.0, 4/11/2026)
+Cambio: en la 1.0.120.0 los datos del parche salían encimados y oscuros. Ahora cada renglón va completo y centrado
+en la letra clara de los créditos: «Patch vista-aliada 1.0.123.0, Nov 4, 2026», «Credits: @elCoprofago» y
+«Anthropic Claude, 2026».
+1. Actualizá vista-aliada a la 1.0.123.0 (opción del Actualizador).
+2. Abrí DarklordAV.exe → botón del disquete → «Acerca de».
+3. ¿Los tres renglones se leen claros, sin encimarse con otro texto? Si no, sacá una captura.
+Resultado (4/11/2026): se ve y se lee bien.
+
 - [x] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
 Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el
 juego arma solo, como los del amarillo que viste, no se anotaban. La 1.0.108.0 anota, solo en las tandas, todo
