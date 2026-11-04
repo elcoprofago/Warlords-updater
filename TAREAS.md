@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 94).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 95).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -9,7 +9,7 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 93** (menú de la torre «Rebuild City/Site»): ya.
+3. **Tarea 94** (precio del camino en montaña): ya.
 4. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
    esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -17,10 +17,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **93.** Menú de la torre: «Rebuild City/Site» (vista-aliada 1.0.112.0, 3/11/2026)
-1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.112.0**.
-2. En una partida, tocá el botón de la torre: el renglón que decía «Build City/Site» tiene que decir
-   **«Rebuild City/Site»**, y al elegirlo tiene que hacer lo mismo que antes.
+- [ ] **94.** Camino en montaña a un cuarto del precio de una ciudad (vista-aliada 1.0.113.0, 3/11/2026)
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.113.0**.
+2. Con el mismo bando de antes (ciudad a 800 con Artificer), pedí un camino en una montaña vecina: el diálogo
+   tiene que decir **200gp**, y al aceptar el oro tiene que bajar 200.
 Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
@@ -80,6 +80,13 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **93.** Menú de la torre: «Rebuild City/Site» (vista-aliada 1.0.112.0, 3/11/2026)
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.112.0**.
+2. En una partida, tocá el botón de la torre: el renglón que decía «Build City/Site» tiene que decir
+   **«Rebuild City/Site»**, y al elegirlo tiene que hacer lo mismo que antes.
+Resultado (3/11/2026): el menú dice «Rebuild City/Site». El camino en montaña costaba 400 (la mitad de una ciudad de
+800 con Artificer): pedido bajarlo a un cuarto (tarea 94).
+
 - [x] **92.** Flecha en el diálogo del camino; dónde dice «build» la torre (vista-aliada 1.0.111.0, 3/11/2026)
 Cambio: el diálogo «Building a road» muestra una **flecha roja** (del propio juego) hacia la montaña elegida, en
 vez de la palabra north/east/south/west. Cuando el camino va donde está parado el grupo, no hay flecha.
