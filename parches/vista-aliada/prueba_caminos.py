@@ -32,6 +32,7 @@ BD_MARK, BD_PKT = 0x7ffe, 0x2a4
 CIUDAD = 200                      # costo de fundar una ciudad ([0x56950e]); precio = CIUDAD * paso / 20
 # tipo de terreno: (clase, costo de paso)
 TERR = {0: (2, 2), 1: (1, 0), 2: (4, 0), 3: (3, 5)}
+NOMBRE = {1: b'Water', 2: b'Mountains', 3: b'Hills'}
 
 mal = 0
 def ver(nombre, r, esperado):
@@ -50,6 +51,7 @@ class Juego:
         mu.mem_write(0x503e00, struct.pack('<hh', 40, 30)); mu.mem_write(0x503e06, b'\6')
         for t, (c, paso) in TERR.items():
             mu.mem_write(0x535f0a + t * 0x58, struct.pack('<hh', paso, c))
+            mu.mem_write(0x535ed6 + t * 0x58, NOMBRE.get(t, b'Plains') + b'\0')
         for y in range(30):
             for x in range(40):
                 t = 1 if x >= 30 else 2 if 20 <= x <= 22 else 3 if x == 25 else 0
@@ -113,13 +115,19 @@ ver('control: edificio (palabra 0 & 0x4000)', menu(B, prep=lambda g: g.mu.mem_wr
 ver('control: no es su turno', menu(B, turno=1), 0)
 
 print('-- costo: 0x4b65e0(BD_MARK, jugador)')
-def costo(x, y, indice=BD_MARK):
+def costo(x, y, indice=BD_MARK, nombre=None):
     g = Juego(); mu = g.mu
+    if nombre:
+        mu.mem_write(0x535ed6, nombre + b'\0')
     mu.mem_write(BD_X, struct.pack('<hh', x, y))
     g.correr(0x4b65e0, RET, struct.pack('<3I', RET, indice, 0))
     return struct.unpack('<h', struct.pack('<I', mu.reg_read(UC_X86_REG_EAX))[:2])[0]
-ver('llanura (paso 2): 200 * 2 / 20 = 20', costo(5, 7), 20)
-ver('colinas (paso 5): 50', costo(25, 7), 50)
+ver('llanura: 5 % de 200 = 10', costo(5, 7), 10)
+ver('colinas: 15 % = 30', costo(25, 7), 30)
+for nom in (b'Desert', b'Desert Pla', b'Ice', b'Snow', b'Floor'):
+    ver(f'{nom.decode()}: 15 % = 30', costo(5, 7, nombre=nom), 30)
+for nom in (b'Forest', b'Marsh', b'Icy', b'Outlands'):
+    ver(f'control {nom.decode()}: 5 % = 10', costo(5, 7, nombre=nom), 10)
 ver('C.2 montaña (paso fijo 5, un cuarto de ciudad): 50', costo(21, 7), 50)
 ver('control: un puente (BR_CODE) sigue costando una ciudad', costo(5, 7, 0x2000), CIUDAD)
 
@@ -199,7 +207,7 @@ def pieza(g, x, y):
     t = g.tile(x, y); v = struct.unpack('<H', t[8:10])[0]
     return t[3] & 7, (v >> 8) & 3, (v >> 5) & 7, v & 0x1f
 g, c = recibir()
-ver('camino suelto en llanura: cobra 20, estructura 1, pieza horizontal (0,1), hoja 0', (c, pieza(g, 5, 7)), ([(2, -20)], (1, 0, 1, 0)))
+ver('camino suelto en llanura: cobra 10 (5 %), estructura 1, pieza horizontal (0,1), hoja 0', (c, pieza(g, 5, 7)), ([(2, -10)], (1, 0, 1, 0)))
 ver('  conserva los otros bits de la casilla (byte 3 = 0x19) y rehace grafo y vista', (g.tile(5, 7)[3], g.llamadas), (0x19, ['grafo', 'redibujo']))
 g, c = recibir(x=11, prep=lambda g: [g.setp8(10, y, 0x10 | (2 << 5)) for y in range(30)])
 ver('al lado de la columna de camino: nueva = solo O (3,0) con el bit 0x10 del vecino',
@@ -214,12 +222,12 @@ def puente(g):
     g.setb(30, 7, 3, 0x19); g.setp8(30, 7, (1 << 8) | (6 << 5))
 g, c = recibir(x=29, prep=puente)
 ver('junto a un puente: empalma (solo E, (3,1)) y el puente no se toca', (pieza(g, 29, 7), pieza(g, 30, 7)), ((1, 3, 1, 0), (1, 1, 6, 0)))
-ver('justo con el oro del costo', recibir(oro=20)[1], [(2, -20)])
+ver('justo con el oro del costo', recibir(oro=10)[1], [(2, -10)])
 def nada(**kw):
     g, c = recibir(**kw)
     return c, g.llamadas, g.tile(kw.get('x', 5), kw.get('y', 7))[3] & 7
 ver('control: lo manda otra máquina', nada(maquina=0), ([], [], 0))
-ver('control: no alcanza el oro', nada(oro=19), ([], [], 0))
+ver('control: no alcanza el oro', nada(oro=9), ([], [], 0))
 ver('control: bando de la computadora', nada(humano=False), ([], [], 0))
 ver('control: bando fuera de rango', nada(p=9), ([], [], 0))
 g, c = recibir(x=21)

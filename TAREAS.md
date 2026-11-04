@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 95).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 96).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -9,7 +9,7 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 94** (precio del camino en montaña): ya.
+3. **Tarea 95** (precio del camino según el terreno): ya.
 4. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
    esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -17,10 +17,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **94.** Camino en montaña a un cuarto del precio de una ciudad (vista-aliada 1.0.113.0, 3/11/2026)
-1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.113.0**.
-2. Con el mismo bando de antes (ciudad a 800 con Artificer), pedí un camino en una montaña vecina: el diálogo
-   tiene que decir **200gp**, y al aceptar el oro tiene que bajar 200.
+- [ ] **95.** Precio del camino según el terreno (vista-aliada 1.0.114.0, 3/11/2026)
+Cambio: cada casilla cuesta una fracción fija de lo que ese bando paga por fundar una ciudad: **25 %** en montaña,
+**15 %** en colinas, desierto, hielo/nieve y piso de mazmorra, **5 %** en los demás terrenos.
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.114.0**.
+2. Con el bando de la ciudad a 800: camino en montaña vecina = **200gp**; en colinas = **120gp**; en llanura o
+   bosque = **40gp**. En cada caso, al aceptar el oro tiene que bajar eso mismo.
 Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
@@ -80,6 +82,11 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **94.** Camino en montaña a un cuarto del precio de una ciudad (vista-aliada 1.0.113.0, 3/11/2026)
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.113.0**.
+2. Con el mismo bando de antes (ciudad a 800 con Artificer), pedí un camino en una montaña vecina: el diálogo
+   tiene que decir **200gp**, y al aceptar el oro tiene que bajar 200.
+Resultado (3/11/2026): reemplazada por la 95 (precio en porcentaje según el terreno).
 - [x] **93.** Menú de la torre: «Rebuild City/Site» (vista-aliada 1.0.112.0, 3/11/2026)
 1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.112.0**.
 2. En una partida, tocá el botón de la torre: el renglón que decía «Build City/Site» tiene que decir

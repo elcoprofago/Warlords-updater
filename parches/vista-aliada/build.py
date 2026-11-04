@@ -4163,6 +4163,10 @@ buildstr = place_data('buildstr', BUILD + b'\0')
 BD_MARK = 0x7ffe
 BD_FLAG = tr_vars + 6
 BD_DIV = 20
+# Fracción del costo de fundar una ciudad, en veinteavos (pedido del usuario): 25 % en montaña, 15 % en colinas,
+# desierto, hielo/nieve y piso de mazmorra o caverna (por el nombre del tipo de terreno, 0x535ed6 + tipo*0x58:
+# "Hill", "Dese", "Ice", "Snow", "Floo"), 5 % en los demás. No depende del costo de paso del terreno.
+BD_EASY, BD_HARD = 1, 3
 BD_MNT = 5                                  # un cuarto de lo que cuesta fundar una ciudad (pedido del usuario)
 bd_vars = place_data('bd_vars', bytes(12))
 BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
@@ -4195,7 +4199,23 @@ bd_ok = place('bd_ok', f'''
     je bdo_no
     cmp edx, 4
     je bdo_no
-    movzx eax, word ptr [ecx + 0x535f0a]
+    mov eax, dword ptr [ecx + 0x535ed6]
+    mov edx, eax
+    and edx, 0xffffff
+    cmp edx, 0x656349
+    je bdo_hard
+    cmp eax, 0x6c6c6948
+    je bdo_hard
+    cmp eax, 0x65736544
+    je bdo_hard
+    cmp eax, 0x776f6e53
+    je bdo_hard
+    cmp eax, 0x6f6f6c46
+    je bdo_hard
+    mov eax, {BD_EASY}
+    jmp bdo_out
+bdo_hard:
+    mov eax, {BD_HARD}
     jmp bdo_out
 bdo_no:
     xor eax, eax
