@@ -17,11 +17,11 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **95.** Precio del camino según el terreno (vista-aliada 1.0.115.0, 3/11/2026)
+- [ ] **95.** Precio del camino según el terreno (vista-aliada 1.0.116.0, 3/11/2026)
 Cambio: cada casilla cuesta una fracción fija de lo que **ese bando** paga por fundar una ciudad: **25 %** en
 montaña, **15 %** en colinas, desierto, hielo/nieve y piso de mazmorra, **5 %** en los demás terrenos. Los
 atributos que abaratan la ciudad (como Artificer) abaratan el camino en la misma proporción.
-1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.115.0**.
+1. Ya está instalada en C:\Warlords3. En otra PC: Actualizador, opción **9**; vista-aliada **1.0.116.0**.
 2. Mirá cuánto le cuesta a tu bando fundar una ciudad (Rebuild City/Site) y pedí caminos: en montaña tiene que
    costar la cuarta parte; en colinas, 15 %; en llanura o bosque, 5 %. Al aceptar, el oro baja eso mismo.
 3. Repetilo con un bando **con Artificer** y otro **sin Artificer**: el del Artificer tiene que pagar menos.

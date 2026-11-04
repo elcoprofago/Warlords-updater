@@ -63,7 +63,7 @@ class Juego:
             mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1))
         self.llamadas = []
         self.ajuste = {}
-        self.interceptar(0x4017a0, lambda a: self.ajuste.get(a[0], 0))
+        self.interceptar(0x4057a0, lambda a: self.ajuste.get(a[0], 0))
     def interceptar(self, addr, fn, pop=0):
         def g(mu, a, size, _):
             sp = mu.reg_read(UC_X86_REG_ESP)
@@ -136,7 +136,7 @@ for nom in (b'Desert', b'Desert Pla', b'Ice', b'Snow', b'Floor'):
 for nom in (b'Forest', b'Marsh', b'Icy', b'Outlands'):
     ver(f'control {nom.decode()}: 5 % = 10', costo(5, 7, nombre=nom), 10)
 ver('ciudad a mitad de precio para el bando (rebaja del juego): montaña 25 % de 100 = 25', costo(21, 7, bando=3, rebaja=True), 25)
-ver('ajuste 0x4017a0 = 5 (ciudad -50 %): colinas 15 % de 100 = 15', costo(25, 7, bando=2, ajuste=5), 15)
+ver('ajuste 0x4057a0 = 5 (ciudad -50 %): colinas 15 % de 100 = 15', costo(25, 7, bando=2, ajuste=5), 15)
 ver('ajuste -5 (ciudad +50 %): llanura 5 % de 300 = 15', costo(5, 7, bando=1, ajuste=-5), 15)
 ver('control: la rebaja de otro bando no cuenta', costo(21, 7, bando=4), 50)
 ver('C.2 montaña (paso fijo 5, un cuarto de ciudad): 50', costo(21, 7), 50)

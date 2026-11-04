@@ -4328,8 +4328,8 @@ bpk_out:
     ret
 ''')
 # bd_price: eax = fracción (veinteavos), ecx = bando -> eax = precio en oro. Preserva el resto. La base es lo que
-# ese bando paga por fundar una ciudad, calculado como el juego (0x4011a0): [0x56950e], a la mitad si el bando
-# tiene la rebaja de [0x536c12 + bando*0x1f8], y luego el ajuste de 0x4017a0(bando) (precio += precio*aj/-10).
+# ese bando paga por fundar una ciudad, calculado como el juego (0x4051a0): [0x56950e], a la mitad si el bando
+# tiene la rebaja de [0x536c12 + bando*0x1f8], y luego el ajuste de 0x4057a0(bando) (precio += precio*aj/-10).
 # Así los atributos que abaratan la ciudad abaratan también el camino.
 bd_price = place('bd_price', f'''
     push ecx
@@ -4348,7 +4348,7 @@ bd_price = place('bd_price', f'''
     mov esi, eax
 bdp_full:
     push ecx
-    call 0x4017a0
+    call 0x4057a0
     add esp, 4
     movsx eax, ax
     imul eax, esi
@@ -7291,7 +7291,7 @@ brc_road:
     mov esi, eax
     pop edx
     pop eax
-    jmp 0x4b65ec
+    jmp 0x4b6609
 ''')
 # Aplicación de reconstruir (0x4b6610(índice, costo, jugador), en todas las máquinas). Para un puente: vuelve a
 # comprobar que está derribado y vacío, cobra (0x43fd60(jugador, -costo)), lo repone y refresca grafo y vista.
