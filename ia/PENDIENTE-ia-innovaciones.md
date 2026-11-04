@@ -267,4 +267,14 @@ queda en tierra y casi nunca hay un segundo barco al lado. Si domina el motivo 4
 por ai_move embarque en otro barco y se sume (convoy desde el muelle), en vez de esperar a que coincidan.
 Evento 25 (1.0.108.0): crlink formó un enlace nuevo (x, y = casilla a la que se sumó), por cualquier vía.
 Tanda pedida: TAREAS 90 (serie de 2 x 10 con Scarpart, Kor, Scarpart_CR y Kor_CR: las dos primeras son el control).
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 90".
+
+Resultado de la tarea 90 (tandas 129-130, vista-aliada 1.0.120.0, 20 partidas ok, 8 en _CR):
+- Evento 25 (convoy formado por cualquier vía): 0. Evento 2: 0. Evento 3 (grupo partido): 22.
+- Evento 24 (ai_conv no armó): 187 = motivo 3 (con "Landing", sin puerto a 2 casillas del destino) 164, motivo 4
+  (sin barco propio vecino) 23; motivos 1, 2 y 5: 0. El diagnóstico funciona (escribe), así que el 0 del 25 es real
+  salvo falla propia de crlink->ia_evt (puntero verificado en el exe compilado, no en partida).
+- PV medio: Scarpart 7,66 / Scarpart_CR 7,56; Kor 4,97 / Kor_CR 5,19. Sin diferencia con muestras tan chicas.
+Lectura: el convoy no falla, se descarta con razón: sus casillas no desembarcan en playa (regla del convoy) y la IA
+casi siempre va a una playa. Sin valor para la IA mientras esa regla siga; no se toca. Paso 5.1 cerrado.
+Próximo paso: 5.2, por qué el evento 4 (reconstruir puentes) nunca sale.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.2".

@@ -10,8 +10,6 @@ Sorteo están acá (tarea 18).
 0. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas, antes de la 90.
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
-   esté instalada entonces.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
@@ -28,17 +26,6 @@ letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I
 3. Botón del disquete → «Acerca de»: ¿la versión, la fecha y los créditos se leen claros, con la misma letra que
    «Version 1.0.3»? Si no, sacá una captura.
 4. Escribí en el chat alguno de los trucos (por ejemplo «Not easy being green»): no tiene que pasar nada raro.
-Resultado:
-
-- [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
-Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el
-juego arma solo, como los del amarillo que viste, no se anotaban. La 1.0.108.0 anota, solo en las tandas, todo
-convoy que se forme y, cada vez que la rutina nueva pudo armar uno y no lo hizo, por qué. Las guardadas sin convoy (Scarpart y Kor) entran para comparar con la misma
-versión.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.108.0**.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá
-   **serie de 2**, **Nueva tanda**.
-3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
@@ -87,6 +74,21 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
+Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el
+juego arma solo, como los del amarillo que viste, no se anotaban. La 1.0.108.0 anota, solo en las tandas, todo
+convoy que se forme y, cada vez que la rutina nueva pudo armar uno y no lo hizo, por qué. Las guardadas sin convoy (Scarpart y Kor) entran para comparar con la misma
+versión.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.108.0**.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CR** y **Kor_CR**, Partidas: **10**, tildá
+   **serie de 2**, **Nueva tanda**.
+3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
+Resultado: (Claude, 4/11/2026: tandas 129 y 130 con la 1.0.120.0, 20 partidas, 8 con convoy posible. Ningún
+convoy formado por ninguna vía. En 187 ocasiones en que la computadora pudo intentarlo, 164 no lo hizo porque el
+destino no tenía un puerto cerca: un convoy solo atraca en puertos, y casi siempre iba a desembarcar en una playa.
+Puntos y ciudades: iguales a las partidas sin convoy. El caso del amarillo que viste fue con la 1.0.106.0, que no
+anotaba convoyes: no se puede confirmar si eran convoyes enlazados o barcos vecinos.)
+
 - [x] **98.** Ciudad convertida en puerto: sin calavera ni mejora equivocada, y el «Acerca de» nuevo (vista-aliada 1.0.119.0, 4/11/2026)
 Cambio: la ciudad convertida en puerto ya no aparece en el minimapa, y la pantalla de ciudades no la toma por una
 ciudad arrasada. Lo que pasó en la 97: al tocar ahí, el juego no encontraba una ciudad para reconstruir y, como
