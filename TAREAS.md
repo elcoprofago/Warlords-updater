@@ -8,15 +8,70 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
-2. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
-3. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
-8. **Tarea 105** (trampa en una ciudad: una sola explosión; Visor con roads02): junto con la 101, en la misma partida de prueba.
+2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
+Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
+desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
+arman los bandos de verdad. La misma serie mide además por qué la computadora nunca reconstruye un puente
+derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
+6. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.121.0** o posterior.
+7. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
+   **serie de 2**, **Nueva tanda**.
+8. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
+
+- [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
+Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
+manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
+detecta como cualquier otra desincronización.
+9. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.97.0**.
+10. Partida **nueva** en red con **Hidden Ruins** y **Discover Ruins**; esta PC de anfitrión, la notebook se une.
+11. Con un jugador de cada PC, caminá hasta descubrir un pozo o remolino. Anotá dónde está y fijate en la otra PC
+   (si son aliados con vista aliada, o mirando más tarde con el otro jugador): tiene que estar **en la misma casilla**.
+12. Mandá un ejército barato a un pozo ya descubierto: tiene que morir en las dos PC, con la misma tumba al lado.
+13. Construí una trampa con un ejército con «trap» y que un ejército del otro jugador caiga en ella: tiene que morir en
+   las dos PC.
+14. Si en algún momento sale un aviso de partida desincronizada, anotá en qué paso.
+Resultado:
+
+- [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
+Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
+computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
+15. Marcá lo que no coincida con lo que viste jugando contra la computadora.
+16. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
+Resultado:
+
+- [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
+  1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
+  2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
+
+- [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
+Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
+la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
+Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
+jugador** que **ya descubriste**. Como la computadora todavía no construye trampas, hacen falta **dos jugadores
+humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26 (paso 0 de esa tarea).
+17. Partida nueva en esta PC con **dos jugadores humanos** (A y B), con misiones de héroe activadas, incluida la
+   dificultad **Hard**.
+18. Con A, construí una trampa (como en la tarea 26) en tierra, a unas 5 a 15 casillas de donde va a andar el héroe de B.
+19. Con B, pasá al lado de la trampa hasta que salga «You have discovered the trap …».
+20. Con el héroe de B pedí misiones **Hard** en un templo varias veces (o en turnos distintos): alguna vez tiene que
+   salir «Escort trap-disarming team to Afland02» (con el nombre de esa trampa), y el texto «… must escort a
+   trap-disarming team to the trap Afland02.».
+21. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
+   caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
+22. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): mientras le queden explosiones la misión
+   de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
+23. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
+Resultado:
+
+# Hecho
 
 - [x] **105.** Trampa en una ciudad: una sola explosión, sin apilar; Visor abre roads02 (vista-aliada 1.0.126.0, Visor de historia 1.0.16.0, 4/11/2026)
 1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.126.0**.
@@ -24,7 +79,7 @@ Sorteo están acá (tarea 18).
 3. Sembrá una trampa en una ciudad propia y quedate encima: «Build Trap» tiene que quedar desactivado (no se apila).
 4. Control: en el campo se siguen apilando dos.
 5. Visor de historia: tiene que decir **VERSIÓN 1.0.16.0** y abrir **roads02.sav** (muestra las votaciones).
-Resultado:
+Resultado (4/11/2026): marcada cumplida. Además, con dos trampas en la ciudad y las demás casillas llenas, las unidades nuevas aparecen sobre las minas sin hacerlas explotar (lo deseado); aclarado en el Manual de vista-aliada 1.0.127.0.
 
 - [x] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
 Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,
@@ -35,18 +90,7 @@ igual que en combate. Morir, mueren igual (del 40 al 80 % del grupo).
 3. Al explotar: los que sobreviven, ¿tienen la cruz celeste y movimiento normal en el turno siguiente, sin la
    marca de paralizados?
 4. Control: una trampa en una casilla común, con otro grupo: los que sobreviven sí quedan paralizados.
-Resultado:
-
-- [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
-Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
-desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
-arman los bandos de verdad. La misma serie mide además por qué la computadora nunca reconstruye un puente
-derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.121.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
-   **serie de 2**, **Nueva tanda**.
-3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
+Resultado (4/11/2026): marcada cumplida por el usuario.
 
 - [x] **99.** Minimapa de «City Improvements», «Acerca de» legible y trucos desactivados (vista-aliada 1.0.120.0, 4/11/2026)
 Cambio: el minimapa de «City Improvements» (y el de las otras pantallas que muestran el mapa chico) ya no dibuja la
@@ -60,53 +104,6 @@ letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I
    «Version 1.0.3»? Si no, sacá una captura.
 4. Escribí en el chat alguno de los trucos (por ejemplo «Not easy being green»): no tiene que pasar nada raro.
 Resultado: 
-
-- [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
-Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
-manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
-detecta como cualquier otra desincronización.
-1. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.97.0**.
-2. Partida **nueva** en red con **Hidden Ruins** y **Discover Ruins**; esta PC de anfitrión, la notebook se une.
-3. Con un jugador de cada PC, caminá hasta descubrir un pozo o remolino. Anotá dónde está y fijate en la otra PC
-   (si son aliados con vista aliada, o mirando más tarde con el otro jugador): tiene que estar **en la misma casilla**.
-4. Mandá un ejército barato a un pozo ya descubierto: tiene que morir en las dos PC, con la misma tumba al lado.
-5. Construí una trampa con un ejército con «trap» y que un ejército del otro jugador caiga en ella: tiene que morir en
-   las dos PC.
-6. Si en algún momento sale un aviso de partida desincronizada, anotá en qué paso.
-Resultado:
-
-- [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
-Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
-computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
-1. Marcá lo que no coincida con lo que viste jugando contra la computadora.
-2. Fijate en el capítulo 16 («Lo que todavía no se sabe»): si querés que se investigue algo de ahí, decímelo.
-Resultado:
-
-- [ ] **36.** Revisar el borrador del Manual de uso (23/10/2026)
-  1. Abrir `manual\Manual-Era-de-Alianzas.pdf`.
-  2. Anotar lo que falte, sobre o esté mal explicado (capítulo y página) y pasármelo en una sesión.
-
-- [ ] **27.** Misión dura: escoltar al equipo que desarma una trampa (22/10/2026)
-Nueva misión de héroe, difícil: «Escort trap-disarming team to Afland02». Se cumple si **un ejército tuyo detona
-la trampa** (muere, como siempre) y **después el héroe llega por tierra** a una casilla vecina (o a la de la trampa).
-Volando o en barco no cuenta. Si la detona otro jugador, la misión fracasa. Solo te la ofrecen por trampas **de otro
-jugador** que **ya descubriste**. Como la computadora todavía no construye trampas, hacen falta **dos jugadores
-humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26 (paso 0 de esa tarea).
-1. Partida nueva en esta PC con **dos jugadores humanos** (A y B), con misiones de héroe activadas, incluida la
-   dificultad **Hard**.
-2. Con A, construí una trampa (como en la tarea 26) en tierra, a unas 5 a 15 casillas de donde va a andar el héroe de B.
-3. Con B, pasá al lado de la trampa hasta que salga «You have discovered the trap …».
-4. Con el héroe de B pedí misiones **Hard** en un templo varias veces (o en turnos distintos): alguna vez tiene que
-   salir «Escort trap-disarming team to Afland02» (con el nombre de esa trampa), y el texto «… must escort a
-   trap-disarming team to the trap Afland02.».
-5. Mandá a la trampa un ejército barato de B (no volador): tiene que morir y la misión seguir. Llevá el héroe de B
-   caminando a una casilla al lado: la misión tiene que quedar **cumplida** y dar el premio.
-6. Si podés, repetí con una segunda trampa y que la detone A (o un tercero): mientras le queden explosiones la misión
-   de B sigue; cuando la gastan del todo (tres veces) sin B, tiene que **fracasar** al turno siguiente. Y otra vez llegando con el héroe volando: no tiene que cumplirse hasta que llegue por tierra.
-7. Anotá abajo qué viste (si el nombre de la misión entra bien en su ventana).
-Resultado:
-
-# Hecho
 
 - [x] **104.** Trampa en una ciudad: se ve encima y explota al conquistarla (vista-aliada 1.0.125.0, 4/11/2026)
 Cambios: la trampa se dibuja encima de la ciudad (debajo de los ejércitos). Y el ejército que gana una ciudad y entra
