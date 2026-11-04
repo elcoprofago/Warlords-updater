@@ -344,5 +344,58 @@ end = b.run(0x4b6610, (0x4b6616,), args=(2, 300, UI))
 check('reconstruir: sitio 2 sigue el camino original (control)', end == 0x4b6616 and b.r('ESP') == b.esp0 - 4
       and b.calls == [])
 
+# ---- puentes largos (hasta 8): horizontal (3..8, 12) de 6 y vertical (17, 2..9) de 8
+LH = [(x, 12) for x in range(3, 9)]; LV = [(17, y) for y in range(2, 10)]
+def long_ext(razed_=False):
+    def f(bb):
+        for xy in LH + LV: bb.set_tile(*xy, WATER, 0 if razed_ else 1, 0x85 if razed_ else 0x05)
+    return f
+for nombre, code, todo in [('largo: derribar el de 6 desde el medio', BC(5, 12), LH),
+                           ('largo: derribar el de 8 desde una punta', BC(17, 9), LV)]:
+    b = Bench(extra=long_ext())
+    end = b.run(0x4d5e30, (), args=(code, 2))
+    otro = LV if todo is LH else LH
+    check(nombre, end == END and razed(b, *todo) and intact(b, *otro) and b.saved_ok(4), f'calls={b.calls}')
+for nombre, code, todo in [('largo: reconstruir el de 6 entero', BC(8, 12), LH),
+                           ('largo: reconstruir el de 8 entero', BC(17, 5), LV)]:
+    b = Bench(extra=long_ext(True))
+    end = b.run(0x4b6610, (), args=(code, 1000, UI))
+    check(nombre, end == END and intact(b, *todo) and b.calls[0] == ('gold', UI, -1000) and b.saved_ok(4),
+          f'calls={b.calls}')
+
+# ---- dibujo de los restos: el tramo medio marca los bordes que siguen en el agua
+def jmp_target(va):
+    assert img[va - BASE] == 0xe9
+    return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
+VFILL = jmp_target(0x45846d)
+CELL = 0x100c00
+PIECE = lambda row, col: 0x8000 | (row << 8) | (col << 5) | 2
+def long_piece_ext(pieces):
+    def f(bb):
+        for (x, y), w8 in pieces.items():
+            bb.set_tile(x, y, WATER, 0, 0x80 | (w8 >> 8) & 0x7f)
+            bb.mu.mem_write(tile_va(x, y) + 8, struct.pack('<H', w8))
+    return f
+hpieces = {(3, 12): PIECE(1, 6), (4, 12): PIECE(3, 4), (5, 12): PIECE(3, 4), (6, 12): PIECE(1, 7)}
+vpieces = {(17, 2): PIECE(2, 7), (17, 3): PIECE(3, 5), (17, 4): PIECE(3, 5), (17, 5): PIECE(2, 6)}
+uno = {(10, 17): PIECE(3, 4)}
+for nombre, pieces, xy, flags in [('restos: punta izquierda sin marcas', hpieces, (3, 12), 0),
+                                  ('restos: medio entre dos derribadas, sin cabeceras', hpieces, (4, 12), 0x6000),
+                                  ('restos: medio vertical, ambos bordes con agua', vpieces, (17, 3), 0x6000),
+                                  ('restos: medio vertical, abajo la punta derribada', vpieces, (17, 4), 0x6000),
+                                  ('restos: puente de una casilla, sin marcas', uno, (10, 17), 0)]:
+    b = Bench(extra=long_piece_ext(pieces))
+    b.mu.mem_write(CELL, bytes(0x10))
+    end = b.run(VFILL, (0x45847f,), regs=dict(ECX=tile_va(*xy), EDI=CELL, EBP=WATER))
+    got = struct.unpack('<H', b.mu.mem_read(CELL + 0xe, 2))[0]
+    w8 = pieces[xy]
+    check(nombre, end == 0x45847f and got == w8 | flags and b.r('EBX') == 0x44444444 and b.r('EDX') == 0x33333333
+          and b.r('ECX') == tile_va(*xy) and b.r('ESP') == b.esp0, f'got={got:#x}')
+# control: con la punta izquierda entera (no derribada), el medio conserva su borde izquierdo
+b = Bench(extra=long_piece_ext(hpieces)); b.set_tile(3, 12, WATER, 1, 0x05)
+end = b.run(VFILL, (0x45847f,), regs=dict(ECX=tile_va(4, 12), EDI=CELL, EBP=WATER))
+got = struct.unpack('<H', b.mu.mem_read(CELL + 0xe, 2))[0]
+check('restos: vecino entero no borra el borde', end == 0x45847f and got == PIECE(3, 4) | 0x4000, f'got={got:#x}')
+
 mal = res.count(False)
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)

@@ -205,3 +205,20 @@ puente → G.
   RES_TEXTS). Los «Darklords.exe» que parecían la tanda eran otro programa (cliente YIIOT): la serie no corría.
 - **Próximo paso:** (1.0.111.0 publicada: flecha roja de mvarrow en el diálogo del camino; el «build» de la torre sigue sin ubicarse, tarea 92 pide captura) F (puentes largos en derribar/reconstruir) y el puente nuevo sobre agua (C, punto 8); luego G.
   Tarea 91 del usuario: paso de montaña.
+- **F + puente nuevo implementados (3/11/2026) en vista-aliada 1.0.117.0.**
+  - F: `br_comp`, `br_canon`, `br_name` y `br_rebapply` ya recorrían hasta 8 casillas (inundación por lados,
+    `br_xy` de 8). Lo único que suponía puentes cortos era el dibujo de los restos: el tramo medio (3,4)/(3,5)
+    dibujaba cabeceras en sus dos bordes. Ahora `br_vfill` marca en la celda (0x2000 / 0x4000) los bordes que dan a
+    otra casilla derribada y `br_vdraw` no los dibuja: solo se ven las cabeceras de la costa. Pruebas en
+    prueba_puentes.py (puentes de 6 y 8; derribar, reconstruir, marcas).
+  - Puente nuevo: `bd_brscan` (de 1 a `BD_BRMAX` = 8 casillas de clase agua sin estructura, edificio ni puente
+    derribado, desde la orilla —la casilla de atrás no es agua— hasta una casilla que no es agua), `bd_brapply`
+    (punta + medios + punta con `bd_brtab`, y `bd_fix` en los caminos de las dos orillas). `bd_pick` rota ahora por
+    5 destinos: la casilla del líder (camino) y N, E, S, O (montaña → camino; agua → puente). `BD_PW` = 0 camino,
+    0x100 | dir puente; viaja en la palabra libre del paquete 0x2a4 (+0x12) y `bd_recv` vuelve a medir con
+    `bd_brscan` antes de cobrar. Precio por casilla: `BD_BRW` = 3 veinteavos (15 %) agua, `BD_BRL` = 5 (25 %) lava,
+    entero o nada. Renglón del menú: «Road/Bridge»; diálogo «Building a bridge» con la flecha.
+  - Caso no cubierto: un puente nuevo pegado de costado a otro puente se une con él para derribar (la inundación
+    de `br_comp` va por los 4 lados). Raro; si molesta, limitar la inundación a la línea recta.
+- **Próximo paso: G (puerto).** Antes, tarea 96 del usuario. Frase para retomar: "Seguimos con
+  PENDIENTE-construcciones.md, paso G".

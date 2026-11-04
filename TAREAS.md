@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 96).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 97).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 96** (puente nuevo sobre agua): cuando puedas, antes de la 90.
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
@@ -15,6 +16,20 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **96.** Construir un puente sobre agua y derribarlo (vista-aliada 1.0.117.0, 3/11/2026)
+El renglón del menú de órdenes ahora se llama **Road/Bridge**. Parado en la orilla con un Dwarf Sappers o Peasants
+(con el bono «build»), si en línea recta hay de 1 a 8 casillas de agua o lava que terminan en tierra, ofrece un
+puente en esa dirección (flecha roja; texto «Building a bridge»). Precio por casilla: 15 % de una ciudad sobre agua,
+25 % sobre lava; se cobra entero.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.117.0**.
+2. En Warlords3, con un constructor en la orilla de un lago o río, elegí **Road/Bridge**. Si ofrece primero un camino
+   en tu casilla, contestá **No** y volvé a elegir **Road/Bridge**: pasa a la dirección siguiente.
+3. Aceptá el puente: ¿se ve entero, con sus dos puntas, y se puede cruzar?
+4. Con otra unidad al lado del puente, **Raze**: ¿se derriba entero y quedan dibujados solo los restos de las dos
+   orillas (no en medio del agua)? Después **Build** (reconstruir): ¿vuelve entero?
+5. Si podés, probá uno largo (4 o más casillas). Si el precio te parece caro o barato, decime cuánto.
+Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
 Cambio: en la tarea 89 se contaron solo los convoyes que ordena la rutina nueva de la IA (ninguno); los que el

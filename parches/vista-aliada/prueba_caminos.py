@@ -23,6 +23,7 @@ TR_SEND = dest(0x4b6236)
 _i = img.index(b'\xb9\xa4\x02\x00\x00\xba', TR_SEND - BASE)
 assert _i < TR_SEND - BASE + 0x40
 BD_X = d32(BASE + _i + 6); BD_Y, BD_LX, BD_LY, BD_DIR = BD_X + 2, BD_X + 4, BD_X + 6, BD_X + 8
+BD_PW = BD_X + 10
 TR_CLICK = dest(0x4b0487)
 _j = img.index(b'\x85\xc0\x0f\x84', TR_CLICK - BASE)
 BD_PICK = dest(BASE + _j - 5)
@@ -198,14 +199,14 @@ ver('control: en camino lejos de montañas, nada', picks(10, 7, 1), [(0,)])
 
 print('-- red: bd_recv')
 PKT = 0x150000
-def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, tipo=BD_PKT, prep=None):
+def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, tipo=BD_PKT, prep=None, pw=0):
     g = Juego(); mu = g.mu
     if prep: prep(g)
     s = 0x536b30 + p * 0x1f8
     mu.mem_write(s, b'\1'); mu.mem_write(s + 3, bytes([1]))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
     mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<i', oro))
-    mu.mem_write(PKT + 6, struct.pack('<h', maquina)); mu.mem_write(PKT + 0xc, struct.pack('<4h', p, x, y, 0))
+    mu.mem_write(PKT + 6, struct.pack('<h', maquina)); mu.mem_write(PKT + 0xc, struct.pack('<4h', p, x, y, pw))
     cobros = []
     g.interceptar(0x43fd60, lambda a: cobros.append((a[0] & 0xffff, struct.unpack('<i', struct.pack('<I', a[1]))[0])))
     g.interceptar(0x4a4f20, lambda a: g.llamadas.append('grafo'))
@@ -248,6 +249,82 @@ ver('control: montaña con camino (no cobra dos veces)', nada(x=21, prep=lambda 
 ver('control: agua', nada(x=33), ([], [], 0))
 ver('control: ya hay camino (no cobra dos veces)', nada(x=10), ([], [], 1))
 ver('control: otro paquete sigue a tr_recv sin tocar nada', nada(tipo=0x2a3), ([], [], 0))
+
+print('-- puente nuevo sobre agua (punto 8)')
+# Lago en la fila 15: agua x = 30..33 y tierra en 34. Fila 20: 9 de agua (30..38) y tierra en 39: demasiado largo.
+# Vertical en x = 31: tierra en (31, 2) y (31, 6), agua 3..5. Lava: tipo 4 (clase 1, "Lava") en (31, 25), tierra en 32.
+def lago(g, camino=True):
+    mu = g.mu
+    mu.mem_write(0x535f0a + 4 * 0x58, struct.pack('<hh', 9, 1)); mu.mem_write(0x535ed6 + 4 * 0x58, b'Lava\0')
+    for x, y in ((34, 15), (39, 20), (31, 2), (31, 6), (32, 25), (29, 25)):
+        mu.mem_write(casilla(x, y), struct.pack('<H', 0))
+    mu.mem_write(casilla(31, 25), struct.pack('<H', 4))
+    mu.mem_write(casilla(30, 25), struct.pack('<H', 0))
+    if camino:
+        for x, y in ((29, 15), (29, 20), (31, 2), (30, 25)): g.setb(x, y, 3, 0x19); g.setp8(x, y, 0)
+ver('menú: en camino a orillas del lago: se puede (puente)', menu(B, x=29, y=15, prep=lago), 1)
+ver('control: en camino frente al mar abierto: no', menu(B, x=29, y=7, prep=lambda g: g.setb(29, 7, 3, 0x19)), 0)
+ver('control: 9 casillas de agua no llegan: no', menu(B, x=29, y=20, prep=lago), 0)
+def picks_pw(x, y, n, prep):
+    g = Juego(); mu = g.mu; prep(g)
+    mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    r = []
+    for i in range(n):
+        g.correr(BD_PICK, RET, struct.pack('<I', RET))
+        ok = mu.reg_read(UC_X86_REG_EAX)
+        r.append((ok, *struct.unpack('<hh', mu.mem_read(BD_X, 4)), mu.mem_read(BD_DIR, 1)[0],
+                  struct.unpack('<H', mu.mem_read(BD_PW, 2))[0]) if ok else (0,))
+    return r
+ver('bd_pick en camino junto al lago: puente al este, una y otra vez', picks_pw(29, 15, 2, lago), [(1, 30, 15, 1, 0x101)] * 2)
+ver('  sin camino: su casilla (camino) y luego el puente', picks_pw(29, 15, 3, lambda g: lago(g, False)),
+    [(1, 29, 15, 4, 0), (1, 30, 15, 1, 0x101), (1, 29, 15, 4, 0)])
+ver('  puente vertical al sur', picks_pw(31, 2, 1, lago), [(1, 31, 3, 2, 0x102)])
+def costo_pw(x, y, pw):
+    g = Juego(); mu = g.mu; lago(g)
+    mu.mem_write(BD_X, struct.pack('<hh', x, y)); mu.mem_write(BD_PW, struct.pack('<H', pw))
+    g.correr(0x4b65e0, RET, struct.pack('<III', RET, BD_MARK, 0))
+    return mu.reg_read(UC_X86_REG_EAX) & 0xffff
+ver('costo: puente de 4 sobre agua = 4 x 15 % de 200 = 120', costo_pw(30, 15, 0x101), 120)
+ver('costo: lava de 1 = 25 % = 50', costo_pw(31, 25, 0x101), 50)
+def texto_pw():
+    g = Juego(); mu = g.mu
+    mu.mem_write(0x587e5c, struct.pack('<h', BD_MARK)); mu.mem_write(BD_DIR, b'\1'); mu.mem_write(BD_PW, struct.pack('<H', 0x101))
+    g.anotar(0x4dd260, '4dd260', 3)
+    g.correr(0x4b64f0, 0x4b651e, struct.pack('<I', RET))
+    return bytes(mu.mem_read(g.llamadas[0][2], 32)).split(b'\0')[0]
+ver('texto: "Building a bridge"', texto_pw(), b'Building a bridge')
+def enviar_pw():
+    g = Juego(); mu = g.mu
+    mu.mem_write(BD_X, struct.pack('<hh', 30, 15)); mu.mem_write(BD_PW, struct.pack('<H', 0x101))
+    paquetes = []
+    g.interceptar(0x4dd3b0, lambda a: paquetes.append((a[0], struct.unpack('<4h', mu.mem_read(a[1], 8)))))
+    g.correr(TR_SEND, RET, struct.pack('<4I', RET, BD_MARK, 20, 2))
+    return paquetes
+ver('envío: BD_PKT con 0x101 (puente al este)', enviar_pw(), [(BD_PKT, (2, 30, 15, 0x101))])
+g, c = recibir(x=30, y=15, pw=0x101, oro=500, prep=lago)
+ver('red: puente de 4 al este: cobra 120, punta (1,6) + medios (3,4) + punta (1,7)',
+    (c, [pieza(g, x, 15)[:3] for x in range(30, 34)], g.llamadas),
+    ([(2, -120)], [(1, 1, 6), (1, 3, 4), (1, 3, 4), (1, 1, 7)], ['grafo', 'redibujo']))
+ver('  el camino de la orilla oeste empalma (solo E)', pieza(g, 29, 15)[:3], (1, 3, 1))
+g, c = recibir(x=31, y=3, pw=0x102, oro=500, prep=lago)
+ver('red: vertical de 3 al sur: (2,7) (3,5) (2,6), cobra 90', (c, [pieza(g, 31, y)[:3] for y in (3, 4, 5)]),
+    ([(2, -90)], [(1, 2, 7), (1, 3, 5), (1, 2, 6)]))
+g, c = recibir(x=33, y=15, pw=0x103, oro=500, prep=lambda g: (lago(g), g.setb(34, 15, 3, 0x19)))
+ver('red: el mismo lago desde el este (oeste): (1,7) en 33 ... (1,6) en 30', [pieza(g, x, 15)[:3] for x in (30, 31, 33)],
+    [(1, 1, 6), (1, 3, 4), (1, 1, 7)])
+g, c = recibir(x=31, y=25, pw=0x101, oro=500, prep=lago)
+ver('red: lava de una casilla: tramo medio (3,4), cobra 50', (c, pieza(g, 31, 25)[:3]), ([(2, -50)], (1, 3, 4)))
+def nada_pw(x, y, pw, oro=500, prep=lago):
+    g, c = recibir(x=x, y=y, pw=pw, oro=oro, prep=prep)
+    return c, g.llamadas, [g.tile(xx, y)[3] & 7 for xx in range(30, 34)]
+ver('control: no alcanza el oro (119)', nada_pw(30, 15, 0x101, oro=119), ([], [], [0, 0, 0, 0]))
+ver('control: 9 de agua no llegan', nada_pw(30, 20, 0x101), ([], [], [0, 0, 0, 0]))
+ver('control: mar abierto', nada_pw(30, 7, 0x101), ([], [], [0, 0, 0, 0]))
+ver('control: empieza en agua (la de atrás también es agua)', nada_pw(31, 15, 0x101), ([], [], [0, 0, 0, 0]))
+ver('control: un puente derribado en el medio', nada_pw(30, 15, 0x101, prep=lambda g: (lago(g), g.setb(32, 15, 9, 0x80))),
+    ([], [], [0, 0, 0, 0]))
+ver('control: un edificio en el agua', nada_pw(30, 15, 0x101, prep=lambda g: (lago(g), g.mu.mem_write(casilla(31, 15), struct.pack('<H', 0x4001)))),
+    ([], [], [0, 0, 0, 0]))
 
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

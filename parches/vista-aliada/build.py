@@ -4170,7 +4170,18 @@ BD_EASY, BD_HARD = 1, 3
 BD_MNT = 5                                  # un cuarto de lo que cuesta fundar una ciudad (pedido del usuario)
 bd_vars = place_data('bd_vars', bytes(12))
 BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
+BD_POS, BD_PW = bd_vars + 9, bd_vars + 10   # posición en la rotación (0 = la del líder, 1-4 = N, E, S, O); 0 camino, 0x100|dir puente
 bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
+bd_brtxt = place_data('bd_brtxt', cstr_('Building a bridge'))
+# Puente nuevo (punto 8): tira recta de 1 a BD_BRMAX casillas de clase agua sin estructura, edificio ni puente
+# derribado, que sale de la orilla (la casilla del líder, que no es agua) y termina en una casilla que no es agua.
+# Por casilla: BD_BRW veinteavos del costo de fundar una ciudad sobre agua, BD_BRL sobre lava (nombre del tipo de
+# terreno "Lava"/"lava"). Se cobra entero o nada. En BD_X/BD_Y va la primera casilla de agua y en BD_DIR la dirección.
+BD_BRMAX, BD_BRW, BD_BRL = 8, 3, 5
+_pw = lambda r, c: (r << 8) | (c << 5)
+# Pieza por dirección (N, E, S, O): primera casilla, última, tramo medio (y puente de una casilla).
+bd_brtab = place_data('bd_brtab', struct.pack('<12H', _pw(2, 6), _pw(2, 7), _pw(3, 5),  _pw(1, 6), _pw(1, 7), _pw(3, 4),
+                                              _pw(2, 7), _pw(2, 6), _pw(3, 5),  _pw(1, 7), _pw(1, 6), _pw(3, 4)))
 # Flecha roja recta de PICTS\mvarrow.pcx (archivo 163 de la tabla de War3.RES, celdas de 32x32) por dirección N, E,
 # S, O: la dibuja br_rebdraw en el recuadro de imagen del diálogo, en vez de nombrar la dirección (pedido del usuario).
 BD_ARROW_FILE = 163
@@ -4258,74 +4269,6 @@ bd_any = place('bd_any', f'''
 bdy_m:
     pop eax
     jmp {bd_okm:#x}
-''')
-# bd_pick (desde el clic; TR_X / TR_Y = líder): elige el destino. La casilla del líder si admite camino; si no, la
-# montaña vecina siguiente a la última ofrecida (si el líder no se movió), en orden N, E, S, O. Deja BD_X, BD_Y,
-# BD_DIR; eax = 0 si no hay ninguna. Preserva el resto.
-bd_pick = place('bd_pick', f'''
-    push ebx
-    push ecx
-    push edx
-    push esi
-    push edi
-    push ebp
-    movsx edi, word ptr [{TR_X:#x}]
-    movsx ebp, word ptr [{TR_Y:#x}]
-    mov eax, edi
-    mov edx, ebp
-    call {bd_ok:#x}
-    test eax, eax
-    jz bpk_nb
-    mov word ptr [{BD_X:#x}], di
-    mov word ptr [{BD_Y:#x}], bp
-    mov byte ptr [{BD_DIR:#x}], 4
-    jmp bpk_lpos
-bpk_nb:
-    xor esi, esi
-    cmp word ptr [{BD_LX:#x}], di
-    jne bpk_go
-    cmp word ptr [{BD_LY:#x}], bp
-    jne bpk_go
-    movzx esi, byte ptr [{BD_DIR:#x}]
-    inc esi
-    cmp esi, 4
-    jbe bpk_go
-    xor esi, esi
-bpk_go:
-    mov ecx, 4
-bpk_l:
-    and esi, 3
-    movsx eax, byte ptr [esi*2 + {bd_dxy:#x}]
-    movsx edx, byte ptr [esi*2 + {bd_dxy + 1:#x}]
-    add eax, edi
-    add edx, ebp
-    mov ebx, eax
-    call {bd_okm:#x}
-    test eax, eax
-    jnz bpk_hit
-    inc esi
-    dec ecx
-    jnz bpk_l
-    mov byte ptr [{BD_DIR:#x}], 0xff
-    xor eax, eax
-    jmp bpk_out
-bpk_hit:
-    mov word ptr [{BD_X:#x}], bx
-    mov word ptr [{BD_Y:#x}], dx
-    mov eax, esi
-    mov byte ptr [{BD_DIR:#x}], al
-bpk_lpos:
-    mov word ptr [{BD_LX:#x}], di
-    mov word ptr [{BD_LY:#x}], bp
-    mov eax, 1
-bpk_out:
-    pop ebp
-    pop edi
-    pop esi
-    pop edx
-    pop ecx
-    pop ebx
-    ret
 ''')
 # bd_price: eax = fracción (veinteavos), ecx = bando -> eax = precio en oro. Preserva el resto. La base es lo que
 # ese bando paga por fundar una ciudad, calculado como el juego (0x4051a0): [0x56950e], a la mitad si el bando
@@ -4509,6 +4452,232 @@ bda_nb:
 bdn_r:
     ret
 ''')
+# bd_brscan: eax = x, edx = y de la primera casilla de agua, ecx = dirección (0-3) -> eax = veinteavos del puente
+# entero (0 si no se puede), ecx = casillas. Preserva el resto.
+bd_brscan = place('bd_brscan', f'''
+    push ebx
+    push edx
+    push esi
+    push edi
+    push ebp
+    and ecx, 3
+    movsx esi, byte ptr [ecx*2 + {bd_dxy:#x}]
+    movsx edi, byte ptr [ecx*2 + {bd_dxy + 1:#x}]
+    mov ebx, eax
+    mov ebp, edx
+    sub eax, esi
+    sub edx, edi
+    call {br_tile:#x}
+    test eax, eax
+    jz bbs_no
+    movzx ecx, word ptr [eax]
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    je bbs_no
+    push 0
+    xor ecx, ecx
+bbs_l:
+    mov eax, ebx
+    mov edx, ebp
+    call {br_tile:#x}
+    test eax, eax
+    jz bbs_nop
+    movzx edx, word ptr [eax]
+    push edx
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    cmp word ptr [edx + 0x535f0c], 1
+    pop edx
+    jne bbs_land
+    test edx, 0x4000
+    jnz bbs_nop
+    test byte ptr [eax + 3], 7
+    jnz bbs_nop
+    test byte ptr [eax + 9], 0x80
+    jnz bbs_nop
+    cmp ecx, {BD_BRMAX}
+    jae bbs_nop
+    and edx, 0x1f
+    imul edx, edx, 0x58
+    mov eax, dword ptr [edx + 0x535ed6]
+    or eax, 0x20
+    cmp eax, 0x6176616c
+    mov eax, {BD_BRW}
+    jne bbs_add
+    mov eax, {BD_BRL}
+bbs_add:
+    add dword ptr [esp], eax
+    inc ecx
+    add ebx, esi
+    add ebp, edi
+    jmp bbs_l
+bbs_land:
+    pop eax
+    test ecx, ecx
+    jnz bbs_out
+    jmp bbs_no
+bbs_nop:
+    add esp, 4
+bbs_no:
+    xor eax, eax
+    xor ecx, ecx
+bbs_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ebx
+    ret
+''')
+# bd_brapply: eax = x, edx = y de la primera casilla de agua, ecx = dirección, ebx = casillas. Pone el puente
+# (estructura 1, hoja 0, punta + medios + punta) y acomoda los caminos de las dos orillas. No rehace el grafo ni la
+# vista. Preserva todo.
+bd_brapply = place('bd_brapply', f'''
+    pushad
+    and ecx, 3
+    movsx esi, byte ptr [ecx*2 + {bd_dxy:#x}]
+    movsx edi, byte ptr [ecx*2 + {bd_dxy + 1:#x}]
+    imul ecx, ecx, 6
+    add ecx, {bd_brtab:#x}
+    mov ebp, ebx
+    push eax
+    push edx
+    xor ebx, ebx
+bba_l:
+    push eax
+    mov eax, ebx
+    inc eax
+    cmp eax, ebp
+    movzx eax, word ptr [ecx + 2]
+    je bba_last
+    movzx eax, word ptr [ecx + 4]
+    test ebx, ebx
+    jnz bba_have
+    movzx eax, word ptr [ecx]
+    jmp bba_have
+bba_last:
+    test ebx, ebx
+    jnz bba_have
+    movzx eax, word ptr [ecx + 4]
+bba_have:
+    xchg eax, dword ptr [esp]
+    push eax
+    call {br_tile:#x}
+    test eax, eax
+    jz bba_skip
+    push ecx
+    mov ecx, dword ptr [esp + 8]
+    mov word ptr [eax + 8], cx
+    mov cl, byte ptr [eax + 3]
+    and cl, 0xf8
+    or cl, 1
+    mov byte ptr [eax + 3], cl
+    and byte ptr [eax + 9], 0x7f
+    pop ecx
+bba_skip:
+    pop eax
+    add esp, 4
+    add eax, esi
+    add edx, edi
+    inc ebx
+    cmp ebx, ebp
+    jb bba_l
+    call {bd_fix:#x}
+    pop edx
+    pop eax
+    sub eax, esi
+    sub edx, edi
+    call {bd_fix:#x}
+    popad
+    ret
+''')
+# bd_pick (desde el clic; TR_X / TR_Y = líder): elige el destino, rotando por la casilla del líder (camino) y las
+# 4 vecinas N, E, S, O (montaña: camino; agua: puente, bd_brscan). Si el líder no se movió, sigue después de la
+# última ofrecida, así el «No» del diálogo y otro clic pasan a la siguiente. Deja BD_X, BD_Y, BD_DIR (4 = la del
+# líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto.
+bd_pick = place('bd_pick', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    movsx edi, word ptr [{TR_X:#x}]
+    movsx ebp, word ptr [{TR_Y:#x}]
+    xor esi, esi
+    cmp word ptr [{BD_LX:#x}], di
+    jne bpk_go
+    cmp word ptr [{BD_LY:#x}], bp
+    jne bpk_go
+    movzx esi, byte ptr [{BD_POS:#x}]
+    inc esi
+    cmp esi, 5
+    jb bpk_go
+    xor esi, esi
+bpk_go:
+    mov ebx, 5
+bpk_l:
+    mov word ptr [{BD_PW:#x}], 0
+    test esi, esi
+    jnz bpk_nb
+    mov eax, edi
+    mov edx, ebp
+    call {bd_ok:#x}
+    test eax, eax
+    jz bpk_nx
+    mov word ptr [{BD_X:#x}], di
+    mov word ptr [{BD_Y:#x}], bp
+    mov byte ptr [{BD_DIR:#x}], 4
+    jmp bpk_hit
+bpk_nb:
+    lea ecx, [esi - 1]
+    movsx eax, byte ptr [ecx*2 + {bd_dxy:#x}]
+    movsx edx, byte ptr [ecx*2 + {bd_dxy + 1:#x}]
+    add eax, edi
+    add edx, ebp
+    mov word ptr [{BD_X:#x}], ax
+    mov word ptr [{BD_Y:#x}], dx
+    mov byte ptr [{BD_DIR:#x}], cl
+    call {bd_okm:#x}
+    test eax, eax
+    jnz bpk_hit
+    movsx eax, word ptr [{BD_X:#x}]
+    movsx edx, word ptr [{BD_Y:#x}]
+    call {bd_brscan:#x}
+    test eax, eax
+    jz bpk_nx
+    movzx eax, byte ptr [{BD_DIR:#x}]
+    or eax, 0x100
+    mov word ptr [{BD_PW:#x}], ax
+    jmp bpk_hit
+bpk_nx:
+    inc esi
+    cmp esi, 5
+    jb bpk_nw
+    xor esi, esi
+bpk_nw:
+    dec ebx
+    jnz bpk_l
+    mov byte ptr [{BD_POS:#x}], 0xff
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    xor eax, eax
+    jmp bpk_out
+bpk_hit:
+    mov eax, esi
+    mov byte ptr [{BD_POS:#x}], al
+    mov word ptr [{BD_LX:#x}], di
+    mov word ptr [{BD_LY:#x}], bp
+    mov eax, 1
+bpk_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
 # bd_check (desde tr_check; edi = x, ebp = y del líder): BD_FLAG = 1 si la casilla (o una montaña vecina) admite camino y el grupo del bando
 # en turno tiene un ejército con "build". Preserva todo.
 bd_check = place('bd_check', f'''
@@ -4529,6 +4698,14 @@ bk_nb:
     add eax, edi
     add edx, ebp
     call {bd_okm:#x}
+    test eax, eax
+    jnz bk_pos
+    movsx eax, byte ptr [esi*2 + {bd_dxy:#x}]
+    movsx edx, byte ptr [esi*2 + {bd_dxy + 1:#x}]
+    add eax, edi
+    add edx, ebp
+    mov ecx, esi
+    call {bd_brscan:#x}
     test eax, eax
     jnz bk_pos
     inc esi
@@ -7269,6 +7446,9 @@ brx_trap:
 brx_road:
     push 0
     mov eax, {bd_dlgtxt:#x}
+    cmp word ptr [{BD_PW:#x}], 0
+    je 0x4b6516
+    mov eax, {bd_brtxt:#x}
     jmp 0x4b6516
 ''')
 # Costo (0x4b65e0(índice, jugador), en 0x4b65e5 tras el push esi): el de fundar una ciudad para un puente.
@@ -7285,7 +7465,14 @@ brc_road:
     push edx
     movsx eax, word ptr [{BD_X:#x}]
     movsx edx, word ptr [{BD_Y:#x}]
+    cmp word ptr [{BD_PW:#x}], 0
+    jne brc_bridge
     call {bd_any:#x}
+    jmp brc_pr
+brc_bridge:
+    movzx ecx, byte ptr [{BD_PW:#x}]
+    call {bd_brscan:#x}
+brc_pr:
     movsx ecx, word ptr [esp + 0x14]
     call {bd_price:#x}
     mov esi, eax
@@ -7354,13 +7541,17 @@ brp_out:
 # 0x21 + ([+0xe] & 0xf), pieza ([+0xe] >> 5) & 0x1f = fila*8 + columna de 48x48. Un puente derribado (estructura 0)
 # lleva ahora [+8] en [celda+0xe] con el bit 0x8000 (el de derribado); en el resto de las celdas sin estructura ese
 # bit se borra, porque [celda+0xe] queda de lo que mostraba antes la celda.
+# Puentes largos (hasta 8): el tramo medio (3,4)/(3,5) dibuja cabecera en sus dos bordes, como un puente de una
+# casilla; si del otro lado de un borde sigue el puente derribado, br_vfill marca ese borde en la celda (0x2000 el
+# primer rectángulo: izquierda/arriba; 0x4000 el segundo: derecha/abajo) y br_vdraw no lo dibuja. Así solo se ven las
+# cabeceras de la costa.
 BR_STUB = 18
 br_stubtab = bytearray(32 * 8)                          # por pieza, hasta 2 rectángulos (dx, dy, ancho, alto)
 for piece, rects in {1 * 8 + 6: [(0, 0, BR_STUB, 48)],                         # horizontal, mitad izquierda
                      1 * 8 + 7: [(48 - BR_STUB, 0, BR_STUB, 48)],              # horizontal, mitad derecha
                      2 * 8 + 7: [(0, 0, 48, BR_STUB)],                         # vertical, mitad de arriba
                      2 * 8 + 6: [(0, 48 - BR_STUB, 48, BR_STUB)],              # vertical, mitad de abajo
-                     3 * 8 + 4: [(0, 0, BR_STUB, 48), (48 - BR_STUB, 0, BR_STUB, 48)],   # de una casilla
+                     3 * 8 + 4: [(0, 0, BR_STUB, 48), (48 - BR_STUB, 0, BR_STUB, 48)],   # tramo medio (o puente de 1)
                      3 * 8 + 5: [(0, 0, 48, BR_STUB), (0, 48 - BR_STUB, 48, BR_STUB)]}.items():
     for k, r in enumerate(rects):
         struct.pack_into('<bbBB', br_stubtab, piece * 8 + k * 4, *r)
@@ -7383,6 +7574,36 @@ bvf_none:
     jne 0x45847f
     mov ax, word ptr [ecx + 8]
     mov word ptr [edi + 0xe], ax
+    push ebx
+    push edx
+    movzx edx, ax
+    shr edx, 5
+    and edx, 0x1f
+    mov ebx, 10
+    cmp edx, {3 * 8 + 4}
+    je bvf_mid
+    cmp edx, {3 * 8 + 5}
+    jne bvf_done
+    push ecx
+    mov cl, byte ptr [0x503e06]
+    shl ebx, cl
+    pop ecx
+bvf_mid:
+    mov eax, ecx
+    sub eax, ebx
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_RAZED}
+    jne bvf_mid2
+    or word ptr [edi + 0xe], 0x2000
+bvf_mid2:
+    lea eax, [ecx + ebx]
+    call {br_kind:#x}
+    cmp eax, {BR_KIND_RAZED}
+    jne bvf_done
+    or word ptr [edi + 0xe], 0x4000
+bvf_done:
+    pop edx
+    pop ebx
     jmp 0x45847f
 ''')
 # Dibujo (reemplaza 0x459a9f..0x459aaa; esi = celda, edi = x en pantalla, [esp+0x1c] = y). Camino: sigue el del juego.
@@ -7403,6 +7624,9 @@ br_vdraw = place('br_vdraw', f'''
     lea ebp, [ecx*8 + {br_stubtab:#x}]
     xor esi, esi
 bvd_loop:
+    lea eax, [esi + 13]
+    bt ebx, eax
+    jc bvd_next
     movzx eax, byte ptr [ebp + esi*4 + 2]
     test eax, eax
     jz bvd_next
@@ -12463,7 +12687,7 @@ TR_TXT, TR_HOT = 0x17, 0x18
 TR_PKT = 0x2a3
 BD_TXT, BD_HOT = 0x19, 0x1a
 BD_PKT = 0x2a4
-bd_menutxt = place_data('bd_menutxt', cstr_('Build Road'))
+bd_menutxt = place_data('bd_menutxt', cstr_('Road/Bridge'))
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
 # Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
 tr_check = place('tr_check', f'''
@@ -12631,6 +12855,11 @@ ts_go:
     mov ax, word ptr [edx + 2]
     mov word ptr [esp + 4], ax
     mov word ptr [esp + 6], 0
+    cmp ecx, {BD_PKT:#x}
+    jne ts_send
+    mov ax, word ptr [{BD_PW:#x}]
+    mov word ptr [esp + 6], ax
+ts_send:
     mov eax, esp
     push 8
     push eax
@@ -12711,8 +12940,11 @@ bd_recv = place('bd_recv', f'''
     movsx edx, word ptr [esi + 6]
     cmp ecx, edx
     jne bv_x
+    movzx ebp, word ptr [esi + 0x12]
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
+    test ebp, 0x100
+    jnz bv_br
     mov eax, esi
     mov edx, edi
     call {bd_any:#x}
@@ -12732,9 +12964,38 @@ bd_recv = place('bd_recv', f'''
     mov eax, esi
     mov edx, edi
     call {bd_apply:#x}
+bv_redo:
     call 0x4a4f20
     call {REDRAW:#x}
     call {br_mapview:#x}
+    jmp bv_x
+bv_br:
+    mov ecx, ebp
+    mov eax, esi
+    mov edx, edi
+    call {bd_brscan:#x}
+    test eax, eax
+    jz bv_x
+    push ecx
+    mov ecx, ebx
+    call {bd_price:#x}
+    mov ecx, eax
+    imul eax, ebx, {SIDE:#x}
+    cmp ecx, dword ptr [eax + 0x536c14]
+    jg bv_xp
+    neg ecx
+    push ecx
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    pop ebx
+    mov ecx, ebp
+    mov eax, esi
+    mov edx, edi
+    call {bd_brapply:#x}
+    jmp bv_redo
+bv_xp:
+    pop ecx
 bv_x:
     popad
     jmp 0x4b85bb
