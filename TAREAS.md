@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 107).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 108).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,10 +15,17 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
+- [ ] **107.** Monitor de IA 1.0.22: actualizarlo cuando termine la tanda en curso (4/11/2026)
+  - No se pudo publicar porque el Monitor estaba abierto corriendo la tanda 131.
+  - Cuando termine: cerrar el Monitor y avisarme «publicá el Monitor 1.0.22».
+  - Después, abrirlo y tocar Actualizar. Ver que la lista «Todas las tandas» tenga barra para bajar, y que al
+    plegar el panel Tanda (flechita ▼) aparezca grande el cronómetro de la serie.
+
+- [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
   - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
   - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
-  - Para volver a consultarlo: abrir una consola en `F:\sourceeposctualizador-warlords\creditos` y
+  - Para volver a consultarlo: abrir una consola en `F:\source
+eposctualizador-warlords\creditos` y
     escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
   - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
