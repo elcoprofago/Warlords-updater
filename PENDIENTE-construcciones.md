@@ -220,5 +220,63 @@ puente → G.
     entero o nada. Renglón del menú: «Road/Bridge»; diálogo «Building a bridge» con la flecha.
   - Caso no cubierto: un puente nuevo pegado de costado a otro puente se une con él para derribar (la inundación
     de `br_comp` va por los 4 lados). Raro; si molesta, limitar la inundación a la línea recta.
-- **Próximo paso: G (puerto).** Antes, tarea 96 del usuario. Frase para retomar: "Seguimos con
+- **G: medición hecha (3/11/2026), ver la sección G al final.** Antes de probar, tarea 96 del usuario. Frase vieja:
   PENDIENTE-construcciones.md, paso G".
+
+## G. Puerto — medición del 3/11/2026 (Darklord.exe y 40 .SAV de `C:\Warlords3\Saves`)
+
+Herramientas: capstone sobre todo el código (accesos al registro de ciudad, grafo de llamadas); los .SAV se leen
+con el mismo desplazamiento que `prueba_emulada.py` (el bloque 0x536b30, de 0x2d894 B, trae ciudades y sitios).
+
+- **Registro de ciudad** (0x537e2c + i*0xde, contador 0x537e2a): x +0, y +2, nombre +4, **+0xa4 = nivel de
+  defensa, 0 = arrasada** (no es un sí/no: valores 0-3), +0xa5 dueño (8 = nadie; las 12 arrasadas de los .SAV
+  tienen 8). **+0xdd no lo lee ni escribe ninguna instrucción** del exe y vale 0 en las 4349 ciudades de los
+  .SAV (también 0xdb/0xdc valen 0, pero esos sí se usan): es la **marca «convertida en puerto»**. Viaja sola en
+  el .SAV y en la sincronización del Puente.
+- **Arrasar** (0x4d5cb0(ciudad, jugador), la que aplica el paquete): 0x49f900(3, jugador, 0, 0), +0xa4 = 0,
+  0x46a3a0(ciudad, 8) (dueño 8 en el registro y en las 4 casillas: palabra 0 bits 10-13, +8 bits 3-6, +8 & 0x80
+  muerta, +8 bits 8-9 nivel; estructura 3), 0x441290, historia 0x4a0400 evento 0x13, 0x46a120(ciudad) (avisa a
+  7 subsistemas, cachés de la IA incluidas), mensajes, redibujo, 0x4a4f20. La conversión hace lo mismo **sin los
+  mensajes ni el evento de arrasar**, más la marca +0xdd y las casillas nuevas.
+- **Quién usa una ciudad arrasada** (218 lecturas de +0xa4; las que siguen de largo cuando vale 0):
+  - **0x440be0(x, y)**, ciudad en la casilla: recorre la tabla por coordenadas **sin mirar +0xa4**; 33 llamadas.
+    → saltear las marcadas: así la ciudad oculta no existe para nadie que pregunte por casilla.
+  - **0x41e290** (evaluador de la meta 9, en 0x41e30a): una muerta es candidata a reconstruir. → saltear las
+    marcadas (ahí mismo engancha ya `ai_brrebev`, en 0x41e4eb).
+  - Menú de reconstruir (0x4b0660, 0x4b0915): obtiene la ciudad solo si la casilla es estructura 3 (0x4b07c6) y
+    con 0x440be0: con las casillas cambiadas y el gancho de arriba, no aparece. Nada más que hacer.
+  - Los demás (0x412020/0x412580/0x4127f0/0x412bc0 dibujo de ruinas en el panel de una ciudad ya elegida;
+    0x435fd0, 0x442470, 0x464ac0, 0x46db00, 0x498fd0, 0x4c57d0, 0x4c58e0, 0x43b6d0): tratan a la muerta como
+    «sin dueño / no sirve». No hace falta tocarlos. 0x461a60 (misiones): una misión sobre esa ciudad queda como
+    con una arrasada; aceptable.
+- **Puerto en la casilla** (los 9 de Tanda_Kor): estructura 4 (palabra 1 = byte bajo | 0x1c00), **palabra 0 |
+  0x4000** (punto de embarque) y dueño 8 (0x2000), +8 = **0xa0** (tipo de sitio 0 en los bits 0-2, bit 3
+  arrasado, bits 4-7 dibujo 0xa). Registro de sitio (0x55acb6 + i*0x96): x, y, nombre +4 (16 B), descripción
+  +0x14, **tipo +0x94 = 0 para puerto**, arrasado +0x95. La tabla de medios 0x582158 (0xc0 = embarque) no va en
+  el .SAV: la rehace 0x4a4f20 a partir del bit 0x4000.
+- **Casilla común** (11772 de Tanda_Kor): palabra 1 alta 0x18 (estructura 0), +8 = 0x92. En una casilla de ciudad
+  el terreno de abajo queda en la palabra 0 (bits bajos) y la palabra 1 lleva 0x04 de byte bajo.
+  **Abierto:** qué terreno (byte bajo de la palabra 1 / pieza de dibujo) se les pone a las 3 casillas que
+  vuelven a ser comunes y a la del puerto. Se decide con una prueba de juguete en el juego (convertir y mirar),
+  copiando lo que tiene una casilla de pasto vecina.
+
+### Diseño de G (etapa 1, humanos)
+
+1. `pt_hidden(i)`: `[0x537e2c + i*0xde + 0xdd] != 0`. Ganchos en 0x440be0 (saltear) y 0x41e30a (saltear).
+2. Renglón **«Make Port»** en el menú de la ciudad propia (diálogo a ubicar, como se ubicó el 34): solo si la
+   ciudad es del jugador, humano, viva, alguna de sus 4 casillas toca agua por un lado y la tabla de sitios
+   tiene lugar (< 50). Confirmación con el diálogo de reconstruir («Make Bridge»-style: «Turn X into a port:
+   N gold? The city is lost.»).
+3. Paquete propio `PT_PKT = 0x2a5` (bando, ciudad, casilla del puerto); `pt_recv` repite las comprobaciones, cobra
+   y aplica en todas las PC: lo de arrasar sin mensajes, +0xdd = 1, 3 casillas a comunes, la de la costa a
+   puerto, sitio nuevo (nombre «Port <ciudad>», tipo 0), 0x46a120, 0x4a4f20, redibujo.
+4. Precio: `PT_X` veces el costo de fundar ciudad del bando (el mismo de 0x4b65e0); valor inicial 2, a calibrar.
+5. Miniatura propia (decisión 6): dibujo nuevo en la hoja de sitios, en un índice libre de los bits 4-7 de +8.
+   Primero se publica con el dibujo de puerto común; el dibujo nuevo va después.
+6. Prueba de juguete `prueba_puerto.py` (emulada, como prueba_caminos): conversión, marca, 0x440be0 devuelve -1 en
+   las 4 casillas, la meta 9 no la ofrece, sitio nuevo y 0x582158 = 0xc0; control: una ciudad arrasada común
+   sigue siendo reconstruible.
+
+**Próximo paso:** ubicar el diálogo/menú de la ciudad propia (dónde va el renglón) y medir el terreno de las
+casillas liberadas; después implementar 1-4 y 6. Frase para retomar: "Seguimos con PENDIENTE-construcciones.md,
+paso G, implementación".
