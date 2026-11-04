@@ -59,7 +59,11 @@ class Juego:
                 mu.mem_write(casilla(x, y), struct.pack('<HBBxxxxH', t, 1, 0x18 | est, 0x91 if not est else 0))
         mu.mem_write(0x537e2a, struct.pack('<h', 0))
         mu.mem_write(0x56950e, struct.pack('<h', CIUDAD))
+        for p in range(8):
+            mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1))
         self.llamadas = []
+        self.ajuste = {}
+        self.interceptar(0x4017a0, lambda a: self.ajuste.get(a[0], 0))
     def interceptar(self, addr, fn, pop=0):
         def g(mu, a, size, _):
             sp = mu.reg_read(UC_X86_REG_ESP)
@@ -115,12 +119,15 @@ ver('control: edificio (palabra 0 & 0x4000)', menu(B, prep=lambda g: g.mu.mem_wr
 ver('control: no es su turno', menu(B, turno=1), 0)
 
 print('-- costo: 0x4b65e0(BD_MARK, jugador)')
-def costo(x, y, indice=BD_MARK, nombre=None):
+def costo(x, y, indice=BD_MARK, nombre=None, bando=0, rebaja=False, ajuste=0):
     g = Juego(); mu = g.mu
+    g.ajuste[bando] = ajuste
+    if rebaja:
+        mu.mem_write(0x536c12 + bando * 0x1f8, struct.pack('<h', 0))
     if nombre:
         mu.mem_write(0x535ed6, nombre + b'\0')
     mu.mem_write(BD_X, struct.pack('<hh', x, y))
-    g.correr(0x4b65e0, RET, struct.pack('<3I', RET, indice, 0))
+    g.correr(0x4b65e0, RET, struct.pack('<3I', RET, indice, bando))
     return struct.unpack('<h', struct.pack('<I', mu.reg_read(UC_X86_REG_EAX))[:2])[0]
 ver('llanura: 5 % de 200 = 10', costo(5, 7), 10)
 ver('colinas: 15 % = 30', costo(25, 7), 30)
@@ -128,6 +135,10 @@ for nom in (b'Desert', b'Desert Pla', b'Ice', b'Snow', b'Floor'):
     ver(f'{nom.decode()}: 15 % = 30', costo(5, 7, nombre=nom), 30)
 for nom in (b'Forest', b'Marsh', b'Icy', b'Outlands'):
     ver(f'control {nom.decode()}: 5 % = 10', costo(5, 7, nombre=nom), 10)
+ver('ciudad a mitad de precio para el bando (rebaja del juego): montaña 25 % de 100 = 25', costo(21, 7, bando=3, rebaja=True), 25)
+ver('ajuste 0x4017a0 = 5 (ciudad -50 %): colinas 15 % de 100 = 15', costo(25, 7, bando=2, ajuste=5), 15)
+ver('ajuste -5 (ciudad +50 %): llanura 5 % de 300 = 15', costo(5, 7, bando=1, ajuste=-5), 15)
+ver('control: la rebaja de otro bando no cuenta', costo(21, 7, bando=4), 50)
 ver('C.2 montaña (paso fijo 5, un cuarto de ciudad): 50', costo(21, 7), 50)
 ver('control: un puente (BR_CODE) sigue costando una ciudad', costo(5, 7, 0x2000), CIUDAD)
 

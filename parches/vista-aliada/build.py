@@ -4327,15 +4327,42 @@ bpk_out:
     pop ebx
     ret
 ''')
-# bd_price: eax = costo de paso -> eax = precio en oro. Preserva el resto.
+# bd_price: eax = fracción (veinteavos), ecx = bando -> eax = precio en oro. Preserva el resto. La base es lo que
+# ese bando paga por fundar una ciudad, calculado como el juego (0x4011a0): [0x56950e], a la mitad si el bando
+# tiene la rebaja de [0x536c12 + bando*0x1f8], y luego el ajuste de 0x4017a0(bando) (precio += precio*aj/-10).
+# Así los atributos que abaratan la ciudad abaratan también el camino.
 bd_price = place('bd_price', f'''
     push ecx
     push edx
-    movsx ecx, word ptr [0x56950e]
-    imul eax, ecx
+    push ebx
+    push esi
+    mov ebx, eax
+    movsx esi, word ptr [0x56950e]
+    imul eax, ecx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je bdp_full
+    mov eax, esi
+    cdq
+    sub eax, edx
+    sar eax, 1
+    mov esi, eax
+bdp_full:
+    push ecx
+    call 0x4017a0
+    add esp, 4
+    movsx eax, ax
+    imul eax, esi
+    cdq
+    mov ecx, -10
+    idiv ecx
+    add esi, eax
+    mov eax, esi
+    imul eax, ebx
     cdq
     mov ecx, {BD_DIV}
     idiv ecx
+    pop esi
+    pop ebx
     test eax, eax
     jg bdp_out
     mov eax, 1
@@ -7259,6 +7286,7 @@ brc_road:
     movsx eax, word ptr [{BD_X:#x}]
     movsx edx, word ptr [{BD_Y:#x}]
     call {bd_any:#x}
+    movsx ecx, word ptr [esp + 0x14]
     call {bd_price:#x}
     mov esi, eax
     pop edx
@@ -12690,6 +12718,7 @@ bd_recv = place('bd_recv', f'''
     call {bd_any:#x}
     test eax, eax
     jz bv_x
+    mov ecx, ebx
     call {bd_price:#x}
     mov ebp, eax
     imul eax, ebx, {SIDE:#x}
