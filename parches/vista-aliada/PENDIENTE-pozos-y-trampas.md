@@ -474,16 +474,25 @@ prueba_pozos.py («daño parcial») y prueba_misiontrampa.py. Solo en tierra: la
   ruinas ocultas, que también se sortean en 0x4a0fb0). La tarea 77 lo comprueba.
 - Con esto el pozos-y-trampas no tiene partes pendientes.
 
-## Trampa sobre un altar (pregunta del usuario, 4/11/2026) — sin investigar
+## Trampa sobre un altar (pregunta del usuario, 4/11/2026) — respondida leyendo el código
 
 Pregunta: si una trampa está en la casilla de un altar, un grupo que lo visita ¿recibe primero la explosión y
-después la bendición (que cura parálisis, veneno, maldición)? ¿Los que sobreviven quedan paralizados o el altar
-les quita la parálisis enseguida?
+después la bendición (que cura parálisis, veneno, maldición)? ¿Los que sobreviven quedan paralizados?
 
-Lo que ya se sabe del código (build.py): `po_step` (gancho 0x49ce08, en cada paso) detecta la trampa y la deja
-pendiente, y el grupo se detiene (0x485c00). `po_fall` (gancho 0x4b6e9d) la hace explotar: mata del 40 al 80 % y
-paraliza a los demás (+0x11 & 0x7f = 0; con movimiento 9 o más, 5 pasos menos y bit 0x80 de +0x15).
-Falta saber: (1) dónde dispara el juego la visita al altar y si va antes o después de 0x4b6e9d en el mismo paso;
-(2) qué borra exactamente la bendición (si toca +0x11/+0x15); (3) si al detenerse sobre el altar la visita ocurre
-igual. Método: emular con unicorn un grupo que entra a un altar con trampa, en el estilo de `prueba_puerto.py`.
-Frase para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, trampa sobre un altar".
+**Respuesta: primero la bendición, después la explosión. Los sobrevivientes quedan paralizados hasta el comienzo de
+su próximo turno.**
+
+- El altar es el efecto de sitio 0x19 (palabra +0x1a del .SIT; shrine, e_shrine; tabla de tipos en 0x55ca1c, 0x2e B
+  por tipo). La visita es **0x49d520(jugador, x, y)**, llamada en **cada paso** desde 0x49cdd9 (también al pasar de
+  largo, no solo al detenerse): si la casilla es estructura 4, sitio no arrasado y de efecto 0x19, llama a
+  **0x434ed0(ejército)** para cada uno del grupo (salvo los que tienen el bit 0x20 de +0x15) y da el aviso y el sonido.
+- 0x434ed0 es la misma cura que corre al empezar el turno: quita la maldición (bit 0x800 de la palabra +0x14,
+  restituye la fuerza), el veneno (0x1000) y la parálisis (0x8000: devuelve los 5 de movimiento). No toca los pasos
+  que quedan (+0x10/+0x11).
+- En el mismo paso, **después** (0x49ce08), `po_step` detecta la trampa y la deja pendiente; `po_fall` explota recién al
+  final del lote de pasos (0x4b6e9d). Para entonces la bendición ya pasó: mata del 40 al 80 % y paraliza al resto
+  (pasos que quedan = 0, movimiento -5). El altar no vuelve a actuar porque el grupo ya no se mueve en ese turno;
+  la parálisis se va al empezar su turno siguiente (0x434ed0 desde el comienzo de turno), como en cualquier casilla.
+- Lo que el altar sí hace en ese caso: curar lo que el grupo traía de antes (veneno, maldición, parálisis vieja).
+- Sin emular ni probar en el juego: es lectura directa del orden de las llamadas (0x49cdd9 antes que 0x49ce08, y
+  0x4b6e9d al final del lote). No se cambió nada del parche.
