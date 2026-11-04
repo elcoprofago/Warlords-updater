@@ -26,7 +26,7 @@ derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
 8. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
-- [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
+- [x] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
 manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
 detecta como cualquier otra desincronización.
@@ -38,7 +38,7 @@ detecta como cualquier otra desincronización.
 13. Construí una trampa con un ejército con «trap» y que un ejército del otro jugador caiga en ella: tiene que morir en
    las dos PC.
 14. Si en algún momento sale un aviso de partida desincronizada, anotá en qué paso.
-Resultado:
+Resultado: verificado, mismos pozos en mismos lugares
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
