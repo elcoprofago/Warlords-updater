@@ -9753,6 +9753,8 @@ pf_ej:
     jmp pf_kill
 pf_para:
     imul edx, esi, 0x1c
+    test byte ptr [edx + 0x54fe65], 0x20
+    jnz pf_ejn
     and word ptr [edx + 0x54fe60], 0x80ff
     inc edi
     test byte ptr [edx + 0x54fe65], 0x80

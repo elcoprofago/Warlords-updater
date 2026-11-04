@@ -496,3 +496,13 @@ su próximo turno.**
 - Lo que el altar sí hace en ese caso: curar lo que el grupo traía de antes (veneno, maldición, parálisis vieja).
 - Sin emular ni probar en el juego: es lectura directa del orden de las llamadas (0x49cdd9 antes que 0x49ce08, y
   0x4b6e9d al final del lote). No se cambió nada del parche.
+
+### Corrección (4/11/2026, observación del usuario): la bendición inmuniza
+Lo de arriba sobre «quedan paralizados» era incompleto. 0x434ed0 además **marca al ejército como bendecido** (bit 0x20
+de +0x15, la cruz celeste que dibuja 0x45cda1) y le suma 1 a la fuerza. En combate (0x4679f7..0x467aef) la marca es
+inmunidad: la palabra +0x14 con 0x2000 (bendecido) junto con 0x1000 / 0x800 / 0x8000 decide si el ejército queda inmune al
+veneno, a la maldición y a la parálisis (además, la parálisis exige movimiento 9 o más).
+`po_fall` no la miraba: un bendecido sobreviviente quedaba paralizado. **Desde 1.0.122.0 `pf_para` saltea a los que
+tienen el bit 0x20** (ni pasos a 0, ni -5, ni marca); siguen pudiendo morir. Probado en prueba_pozos.py («bendecidos
+por un altar» y el control del grupo mezclado). Como la bendición ocurre antes de la explosión en el mismo paso, un
+grupo que entra a un altar con trampa sobrevive sin paralizarse. En el juego: tarea 101.

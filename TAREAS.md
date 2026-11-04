@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 101).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 102).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,8 +13,20 @@ Sorteo están acá (tarea 18).
 4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
 
 # Pendientes
+
+- [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
+Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,
+igual que en combate. Morir, mueren igual (del 40 al 80 % del grupo).
+1. Cuando termine la serie de la tarea 100: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.122.0**.
+2. En una partida de prueba (Warlords3), poné una trampa (bono «trap») en la casilla de un altar y mandá a ella un
+   grupo de varios ejércitos que no estén bendecidos.
+3. Al explotar: los que sobreviven, ¿tienen la cruz celeste y movimiento normal en el turno siguiente, sin la
+   marca de paralizados?
+4. Control: una trampa en una casilla común, con otro grupo: los que sobreviven sí quedan paralizados.
+Resultado:
 
 - [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
 Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene

@@ -208,7 +208,7 @@ PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
 k = img.index(b'\x68' + struct.pack('<I', BASE + img.index(b'%d,%d,%d,%d,%d,%d,%d\n\0')))
 IA_EVT = BASE + next(j for j in range(k & ~15, 0, -16) if img[j:j + 2] == b'\x80\x3d')
 EVTS = []   # (tipo, jugador, x, y, n) de la última caída
-def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None):
+def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), mu_out=None, bend=()):
     # ejs: (x, y, dueño, héroe, vuela); pasos: (jugador, x, y). Devuelve muertos (ejército, arg), avisos, sonidos,
     # la tabla y lo que quedó anotado.
     g = Juego(); mu = g.mu; g.poner(regs); g.ciudades(cs)
@@ -221,6 +221,7 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), 
         a = 0x54fe50 + i * 0x1c
         mu.mem_write(a + 2, struct.pack('<hh', x, y)); mu.mem_write(a + 0xe, struct.pack('<H', (0x10 if h else 3) | d << 5))
         mu.mem_write(a + 0x13, b'@'); vuela[i] = v
+        if i - 1 in bend: mu.mem_write(a + 0x15, b' ')
         if mov: mu.mem_write(a + 0x10, struct.pack('<HH', mov[i - 1] << 8, mov[i - 1] | 0x4000))
     paradas = []
     g.interceptar(0x485c00, lambda a: paradas.append(a[0] & 0xffff))
@@ -298,10 +299,10 @@ ver('trampa: evento 20', EVTS, [(20, 3, 15, 15, 1)])
 caer(POZOS, [(10, 10, 2, 0, 1)], [(2, 10, 10)])
 ver('control: solo voladores, nadie cae: sin evento', EVTS, [])
 print('-- trampa: daño parcial (26/10/2026)')
-def parcial(n, mov, x=15, y=15, est=0, vuelan=()):
+def parcial(n, mov, x=15, y=15, est=0, vuelan=(), bend=()):
     out = []
     t = POZOS[:2] + [(15, 15, 2, est, 0, 3)] + POZOS[3:]
-    r = caer(t, [(x, y, 2, 0, i in vuelan) for i in range(n)], [(2, x, y)], mov=mov, mu_out=out)
+    r = caer(t, [(x, y, 2, 0, i in vuelan) for i in range(n)], [(2, x, y)], mov=mov, mu_out=out, bend=bend)
     mu = out[0]
     ej = [struct.unpack('<HH', mu.mem_read(0x54fe50 + i * 0x1c + 0x10, 4)) + (mu.mem_read(0x54fe65 + i * 0x1c, 1)[0],)
           for i in range(1, n + 1)]
@@ -326,6 +327,14 @@ ver('movimiento menor de 9: sin pasos pero no se le resta ni se marca (como el j
     {(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for i, v in enumerate(ej, 1) if i not in [a for a, _ in r[0]]}, {(0, 6, 0)})
 r, ej, _ = parcial(4, [12] * 4, vuelan=(0, 1))
 ver('voladores: ni mueren ni se paralizan; de los 2 que caen, 1 muere', (len(r[0]), [(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0x80) for v in ej[:2]]), (1, [(12, 12, 0)] * 2))
+r, ej, _ = parcial(10, [12] * 10, bend=range(10))
+m = [a for a, _ in r[0]]
+ver('bendecidos por un altar (marca 0x20): mueren igual entre 4 y 8, los demás no se paralizan (como el juego)',
+    (4 <= len(m) <= 8, {(v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0xa0) for i, v in enumerate(ej, 1) if i not in m}), (True, {(12, 12, 0x20)}))
+r, ej, _ = parcial(10, [12] * 10, bend=range(0, 10, 2))
+m = [a for a, _ in r[0]]
+ver('control: en un grupo mezclado solo se paralizan los no bendecidos',
+    {(i % 2, v[0] >> 8 & 0x7f, v[1] & 0x7f, v[2] & 0xa0) for i, v in enumerate(ej, 1) if i not in m} <= {(1, 12, 12, 0x20), (0, 0, 7, 0x80)}, True)
 r = caer(POZOS, [(15, 15, 2, 0, 0)] * 6, [(2, 15, 15)], agua=[(15, 15)])
 ver('control: la mina submarina sigue hundiendo todo, con 1', r[0], [(i, 1) for i in range(1, 7)])
 r = caer(POZOS, GRUPO * 2, [(2, 10, 10)])
