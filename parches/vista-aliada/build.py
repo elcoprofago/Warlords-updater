@@ -5837,6 +5837,9 @@ aibn_bridge:
 # Convoy (paso 5.1): 24 grupo embarcado con "Carrier" que no armó convoy (ai_conv; x, y = destino; n = 1 ya está en un
 # convoy, 2 ya enlazado, 3 tiene "Landing" y no hay puerto a 2 casillas del destino, 4 ningún barco propio vecino
 # que vaya cerca del mismo destino, 5 lo hubo pero la suma entraba en un stack).
+# Reconstruir (paso 5.2, ai_brrebev): 26 puente derribado que no se propone, una vez por puente, color y turno (n = 1
+# ejército encima, 2 falta oro, 3 cabecera sin camino, 4 enemigo visible cerca, 5 lo volvería a derribar, 6 nada que
+# ganar al cruzar, 7 pasó todo), 27 un puente queda como candidato de la meta 9 (n = costo).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -7263,8 +7266,12 @@ bdv_out:
 # Valor = max(0, 50 - costo) + 2 * oportunidades + 0x4deb20(1, 6), como el de una ciudad. Si el mejor es un puente,
 # se guarda con su código en la tabla de candidatos ([0x5032e6]) y se salta el final del original, que lo nombraría
 # como ciudad.
-EV_X, EV_Y, EV_N, EV_D, EV_SX, EV_SY, EV_P, EV_DI, EV_V, EV_E = (4 * i for i in range(10))
-EV_LOC = 4 * 10
+EV_X, EV_Y, EV_N, EV_D, EV_SX, EV_SY, EV_P, EV_DI, EV_V, EV_E, EV_EM = (4 * i for i in range(11))
+EV_LOC = 4 * 11
+RBE_EVNO = 26    # evento (paso 5.2): puente derribado que no se propone; n = motivo (RBE_ARMIES...), 7 pasó todo
+RBE_EVPROP = 27  # evento (paso 5.2): un puente queda como candidato de la meta 9 (n = costo)
+RBE_ARMIES, RBE_GOLD, RBE_HEAD, RBE_ENEMY, RBE_RAZE, RBE_GAIN, RBE_OK = range(1, 8)
+RBE_LAST = place_data('rbe_last', bytes(4))   # turno * 16 + jugador de la última pasada que anotó el evento 26
 EVF = EV_LOC + 0x20
 ai_brrebev = place('ai_brrebev', f'''
     pushad
@@ -7275,6 +7282,14 @@ ai_brrebev = place('ai_brrebev', f'''
     mov dword ptr [esp + {EV_SX:#x}], eax
     movsx eax, word ptr [esp + {EVF + 0x30:#x}]
     mov dword ptr [esp + {EV_SY:#x}], eax
+    movsx eax, word ptr [0x503328]
+    shl eax, 4
+    add eax, dword ptr [esp + {EV_P:#x}]
+    xor ecx, ecx
+    cmp eax, dword ptr [{RBE_LAST:#x}]
+    setne cl
+    mov dword ptr [{RBE_LAST:#x}], eax
+    mov dword ptr [esp + {EV_EM:#x}], ecx
     mov dword ptr [esp + {EV_Y:#x}], 0
 rbe_row:
     movsx eax, word ptr [0x503e02]
@@ -7325,7 +7340,7 @@ rbe_free:
     call {br_armies:#x}
     add esp, 8
     test edx, edx
-    jnz rbe_next
+    jnz rbe_r1
     push dword ptr [esp + {EV_P:#x}]
     lea eax, [ebx + {BR_CODE:#x}]
     push eax
@@ -7334,14 +7349,14 @@ rbe_free:
     movsx eax, ax
     imul ecx, dword ptr [esp + {EV_P:#x}], 0x1f8
     cmp eax, dword ptr [ecx + 0x536c14]
-    jg rbe_next
+    jg rbe_r2
     push dword ptr [esp + {EV_SY:#x}]
     push dword ptr [esp + {EV_SX + 4:#x}]
     push dword ptr [esp + {EV_N + 8:#x}]
     call {br_head:#x}
     add esp, 0xc
     cmp eax, 0x10000
-    jge rbe_next
+    jge rbe_r3
     test eax, eax
     jnz rbe_d
     inc eax
@@ -7356,7 +7371,7 @@ rbe_d:
     mov dword ptr [esp + {EV_E:#x}], eax
     movsx ecx, word ptr [esp + {EVF + 0x12:#x}]
     cmp ecx, eax
-    jg rbe_next
+    jg rbe_r4
     push 1
     push dword ptr [esp + {EV_P + 4:#x}]
     lea eax, [ebx + {BR_CODE:#x}]
@@ -7364,7 +7379,7 @@ rbe_d:
     call {ai_brs:#x}
     add esp, 0xc
     cmp eax, 5
-    jge rbe_next
+    jge rbe_r5
     push dword ptr [esp + {EV_Y:#x}]
     push dword ptr [esp + {EV_X + 4:#x}]
     call 0x41d640
@@ -7377,7 +7392,10 @@ rbe_d:
     movsx eax, ax
     add esi, eax
     test esi, esi
-    jle rbe_next
+    jle rbe_r6
+    push {RBE_OK}
+    call rbe_ev
+    add esp, 4
     mov dword ptr [esp + {EV_DI:#x}], esi
     mov edi, 50
     sub edi, dword ptr [esp + {EV_D:#x}]
@@ -7423,6 +7441,40 @@ rbe_pos:
     mov word ptr [esp + {EVF + 0x18:#x}], ax
     lea eax, [ebx + {BR_CODE:#x}]
     mov word ptr [esp + {EVF + 0x1c:#x}], ax
+    jmp rbe_next
+rbe_r1:
+    push {RBE_ARMIES}
+    jmp rbe_rn
+rbe_r2:
+    push {RBE_GOLD}
+    jmp rbe_rn
+rbe_r3:
+    push {RBE_HEAD}
+    jmp rbe_rn
+rbe_r4:
+    push {RBE_ENEMY}
+    jmp rbe_rn
+rbe_r5:
+    push {RBE_RAZE}
+    jmp rbe_rn
+rbe_r6:
+    push {RBE_GAIN}
+rbe_rn:
+    call rbe_ev
+    add esp, 4
+    jmp rbe_next
+rbe_ev:
+    cmp dword ptr [esp + {EV_EM + 8:#x}], 0
+    je rbe_evr
+    push dword ptr [esp + 4]
+    lea eax, [ebx + {BR_CODE:#x}]
+    push eax
+    push dword ptr [esp + {EV_P + 0x10:#x}]
+    push {RBE_EVNO}
+    call {ia_evtb:#x}
+    add esp, 0x10
+rbe_evr:
+    ret
 rbe_next:
     inc dword ptr [esp + {EV_X:#x}]
     jmp rbe_col
@@ -7450,6 +7502,13 @@ rbe_nodef:
     mov cx, word ptr [esp + {EVF + 0x18:#x}]
     mov word ptr [0x5032e8], cx
     mov word ptr [0x5032ea], 1
+    movsx ecx, cx
+    push ecx
+    push eax
+    push dword ptr [esp + {EV_P + 8:#x}]
+    push {RBE_EVPROP}
+    call {ia_evtb:#x}
+    add esp, 0x10
     push 0
     push eax
     call {br_name:#x}

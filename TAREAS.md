@@ -7,7 +7,7 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 100** (tanda de convoyes con Carrier solo): cuando la PC esté libre.
+1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
 2. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
 3. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
@@ -19,8 +19,9 @@ Sorteo están acá (tarea 18).
 - [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
 Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
 desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
-arman los bandos de verdad. No hay versión nueva del parche.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.120.0** o posterior.
+arman los bandos de verdad. La misma serie mide además por qué la computadora nunca reconstruye un puente
+derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.121.0** o posterior.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
    **serie de 2**, **Nueva tanda**.
 3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.

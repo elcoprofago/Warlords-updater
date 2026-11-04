@@ -38,6 +38,8 @@ def _ia_on():
         if t != 0x4deb20: return struct.unpack('<I', img[k + 2:k + 6])[0], t
 (IA_ON, IA_EVTB) = _ia_on(); IA_MODE = IA_ON - 8
 BRDV_VAL, BRDV_RAZED, EV_PROP, EV_NO = 100, 101, 22, 23     # los de build.py (paso 4 D)
+RB_NO, RB_PROP = 26, 27   # los de build.py (paso 5.2): puente derribado no propuesto (n = motivo); propuesto (n = costo)
+def rb_evts(g): return [e for e in g['evts'] if e[0] in (RB_NO, RB_PROP)]
 
 W = H = 64; SHIFT = 8; LAND, WATER, MOUNT = 2, 3, 5
 AI, ENEMY, FRIEND = 2, 3, 4
@@ -281,7 +283,8 @@ def model_def(c):
 def model_ev(c):
     lim = 15 if c['temp'] == 0 else 30
     best = [-1, -1, -1]                         # valor, costo, índice
-    lines = []
+    lines = []; evs = c['_rb'] = []
+    def no(code, n): evs.append((RB_NO, AI, code, n))
     def opp(xy): a, b = c['opp'].get(xy, (0, 0)); return a + b
     for i in reversed(range(len(c['cities']))):
         x, y, alive, _ = c['cities'][i]
@@ -295,18 +298,19 @@ def model_ev(c):
         lines.append(('linea', v, d, opp((x, y)), e, f'Ciudad{i}'))
     for k in sorted((k for k, st in c['bridges'].items() if st == 'razed'), key=lambda k: BC(*BRIDGES[k][0])):
         tl = BRIDGES[k]; p0 = tl[0]; code = BC(*p0)
-        if c['stack'] in tl or any(xy in tl for xy, _ in c['armies']): continue
-        if cost(c) > c['gold']: continue
+        if c['stack'] in tl or any(xy in tl for xy, _ in c['armies']): no(code, 1); continue
+        if cost(c) > c['gold']: no(code, 2); continue
         hk = heads(c, tl)
         d = min(hk.values(), default=0x7fffffff)
-        if d >= 0x10000: continue
+        if d >= 0x10000: no(code, 3); continue
         d = max(d, 1)
         e = c['enemy'].get(p0, 99)
-        if lim > e: continue
+        if lim > e: no(code, 4); continue
         s = brs(c, p0)
-        if s is not None and s >= 5: continue
+        if s is not None and s >= 5: no(code, 5); continue
         o = opp(p0)
-        if o <= 0: continue
+        if o <= 0: no(code, 6); continue
+        no(code, 7)
         v = max(0, 50 - d) + 2 * o + c['r']
         lines.append(('linea', v, d, o, e, NAME))
         if v > best[0]: best = [v, d, code]
@@ -317,6 +321,7 @@ def model_ev(c):
     if dv == 'amb': return 'amb', lines
     if dv:
         return (dv[0], dv[1], BRDV_VAL), [ln for ln in lines if ln[0] != 'mejor']
+    if best[2] >= 0x2000: evs.append((RB_PROP, AI, best[2], best[1]))
     return table, lines
 
 res = []
@@ -327,7 +332,8 @@ def named(nombre, esperado=None, **kw):
     """esperado: la tabla que tiene que quedar (código, costo, 1), o None si ninguna (queda 0x777)."""
     c = caso(**kw); g = ev(c); t, lines = model_ev(c)
     want = esperado if esperado is not None else (0x777, 0x777, 0x777)
-    check(nombre, g['ok'] and g['table'] == t == want and g['lines'] == lines, f'modelo {t} {lines} banco {g}')
+    check(nombre, g['ok'] and g['table'] == t == want and g['lines'] == lines and rb_evts(g) == c['_rb'],
+          f'modelo {t} {lines} {c["_rb"]} banco {g}')
     return g
 
 OPP = {PA[0]: (1, 1)}
@@ -430,7 +436,7 @@ check(f'control: sin puentes derribados, {nc} casos al azar iguales al original 
       f'iguales {same}')
 
 # ---- al azar contra el modelo
-bad = 0; cnt = {'puente': 0, 'ciudad': 0, 'nada': 0}; ndef = namb = 0
+bad = 0; cnt = {'puente': 0, 'ciudad': 0, 'nada': 0}; ndef = namb = 0; nrb = __import__('collections').Counter()
 def cerca(t, r):
     while True:
         xy = (t[0] + rng.randint(-r, r), t[1] + rng.randint(-r, r))
@@ -470,12 +476,14 @@ for n in range(NRAND):
     if t == 'amb': namb += 1; continue
     if t[2] == BRDV_VAL: ndef += 1
     cnt['nada' if t[0] == 0x777 else 'puente' if t[0] >= 0x2000 else 'ciudad'] += 1
-    if not (g['ok'] and g['table'] == t and g['lines'] == lines):
+    nrb.update(e[0] if e[0] == RB_PROP else e[3] for e in c['_rb'])
+    if not (g['ok'] and g['table'] == t and g['lines'] == lines and rb_evts(g) == c['_rb']):
         bad += 1
         if bad <= 3: print('DIFIERE', t, lines, g, c)
 check(f'{NRAND} casos al azar iguales al modelo (puente {cnt["puente"]}, de ellos defensa {ndef}, ciudad {cnt["ciudad"]}, '
       f'nada {cnt["nada"]}; {namb} con cabeceras empatadas que deciden, sin comparar)',
       bad == 0 and min(cnt.values()) > NRAND // 20 and ndef > NRAND // 50 and namb < NRAND // 10, f'difieren {bad}')
+check(f'eventos 26 (por motivo) y 27 en los casos al azar: {dict(sorted(nrb.items()))}', all(nrb[k] >= 5 for k in (1, 2, 4, 5, 6, 7, RB_PROP)))   # el 3, en «sin camino a ninguna cabecera»
 
 # ---- la meta 9: 0x40dbf0(código)
 def goal(c, code=CA, exe=AV, stops=()):

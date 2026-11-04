@@ -286,3 +286,25 @@ verificado releyendo: 7 bytes por bando). Sin "Landing", ai_conv no exige puerto
 es el stack del bando. Tanda pedida: TAREAS 100 (serie de 2 x 10 con Scarpart, Kor, Scarpart_CA, Kor_CA).
 Al volver: eventos 2, 24 (por motivo) y 25 en _CA, y PV contra el control de las mismas tandas.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 100".
+
+## Paso 5.2: por qué nunca se reconstruye un puente (4/11/2026, vista-aliada 1.0.121.0)
+Datos: 90 puentes derribados (evento 1) en las tandas 124-130, con unos 1.080 turnos restantes de partida en total, y
+0 eventos 4. ai_brrebev se ejecuta (desde él sale el evento 22, 245 veces), así que el evaluador corre: lo frena
+algún filtro o la competencia con las otras metas.
+Hipótesis principal, sin confirmar: cuando el puente queda como el mejor candidato, se anota en la tabla de la meta 9
+con valor 1 (igual que el original con una ciudad muerta, 0x41e510), y el selector 0x41f2c5 le suma a lo sumo +6 por
+cercanía; la defensa entra con 100 y sí se ejecuta (51 derribos). Si el valor 1 pierde siempre, nunca se elige.
+Antes de tocar el valor, enumerar (regla 3): 1.0.121.0 agrega en ai_brrebev
+- evento 26, una vez por puente derribado, color y turno (en la primera pila evaluada; rbe_last guarda turno*16 +
+  jugador), n = filtro que lo descartó: 1 ejército encima, 2 falta oro, 3 cabecera sin camino, 4 enemigo visible más
+  cerca que el límite, 5 lo volvería a derribar (ai_brs >= 5), 6 nada que ganar al cruzar, 7 pasó todo;
+- evento 27, cada vez que un puente queda como candidato de la meta 9 en la tabla (n = costo).
+Prueba emulada: prueba_iareconstruye.py compara los eventos 26/27 con el modelo en todos los casos nombrados y en los
+600 al azar (motivos 1, 2, 4-7 y el 27 más de 5 veces cada uno; el 3 en «sin camino a ninguna cabecera»); las
+decisiones, iguales que antes. prueba_iarazea y prueba_iapuente, TODO OK.
+Medición: la serie de la tarea 100 (Scarpart, Kor y sus _CA), ahora con 1.0.121.0 o posterior.
+Lectura al volver: si dominan 27 sin eventos 4, el valor 1 pierde con otras metas: subirlo (como la defensa, pero
+menor que 100) y medir PV. Si domina un motivo de 26, ajustar ese filtro (el 4, enemigo a menos de 30, es el
+sospechoso: el puente se derribó justamente porque había enemigos cerca). Contar con
+`select n, count(*) from evento where tipo = 26 group by n` y `tipo in (4, 27)`.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.2".
