@@ -252,6 +252,18 @@ for f, (sig, ret, sal, off) in {1: (0x412325, 0x412320, 0x412551, 0x16), 3: (0x4
             esp = (ret, 1)
         ver(f'minimapa {f}: ciudad {i} marca {m}', a, esp)
 
+print('-- minimapas de pantallas (0x4125a2, City Improvements; 0x41303b): la marcada no está (tarea 98)')
+for f, (ini, sig, sal, reg, chk) in {4: (0x4125a2, 0x4125a8, 0x4127ca, UC_X86_REG_BX, UC_X86_REG_ECX),
+                                     5: (0x41303b, 0x413042, 0x413142, UC_X86_REG_DI, UC_X86_REG_EBP)}.items():
+    for m in (0, 1):
+        a, mu = salto(ini, (sig, sal), m, regs=((reg, 0),))
+        ver(f'minimapa {f}: marca {m}', (a, mu.reg_read(chk) if a == sig else mu.reg_read(reg)),
+            ((sig, 0), (sal, 1))[m])
+
+print('-- trucos del chat desactivados (0x4552cf salta a la salida 0x456444)')
+a, mu = salto(0x4552cf, (0x4552d3, 0x4552d9, 0x456444), 0, regs=((UC_X86_REG_SI, 1),))
+ver('con un solo humano igual sale sin aplicar', a, 0x456444)
+
 print('-- Acerca de: controles 8-10 con parche, fecha y créditos; pila igual que en el original')
 g = Juego(); textos = []
 g.interceptar(0x4dd260, lambda a: textos.append((a[0], bytes(g.mu.mem_read(a[1], 64)).split(b'\0')[0].decode())))
@@ -263,5 +275,13 @@ ver_txt = next(l.split('|')[1] for l in open(os.path.join(os.path.dirname(os.pat
 ver('textos', [(i, t.split(',')[0] if i == 8 else t) for i, t in textos],
     [(8, ver_txt), (9, '@elCoprofago'), (10, 'Anthropic Claude, 2026')])
 print('   fecha:', textos[0][1] if textos else None)
+_r = open(r'C:\Warlords3\DATA\WAR3AV.RES', 'rb').read(); _o = 8
+while struct.unpack_from('<II', _r, _o)[:2] != (7, 94): _o += 20 + struct.unpack_from('<I', _r, _o + 16)[0]
+_p = _o + 20; _col = {}
+for _ in range(struct.unpack_from('<I', _r, _o + 8)[0]):
+    _t, _i = struct.unpack_from('<II', _r, _p)
+    if _t == 0x13: _col[_i] = struct.unpack_from('<I', _r, _p + 0x24)[0]
+    _p += 4 + {0x12: 0x68, 0x13: 0x28, 0x15: 0xac}[_t]
+ver('valores 8-10 en color claro como «Version 1.0.3» (+0x24 = 1)', [_col[i] for i in (8, 9, 10, 2)], [1, 1, 1, 1])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

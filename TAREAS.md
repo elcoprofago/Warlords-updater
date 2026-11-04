@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 99).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 100).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 98** (puerto sin calavera y «Acerca de» nuevo): cuando puedas, antes de la 90.
+0. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas, antes de la 90.
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
@@ -17,17 +17,17 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **98.** Ciudad convertida en puerto: sin calavera ni mejora equivocada, y el «Acerca de» nuevo (vista-aliada 1.0.119.0, 4/11/2026)
-Cambio: la ciudad convertida en puerto ya no aparece en el minimapa, y la pantalla de ciudades no la toma por una
-ciudad arrasada. Lo que pasó en la 97: al tocar ahí, el juego no encontraba una ciudad para reconstruir y, como
-hace siempre que se toca un lugar sin ciudad, abría la mejora de defensas de tu ciudad más cercana (la del sur).
-Eso último es del juego original y sigue igual. Además, en el botón del disquete → «Acerca de», en lugar de la
-memoria van el parche, su versión y fecha, y los créditos.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.119.0**.
-2. Cargá la partida de la 97 (o convertí otra ciudad en puerto). En el minimapa, ¿desapareció la calavera?
-3. Tocá donde estaba la ciudad vieja como hiciste en la 97: ¿ya no ofrece reconstruirla?
-4. Botón del disquete → «Acerca de»: ¿se lee «Patch vista-aliada  1.0.119.0, Nov 4, 2026», «Credits:
-   @elCoprofago» y «Anthropic Claude, 2026», y no hay líneas cortadas? Si algo se ve raro, sacá una captura.
+- [ ] **99.** Minimapa de «City Improvements», «Acerca de» legible y trucos desactivados (vista-aliada 1.0.120.0, 4/11/2026)
+Cambio: el minimapa de «City Improvements» (y el de las otras pantallas que muestran el mapa chico) ya no dibuja la
+calavera de la ciudad convertida en puerto. En el «Acerca de», la versión, la fecha y los créditos van con la misma
+letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I were a rich man», «Burn baby burn»,
+«Not easy being green» y los demás) ya no hacen nada: el mensaje queda como un mensaje común.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.120.0**.
+2. Cargá la partida de la 98. Construí defensas en una ciudad (comando de mejoras) y mirá el minimapa de «City
+   Improvements»: ¿desapareció la calavera de la ciudad vieja?
+3. Botón del disquete → «Acerca de»: ¿la versión, la fecha y los créditos se leen claros, con la misma letra que
+   «Version 1.0.3»? Si no, sacá una captura.
+4. Escribí en el chat alguno de los trucos (por ejemplo «Not easy being green»): no tiene que pasar nada raro.
 Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
@@ -87,6 +87,21 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **98.** Ciudad convertida en puerto: sin calavera ni mejora equivocada, y el «Acerca de» nuevo (vista-aliada 1.0.119.0, 4/11/2026)
+Cambio: la ciudad convertida en puerto ya no aparece en el minimapa, y la pantalla de ciudades no la toma por una
+ciudad arrasada. Lo que pasó en la 97: al tocar ahí, el juego no encontraba una ciudad para reconstruir y, como
+hace siempre que se toca un lugar sin ciudad, abría la mejora de defensas de tu ciudad más cercana (la del sur).
+Eso último es del juego original y sigue igual. Además, en el botón del disquete → «Acerca de», en lugar de la
+memoria van el parche, su versión y fecha, y los créditos.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.119.0**.
+2. Cargá la partida de la 97 (o convertí otra ciudad en puerto). En el minimapa, ¿desapareció la calavera?
+3. Tocá donde estaba la ciudad vieja como hiciste en la 97: ¿ya no ofrece reconstruirla?
+4. Botón del disquete → «Acerca de»: ¿se lee «Patch vista-aliada  1.0.119.0, Nov 4, 2026», «Credits:
+   @elCoprofago» y «Anthropic Claude, 2026», y no hay líneas cortadas? Si algo se ve raro, sacá una captura.
+Resultado:
+4/11/2026: el minimapa principal ya no muestra la calavera. Quedaba la calavera en el minimapa de «City
+Improvements», y el «Acerca de» se veía bien pero con los valores muy oscuros. Además pediste desactivar los trucos
+del chat. Todo eso va en la 99.
 - [x] **97.** Convertir una ciudad propia en puerto, y el puente nuevo más caro (vista-aliada 1.0.118.0, 3/11/2026)
 Cambio: el renglón del menú de órdenes ahora se llama **Build**. Con cualquier grupo parado en una ciudad tuya que
 toque agua (no hace falta constructor), ofrece **City into a port**: la ciudad desaparece y en el agua de al lado

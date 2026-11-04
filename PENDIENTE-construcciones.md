@@ -312,6 +312,15 @@ Cambios respecto del diseño de arriba:
   (de parches.txt y de git) y créditos @elCoprofago / Anthropic Claude, 2026 (`about_fill` en 0x4a97b7).
 - Prueba nueva en `prueba_puerto.py`. Retest del usuario: tarea 98.
 
-**Próximo paso:** resultado de la tarea 98 (antes 97). Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
+### Corrección 1.0.120.0 (4/11/2026, resultado de la tarea 98)
+
+- Quedaba la calavera en el minimapa de «City Improvements»: otros dos bucles de ciudades, 0x412580 y 0x413000
+  (el de lo conocido por el jugador, tabla 0x4f9870). Ganchos 0x4125a2 → `pt_mm4`, 0x41303b → `pt_mm5`.
+- Acerca de: los valores 8-10 (tipo 0x13) tenían +0x24 = 0 (oscuro); «Version 1.0.3» y las líneas de Broderbund
+  tienen 1. Se puso 1.
+- Trucos del chat (0x455240) desactivados: 0x4552cf salta siempre a la salida 0x456444.
+- Retest del usuario: tarea 99.
+
+**Próximo paso:** resultado de la tarea 99. Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
 de `pt_apply`. Etapa 2 (la IA convierte ciudades) y miniatura propia, solo si el usuario lo pide. Frase para
-retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tarea 97".
+retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tarea 99".

@@ -473,3 +473,17 @@ prueba_pozos.py («daño parcial») y prueba_misiontrampa.py. Solo en tierra: la
   anfitrión (si fuera al revés, po_gen vaciaría la tabla recibida; el original tendría el mismo problema con las
   ruinas ocultas, que también se sortean en 0x4a0fb0). La tarea 77 lo comprueba.
 - Con esto el pozos-y-trampas no tiene partes pendientes.
+
+## Trampa sobre un altar (pregunta del usuario, 4/11/2026) — sin investigar
+
+Pregunta: si una trampa está en la casilla de un altar, un grupo que lo visita ¿recibe primero la explosión y
+después la bendición (que cura parálisis, veneno, maldición)? ¿Los que sobreviven quedan paralizados o el altar
+les quita la parálisis enseguida?
+
+Lo que ya se sabe del código (build.py): `po_step` (gancho 0x49ce08, en cada paso) detecta la trampa y la deja
+pendiente, y el grupo se detiene (0x485c00). `po_fall` (gancho 0x4b6e9d) la hace explotar: mata del 40 al 80 % y
+paraliza a los demás (+0x11 & 0x7f = 0; con movimiento 9 o más, 5 pasos menos y bit 0x80 de +0x15).
+Falta saber: (1) dónde dispara el juego la visita al altar y si va antes o después de 0x4b6e9d en el mismo paso;
+(2) qué borra exactamente la bendición (si toca +0x11/+0x15); (3) si al detenerse sobre el altar la visita ocurre
+igual. Método: emular con unicorn un grupo que entra a un altar con trampa, en el estilo de `prueba_puerto.py`.
+Frase para retomar: "Seguimos con PENDIENTE-pozos-y-trampas.md, trampa sobre un altar".

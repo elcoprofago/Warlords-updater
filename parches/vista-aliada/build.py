@@ -4685,6 +4685,29 @@ pt_mm3 = place('pt_mm3', f'''
     jg 0x412bde
     jmp 0x412ed2
 ''')
+# Minimapas de las pantallas (City Improvements y otras): bucles 0x412580 y 0x413000, también dibujaban la calavera.
+pt_mm4 = place('pt_mm4', f'''
+    movsx ecx, bx
+    imul eax, ecx, 0xde
+    cmp byte ptr [eax + {PT_HIDE:#x}], 0
+    je mm4_ok
+    inc bx
+    jmp 0x4127ca
+mm4_ok:
+    lea edx, [ecx + ecx*8]
+    jmp 0x4125a8
+''')
+pt_mm5 = place('pt_mm5', f'''
+    movsx ebp, di
+    imul eax, ebp, 0xde
+    cmp byte ptr [eax + {PT_HIDE:#x}], 0
+    je mm5_ok
+    inc di
+    jmp 0x413142
+mm5_ok:
+    lea eax, [ebp + ebp*8]
+    jmp 0x413042
+''')
 # pt_okw: eax = x, edx = y -> eax = casilla si ahí puede ir el puerto (clase 1 sin estructura, edificio ni puente
 # derribado), 0 si no. Preserva el resto.
 pt_okw = place('pt_okw', f'''
@@ -15462,6 +15485,10 @@ patch(0x404893, asm('mov ax, word ptr [ebx + 0x537e2c]', 0x404893), asm(f'jmp {p
 patch(0x412320, asm('movsx ecx, word ptr [esp + 0x16]', 0x412320), asm(f'jmp {pt_mm1:#x}', 0x412320))
 patch(0x412809, asm('movsx eax, di; lea edx, [eax + eax*8]', 0x412809), asm(f'jmp {pt_mm2:#x}', 0x412809))
 patch(0x412bde, asm('movsx eax, word ptr [esp + 0x1a]', 0x412bde), asm(f'jmp {pt_mm3:#x}', 0x412bde))
+# Trucos del chat (0x455240: «If I were a rich man», «Burn baby burn», etc.) desactivados: sale siempre sin aplicar.
+patch(0x4552cf, bytes.fromhex('6683fe010f856b110000'), asm('jmp 0x456444', 0x4552cf))
+patch(0x4125a2, asm('movsx ecx, bx; lea edx, [ecx + ecx*8]', 0x4125a2), asm(f'jmp {pt_mm4:#x}', 0x4125a2))
+patch(0x41303b, asm('movsx ebp, di; lea eax, [ebp + ebp*8]', 0x41303b), asm(f'jmp {pt_mm5:#x}', 0x41303b))
 patch(0x40dbf0, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brreb:#x}', 0x40dbf0))
 patch(0x40ce24, asm('movsx eax, word ptr [esp + 0x1e]; lea edx, [eax + eax*8]; lea eax, [eax + edx*4];'
                     'lea ecx, [eax + eax*2]; lea edx, [ecx*2 + 0x537e30]', 0x40ce24),
@@ -15570,7 +15597,7 @@ def append(d, did, new):
 new_list = {}
 
 # Diálogo 9 (Customize Options): casilla nueva clonada de Fog of War (id 7), debajo de ella.
-# Acerca de (diálogo 94): rótulos 5-7 (tipo 0x12, texto en +0x2c de 64) y valores 8-10 un poco más anchos (+0x14).
+# Acerca de (diálogo 94): rótulos 5-7 (tipo 0x12, texto en +0x2c de 64) y valores 8-10 un poco más anchos (+0x14) y en color claro (+0x24 = 1).
 r94 = records(res, 94)
 for i, t in ABOUT_LBL.items():
     p, ty = r94[i]; assert ty == 0x12
@@ -15578,6 +15605,7 @@ for i, t in ABOUT_LBL.items():
 for i in ABOUT_VAL:
     p, ty = r94[i]; assert ty == 0x13
     struct.pack_into('<I', res, p + 0x14, 0xa0)
+    struct.pack_into('<I', res, p + 0x24, 1)   # color claro, como «Version 1.0.3» y las líneas de Broderbund
 r9 = records(res, 9)
 p, t = r9[7]; assert t == 5
 chk = bytearray(res[p:p + 4 + SZ[5]])
