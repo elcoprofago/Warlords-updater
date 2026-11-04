@@ -274,7 +274,15 @@ Resultado de la tarea 90 (tandas 129-130, vista-aliada 1.0.120.0, 20 partidas ok
   (sin barco propio vecino) 23; motivos 1, 2 y 5: 0. El diagnóstico funciona (escribe), así que el 0 del 25 es real
   salvo falla propia de crlink->ia_evt (puntero verificado en el exe compilado, no en partida).
 - PV medio: Scarpart 7,66 / Scarpart_CR 7,56; Kor 4,97 / Kor_CR 5,19. Sin diferencia con muestras tan chicas.
-Lectura: el convoy no falla, se descarta con razón: sus casillas no desembarcan en playa (regla del convoy) y la IA
-casi siempre va a una playa. Sin valor para la IA mientras esa regla siga; no se toca. Paso 5.1 cerrado.
-Próximo paso: 5.2, por qué el evento 4 (reconstruir puentes) nunca sale.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.2".
+Corrección del usuario (4/11/2026): la prueba estaba mal armada. Juntar Landing y Carrier en el mismo barco no
+representa el juego: el usuario nunca los pone juntos (sería demasiada ventaja en una unidad; la idea es repartir
+cualidades para obligar a elegir al armar el bando), y con Landing siempre conviene la playa, para la IA y para un
+humano. Atracar solo en puertos es la razón de ser del Carrier, lo que lo diferencia del Landing: no se toca.
+El amarillo de las tandas 127-128 (1.0.106.0): el usuario lo vio en directo y eran barcos enlazados. Como el evento 2
+fue 0 en esas partidas, el enlace no lo ordenó ai_conv: salió de crlink al chocar un movimiento común con un barco
+propio lleno (accidental). La 1.0.106.0 no tenía el evento 25 para contarlo.
+Paso 5.1 reabierto: guardadas Tanda_Scarpart_CA y Tanda_Kor_CA (ia\convoy.py, ahora solo "Carrier" en el barco;
+verificado releyendo: 7 bytes por bando). Sin "Landing", ai_conv no exige puerto (va directo a cv_need) y el tope
+es el stack del bando. Tanda pedida: TAREAS 100 (serie de 2 x 10 con Scarpart, Kor, Scarpart_CA, Kor_CA).
+Al volver: eventos 2, 24 (por motivo) y 25 en _CA, y PV contra el control de las mismas tandas.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.1: terminó la tarea 100".

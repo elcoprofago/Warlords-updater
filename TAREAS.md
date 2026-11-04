@@ -1,19 +1,30 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 100).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 101).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
-1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+1. **Tarea 100** (tanda de convoyes con Carrier solo): cuando la PC esté libre.
+2. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
+3. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
+Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
+desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se
+arman los bandos de verdad. No hay versión nueva del parche.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.120.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart**, **Kor**, **Scarpart_CA** y **Kor_CA**, Partidas: **10**, tildá
+   **serie de 2**, **Nueva tanda**.
+3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **99.** Minimapa de «City Improvements», «Acerca de» legible y trucos desactivados (vista-aliada 1.0.120.0, 4/11/2026)
 Cambio: el minimapa de «City Improvements» (y el de las otras pantallas que muestran el mapa chico) ya no dibuja la
@@ -86,8 +97,11 @@ versión.
 Resultado: (Claude, 4/11/2026: tandas 129 y 130 con la 1.0.120.0, 20 partidas, 8 con convoy posible. Ningún
 convoy formado por ninguna vía. En 187 ocasiones en que la computadora pudo intentarlo, 164 no lo hizo porque el
 destino no tenía un puerto cerca: un convoy solo atraca en puertos, y casi siempre iba a desembarcar en una playa.
-Puntos y ciudades: iguales a las partidas sin convoy. El caso del amarillo que viste fue con la 1.0.106.0, que no
-anotaba convoyes: no se puede confirmar si eran convoyes enlazados o barcos vecinos.)
+Prueba mal armada (usuario): el barco tenía Landing y Carrier juntos, y con Landing siempre conviene la playa; se
+repite con Carrier solo en la tarea 100.
+Puntos y ciudades: iguales a las partidas sin convoy. El amarillo (1.0.106.0, visto en directo por el usuario):
+eran barcos enlazados; como en esas partidas la rutina de la IA no ordenó ninguno, se enlazaron al chocar con un
+barco propio lleno en un movimiento común, no a propósito.)
 
 - [x] **98.** Ciudad convertida en puerto: sin calavera ni mejora equivocada, y el «Acerca de» nuevo (vista-aliada 1.0.119.0, 4/11/2026)
 Cambio: la ciudad convertida en puerto ya no aparece en el minimapa, y la pantalla de ciudades no la toma por una
