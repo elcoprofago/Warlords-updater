@@ -4176,6 +4176,9 @@ TR_FLAG, TR_X, TR_Y, TR_CHKP = tr_vars, tr_vars + 2, tr_vars + 4, place_data('tr
 # Código de la trampa en el diálogo de reconstruir ([0x587e5c]): >= BR_CODE, así br_rebdraw no busca imagen y br_cost
 # le pone el costo de fundar una ciudad; br_rebtxt le pone su texto y tr_send la manda por red.
 TR_MARK = 0x7fff
+# Costo (pedido del usuario, 4/11/2026): el 25 % de fundar una ciudad, con bd_price: a ese 25 % se le aplica la
+# misma rebaja que el juego da a la ciudad (0x4057a0: la habilidad 12 de los héroes del bando, la de la ingeniería).
+TR_FRAC = 5   # veinteavos (BD_DIV)
 tr_dlgtxt = place_data('tr_dlgtxt', cstr_('Building a trap'))
 # ---- Construir caminos (PENDIENTE-construcciones.md, diseño A-E; paso C.1). Un grupo con un ejército (no héroe)
 # cuyo registro tiene el bono de movimiento "build" pone un camino en la casilla del líder: tierra (clase de terreno
@@ -7905,11 +7908,18 @@ brx_road:
 br_cost = place('br_cost', f'''
     cmp word ptr [esp + 8], {BD_MARK:#x}
     je brc_road
+    cmp word ptr [esp + 8], {TR_MARK:#x}
+    je brc_trap
     mov si, word ptr [0x569510]
     cmp word ptr [esp + 8], {BR_CODE:#x}
     jl 0x4b65ec
     mov si, word ptr [0x56950e]
     jmp 0x4b65ec
+brc_trap:
+    push eax
+    push edx
+    mov eax, {TR_FRAC}
+    jmp brc_pr
 brc_road:
     push eax
     push edx
@@ -8754,7 +8764,11 @@ PO_POZO, PO_REMOLINO, PO_TRAMPA, PO_TUMBA = 0, 1, 2, 3   # tumba: +5 = cuál (tu
 # empezó otro turno; mientras tanto, quien la ve, ve el agujero con humo, y después de nuevo la mina (tr_turn).
 # Un .SAV de antes trae 1 en las detonadas: les queda 1 uso. Desde 1.0.70.0 son 2 explosiones, no 3 (pedido del
 # usuario, 24/10/2026: tres era excesivo); una trampa que ya llevaba 2 queda gastada.
-TR_USOS, TR_CUENTA, TR_RECIEN = 2, 0x0f, 0x80
+# Trampa doble (pedido del usuario, 4/11/2026: apilar, con tope de 2 por casilla, también minas submarinas): bit 3
+# (TR_DOBLE) = hay otra trampa debajo. Al gastarse la de arriba (TR_USOS explosiones), po_fall borra el bit y la
+# cuenta vuelve a 0: la casilla explota hasta 2 * TR_USOS veces, una por paso, como antes. Solo el dueño la apila
+# (tr_stk), parado en su trampa activa; no se agrega registro. Un .SAV de antes no trae el bit.
+TR_USOS, TR_CUENTA, TR_RECIEN, TR_DOBLE = 2, 0x07, 0x80, 0x08
 PO_MAPSZ = 0x32000 // 10                       # casillas del mapa 0x503e58 (10 bytes cada una)
 po_save = place_data('po_save', b'POZO' + bytes(4 + PO_MAX * PO_REC))   # tal cual se escribe al final del .SAV
 PO_SAVELEN = 8 + PO_MAX * PO_REC
@@ -9668,7 +9682,7 @@ pf_pl:
     shl eax, 16
     mov ax, word ptr [ebp]
     movzx ecx, byte ptr [ebp + 5]
-    and ecx, {TR_CUENTA}
+    and ecx, {TR_CUENTA | TR_DOBLE}
     imul ecx, ecx, 0x1000193
     xor eax, ecx
     imul ecx, ebx, 0x9e3779b9
@@ -9824,8 +9838,16 @@ pf_trap:
     cmp byte ptr [ebp + 4], {PO_TRAMPA}
     jne pf_vis
     mov al, byte ptr [ebp + 5]
-    and al, {TR_CUENTA}
+    and al, {TR_CUENTA | TR_DOBLE}
     inc al
+    mov ah, al
+    and ah, {TR_CUENTA}
+    cmp ah, {TR_USOS}
+    jb pf_tcnt
+    test al, {TR_DOBLE}
+    jz pf_tcnt
+    xor al, al
+pf_tcnt:
     mov ah, bl
     shl ah, 4
     or al, ah
@@ -10664,12 +10686,13 @@ po_curclr = place('po_curclr', f'''
 ''')
 PI_TXT = ('A hidden pit. Any army that steps into it dies; only flyers are safe.',
           'A whirlpool. Any ship that sails into its eye sinks with all aboard; only flyers are safe.')
-PI_TRFMT = (f'A mine. Explosions left: %d of {TR_USOS}.', f'A sea mine. Explosions left: %d of {TR_USOS}.')
+PI_TRFMT = ('A mine. Explosions left: %d of %d.', 'A sea mine. Explosions left: %d of %d.',
+            'Two stacked mines. Explosions left: %d of %d.', 'Two stacked sea mines. Explosions left: %d of %d.')
 PI_SPENT = 'A spent mine: it will not explode again.'
 PI_TRAP, PI_TRNM = 'Trap %.20s%02d', 'Trap'
 assert len(PI_TRAP % ('x' * 20, 99)) < 64   # el título del cuadro se copia a 63 (0x4f0f40)
 pi_txtt = place_data('pi_txtt', struct.pack('<2I', *(place_data(f'str_pi_txt{i}', cstr_(s)) for i, s in enumerate(PI_TXT))))
-pi_trft = place_data('pi_trft', struct.pack('<2I', *(place_data(f'str_pi_trf{i}', cstr_(s)) for i, s in enumerate(PI_TRFMT))))
+pi_trft = place_data('pi_trft', struct.pack('<4I', *(place_data(f'str_pi_trf{i}', cstr_(s)) for i, s in enumerate(PI_TRFMT))))
 str_pi_spent = place_data('str_pi_spent', cstr_(PI_SPENT))
 str_pi_trap = place_data('str_pi_trap', cstr_(PI_TRAP))
 str_pi_trnm = place_data('str_pi_trnm', cstr_(PI_TRNM))
@@ -10736,11 +10759,18 @@ pi_tuse:
     jae pi_show
     neg ecx
     add ecx, {TR_USOS}
+    push {TR_USOS}
+    test byte ptr [ebx + 5], {TR_DOBLE}
+    jz pi_t1
+    add ecx, {TR_USOS}
+    add dword ptr [esp], {TR_USOS}
+    add edi, 2
+pi_t1:
     push ecx
     push dword ptr [edi*4 + {pi_trft:#x}]
     push {pi_txt:#x}
     call dword ptr [{SPRINTF:#x}]
-    add esp, 12
+    add esp, 16
     mov esi, {pi_txt:#x}
 pi_show:
     push dword ptr [esp + 0x20]
@@ -13145,22 +13175,66 @@ BD_TXT, BD_HOT = 0x19, 0x1a
 BD_PKT = 0x2a4
 bd_menutxt = place_data('bd_menutxt', cstr_('Build'))
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
+# tr_stk (apilar, pedido del usuario, 4/11/2026): esi = x, edi = y, ebx = bando -> eax = registro de la trampa de
+# ese bando en la casilla si se le puede poner otra encima (activa y todavía no doble), 0 si no. Preserva el resto.
+tr_stk = place('tr_stk', f'''
+    push ecx
+    xor eax, eax
+    test esi, esi
+    jl tsk_out
+    test edi, edi
+    jl tsk_out
+    cmp si, word ptr [0x503e00]
+    jge tsk_out
+    cmp di, word ptr [0x503e02]
+    jge tsk_out
+    mov cl, byte ptr [0x503e06]
+    mov eax, edi
+    shl eax, cl
+    add eax, esi
+    cmp eax, {PO_MAPSZ}
+    jae tsk_no
+    movzx eax, byte ptr [eax + {po_map:#x}]
+    test eax, eax
+    jz tsk_out
+    lea eax, [eax*8 + {PO_TAB - 8:#x}]
+    cmp byte ptr [eax + 4], {PO_TRAMPA}
+    jne tsk_no
+    movzx ecx, byte ptr [eax + 7]
+    cmp ecx, ebx
+    jne tsk_no
+    mov cl, byte ptr [eax + 5]
+    test cl, {TR_DOBLE}
+    jnz tsk_no
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
+    jb tsk_out
+tsk_no:
+    xor eax, eax
+tsk_out:
+    pop ecx
+    ret
+''')
 # Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
 tr_check = place('tr_check', f'''
     pushad
     mov word ptr [{TR_X:#x}], di
     mov word ptr [{TR_Y:#x}], bp
     call {bd_check:#x}
-    cmp dword ptr [{PO_N:#x}], {PO_MAX}
-    jae tk_out
-    mov esi, edi
-    mov edi, ebp
-    mov ebp, {PO_TRAMPA}
-    call {pg_ok:#x}
-    jnz tk_out
     movsx ebx, word ptr [0x537ce8]
     cmp ebx, 8
     jae tk_out
+    mov esi, edi
+    mov edi, ebp
+    call {tr_stk:#x}
+    test eax, eax
+    jnz tk_ok
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jae tk_out
+    mov ebp, {PO_TRAMPA}
+    call {pg_ok:#x}
+    jnz tk_out
+tk_ok:
     imul ebx, ebx, 0x4f0
     movsx ecx, word ptr [ebx + 0x56eaa8]
 tk_army:
@@ -13341,13 +13415,18 @@ tr_recv = place('tr_recv', f'''
     movsx edx, word ptr [esi + 6]
     cmp ecx, edx
     jne tv_x
-    cmp dword ptr [{PO_N:#x}], {PO_MAX}
-    jae tv_x
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
+    call {tr_stk:#x}
+    push eax
+    test eax, eax
+    jnz tv_pay
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jae tv_x1
     mov ebp, {PO_TRAMPA}
     call {pg_ok:#x}
-    jnz tv_x
+    jnz tv_x1
+tv_pay:
     push ebx
     push {TR_MARK:#x}
     call 0x4b65e0
@@ -13355,12 +13434,18 @@ tr_recv = place('tr_recv', f'''
     movsx ebp, ax
     imul eax, ebx, {SIDE:#x}
     cmp ebp, dword ptr [eax + 0x536c14]
-    jg tv_x
+    jg tv_x1
     neg ebp
     push ebp
     push ebx
     call 0x43fd60
     add esp, 8
+    pop edx
+    test edx, edx
+    jz tv_new
+    or byte ptr [edx + 5], {TR_DOBLE}
+    jmp tv_x
+tv_new:
     mov eax, dword ptr [{PO_N:#x}]
     lea edx, [eax*8 + {PO_TAB:#x}]
     mov word ptr [edx], si
@@ -13375,6 +13460,9 @@ tr_recv = place('tr_recv', f'''
     inc dword ptr [{PO_N:#x}]
     call {po_rebuild:#x}
     call {REDRAW:#x}
+    jmp tv_x
+tv_x1:
+    pop eax
 tv_x:
     popad
     jmp 0x4b85bb
@@ -13557,7 +13645,7 @@ tt_loop:
     and ecx, 7
     cmp ecx, ebx
     jne tt_next
-    and al, {TR_CUENTA}
+    and al, {TR_CUENTA | TR_DOBLE}
     mov byte ptr [edx*8 + {PO_TAB + 5:#x}], al
 tt_next:
     inc edx

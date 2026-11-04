@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 103).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 104).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,8 +14,27 @@ Sorteo están acá (tarea 18).
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
+8. **Tarea 103** (trampas: costo, apilar y en ciudades): junto con la 101, en la misma partida de prueba.
 
 # Pendientes
+
+- [ ] **103.** Trampas: más baratas, apiladas de a dos y dentro de ciudades (vista-aliada 1.0.124.0, 4/11/2026)
+Cambios: la trampa cuesta la cuarta parte de fundar una ciudad (menos si un héroe tuyo abarata las ciudades). Parado
+sobre tu propia trampa podés sembrar otra encima, como mucho dos por casilla (también minas submarinas): la casilla
+explota hasta cuatro veces. Las trampas ya se podían poner en una ciudad: falta verlo en el juego.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.124.0**.
+2. Partida de prueba (Warlords3), con un grupo que tenga el bono «trap»: abrí **Build Trap**. ¿El costo del diálogo
+   es la cuarta parte de lo que cuesta fundar una ciudad?
+3. Sin moverte, volvé a abrir **Build Trap** y confirmá: ¿se cobra otra vez, **no explota**, y la lupa sobre la
+   casilla dice «Two stacked mines. Explosions left: 4 of 4»?
+4. Una tercera vez: **Build Trap** tiene que estar apagado (tope de 2).
+5. Mandá un grupo enemigo a pisarla cuatro veces (en turnos o pasos distintos): ¿explota las cuatro, y después queda
+   como agujero con humo?
+6. Ciudades: llevá el grupo a una casilla de una ciudad tuya y sembrá una trampa.
+   Contame: ¿se puede?, ¿se ve la mina sobre la ciudad o la tapa la ciudad?, y qué pasa cuando un enemigo
+   **conquista** esa ciudad y entra en la casilla (¿explota después del combate?).
+7. Control: en el agua (mina submarina), los pasos 3 y 4 igual, con «Two stacked sea mines».
+Resultado:
 
 - [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
 Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,

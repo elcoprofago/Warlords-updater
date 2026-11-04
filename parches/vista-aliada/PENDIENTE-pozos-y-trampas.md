@@ -507,7 +507,7 @@ tienen el bit 0x20** (ni pasos a 0, ni -5, ni marca); siguen pudiendo morir. Pro
 por un altar» y el control del grupo mezclado). Como la bendición ocurre antes de la explosión en el mismo paso, un
 grupo que entra a un altar con trampa sobrevive sin paralizarse. En el juego: tarea 101.
 
-## Pedidos del 4/11/2026 (después de 1.0.123.0): pendientes
+## Pedidos del 4/11/2026 (después de 1.0.123.0): hechos en 1.0.124.0, falta probar en el juego (tarea 103)
 Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, pedidos del 4/11».
 1. **Costo:** hoy cada trampa cuesta lo de una ciudad ([0x56950e], br_cost con TR_MARK). Bajarlo al **25 %** del costo
    de una ciudad, y **más aún** si el jugador tiene la ingeniería (bono artificer / engineering; averiguar cuánto
@@ -524,3 +524,19 @@ Para retomar: «Seguimos con PENDIENTE-pozos-y-trampas.md, pedidos del 4/11».
    detonarla (hoy no cae al salir; sí si vuelve a pisarla).
 Ojo: los cambios de costo y ubicación tocan la orden de red (tr_send / tr_recv): las dos PC tienen que tener la misma
 versión.
+
+### Resultado (1.0.124.0, 4/11/2026)
+1. **Costo:** br_cost manda TR_MARK a bd_price con TR_FRAC = 5 veinteavos: el 25 % de la ciudad tal como la cobra
+   el juego (mitad para la computadora y el ajuste de 0x4057a0, que es la habilidad 12 de los héroes del bando,
+   la que abarata las ciudades). Es decir, la rebaja se aplica a la ciudad y de eso se toma el 25 %. El diálogo
+   y su OK (se apaga sin oro) y tr_recv usan el mismo 0x4b65e0: no hubo que tocarlos.
+2. **Ubicación:** ya estaba permitido desde el 22/10 (pg_ok con PO_TRAMPA solo exige casilla libre en po_map; todas
+   las salidas de 0x4b0660 pasan por br_menu → tr_check; prueba_trampas ya aceptaba la casilla de ciudad). Lo que
+   falta ver en el juego (dibujo bajo la ciudad, conquista: el atacante solo entra en la casilla después de ganar,
+   y ahí po_step la detona) va en la tarea 103, paso 6.
+3. **Apilar** (pedido del usuario, 4/11: tope de 2 por casilla, también minas submarinas): bit 3 de +5 = TR_DOBLE,
+   TR_CUENTA pasa a 0x07. tr_stk acepta si la casilla tiene una trampa **del mismo bando**, activa y sin TR_DOBLE;
+   entonces tr_check la habilita sin mirar PO_N/pg_ok, y tr_recv cobra y pone el bit en vez de agregar un registro.
+   po_fall: al llegar a TR_USOS con TR_DOBLE, cuenta 0 y borra el bit (explota una por paso, 4 en total). tr_turn
+   conserva el bit; la lupa dice «Two stacked (sea) mines. Explosions left: n of 4». Sembrar no detona (po_step solo
+   corre al llegar). Pruebas: prueba_trampas, prueba_pozos, prueba_lupa.

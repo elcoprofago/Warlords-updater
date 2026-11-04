@@ -27,7 +27,8 @@ TR_RECV = dest(0x4b6a22, 2)
 if img[TR_RECV - BASE] == 0x3d and d32(TR_RECV + 1) == 0x2a4 + 8:   # bd_recv (caminos) va antes y le pasa lo demás
     TR_RECV = dest(TR_RECV + 5, 2)
 TR_MARK = 0x7fff
-CIUDAD = 15                       # costo de fundar una ciudad ([0x56950e])
+CIUDAD = 20                       # costo de fundar una ciudad ([0x56950e])
+TRAMPA = CIUDAD // 4              # la trampa cuesta el 25 % (pedido del 4/11/2026)
 
 mal = 0
 def ver(nombre, r, esperado):
@@ -107,10 +108,15 @@ ver('puente (agua con camino): se puede (pedido del 22/10/2026)', menu([(3, 'Tra
 ver('ruina, ciudad y agua: se puede (pedido del 22/10/2026: en cualquier lugar)',
     [menu([(3, 'Trap', [])], x=x, y=y)[0] for x, y in ((14, 14), (12, 12), (33, 7))], [1, 1, 1])
 ver('control: ya hay un pozo ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
-ver('control: ya hay una trampa detonada ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 0)
+ver('trampa propia detonada una vez (sigue activa): se apila', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 1)
+ver('control: detonada una vez, de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 1)])[0], 0)
 ver('control: ni una gastada', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 3, 0xff, 0)])[0], 0)
 ver('control: tabla llena', menu([(3, 'Trap', [])], regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[0], 0)
 ver('control: no es su turno', menu([(3, 'Trap', [])], turno=1)[0], 0)
+ver('apilar: sobre su trampa activa se puede', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 0)])[0], 1)
+ver('  con una explosión y la tabla llena', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 1, 0)] + [(1, 1, 0, 0, 0, 0xff)] * (PO_MAX - 1))[0], 1)
+ver('control: ya es doble (tope 2)', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 8, 1, 0)])[0], 0)
+ver('control: trampa de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 1)])[0], 0)
 ver('control: un pozo en otra casilla no molesta', menu([(3, 'Trap', [])], regs=[(6, 7, 0, 0, 0, 0xff)])[0], 1)
 
 print('-- diálogo: texto y envío')
@@ -138,7 +144,7 @@ ver('control: un sitio sigue a 0x4b9ce0(índice, costo, jugador)',
 
 print('-- red: tr_recv')
 PKT = 0x150000
-def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, regs=(), tipo=0x2a3):
+def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, regs=(), tipo=0x2a3, inge=0, todo=False):
     g = Juego(); mu = g.mu; g.poner(regs)
     s = 0x536b30 + p * 0x1f8
     mu.mem_write(s, b'\1'); mu.mem_write(s + 3, bytes([1]))                      # activo; máquina 1
@@ -147,25 +153,36 @@ def recibir(p=2, x=5, y=7, maquina=1, oro=100, humano=True, regs=(), tipo=0x2a3)
     mu.mem_write(PKT + 6, struct.pack('<h', maquina)); mu.mem_write(PKT + 0xc, struct.pack('<4h', p, x, y, 0))
     cobros = []
     g.interceptar(0x43fd60, lambda a: cobros.append((a[0] & 0xffff, struct.unpack('<i', struct.pack('<I', a[1]))[0])))
-    g.interceptar(0x4057a0, lambda a: 0)
+    g.interceptar(0x4057a0, lambda a: inge)
     g.interceptar(0x4a2170, lambda a: g.llamadas.append('redibujo'))
     fin = 0x4b85bb if tipo == 0x2a3 else dest(TR_RECV + 5, 2)
     g.correr(TR_RECV, fin, struct.pack('<I', RET), [(UC_X86_REG_EAX, tipo + 8), (UC_X86_REG_ESI, PKT)])
+    if todo: return g.tabla(), cobros
     return g.tabla()[len(regs):], cobros, mu.reg_read(UC_X86_REG_ESI) == PKT, mu.mem_read(PO_MAP + (y << 6) + x, 1)[0]
 ver('trampa del bando 2: se cobra, se anota oculta (solo su bit) y entra en po_map',
-    recibir(), ([(5, 7, 2, 0, 4, 2)], [(2, -CIUDAD)], True, 1))
+    recibir(), ([(5, 7, 2, 0, 4, 2)], [(2, -TRAMPA)], True, 1))
 ver('  detrás de lo que ya había', recibir(regs=[(1, 1, 0, 0, 0, 0xff)])[0::3], ([(5, 7, 2, 0, 4, 2)], 2))
-ver('  justo con el oro del costo', recibir(oro=CIUDAD)[1], [(2, -CIUDAD)])
+ver('  justo con el oro del costo', recibir(oro=TRAMPA)[1], [(2, -TRAMPA)])
 NADA = ([], [], True, 0)
 ver('control: lo manda otra máquina', recibir(maquina=0), NADA)
-ver('control: no alcanza el oro', recibir(oro=CIUDAD - 1), NADA)
-ver('casilla con camino: se acepta', recibir(x=10)[:2], ([(10, 7, 2, 0, 4, 2)], [(2, -CIUDAD)]))
-ver('puente: se acepta', recibir(x=31, y=3)[:2], ([(31, 3, 2, 0, 4, 2)], [(2, -CIUDAD)]))
-ver('agua: se acepta', recibir(x=33)[:2], ([(33, 7, 2, 0, 4, 2)], [(2, -CIUDAD)]))
+ver('control: no alcanza el oro', recibir(oro=TRAMPA - 1), NADA)
+ver('casilla con camino: se acepta', recibir(x=10)[:2], ([(10, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
+ver('puente: se acepta', recibir(x=31, y=3)[:2], ([(31, 3, 2, 0, 4, 2)], [(2, -TRAMPA)]))
+ver('agua: se acepta', recibir(x=33)[:2], ([(33, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
 ver('control: bando de la computadora', recibir(humano=False), NADA)
 ver('control: bando fuera de rango', recibir(p=9)[:3], NADA[:3])
 ver('control: tabla llena', recibir(regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[:2], NADA[:2])
 ver('control: casilla ocupada por una trampa', recibir(regs=[(5, 7, 2, 0, 1, 0)])[:2], NADA[:2])
+ver('ingeniería (0x4057a0 = 5): la ciudad rebajada (20 + 20*5/-10 = 10) y su 25 %', recibir(inge=5)[1], [(2, -2)])
+print('-- apilar (pedido del 4/11/2026: hasta 2 por casilla, también minas submarinas)')
+ver('sobre su trampa activa: no agrega registro, la marca doble (bit 3) y cobra',
+    recibir(regs=[(5, 7, 2, 0, 4, 2)], todo=True), ([(5, 7, 2, 8, 4, 2)], [(2, -TRAMPA)]))
+ver('  con una explosión ya hecha y la tabla llena', recibir(regs=[(5, 7, 2, 1, 4, 2)] + [(1, 1, 0, 0, 0, 0xff)] * (PO_MAX - 1), todo=True)[0][0], (5, 7, 2, 9, 4, 2))
+ver('  mina submarina', recibir(x=33, regs=[(33, 7, 2, 0, 4, 2)], todo=True), ([(33, 7, 2, 8, 4, 2)], [(2, -TRAMPA)]))
+ver('control: ya es doble (tope 2)', recibir(regs=[(5, 7, 2, 8, 4, 2)], todo=True), ([(5, 7, 2, 8, 4, 2)], []))
+ver('control: gastada', recibir(regs=[(5, 7, 2, 2, 0xff, 2)], todo=True)[1], [])
+ver('control: trampa de otro bando', recibir(regs=[(5, 7, 2, 0, 0xff, 3)], todo=True)[1], [])
+ver('control: sin oro', recibir(oro=TRAMPA - 1, regs=[(5, 7, 2, 0, 4, 2)], todo=True), ([(5, 7, 2, 0, 4, 2)], []))
 ver('control: otro paquete sigue a or_recv sin tocar nada', recibir(tipo=0x2a2)[:2], NADA[:2])
 
 print('MAL:', mal)

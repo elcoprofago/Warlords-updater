@@ -278,6 +278,9 @@ for k in (1,):
     t = POZOS[:2] + [(15, 15, 2, k, 0, 3)] + POZOS[3:]
     r = caer(t, [(15, 15, 2, 0, 0)], [(2, 15, 15)])
     ver(f'trampa con {k} explosión: mata otra vez y suma una', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa0 | k + 1, 0x04)))
+for e, fin in ((0x08, 0xa9), (0x09, 0xa0)):
+    r = caer(POZOS[:2] + [(15, 15, 2, e, 0, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
+    ver(f'doble (+5 = {e:#x}): explota y queda en {fin:#x}', (r[0], r[3][2][3]), ([(1, 0)], fin))
 r = caer(POZOS[:2] + [(15, 15, 2, 0xb1, 0x08, 3)] + POZOS[3:], [(15, 15, 2, 0, 0)], [(2, 15, 15)])
 ver('recién explotada por otro (bits 4-7): mata igual y queda a nombre del último', (r[0], r[3][2][3:5]), ([(1, 0)], (0xa2, 0x0c)))
 r = caer(POZOS, [(16, 16, 2, 0, 0)], [(2, 16, 16)])
@@ -350,10 +353,10 @@ def turno(regs, p):
     mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK); mu.reg_write(UC_X86_REG_EBX, p)
     mu.emu_start(TR_TURN, RET, count=100000); assert mu.reg_read(UC_X86_REG_EBX) == p
     return [r[3] for r in g.tabla()]
-T = [(1, 1, 2, 0xb1, 8, 0), (2, 1, 2, 0xa2, 4, 0), (3, 1, 2, 0xb3, 8, 0), (4, 1, 0, 0xb1, 8, 0), (5, 1, 3, 0xb1, 8, 0)]
-ver('empieza el 3: sus trampas dejan de estar recién explotadas; las del 2, pozo y tumba igual', turno(T, 3),
-    [1, 0xa2, 3, 0xb1, 0xb1])
-ver('empieza el 2', turno(T, 2), [0xb1, 2, 0xb3, 0xb1, 0xb1])
+T = [(1, 1, 2, 0xb9, 8, 0), (2, 1, 2, 0xa2, 4, 0), (3, 1, 2, 0xb3, 8, 0), (4, 1, 0, 0xb1, 8, 0), (5, 1, 3, 0xb1, 8, 0)]
+ver('empieza el 3: sus trampas dejan de estar recién explotadas (la doble sigue doble); las del 2, pozo y tumba igual', turno(T, 3),
+    [9, 0xa2, 3, 0xb1, 0xb1])
+ver('empieza el 2', turno(T, 2), [0xb9, 2, 0xb3, 0xb1, 0xb1])
 r = caer(POZOS, GRUPO, [(2, 11, 10), (2, -1, 10), (2, 40, 10), (9, 10, 10)])
 ver('control: casilla sin pozo, fuera del mapa o jugador inválido: nada', r[0], [])
 r = caer(POZOS, GRUPO + [(20, 10, 4, 0, 0)], [(2, 10, 10), (4, 20, 10)])
