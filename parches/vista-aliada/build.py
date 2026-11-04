@@ -1011,6 +1011,7 @@ TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0x18a, 3, 'Each point of Bridge adds 1 to the strength of ', 'XXXX '),
     (0x18a, 4, 'this army when the battle is on a bridge that ', 'XXXX '),
     (0x18a, 5, 'is still standing.', 'XXXX'),
+    (0x168, 2, 'Rebuild City/Site', 'Build City/Site'),   # menú de la torre (pedido del usuario)
 ]
 strs = {}
 for g, i, s, _ in TEXTS:
