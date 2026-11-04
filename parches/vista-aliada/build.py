@@ -16297,7 +16297,7 @@ for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))
 pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
 
-# Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco) va pintada en el fondo, en
+# Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco, 65 de alto: lo más grande que entra sin tocar el marco) va pintada en el fondo, en
 # lugar del texto del control 19 (que queda vacío). El fondo es el archivo 1 (picts\startup, 640x480, por la pantalla
 # 1 de la tabla tipo 5) o, a 800x600 y 1024x768, el 138 o el 139 (0x4aab9a), con el diálogo corrido (80,60) o
 # (192,144); el marco es el mismo en los tres, en esa posición. Las tres copias nuevas (picts\startav*) llevan el
@@ -16308,7 +16308,7 @@ pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
 # blanco. Se mezcla con el fondo y se lleva al color más cercano entre los que ya usan los tres fondos (comparten
 # paleta).
 TITULO = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'titulo.pcx')).convert('RGB')
-TIT_H, TIT_X, TIT_Y, TIT_W = 60, 322, 3, (254, 254, 254)
+TIT_H, TIT_X, TIT_Y, TIT_W = 65, 322, 1, (254, 254, 254)
 STARTUP = [(1, 'startup', 'startav', (0, 0)), (138, 'startup1', 'startav1', (80, 60)), (139, 'startup2', 'startav2', (192, 144))]
 fondos = {n: Image.open(os.path.join(r'C:\Warlords3\PICTS', n + '.pcx')) for _, n, _, _ in STARTUP}
 st_pal = fondos['startup'].getpalette()[:768]
