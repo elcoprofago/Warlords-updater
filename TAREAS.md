@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
-2. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+2. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
@@ -25,20 +25,6 @@ derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
    **serie de 2**, **Nueva tanda**.
 8. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
-
-- [x] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
-Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
-manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
-detecta como cualquier otra desincronización.
-9. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.97.0**.
-10. Partida **nueva** en red con **Hidden Ruins** y **Discover Ruins**; esta PC de anfitrión, la notebook se une.
-11. Con un jugador de cada PC, caminá hasta descubrir un pozo o remolino. Anotá dónde está y fijate en la otra PC
-   (si son aliados con vista aliada, o mirando más tarde con el otro jugador): tiene que estar **en la misma casilla**.
-12. Mandá un ejército barato a un pozo ya descubierto: tiene que morir en las dos PC, con la misma tumba al lado.
-13. Construí una trampa con un ejército con «trap» y que un ejército del otro jugador caiga en ella: tiene que morir en
-   las dos PC.
-14. Si en algún momento sale un aviso de partida desincronizada, anotá en qué paso.
-Resultado: verificado, mismos pozos en mismos lugares
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -72,6 +58,20 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
+Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
+manda los suyos a los demás al empezar (igual que ciudades y ruinas), y si las PC llegan a diferir el juego lo
+detecta como cualquier otra desincronización.
+9. En **esta PC y en la notebook**: Actualizador, opción **9**; vista-aliada tiene que quedar **1.0.97.0**.
+10. Partida **nueva** en red con **Hidden Ruins** y **Discover Ruins**; esta PC de anfitrión, la notebook se une.
+11. Con un jugador de cada PC, caminá hasta descubrir un pozo o remolino. Anotá dónde está y fijate en la otra PC
+   (si son aliados con vista aliada, o mirando más tarde con el otro jugador): tiene que estar **en la misma casilla**.
+12. Mandá un ejército barato a un pozo ya descubierto: tiene que morir en las dos PC, con la misma tumba al lado.
+13. Construí una trampa con un ejército con «trap» y que un ejército del otro jugador caiga en ella: tiene que morir en
+   las dos PC.
+14. Si en algún momento sale un aviso de partida desincronizada, anotá en qué paso.
+Resultado (4/11/2026): cumplida, según el usuario. verificado, mismos pozos en mismos lugares
 
 - [x] **105.** Trampa en una ciudad: una sola explosión, sin apilar; Visor abre roads02 (vista-aliada 1.0.126.0, Visor de historia 1.0.16.0, 4/11/2026)
 1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.126.0**.
