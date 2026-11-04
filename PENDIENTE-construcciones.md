@@ -302,6 +302,16 @@ Cambios respecto del diseño de arriba:
 - Pruebas que ya fallaban en la 1.0.117.0 (comprobado compilando HEAD aparte): prueba_iaalianzas.py (2 fallas del
   evento 12), prueba_ariete.py y prueba_botones.py (cuentan archivos de recursos).
 
-**Próximo paso:** resultado de la tarea 97. Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
+### Corrección 1.0.119.0 (4/11/2026, resultado de la tarea 97)
+
+- La ciudad marcada como puerto seguía contando como arrasada: calavera en el minimapa y, al tocarla, la pantalla
+  de ciudad caía al respaldo original (ciudad propia más cercana → mejora de defensa, el +3 de la ciudad del sur).
+  Ganchos: 0x404893 → `pt_scrn` (pantalla de ciudad), 0x412320/0x412809/0x412bde → `pt_mm1/2/3` (los tres lazos
+  del minimapa) saltean la ciudad con `PT_HIDE`.
+- Acerca de (diálogo 94 del RES): sin las líneas de memoria; muestra «Patch vista-aliada» versión y fecha
+  (de parches.txt y de git) y créditos @elCoprofago / Anthropic Claude, 2026 (`about_fill` en 0x4a97b7).
+- Prueba nueva en `prueba_puerto.py`. Retest del usuario: tarea 98.
+
+**Próximo paso:** resultado de la tarea 98 (antes 97). Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
 de `pt_apply`. Etapa 2 (la IA convierte ciudades) y miniatura propia, solo si el usuario lo pide. Frase para
 retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tarea 97".

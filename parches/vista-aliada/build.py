@@ -1018,6 +1018,31 @@ for g, i, s, _ in TEXTS:
     assert len(s) < 0x4f
     strs[(g, i)] = place_data(f'str_{g:x}_{i}', cstr_(s))
 ver_str = place_data('str_version', cstr_(VERSION))
+# ---- Ayuda -> Acerca de (diálogo 94): en lugar de la memoria (Physical/Page/Virtual Memory, controles 5-7 rótulos y
+# 8-10 valores que llena 0x4a9770) van el parche, su versión y fecha, y los créditos (pedido del usuario, 4/11/2026).
+# La versión sale de parches.txt y la fecha del commit que la subió (hoy si todavía no está commiteada): así el
+# resultado es el mismo al recompilar para publicar.
+def _parche_info():
+    import subprocess, datetime
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ver = next(l.split('|')[1] for l in open(os.path.join(raiz, 'parches.txt'), encoding='latin1')
+               if l.startswith('vista-aliada|'))
+    git = ['git', '-C', raiz]
+    sucio = subprocess.run(git + ['diff', '--quiet', 'HEAD', '--', 'parches.txt']).returncode != 0
+    if sucio: f = datetime.date.today()
+    else:
+        f = datetime.date.fromisoformat(subprocess.run(git + ['log', '-1', '--format=%cs', '--', 'parches.txt'],
+                                                       capture_output=True, text=True, check=True).stdout.strip())
+    meses = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
+    return ver, f'{meses[f.month - 1]} {f.day}, {f.year}'
+PARCHE_VER, PARCHE_FECHA = _parche_info()
+ABOUT_LBL = {5: 'Patch vista-aliada', 6: 'Credits:', 7: ''}
+ABOUT_VAL = {8: f'{PARCHE_VER}, {PARCHE_FECHA}', 9: '@elCoprofago', 10: 'Anthropic Claude, 2026'}
+about_s = {i: place_data(f'about_{i}', cstr_(t)) for i, t in ABOUT_VAL.items()}
+# En 0x4a97b7 (quedan 0xc bytes de argumentos en la pila): los tres valores con 0x4dd260(control, texto); sigue en
+# 0x4a9886, después de los de la memoria.
+about_fill = place('about_fill', 'add esp, 0xc\n' + ''.join(
+    f'push {about_s[i]:#x}\npush {i}\ncall 0x4dd260\nadd esp, 8\n' for i in (8, 9, 10)) + 'jmp 0x4a9886\n')
 gtab = place_data('gname_tab', b''.join(struct.pack('<iiI', g, i, strs[(g, i)]) for g, i, _, _ in TEXTS)
                   + struct.pack('<i', -1))
 # En 0x4def81 del lector de textos 0x4def30: edx = edi + índice*4 (edi = desplazamiento del grupo), ecx = base de
@@ -4619,6 +4644,46 @@ pt_ai9 = place('pt_ai9', f'''
     jne 0x41e4d8
     cmp byte ptr [eax + 0x537ed0], 0
     jmp 0x41e311
+''')
+# Pantalla de ciudades (0x404840, clic en el mapa; en 0x404893, ebx = ciudad * 0xde): primero busca una ciudad arrasada
+# en el punto para ofrecer reconstruirla y, si no, toma la propia más cercana (0x440c60). La marcada no es una arrasada:
+# antes ofrecía mejorar las defensas de otra ciudad (tarea 97).
+pt_scrn = place('pt_scrn', f'''
+    cmp byte ptr [ebx + {PT_HIDE:#x}], 0
+    jne 0x4048cb
+    mov ax, word ptr [ebx + 0x537e2c]
+    jmp 0x40489a
+''')
+# Minimapa: los tres bucles de ciudades (0x412020, 0x4127f0, 0x412bc0) no dibujan la marcada (salía como calavera).
+pt_mm1 = place('pt_mm1', f'''
+    movsx ecx, word ptr [esp + 0x16]
+    imul eax, ecx, 0xde
+    cmp byte ptr [eax + {PT_HIDE:#x}], 0
+    je 0x412325
+    inc word ptr [esp + 0x16]
+    mov cx, word ptr [esp + 0x16]
+    cmp word ptr [0x537e2a], cx
+    jg 0x412320
+    jmp 0x412551
+''')
+pt_mm2 = place('pt_mm2', f'''
+    movsx eax, di
+    imul edx, eax, 0xde
+    cmp byte ptr [edx + {PT_HIDE:#x}], 0
+    jne 0x412a61
+    lea edx, [eax + eax*8]
+    jmp 0x41280f
+''')
+pt_mm3 = place('pt_mm3', f'''
+    movsx eax, word ptr [esp + 0x1a]
+    imul edx, eax, 0xde
+    cmp byte ptr [edx + {PT_HIDE:#x}], 0
+    je 0x412be3
+    inc word ptr [esp + 0x1a]
+    mov cx, word ptr [esp + 0x1a]
+    cmp word ptr [0x537e2a], cx
+    jg 0x412bde
+    jmp 0x412ed2
 ''')
 # pt_okw: eax = x, edx = y -> eax = casilla si ahí puede ir el puerto (clase 1 sin estructura, edificio ni puente
 # derribado), 0 si no. Preserva el resto.
@@ -15392,6 +15457,11 @@ patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm
 # Puerto nuevo: la ciudad convertida (+0xdd) no está en ninguna casilla ni es reconstruible (pt_*)
 patch(0x440c26, asm('mov cx, word ptr [ebx + 0x537e2e]', 0x440c26), asm(f'jmp {pt_cityat:#x}', 0x440c26))
 patch(0x41e30a, asm('cmp byte ptr [eax + 0x537ed0], 0', 0x41e30a), asm(f'jmp {pt_ai9:#x}', 0x41e30a))
+patch(0x4a97b7, rel(0x4a97b7, 0x4a9886 - 0x4a97b7), asm(f'jmp {about_fill:#x}', 0x4a97b7))
+patch(0x404893, asm('mov ax, word ptr [ebx + 0x537e2c]', 0x404893), asm(f'jmp {pt_scrn:#x}', 0x404893))
+patch(0x412320, asm('movsx ecx, word ptr [esp + 0x16]', 0x412320), asm(f'jmp {pt_mm1:#x}', 0x412320))
+patch(0x412809, asm('movsx eax, di; lea edx, [eax + eax*8]', 0x412809), asm(f'jmp {pt_mm2:#x}', 0x412809))
+patch(0x412bde, asm('movsx eax, word ptr [esp + 0x1a]', 0x412bde), asm(f'jmp {pt_mm3:#x}', 0x412bde))
 patch(0x40dbf0, bytes.fromhex('83ec04a1d4205000'), asm(f'jmp {ai_brreb:#x}', 0x40dbf0))
 patch(0x40ce24, asm('movsx eax, word ptr [esp + 0x1e]; lea edx, [eax + eax*8]; lea eax, [eax + edx*4];'
                     'lea ecx, [eax + eax*2]; lea edx, [ecx*2 + 0x537e30]', 0x40ce24),
@@ -15500,6 +15570,14 @@ def append(d, did, new):
 new_list = {}
 
 # Diálogo 9 (Customize Options): casilla nueva clonada de Fog of War (id 7), debajo de ella.
+# Acerca de (diálogo 94): rótulos 5-7 (tipo 0x12, texto en +0x2c de 64) y valores 8-10 un poco más anchos (+0x14).
+r94 = records(res, 94)
+for i, t in ABOUT_LBL.items():
+    p, ty = r94[i]; assert ty == 0x12
+    setstr(memoryview(res)[p:p + 4 + SZ[ty]], 0x2c, 0x40, t)
+for i in ABOUT_VAL:
+    p, ty = r94[i]; assert ty == 0x13
+    struct.pack_into('<I', res, p + 0x14, 0xa0)
 r9 = records(res, 9)
 p, t = r9[7]; assert t == 5
 chk = bytearray(res[p:p + 4 + SZ[5]])

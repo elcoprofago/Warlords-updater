@@ -223,5 +223,45 @@ def meta9(marca):
     return fin[0], mu.reg_read(UC_X86_REG_EFLAGS) >> 6 & 1
 ver('meta 9: la arrasada común sigue (0x41e311 con ZF = 1, «está muerta»)', meta9(0), (0x41e311, 1))
 ver('meta 9: la convertida en puerto se salta (0x41e4d8)', meta9(1)[0], 0x41e4d8)
+
+print('-- pantalla de ciudades (0x404893) y minimapa (0x412320, 0x412809, 0x412bde): la marcada no está (tarea 97)')
+def salto(inicio, fines, marca, i=0, regs=(), pila=b''):
+    # Corre desde el gancho hasta la primera dirección de «fines»; ciudad i marcada o no (2 ciudades).
+    g = Juego(); mu = g.mu
+    mu.mem_write(CITIES + i * 0xde + 0xdd, bytes([marca]))
+    fin = []
+    for a in fines:
+        mu.hook_add(UC_HOOK_CODE, lambda mu, ad, s, _: (fin.append(ad), mu.emu_stop()), begin=a, end=a)
+    mu.mem_write(STACK, pila.ljust(0x40, b'\0')); mu.reg_write(UC_X86_REG_ESP, STACK)
+    for r, v in regs: mu.reg_write(r, v)
+    mu.emu_start(inicio, 0, count=200)
+    return fin[0] if fin else None, mu
+for m in (0, 1):
+    a, mu = salto(0x404893, (0x40489a, 0x4048cb), m, regs=((UC_X86_REG_EBX, 0),))
+    ver(f'pantalla: marca {m}', (a, mu.reg_read(UC_X86_REG_AX) if a == 0x40489a else None),
+        ((0x40489a, 28), (0x4048cb, None))[m])
+    a, mu = salto(0x412809, (0x41280f, 0x412a61), m, regs=((UC_X86_REG_DI, 0),))
+    ver(f'minimapa 2: marca {m}', (a, mu.reg_read(UC_X86_REG_EDX) if a == 0x41280f else None),
+        ((0x41280f, 0), (0x412a61, None))[m])
+for f, (sig, ret, sal, off) in {1: (0x412325, 0x412320, 0x412551, 0x16), 3: (0x412be3, 0x412bde, 0x412ed2, 0x1a)}.items():
+    for m, i, esp in ((0, 0, sig), (1, 0, ret), (1, 1, sal)):
+        pila = bytearray(0x40); struct.pack_into('<h', pila, off, i)
+        a, mu = salto(dest(ret), (sig, sal, ret), m, i, pila=bytes(pila))
+        if (m, i) == (1, 0):  # vuelve al gancho con la siguiente ciudad
+            a = (a, struct.unpack('<h', mu.mem_read(STACK + off, 2))[0])
+            esp = (ret, 1)
+        ver(f'minimapa {f}: ciudad {i} marca {m}', a, esp)
+
+print('-- Acerca de: controles 8-10 con parche, fecha y créditos; pila igual que en el original')
+g = Juego(); textos = []
+g.interceptar(0x4dd260, lambda a: textos.append((a[0], bytes(g.mu.mem_read(a[1], 64)).split(b'\0')[0].decode())))
+ABOUT = dest(0x4a97b7)
+g.mu.reg_write(UC_X86_REG_ESP, STACK); g.mu.emu_start(ABOUT, 0x4a9886, count=500)
+ver('vuelve a 0x4a9886 con 0xc bytes menos de pila', g.mu.reg_read(UC_X86_REG_ESP) - STACK, 0xc)
+ver_txt = next(l.split('|')[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'parches.txt'),
+                                              encoding='latin1') if l.startswith('vista-aliada|'))
+ver('textos', [(i, t.split(',')[0] if i == 8 else t) for i, t in textos],
+    [(8, ver_txt), (9, '@elCoprofago'), (10, 'Anthropic Claude, 2026')])
+print('   fecha:', textos[0][1] if textos else None)
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

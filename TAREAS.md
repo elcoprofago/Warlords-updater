@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 98).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 99).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 97** (ciudad en puerto y precio del puente): cuando puedas, antes de la 90.
+0. **Tarea 98** (puerto sin calavera y «Acerca de» nuevo): cuando puedas, antes de la 90.
 1. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 90** (tanda de convoyes con diagnóstico): después de los pasos de montaña y puentes, con la versión que
@@ -17,23 +17,17 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **97.** Convertir una ciudad propia en puerto, y el puente nuevo más caro (vista-aliada 1.0.118.0, 3/11/2026)
-Cambio: el renglón del menú de órdenes ahora se llama **Build**. Con cualquier grupo parado en una ciudad tuya que
-toque agua (no hace falta constructor), ofrece **City into a port**: la ciudad desaparece y en el agua de al lado
-queda un puerto «Port <nombre de la ciudad>». Cuesta el doble de lo que tu bando paga por fundar una ciudad. No se
-ofrece si es tu última ciudad. Además, el puente nuevo cuesta ahora por casilla 30 % de una ciudad sobre agua y
-60 % sobre lava (lo que pediste en la 96).
-1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.118.0**.
-2. En Warlords3, con un grupo dentro de una ciudad tuya junto al agua (que no sea la única que tenés), elegí
-   **Build**. Si en el grupo hay un constructor y te ofrece primero un camino o un puente, contestá **No** y volvé a
-   elegir **Build** hasta que aparezca «City into a port».
-3. Aceptá: ¿el oro baja el doble de lo que cuesta fundar una ciudad? ¿La ciudad desaparece del todo (nombre,
-   ruinas, bandera)? ¿Cómo se ven las 4 casillas donde estaba? Tendrían que parecerse al terreno de alrededor; si
-   algo se ve raro, sacá una captura.
-4. ¿Aparece el puerto en el agua de al lado? ¿Se puede embarcar y desembarcar ahí? ¿Qué nombre muestra?
-5. Guardá, salí y volvé a cargar la partida: ¿sigue igual (sin ciudad, con el puerto)?
-6. Puente nuevo sobre agua de una casilla: ¿cuesta 30 % de una ciudad? (Sobre lava, 60 %.)
-7. Si podés, en red con otra PC: ¿la conversión se ve igual en las dos?
+- [ ] **98.** Ciudad convertida en puerto: sin calavera ni mejora equivocada, y el «Acerca de» nuevo (vista-aliada 1.0.119.0, 4/11/2026)
+Cambio: la ciudad convertida en puerto ya no aparece en el minimapa, y la pantalla de ciudades no la toma por una
+ciudad arrasada. Lo que pasó en la 97: al tocar ahí, el juego no encontraba una ciudad para reconstruir y, como
+hace siempre que se toca un lugar sin ciudad, abría la mejora de defensas de tu ciudad más cercana (la del sur).
+Eso último es del juego original y sigue igual. Además, en el botón del disquete → «Acerca de», en lugar de la
+memoria van el parche, su versión y fecha, y los créditos.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.119.0**.
+2. Cargá la partida de la 97 (o convertí otra ciudad en puerto). En el minimapa, ¿desapareció la calavera?
+3. Tocá donde estaba la ciudad vieja como hiciste en la 97: ¿ya no ofrece reconstruirla?
+4. Botón del disquete → «Acerca de»: ¿se lee «Patch vista-aliada  1.0.119.0, Nov 4, 2026», «Credits:
+   @elCoprofago» y «Anthropic Claude, 2026», y no hay líneas cortadas? Si algo se ve raro, sacá una captura.
 Resultado:
 
 - [ ] **90.** IA: ¿cuántos convoyes arma y por qué no más? (vista-aliada 1.0.108.0, 3/11/2026)
@@ -93,6 +87,28 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+- [x] **97.** Convertir una ciudad propia en puerto, y el puente nuevo más caro (vista-aliada 1.0.118.0, 3/11/2026)
+Cambio: el renglón del menú de órdenes ahora se llama **Build**. Con cualquier grupo parado en una ciudad tuya que
+toque agua (no hace falta constructor), ofrece **City into a port**: la ciudad desaparece y en el agua de al lado
+queda un puerto «Port <nombre de la ciudad>». Cuesta el doble de lo que tu bando paga por fundar una ciudad. No se
+ofrece si es tu última ciudad. Además, el puente nuevo cuesta ahora por casilla 30 % de una ciudad sobre agua y
+60 % sobre lava (lo que pediste en la 96).
+1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.118.0**.
+2. En Warlords3, con un grupo dentro de una ciudad tuya junto al agua (que no sea la única que tenés), elegí
+   **Build**. Si en el grupo hay un constructor y te ofrece primero un camino o un puente, contestá **No** y volvé a
+   elegir **Build** hasta que aparezca «City into a port».
+3. Aceptá: ¿el oro baja el doble de lo que cuesta fundar una ciudad? ¿La ciudad desaparece del todo (nombre,
+   ruinas, bandera)? ¿Cómo se ven las 4 casillas donde estaba? Tendrían que parecerse al terreno de alrededor; si
+   algo se ve raro, sacá una captura.
+4. ¿Aparece el puerto en el agua de al lado? ¿Se puede embarcar y desembarcar ahí? ¿Qué nombre muestra?
+5. Guardá, salí y volvé a cargar la partida: ¿sigue igual (sin ciudad, con el puerto)?
+6. Puente nuevo sobre agua de una casilla: ¿cuesta 30 % de una ciudad? (Sobre lava, 60 %.)
+7. Si podés, en red con otra PC: ¿la conversión se ve igual en las dos?
+Resultado (4/11/2026): la ciudad se convirtió en puerto con su nombre y su imagen, operable; el precio quedó más
+equilibrado. Dos fallas: en el minimapa la ciudad vieja seguía como calavera (ciudad arrasada), y al pedir reconstruirla
+la pantalla de ciudades ofrecía subir defensas y las subió a +3 en otra ciudad, bien al sur. Arreglado en 1.0.119.0
+(tarea 98).
+
 - [x] **96.** Construir un puente sobre agua y derribarlo (vista-aliada 1.0.117.0, 3/11/2026)
 El renglón del menú de órdenes ahora se llama **Road/Bridge**. Parado en la orilla con un Dwarf Sappers o Peasants
 (con el bono «build»), si en línea recta hay de 1 a 8 casillas de agua o lava que terminan en tierra, ofrece un
