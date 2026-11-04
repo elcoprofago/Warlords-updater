@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 102).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 103).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -8,7 +8,7 @@ Sorteo están acá (tarea 18).
 
 ## Orden sugerido
 1. **Tarea 100** (tanda de convoyes con Carrier solo, y puentes reconstruidos): cuando la PC esté libre.
-2. **Tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
+2. **Tarea 102** («Acerca de», un minuto) y **tarea 99** (minimapa de «City Improvements», «Acerca de» legible y trucos desactivados): cuando puedas.
 3. Con la notebook: **tarea 77** (pozos iguales en las dos PC), **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -16,6 +16,15 @@ Sorteo están acá (tarea 18).
 7. **Tarea 101** (trampa sobre un altar): después de la serie de la 100.
 
 # Pendientes
+
+- [ ] **102.** «Acerca de» legible, otra vez (vista-aliada 1.0.123.0, 4/11/2026)
+Cambio: en la 1.0.120.0 los datos del parche salían encimados y oscuros. Ahora cada renglón va completo y centrado
+en la letra clara de los créditos: «Patch vista-aliada 1.0.123.0, Nov 4, 2026», «Credits: @elCoprofago» y
+«Anthropic Claude, 2026».
+1. Actualizá vista-aliada a la 1.0.123.0 (opción del Actualizador).
+2. Abrí DarklordAV.exe → botón del disquete → «Acerca de».
+3. ¿Los tres renglones se leen claros, sin encimarse con otro texto? Si no, sacá una captura.
+Resultado:
 
 - [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
 Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,
@@ -50,7 +59,7 @@ letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I
 3. Botón del disquete → «Acerca de»: ¿la versión, la fecha y los créditos se leen claros, con la misma letra que
    «Version 1.0.3»? Si no, sacá una captura.
 4. Escribí en el chat alguno de los trucos (por ejemplo «Not easy being green»): no tiene que pasar nada raro.
-Resultado:
+Resultado: Las letras estan ahora peor, encimadas, y el color no cambio. (Corregido en 1.0.123.0: se prueba en la tarea 102.)
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le

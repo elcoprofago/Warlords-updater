@@ -272,16 +272,17 @@ g.mu.reg_write(UC_X86_REG_ESP, STACK); g.mu.emu_start(ABOUT, 0x4a9886, count=500
 ver('vuelve a 0x4a9886 con 0xc bytes menos de pila', g.mu.reg_read(UC_X86_REG_ESP) - STACK, 0xc)
 ver_txt = next(l.split('|')[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'parches.txt'),
                                               encoding='latin1') if l.startswith('vista-aliada|'))
-ver('textos', [(i, t.split(',')[0] if i == 8 else t) for i, t in textos],
-    [(8, ver_txt), (9, '@elCoprofago'), (10, 'Anthropic Claude, 2026')])
-print('   fecha:', textos[0][1] if textos else None)
+ver('valores 8-10 vacíos', textos, [(8, ''), (9, ''), (10, '')])
 _r = open(r'C:\Warlords3\DATA\WAR3AV.RES', 'rb').read(); _o = 8
 while struct.unpack_from('<II', _r, _o)[:2] != (7, 94): _o += 20 + struct.unpack_from('<I', _r, _o + 16)[0]
 _p = _o + 20; _col = {}
 for _ in range(struct.unpack_from('<I', _r, _o + 8)[0]):
     _t, _i = struct.unpack_from('<II', _r, _p)
-    if _t == 0x13: _col[_i] = struct.unpack_from('<I', _r, _p + 0x24)[0]
+    if _t == 0x12 and _i in (5, 6, 7): _col[_i] = (struct.unpack_from('<I', _r, _p + 8)[0], struct.unpack_from('<I', _r, _p + 0x24)[0],
+                                                   _r[_p + 0x2c:_p + 0x6c].split(b'\0')[0].decode('latin1'))
     _p += 4 + {0x12: 0x68, 0x13: 0x28, 0x15: 0xac}[_t]
-ver('valores 8-10 en color claro como «Version 1.0.3» (+0x24 = 1)', [_col[i] for i in (8, 9, 10, 2)], [1, 1, 1, 1])
+ver('rótulos claros 5-7 centrados con el texto completo', [(_col[i][0], _col[i][1], _col[i][2].split(',')[0]) for i in (5, 6, 7)],
+    [(0xb1, 1, f'Patch vista-aliada {ver_txt}'), (0xb1, 1, 'Credits: @elCoprofago'), (0xb1, 1, 'Anthropic Claude')])
+print('   ', _col[5][2])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

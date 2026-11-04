@@ -1036,8 +1036,10 @@ def _parche_info():
     meses = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
     return ver, f'{meses[f.month - 1]} {f.day}, {f.year}'
 PARCHE_VER, PARCHE_FECHA = _parche_info()
-ABOUT_LBL = {5: 'Patch vista-aliada', 6: 'Credits:', 7: ''}
-ABOUT_VAL = {8: f'{PARCHE_VER}, {PARCHE_FECHA}', 9: '@elCoprofago', 10: 'Anthropic Claude, 2026'}
+# El texto completo va en los rótulos 5-7 (tipo 0x12, se dibujan claros, como los créditos); los valores 8-10 (tipo
+# 0x13) salían oscuros y quedan vacíos.
+ABOUT_LBL = {5: f'Patch vista-aliada {PARCHE_VER}, {PARCHE_FECHA}', 6: 'Credits: @elCoprofago', 7: 'Anthropic Claude, 2026'}
+ABOUT_VAL = {8: '', 9: '', 10: ''}
 about_s = {i: place_data(f'about_{i}', cstr_(t)) for i, t in ABOUT_VAL.items()}
 # En 0x4a97b7 (quedan 0xc bytes de argumentos en la pila): los tres valores con 0x4dd260(control, texto); sigue en
 # 0x4a9886, después de los de la memoria.
@@ -15658,15 +15660,15 @@ def append(d, did, new):
 new_list = {}
 
 # Diálogo 9 (Customize Options): casilla nueva clonada de Fog of War (id 7), debajo de ella.
-# Acerca de (diálogo 94): rótulos 5-7 (tipo 0x12, texto en +0x2c de 64) y valores 8-10 un poco más anchos (+0x14) y en color claro (+0x24 = 1).
+# Acerca de (diálogo 94): rótulos 5-7 (tipo 0x12, texto en +0x2c de 64) centrados como «Version» (+0x8 = centro 0xb1,
+# +0x14 ancho, +0x24 = 1 centrado); los valores 8-10 quedan vacíos.
 r94 = records(res, 94)
 for i, t in ABOUT_LBL.items():
     p, ty = r94[i]; assert ty == 0x12
     setstr(memoryview(res)[p:p + 4 + SZ[ty]], 0x2c, 0x40, t)
-for i in ABOUT_VAL:
-    p, ty = r94[i]; assert ty == 0x13
-    struct.pack_into('<I', res, p + 0x14, 0xa0)
-    struct.pack_into('<I', res, p + 0x24, 1)   # color claro, como «Version 1.0.3» y las líneas de Broderbund
+    struct.pack_into('<III', res, p + 8, 0xb1, *struct.unpack_from('<II', res, p + 0xc))
+    struct.pack_into('<I', res, p + 0x14, 0x150)
+    struct.pack_into('<I', res, p + 0x24, 1)
 r9 = records(res, 9)
 p, t = r9[7]; assert t == 5
 chk = bytearray(res[p:p + 4 + SZ[5]])
