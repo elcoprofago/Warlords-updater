@@ -9447,45 +9447,64 @@ pm_show:
     ret
 ''')
 PO_RADIO = 1    # pedido del usuario (21/10/2026): se descubren a una casilla, no con el radio del grupo
-po_step = place('po_step', f'''
-    pushad
+# po_mark(l): con pushad hecho y en la pila (jugador, x, y), como la reciben 0x4a1ce0 y 0x469ed0, anota la casilla
+# en po_pend / po_pvis (ver arriba). l: prefijo de sus rótulos.
+def po_mark(l):
+    return f'''
     movsx ebx, word ptr [esp + 0x24]
     movsx esi, word ptr [esp + 0x28]
     movsx edi, word ptr [esp + 0x2c]
     cmp ebx, 8
-    jae pt_end
+    jae {l}_end
     test esi, esi
-    jl pt_end
+    jl {l}_end
     test edi, edi
-    jl pt_end
+    jl {l}_end
     cmp si, word ptr [0x503e00]
-    jge pt_end
+    jge {l}_end
     cmp di, word ptr [0x503e02]
-    jge pt_end
+    jge {l}_end
     mov cl, byte ptr [0x503e06]
     shl edi, cl
     add edi, esi
     cmp edi, {PO_MAPSZ}
-    jae pt_end
+    jae {l}_end
     movzx eax, byte ptr [edi + {po_map:#x}]
     test eax, eax
-    jz pt_end
+    jz {l}_end
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TUMBA}
-    je pt_end
+    je {l}_end
     cmp byte ptr [eax*8 + {PO_TAB - 8 + 4:#x}], {PO_TRAMPA}
-    jne pt_mark
+    jne {l}_mark
     mov cl, byte ptr [eax*8 + {PO_TAB - 8 + 5:#x}]
     and cl, {TR_CUENTA}
     cmp cl, {TR_USOS}
-    jae pt_end
-pt_mark:
+    jae {l}_end
+{l}_mark:
     mov byte ptr [ebx + {po_pend:#x}], al
     movzx ecx, byte ptr [eax*8 + {PO_TAB - 8 + 6:#x}]
     bt ecx, ebx
     setc cl
     mov byte ptr [ebx + {po_pvis:#x}], cl
-pt_end:
-    popad
+{l}_end:
+'''
+# Entrar a una ciudad propia (o aliada) es el paso de código 7 (0x49e45e; 0x49d0a1 descuenta el movimiento y mueve
+# el grupo con 0x469ed0(jugador, x, y)), no el 0: es también como entra quien acaba de conquistarla. po_enter anota
+# la casilla igual que po_step (pedido del usuario, 4/11/2026: el héroe que ganó una ciudad quedaba sobre la trampa
+# sin que explotara).
+po_enter = place('po_enter', f'''
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    call 0x469ed0
+    add esp, 0xc
+    pushad
+{po_mark('pe')}    popad
+    ret
+''')
+po_step = place('po_step', f'''
+    pushad
+{po_mark('pt')}    popad
     push dword ptr [esp + 0x10]
     push dword ptr [esp + 0x10]
     push dword ptr [esp + 0x10]
@@ -10314,6 +10333,10 @@ pp_copy:
 pp_end:
     ret
 ''')
+# Las trampas se pintan en la 2.ª pasada (pedido del usuario, 4/11/2026: en una ciudad quedaban tapadas): po_draw2,
+# en 0x459d54, después del edificio o ciudad de la celda y antes de sus ejércitos, corre po_draw con po_mode = 1, que
+# pinta solo trampas; la 1.ª pasada (po_mode = 0) pinta el resto. Misma pila y mismos filtros de celda en las dos.
+po_mode = place_data('po_mode', bytes(4))
 po_draw = place('po_draw', f'''
     pushad
     movsx eax, word ptr [esp + 0x34]
@@ -10339,6 +10362,8 @@ po_draw = place('po_draw', f'''
     movsx ecx, word ptr [0x560b20]
     cmp ecx, 8
     jae pw_end
+    cmp byte ptr [{po_mode:#x}], 0
+    jne pw_own
     mov cl, byte ptr [0x503e06]
     lea esi, [edx + edx*4]
     add esi, esi
@@ -10426,6 +10451,15 @@ pw_own:
 pw_vis:
     movzx eax, byte ptr [ebx + 4]
     xor edi, edi
+    cmp byte ptr [{po_mode:#x}], 0
+    je pw_m0
+    cmp eax, {PO_TRAMPA}
+    jne pw_end
+    jmp pw_m1
+pw_m0:
+    cmp eax, {PO_TRAMPA}
+    je pw_end
+pw_m1:
     cmp eax, {PO_REMOLINO}
     je pw_end
     cmp eax, {PO_TRAMPA}
@@ -10465,9 +10499,20 @@ pw_sheet:
     call {pw_put:#x}
 pw_end:
     popad
+    cmp byte ptr [{po_mode:#x}], 0
+    jne pw_p2
     cmp byte ptr [esi + 0x10], 0
     je 0x459bb9
     jmp 0x459b9b
+pw_p2:
+    mov byte ptr [{po_mode:#x}], 0
+    mov al, byte ptr [esi + 6]
+    test al, 1
+    jmp 0x459d59
+''')
+po_draw2 = place('po_draw2', f'''
+    mov byte ptr [{po_mode:#x}], 1
+    jmp {po_draw:#x}
 ''')
 
 # Lupa y botón derecho (pedido del usuario, 22/10/2026): como en ruinas y sitios. El decodificador de clic/cursor
@@ -15705,8 +15750,10 @@ patch(0x4aa421, asm('mov dword ptr [0x4ff03c], edx', 0x4aa421), asm(f'jmp {po_nr
 patch(0x4aa6bf, asm('xor dword ptr [esp + 0x10], ebp; mov eax, dword ptr [esp + 0x10]', 0x4aa6bf),
       asm(f'jmp {po_nsum:#x}', 0x4aa6bf))
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
+patch(0x49d151, asm('call 0x469ed0', 0x49d151), asm(f'call {po_enter:#x}', 0x49d151))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
+patch(0x459d54, bytes.fromhex('8a4606a801'), asm(f'jmp {po_draw2:#x}', 0x459d54))
 patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:#x}', 0x473d32))
 patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
 patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))

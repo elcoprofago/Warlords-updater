@@ -203,6 +203,8 @@ g = Juego(); generar(g); g.mu.mem_write(0x53c393, b'\0')
 ver('control: sin Hidden Ruins no descubre nada', empezar(g), [0] * 6)
 print('-- parte 3: caer')
 PO_STEP = 0x49ce08 + 5 + struct.unpack_from('<i', img, 0x49ce08 - BASE + 1)[0]
+PO_ENTER = 0x49d151 + 5 + struct.unpack_from('<i', img, 0x49d151 - BASE + 1)[0]   # paso 7: entrar a ciudad propia
+ENTRADAS = []       # llamadas a 0x469ed0 que hizo po_enter
 PO_FALL = 0x4b6e9d + 5 + struct.unpack_from('<i', img, 0x4b6e9d - BASE + 1)[0]
 # ia_evt: empieza (alineada a 16) con cmp byte ptr [ia_on], 0, antes del push del formato '%d,...,%d\n'
 k = img.index(b'\x68' + struct.pack('<I', BASE + img.index(b'%d,%d,%d,%d,%d,%d,%d\n\0')))
@@ -240,9 +242,16 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), 
     g.interceptar(0x4e6fd0, lambda a: sonidos.append((('fx', mu.reg_read(UC_X86_REG_ECX) - 0x1f7000), 0)), pop=8)
     for f in (0x441290, 0x4a2170): g.interceptar(f, lambda a: 0)
     EVTS.clear(); g.interceptar(IA_EVT, lambda a: EVTS.append(tuple(struct.unpack('<5i', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4, 20)))))
-    for j, x, y in pasos:
+    ENTRADAS.clear(); g.interceptar(0x469ed0, lambda a: ENTRADAS.append((a[0] & 0xffff, a[1] & 0xffff, a[2] & 0xffff)))
+    for j, x, y, *ciudad in pasos:
         mu.mem_write(STACK, struct.pack('<5I', RET, j, x & 0xffff, y & 0xffff, 1)); mu.reg_write(UC_X86_REG_ESP, STACK)
-        mu.emu_start(PO_STEP, 0x4a1ce0, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == 0x4a1ce0
+        if ciudad:   # paso 7 (entrar a una ciudad propia, también al conquistarla)
+            mu.mem_write(STACK + 16, struct.pack('<I', 0xdeadbeef))
+            mu.emu_start(PO_ENTER, RET, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == RET
+            assert mu.reg_read(UC_X86_REG_ESP) == STACK + 4
+            assert mu.mem_read(STACK + 16, 4) == struct.pack('<I', 0xdeadbeef)
+        else:
+            mu.emu_start(PO_STEP, 0x4a1ce0, count=100000); assert mu.reg_read(UC_X86_REG_EIP) == 0x4a1ce0
     mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.emu_start(PO_FALL, 0x49d1a0, count=1000000); assert mu.reg_read(UC_X86_REG_EIP) == 0x49d1a0
     assert mu.reg_read(UC_X86_REG_ESP) == STACK
@@ -250,6 +259,14 @@ def caer(regs, ejs, pasos, mira=2, snd=0x20, cs=(), agua=(), puente=(), mov=(), 
     return muertos, avisos, [s[0] for s in sonidos], g.tabla()
 POZOS = [(10, 10, 0, 0, 0, 0xff), (20, 10, 1, 0, 0, 0xff), (15, 15, 2, 0, 0, 3), (16, 16, 2, 1, 0xff, 3)]
 GRUPO = [(10, 10, 2, 0, 0), (10, 10, 2, 1, 0), (10, 10, 2, 0, 0)]
+# Entrar a una ciudad (paso 7, también al conquistarla; pedido del usuario, 4/11/2026)
+r = caer(POZOS, [(15, 15, 2, 0, 0), (15, 15, 2, 1, 0)], [(2, 15, 15, 'ciudad')])
+ver('ciudad: entrar a la casilla con trampa la hace explotar (como el paso normal), y el grupo se mueve igual',
+    (len(r[0]) > 0, ENTRADAS), (True, [(2, 15, 15)]))
+r2 = caer(POZOS, [(15, 15, 2, 0, 0), (15, 15, 2, 1, 0)], [(2, 15, 15)])
+ver('ciudad: mismo resultado que el paso normal', r[0], r2[0])
+ver('control: entrar a una casilla de ciudad sin trampa: nada', caer(POZOS, [(14, 15, 2, 0, 0)], [(2, 14, 15, 'ciudad')])[0], [])
+ver('control: entrar a una trampa gastada: nada', caer([(15, 15, 2, 2, 0xff, 3)], [(15, 15, 2, 0, 0)], [(2, 15, 15, 'ciudad')])[0], [])
 r = caer(POZOS, GRUPO + [(10, 10, 3, 0, 0), (11, 10, 2, 0, 0)], [(2, 10, 10)])
 ver('pozo: mueren los 3 del grupo (héroe incluido), con 0; otro bando y otra casilla quedan', r[0], [(1, 0), (2, 0), (3, 0)])
 ver('pozo: aviso y sonido 7 en la PC del que cayó; descubierto para él', (r[1], r[2], r[3][0][4]),
@@ -441,10 +458,13 @@ ver('10 pasos con radio 1: el contador da una vuelta (un 0x4a1ce0 por paso), des
     descubrir(LEJOS[1:2], [(2, 10, 10, 1)] * 10), ([4], ['You have discovered the Well of Souls!'], 9))
 print('-- parte 5: dibujo')
 PO_DRAW = 0x459b95 + 5 + struct.unpack_from('<i', img, 0x459b95 - BASE + 1)[0]
+PO_DRAW2 = 0x459d54 + 5 + struct.unpack_from('<i', img, 0x459d54 - BASE + 1)[0]   # 2.ª pasada: solo trampas
 VISTA, CELDA, HOJA = 0x180000, 0x181000, 0x182000
 PO_FILE = 168
 def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vista=True, cargada=True, hay=True,
-            sitio=0, agua=(), puente=(), noche=None):
+            sitio=0, agua=(), puente=(), noche=None, pasada=None):
+    # pasada: 1 (pozos, remolinos, tumbas) o 2 (trampas, sobre la ciudad); por omisión, 2 si hay alguna trampa.
+    if pasada is None: pasada = 2 if any(r[2] == 2 for r in regs) else 1
     # Una celda de la vista: columna/fila celda, origen de la vista, quien mira. Devuelve los dibujos de 0x4dd530
     # (hoja, x, y, ancho, alto, destino, x, y en pantalla), las cargas de la hoja y por dónde siguió.
     g = Juego(); mu = g.mu; g.poner(regs)
@@ -477,9 +497,12 @@ def dibujar(regs, celda=(3, 2), origen=(10, 20), mira=2, fase=0, aliados=(), vis
     mu.mem_write(sp + 0x14, struct.pack('<hhhh', celda[0], celda[1], celda[0] * 48, celda[1] * 48))
     mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBP, VISTA); mu.reg_write(UC_X86_REG_ESI, CELDA)
     sigue = None
-    for fin in (0x459b9b, 0x459bb9):
+    for fin in ((0x459b9b, 0x459bb9) if pasada == 1 else (0x459d59,)):
         mu.hook_add(UC_HOOK_CODE, lambda mu, a, s, _, f=fin: mu.emu_stop(), begin=fin, end=fin)
-    mu.emu_start(PO_DRAW, 0, count=100000)
+    mu.emu_start(PO_DRAW if pasada == 1 else PO_DRAW2, 0, count=100000)
+    if pasada == 2:   # sigue como el original: al = [celda+6], ZF de test al, 1; y po_mode vuelve a 0
+        assert mu.reg_read(UC_X86_REG_EAX) & 0xff == mu.mem_read(CELDA + 6, 1)[0]
+        assert bool(mu.reg_read(UC_X86_REG_EFLAGS) & 0x40) == (mu.mem_read(CELDA + 6, 1)[0] & 1 == 0)
     sigue = mu.reg_read(UC_X86_REG_EIP)
     assert mu.reg_read(UC_X86_REG_ESP) == sp and mu.reg_read(UC_X86_REG_EBP) == VISTA
     assert mu.reg_read(UC_X86_REG_ESI) == CELDA
@@ -511,6 +534,10 @@ ver('pozo en una vecina de agua: primero la pieza del remolino, encima el pozo',
 ver('remolino en el borde del mapa: las vecinas de afuera no cuentan',
     [d[0] for d in dibujar([(0, 0, 1, 0, 4, 0xff)], celda=(0, 0), origen=(0, 0), agua=[(0, 0)])[0]], [R0 + 4])
 ver('trampa del que mira (no descubierta): cuadro 5', dibujar(en(2, d=2))[0][0][0], 5)
+# 2.ª pasada (pedido del usuario, 4/11/2026): la trampa va encima de la ciudad y debajo de los ejércitos
+ver('trampa: en la 1.ª pasada no se pinta', dibujar(en(2, d=2), pasada=1)[0], [])
+ver('control: pozo, tumba: en la 2.ª pasada no se pintan', [dibujar(en(0, m=0x04), pasada=2)[0], dibujar(en(3, m=0x04), pasada=2)[0]], [[], []])
+ver('control: pozo en la 1.ª pasada sigue igual', dibujar(en(0, m=0x04), pasada=1)[0], [(0, 0, 48, 48, 0x27, 144, 96)])
 ver('trampa de un aliado con vista aliada: se ve', dibujar(en(2, d=3), aliados=[(2, 3)])[0][0][0], 5)
 ver('control: aliado sin vista aliada: no', dibujar(en(2, d=3), aliados=[(2, 3)], vista=False)[0], [])
 ver('control: trampa de otro (no aliado): no', dibujar(en(2, d=3))[0], [])

@@ -540,3 +540,17 @@ versión.
    po_fall: al llegar a TR_USOS con TR_DOBLE, cuenta 0 y borra el bit (explota una por paso, 4 en total). tr_turn
    conserva el bit; la lupa dice «Two stacked (sea) mines. Explosions left: n of 4». Sembrar no detona (po_step solo
    corre al llegar). Pruebas: prueba_trampas, prueba_pozos, prueba_lupa.
+
+### Prueba del usuario (tarea 103) y arreglos (1.0.125.0, 4/11/2026)
+Resultado en el juego (1.0.124.0): apilar y el tope de 2 andan, el costo está bien, se puede sembrar en una ciudad.
+Dos fallas, arregladas en 1.0.125.0:
+1. **La ciudad tapaba la trampa.** La ciudad se pinta en la 2.ª pasada de 0x459790 (0x459c97..0x459d51) y la trampa
+   iba en la 1.ª. Ahora po_draw2 (en 0x459d54, después del edificio de la celda y antes de sus ejércitos) corre
+   po_draw con po_mode = 1, que pinta solo trampas; la 1.ª pasada (po_mode = 0) ya no las pinta. Pozos, remolinos
+   y tumbas siguen en la 1.ª.
+2. **Conquistar no detonaba** (partida roads02.sav: el héroe azul ganó la ciudad roja y quedó sobre la trampa).
+   Entrar a una ciudad propia o aliada es el paso de código 7 (0x49e45e; 0x49d0a1 mueve con 0x469ed0), no el 0 donde
+   está po_step; y después de ganar, la ciudad ya es del atacante. po_enter (en 0x49d151) mueve y anota la casilla
+   con el mismo po_mark que po_step; po_fall la detona en el mismo lote. Efecto aparte: también detona al entrar a
+   una ciudad propia que tenga una trampa enemiga sembrada antes de conquistarla (es la misma casilla).
+Pruebas: prueba_pozos (pasadas 1 y 2, paso 7). Falta verlo en el juego: tarea 104.
