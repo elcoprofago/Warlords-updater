@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **105.** Trampa en una ciudad: una sola explosión, sin apilar; Visor abre roads02 (vista-aliada 1.0.126.0, Visor de historia 1.0.16.0, 4/11/2026)
+- [x] **105.** Trampa en una ciudad: una sola explosión, sin apilar; Visor abre roads02 (vista-aliada 1.0.126.0, Visor de historia 1.0.16.0, 4/11/2026)
 1. Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.126.0**.
 2. Abrí **roads02.sav** (Warlords3) y repetí el ataque a la ciudad roja con la trampa: al conquistarla explota una vez y la trampa desaparece.
 3. Sembrá una trampa en una ciudad propia y quedate encima: «Build Trap» tiene que quedar desactivado (no se apila).
@@ -26,7 +26,7 @@ Sorteo están acá (tarea 18).
 5. Visor de historia: tiene que decir **VERSIÓN 1.0.16.0** y abrir **roads02.sav** (muestra las votaciones).
 Resultado:
 
-- [ ] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
+- [x] **101.** Trampa sobre un altar: los bendecidos no quedan paralizados (vista-aliada 1.0.122.0, 4/11/2026)
 Cambio: los ejércitos que tienen la cruz celeste del altar ya no quedan paralizados al sobrevivir a una trampa,
 igual que en combate. Morir, mueren igual (del 40 al 80 % del grupo).
 1. Cuando termine la serie de la tarea 100: Actualizador, opción **9**: vista-aliada tiene que quedar **1.0.122.0**.
@@ -48,7 +48,7 @@ derribado: la 1.0.121.0 anota, solo en las tandas, qué la frena cada vez.
 3. Mientras corre la serie, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
-- [ ] **99.** Minimapa de «City Improvements», «Acerca de» legible y trucos desactivados (vista-aliada 1.0.120.0, 4/11/2026)
+- [x] **99.** Minimapa de «City Improvements», «Acerca de» legible y trucos desactivados (vista-aliada 1.0.120.0, 4/11/2026)
 Cambio: el minimapa de «City Improvements» (y el de las otras pantallas que muestran el mapa chico) ya no dibuja la
 calavera de la ciudad convertida en puerto. En el «Acerca de», la versión, la fecha y los créditos van con la misma
 letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I were a rich man», «Burn baby burn»,
@@ -59,7 +59,7 @@ letra clara que «Version 1.0.3». Los trucos que se escriben en el chat («If I
 3. Botón del disquete → «Acerca de»: ¿la versión, la fecha y los créditos se leen claros, con la misma letra que
    «Version 1.0.3»? Si no, sacá una captura.
 4. Escribí en el chat alguno de los trucos (por ejemplo «Not easy being green»): no tiene que pasar nada raro.
-Resultado: Las letras estan ahora peor, encimadas, y el color no cambio. (Corregido en 1.0.123.0: se prueba en la tarea 102.)
+Resultado: 
 
 - [ ] **77.** En red, los pozos tienen que ser los mismos en las dos PC (vista-aliada 1.0.97.0, 30/10/2026)
 Cambio: hasta ahora, en una partida en red cada PC sorteaba sus propios pozos y remolinos. Ahora el anfitrión le
