@@ -1,0 +1,1825 @@
+{
+  "fecha": "2026-11-04",
+  "version": "1.0.0.0",
+  "personas": [
+    {
+      "nombre": "Grant Arthur",
+      "roles": [
+        "Artwork"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Cassie Baker",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Eric Baker",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q543657",
+          "url": "https://www.wikidata.org/wiki/Q543657",
+          "descripcion": "British activist (1920–1976)",
+          "fallecimiento": [
+            "1976-07-11"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Eric Baker (activist)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q24037752",
+          "url": "https://www.wikidata.org/wiki/Q24037752",
+          "descripcion": "character in The West Wing",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q29033820",
+          "url": "https://www.wikidata.org/wiki/Q29033820",
+          "descripcion": "American businessman",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Eric Baker (businessman)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Jenny Baker",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q56837601",
+          "url": "https://www.wikidata.org/wiki/Q56837601",
+          "descripcion": "researcher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q96780523",
+          "url": "https://www.wikidata.org/wiki/Q96780523",
+          "descripcion": "cookbook writer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Rachel Baker",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q107995681",
+          "url": "https://www.wikidata.org/wiki/Q107995681",
+          "descripcion": "graduate of Te Kura Toi Whakaari o Aotearoa: New Zealand Drama School in 2009",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q119560664",
+          "url": "https://www.wikidata.org/wiki/Q119560664",
+          "descripcion": "college basketball player (2007–2008) Arkansas State",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q130564023",
+          "url": "https://www.wikidata.org/wiki/Q130564023",
+          "descripcion": "digital artist and curator",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Karl-Peter Baum",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Peter Butterworth",
+      "roles": [
+        "Video Production: Technical Director"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q925902",
+          "url": "https://www.wikidata.org/wiki/Q925902",
+          "descripcion": "English actor (1915-1979)",
+          "fallecimiento": [
+            "1979-01-17",
+            "1979-01-16"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Peter Butterworth",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q39841371",
+          "url": "https://www.wikidata.org/wiki/Q39841371",
+          "descripcion": "researcher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Paul Cheng",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q9087010",
+          "url": "https://www.wikidata.org/wiki/Q9087010",
+          "descripcion": "Hong Kong politician",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Paul Cheng",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q137677464",
+          "url": "https://www.wikidata.org/wiki/Q137677464",
+          "descripcion": "Canadian political candidate",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q136461652",
+          "url": "https://www.wikidata.org/wiki/Q136461652",
+          "descripcion": "director",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Dexter Chow",
+      "roles": [
+        "Red Orb Entertainment: Producers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Debbie Daniels",
+      "roles": [
+        "Video Production: Editing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Barry Dean",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q19281657",
+          "url": "https://www.wikidata.org/wiki/Q19281657",
+          "descripcion": "songwriter",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Barry Dean (songwriter)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q2885724",
+          "url": "https://www.wikidata.org/wiki/Q2885724",
+          "descripcion": "Canadian ice hockey player",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Barry Dean (ice hockey)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q137678152",
+          "url": "https://www.wikidata.org/wiki/Q137678152",
+          "descripcion": "Canadian political candidate",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Denise Dean",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Jon Dixon",
+      "roles": [
+        "Red Orb Entertainment: Lead Testers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Dean Farmer",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Janeen Fawkner",
+      "roles": [
+        "Scenario Design",
+        "Testing",
+        "Video Production: Digital Implementation"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Steve Fawkner",
+      "roles": [
+        "Original Design",
+        "Design & Development",
+        "Programming",
+        "Original Music",
+        "Scenario Design",
+        "Video Production: Story",
+        "Video Production: Music"
+      ],
+      "estado": "con ficha pública, sin fecha de fallecimiento",
+      "fichas": [
+        {
+          "qid": "Q4492245",
+          "url": "https://www.wikidata.org/wiki/Q4492245",
+          "descripcion": "Australian software designer, programmer and composer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Steve Fawkner",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": true
+        }
+      ]
+    },
+    {
+      "nombre": "Paul Fisher",
+      "roles": [
+        "Video: agradecimiento"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q108800718",
+          "url": "https://www.wikidata.org/wiki/Q108800718",
+          "descripcion": "Chief Executive (formerly Group Managing Director), Jockey Club Racecourses Ltd, 2008–20",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q112410616",
+          "url": "https://www.wikidata.org/wiki/Q112410616",
+          "descripcion": "education researcher (born 1952)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q7150646",
+          "url": "https://www.wikidata.org/wiki/Q7150646",
+          "descripcion": "British economist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Paul Fisher (economist)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Josiah Fizer",
+      "roles": [
+        "Red Orb Entertainment: Testers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Steve Ford",
+      "roles": [
+        "Design & Development",
+        "Art Director",
+        "Artwork",
+        "Actor en videos: Lord Bane"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q107695041",
+          "url": "https://www.wikidata.org/wiki/Q107695041",
+          "descripcion": "Contemporary art jeweller (born 1964)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "https://fordforlano.com/"
+          ],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q7612568",
+          "url": "https://www.wikidata.org/wiki/Q7612568",
+          "descripcion": "Welsh rugby union player",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Steve Ford",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Chris Fraser",
+      "roles": [
+        "Video Production: Cameras"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q102553201",
+          "url": "https://www.wikidata.org/wiki/Q102553201",
+          "descripcion": "Ph.D. University of Michigan 2016",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q130806077",
+          "url": "https://www.wikidata.org/wiki/Q130806077",
+          "descripcion": "associate professor of philosophy",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "http://cjfraser.net/"
+          ],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q18145386",
+          "url": "https://www.wikidata.org/wiki/Q18145386",
+          "descripcion": "computer scientist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Andrew Garske",
+      "roles": [
+        "Red Orb Entertainment: QA Leads",
+        "Red Orb Entertainment: QA Lead"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Robert Gjessing",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "John Gleason",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q111135368",
+          "url": "https://www.wikidata.org/wiki/Q111135368",
+          "descripcion": "Wikimedia disambiguation page",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "John Gleason",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Ken Goldstein",
+      "roles": [
+        "Red Orb Entertainment: General Manager"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q6387682",
+          "url": "https://www.wikidata.org/wiki/Q6387682",
+          "descripcion": "entrepreneur",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Ken Goldstein",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Stephen Hand",
+      "roles": [
+        "Design & Development",
+        "Actor en videos: the Emperor",
+        "Video Production: Armourer"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q25930420",
+          "url": "https://www.wikidata.org/wiki/Q25930420",
+          "descripcion": "author",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Simon Hayes",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q7518933",
+          "url": "https://www.wikidata.org/wiki/Q7518933",
+          "descripcion": "Sound engineer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Simon Hayes (sound engineer)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q16211594",
+          "url": "https://www.wikidata.org/wiki/Q16211594",
+          "descripcion": "Wikimedia disambiguation page",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Simon Hayes",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q7518931",
+          "url": "https://www.wikidata.org/wiki/Q7518931",
+          "descripcion": "Police and Crime Commissioner for Hampshire Constabulary",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Simon Hayes (police commissioner)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Mark J. J. Hill",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "David Hockes",
+      "roles": [
+        "Video Production: Lighting"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Ben Hutchings",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q84858884",
+          "url": "https://www.wikidata.org/wiki/Q84858884",
+          "descripcion": "Linux kernel developer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Chris Kane",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q107279610",
+          "url": "https://www.wikidata.org/wiki/Q107279610",
+          "descripcion": "British politician, from 2024, Member of Parliament for Stirling and Strathallan",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "https://www.chriskane.net/"
+          ],
+          "correo": [],
+          "wikipedia": "Chris Kane (politician)",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q124002000",
+          "url": "https://www.wikidata.org/wiki/Q124002000",
+          "descripcion": "American lacrosse player (Syracuse)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q16236239",
+          "url": "https://www.wikidata.org/wiki/Q16236239",
+          "descripcion": "Scottish footballer (born 1994)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Chris Kane (footballer, born 1994)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Tim Kane",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q7803749",
+          "url": "https://www.wikidata.org/wiki/Q7803749",
+          "descripcion": "American economist (born 1968)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Tim Kane",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q137789319",
+          "url": "https://www.wikidata.org/wiki/Q137789319",
+          "descripcion": "Canadian political candidate from British Columbia",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Adam Keane",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q88641672",
+          "url": "https://www.wikidata.org/wiki/Q88641672",
+          "descripcion": "researcher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Conor Keane",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Roger Keating",
+      "roles": [
+        "Design & Development",
+        "AI Programming",
+        "Actor en videos: General Korovar"
+      ],
+      "estado": "con ficha pública, sin fecha de fallecimiento",
+      "fichas": [
+        {
+          "qid": "Q19874866",
+          "url": "https://www.wikidata.org/wiki/Q19874866",
+          "descripcion": "Australian computer game designer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Roger Keating",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": true
+        }
+      ]
+    },
+    {
+      "nombre": "Rowan Keating",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Shelley Keating",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Margaret Keegan",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Anna Lang",
+      "roles": [
+        "Video Production: Autocue"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q4767200",
+          "url": "https://www.wikidata.org/wiki/Q4767200",
+          "descripcion": "Swedish harpist (1874-1920)",
+          "fallecimiento": [
+            "1920-12-20"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Anna Lang (harpist)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q115300660",
+          "url": "https://www.wikidata.org/wiki/Q115300660",
+          "descripcion": "cyclist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q4960773",
+          "url": "https://www.wikidata.org/wiki/Q4960773",
+          "descripcion": "Swedish violinist",
+          "fallecimiento": [
+            "1917-00-00"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Jennie Leslie",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Gerald Letts",
+      "roles": [
+        "Video: supervisor de producción (AFTRS)"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Christopher Lintlop",
+      "roles": [
+        "Red Orb Entertainment: Testers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Alister Lockhart",
+      "roles": [
+        "Artwork",
+        "Actor en videos: Lord Gildus"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Bernie Lyons",
+      "roles": [
+        "Actor en videos"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Gary Makin",
+      "roles": [
+        "Design & Development",
+        "Video Production: Digital Implementation"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Eric Mark",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Scott Mark",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Phil Niven",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Tony Oliver",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q6150732",
+          "url": "https://www.wikidata.org/wiki/Q6150732",
+          "descripcion": "Puerto Rican voice actor",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "https://www.tonyoliverentertainment.com/"
+          ],
+          "correo": [],
+          "wikipedia": "Tony Oliver",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q19577471",
+          "url": "https://www.wikidata.org/wiki/Q19577471",
+          "descripcion": "Footballer (born 1967)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Tony Oliver (footballer)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q7823096",
+          "url": "https://www.wikidata.org/wiki/Q7823096",
+          "descripcion": "English football referee (born 1931)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Tony Oliver (referee)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Paul Paella",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Shane Parker",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q100896022",
+          "url": "https://www.wikidata.org/wiki/Q100896022",
+          "descripcion": "college basketball player (1994–1994) Charlotte",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q7488224",
+          "url": "https://www.wikidata.org/wiki/Q7488224",
+          "descripcion": "Australian rules footballer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Shane Parker (footballer)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q28672826",
+          "url": "https://www.wikidata.org/wiki/Q28672826",
+          "descripcion": "Australian wrestler",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Ron Pereira",
+      "roles": [
+        "Red Orb Entertainment: Associate Producer"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Ken Piper",
+      "roles": [
+        "Red Orb Entertainment: Lead Testers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Michael Quittenden",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Peter Radvan",
+      "roles": [
+        "Testing",
+        "Video: agradecimiento"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "John Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Sarah Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Tim Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Christopher Richardson",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q43039964",
+          "url": "https://www.wikidata.org/wiki/Q43039964",
+          "descripcion": "chemist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q57015430",
+          "url": "https://www.wikidata.org/wiki/Q57015430",
+          "descripcion": "biologist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q56087434",
+          "url": "https://www.wikidata.org/wiki/Q56087434",
+          "descripcion": "figure skater",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Andrew Robertson",
+      "roles": [
+        "Video Production: Cameras"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q4758406",
+          "url": "https://www.wikidata.org/wiki/Q4758406",
+          "descripcion": "Wikimedia disambiguation page",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Andrew Robertson (disambiguation)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q108375549",
+          "url": "https://www.wikidata.org/wiki/Q108375549",
+          "descripcion": "British QC",
+          "fallecimiento": [
+            "2018-10-23"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q114837540",
+          "url": "https://www.wikidata.org/wiki/Q114837540",
+          "descripcion": "President and Chief Executive Officer - BBDO Worldwide",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Mick Robertson",
+      "roles": [
+        "Design & Development",
+        "Programming",
+        "Scenario Design",
+        "Testing",
+        "Video Production: Digital Implementation"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q6838420",
+          "url": "https://www.wikidata.org/wiki/Q6838420",
+          "descripcion": "British television presenter",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Mick Robertson",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Miriam Robertson",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q112183261",
+          "url": "https://www.wikidata.org/wiki/Q112183261",
+          "descripcion": "doctoral candidate at the London School of Economics and Political Science",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q75501409",
+          "url": "https://www.wikidata.org/wiki/Q75501409",
+          "descripcion": "Peerage person ID=180091",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Steve Scholz",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Alex Shaw",
+      "roles": [
+        "Testing",
+        "Actor en videos: Lord Oberon"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q16018590",
+          "url": "https://www.wikidata.org/wiki/Q16018590",
+          "descripcion": "American basketball player and coach, football coach (1907-2009)",
+          "fallecimiento": [
+            "2009-11-29"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Alex Shaw (basketball)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q94460676",
+          "url": "https://www.wikidata.org/wiki/Q94460676",
+          "descripcion": "psychology researcher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q28233536",
+          "url": "https://www.wikidata.org/wiki/Q28233536",
+          "descripcion": "association football player",
+          "fallecimiento": [
+            "2013-01-01"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Alex Shaw (soccer)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Stuart Sheldon",
+      "roles": [
+        "Video Production: Audio Post Production"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Nigel Slater",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (1 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q4352760",
+          "url": "https://www.wikidata.org/wiki/Q4352760",
+          "descripcion": "English food writer, journalist and broadcaster",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Nigel Slater",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Louise Slattery",
+      "roles": [
+        "Actor en videos"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Jacob Smith",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q132178515",
+          "url": "https://www.wikidata.org/wiki/Q132178515",
+          "descripcion": "American racing driver (born 2004)",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Jacob Smith (racing driver)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q1353152",
+          "url": "https://www.wikidata.org/wiki/Q1353152",
+          "descripcion": "American actor",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Jacob Smith (actor)",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q75920112",
+          "url": "https://www.wikidata.org/wiki/Q75920112",
+          "descripcion": "Peerage person ID=404047",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Erik Spencer",
+      "roles": [
+        "Red Orb Entertainment: QA Leads",
+        "Red Orb Entertainment: QA Red Orb Lead Tech"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Henri Stathopoulos",
+      "roles": [
+        "Video Production: Makeup"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Nick Stathopoulos",
+      "roles": [
+        "Artwork",
+        "Video Production: Produced & Directed by",
+        "Video Production: Storyboards",
+        "Video Production: Production Design",
+        "Video Production: Models",
+        "Video Production: Background Art",
+        "Video Production: Wardrobe",
+        "Video Production: Special Effects",
+        "Video Production: Foley Artist",
+        "Video Production: Lord Bane's Prosthetic Makeup"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Helen Steele",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "estado": "sin datos públicos confirmados (2 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q110027217",
+          "url": "https://www.wikidata.org/wiki/Q110027217",
+          "descripcion": "American composer and pianist",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": "Helen Steele",
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q128797724",
+          "url": "https://www.wikidata.org/wiki/Q128797724",
+          "descripcion": "(1876-1958)",
+          "fallecimiento": [
+            "1957-12-28",
+            "1958-01-04"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Steve Thomas",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q120871198",
+          "url": "https://www.wikidata.org/wiki/Q120871198",
+          "descripcion": "Australian award-winning documentary filmmaker and lecturer",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q122897645",
+          "url": "https://www.wikidata.org/wiki/Q122897645",
+          "descripcion": "politics and public policy lecturer at University of Auckland in New Zealand",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q47805447",
+          "url": "https://www.wikidata.org/wiki/Q47805447",
+          "descripcion": "researcher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Elva Trout",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Ian Trout",
+      "roles": [
+        "Design & Development"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Jemima Trout",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Jenny Trout",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Tess Trout",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Tom Trout",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Paul Wagner",
+      "roles": [
+        "Testing",
+        "Video: agradecimiento"
+      ],
+      "estado": "sin datos públicos confirmados (3 homónimo/s sin relación comprobada con el juego)",
+      "fichas": [
+        {
+          "qid": "Q108682",
+          "url": "https://www.wikidata.org/wiki/Q108682",
+          "descripcion": "German chemist (1843-1930)",
+          "fallecimiento": [
+            "1930-08-25"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q102128975",
+          "url": "https://www.wikidata.org/wiki/Q102128975",
+          "descripcion": "Ph.D. University of Minnesota-Minneapolis 2001",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        },
+        {
+          "qid": "Q116175382",
+          "url": "https://www.wikidata.org/wiki/Q116175382",
+          "descripcion": "German merchant",
+          "fallecimiento": [
+            "1992-00-00"
+          ],
+          "disolucion": [],
+          "sitio_web": [],
+          "correo": [],
+          "wikipedia": null,
+          "vinculada_al_juego": false,
+          "correo_estado": {},
+          "confirmada": false
+        }
+      ]
+    },
+    {
+      "nombre": "Tim Wakeman",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Alan Wasserman",
+      "roles": [
+        "Red Orb Entertainment: Producers"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Ian Weddell",
+      "roles": [
+        "Video Production: Digital Implementation"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Judy Weller",
+      "roles": [
+        "Testing"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Gregor Whiley",
+      "roles": [
+        "Design & Development",
+        "Producer",
+        "Actor en videos: Lord Albion"
+      ],
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Gavin Woodward",
+      "roles": [
+        "Actor en videos"
+      ],
+      "estado": "sin datos públicos"
+    }
+  ],
+  "empresas": [
+    {
+      "nombre": "Strategic Studies Group",
+      "estado": "activa según Wikidata",
+      "fichas": [
+        {
+          "qid": "Q615181",
+          "url": "https://www.wikidata.org/wiki/Q615181",
+          "descripcion": "video game developer and publisher",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "http://www.ssg.com.au/"
+          ],
+          "correo": [],
+          "wikipedia": "Strategic Studies Group",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {}
+        }
+      ]
+    },
+    {
+      "nombre": "Red Orb Entertainment",
+      "estado": "disuelta (2001-03-00)",
+      "fichas": [
+        {
+          "qid": "Q2642863",
+          "url": "https://www.wikidata.org/wiki/Q2642863",
+          "descripcion": "video game publishing company",
+          "fallecimiento": [],
+          "disolucion": [
+            "2001-03-00"
+          ],
+          "sitio_web": [
+            "http://www.redorb.com"
+          ],
+          "correo": [],
+          "wikipedia": "Red Orb Entertainment",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {}
+        }
+      ]
+    },
+    {
+      "nombre": "Broderbund Software, Inc.",
+      "estado": "disuelta (1999-00-00, 1998-08-30)",
+      "fichas": [
+        {
+          "qid": "Q995863",
+          "url": "https://www.wikidata.org/wiki/Q995863",
+          "descripcion": "American software company",
+          "fallecimiento": [],
+          "disolucion": [
+            "1999-00-00",
+            "1998-08-30"
+          ],
+          "sitio_web": [
+            "http://www.broderbund.com/"
+          ],
+          "correo": [],
+          "wikipedia": "Broderbund",
+          "vinculada_al_juego": true,
+          "sitio_web_estado": "responde con error 403",
+          "correo_estado": {}
+        }
+      ]
+    },
+    {
+      "nombre": "Beta Breakers",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "RAD Software",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Australian Film, Television and Radio School",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Society of Creative Anachronism",
+      "estado": "activa según Wikidata",
+      "fichas": [
+        {
+          "qid": "Q1414697",
+          "url": "https://www.wikidata.org/wiki/Q1414697",
+          "descripcion": "nonprofit organization",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "https://www.sca.org/"
+          ],
+          "correo": [],
+          "wikipedia": "Society for Creative Anachronism",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {}
+        }
+      ]
+    },
+    {
+      "nombre": "Costume Design Center",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "The Ancient and Medieval Martial Arts Society",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Mpath Interactive (Mplayer)",
+      "estado": "sin datos públicos"
+    },
+    {
+      "nombre": "Microsoft Corporation",
+      "estado": "activa según Wikidata",
+      "fichas": [
+        {
+          "qid": "Q2283",
+          "url": "https://www.wikidata.org/wiki/Q2283",
+          "descripcion": "American multinational technology corporation",
+          "fallecimiento": [],
+          "disolucion": [],
+          "sitio_web": [
+            "https://www.microsoft.com/",
+            "https://www.microsoft.com/en-gb",
+            "https://www.microsoft.com/de-de/",
+            "https://www.microsoft.com/ja-jp/",
+            "https://microsoft.cz/"
+          ],
+          "correo": [
+            "opensource@microsoft.com"
+          ],
+          "wikipedia": "Microsoft",
+          "vinculada_al_juego": false,
+          "sitio_web_estado": "responde (200)",
+          "correo_estado": {
+            "opensource@microsoft.com": "el dominio recibe correo (microsoft-com.mail.protection.outlook.com)"
+          }
+        }
+      ]
+    }
+  ],
+  "correos": [
+    {
+      "correo": "mazrob@panix.com",
+      "estado": "el dominio recibe correo (mx.panix.com)"
+    }
+  ]
+}

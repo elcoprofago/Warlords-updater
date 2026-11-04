@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 106).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 107).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,13 @@ Sorteo están acá (tarea 18).
 5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
+  - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
+  - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
+  - Para volver a consultarlo: abrir una consola en `F:\sourceeposctualizador-warlords\creditos` y
+    escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
+  - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
 - [ ] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
 Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene

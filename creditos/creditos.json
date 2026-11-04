@@ -1,0 +1,1094 @@
+{
+  "juego": "Warlords III: Darklords Rising (1998)",
+  "origen": "C:\\Warlords3",
+  "personas": [
+    {
+      "nombre": "Grant Arthur",
+      "roles": [
+        "Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Cassie Baker",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Eric Baker",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jenny Baker",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Rachel Baker",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Karl-Peter Baum",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Peter Butterworth",
+      "roles": [
+        "Video Production: Technical Director"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Paul Cheng",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Dexter Chow",
+      "roles": [
+        "Red Orb Entertainment: Producers"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Debbie Daniels",
+      "roles": [
+        "Video Production: Editing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Barry Dean",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Denise Dean",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jon Dixon",
+      "roles": [
+        "Red Orb Entertainment: Lead Testers"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ],
+      "tambien_figura_como": [
+        "Jonathan Dixon"
+      ]
+    },
+    {
+      "nombre": "Dean Farmer",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Janeen Fawkner",
+      "roles": [
+        "Scenario Design",
+        "Testing",
+        "Video Production: Digital Implementation"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Steve Fawkner",
+      "roles": [
+        "Original Design",
+        "Design & Development",
+        "Programming",
+        "Original Music",
+        "Scenario Design",
+        "Video Production: Story",
+        "Video Production: Music"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Paul Fisher",
+      "roles": [
+        "Video: agradecimiento"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Josiah Fizer",
+      "roles": [
+        "Red Orb Entertainment: Testers"
+      ],
+      "fuentes": [
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Steve Ford",
+      "roles": [
+        "Design & Development",
+        "Art Director",
+        "Artwork",
+        "Actor en videos: Lord Bane"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Chris Fraser",
+      "roles": [
+        "Video Production: Cameras"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Andrew Garske",
+      "roles": [
+        "Red Orb Entertainment: QA Leads",
+        "Red Orb Entertainment: QA Lead"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ],
+      "tambien_figura_como": [
+        "Drew Garske"
+      ]
+    },
+    {
+      "nombre": "Robert Gjessing",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "John Gleason",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ken Goldstein",
+      "roles": [
+        "Red Orb Entertainment: General Manager"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Stephen Hand",
+      "roles": [
+        "Design & Development",
+        "Actor en videos: the Emperor",
+        "Video Production: Armourer"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Simon Hayes",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Mark J. J. Hill",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "David Hockes",
+      "roles": [
+        "Video Production: Lighting"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ben Hutchings",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Chris Kane",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tim Kane",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Adam Keane",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Conor Keane",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Roger Keating",
+      "roles": [
+        "Design & Development",
+        "AI Programming",
+        "Actor en videos: General Korovar"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Rowan Keating",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Shelley Keating",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Margaret Keegan",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Anna Lang",
+      "roles": [
+        "Video Production: Autocue"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jennie Leslie",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Gerald Letts",
+      "roles": [
+        "Video: supervisor de producción (AFTRS)"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Christopher Lintlop",
+      "roles": [
+        "Red Orb Entertainment: Testers"
+      ],
+      "fuentes": [
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Alister Lockhart",
+      "roles": [
+        "Artwork",
+        "Actor en videos: Lord Gildus"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Bernie Lyons",
+      "roles": [
+        "Actor en videos"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Gary Makin",
+      "roles": [
+        "Design & Development",
+        "Video Production: Digital Implementation"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Eric Mark",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "nombre": "Scott Mark",
+      "roles": [
+        "Scenario Design",
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Phil Niven",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tony Oliver",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Paul Paella",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Shane Parker",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ron Pereira",
+      "roles": [
+        "Red Orb Entertainment: Associate Producer"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ken Piper",
+      "roles": [
+        "Red Orb Entertainment: Lead Testers"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Michael Quittenden",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Peter Radvan",
+      "roles": [
+        "Testing",
+        "Video: agradecimiento"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "John Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Sarah Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tim Reichelt",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Christopher Richardson",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Andrew Robertson",
+      "roles": [
+        "Video Production: Cameras"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Mick Robertson",
+      "roles": [
+        "Design & Development",
+        "Programming",
+        "Scenario Design",
+        "Testing",
+        "Video Production: Digital Implementation"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Miriam Robertson",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Steve Scholz",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Alex Shaw",
+      "roles": [
+        "Testing",
+        "Actor en videos: Lord Oberon"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Stuart Sheldon",
+      "roles": [
+        "Video Production: Audio Post Production"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Nigel Slater",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Louise Slattery",
+      "roles": [
+        "Actor en videos"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jacob Smith",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Erik Spencer",
+      "roles": [
+        "Red Orb Entertainment: QA Leads",
+        "Red Orb Entertainment: QA Red Orb Lead Tech"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Henri Stathopoulos",
+      "roles": [
+        "Video Production: Makeup"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Nick Stathopoulos",
+      "roles": [
+        "Artwork",
+        "Video Production: Produced & Directed by",
+        "Video Production: Storyboards",
+        "Video Production: Production Design",
+        "Video Production: Models",
+        "Video Production: Background Art",
+        "Video Production: Wardrobe",
+        "Video Production: Special Effects",
+        "Video Production: Foley Artist",
+        "Video Production: Lord Bane's Prosthetic Makeup"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Helen Steele",
+      "roles": [
+        "Additional Artwork"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Steve Thomas",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Elva Trout",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ian Trout",
+      "roles": [
+        "Design & Development"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jemima Trout",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Jenny Trout",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tess Trout",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tom Trout",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Paul Wagner",
+      "roles": [
+        "Testing",
+        "Video: agradecimiento"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Tim Wakeman",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Alan Wasserman",
+      "roles": [
+        "Red Orb Entertainment: Producers"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Ian Weddell",
+      "roles": [
+        "Video Production: Digital Implementation"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Judy Weller",
+      "roles": [
+        "Testing"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Gregor Whiley",
+      "roles": [
+        "Design & Development",
+        "Producer",
+        "Actor en videos: Lord Albion"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    },
+    {
+      "nombre": "Gavin Woodward",
+      "roles": [
+        "Actor en videos"
+      ],
+      "fuentes": [
+        "juego",
+        "editor"
+      ]
+    }
+  ],
+  "alias": [
+    {
+      "alias": "Katana Man",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "KGB",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Sandilar",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Noodle",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Blue Lightning",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Trym",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Hydrojackson",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Dogged",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Gardrak",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Gandalf",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Seren",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Glod",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Adrak",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Beowulf",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "tasteofvictory",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "St Valamir",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Hugh",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Lady Maya",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Kasmir",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Magraev",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Sir Talion",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Gryffone",
+      "fuentes": [
+        "juego"
+      ]
+    },
+    {
+      "alias": "Dragonwizard",
+      "fuentes": [
+        "juego"
+      ]
+    }
+  ],
+  "empresas": [
+    {
+      "nombre": "Strategic Studies Group",
+      "rol": "Desarrolladora (copyright 1998, marca Warlords)"
+    },
+    {
+      "nombre": "Red Orb Entertainment",
+      "rol": "Editora (división de Broderbund)"
+    },
+    {
+      "nombre": "Broderbund Software, Inc.",
+      "rol": "Dueña de Red Orb; marcas Darklords Rising y Red Orb; QA"
+    },
+    {
+      "nombre": "Beta Breakers",
+      "rol": "Testeo externo"
+    },
+    {
+      "nombre": "RAD Software",
+      "rol": "Smacker (código de reproducción de video)"
+    },
+    {
+      "nombre": "Australian Film, Television and Radio School",
+      "rol": "Lugar de filmación de los videos"
+    },
+    {
+      "nombre": "Society of Creative Anachronism",
+      "rol": "Actores de los videos"
+    },
+    {
+      "nombre": "Costume Design Center",
+      "rol": "Agradecimiento (vestuario)"
+    },
+    {
+      "nombre": "The Ancient and Medieval Martial Arts Society",
+      "rol": "Agradecimiento"
+    },
+    {
+      "nombre": "Mpath Interactive (Mplayer)",
+      "rol": "Juego en línea (README)"
+    },
+    {
+      "nombre": "Microsoft Corporation",
+      "rol": "Marca Windows (aviso legal)"
+    }
+  ],
+  "correos": [
+    {
+      "correo": "mazrob@panix.com",
+      "archivos": [
+        "FX\\AttHit2.wav",
+        "FX\\DefHit2.wav"
+      ]
+    }
+  ]
+}
