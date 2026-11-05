@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.10.0'
+VERSION = '1.0.11.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -546,13 +546,15 @@ class App(tk.Tk):
                               noche=self.noche.get(), defensas=d)}
 
     def iniciar(self):
+        v = getattr(self, 'v_combate', None)   # una sola pelea a la vez: si ya hay una ventana, se la trae al frente
+        if v is not None and v.winfo_exists(): v.lift(); v.focus_force(); return
         try: n = max(1, int(self.n.get()))
         except ValueError: n = 1000
         try: r = self.sim.simular(self.escenario(), n)
         except Error as e: messagebox.showerror(TITULO, str(e)); return
         except Exception as e: messagebox.showerror(TITULO, f'Falló el motor:\n{e}'); return
         self.mostrar(r)
-        VentanaCombate(self, self.juego.get(), r, TITULO, velocidad=self.velocidad.get(), efectos=self.efectos.get(),
+        self.v_combate = VentanaCombate(self, self.juego.get(), r, TITULO, velocidad=self.velocidad.get(), efectos=self.efectos.get(),
                        sonido=self.sonido.get(), tamano=self.tamano.get(), resultados=self.resultados.get())
 
     def mostrar(self, r):

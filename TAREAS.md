@@ -17,12 +17,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **119.** Simulador de combate 1.0.10.0: relámpago, bola dorada, botón azul, configuración y actualización (5/11/2026)
-1. Bajá el simulador de https://github.com/elcoprofago/Simulador-Combate/releases (Simulador-Combate.exe) y abrilo; el título dice **VERSIÓN 1.0.10.0**. Con «INICIAR COMBATE» se abre la ventana de combate (la 1.0.9.0 se colgaba ahí).
+- [ ] **119.** Simulador de combate 1.0.11.0: relámpago, bola dorada, botón azul, configuración y actualización (5/11/2026)
+1. Bajá el simulador de https://github.com/elcoprofago/Simulador-Combate/releases (Simulador-Combate.exe) y abrilo; el título dice **VERSIÓN 1.0.11.0**. Con «INICIAR COMBATE» se abre la ventana de combate (la 1.0.9.0 se colgaba ahí); apretándolo de nuevo con la pelea abierta no se abre otra, se trae al frente la que está.
 2. «INICIAR COMBATE» es azul como el escudo azul del juego (más oscuro en los bordes, con brillo), con letra blanca y sombra.
 2b. La barra de Velocidad tiene la bola dorada del Visor de historia (se arrastra o se hace clic en el riel).
 3. El panel de arriba tiene el fondo de mármol, con el título, la casilla de ordenar y «Carpeta del juego…».
-4. Arriba a la derecha está el engranaje de configuración: abre «Configuración — VERSIÓN 1.0.10.0» con «Buscar actualización», los créditos y el correo. «Buscar actualización» tiene que decir que ya tenés la última.
+4. Arriba a la derecha está el engranaje de configuración: abre «Configuración — VERSIÓN 1.0.11.0» con «Buscar actualización», los créditos y el correo. «Buscar actualización» tiene que decir que ya tenés la última.
 5. Armá una pelea con Blue Dragons (budragon) que mate: el relámpago suena con Lightning.wav.
 6. Después de que se publique el parche Alianzas nuevo, en el juego el relámpago también suena con Lightning.wav (el ácido sigue con el zumbido de antes).
 Resultado:
