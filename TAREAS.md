@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **112.** Simulador de combate: probar el tablero (5/11/2026)
-1. Abrí una consola en `F:\sourceeposctualizador-warlords\simcombate` y escribí `python tablero.py`.
+1. Abrí una consola en `F:\source\repos\actualizador-warlords\simcombate` y escribí `python tablero.py`.
 2. El título dice **SIMULADOR DE COMBATE — VERSIÓN 1.0.0.0** y arriba a la derecha aparece la cantidad de armas,
    barcos, clases, ítems y hechizos.
 3. Armá una batalla que conozcas del juego: en cada lado elegí armas y cantidades (el casillero 1 pelea primero),
