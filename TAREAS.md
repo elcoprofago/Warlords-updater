@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
-1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
    **VERSIÓN 1.0.1.0**.
 2. Armá una batalla y apretá **INICIAR COMBATE**: se abre la ventana de combate con las imágenes del juego,
    defensor arriba y atacante abajo, en el orden en que pelean.
