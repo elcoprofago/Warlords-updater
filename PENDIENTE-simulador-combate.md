@@ -99,7 +99,13 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   `datos.clases` lee los 66 `.HER`. `python simcombate\prueba_heroes.py` → TODO OK: las 32 clases de la partida son
   copia exacta de su `.HER`; cada elección de las 4 clases cambia lo que dice el `.HER`; Grak real y Grak sintético dan
   el mismo 99,82 %; 3 gnollcav 50,70 % → con un KBarbarian nivel 1 88,66 % → nivel 10 con F15 94,73 % (control).
-- Próximo paso: etapa 2, ítems (después hechizos y terreno).
+- 5/11/2026: **etapa 2, ítems hechos.** `Motor.dar_item(héroe, registro)` le da al héroe cualquier `.ITM`
+  (`datos.items` lee los 328 del ITEMS); `Motor.item_suma(héroe, habilidad)` devuelve lo que cuenta el juego (0x409fb0).
+  `python simcombate\prueba_items.py` → TODO OK: el juego cuenta +3 Gold per City en Grak (Ring of Grak) y lo que dice
+  el `.ITM` dado; KBarbarian nivel 1 con 3 gnollcav 88,66 %; 34 de 45 habilidades de ítem lo cambian (The Yellow Cross
+  100 %, Beowulfs Fire 98,62 %, Illearth Stone 87,53 %); no lo cambian View, Fly, Movement, Gold per City ni los
+  «slayer» que no tocan a gnolls (control); el mismo ítem en el suelo da 88,66 % (control).
+- Próximo paso: etapa 2, hechizos (después terreno).
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
@@ -118,9 +124,10 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   vista en +0xe bits 1-3. El nivel no lo lee la pelea: solo cuentan los casilleros, fuerza y vidas.
   **0x48efa0 no pone tope**: una fuerza de 21 queda en 5 (4 bits). Sin ver si la pantalla de subir de nivel del juego
   lo impide; el simulador lo rechaza.
-- Ítems (para seguir): tabla 0x55cc22 + i*0xd8, cantidad en 0x55cb72; +0 héroe, +2 bits 0-1 = 1 lo lleva un héroe,
-  +0xa y +0x1a dos habilidades (palabra id, palabra valor), nombre en +0x2c. 0x409fb0 los suma por habilidad (los
-  «slayer» 0x2c..0x33 valen 2). Hechizos activos: 0x55f030 + i*0x36 (40), +2 unidad, +0x16 4 efectos (id, valor).
+- **Ítems, resuelto**: el juego lee el `.ITM` entero (0xd8 bytes; algunos traen 2 de más) a 0x55cb74 + i*0xd8
+  (cargador 0x433e7c), cantidad en 0x55cb72, hasta 40. +0 nombre, +0xae héroe, +0xb0 bits 0-1 (1 lo lleva un héroe,
+  3 en el suelo), +0xb8 y +0xc8 dos habilidades (palabra id, palabra valor). 0x409fb0 los suma por habilidad (los
+  «slayer» 0x2c..0x33 valen 2). Los ítems del escenario de la partida no son `.ITM`. Hechizos activos: 0x55f030 + i*0x36 (40), +2 unidad, +0x16 4 efectos (id, valor).
 - Héroes (notas de antes): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
   (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
   juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.

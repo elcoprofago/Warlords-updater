@@ -22,6 +22,11 @@ CIUDADES_N, CIUDAD0, CREC = 0x537e2a, 0x537e2c, 0xde   # ciudad c: +0xa4 viva (>
 # +0x3fc 10 elecciones de 16 bytes (habilidad, valor) y +0x49c su costo en puntos. 0x48efa0(unidad, elección) es la
 # rutina del juego que aplica una elección (fuerza, vidas y movimiento van a la unidad; el resto, a un casillero).
 HEROE0, HREC, HEROES = 0x556bb2, 0xb8, 64
+# Ítems: el juego lee el .ITM entero (0xd8 bytes) a ITEM0 + i*IREC (0x433e7c), cantidad en ITEMS_N, hasta 40.
+# +0 nombre; +0xae héroe que lo lleva (índice de registro); +0xb0 bits 0-1 dónde está (1 = lo lleva un héroe,
+# 3 = en el suelo, con x, y en +0xaa, +0xac); +0xb8 y +0xc8 dos habilidades (palabra id, palabra valor). 0x409fb0
+# suma por habilidad lo que llevan los héroes.
+ITEM0, IREC, ITEMS_N, ITEMS_MAX = 0x55cb74, 0xd8, 0x55cb72, 40
 CLASE0, CLREC = 0x5451d0, 1380
 # [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
 # de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
@@ -67,6 +72,7 @@ class Motor:
         self.n0 = self.w(UNITS_N)
         self.inicial = bytes(mu.mem_read(UNIT0, (self.n0 + 64) * UREC))
         self.heroes0 = bytes(mu.mem_read(HEROE0, HEROES * HREC))
+        self.items0 = bytes(mu.mem_read(ITEMS_N, 2 + ITEMS_MAX * IREC))
         self.fallo = None
         def malo(m, acc, addr, sz, val, u):
             self.fallo = (acc, addr); return False
@@ -159,7 +165,25 @@ class Motor:
 
     def limpiar(self):
         self.mu.mem_write(UNIT0, self.inicial); self.mu.mem_write(UNITS_N, struct.pack('<h', self.n0))
-        self.mu.mem_write(HEROE0, self.heroes0)
+        self.mu.mem_write(HEROE0, self.heroes0); self.mu.mem_write(ITEMS_N, self.items0)
+
+    def dar_item(self, u, registro):
+        """Le da al héroe u un ítem (.ITM, datos.Item.registro). Usa un lugar libre de la tabla (hasta 40; si está
+        llena, reemplaza uno que no lleve ningún héroe). Devuelve el índice del ítem."""
+        h = self.heroe(u)['h']; n = self.w(ITEMS_N)
+        if n < ITEMS_MAX: i = n; self.mu.mem_write(ITEMS_N, struct.pack('<h', n + 1))
+        else:
+            i = next((k for k in range(n) if self.mu.mem_read(ITEM0 + k * IREC + 0xb0, 1)[0] & 3 != 1), None)
+            if i is None: raise RuntimeError('la tabla de ítems está llena de ítems de héroes')
+        r = bytearray(registro[:IREC])
+        struct.pack_into('<h', r, 0xae, h); r[0xb0] = (r[0xb0] & ~3) | 1; r[0xb1] = 0
+        self.mu.mem_write(ITEM0 + i * IREC, bytes(r))
+        return i
+
+    def item_suma(self, u, hab):
+        """Lo que el juego (0x409fb0) cuenta de la habilidad hab en los ítems del héroe u."""
+        d = bytes(self.mu.mem_read(UNIT0 + u * UREC, 4)); x, y = struct.unpack('<hh', d)
+        return self.call(0x409fb0, [u, x, y, hab]) & 0xffff
 
     # --- héroes ---
     def cargar_clase(self, dueno, ranura, her):

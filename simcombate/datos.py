@@ -76,3 +76,20 @@ def clases(carpeta):
     """Todas las clases del HERO, en orden alfabético de archivo."""
     fs = sorted(glob.glob(os.path.join(carpeta, '*.her')), key=lambda f: os.path.basename(f).lower())
     return [Clase(f) for f in fs]
+
+class Item:
+    """Ítem (.ITM, 216 bytes = el registro que el juego pone en memoria; ver motor.ITEM0)."""
+    def __init__(self, ruta):
+        b = open(ruta, 'rb').read()
+        if len(b) < 0xd8: raise ValueError(f'{ruta}: {len(b)} bytes, se esperaban 216')   # varios traen 2 de más
+        b = b[:0xd8]; self.ruta, self.registro, self.nombre = ruta, b, _cad(b[0:32])
+        self.habilidades = [(int.from_bytes(b[o:o + 2], 'little'), int.from_bytes(b[o + 2:o + 4], 'little', signed=True))
+                            for o in (0xb8, 0xc8) if int.from_bytes(b[o:o + 2], 'little')]
+    def texto(self):
+        return ', '.join(HABILIDADES.get(h, f'Ability_{h}') + ('' if h in SIN_VALOR else f' +{v}') for h, v in self.habilidades)
+    def __repr__(self): return f'<Item {os.path.basename(self.ruta)} {self.nombre!r} {self.texto()}>'
+
+def items(carpeta):
+    """Todos los ítems del ITEMS, en orden alfabético de archivo (Windows no distingue .ITM de .itm)."""
+    fs = {os.path.basename(f).lower(): f for f in glob.glob(os.path.join(carpeta, '*.itm'))}
+    return [Item(fs[k]) for k in sorted(fs)]
