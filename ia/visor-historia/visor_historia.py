@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.17.0'
+VERSION = '1.0.18.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -39,7 +39,7 @@ ASSETS = os.path.join(getattr(sys, '_MEIPASS', ''), 'assets') if getattr(sys, 'f
     os.path.join(os.path.dirname(CARPETA), 'monitor-ia', 'assets')
 ICONO = getattr(sys, '_MEIPASS', '') if getattr(sys, 'frozen', False) else CARPETA
 DATOS = (('turnos', 'Turnos jugados:'), ('victoria', 'Victoria:'), ('mapa', 'Mapa:'), ('guardado', 'Último guardado:'),
-         ('explorado', '% de mapa explorado:'))   # este, solo con Hidden Map
+         ('explorado', 'Explorado:'))   # este, solo con Hidden Map
 
 
 def juego_de(sav):
@@ -189,7 +189,7 @@ class Visor:
         # Los datos en una grilla propia, a lo ancho del panel: así «Victoria:» queda cerca del medio
         dat = self.caja(sup)
         dat.grid(row=1, column=0, columnspan=4, sticky='we')
-        dat.columnconfigure(1, minsize=230)
+        dat.columnconfigure(1, minsize=190)
         for i, (clave, rot) in enumerate(DATOS):
             f, c = 1 + i // 2, 2 * (i % 2)   # rótulos al margen izquierdo, los dos primeros debajo de «Abrir…»
             self.rotulo(dat, 'etiqueta', text=rot, font=('Segoe UI', 9, 'bold')).grid(
@@ -571,8 +571,7 @@ class Visor:
         cv.create_text(310, TIT_Y, text='History of Events', font=self.f_tit, fill='#20203a')
         self.texto_sombra(REN_X + 175, SUB_Y, f'EVENTS FOR TURN {self.ronda}', self.f_sub, 'n', '#8b6914')
         self.dibujar_minimapa()
-        self.datos['explorado']['text'] = (f"{historia.explorado(self.mapa, self.color):.0f}  "
-                                           f"({self.p.jugador(self.color)}, al guardar)") if self.p.cabecera['oculto'] else ''
+        self.datos['explorado']['text'] = f"{historia.explorado(self.mapa, self.color):.0f} %" if self.p.cabecera['oculto'] else ''
         clave = self.buscar.get().strip().lower()
         y = REN_Y
         for j, s in self.rondas.get(self.ronda, []):
@@ -794,12 +793,12 @@ class Visor:
             pdf.ln(3)
             pdf.set_font('ui', 'B', 10)
             pdf.cell(60, 6, 'SIDE', border=1)
-            pdf.cell(45, 6, '% de mapa explorado', border=1, align='C', new_x='LMARGIN', new_y='NEXT')
+            pdf.cell(45, 6, 'Explorado', border=1, align='C', new_x='LMARGIN', new_y='NEXT')
             pdf.set_font('ui', '', 10)
             for k in range(8):
                 if self.p.juega(k):
                     pdf.cell(60, 6, self.p.jugador(k), border=1)
-                    pdf.cell(45, 6, f'{historia.explorado(self.mapa, k):.0f}', border=1, align='C',
+                    pdf.cell(45, 6, f'{historia.explorado(self.mapa, k):.0f} %', border=1, align='C',
                              new_x='LMARGIN', new_y='NEXT')
             pdf.set_font('ui', '', 8)
             pdf.cell(0, 5, 'Al último guardado: el .SAV no registra la exploración turno a turno.',

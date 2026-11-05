@@ -17,8 +17,8 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
-1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.17.0**.
-2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «% de mapa explorado:» con el
+1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.18.0**.
+2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «Explorado: xx %» con el
    bando elegido en el minimapa; al tocar otro escudo, cambia el número.
 3. Abrí una partida sin mapa oculto: ese renglón no aparece.
 4. **Exportar PDF…** de la partida oculta: debajo de los datos, una tabla con cada bando y su porcentaje.
