@@ -5,7 +5,7 @@
 # victorias y abre la ventana de combate (combate.py) con una batalla de muestra. Uso: python tablero.py
 import configparser, json, os, struct, subprocess, sys, threading, urllib.request, webbrowser
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, font as tkfont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA   # noqa: E402
@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.17.0'
+VERSION = '1.0.18.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -73,6 +73,19 @@ class Estandarte(tk.Canvas):
             self.create_image(8, h // 2, image=self.fotos[1], anchor='w'); self.create_image(w - 8, h // 2, image=self.fotos[0], anchor='e')
         for dx, col in ((2, '#000000'), (0, '#ffffff')):
             self.create_text(w // 2 + dx, h // 2 + dx, text=self.titulo, font=('Georgia', 17, 'bold'), fill=col)
+
+def titulo_verde(padre, texto, aclaracion=''):
+    """Título de subpanel: Arial bold del tamaño de los estandartes, verde con borde dorado y sombra."""
+    fondo = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
+    f = tk.Frame(padre, bg=fondo); fuente = ('Arial', 17, 'bold')
+    w = tkfont.Font(font=fuente).measure(texto) + 8
+    cv = tk.Canvas(f, width=w, height=30, bg=fondo, highlightthickness=0); cv.pack(side='left')
+    cv.create_text(5, 17, text=texto, font=fuente, fill='#303030', anchor='w')                 # sombra
+    for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
+        cv.create_text(3 + dx, 15 + dy, text=texto, font=fuente, fill=ORO, anchor='w')       # borde dorado
+    cv.create_text(3, 15, text=texto, font=fuente, fill='#0a8a28', anchor='w')
+    if aclaracion: tk.Label(f, text=aclaracion, bg=fondo).pack(side='left', padx=(2, 0), pady=(6, 0))
+    return f
 
 def reborde(padre, color='#000000'):
     """Reborde dorado como el de los cuadros de texto del Visor de historia: dorado ancho por fuera y una línea negra
@@ -376,11 +389,11 @@ class App(tk.Tk):
         # Los paneles van directo sobre la ventana, cada uno en su reborde dorado: entre ellos se ve el mármol.
         cajas = [reborde(self, BANDOS['ATACANTE']['medio']), reborde(self, BANDOS['DEFENSOR']['medio']), reborde(self)]
         for col, m in enumerate(cajas):
-            m.master.grid(row=1, column=col, sticky='n', padx=(10 if col == 0 else 4, 10 if col == 2 else 4), pady=4)
+            m.master.grid(row=1, column=col, sticky='ns', padx=(10 if col == 0 else 4, 10 if col == 2 else 4), pady=4)
         for caja, t in ((cajas[0], 'ATACANTE'), (cajas[1], 'DEFENSOR')): Estandarte(caja, t, self.juego.get()).pack(fill='x')
         self.pa = Panel(self, cajas[0], 'ATACANTE'); self.pa.pack(fill='both')
         self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack(fill='both')
-        der = ttk.Frame(cajas[2], padding=4); der.pack()
+        der = ttk.Frame(cajas[2], padding=4); der.pack(fill='both', expand=True)
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
         caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
         fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
@@ -526,7 +539,7 @@ class App(tk.Tk):
         self.cerrar()
 
     def subpanel_terreno(self, padre):
-        f = ttk.LabelFrame(padre, text='TERRENO (casilla del defensor)', padding=6); f.pack(fill='x')
+        f = ttk.LabelFrame(padre, labelwidget=titulo_verde(padre, 'TERRENO', '(casilla del defensor)'), padding=6); f.pack(fill='x')
         ttk.Label(f, text='Tipo').grid(row=0, column=0, sticky='w')
         self.terreno = ttk.Combobox(f, width=18, state='readonly'); self.terreno.grid(row=0, column=1, sticky='w')
         self.lagua = ttk.Label(f, text=''); self.lagua.grid(row=1, column=1, sticky='w')
@@ -540,7 +553,7 @@ class App(tk.Tk):
         self.defensas = ttk.Spinbox(f, from_=1, to=3, width=3); self.defensas.set(1); self.defensas.grid(row=7, column=1, sticky='w')
 
     def subpanel_visual(self, padre, c):
-        f = ttk.LabelFrame(padre, text='VISUAL (ventana de combate)', padding=6); f.pack(fill='x', pady=(6, 0))
+        f = ttk.LabelFrame(padre, text='VISUAL (ventana de combate)', padding=6); f.pack(fill='both', expand=True, pady=(6, 0))
         ttk.Label(f, text='Velocidad').grid(row=0, column=0, sticky='w')
         self.velocidad = tk.IntVar(value=c.getint('velocidad', 5)); Deslizador(f, self.velocidad, 1, 10).grid(row=0, column=1, sticky='w')
         self.efectos = tk.BooleanVar(value=c.getboolean('efectos', True)); ttk.Checkbutton(f, text='Efectos', variable=self.efectos).grid(row=1, column=0, sticky='w')
