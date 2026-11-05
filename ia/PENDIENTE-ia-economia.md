@@ -23,6 +23,16 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
 1. **Medir el desbande de verdad.** Ubicar en el exe dónde el juego disuelve ejércitos por falta de oro (el
    mantenimiento por turno) y anotar un evento nuevo (color, ejércitos disueltos, oro antes). Probarlo en emulación.
    Correr una tanda y contar cuántos hay, en qué turno y con qué oro.
+   **Hecho en el código (4/11/2026, vista-aliada 1.0.129.0); falta la tanda (TAREAS 108).** Cómo lo hace el juego:
+   al empezar el turno (0x42244b), si oro [0x536c14 + p·0x1f8] − mantenimiento [0x5643d8 + 2p] + ingreso
+   [0x5643f0 + 2p] < 0, pone la bandera de quiebra [0x536c1c + p·0x1f8] (0x415a00) y aplica el saldo (0x4b9390).
+   Después 0x4159d0 → 0x415910(p): cada ejército vivo de p que no sea héroe y tenga algún bit 0xf0 en +0x10 deserta
+   con 20 % (0x4deb20(1, 100) ≤ 20 → 0x4b9e20); cuenta en [0x4f9894] y, al humano, «%d troops desert your cause»
+   (Sagetext 0x90, 0x4158a0). Es aparte del desbande por **maná** (0x490xxx, «banished creatures», grupo 0x1e7),
+   que todavía no se anota. Evento 28 (ds_evt, gancho en 0x415995): x, y del ejército, n = oro en ese momento.
+   Prueba emulada: `parchesista-aliada\prueba_desbande.py` (3 guardadas, 8 colores: 438 deserciones anotadas
+   = conteo propio; controles: azar 21 → ninguna; sin ia_on → desertan sin anotarse).
+   Pendiente sin comprobar: qué marca el bit 0xf0 de +0x10 (¿ejércitos con mantenimiento?).
 2. **Medir el gasto.** Por turno y color: ingreso, mantenimiento, producción, héroes comprados (con y sin
    descuento), y lo que sobra. Ver si la tabla turno alcanza o hace falta otro evento.
 3. **Contrastar con partidas reales.** Usar el Visor de historia o las guardadas del ranking del clan para ver si
@@ -34,4 +44,5 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: 1. Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 1".
+Próximo paso: contar los eventos 28 de la tanda de TAREAS 108 (cerrar el paso 1) y seguir con el 2. Frase para
+retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 1: la tanda de la 108 terminó".

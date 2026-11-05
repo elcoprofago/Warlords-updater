@@ -5845,6 +5845,9 @@ aibn_bridge:
 # Reconstruir (paso 5.2, ai_brrebev): 26 puente derribado que no se propone, una vez por puente, color y turno (n = 1
 # ejército encima, 2 falta oro, 3 cabecera sin camino, 4 enemigo visible cerca, 5 lo volvería a derribar, 6 nada que
 # ganar al cruzar, 7 pasó todo), 27 un puente queda como candidato de la meta 9 (n = costo).
+# Economía (PENDIENTE-ia-economia, paso 1): 28 un ejército deserta por falta de oro (ds_evt; x, y = casilla del ejército,
+# n = oro del bando en ese momento). Lo hace 0x415910 al empezar el turno, con 20 % por ejército, si la bandera de
+# quiebra [0x536c1c + p * 0x1f8] quedó puesta (0x42244b: oro - mantenimiento + ingreso < 0).
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -5890,6 +5893,31 @@ ie_ret:
     ret
 ''')
 caves['crevt'] = ia_evt.to_bytes(4, 'little') + caves['crevt'][4:]   # (conserva el relleno de alineación); puntero de crlink (evento 25)
+
+DS_EVT = 28
+# ds_evt: reemplaza en 0x415995 "push esi; call 0x4b9e20; inc word ptr [0x4f9894]; add esp, 4" (deserción de un
+# ejército, si = índice, ebp = jugador) y anota antes el evento 28. Preserva lo mismo que el original.
+ds_evt = place('ds_evt', f'''
+    pushad
+    movsx ecx, si
+    imul edx, ecx, 0x1c
+    imul eax, ebp, 0x1f8
+    push dword ptr [eax + 0x536c14]
+    movsx eax, word ptr [edx + 0x54fe54]
+    push eax
+    movsx eax, word ptr [edx + 0x54fe52]
+    push eax
+    push ebp
+    push {DS_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    popad
+    push esi
+    call 0x4b9e20
+    add esp, 4
+    inc word ptr [0x4f9894]
+    ret
+''')
 
 # ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
 ia_evtb = place('ia_evtb', f'''
@@ -15557,6 +15585,7 @@ def rel(va, n):  # bytes originales
 
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
+patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
