@@ -124,8 +124,6 @@ class VentanaCombate(tk.Toplevel):
         self.leyenda = self.c.create_text(z(312), z(395), text='', fill=ORO, font=self.f_tit, width=z(340))
         self.leyenda_s = None
         # botones dentro del cuadro, abajo
-        self.bsaltar = self.boton(z(145), z(440), 'Saltar al final', self.saltar)
-        self.boton(z(480), z(440), 'Cerrar', self.cerrar, 'ne')
         self.protocol('WM_DELETE_WINDOW', self.cerrar); self.bind('<Escape>', lambda e: self.cerrar())
         self.ev = list(r['eventos']); self.i = 0; self.na = self.nd = 0; self.ea = self.ed = False
         self.muertes = []; self.tarea = None; self.rapido = False; self.terminado = False
@@ -291,7 +289,7 @@ class VentanaCombate(tk.Toplevel):
         self.rapido = True; self.paso()
 
     def fin(self):
-        self.rapido = False; self.terminado = True; self.bsaltar.configure(state='disabled')
+        self.rapido = False; self.terminado = True
         self.c.delete('vdA'); self.c.delete('vdD')
         r = self.r; gana = 'ATACANTE' if r['gana'] else 'DEFENSOR'
         coincide = self.muertes == [tuple(m) for m in r['muertes']]    # la repetición tiene que coincidir con el motor

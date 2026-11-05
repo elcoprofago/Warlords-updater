@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.13.0'
+VERSION = '1.0.14.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -38,11 +38,48 @@ JUEGO0 = r'C:\Warlords3'
 ESTRUCTURAS = (('Nada', 0), ('Camino / puente', 1), ('Ciudad', 3))
 ORO = '#c8a040'
 
-def reborde(padre):
+# Colores de cada bando (pedido del usuario, 5/11/2026): atacante en azules, defensor en rojos.
+BANDOS = {'ATACANTE': dict(oscuro='#001a66', medio='#0050d0', claro='#38a8ff', letra='#0a3c9c', suave='#a8d4ff', escudo='Cbludrag.PCX'),
+          'DEFENSOR': dict(oscuro='#5a0000', medio='#c01818', claro='#ff6040', letra='#9c1010', suave='#ffb0a0', escudo='Creddrag.PCX')}
+
+def mezcla(a, b, t):
+    a, b = [int(a[i:i + 2], 16) for i in (1, 3, 5)], [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return '#%02x%02x%02x' % tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+class Estandarte(tk.Canvas):
+    """Encabezado de un panel: franja degradada del color del bando, el escudo del dragón del juego (SHIELD) a cada
+    lado y el nombre del bando en blanco con sombra."""
+    def __init__(self, padre, titulo, juego):
+        super().__init__(padre, height=48, highlightthickness=0, bd=0, bg='#000000')
+        self.titulo, self.c = titulo, BANDOS[titulo]; self.fotos = []
+        try:
+            from combate import pcx
+            im = pcx(os.path.join(juego, 'SHIELD', self.c['escudo']))
+            im = im.crop((1, 1, 32, 37)) if im is not None else None
+        except Exception: im = None
+        if im is not None:
+            from PIL import ImageOps
+            im = im.resize((im.width * 6 // 5, im.height * 6 // 5), Image.NEAREST)
+            self.fotos = [ImageTk.PhotoImage(im), ImageTk.PhotoImage(ImageOps.mirror(im))]
+        self.bind('<Configure>', lambda e: self.dibujar())
+    def dibujar(self):
+        self.delete('all'); w, h, c = self.winfo_width(), int(self['height']), self.c
+        for x in range(0, w, 2):
+            t = 1 - abs(x / max(w - 1, 1) - 0.5) * 2
+            col = mezcla(c['oscuro'], c['medio'], min(t * 1.6, 1)) if t < 0.62 else mezcla(c['medio'], c['claro'], (t - 0.62) / 0.38)
+            self.create_rectangle(x, 0, x + 2, h, fill=col, outline='')
+        self.create_line(0, 1, w, 1, fill=ORO, width=2); self.create_line(0, h - 2, w, h - 2, fill=ORO, width=2)
+        if self.fotos:
+            self.create_image(8, h // 2, image=self.fotos[1], anchor='w'); self.create_image(w - 8, h // 2, image=self.fotos[0], anchor='e')
+        for dx, col in ((2, '#000000'), (0, '#ffffff')):
+            self.create_text(w // 2 + dx, h // 2 + dx, text=self.titulo, font=('Georgia', 17, 'bold'), fill=col)
+
+def reborde(padre, color='#000000'):
     """Reborde dorado como el de los cuadros de texto del Visor de historia: dorado ancho por fuera y una línea negra
     por dentro. Devuelve el marco interior (donde va el widget); el exterior, que se ubica, es su .master."""
     oro = tk.Frame(padre, bg=ORO, padx=3, pady=3)
-    negro = tk.Frame(oro, bg='#000000', padx=1, pady=1); negro.pack(fill='both', expand=True)
+    negro = tk.Frame(oro, bg=color, padx=1 if color == '#000000' else 3, pady=1 if color == '#000000' else 3)
+    negro.pack(fill='both', expand=True)
     return negro
 
 def boton(padre, **kw):
@@ -115,8 +152,9 @@ class Deslizador(tk.Canvas):
 class RecuadroFactor(tk.Frame):
     """El Factor total de la pila: fondo negro, letra blanca con sombra gris, borde dorado (pedido del usuario,
     5/11/2026: el fondo de la app irá pareciéndose al del juego)."""
-    def __init__(self, padre):
-        super().__init__(padre, bg=ORO, padx=3, pady=3)
+    def __init__(self, padre, bando=None):
+        super().__init__(padre, bg=BANDOS[bando]['medio'] if bando else ORO, padx=3, pady=3)
+        self.claro = BANDOS[bando]['suave'] if bando else '#ffffff'
         negro = tk.Frame(self, bg='#000000', padx=1, pady=1); negro.pack(fill='x')
         self.cv = tk.Canvas(negro, height=50, bg='#000000', highlightthickness=0); self.cv.pack(fill='x')
         self.cv.bind('<Configure>', lambda e: self.dibujar()); self.t = ('', '')
@@ -125,21 +163,23 @@ class RecuadroFactor(tk.Frame):
     def dibujar(self):
         cv = self.cv; cv.delete('all'); w = cv.winfo_width() // 2
         for dx, col in ((2, '#707070'), (0, '#ffffff')):
-            cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=col)
+            cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=self.claro if dx == 0 else col)
         for dx, col in ((1, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
-class Panel(ttk.LabelFrame):
-    """Un lado: 8 casilleros, barco, héroe y Factor total."""
+class Panel(ttk.Frame):
+    """Un lado: 8 casilleros, barco, héroe y Factor total, con los colores de su bando."""
     def __init__(self, app, padre, titulo):
-        super().__init__(padre, text=titulo, padding=6)
-        self.app = app; self.heroe = None
-        ttk.Label(self, text='N.º').grid(row=0, column=0); ttk.Label(self, text='Arma').grid(row=0, column=1, sticky='w')
-        ttk.Label(self, text='Cant.').grid(row=0, column=2)
+        super().__init__(padre, padding=6)
+        self.app = app; self.heroe = None; b = BANDOS[titulo]
+        st = ttk.Style(self); est = f'{titulo}.TLabel'
+        st.configure(est, foreground=b['letra'], font=('Segoe UI', 9, 'bold'))
+        ttk.Label(self, text='N.º', style=est).grid(row=0, column=0); ttk.Label(self, text='Arma', style=est).grid(row=0, column=1, sticky='w')
+        ttk.Label(self, text='Cant.', style=est).grid(row=0, column=2)
         self.armas, self.cant = [], []
         self.arrastre = None
         for k in range(8):
-            n = ttk.Label(self, text=f'☰ {k + 1}', cursor='fleur'); n.grid(row=k + 1, column=0, padx=(0, 4))
+            n = ttk.Label(self, text=f'☰ {k + 1}', cursor='fleur', style=est); n.grid(row=k + 1, column=0, padx=(0, 4))
             n.bind('<ButtonPress-1>', lambda e, k=k: self.tomar(k))
             n.bind('<B1-Motion>', self.mover)
             n.bind('<ButtonRelease-1>', self.soltar)
@@ -150,13 +190,13 @@ class Panel(ttk.LabelFrame):
             sp.bind('<KeyRelease>', lambda e: self.recalcular())
             self.armas.append(cb); self.cant.append(sp)
         f = ttk.Frame(self); f.grid(row=9, column=0, columnspan=3, sticky='we', pady=(6, 0))
-        ttk.Label(f, text='Barco').grid(row=0, column=0, sticky='w')
+        ttk.Label(f, text='Barco', style=est).grid(row=0, column=0, sticky='w')
         self.barco = ttk.Combobox(f, width=28, state='readonly'); self.barco.grid(row=0, column=1, sticky='w')
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w')
         boton(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
-        self.coef = RecuadroFactor(self); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
+        self.coef = RecuadroFactor(self, titulo); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
 
     def cargar_listas(self, sim):
         """Llena los desplegables, ordenados por nombre común o por archivo según el tablero; conserva lo elegido."""
@@ -332,11 +372,12 @@ class App(tk.Tk):
         self.marmol_im = None
         self.encabezado(c)
         # Los paneles van directo sobre la ventana, cada uno en su reborde dorado: entre ellos se ve el mármol.
-        cajas = [reborde(self) for _ in range(3)]
+        cajas = [reborde(self, BANDOS['ATACANTE']['medio']), reborde(self, BANDOS['DEFENSOR']['medio']), reborde(self)]
         for col, m in enumerate(cajas):
             m.master.grid(row=1, column=col, sticky='n', padx=(10 if col == 0 else 4, 10 if col == 2 else 4), pady=4)
-        self.pa = Panel(self, cajas[0], 'ATACANTE'); self.pa.pack()
-        self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack()
+        for caja, t in ((cajas[0], 'ATACANTE'), (cajas[1], 'DEFENSOR')): Estandarte(caja, t, self.juego.get()).pack(fill='x')
+        self.pa = Panel(self, cajas[0], 'ATACANTE'); self.pa.pack(fill='both')
+        self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack(fill='both')
         der = ttk.Frame(cajas[2], padding=4); der.pack()
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
         caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
