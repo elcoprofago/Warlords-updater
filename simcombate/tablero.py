@@ -10,14 +10,28 @@ from tkinter import ttk, filedialog, messagebox
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
-from combate import VentanaCombate                 # noqa: E402
+from combate import VentanaCombate, pcx            # noqa: E402
+from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.5.0'
+VERSION = '1.0.6.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
 JUEGO0 = r'C:\Warlords3'
 ESTRUCTURAS = (('Nada', 0), ('Camino / puente', 1), ('Ciudad', 3))
+ORO = '#c8a040'
+
+def reborde(padre):
+    """Reborde dorado como el de los cuadros de texto del Visor de historia: dorado ancho por fuera y una línea negra
+    por dentro. Devuelve el marco interior (donde va el widget); el exterior, que se ubica, es su .master."""
+    oro = tk.Frame(padre, bg=ORO, padx=3, pady=3)
+    negro = tk.Frame(oro, bg='#000000', padx=1, pady=1); negro.pack(fill='both', expand=True)
+    return negro
+
+def boton(padre, **kw):
+    """Un botón con reborde dorado; devuelve el marco a ubicar (el botón queda en .boton)."""
+    m = reborde(padre); b = ttk.Button(m, **kw); b.pack(fill='both', expand=True); m.master.boton = b
+    return m.master
 
 def elecciones(clase):
     """Las 10 elecciones de una clase (.HER) y los puntos por nivel: [(texto, costo)], [puntos de cada subida]."""
@@ -32,10 +46,10 @@ def elecciones(clase):
     return out, list(struct.unpack_from('<9h', r, 0x3e8))
 
 class RecuadroFactor(tk.Frame):
-    """El Factor total de la pila: fondo negro, letra color arena con sombra gris, borde dorado (pedido del usuario,
+    """El Factor total de la pila: fondo negro, letra blanca con sombra gris, borde dorado (pedido del usuario,
     5/11/2026: el fondo de la app irá pareciéndose al del juego)."""
     def __init__(self, padre):
-        super().__init__(padre, bg='#c8a040', padx=3, pady=3)
+        super().__init__(padre, bg=ORO, padx=3, pady=3)
         negro = tk.Frame(self, bg='#000000', padx=1, pady=1); negro.pack(fill='x')
         self.cv = tk.Canvas(negro, height=50, bg='#000000', highlightthickness=0); self.cv.pack(fill='x')
         self.cv.bind('<Configure>', lambda e: self.dibujar()); self.t = ('', '')
@@ -43,9 +57,9 @@ class RecuadroFactor(tk.Frame):
         self.t = (grande, chico); self.dibujar()
     def dibujar(self):
         cv = self.cv; cv.delete('all'); w = cv.winfo_width() // 2
-        for dx, col in ((2, '#707070'), (0, '#e0c890')):
+        for dx, col in ((2, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=col)
-        for dx, col in ((1, '#707070'), (0, '#e0c890')):
+        for dx, col in ((1, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
 class Panel(ttk.LabelFrame):
@@ -73,7 +87,7 @@ class Panel(ttk.LabelFrame):
         self.barco = ttk.Combobox(f, width=28, state='readonly'); self.barco.grid(row=0, column=1, sticky='w')
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w')
-        ttk.Button(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
+        boton(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
         self.coef = RecuadroFactor(self); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
 
@@ -184,8 +198,8 @@ class SubpanelHeroe(tk.Toplevel):
         self.items = self.lista(f, 'Ítems (Ctrl+clic para varios)', sim.items, h['items'], 0)
         self.hech = self.lista(f, 'Magias del héroe (se lanzan antes de pelear)', sim.hechizos, h['hechizos'], 1)
         b = ttk.Frame(self); b.grid(row=5, column=0, columnspan=2, pady=6)
-        ttk.Button(b, text='Aceptar', command=self.aceptar).pack(side='left', padx=4)
-        ttk.Button(b, text='Cancelar', command=self.destroy).pack(side='left', padx=4)
+        boton(b, text='Aceptar', command=self.aceptar).pack(side='left', padx=4)
+        boton(b, text='Cancelar', command=self.destroy).pack(side='left', padx=4)
 
     def lista(self, padre, titulo, tabla, sel, col):
         fr = ttk.LabelFrame(padre, text=titulo, padding=4); fr.grid(row=0, column=col, padx=4, sticky='n')
@@ -240,30 +254,48 @@ class App(tk.Tk):
         self.cfg = configparser.ConfigParser(); self.cfg.read(CONFIG, encoding='utf-8')
         if 'tablero' not in self.cfg: self.cfg['tablero'] = {}
         c = self.cfg['tablero']
-        top = ttk.Frame(self, padding=6); top.pack(fill='x')
+        self.marmol = tk.Label(self, bd=0); self.marmol.place(x=0, y=0, relwidth=1, relheight=1); self.marmol.lower()
+        caja = reborde(self); caja.master.grid(row=0, column=0, columnspan=3, sticky='we', padx=10, pady=(10, 4))
+        top = ttk.Frame(caja, padding=6); top.pack(fill='x')
         ttk.Label(top, text=TITULO, font=('Segoe UI', 12, 'bold')).pack(side='left')
         self.estado = ttk.Label(top, text=''); self.estado.pack(side='right')
         self.juego = tk.StringVar(value=c.get('juego', JUEGO0))
         self.sav = tk.StringVar(value=c.get('partida', os.path.join(JUEGO0, 'SAVES', 'Tanda_Kor.SAV')))
-        fb = ttk.Frame(self, padding=(6, 0)); fb.pack(fill='x')
+        fb = ttk.Frame(caja, padding=(6, 0, 6, 6)); fb.pack(fill='x')
         self.por_nombre = tk.BooleanVar(value=c.getboolean('por_nombre', False))
         ttk.Checkbutton(fb, text='Ordenar las armas por NOMBRE COMÚN (si no, por nombre de archivo)', variable=self.por_nombre,
                         command=self.reordenar).pack(side='left')
-        ttk.Button(fb, text='Carpeta del juego…', command=self.configurar).pack(side='right')
-        mid = ttk.Frame(self, padding=6); mid.pack(fill='both')
-        self.pa = Panel(self, mid, 'ATACANTE'); self.pa.grid(row=0, column=0, sticky='n', padx=4)
-        self.pd = Panel(self, mid, 'DEFENSOR'); self.pd.grid(row=0, column=1, sticky='n', padx=4)
-        der = ttk.Frame(mid); der.grid(row=0, column=2, sticky='n', padx=4)
+        boton(fb, text='Carpeta del juego…', command=self.configurar).pack(side='left', padx=(24, 0))
+        # Los paneles van directo sobre la ventana, cada uno en su reborde dorado: entre ellos se ve el mármol.
+        cajas = [reborde(self) for _ in range(3)]
+        for col, m in enumerate(cajas):
+            m.master.grid(row=1, column=col, sticky='n', padx=(10 if col == 0 else 4, 10 if col == 2 else 4), pady=4)
+        self.pa = Panel(self, cajas[0], 'ATACANTE'); self.pa.pack()
+        self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack()
+        der = ttk.Frame(cajas[2], padding=4); der.pack()
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
-        bot = ttk.Frame(self, padding=6); bot.pack(fill='both', expand=True)
-        fila = ttk.Frame(bot); fila.pack(fill='x')
+        caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
+        fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
         self.n = ttk.Spinbox(fila, from_=10, to=100000, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
-        self.boton = ttk.Button(fila, text='INICIAR COMBATE', command=self.iniciar); self.boton.pack(side='left', padx=12)
-        ttk.Button(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
-        self.salida = tk.Text(bot, height=12, width=120, wrap='word', state='disabled'); self.salida.pack(fill='both', expand=True, pady=(6, 0))
+        b = boton(fila, text='INICIAR COMBATE', command=self.iniciar); b.pack(side='left', padx=12); self.boton = b.boton
+        boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
+        caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
+        self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
+        self.rowconfigure(3, weight=1); self.columnconfigure(2, weight=1)
+        self.poner_marmol()
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
         self.after(100, self.cargar)
+
+    def poner_marmol(self):
+        """Fondo de la ventana: MARBLE.PCX del juego (EDPICTS) en mosaico; sin él queda el color de siempre."""
+        t = pcx(os.path.join(self.juego.get(), 'EDPICTS', 'MARBLE.PCX'))
+        if t is None: self.marmol.configure(image=''); return
+        t = t.convert('RGB'); W, H = self.winfo_screenwidth(), self.winfo_screenheight()
+        m = Image.new('RGB', (W, H))
+        for y in range(0, H, t.height):
+            for x in range(0, W, t.width): m.paste(t, (x, y))
+        self.foto_marmol = ImageTk.PhotoImage(m); self.marmol.configure(image=self.foto_marmol, anchor='nw')
 
     def subpanel_terreno(self, padre):
         f = ttk.LabelFrame(padre, text='TERRENO (casilla del defensor)', padding=6); f.pack(fill='x')
@@ -305,7 +337,7 @@ class App(tk.Tk):
             hay = sorted(f for f in os.listdir(saves) if f.lower().endswith('.sav')) if os.path.isdir(saves) else []
             if not hay: messagebox.showerror(TITULO, f'No hay partidas (.SAV) en {saves}: el motor necesita una.'); return
             sav = os.path.join(saves, hay[0])
-        self.sav.set(sav); self.cargar()
+        self.sav.set(sav); self.poner_marmol(); self.cargar()
 
     def reordenar(self):
         if self.sim:

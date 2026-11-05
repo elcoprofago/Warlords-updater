@@ -240,5 +240,8 @@ combate WOODS y FOREST tienen una rama propia que mira solo la capa de bosque (+
 nombre del terreno, así que el terreno 3 «forest» (clase 4, la de las montañas) no da esos bonos.
 Efecto: en Tanda_Kor hay 585 casillas de terreno «forest» y unas 70 con capa de bosque; las 47 armas con bono
 «woods» solo lo reciben en estas últimas. Ninguna arma del ARMY usa «forest».
-Falta: ver en el juego cómo se dibujan las casillas de terreno 3 (¿bosque de verdad o otra cosa con ese nombre?) y,
-según eso, decidir si el parche las hace contar como bosque o si se renombra el terreno.
+Visto (5/11/2026): el terreno 3 es **bosque de verdad**. Su ficha (`TERRAIN\DATA\o_forest.TER`) lo llama «Forest» en
+pantalla y lo dibuja con `o_forest.PCX`: arboleda tupida que cubre toda la casilla (la capa «woods», `o_woods.PCX`,
+son los mismos árboles sueltos sobre otro terreno). Para el jugador se ve como bosque y no da el bono de bosque.
+Falta: que el usuario decida si el parche las hace contar como bosque para WOODS/FOREST (cambia el equilibrio:
+47 armas, 585 casillas en Tanda_Kor).
