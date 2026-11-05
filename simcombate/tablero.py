@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.8.0'
+VERSION = '1.0.9.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -68,8 +68,16 @@ class BotonAzul(tk.Canvas):
         self.configure(cursor='hand2' if self.activo else ''); self.dibujar()
     def dibujar(self):
         self.delete('all')
-        c = self.AZUL_APAGADO if not self.activo else self.AZUL_SOBRE if self.sobre else self.AZUL
-        self.configure(bg=c)
+        # Degradé de izquierda a derecha como el escudo azul del juego: bordes oscuros, brillo a un tercio.
+        pasos = [(0, (0x00, 0x2f, 0x9f)), (.12, (0x00, 0x6b, 0xe3)), (.33, (0x17, 0xa7, 0xf3)), (.55, (0x00, 0x77, 0xe7)),
+                 (.75, (0x00, 0x6b, 0xe3)), (.9, (0x00, 0x43, 0xb7)), (1, (0x00, 0x2f, 0x9f))]
+        for x in range(self.ancho):
+            t = x / (self.ancho - 1)
+            (t0, c0), (t1, c1) = next((pasos[i], pasos[i + 1]) for i in range(len(pasos) - 1) if t <= pasos[i + 1][0])
+            k = (t - t0) / (t1 - t0); rgb = [a + (b - a) * k for a, b in zip(c0, c1)]
+            if not self.activo: g = sum(rgb) / 3; rgb = [(v + g * 2) / 3 for v in rgb]
+            elif self.sobre: rgb = [v + (255 - v) * .15 for v in rgb]
+            self.create_line(x, 0, x, self.alto, fill='#%02x%02x%02x' % tuple(int(v) for v in rgb))
         f = ('Segoe UI', 10, 'bold'); x, y = self.ancho // 2, self.alto // 2
         self.create_text(x + 2, y + 2, text=self.texto, font=f, fill='#000000')
         self.create_text(x, y, text=self.texto, font=f, fill='#ffffff')
