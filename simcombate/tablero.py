@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.14.0'
+VERSION = '1.0.15.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -162,8 +162,10 @@ class RecuadroFactor(tk.Frame):
         self.t = (grande, chico); self.dibujar()
     def dibujar(self):
         cv = self.cv; cv.delete('all'); w = cv.winfo_width() // 2
-        for dx, col in ((2, '#707070'), (0, '#ffffff')):
-            cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=self.claro if dx == 0 else col)
+        # FACTOR y COSTO en dorado con borde verde, igual en los dos bandos (pedido del usuario, 5/11/2026)
+        for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (2, 2)):
+            cv.create_text(w + dx, 18 + dy, text=self.t[0], font=('Arial', 15, 'bold'), fill='#0a7a1e')
+        cv.create_text(w, 18, text=self.t[0], font=('Arial', 15, 'bold'), fill='#ffd040')
         for dx, col in ((1, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
@@ -266,13 +268,13 @@ class Panel(ttk.Frame):
     def recalcular(self):
         sim = self.app.sim
         if not sim: return
-        d = self.lado(); tot = n = 0
-        for a, c in d['tropas']:
-            if a and c > 0: tot += sim.armas[a].factor() * c; n += c
+        d = self.lado(); tot = n = costo = 0
+        for a, c in d['tropas']:   # costo: el de comprar cada unidad (Arma.costo), no el de armar la producción
+            if a and c > 0: tot += sim.armas[a].factor() * c; n += c; costo += sim.armas[a].costo * c
         h = d['heroe']
         det = (f'{n} unidad' if n == 1 else f'{n} unidades') + (' + héroe' if h else '') + (f'  ·  Factor medio {tot / n:.1f}' if n else '')
         if n + (1 if h else 0) > MAX_PILA: det += f'  ·  ¡MÁS DE {MAX_PILA}!'
-        self.coef.poner(f'FACTOR TOTAL {tot:.0f}' if n else 'FACTOR TOTAL —', det)
+        self.coef.poner((f'FACTOR = {tot:.0f}     COSTO = $ {costo:,}'.replace(',', '.')) if n else 'FACTOR = —     COSTO = $ 0', det)
         if self.heroe:
             cl = sim.clases[self.heroe['clase']]; el, _ = elecciones(cl)
             suma = lambda p: sum(int(el[i][0].split('+')[1]) for i in self.heroe['elecciones'] if el[i][0].startswith(p))
