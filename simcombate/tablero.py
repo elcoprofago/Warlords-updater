@@ -2,7 +2,7 @@
 # Dos paneles gemelos (atacante y defensor) con 8 casilleros numerados = fight order (arma y cantidad), barco, ciudades
 # del bando y héroe (subpanel: clase, nivel, elecciones, ítems y hechizos); subpanel de terreno y subpanel visual
 # (se guarda para la ventana de combate, etapa 4). INICIAR COMBATE arma el escenario (escenario.py) y muestra el % de
-# victorias y una batalla de muestra. Uso: python tablero.py
+# victorias y abre la ventana de combate (combate.py) con una batalla de muestra. Uso: python tablero.py
 import configparser, os, struct, sys, threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -10,8 +10,9 @@ from tkinter import ttk, filedialog, messagebox
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
+from combate import VentanaCombate                 # noqa: E402
 
-VERSION = '1.0.0.0'
+VERSION = '1.0.1.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -272,6 +273,8 @@ class App(tk.Tk):
         except Error as e: messagebox.showerror(TITULO, str(e)); return
         except Exception as e: messagebox.showerror(TITULO, f'Falló el motor:\n{e}'); return
         self.mostrar(r)
+        VentanaCombate(self, self.juego.get(), r, TITULO, velocidad=self.velocidad.get(), efectos=self.efectos.get(),
+                       sonido=self.sonido.get(), tamano=self.tamano.get(), resultados=self.resultados.get())
 
     def mostrar(self, r):
         muertos = {('A', i) for l, i in r['muertes'] if l == 'A'} | {('D', i) for l, i in r['muertes'] if l == 'D'}

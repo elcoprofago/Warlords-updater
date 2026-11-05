@@ -144,8 +144,22 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   «coeficiente» de la pila es el Factor medio y total (el del héroe no tiene fórmula definida: se muestran F/V/M,
   ítems y hechizos). El subpanel visual se guarda en `Simulador-Combate.ini` para la etapa 4.
   Probar en manos del usuario: TAREAS 112.
-- Próximo paso: etapa 4, la ventana de combate (imágenes de las unidades del juego, tachar según `muertes`, sonidos;
-  falta identificar los eventos especiales 0xc.. para los efectos).
+- 5/11/2026: **etapa 4, ventana de combate hecha.** `simcombate/combate.py` (VentanaCombate); el tablero (VERSIÓN
+  1.0.1.0) la abre con INICIAR COMBATE y le pasa el subpanel visual (velocidad, efectos, sonido, tamaño 48/96,
+  resultados). Repite los eventos de la batalla de muestra: marco dorado en la que pelea, una vida roja por golpe (0/1),
+  tachada al caer (por la estructura, como `motor.muertes`), y al final ganador, % y sobrevivientes/muertos.
+  `python simcombate\prueba_combate.py` → TODO OK: ícono para las 379 armas y barcos y las 66 clases; en 147 batallas
+  al azar la repetición tacha lo mismo y en el mismo orden que el motor. Captura revisada.
+  Imágenes: la hoja PCX de cada arma/clase es 521x246: retrato (0,0)-(127,159), ícono 48x48 en (1,161) (y en (50,161)
+  el mismo con contorno verde = elegido), grilla de 8x5 animaciones desde x=128 en celdas de 49; magenta = transparente.
+  El héroe usa `HERO\<.HER +0xc9>.PCX` (+0xd2 la mujer). `escenario.simular` devuelve ahora `fichas_a`/`fichas_d`
+  (nombre, imagen, vidas de la unidad).
+  Sin verificar: qué sonido usa el juego en cada golpe. Se usan `FX\DefHit`/`AttHit` (golpe al defensor/atacante),
+  `DefDead`/`AttDead` y `Spell` para los eventos 0xc.. (esos nombres solo están en `DATA\*.RES`, no en el exe). Los
+  `ARMY\<arma>00/01.wav` no se usan todavía. Las vidas mostradas son las de la unidad (bits 13-15), sin bonos de pelea.
+  Probar en manos del usuario: TAREAS 113.
+- Próximo paso: etapa 5, aspecto del juego (fondos, marcos, botones y fuentes de los PCX/FNT del set; ver cómo lo hace
+  `ia/visor-historia/visor_historia.py` con DLG_BIG/DLG_MED). Pendiente aparte: identificar los eventos 0xc..
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:

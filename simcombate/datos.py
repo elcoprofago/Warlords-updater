@@ -70,6 +70,7 @@ class Clase:
         if len(b) < 1380: raise ValueError(f'{ruta}: {len(b)} bytes, se esperaban 1380')   # KALCHEM.HER trae 2 bytes de más
         b = b[:1380]; self.ruta, self.registro, self.nombre = ruta, b, _cad(b[0:16])
         self.fuerza, self.mov, self.vidas, self.vista = b[0xdc:0xe0]
+        self.imagen = _cad(b[0xc9:0xd2])     # PCX del héroe (+0xc9 hombre, +0xd2 mujer), sin extensión
     def __repr__(self): return f'<Clase {os.path.basename(self.ruta)} {self.nombre!r} F{self.fuerza} V{self.vidas} M{self.mov}>'
 
 def clases(carpeta):

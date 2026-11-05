@@ -67,7 +67,7 @@ class Simulador:
             nivel = c.get('defensas', 1)
             if not 1 <= nivel <= 3: raise Error('defensas de la ciudad: 1 a 3')
             m.mu.mem_write(CIUDAD0 + 0xa5, bytes([1])); m.mu.mem_write(CIUDAD0 + 0xa4, bytes([nivel])); m.call(0x4407d0, [])
-        ids = {}
+        ids = {}; self.clase_de = {}
         for b, lado, (x, y), pila in ((0, 'A', (ax, ay), PILA_A), (1, 'D', (dx, dy), PILA_D)):
             ids[lado] = self._lado(b, lado, esc[lado], x, y, pila, agua and est != 1, avisos)
         if not ids['A']: raise Error('el atacante no tiene unidades')
@@ -89,7 +89,8 @@ class Simulador:
         ids = m.poner(b, tipos, x, y, pila)
         h = d.get('heroe')
         if h:
-            m.cargar_clase(b, 0, self._busca(self.clases, h['clase'], 'la clase').registro)
+            cl = self._busca(self.clases, h['clase'], 'la clase'); self.clase_de[lado] = cl
+            m.cargar_clase(b, 0, cl.registro)
             try: u = m.poner_heroe(b, 0, h.get('nivel', 1), h.get('elecciones', []), x, y, pila)
             except ValueError as e: raise Error(f'héroe del {nombre}: {e}')
             for it in h.get('items', []): m.dar_item(u, self._busca(self.items, it, 'el ítem').registro)
@@ -110,11 +111,18 @@ class Simulador:
         g = self.m.probabilidad_motor(0, atac, dx, dy, semilla, n)
         r = self.m.batalla(0, atac, dx, dy, semilla)
         f = r['ficha']; u = lambda i: self.m.unidades()[i - 1]
-        def nombres(lado):
+        def fichas(lado):
             out = []
             for i in self.m.orden_ficha(f, lado)[:len(self.ids[lado])]:
-                d = u(i)
-                out.append('Héroe' if d['tipo'] == 16 else self.m.tipo(d['dueno'], d['tipo'])['corto'])
+                d = u(i); t = struct.unpack_from('<H', d['raw'], 0xc)[0]
+                if d['tipo'] == 16:
+                    cl = self.clase_de.get(lado); nm = 'Héroe'
+                    img = os.path.join(self.juego, 'HERO', cl.imagen) if cl else None
+                else:
+                    nm = self.m.tipo(d['dueno'], d['tipo'])['corto']; img = os.path.join(self.juego, 'ARMY', nm)
+                out.append(dict(nombre=nm, imagen=img, vidas=(t >> 13) & 7, heroe=d['tipo'] == 16))
             return out
+        fa, fd = fichas('A'), fichas('D')
         return dict(pct=100 * g / n, n=n, gana=r['gana'], eventos=r['eventos'], muertes=self.m.muertes(r['eventos']),
-                    orden_a=nombres('A'), orden_d=nombres('D'), avisos=avisos)
+                    orden_a=[x['nombre'] for x in fa], orden_d=[x['nombre'] for x in fd], fichas_a=fa, fichas_d=fd,
+                    avisos=avisos)

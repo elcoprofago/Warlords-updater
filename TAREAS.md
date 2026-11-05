@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 112).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 113).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 112** (simulador de combate: probar el tablero).
+0. **Tarea 112** y **tarea 113** (simulador de combate: el tablero y la ventana de combate).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -16,6 +16,18 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
+1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.1.0**.
+2. Armá una batalla y apretá **INICIAR COMBATE**: se abre la ventana de combate con las imágenes del juego,
+   defensor arriba y atacante abajo, en el orden en que pelean.
+3. Mirá la batalla: la unidad que pelea tiene marco dorado, cada golpe pone roja una de sus vidas (cuadritos verdes)
+   y la que cae queda tachada. Al final aparecen el ganador y los sobrevivientes (y los muertos, según «Resultados»).
+4. Probá el subpanel visual: velocidad, «Efectos», «Sonido» (golpes y muertes con los sonidos de la carpeta FX del
+   juego), tamaño «Grande» y «Saltar al final».
+5. Anotá si los sonidos te parecen los que usa el juego en cada caso y qué le falta para parecerse a la pelea real.
+Resultado:
 
 - [ ] **112.** Simulador de combate: probar el tablero (5/11/2026)
 1. Abrí una consola en `F:\source\repos\actualizador-warlords\simcombate` y escribí `python tablero.py`.
