@@ -157,3 +157,12 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
 - Héroes (notas de antes): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
   (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
   juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.
+
+## Para investigar (sesión aparte): el terreno «forest» no cuenta como bosque
+Hallado el 5/11/2026 en `prueba_terreno.py`. En 0x467b33 (código original, igual en `Darklord.exe`) los bonos de
+combate WOODS y FOREST tienen una rama propia que mira solo la capa de bosque (+3 bit 0x40); nunca comparan con el
+nombre del terreno, así que el terreno 3 «forest» (clase 4, la de las montañas) no da esos bonos.
+Efecto: en Tanda_Kor hay 585 casillas de terreno «forest» y unas 70 con capa de bosque; las 47 armas con bono
+«woods» solo lo reciben en estas últimas. Ninguna arma del ARMY usa «forest».
+Falta: ver en el juego cómo se dibujan las casillas de terreno 3 (¿bosque de verdad o otra cosa con ese nombre?) y,
+según eso, decidir si el parche las hace contar como bosque o si se renombra el terreno.
