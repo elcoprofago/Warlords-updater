@@ -12,7 +12,7 @@ from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate                 # noqa: E402
 
-VERSION = '1.0.4.0'
+VERSION = '1.0.5.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -32,20 +32,21 @@ def elecciones(clase):
     return out, list(struct.unpack_from('<9h', r, 0x3e8))
 
 class RecuadroFactor(tk.Frame):
-    """El Factor total de la pila: recuadro de fondo claro con borde dorado (como el reborde del Visor de historia),
-    Arial Bold con sombra."""
+    """El Factor total de la pila: fondo negro, letra color arena con sombra gris, borde dorado (pedido del usuario,
+    5/11/2026: el fondo de la app irá pareciéndose al del juego)."""
     def __init__(self, padre):
         super().__init__(padre, bg='#c8a040', padx=3, pady=3)
         negro = tk.Frame(self, bg='#000000', padx=1, pady=1); negro.pack(fill='x')
-        self.cv = tk.Canvas(negro, height=50, bg='#f4ecd0', highlightthickness=0); self.cv.pack(fill='x')
+        self.cv = tk.Canvas(negro, height=50, bg='#000000', highlightthickness=0); self.cv.pack(fill='x')
         self.cv.bind('<Configure>', lambda e: self.dibujar()); self.t = ('', '')
     def poner(self, grande, chico):
         self.t = (grande, chico); self.dibujar()
     def dibujar(self):
         cv = self.cv; cv.delete('all'); w = cv.winfo_width() // 2
-        for dx, col in ((2, '#b0a080'), (0, '#5a3a10')):
+        for dx, col in ((2, '#707070'), (0, '#e0c890')):
             cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=col)
-        cv.create_text(w, 40, text=self.t[1], font=('Arial', 9, 'bold'), fill='#3a2a10')
+        for dx, col in ((1, '#707070'), (0, '#e0c890')):
+            cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
 class Panel(ttk.LabelFrame):
     """Un lado: 8 casilleros, barco, héroe y Factor total."""

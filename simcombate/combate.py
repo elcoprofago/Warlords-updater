@@ -11,8 +11,8 @@
 # Efectos y sonidos: copiados de la ventana de combate de DarklordAV.exe (leído en el exe el 5/11/2026):
 #   0x405cd0 recorre los eventos y 0x406ed0(código) muestra cada uno: una animación de CMBTPICS (0x407e20, tabla en
 #   ANIM) y un sonido (0x4465e0 -> recurso de WAR3AV.RES -> FX\ o SETS\Fantasy\). Ver EVENTO y elegir().
-#   Cada golpe que quita vidas: las chispas sobre la tropa golpeada, una vez por evento (el motor da un evento por golpe
-#   que acierta; 0x16-0x18 / 0x19-0x1b quitan 2, 3 o 4 vidas de un golpe). La muerte: la explosión, salvo la que causa
+#   Cada golpe: las chispas sobre la tropa golpeada, con su sonido, una vez por vida que quita (0x16-0x18 / 0x19-0x1b
+#   quitan 2, 3 o 4: tantas chispas seguidas). Se muestran todos los golpes (lo que el usuario ve en el juego). La muerte: la explosión, salvo la que causa
 #   un poder: flechas (Missiles), daga con sangre (Assassin), relámpago (Lightning), roca que se deshace en polvo
 #   (Trample), ácido (Acid), calavera (Dragonslayer). Lightning que no mata parte las vidas a la mitad (relámpago
 #   corto); Acid que no mata parte la fuerza a la mitad. Las tropas no suenan con su ARMY\<archivo>00.wav en el combate.
@@ -217,23 +217,18 @@ class VentanaCombate(tk.Toplevel):
         for i, p in enumerate(d['pips']): self.c.itemconfigure(p, fill=VIVA if i < d['vidas'] else PERDIDA)
 
     def elegir(self):
-        """El próximo evento que muestra el juego (0x405cd0), con los reemplazos que hace; None si no quedan.
-        Una racha de golpes que termina en Trample (0xe + 5) o en un golpe de 2-4 vidas (0x16-0x18) se salta hasta ese
-        evento; un golpe a una tropa con una sola vida no se muestra (lo muestra su muerte); el marcador de Trample
-        solo, tampoco; Lightning o Acid sobre una tropa que ya no aguanta reemplazan a su muerte."""
+        """El próximo evento a mostrar, con los reemplazos de 0x405cd0; None si no quedan. Se muestran todos los golpes
+        (cada uno con sus chispas y su sonido: así se ve en el juego, según el usuario, 6/11/2026); el marcador de
+        Trample (0xe/0x11) no se muestra solo: pasa a ser la muerte que le sigue; Lightning o Acid sobre una tropa que
+        ya no aguanta reemplazan a su muerte."""
         ev = self.ev
         while self.i < len(ev):
             c = ev[self.i]
-            for golpe, marca, muerte, multi in ((0, 0xe, 5, (0x16, 0x17, 0x18)), (1, 0x11, 4, (0x19, 0x1a, 0x1b))):
-                if c != golpe: continue
-                j = self.i
-                while j < len(ev) and ev[j] == golpe: j += 1
-                if j + 1 < len(ev) and ev[j] == marca and ev[j + 1] == muerte:
-                    ev[j + 1] = marca; self.i = j + 1; return self.cambiar(ev[self.i])
-                if j < len(ev) and ev[j] in multi: self.i = j; return self.cambiar(ev[self.i])
+            if c in (0xe, 0x11):
+                if self.i + 1 < len(ev) and ev[self.i + 1] == (5 if c == 0xe else 4): self.i += 1; ev[self.i] = c; return c
+                self.i += 1; continue
             dA, dD = self.peleando('A'), self.peleando('D')
             vA, vD = (dA['vidas'] if dA else 0), (dD['vidas'] if dD else 0)
-            if c in (0xe, 0x11) or (c == 0 and vD <= 1) or (c == 1 and vA <= 1): self.i += 1; continue
             if c == 0xc and vD <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0xc
             elif c == 0xf and vA <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0xf
             c = ev[self.i]
@@ -258,7 +253,10 @@ class VentanaCombate(tk.Toplevel):
         if d is None: return
         if que == 'mitad': self.quitar_vidas(d, d['vidas'] // 2)
         elif que == 'fuerza': d['fuerza'] //= 2
-        elif isinstance(que, int): self.quitar_vidas(d, d['vidas'] - que)
+        elif isinstance(que, int):     # un golpe de 2-4 vidas: tantas chispas seguidas, cada una con su sonido
+            for k in range(que):
+                self.after(k * self.paso_ms // que, lambda: self.winfo_exists() and (self.animar(anim, lado), self.sonar(son)))
+            self.quitar_vidas(d, d['vidas'] - que); self.vidas_duelo(lado); return
         self.vidas_duelo(lado)
         self.animar(anim, lado); self.sonar(son)
 

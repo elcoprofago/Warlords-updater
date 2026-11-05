@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 116).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 117).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -16,6 +16,14 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **117.** Simulador de combate: chispas en cada golpe y recuadro del Factor (5/11/2026)
+1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.5.0**.
+2. Los recuadros FACTOR TOTAL: fondo negro, letra arena con sombra gris.
+3. Elefantes contra gnolls, **INICIAR COMBATE**: cada golpe muestra sus chispas con su sonido; los golpes que quitan
+   varias vidas muestran tantas chispas seguidas.
+4. Anotá si algo no coincide con el juego.
+Resultado:
 
 - [ ] **116.** Simulador de combate: efectos iguales a los del juego (5/11/2026)
 1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice

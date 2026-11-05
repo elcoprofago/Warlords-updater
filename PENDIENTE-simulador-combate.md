@@ -196,6 +196,11 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   Las tropas NO suenan con su ARMY\<archivo>00.wav en el combate. Tabla en `combate.py` (ANIM, EVENTO, elegir).
   La ficha del simulador trae fuerza_c y vidas_c (casillero +8/+9, lo que lee 0x4071cb). prueba_combate suma una
   prueba por poder; TODO OK (147/147). Probar: TAREAS 116.
+- 5/11/2026 (tablero 1.0.5.0): se muestran todos los golpes, con chispas y sonido, y tantas chispas como vidas
+  quite el golpe (lo que el usuario ve en el juego). Recuadro del Factor: fondo negro, letra arena, sombra gris.
+  Sin verificar: Poison, Paralysis, Disease y Curse no dan eventos en el combate del motor; su marca y su zzzt
+  salen de otra parte (quizá las banderas de dibujo de la ficha, +0x2c..0x31), sin investigar. Lightning: el exe
+  le da el sonido «zzzt» (FX\ZZZT.WAV); no hay otro archivo de trueno en FX ni en SETS\Fantasy.
 - Próximo paso: seguir la etapa 5 en el tablero (fondos y marcos del juego en vez de los controles de Windows: p. ej.
   DLG_BIG/ARMYBG, BUT_MED para los botones). Pendiente aparte: identificar los eventos 0xc..
 
