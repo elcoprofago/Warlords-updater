@@ -42,6 +42,14 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Pendiente sin comprobar: qué marca el bit 0xf0 de +0x10 (¿ejércitos con mantenimiento?).
 2. **Medir el gasto.** Por turno y color: ingreso, mantenimiento, producción, héroes comprados (con y sin
    descuento), y lo que sobra. Ver si la tabla turno alcanza o hace falta otro evento.
+   **Hecho en el código (5/11/2026, vista-aliada 1.0.130.0); falta la tanda (TAREAS 110).** La tabla turno no
+   alcanza: anota el oro en 0x4223ad, antes de que el juego calcule el ingreso (0x43ff80) y el mantenimiento
+   (0x4406b0) y aplique el saldo en 0x42248d → 0x4b9390. Evento 29 (ec_evt, en 0x422482): x = ingreso, y =
+   mantenimiento, n = oro en ese momento. Cuentas por color y turno t: turno.oro(t) − n = lo cobrado al empezar el
+   turno antes del saldo (producción); n + x − y − turno.oro(t+1) = lo gastado durante el turno (héroes, puentes;
+   negativo si ganó oro, p. ej. ruinas o saqueo); heroes(t+1) − heroes(t) = héroes comprados (sin distinguir
+   descuento todavía). Prueba emulada: `parches\vista-aliada\prueba_saldo.py` (3 guardadas, 8 colores, 4 casos con y
+   sin quiebra: 96 líneas correctas, quiebra y saldo iguales al original; control sin ia_on: nada anotado).
 3. **Contrastar con partidas reales.** Usar el Visor de historia o las guardadas del ranking del clan para ver si
    más de tres héroes y el desbande aparecen ahí y no en las tandas.
 4. **Diseñar la reserva**, con lo medido: un piso de oro para el mantenimiento de los próximos turnos (contra el
@@ -51,4 +59,5 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: paso 2 (medir el gasto). Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 2".
+Próximo paso: analizar la tanda de TAREAS 110 con los eventos 29 (cerrar el paso 2) y seguir con el 3.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 2: la tanda de la 110 terminó".

@@ -40,6 +40,13 @@ la 134 se colgaron al empezar; la 133 no tuvo ninguna.)
     escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
   - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
+- [ ] **110.** IA: medir en qué gasta el oro (5/11/2026)
+La 1.0.130.0 anota, solo en las tandas, cuánto oro entra y cuánto se paga de mantenimiento cada turno.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.130.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
+
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
