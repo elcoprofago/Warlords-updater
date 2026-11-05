@@ -93,3 +93,22 @@ def items(carpeta):
     """Todos los ítems del ITEMS, en orden alfabético de archivo (Windows no distingue .ITM de .itm)."""
     fs = {os.path.basename(f).lower(): f for f in glob.glob(os.path.join(carpeta, '*.itm'))}
     return [Item(fs[k]) for k in sorted(fs)]
+
+class Hechizo:
+    """Hechizo (.SPL, 210 bytes): +0 nombre, +0x10 descripción, +0x90 palabra (costo), +0x92 4 efectos de 16 bytes
+    (palabra habilidad, palabra valor, ...; 22 = invocar, con el arma en +0x98). Ver motor.HECH0."""
+    def __init__(self, ruta):
+        b = open(ruta, 'rb').read()
+        if len(b) < 0xd2: raise ValueError(f'{ruta}: {len(b)} bytes, se esperaban 210')
+        b = b[:0xd2]; self.ruta, self.registro, self.nombre = ruta, b, _cad(b[0:16])
+        self.costo = int.from_bytes(b[0x90:0x92], 'little')
+        self.efectos = [(int.from_bytes(b[o:o + 2], 'little'), int.from_bytes(b[o + 2:o + 4], 'little', signed=True))
+                        for o in range(0x92, 0xd2, 16) if int.from_bytes(b[o:o + 2], 'little')]
+    def texto(self):
+        return ', '.join(HABILIDADES.get(h, f'Ability_{h}') + ('' if h in SIN_VALOR else f' +{v}') for h, v in self.efectos)
+    def __repr__(self): return f'<Hechizo {os.path.basename(self.ruta)} {self.nombre!r} {self.texto()}>'
+
+def hechizos(carpeta):
+    """Todos los hechizos del SPELL, en orden alfabético de archivo (Windows no distingue .SPL de .spl)."""
+    fs = {os.path.basename(f).lower(): f for f in glob.glob(os.path.join(carpeta, '*.spl'))}
+    return [Hechizo(fs[k]) for k in sorted(fs)]

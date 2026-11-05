@@ -27,6 +27,15 @@ HEROE0, HREC, HEROES = 0x556bb2, 0xb8, 64
 # 3 = en el suelo, con x, y en +0xaa, +0xac); +0xb8 y +0xc8 dos habilidades (palabra id, palabra valor). 0x409fb0
 # suma por habilidad lo que llevan los héroes.
 ITEM0, IREC, ITEMS_N, ITEMS_MAX = 0x55cb74, 0xd8, 0x55cb72, 40
+# Hechizos activos: HECH0 + i*HECREC (40): +0 vivo, +2 unidad del héroe, +4 palabra +0x10 del hechizo, +6 nombre,
+# +0x16 4 efectos de 16 bytes (palabra id, palabra valor, ...). 0x48f300(unidad, hechizo) lanza: el hechizo en memoria
+# es el .SPL sin la descripción (nombre 16 bytes + .SPL[0x90:0xd2]); multiplica los valores por 1 (nivel 1-5),
+# 2 (6-8) o 3 (9-10); los efectos 13, 16, 22, 25, 29, 35, 36, 54, 58-60 se aplican en el acto, el resto queda activo.
+# 0x409e40(unidad, habilidad) devuelve el mayor valor activo (salvo 18 y 24).
+# Los inmediatos que tocan el mapa o la pantalla (invocar 22, volar 13...) fallan en el motor y no quedan activos:
+# lanzar() los saca antes (salvo 54, que solo baja el multiplicador) y los devuelve aparte.
+HECH0, HECREC, HECH_MAX = 0x55f030, 0x56, 40
+INMEDIATOS = {13, 16, 22, 25, 29, 35, 36, 58, 59, 60}
 CLASE0, CLREC = 0x5451d0, 1380
 # [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
 # de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
@@ -73,6 +82,7 @@ class Motor:
         self.inicial = bytes(mu.mem_read(UNIT0, (self.n0 + 64) * UREC))
         self.heroes0 = bytes(mu.mem_read(HEROE0, HEROES * HREC))
         self.items0 = bytes(mu.mem_read(ITEMS_N, 2 + ITEMS_MAX * IREC))
+        self.hech0 = bytes(mu.mem_read(HECH0, HECH_MAX * HECREC))
         self.fallo = None
         def malo(m, acc, addr, sz, val, u):
             self.fallo = (acc, addr); return False
@@ -166,6 +176,28 @@ class Motor:
     def limpiar(self):
         self.mu.mem_write(UNIT0, self.inicial); self.mu.mem_write(UNITS_N, struct.pack('<h', self.n0))
         self.mu.mem_write(HEROE0, self.heroes0); self.mu.mem_write(ITEMS_N, self.items0)
+        self.mu.mem_write(HECH0, self.hech0)
+
+    def lanzar(self, u, spl):
+        """El héroe u lanza el hechizo (.SPL, datos.Hechizo.registro) con la rutina del juego 0x48f300 (sin cobrar maná).
+        Devuelve (efectos que quedaron activos [(habilidad, valor)], efectos inmediatos que no se aplicaron)."""
+        antes = bytes(self.mu.mem_read(HECH0, HECH_MAX * HECREC))
+        h = bytearray(bytes(spl[:16]) + bytes(spl[0x90:0xd2])); a = STK + 0xa0000; fuera = []
+        for k in range(4):
+            e = struct.unpack_from('<hh', h, 0x12 + 16 * k)
+            if e[0] in INMEDIATOS: fuera.append(e); h[0x12 + 16 * k:0x22 + 16 * k] = bytes(16)
+        self.mu.mem_write(a, bytes(h)); self.call(0x48f300, [u, a])
+        ahora = bytes(self.mu.mem_read(HECH0, HECH_MAX * HECREC)); r = []
+        for i in range(HECH_MAX):
+            o = i * HECREC
+            if ahora[o:o + HECREC] != antes[o:o + HECREC] and ahora[o]:
+                r += [struct.unpack_from('<hh', ahora, o + 0x16 + 16 * k) for k in range(4)]
+        return [e for e in r if e[0]], fuera
+
+    def hechizo_suma(self, u, hab):  # 0x409e40(unidad, x, y, habilidad)
+        """Lo que el juego (0x409e40) cuenta de la habilidad hab en los hechizos activos del héroe u."""
+        d = bytes(self.mu.mem_read(UNIT0 + u * UREC, 4)); x, y = struct.unpack("<hh", d)
+        return self.call(0x409e40, [u, x, y, hab]) & 0xffff
 
     def dar_item(self, u, registro):
         """Le da al héroe u un ítem (.ITM, datos.Item.registro). Usa un lugar libre de la tabla (hasta 40; si está

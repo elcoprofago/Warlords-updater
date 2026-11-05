@@ -105,7 +105,16 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   el `.ITM` dado; KBarbarian nivel 1 con 3 gnollcav 88,66 %; 34 de 45 habilidades de ítem lo cambian (The Yellow Cross
   100 %, Beowulfs Fire 98,62 %, Illearth Stone 87,53 %); no lo cambian View, Fly, Movement, Gold per City ni los
   «slayer» que no tocan a gnolls (control); el mismo ítem en el suelo da 88,66 % (control).
-- Próximo paso: etapa 2, hechizos (después terreno).
+- 5/11/2026: **etapa 2, hechizos hechos.** `Motor.lanzar(héroe, registro)` lanza cualquier `.SPL` con la rutina del
+  juego (0x48f300, sin cobrar maná); `Motor.hechizo_suma(héroe, habilidad)` devuelve lo que cuenta el juego (0x409e40);
+  `datos.hechizos` lee los 200 del SPELL. `python simcombate\prueba_hechizos.py` → TODO OK (~3 min): los 200 se lanzan
+  sin fallar; el juego multiplica los valores ×1 en nivel 1-5, ×2 en 6-8 y ×3 en 9-10 (Black Dragon); 81 de 95
+  combinaciones de efectos cambian el 88,66 % del héroe solo (Battle Rune 99,29 %, Blood Feast 98,56 %; Cursing +8
+  lo baja a 87,68 %); no lo cambian Fly, Invisibility, Movement, View, Engineer, Mana Drain ni los «slayer» que no
+  tocan a gnolls; control: Focus' lanzado por un héroe de otra pila da el mismo 88,66 %.
+  Sin hacer: los efectos inmediatos (invocar 22, volar 13, etc.) no se aplican en el motor (tocan mapa y pantalla);
+  `lanzar` los devuelve aparte: en el tablero, una invocación se representa poniendo las unidades invocadas.
+- Próximo paso: etapa 2, terreno (después barcos).
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
@@ -127,7 +136,12 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
 - **Ítems, resuelto**: el juego lee el `.ITM` entero (0xd8 bytes; algunos traen 2 de más) a 0x55cb74 + i*0xd8
   (cargador 0x433e7c), cantidad en 0x55cb72, hasta 40. +0 nombre, +0xae héroe, +0xb0 bits 0-1 (1 lo lleva un héroe,
   3 en el suelo), +0xb8 y +0xc8 dos habilidades (palabra id, palabra valor). 0x409fb0 los suma por habilidad (los
-  «slayer» 0x2c..0x33 valen 2). Los ítems del escenario de la partida no son `.ITM`. Hechizos activos: 0x55f030 + i*0x36 (40), +2 unidad, +0x16 4 efectos (id, valor).
+  «slayer» 0x2c..0x33 valen 2). Los ítems del escenario de la partida no son `.ITM`. Hechizos activos: ver abajo.
+- **Hechizos, resuelto**: activos en 0x55f030 + i*0x56 (40; la nota anterior decía 0x36, mal): +0 vivo, +2 unidad
+  del héroe, +4, +6 nombre, +0x16 4 efectos de 16 bytes (id, valor). El `.SPL` (210 bytes): +0 nombre, +0x10
+  descripción, +0x90 palabra, +0x92 4 efectos; en memoria el juego lo usa sin la descripción. 0x409bd0 cobra el
+  maná (0x43fe20) y llama a 0x48f300(unidad, hechizo), que multiplica según el nivel y deja activos todos los efectos
+  salvo 13, 16, 22, 25, 29, 35, 36, 54, 58-60 (inmediatos). 0x409e40(unidad, x, y, hab) da el mayor activo.
 - Héroes (notas de antes): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
   (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
   juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.
