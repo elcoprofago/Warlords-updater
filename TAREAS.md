@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 110).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 111).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,13 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **111.** Simulador de combate: comparar el «Factor» con DarkCompare (5/11/2026)
+El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare. Para confirmar que da lo mismo:
+1. Abrí DarkCompare con la carpeta `C:\Warlords3\ARMY`.
+2. Buscá estas armas y anotá su Factor: **Fire Dragon** (FireDrag) tiene que decir **52,2**; **Mountain Wyrm**
+   (AmeWyrm) **49,7**; **Wyverns** **46,2**.
+Resultado:
 
 - [ ] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
 1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.18.0**.

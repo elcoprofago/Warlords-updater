@@ -120,6 +120,13 @@ class Motor:
         r = bytes(self.mu.mem_read(TIPOS + (dueno * 16 + t) * TREC, TREC))
         return dict(corto=r[0x90:0x9a].split(bytes(1))[0].decode('latin-1'), fuerza=r[0x9a], mov=r[0x9b], vidas=r[0x9c])
 
+    def cargar_arma(self, dueno, ranura, registro):
+        """Pone un .ARM (sus primeros 0xfc bytes, datos.Arma.registro) en la ranura 0..15 del bando; conserva +0xe0
+        (contador del juego, no viene del .ARM)."""
+        a = TIPOS + (dueno * 16 + ranura) * TREC
+        e0 = bytes(self.mu.mem_read(a + 0xe0, 2))
+        self.mu.mem_write(a, bytes(registro[:TREC])); self.mu.mem_write(a + 0xe0, e0)
+
     def plantilla(self):
         for d in self.unidades():
             if d['activa'] and d['tipo'] < 16 and not d['raw'][0xb] & 2: return d['raw']

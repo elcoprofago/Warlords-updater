@@ -86,4 +86,23 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   así que solo se podría comparar en promedio).
   Defensas 1-3 de la ciudad: ubicadas y medidas (arriba). Ojo en la etapa 2: el .rul del escenario puede cambiar los
   topes de [COMBAT]; usar el que use la partida. Héroes, barcos y terreno aún no probados en el motor.
-- Próximo paso: etapa 2 (datos).
+- 5/11/2026: **etapa 2, armas hechas.** `simcombate/datos.py` lee todos los `.ARM` del ARMY (orden alfabético; 379,
+  14 barcos) con fuerza, vidas, movimiento, vista, medalla, bonos, poder, costo y Factor (cuenta de DarkCompare,
+  reimplementada sin enlazar ese repo; falta confirmarla contra DarkCompare: TAREAS 111).
+  `Motor.cargar_arma(bando, ranura, Arma.registro)` pone cualquier `.ARM` en una ranura 0..15 del bando.
+  `python simcombate\prueba_datos.py` → TODO OK: gnollcav cargado del `.ARM` en la ranura 12 da el mismo 50,70 % que el
+  gnollcav que trae la partida; control: elephant en el atacante sube a 92,16 %.
+- Próximo paso: etapa 2, héroes (después ítems, hechizos y terreno).
+
+## Lo averiguado en la etapa 2 (datos)
+- **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
+  +0 nombre, +0x10 descripción, +0x90 archivo, +0x99 medalla, fuerza, mov, vidas, turnos, mantenimiento, vista;
+  +0xb2 4 bonos de movimiento de 9 bytes; +0xd6 bono de combate y +0xdf su valor; +0xe2 costo; +0xe4 armado;
+  +0xe6 poder, +0xe8 su valor). Solo +0xe0 es del juego (un contador): `cargar_arma` lo conserva.
+- **La partida guarda su propia copia de los tipos**: si un `.ARM` cambió después de grabarla (pasa con Zappers,
+  barcaza, orcs_ram y Tanda_Kor.SAV), la partida pelea con el viejo. El simulador carga siempre el `.ARM` del ARMY.
+- Ranuras: la 15 es el barco del bando; en Tanda_Kor las 12-14 están vacías. Cada lado usa su propio bando, así que
+  hay 16 ranuras por lado para los hasta 8 tipos del tablero.
+- Héroes (para seguir): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
+  (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
+  juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.
