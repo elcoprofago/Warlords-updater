@@ -12,7 +12,7 @@ from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate                 # noqa: E402
 
-VERSION = '1.0.2.0'
+VERSION = '1.0.3.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -55,8 +55,12 @@ class Panel(ttk.LabelFrame):
         ttk.Label(self, text='N.º').grid(row=0, column=0); ttk.Label(self, text='Arma').grid(row=0, column=1, sticky='w')
         ttk.Label(self, text='Cant.').grid(row=0, column=2)
         self.armas, self.cant = [], []
+        self.arrastre = None
         for k in range(8):
-            ttk.Label(self, text=f'{k + 1}').grid(row=k + 1, column=0)
+            n = ttk.Label(self, text=f'☰ {k + 1}', cursor='fleur'); n.grid(row=k + 1, column=0, padx=(0, 4))
+            n.bind('<ButtonPress-1>', lambda e, k=k: self.tomar(k))
+            n.bind('<B1-Motion>', self.mover)
+            n.bind('<ButtonRelease-1>', self.soltar)
             cb = ttk.Combobox(self, width=34, state='readonly'); cb.grid(row=k + 1, column=1, pady=1)
             sp = ttk.Spinbox(self, from_=0, to=MAX_PILA, width=4, command=self.recalcular); sp.set(0)
             sp.grid(row=k + 1, column=2, padx=4)
@@ -85,6 +89,35 @@ class Panel(ttk.LabelFrame):
         for cb in self.armas: cb['values'] = [''] + list(self.nombres)
         self.barco['values'] = [''] + list(self.nbarcos)
         if antes: self.poner_estado(antes)
+        self.recalcular()
+
+    # ---- arrastrar una fila (☰ N) a otra posición del orden de pelea ----
+    def fila_en(self, y_raiz):
+        for k, cb in enumerate(self.armas):
+            y0 = cb.winfo_rooty()
+            if y_raiz < y0 + cb.winfo_height(): return k
+        return len(self.armas) - 1
+
+    def tomar(self, k):
+        self.arrastre = k; self.configure(cursor='fleur')
+
+    def mover(self, e):
+        if self.arrastre is None: return
+        j = self.fila_en(e.y_root)
+        for i, cb in enumerate(self.armas): cb.state(['focus'] if i == j else ['!focus'])
+
+    def soltar(self, e):
+        k, self.arrastre = self.arrastre, None; self.configure(cursor='')
+        for cb in self.armas: cb.state(['!focus'])
+        if k is None: return
+        self.mover_fila(k, self.fila_en(e.y_root))
+
+    def mover_fila(self, k, j):
+        """Lleva la fila k a la posición j; las del medio se corren un lugar."""
+        if k == j: return
+        filas = [(cb.get(), sp.get()) for cb, sp in zip(self.armas, self.cant)]
+        filas.insert(j, filas.pop(k))
+        for (t, n), cb, sp in zip(filas, self.armas, self.cant): cb.set(t); sp.set(n)
         self.recalcular()
 
     def estado(self):

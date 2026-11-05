@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 114).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 115).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 114** (simulador de combate: aspecto del juego, Invertir, orden por nombre, Factor).
+0. **Tarea 114** y **tarea 115** (simulador de combate).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -16,6 +16,19 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **115.** Simulador de combate: efectos por poder, vidas y arrastre (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.3.0**.
+2. Atacante: Elephants y Moonguard; defensor: gnolls y un dragón azul (budragon, Lightning). **INICIAR COMBATE**.
+3. Fijate: los elefantes muestran el polvo («Trample») con su sonido; los Moonguard, flechas; el dragón azul,
+   relámpago. Los dragones negros (bkdragon) tienen Acid. Ojo: el Red Dragons de este juego (rddragon) tiene el
+   poder Chaos, no Acid: pelea con espada.
+4. Las vidas: puntos verdes/rojos grandes debajo de las dos tropas que pelean, y más grandes en los casilleros.
+5. En el tablero, agarrá el «☰ 2» de una fila y soltalo sobre la fila 1: las dos se cambian de lugar en el orden de
+   pelea.
+6. Anotá si algún efecto no es el que muestra el juego real (tropa y qué efecto debería tener).
+Resultado:
 
 - [ ] **114.** Simulador de combate: probar los cambios del 5/11 (5/11/2026)
 1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
@@ -40,7 +53,7 @@ Resultado:
 5. Anotá si los sonidos te parecen los que usa el juego en cada caso y qué le falta para parecerse a la pelea real.
 Resultado:
 
-- [ ] **112.** Simulador de combate: probar el tablero (5/11/2026)
+- [x] **112.** Simulador de combate: probar el tablero (5/11/2026)
 1. Abrí una consola en `F:\source\repos\actualizador-warlords\simcombate` y escribí `python tablero.py`.
 2. El título dice **SIMULADOR DE COMBATE — VERSIÓN 1.0.0.0** y arriba a la derecha aparece la cantidad de armas,
    barcos, clases, ítems y hechizos.

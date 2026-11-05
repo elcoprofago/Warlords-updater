@@ -120,7 +120,8 @@ class Simulador:
                     img = os.path.join(self.juego, 'HERO', cl.imagen) if cl else None
                 else:
                     nm = self.m.tipo(d['dueno'], d['tipo'])['corto']; img = os.path.join(self.juego, 'ARMY', nm)
-                out.append(dict(nombre=nm, imagen=img, vidas=(t >> 13) & 7, heroe=d['tipo'] == 16))
+                a = self.armas.get(nm.lower() + '.arm') if d['tipo'] != 16 else None
+                out.append(dict(nombre=nm, imagen=img, vidas=(t >> 13) & 7, heroe=d['tipo'] == 16, poder=a.poder if a else 0))
             return out
         fa, fd = fichas('A'), fichas('D')
         return dict(pct=100 * g / n, n=n, gana=r['gana'], eventos=r['eventos'], muertes=self.m.muertes(r['eventos']),

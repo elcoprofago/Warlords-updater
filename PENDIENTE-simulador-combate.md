@@ -170,6 +170,18 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   queda el botón «Carpeta del juego…», que toma sola una partida de SAVES (el motor la necesita como memoria base; no
   cambia la pelea). `python simcombate\prueba_tablero.py` y `prueba_combate.py` → TODO OK. Capturas revisadas.
   Probar en manos del usuario: TAREAS 114.
+- 5/11/2026 (tablero 1.0.3.0): **efectos por poder, vidas a la vista y arrastre de filas**. Medido con el motor
+  (una tropa de cada poder contra gnolls, de atacante y de defensor): los códigos especiales son de poderes —
+  0xc/0xf Lightning, 0xd/0x10 Acid, 0xe/0x11 Trample (del atacante/defensor), 0x14/0x15 Dragonslayer, 0x16/0x19 vistos
+  con chariot (sin identificar); 8/9 = cae D/A por Missiles (Moonguard contra murciélagos, sin golpes antes). El byte
+  +0xf6 del .ARM NO es el efecto: es un sonido (0x4469ac: sonido 0x22 + valor). CMBTPICS tiene 9 tiras (fuego 50,
+  flecha 103, espada 154, relámpago 210, calavera 264, roca 318, polvo 373, ácido 426; chispas en la fila 0). La
+  ventana usa la tira del poder de la tropa que pega (golpes, muertes y códigos especiales) y su ARMY\<archivo>00.wav.
+  No se encontró la rutina de dibujo del exe: el par poder-tira sale del dibujo de cada tira. El Red Dragons de
+  C:\Warlords3 (rddragon) tiene Chaos, no Acid; los dragones con Acid son p. ej. bkdragon.
+  Vidas: puntos más grandes en los casilleros y puntos grandes debajo de cada tropa del duelo. Arrastre: «☰ N» de cada
+  fila del tablero se arrastra a otra posición (la grilla es el fight order). prueba_tablero y prueba_combate → TODO OK.
+  Probar en manos del usuario: TAREAS 115.
 - Próximo paso: seguir la etapa 5 en el tablero (fondos y marcos del juego en vez de los controles de Windows: p. ej.
   DLG_BIG/ARMYBG, BUT_MED para los botones). Pendiente aparte: identificar los eventos 0xc..
 
