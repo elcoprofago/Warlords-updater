@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.15.0'
+VERSION = '1.0.16.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -468,6 +468,7 @@ class App(tk.Tk):
         estado = tk.Label(fr, text='', width=55, anchor='w', justify='left', wraplength=410)
         tk.Button(fr, text='Buscar actualización', width=20, command=lambda: self.actualizar(v, estado)).pack(anchor='w', pady=(8, 0))
         estado.pack(anchor='w', pady=(6, 0))
+        estado.barra = ttk.Progressbar(fr, length=410, maximum=100)   # aparece solo mientras baja la versión nueva
         tk.Label(fr, text='RA Sistemas & Claude © 2026', fg='#696969').pack(anchor='w', pady=(14, 0))
         correo = tk.Label(fr, text=CORREO, fg='#0066cc', cursor='hand2', font=('Segoe UI', 9, 'underline')); correo.pack(anchor='w')
         correo.bind('<Button-1>', lambda e: webbrowser.open(f'mailto:{CORREO}'))
@@ -493,13 +494,23 @@ class App(tk.Tk):
                                    '¿Bajarla e instalarla? El simulador se cierra y se vuelve a abrir.', parent=padre):
             return decir('')
         actual = sys.executable; nuevo = actual[:-4] + '.nuevo.exe'
-        decir(f'Bajando la versión {etiqueta}…')
+        barra = estado.barra; barra.pack(anchor='w', pady=(4, 0), before=estado); barra['value'] = 0
+        decir(f'Descargando la versión {etiqueta}…')
+        def avance(bloques, tam, total):
+            hecho = bloques * tam; total = total if total > 0 else exe.get('size', 0)
+            if total:
+                pct = min(hecho * 100 / total, 100); barra['value'] = pct
+                estado['text'] = (f'Descargando la versión {etiqueta}: {min(hecho, total) / 1048576:.1f} de '
+                                  f'{total / 1048576:.1f} MB ({pct:.0f} %)').replace('.', ',')
+            padre.update()
         try:
-            urllib.request.urlretrieve(exe['browser_download_url'], nuevo)
+            urllib.request.urlretrieve(exe['browser_download_url'], nuevo, avance)
+            barra['value'] = 100; decir(f'Descarga completa. Verificando la versión {etiqueta}…')
             interna = version_de(nuevo)   # la release tiene que ser lo que dice su etiqueta
             if interna != etiqueta: raise RuntimeError(f'la release {etiqueta} trae adentro la versión {interna}')
         except Exception as e:
             if os.path.exists(nuevo): os.remove(nuevo)
+            barra.pack_forget()
             return decir(f'No se instaló la actualización: {e}')
         # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
         bat, pid = actual[:-4] + '.actualizar.bat', os.getppid()   # el cargador de PyInstaller: sale último
@@ -509,6 +520,7 @@ class App(tk.Tk):
                     f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
         env = {k: v for k, v in os.environ.items() if not k.upper().startswith(('_PYI', '_MEI'))}
         env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        decir(f'Instalando la versión {etiqueta}: el simulador se cierra y se vuelve a abrir…'); padre.after(1200)
         subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW, env=env)
         self.cerrar()
 
