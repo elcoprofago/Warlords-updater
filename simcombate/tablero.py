@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.11.0'
+VERSION = '1.0.12.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -533,6 +533,20 @@ class App(tk.Tk):
         if not self.terreno.get(): self.terreno.set('plains' if 'plains' in sim.terrenos else next(iter(sim.terrenos)))
         self.ver_agua()
         for p in (self.pa, self.pd): p.cargar_listas(sim)
+        if not getattr(self, 'restaurado', False): self.restaurado = True; self.restaurar()
+
+    def restaurar(self):
+        """Vuelve a poner las tropas, barcos, héroes y el terreno de la última vez (los guarda cerrar() en el .ini).
+        Un arma o terreno que esta carpeta del juego no tiene queda vacío."""
+        c = self.cfg['tablero']
+        try:
+            for clave, p in (('atacante', self.pa), ('defensor', self.pd)):
+                if c.get(clave): p.poner_estado(json.loads(c[clave]))
+            campo = json.loads(c.get('campo', '{}'))
+        except (ValueError, KeyError, TypeError, IndexError): return
+        if campo.get('terreno') in self.sim.terrenos: self.terreno.set(campo['terreno']); self.ver_agua()
+        self.estructura.set(campo.get('estructura', 0)); self.bosque.set(campo.get('bosque', False))
+        self.noche.set(campo.get('noche', False)); self.defensas.set(campo.get('defensas', 1))
 
     def ver_agua(self):
         if self.sim and self.terreno.get():
@@ -579,6 +593,9 @@ class App(tk.Tk):
         c.update(juego=self.juego.get(), partida=self.sav.get(), por_nombre=str(self.por_nombre.get()), peleas=self.n.get(), velocidad=str(self.velocidad.get()),
                  efectos=str(self.efectos.get()), sonido=str(self.sonido.get()), tamano=self.tamano.get(),
                  resultados=self.resultados.get())
+        if self.sim:   # la última pelea armada, para la próxima vez (restaurar)
+            c.update(atacante=json.dumps(self.pa.estado()), defensor=json.dumps(self.pd.estado()),
+                     campo=json.dumps(self.escenario()['campo']))
         try:
             with open(CONFIG, 'w', encoding='utf-8') as f: self.cfg.write(f)
         except OSError: pass
