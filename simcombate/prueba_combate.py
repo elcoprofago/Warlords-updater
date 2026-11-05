@@ -39,5 +39,24 @@ for j in range(150):
     if v.muertes == [tuple(m) for m in r['muertes']] and vivos_g and all(d['muerto'] for d in perd): bien += 1
     v.cerrar()
 ver(n >= 100 and bien == n, f'repetición igual al motor en {bien} de {n} batallas (ganador con vivos, perdedor sin vivos)')
+
+# 3. Cada poder muestra la animación que le da la ventana del juego (0x406ed0) y nada más (Lightning contra tropas
+#    de más de una vida: el relámpago corto, que les parte las vidas a la mitad)
+def anims(a, d):
+    def lado(*t): return dict(tropas=list(t) + [(None, 0)] * (8 - len(t)), heroe=None, barco=None)
+    r = s.simular({'A': lado(*a), 'D': lado(*d), 'campo': dict(terreno='plains', estructura=0, bosque=False, noche=False,
+                                                                defensas=1)}, 1)
+    v = VentanaCombate(root, JUEGO, r, 'prueba', sonido=False); vistas = set()
+    v.animar = lambda tira, l: vistas.add(tira); v.saltar(); v.cerrar(); return vistas
+for a, d, debe, no in (([('elephant.arm', 3)], [('gnolls.arm', 3)], 'roca', 'explosion'),
+                       ([('assassin.arm', 3)], [('gnolls.arm', 3)], 'daga', None),
+                       ([('moongard.arm', 3)], [('bats.arm', 3)], 'flechas', None),
+                       ([('budragon.arm', 2)], [('gnolls.arm', 4)], 'relampago_corto', None),
+                       ([('fu_fire.arm', 3)], [('gnolls.arm', 4)], 'acido', None),
+                       ([('firedrag.arm', 1)], [('rddragon.arm', 1)], 'calavera', None),
+                       ([('gnolls.arm', 3)], [('gnolls.arm', 3)], 'explosion', 'calavera')):
+    try: vistas = anims(a, d)
+    except Exception as e: ver(False, f'{a[0][0]}: {e}'); continue
+    ver(debe in vistas and (no is None or no not in vistas), f'{a[0][0]} contra {d[0][0]}: {sorted(vistas)}')
 root.destroy()
 print('TODO OK' if not mal else f'{mal} MAL')

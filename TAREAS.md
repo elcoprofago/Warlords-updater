@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 115).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 116).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 114** y **tarea 115** (simulador de combate).
+0. **Tarea 114** y **tarea 116** (simulador de combate; la 116 reemplaza a la 115).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -17,7 +17,23 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **116.** Simulador de combate: efectos iguales a los del juego (5/11/2026)
+1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.4.0**.
+2. Armá peleas contra gnolls con cada una de estas tropas de atacante y mirá el efecto cuando matan:
+   - Elephants: la roca que se deshace en polvo.
+   - Assassins: la daga con sangre.
+   - Moonguard: las flechas.
+   - Blue Dragons (budragon): el relámpago (contra tropas de más de una vida, un relámpago corto que les quita la mitad).
+   - Black Dragons (bkdragon): el ácido.
+   - Fire Dragons (firedrag) contra Red Dragons: la calavera.
+   - Una tropa sin poder: la explosión.
+3. Cada golpe que quita una vida muestra las chispas sobre la tropa golpeada.
+4. Hacé la misma pelea en el juego y anotá cualquier diferencia (tropa, qué muestra el juego y qué el simulador).
+Resultado:
+
 - [ ] **115.** Simulador de combate: efectos por poder, vidas y arrastre (5/11/2026)
+   **Los efectos de esta tarea quedaron viejos: probarlos con la 116.** Las vidas (paso 4) y el arrastre (paso 5) siguen valiendo.
 1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
    **VERSIÓN 1.0.3.0**.
 2. Atacante: Elephants y Moonguard; defensor: gnolls y un dragón azul (budragon, Lightning). **INICIAR COMBATE**.

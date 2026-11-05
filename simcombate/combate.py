@@ -5,20 +5,19 @@
 #   DLG_CMBT.PCX 624x464: el cuadro del dragón; banda de arriba (18-604, 85-170) y tres paneles: izquierdo (18-122),
 #     central (132-492) y derecho (502-603), de y 183 a 431. Izquierdo = atacante, derecho = defensor (2x4 casilleros),
 #     central = el duelo de las dos que pelean.
-#   CMBTPICS.PCX: (0,0)-(48,48) el casillero de unidad y 6 cuadros de chispas (x 49..); tiras de 12 cuadros de 49 de
-#     ancho: bola de fuego (y 50), flecha (103), espada con sangre (154), relámpago (210), calavera que estalla (264),
-#     roca (318), polvo (373) y ácido (426).
-#   Qué tira usa cada golpe: la del poder de la tropa que pega (PODER_TIRA: Missiles = flecha, Trample = polvo,
-#     Lightning = relámpago, Acid = ácido; las demás, espada), y la calavera para la muerte de una tropa sin esos
-#     poderes. Los códigos especiales del motor son de esos poderes (medido con el motor, 5/11/2026: 0xc/0xf Lightning,
-#     0xd/0x10 Acid, 0xe/0x11 Trample del atacante/defensor; 8/9 cae D/A por Missiles). La rutina de dibujo del juego
-#     no se encontró en el exe: el par poder-tira sale del dibujo de cada tira.
+#   CMBTPICS.PCX: (0,0)-(48,48) el casillero de unidad.
 #   Unidades: el ícono 48x48 de la hoja de cada arma (ARMY\<archivo>.PCX, (1,161)-(48,208)) y del héroe
 #     (HERO\<.HER +0xc9>.PCX, misma hoja). El magenta es transparente en todos.
-# Sonidos: FX\AttHit, DefHit, AttDead, DefDead y Spell.wav (nombres tomados de los archivos; sin ver en el exe); la
-#     tropa con uno de esos poderes suena con su propio ARMY\<archivo>00.wav (p. ej. Elephant00.wav).
+# Efectos y sonidos: copiados de la ventana de combate de DarklordAV.exe (leído en el exe el 5/11/2026):
+#   0x405cd0 recorre los eventos y 0x406ed0(código) muestra cada uno: una animación de CMBTPICS (0x407e20, tabla en
+#   ANIM) y un sonido (0x4465e0 -> recurso de WAR3AV.RES -> FX\ o SETS\Fantasy\). Ver EVENTO y elegir().
+#   Cada golpe que quita vidas: las chispas sobre la tropa golpeada, una vez por evento (el motor da un evento por golpe
+#   que acierta; 0x16-0x18 / 0x19-0x1b quitan 2, 3 o 4 vidas de un golpe). La muerte: la explosión, salvo la que causa
+#   un poder: flechas (Missiles), daga con sangre (Assassin), relámpago (Lightning), roca que se deshace en polvo
+#   (Trample), ácido (Acid), calavera (Dragonslayer). Lightning que no mata parte las vidas a la mitad (relámpago
+#   corto); Acid que no mata parte la fuerza a la mitad. Las tropas no suenan con su ARMY\<archivo>00.wav en el combate.
 # Eventos (motor.py): 0/1 pierde una vida el defensor/atacante, 2/3 entra la siguiente, 6/7 gana atacante/defensor;
-# las muertes se sacan de la estructura (motor.muertes); 0xc..0x11 y 8/9 son poderes (ESPECIAL); 0x14.. sin identificar.
+# las muertes se marcan por la estructura (motor.muertes); el resto, en EVENTO.
 import os
 import tkinter as tk
 from PIL import Image, ImageChops, ImageTk
@@ -31,12 +30,24 @@ ESCALA = {'Normal': 1.0, 'Grande': 1.5}
 SET = 'Fantasy'
 ORO, TINTA, SOMBRA = '#e8c860', '#f4ecd0', '#000000'
 VIVA, PERDIDA, MUERTA = '#30e030', '#e02020', '#503020'
-TIRAS = {'fuego': 50, 'flecha': 103, 'golpe': 154, 'rayo': 210, 'muerte': 264, 'roca': 318, 'polvo': 373, 'acido': 426}
-PODER_TIRA = {30: 'flecha', 32: 'polvo', 38: 'acido', 42: 'acido', 39: 'rayo', 43: 'rayo'}
-ESPECIAL = {0xc: ('D', 'rayo'), 0xd: ('D', 'acido'), 0xe: ('D', 'polvo'), 0xf: ('A', 'rayo'), 0x10: ('A', 'acido'),
-            0x11: ('A', 'polvo'), 8: ('D', 'flecha'), 9: ('A', 'flecha')}   # código -> (lado que recibe, tira)
-NOMBRE_TIRA = {'rayo': 'Lightning', 'acido': 'Acid', 'polvo': 'Trample', 'flecha': 'Missiles'}
-
+# animaciones de 0x407e20: nombre -> (x del primer cuadro, y, ancho, alto, cuadros) en CMBTPICS
+ANIM = {'chispas': (48, 0, 48, 48, 5), 'explosion': (0, 48, 49, 54, 12), 'flechas': (0, 102, 49, 54, 12),
+        'daga': (0, 156, 49, 54, 12), 'relampago': (0, 210, 49, 54, 12), 'calavera': (0, 264, 49, 54, 12),
+        'roca': (0, 318, 49, 54, 12), 'acido': (0, 426, 49, 54, 12), 'relampago_corto': (0, 210, 49, 48, 5)}
+# código (ya convertido como en 0x406ed0) -> (lado que lo recibe, qué le pasa, animación, sonido)
+#   qué le pasa: un número = vidas que pierde; 'mitad' = vidas a la mitad; 'fuerza' = fuerza a la mitad; 'muere'
+EVENTO = {0: ('D', 1, 'chispas', 'DefHit'), 0x16: ('D', 2, 'chispas', 'DefHit'), 0x17: ('D', 3, 'chispas', 'DefHit'),
+          0x18: ('D', 4, 'chispas', 'DefHit'), 0x13: ('D', 'mitad', 'relampago_corto', 'zzzt'),
+          1: ('A', 1, 'chispas', 'AttHit'), 0x19: ('A', 2, 'chispas', 'AttHit'), 0x1a: ('A', 3, 'chispas', 'AttHit'),
+          0x1b: ('A', 4, 'chispas', 'AttHit'), 0x12: ('A', 'mitad', 'relampago_corto', 'zzzt'),
+          0xd: ('D', 'fuerza', 'acido', 'zzzt'), 0x10: ('A', 'fuerza', 'acido', 'zzzt'),
+          5: ('D', 'muere', 'explosion', 'DefDead'), 4: ('A', 'muere', 'explosion', 'AttDead'),
+          8: ('D', 'muere', 'flechas', 'arrows'), 9: ('A', 'muere', 'flechas', 'arrows'),
+          0xa: ('D', 'muere', 'daga', 'aagh'), 0xb: ('A', 'muere', 'daga', 'aagh'),
+          0xc: ('D', 'muere', 'relampago', 'zzzt'), 0xf: ('A', 'muere', 'relampago', 'zzzt'),
+          0xe: ('D', 'muere', 'roca', 'DefDead'), 0x11: ('A', 'muere', 'roca', 'AttDead'),
+          0x1c: ('D', 'muere', 'acido', 'zzzt'), 0x1d: ('A', 'muere', 'acido', 'zzzt'),
+          0x14: ('D', 'muere', 'calavera', 'Slayer'), 0x15: ('A', 'muere', 'calavera', 'Slayer')}
 def _indice(carpeta):
     try: return {f.lower(): os.path.join(carpeta, f) for f in os.listdir(carpeta)}
     except OSError: return {}
@@ -67,9 +78,9 @@ class VentanaCombate(tk.Toplevel):
         super().__init__(padre); self.title(titulo); self.configure(bg='#000000'); self.resizable(False, False)
         self.r, self.efectos, self.sonido_si, self.resultados = r, efectos, sonido, resultados
         self.paso_ms = max(60, int(1400 / max(1, velocidad)))
-        self.fx = _indice(os.path.join(juego, 'FX')); self.army = _indice(os.path.join(juego, 'ARMY'))
-        f = self.f = ESCALA.get(tamano, 1.0); z = self.z
         sets = os.path.join(juego, 'SETS', SET)
+        self.fx = {**_indice(sets), **_indice(os.path.join(juego, 'FX'))}   # AAGH y ARROWS están en el set
+        f = self.f = ESCALA.get(tamano, 1.0); z = self.z
         self.fotos = []
         fondo = pcx(os.path.join(sets, 'DLG_CMBT.PCX'))
         picts = pcx(os.path.join(sets, 'CMBTPICS.PCX'))
@@ -80,14 +91,10 @@ class VentanaCombate(tk.Toplevel):
         s = self.s = z(48)
         casillero = picts.crop((0, 0, 48, 48)).resize((s, s), Image.NEAREST) if picts is not None else None
         self.tiras = {}
-        if picts is not None:
-            ys = sorted(TIRAS.values()) + [picts.height + 1]
-            for k, y in TIRAS.items():
-                h = min(52, ys[ys.index(y) + 1] - y - 1)
-                self.tiras[k] = [ImageTk.PhotoImage(picts.crop((i * 49, y, i * 49 + 49, y + h)).resize((z(98), z(2 * h)), Image.NEAREST))
-                                 for i in range(12)]
-            self.tiras['chispas'] = [ImageTk.PhotoImage(picts.crop((49 + i * 49, 0, 98 + i * 49, 49)).resize((z(98), z(98)), Image.NEAREST))
-                                     for i in range(6)]
+        if picts is not None:      # al doble, como la tropa del duelo
+            for k, (x0, y, w, h, n) in ANIM.items():
+                self.tiras[k] = [ImageTk.PhotoImage(picts.crop((x0 + i * w, y, x0 + i * w + w, y + h)).resize((z(2 * w), z(2 * h)), Image.NEAREST))
+                                 for i in range(n)]
         self.f_tit = ('Arial', max(9, z(13)), 'bold'); self.f_txt = ('Arial', max(8, z(10)), 'bold')
         self.f_chi = ('Arial', max(7, z(8)), 'bold')
         self.sombra(z(130), z(112), 'ATACANTE', self.f_tit, ORO); self.sombra(z(494), z(112), 'DEFENSOR', self.f_tit, ORO)
@@ -108,6 +115,7 @@ class VentanaCombate(tk.Toplevel):
                 pips = [self.c.create_oval(x + i * (pw + 1), y + s + 1, x + i * (pw + 1) + pw, y + s + 1 + pw,
                                            fill=VIVA, outline='#000000') for i in range(ficha['vidas'])]
                 self.u[lado].append(dict(x=x, y=y, marco=marco, pips=pips, vidas=ficha['vidas'], muerto=False, ficha=ficha,
+                                         fuerza=ficha.get('fuerza_c', 2),
                                          foto=ImageTk.PhotoImage(icono(ficha['imagen'], z(96))) if im is not None else None))
         # duelo en el panel central
         self.duelo = {'A': (z(175), z(250)), 'D': (z(353), z(250))}
@@ -164,7 +172,7 @@ class VentanaCombate(tk.Toplevel):
         cuadros = self.tiras.get(tira)
         if not self.efectos or self.rapido or not cuadros: return
         x, y = self.duelo[lado]; t = max(20, self.paso_ms // (len(cuadros) + 2))
-        it = self.c.create_image(x, y, image=cuadros[0], anchor='nw')
+        it = self.c.create_image(x + self.z(48), y + self.z(48), image=cuadros[0], anchor='center')
         def sig(i):
             if not self.winfo_exists(): return
             if i >= len(cuadros): self.c.delete(it); return
@@ -198,34 +206,61 @@ class VentanaCombate(tk.Toplevel):
         self.c.itemconfigure(d['marco'], outline='#802020')
         for p in d['pips']: self.c.itemconfigure(p, fill=MUERTA)
         self.vidas_duelo(lado)
-        tira = self.tira_de(self.contrario(lado))
-        if tira: self.animar(tira, lado); self.sonar_tropa(self.contrario(lado)) or self.sonar('AttDead' if lado == 'A' else 'DefDead')
-        else: self.animar('muerte', lado); self.sonar('AttDead' if lado == 'A' else 'DefDead')
 
-    def contrario(self, lado):
-        """La tropa del otro lado que está peleando ahora (la que pega), o None."""
-        o = 'D' if lado == 'A' else 'A'; k = self.nd if o == 'D' else self.na
-        return self.u[o][k] if k < len(self.u[o]) else None
+    def peleando(self, lado):
+        """La tropa de ese lado que está peleando ahora, o None."""
+        k = self.na if lado == 'A' else self.nd
+        return self.u[lado][k] if k < len(self.u[lado]) else None
 
-    def tira_de(self, d):
-        return PODER_TIRA.get(d['ficha'].get('poder', 0)) if d else None
+    def quitar_vidas(self, d, nuevas):
+        d['vidas'] = max(0, nuevas)
+        for i, p in enumerate(d['pips']): self.c.itemconfigure(p, fill=VIVA if i < d['vidas'] else PERDIDA)
 
-    def sonar_tropa(self, d):
-        """El sonido propio de la tropa (ARMY\\<archivo>00.wav); False si no tiene."""
-        if not d or d['ficha'].get('heroe'): return False
-        p = self.army.get(os.path.basename(d['ficha']['imagen'] or '').lower() + '00.wav')
-        if not p: return False
-        self.sonar_ruta(p); return True
+    def elegir(self):
+        """El próximo evento que muestra el juego (0x405cd0), con los reemplazos que hace; None si no quedan.
+        Una racha de golpes que termina en Trample (0xe + 5) o en un golpe de 2-4 vidas (0x16-0x18) se salta hasta ese
+        evento; un golpe a una tropa con una sola vida no se muestra (lo muestra su muerte); el marcador de Trample
+        solo, tampoco; Lightning o Acid sobre una tropa que ya no aguanta reemplazan a su muerte."""
+        ev = self.ev
+        while self.i < len(ev):
+            c = ev[self.i]
+            for golpe, marca, muerte, multi in ((0, 0xe, 5, (0x16, 0x17, 0x18)), (1, 0x11, 4, (0x19, 0x1a, 0x1b))):
+                if c != golpe: continue
+                j = self.i
+                while j < len(ev) and ev[j] == golpe: j += 1
+                if j + 1 < len(ev) and ev[j] == marca and ev[j + 1] == muerte:
+                    ev[j + 1] = marca; self.i = j + 1; return self.cambiar(ev[self.i])
+                if j < len(ev) and ev[j] in multi: self.i = j; return self.cambiar(ev[self.i])
+            dA, dD = self.peleando('A'), self.peleando('D')
+            vA, vD = (dA['vidas'] if dA else 0), (dD['vidas'] if dD else 0)
+            if c in (0xe, 0x11) or (c == 0 and vD <= 1) or (c == 1 and vA <= 1): self.i += 1; continue
+            if c == 0xc and vD <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0xc
+            elif c == 0xf and vA <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0xf
+            c = ev[self.i]
+            if c == 0xd and dD and dD['fuerza'] <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0x1c
+            elif c == 0x10 and dA and dA['fuerza'] <= 1 and self.i + 1 < len(ev): self.i += 1; ev[self.i] = 0x1d
+            return self.cambiar(ev[self.i])
+        return None
 
-    def golpe(self, lado, k):
-        if k >= len(self.u[lado]): return
-        d = self.u[lado][k]
-        if d['vidas'] > 0:
-            d['vidas'] -= 1; self.c.itemconfigure(d['pips'][d['vidas']], fill=PERDIDA)
+    def cambiar(self, c):
+        """Conversiones de 0x406ed0: Lightning que no mata = vidas a la mitad; Acid sobre fuerza 1 = muerte."""
+        dA, dD = self.peleando('A'), self.peleando('D')
+        if c == 0xc and dD and dD['vidas'] > 1: return 0x13
+        if c == 0xf and dA and dA['vidas'] > 1: return 0x12
+        if c == 0xd and dD and dD['fuerza'] <= 1: return 0x1c
+        if c == 0x10 and dA and dA['fuerza'] <= 1: return 0x1d
+        return c
+
+    def mostrar(self, c):
+        """Un evento con su animación y su sonido del juego (0x406ed0)."""
+        lado, que, anim, son = EVENTO[c]
+        d = self.peleando(lado)
+        if d is None: return
+        if que == 'mitad': self.quitar_vidas(d, d['vidas'] // 2)
+        elif que == 'fuerza': d['fuerza'] //= 2
+        elif isinstance(que, int): self.quitar_vidas(d, d['vidas'] - que)
         self.vidas_duelo(lado)
-        p = self.contrario(lado); tira = self.tira_de(p)
-        self.animar(tira or 'golpe', lado)
-        if not (tira and self.sonar_tropa(p)): self.sonar('DefHit' if lado == 'D' else 'AttHit')
+        self.animar(anim, lado); self.sonar(son)
 
     def decir(self, t):
         self.c.itemconfigure(self.leyenda, text=t)
@@ -236,11 +271,10 @@ class VentanaCombate(tk.Toplevel):
     # ---- repetición de eventos ----
     def paso(self):
         self.tarea = None
-        if self.i >= len(self.ev): self.fin(); return
-        c = self.ev[self.i]; self.i += 1
-        if c == 0: self.golpe('D', self.nd)
-        elif c == 1: self.golpe('A', self.na)
-        elif c == 2:
+        c = self.elegir()
+        if c is None: self.fin(); return
+        self.i += 1
+        if c == 2:
             if self.ea: self.matar('A', self.na); self.na += 1
             self.ea = True; self.activa('A', self.na)
         elif c == 3:
@@ -248,17 +282,8 @@ class VentanaCombate(tk.Toplevel):
             self.ed = True; self.activa('D', self.nd)
         elif c == 6: self.matar('D', self.nd); self.fin(); return
         elif c == 7: self.matar('A', self.na); self.fin(); return
-        elif c in ESPECIAL:      # poder especial (8/9 además son muertes; se marcan por la estructura, motor.muertes)
-            recibe, tira = ESPECIAL[c]
-            if self.efectos and not self.rapido:
-                self.decir(NOMBRE_TIRA[tira]); self.animar(tira, recibe)
-                if not self.sonar_tropa(self.contrario(recibe)): self.sonar('Spell')
-                self.after(self.paso_ms, lambda: self.winfo_exists() and not self.terminado and self.decir(''))
-        elif c in (4, 5, 10, 11): pass     # códigos de muerte: la muerte se marca por la estructura (motor.muertes)
-        elif self.efectos and not self.rapido:
-            self.decir(f'efecto especial (código 0x{c:x})'); self.sonar('Spell')
-            self.animar('chispas', 'A'); self.animar('chispas', 'D')
-            self.after(self.paso_ms, lambda: self.winfo_exists() and not self.terminado and self.decir(''))
+        elif c in EVENTO: self.mostrar(c)   # las muertes se marcan por la estructura (motor.muertes); otro código:
+                                            # 0x406ed0 no lo muestra
         if self.rapido: self.paso()
         else: self.tarea = self.after(self.paso_ms, self.paso)
 

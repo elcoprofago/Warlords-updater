@@ -113,7 +113,8 @@ class Simulador:
         f = r['ficha']; u = lambda i: self.m.unidades()[i - 1]
         def fichas(lado):
             out = []
-            for i in self.m.orden_ficha(f, lado)[:len(self.ids[lado])]:
+            o = 0xe if lado == 'A' else 0x12e
+            for k, i in enumerate(self.m.orden_ficha(f, lado)[:len(self.ids[lado])]):
                 d = u(i); t = struct.unpack_from('<H', d['raw'], 0xc)[0]
                 if d['tipo'] == 16:
                     cl = self.clase_de.get(lado); nm = 'Héroe'
@@ -121,7 +122,9 @@ class Simulador:
                 else:
                     nm = self.m.tipo(d['dueno'], d['tipo'])['corto']; img = os.path.join(self.juego, 'ARMY', nm)
                 a = self.armas.get(nm.lower() + '.arm') if d['tipo'] != 16 else None
-                out.append(dict(nombre=nm, imagen=img, vidas=(t >> 13) & 7, heroe=d['tipo'] == 16, poder=a.poder if a else 0))
+                out.append(dict(nombre=nm, imagen=img, vidas=(t >> 13) & 7, heroe=d['tipo'] == 16, poder=a.poder if a else 0,
+                                # lo que muestra la ventana del juego (0x4071cb): fuerza +8 y vidas +9 del casillero de la ficha
+                                fuerza_c=f[o + k * 0x24 + 8], vidas_c=f[o + k * 0x24 + 9]))
             return out
         fa, fd = fichas('A'), fichas('D')
         return dict(pct=100 * g / n, n=n, gana=r['gana'], eventos=r['eventos'], muertes=self.m.muertes(r['eventos']),

@@ -12,7 +12,7 @@ from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate                 # noqa: E402
 
-VERSION = '1.0.3.0'
+VERSION = '1.0.4.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')

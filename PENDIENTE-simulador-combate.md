@@ -182,6 +182,20 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   Vidas: puntos más grandes en los casilleros y puntos grandes debajo de cada tropa del duelo. Arrastre: «☰ N» de cada
   fila del tablero se arrastra a otra posición (la grilla es el fight order). prueba_tablero y prueba_combate → TODO OK.
   Probar en manos del usuario: TAREAS 115.
+- 5/11/2026 (tablero 1.0.4.0): **efectos copiados de la ventana de combate del juego** (corrige la entrada anterior:
+  el par poder-tira «por el dibujo» era invento). Leído en DarklordAV.exe: 0x405cd0 recorre los eventos (salta la
+  racha de golpes que termina en Trample 0xe+5 o en 0x16-0x18; no muestra el golpe a una tropa con 1 vida ni el
+  marcador 0xe/0x11 suelto; Lightning/Acid sobre una tropa que no aguanta reemplazan a su muerte por 0xc/0xf/0x1c/0x1d);
+  0x406ed0(código) convierte (0xc con vidas>1 -> 0x13 = vidas a la mitad; 0xd con fuerza>1 = fuerza a la mitad) y
+  dibuja con 0x407e20 (13 animaciones de CMBTPICS: 0 chispas, 1 explosión y 48, 2 flechas 102, 3 daga con sangre 156,
+  4 calavera 264, 5 relámpago 210, 6 roca que se deshace en polvo 318, 8/12 ácido 426, 10 relámpago corto) y suena
+  con 0x4465e0 (recurso de WAR3AV.RES: 2 AttHit, 3 DefHit, 4 AttDead, 5 DefDead, 0x2e arrows, 0x2f aagh, 0x30 zzzt,
+  0x34 Slayer; arrows y aagh están en SETS\Fantasy). Por evento: golpe = chispas (1 por evento; 0x16-0x18 quitan 2-4
+  vidas), muerte común = explosión, Missiles 8/9 = flechas, Assassin 0xa/0xb = daga, Lightning = relámpago, Trample
+  0xe/0x11 = roca, Acid = ácido, Dragonslayer 0x14/0x15 = calavera. La fila del polvo (y 372) no la usa el combate.
+  Las tropas NO suenan con su ARMY\<archivo>00.wav en el combate. Tabla en `combate.py` (ANIM, EVENTO, elegir).
+  La ficha del simulador trae fuerza_c y vidas_c (casillero +8/+9, lo que lee 0x4071cb). prueba_combate suma una
+  prueba por poder; TODO OK (147/147). Probar: TAREAS 116.
 - Próximo paso: seguir la etapa 5 en el tablero (fondos y marcos del juego en vez de los controles de Windows: p. ej.
   DLG_BIG/ARMYBG, BUT_MED para los botones). Pendiente aparte: identificar los eventos 0xc..
 
