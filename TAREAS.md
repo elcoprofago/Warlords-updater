@@ -1,130 +1,19 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 119).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 120).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 118**, **tarea 114** y **tarea 116** (simulador de combate; la 116 reemplaza a la 115).
-1. **Tarea 109** (visor de historia: % de mapa explorado).
-2. **Tarea 108** (tanda de la computadora, desbande por oro).
-3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+0. **Tarea 110** (IA: en qué gasta el oro).
+1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
-
-- [ ] **119.** Simulador de combate 1.0.12.0: relámpago, bola dorada, botón azul, configuración y actualización (5/11/2026)
-1. Bajá el simulador de https://github.com/elcoprofago/Simulador-Combate/releases (Simulador-Combate.exe) y abrilo; el título dice **VERSIÓN 1.0.12.0**. Con «INICIAR COMBATE» se abre la ventana de combate (la 1.0.9.0 se colgaba ahí); apretándolo de nuevo con la pelea abierta no se abre otra, se trae al frente la que está. Armá una pelea (tropas, barco, héroe, terreno), cerrá el simulador y abrilo: tiene que aparecer igual.
-2. «INICIAR COMBATE» es azul como el escudo azul del juego (más oscuro en los bordes, con brillo), con letra blanca y sombra.
-2b. La barra de Velocidad tiene la bola dorada del Visor de historia (se arrastra o se hace clic en el riel).
-3. El panel de arriba tiene el fondo de mármol, con el título, la casilla de ordenar y «Carpeta del juego…».
-4. Arriba a la derecha está el engranaje de configuración: abre «Configuración — VERSIÓN 1.0.12.0» con «Buscar actualización», los créditos y el correo. «Buscar actualización» tiene que decir que ya tenés la última.
-5. Armá una pelea con Blue Dragons (budragon) que mate: el relámpago suena con Lightning.wav.
-6. Después de que se publique el parche Alianzas nuevo, en el juego el relámpago también suena con Lightning.wav (el ácido sigue con el zumbido de antes).
-Resultado:
-- [ ] **118.** Simulador de combate: fondo de mármol y rebordes dorados (5/11/2026)
-1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.6.0**.
-2. El fondo de la ventana es la textura de mármol del juego, en mosaico.
-3. Los paneles, los botones y el cuadro de resultados tienen el reborde dorado del Visor de historia.
-4. Las letras de los recuadros FACTOR TOTAL son blancas.
-5. «Carpeta del juego…» está al lado de la casilla de ordenar, no en el extremo derecho, y la ventana es más angosta.
-Resultado:
-
-- [ ] **116.** Simulador de combate: efectos iguales a los del juego (5/11/2026)
-1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
-   **VERSIÓN 1.0.4.0**.
-2. Armá peleas contra gnolls con cada una de estas tropas de atacante y mirá el efecto cuando matan:
-   - Elephants: la roca que se deshace en polvo.
-   - Assassins: la daga con sangre.
-   - Moonguard: las flechas.
-   - Blue Dragons (budragon): el relámpago (contra tropas de más de una vida, un relámpago corto que les quita la mitad).
-   - Black Dragons (bkdragon): el ácido.
-   - Fire Dragons (firedrag) contra Red Dragons: la calavera.
-   - Una tropa sin poder: la explosión.
-3. Cada golpe que quita una vida muestra las chispas sobre la tropa golpeada.
-4. Hacé la misma pelea en el juego y anotá cualquier diferencia (tropa, qué muestra el juego y qué el simulador).
-Resultado:
-
-- [ ] **115.** Simulador de combate: efectos por poder, vidas y arrastre (5/11/2026)
-   **Los efectos de esta tarea quedaron viejos: probarlos con la 116.** Las vidas (paso 4) y el arrastre (paso 5) siguen valiendo.
-1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
-   **VERSIÓN 1.0.3.0**.
-2. Atacante: Elephants y Moonguard; defensor: gnolls y un dragón azul (budragon, Lightning). **INICIAR COMBATE**.
-3. Fijate: los elefantes muestran el polvo («Trample») con su sonido; los Moonguard, flechas; el dragón azul,
-   relámpago. Los dragones negros (bkdragon) tienen Acid. Ojo: el Red Dragons de este juego (rddragon) tiene el
-   poder Chaos, no Acid: pelea con espada.
-4. Las vidas: puntos verdes/rojos grandes debajo de las dos tropas que pelean, y más grandes en los casilleros.
-5. En el tablero, agarrá el «☰ 2» de una fila y soltalo sobre la fila 1: las dos se cambian de lugar en el orden de
-   pelea.
-6. Anotá si algún efecto no es el que muestra el juego real (tropa y qué efecto debería tener).
-Resultado:
-
-- [ ] **114.** Simulador de combate: probar los cambios del 5/11 (5/11/2026)
-1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
-   **VERSIÓN 1.0.2.0**. Ya no está la fila de carpeta y partida ni «Ciudades del bando».
-2. Armá dos pilas y fijate el **FACTOR TOTAL** de cada lado, en el recuadro claro de borde dorado.
-3. Marcá y desmarcá «Ordenar las armas por NOMBRE COMÚN»: las listas cambian de orden y lo elegido queda.
-4. Apretá «Invertir atacante y defensor»: los dos lados se cambian (armas, cantidades, barco y héroe).
-5. **INICIAR COMBATE**: la batalla se ve en el cuadro del dragón del juego, atacante a la izquierda, defensor a la
-   derecha y el duelo en el medio, con la espada, la calavera y el relámpago del juego. Probá también «Grande».
-6. Anotá qué más querés que se parezca al juego (por ejemplo, el tablero con fondos y botones del juego).
-Resultado:
-
-- [x] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
-1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
-   **VERSIÓN 1.0.1.0**.
-2. Armá una batalla y apretá **INICIAR COMBATE**: se abre la ventana de combate con las imágenes del juego,
-   defensor arriba y atacante abajo, en el orden en que pelean.
-3. Mirá la batalla: la unidad que pelea tiene marco dorado, cada golpe pone roja una de sus vidas (cuadritos verdes)
-   y la que cae queda tachada. Al final aparecen el ganador y los sobrevivientes (y los muertos, según «Resultados»).
-4. Probá el subpanel visual: velocidad, «Efectos», «Sonido» (golpes y muertes con los sonidos de la carpeta FX del
-   juego), tamaño «Grande» y «Saltar al final».
-5. Anotá si los sonidos te parecen los que usa el juego en cada caso y qué le falta para parecerse a la pelea real.
-Resultado:
-
-- [x] **112.** Simulador de combate: probar el tablero (5/11/2026)
-1. Abrí una consola en `F:\source\repos\actualizador-warlords\simcombate` y escribí `python tablero.py`.
-2. El título dice **SIMULADOR DE COMBATE — VERSIÓN 1.0.0.0** y arriba a la derecha aparece la cantidad de armas,
-   barcos, clases, ítems y hechizos.
-3. Armá una batalla que conozcas del juego: en cada lado elegí armas y cantidades (el casillero 1 pelea primero),
-   un héroe con «Héroe…» si querés, el terreno, y apretá **INICIAR COMBATE**.
-4. Fijate si el % y la batalla de muestra te parecen razonables; anotá lo que falte o moleste en el tablero.
-Resultado:
-
-- [ ] **111.** Simulador de combate: comparar el «Factor» con DarkCompare (5/11/2026)
-El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare. Para confirmar que da lo mismo:
-1. Abrí DarkCompare con la carpeta `C:\Warlords3\ARMY`.
-2. Buscá estas armas y anotá su Factor: **Fire Dragon** (FireDrag) tiene que decir **52,2**; **Mountain Wyrm**
-   (AmeWyrm) **49,7**; **Wyverns** **46,2**.
-Resultado:
-
-- [x] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
-1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.18.0**.
-2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «Explorado: xx %» con el
-   bando elegido en el minimapa; al tocar otro escudo, cambia el número.
-3. Abrí una partida sin mapa oculto: ese renglón no aparece.
-4. **Exportar PDF…** de la partida oculta: debajo de los datos, una tabla con cada bando y su porcentaje.
-Resultado:
-
-- [x] **108.** IA: medir cuántas veces se le desbandan tropas por falta de oro (4/11/2026)
-La 1.0.129.0 anota, solo en las tandas, cada ejército que deserta porque el bando se quedó sin oro.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.129.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado: (Claude, 5/11/2026: tandas 133 y 134, 52 tropas desertaron en 7 casos, siempre con oro 0 y en un
-bando que ya estaba perdiendo sus ciudades. Es raro y viene de perder ciudades, no de gastar de más. 3 partidas de
-la 134 se colgaron al empezar; la 133 no tuvo ninguna.)
-
-- [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
-  - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
-  - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
-  - Para volver a consultarlo: abrir una consola en `F:\source\repos\actualizador-warlords\creditos` y
-    escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
-  - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
 - [ ] **110.** IA: medir en qué gasta el oro (5/11/2026)
 La 1.0.130.0 anota, solo en las tandas, cuánto oro entra y cuánto se paga de mantenimiento cada turno.
@@ -165,6 +54,116 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **111.** Simulador de combate: comparar el «Factor» con DarkCompare (5/11/2026)
+El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare. Para confirmar que da lo mismo:
+1. Abrí DarkCompare con la carpeta `C:\Warlords3\ARMY`.
+2. Buscá estas armas y anotá su Factor: **Fire Dragon** (FireDrag) tiene que decir **52,2**; **Mountain Wyrm**
+   (AmeWyrm) **49,7**; **Wyverns** **46,2**.
+Resultado: cumplida (5/11/2026).
+
+- [x] **119.** Simulador de combate 1.0.12.0: relámpago, bola dorada, botón azul, configuración y actualización (5/11/2026)
+1. Bajá el simulador de https://github.com/elcoprofago/Simulador-Combate/releases (Simulador-Combate.exe) y abrilo; el título dice **VERSIÓN 1.0.12.0**. Con «INICIAR COMBATE» se abre la ventana de combate (la 1.0.9.0 se colgaba ahí); apretándolo de nuevo con la pelea abierta no se abre otra, se trae al frente la que está. Armá una pelea (tropas, barco, héroe, terreno), cerrá el simulador y abrilo: tiene que aparecer igual.
+2. «INICIAR COMBATE» es azul como el escudo azul del juego (más oscuro en los bordes, con brillo), con letra blanca y sombra.
+2b. La barra de Velocidad tiene la bola dorada del Visor de historia (se arrastra o se hace clic en el riel).
+3. El panel de arriba tiene el fondo de mármol, con el título, la casilla de ordenar y «Carpeta del juego…».
+4. Arriba a la derecha está el engranaje de configuración: abre «Configuración — VERSIÓN 1.0.12.0» con «Buscar actualización», los créditos y el correo. «Buscar actualización» tiene que decir que ya tenés la última.
+5. Armá una pelea con Blue Dragons (budragon) que mate: el relámpago suena con Lightning.wav.
+6. Después de que se publique el parche Alianzas nuevo, en el juego el relámpago también suena con Lightning.wav (el ácido sigue con el zumbido de antes).
+Resultado: cumplida (5/11/2026).
+
+- [x] **118.** Simulador de combate: fondo de mármol y rebordes dorados (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.6.0**.
+2. El fondo de la ventana es la textura de mármol del juego, en mosaico.
+3. Los paneles, los botones y el cuadro de resultados tienen el reborde dorado del Visor de historia.
+4. Las letras de los recuadros FACTOR TOTAL son blancas.
+5. «Carpeta del juego…» está al lado de la casilla de ordenar, no en el extremo derecho, y la ventana es más angosta.
+Resultado: cumplida (5/11/2026).
+
+- [x] **116.** Simulador de combate: efectos iguales a los del juego (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.4.0**.
+2. Armá peleas contra gnolls con cada una de estas tropas de atacante y mirá el efecto cuando matan:
+   - Elephants: la roca que se deshace en polvo.
+   - Assassins: la daga con sangre.
+   - Moonguard: las flechas.
+   - Blue Dragons (budragon): el relámpago (contra tropas de más de una vida, un relámpago corto que les quita la mitad).
+   - Black Dragons (bkdragon): el ácido.
+   - Fire Dragons (firedrag) contra Red Dragons: la calavera.
+   - Una tropa sin poder: la explosión.
+3. Cada golpe que quita una vida muestra las chispas sobre la tropa golpeada.
+4. Hacé la misma pelea en el juego y anotá cualquier diferencia (tropa, qué muestra el juego y qué el simulador).
+Resultado: cumplida (5/11/2026).
+
+- [x] **115.** Simulador de combate: efectos por poder, vidas y arrastre (5/11/2026)
+   **Los efectos de esta tarea quedaron viejos: probarlos con la 116.** Las vidas (paso 4) y el arrastre (paso 5) siguen valiendo.
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.3.0**.
+2. Atacante: Elephants y Moonguard; defensor: gnolls y un dragón azul (budragon, Lightning). **INICIAR COMBATE**.
+3. Fijate: los elefantes muestran el polvo («Trample») con su sonido; los Moonguard, flechas; el dragón azul,
+   relámpago. Los dragones negros (bkdragon) tienen Acid. Ojo: el Red Dragons de este juego (rddragon) tiene el
+   poder Chaos, no Acid: pelea con espada.
+4. Las vidas: puntos verdes/rojos grandes debajo de las dos tropas que pelean, y más grandes en los casilleros.
+5. En el tablero, agarrá el «☰ 2» de una fila y soltalo sobre la fila 1: las dos se cambian de lugar en el orden de
+   pelea.
+6. Anotá si algún efecto no es el que muestra el juego real (tropa y qué efecto debería tener).
+Resultado: cumplida (5/11/2026).
+
+- [x] **114.** Simulador de combate: probar los cambios del 5/11 (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.2.0**. Ya no está la fila de carpeta y partida ni «Ciudades del bando».
+2. Armá dos pilas y fijate el **FACTOR TOTAL** de cada lado, en el recuadro claro de borde dorado.
+3. Marcá y desmarcá «Ordenar las armas por NOMBRE COMÚN»: las listas cambian de orden y lo elegido queda.
+4. Apretá «Invertir atacante y defensor»: los dos lados se cambian (armas, cantidades, barco y héroe).
+5. **INICIAR COMBATE**: la batalla se ve en el cuadro del dragón del juego, atacante a la izquierda, defensor a la
+   derecha y el duelo en el medio, con la espada, la calavera y el relámpago del juego. Probá también «Grande».
+6. Anotá qué más querés que se parezca al juego (por ejemplo, el tablero con fondos y botones del juego).
+Resultado: cumplida (5/11/2026).
+
+- [x] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.1.0**.
+2. Armá una batalla y apretá **INICIAR COMBATE**: se abre la ventana de combate con las imágenes del juego,
+   defensor arriba y atacante abajo, en el orden en que pelean.
+3. Mirá la batalla: la unidad que pelea tiene marco dorado, cada golpe pone roja una de sus vidas (cuadritos verdes)
+   y la que cae queda tachada. Al final aparecen el ganador y los sobrevivientes (y los muertos, según «Resultados»).
+4. Probá el subpanel visual: velocidad, «Efectos», «Sonido» (golpes y muertes con los sonidos de la carpeta FX del
+   juego), tamaño «Grande» y «Saltar al final».
+5. Anotá si los sonidos te parecen los que usa el juego en cada caso y qué le falta para parecerse a la pelea real.
+Resultado: cumplida (5/11/2026).
+
+- [x] **112.** Simulador de combate: probar el tablero (5/11/2026)
+1. Abrí una consola en `F:\source\repos\actualizador-warlords\simcombate` y escribí `python tablero.py`.
+2. El título dice **SIMULADOR DE COMBATE — VERSIÓN 1.0.0.0** y arriba a la derecha aparece la cantidad de armas,
+   barcos, clases, ítems y hechizos.
+3. Armá una batalla que conozcas del juego: en cada lado elegí armas y cantidades (el casillero 1 pelea primero),
+   un héroe con «Héroe…» si querés, el terreno, y apretá **INICIAR COMBATE**.
+4. Fijate si el % y la batalla de muestra te parecen razonables; anotá lo que falte o moleste en el tablero.
+Resultado: cumplida (5/11/2026).
+
+- [x] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
+1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.18.0**.
+2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «Explorado: xx %» con el
+   bando elegido en el minimapa; al tocar otro escudo, cambia el número.
+3. Abrí una partida sin mapa oculto: ese renglón no aparece.
+4. **Exportar PDF…** de la partida oculta: debajo de los datos, una tabla con cada bando y su porcentaje.
+Resultado: cumplida (5/11/2026).
+
+- [x] **108.** IA: medir cuántas veces se le desbandan tropas por falta de oro (4/11/2026)
+La 1.0.129.0 anota, solo en las tandas, cada ejército que deserta porque el bando se quedó sin oro.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.129.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: (Claude, 5/11/2026: tandas 133 y 134, 52 tropas desertaron en 7 casos, siempre con oro 0 y en un
+bando que ya estaba perdiendo sus ciudades. Es raro y viene de perder ciudades, no de gastar de más. 3 partidas de
+la 134 se colgaron al empezar; la 133 no tuvo ninguna.)
+
+- [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
+  - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
+  - El estado actual consultado por internet está en `creditos\ESTADO.md` (última corrida: 4/11/2026).
+  - Para volver a consultarlo: abrir una consola en `F:\source\repos\actualizador-warlords\creditos` y
+    escribir `python actualizar.py`. Tarda unos 5 minutos y reescribe `ESTADO.md`.
+  - Donde diga «OJO: varias fichas posibles», abrir los enlaces y ver cuál es la persona del juego.
 
 - [x] **117.** Simulador de combate: chispas en cada golpe y recuadro del Factor (5/11/2026)
 1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.5.0**.

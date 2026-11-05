@@ -28,6 +28,7 @@ if __name__ == '__main__':
     r = subprocess.run([sys.executable, '-m', 'PyInstaller', '--onefile', '--windowed', '--noconfirm',
                         '--name', 'Simulador-Combate', '--distpath', AQUI, '--workpath', tmp, '--specpath', tmp,
                         '--paths', AQUI, '--add-data', ASSETS + os.pathsep + 'assets', '--collect-all', 'unicorn',
+                        '--icon', os.path.join(AQUI, 'icono.ico'), '--add-data', os.path.join(AQUI, 'icono.png') + os.pathsep + '.',
                         os.path.join(AQUI, 'tablero.py')])
     if r.returncode: sys.exit(r.returncode)
     sin_cfg(EXE)

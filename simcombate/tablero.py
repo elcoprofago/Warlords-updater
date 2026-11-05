@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.12.0'
+VERSION = '1.0.13.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -318,6 +318,10 @@ class SubpanelHeroe(tk.Toplevel):
 class App(tk.Tk):
     def __init__(self):
         super().__init__(); self.title(TITULO); self.sim = None
+        try:   # el escudo con las espadas (icono.py); en el .exe va adentro, junto al ícono del archivo
+            self.foto_icono = tk.PhotoImage(file=os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'icono.png'))
+            self.iconphoto(True, self.foto_icono)
+        except tk.TclError: pass
         self.cfg = configparser.ConfigParser(); self.cfg.read(CONFIG, encoding='utf-8')
         if 'tablero' not in self.cfg: self.cfg['tablero'] = {}
         c = self.cfg['tablero']
