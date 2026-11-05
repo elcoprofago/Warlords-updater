@@ -49,6 +49,17 @@ def pct_ciudad(cd):
 c40, c1 = pct_ciudad(40), pct_ciudad(1)
 ver(c40 == c1, f'en ciudad: defensor con 40 ciudades {c40:.2f} %, con 1 {c1:.2f} %')
 
+# 2c. Defensas de la ciudad (+0xa4): 3 contra 3, el defensor en su ciudad con nivel 1, 2 y 3; el atacante tiene que
+# ganar menos que en campo abierto y menos cuanto más alto el nivel (tope FortifySiegeLimit del .rul)
+def pct_defensa(nivel):
+    m.limpiar(); m.vaciar((CX - 1, CY), (CX, CY))
+    a = m.poner(0, [1] * 3, CX - 1, CY, 200); m.poner(1, [1] * 3, CX, CY, 201)
+    m.mu.mem_write(0x537e2c + 0xa5, bytes([1])); m.mu.mem_write(0x537e2c + 0xa4, bytes([nivel])); m.call(0x4407d0, [])
+    return 100 * m.probabilidad_motor(0, a, CX, CY, 12345, N) / N
+niv = [pct_defensa(k) for k in (1, 2, 3)]
+ver(base > niv[0] > niv[1] > niv[2], 'defensas: atacante gana ' + f'{base:.2f} % en campo, ' +
+    ', '.join(f'{v:.2f} % contra nivel {k}' for k, v in zip((1, 2, 3), niv)))
+
 # 3. Secuencia: una batalla con semilla fija, de punta a punta; las muertes alcanzan para dar el ganador
 a = armar(); r = m.batalla(0, a, DX, DY, 777)
 mu = m.muertes(r['eventos'])

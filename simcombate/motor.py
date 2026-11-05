@@ -1,7 +1,7 @@
 # Motor del simulador de combate: corre el código real de DarklordAV.exe (unicorn) sobre el estado de una partida.
 # 0x464ac0(atacante, x, y, ficha) arma la ficha; 0x466c90(ficha) la deja lista; 0x464ea0(ficha, resultado, modo) pelea.
 # Resultado (0x40c bytes): +0 palabra 1 = gana el atacante; +6.. registro de eventos, un byte por evento.
-import struct, pefile
+import os, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_MEM_INVALID, UC_HOOK_CODE, UcError
 from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EAX
 
@@ -14,6 +14,15 @@ FICHA, FSZ = 0x569a80, 0x5cc
 RES, RSZ = 0x56c8e0, 0x40c
 SEED, SEEDT = 0x500bf4, 0x500bf8                    # estado del azar 0x4deb20; SEEDT != 0 lo siembra con time()
 CIUDADES_N, CIUDAD0, CREC = 0x537e2a, 0x537e2c, 0xde   # ciudad c: +0xa4 viva (> 0), +0xa5 dueño
+# [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
+# de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
+COMBATE = {'FinalBonusLimit': (0x56951a, 2), 'MoraleFearLimit': (0x56951e, 2), 'LeadershipChaosLimit': (0x569522, 2),
+           'FortifySiegeLimit': (0x569526, 2), 'BaseDiseaseChance': (0x56952a, 0), 'BasePoisonChance': (0x56952c, 0),
+           'BaseParalyzationChance': (0x56952e, 0), 'BaseCurseChance': (0x569530, 0),
+           'BaseAssassinationChance': (0x569532, 0), 'BaseLightningChance': (0x569534, 0), 'BaseAcidChance': (0x569536, 0),
+           'BaseMedalChance': (0x569538, 0), 'MedalsForRegulars': (0x56953a, 1), 'MedalsForMercs': (0x56953b, 1),
+           'MedalsForAllies': (0x56953c, 1), 'MedalDice1': (0x56953e, 0), 'MedalDice2': (0x569540, 0),
+           'MedalDice3': (0x569542, 0), 'MedalDice4': (0x569544, 0)}
 REGIONES = ((0x503e00, 0x12), (0x503e58, 0x32000), (0x535ed0, 0xa96), (0x536b30, 0x2d894))
 
 # Eventos del registro de 0x464ea0: 0 el defensor pierde una vida, 1 el atacante pierde una, 2/3 entra la siguiente
@@ -32,7 +41,7 @@ def muertes(ev):
 class Motor:
     muertes = staticmethod(muertes)
 
-    def __init__(self, exe, sav):
+    def __init__(self, exe, sav, rul=None):
         pe = pefile.PE(exe)
         img = pe.get_memory_mapped_image()
         mu = self.mu = Uc(UC_ARCH_X86, UC_MODE_32)
@@ -43,6 +52,7 @@ class Motor:
         for va, n in REGIONES:
             mu.mem_write(va, b[off:off + n]); off += n
         mu.mem_write(SEEDT, bytes(4))
+        self.reglas(rul or os.path.join(os.path.dirname(exe), 'Default.rul'))
         self.W, self.H = struct.unpack('<hh', mu.mem_read(0x503e00, 4))
         self.sh = mu.mem_read(0x503e06, 1)[0]
         self.n0 = self.w(UNITS_N)
@@ -60,6 +70,19 @@ class Motor:
                 self.imp[IMP + 16 * k] = (i.name or b'?').decode(); k += 1
         mu.mem_write(IMP, bytes([0xc3]) * 0x10000)
         mu.hook_add(UC_HOOK_CODE, self._importada, begin=IMP, end=IMP + 0xffff)
+
+    def reglas(self, rul):
+        """Carga la sección [COMBAT] del .rul como lo hace el juego al arrancar (0x454700); falta una clave -> error."""
+        sec, vals = None, {}
+        for ln in open(rul, encoding='latin-1'):
+            ln = ln.strip()
+            if ln.startswith('['): sec = ln
+            elif sec == '[COMBAT]' and '=' in ln: k, v = ln.split('=', 1); vals[k.strip()] = v.strip()
+        for k, (a, t) in COMBATE.items():
+            v = vals[k]
+            if t == 2: self.mu.mem_write(a, struct.pack('<2h', *map(int, v.split(','))))
+            elif t == 1: self.mu.mem_write(a, bytes([v.lower() in ('on', 'yes', '1')]))
+            else: self.mu.mem_write(a, struct.pack('<h', int(v)))
 
     def cad(self, a): return bytes(self.mu.mem_read(a, 256)).split(bytes(1))[0]
     def _importada(self, mu, addr, size, u):

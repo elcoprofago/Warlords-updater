@@ -33,6 +33,14 @@ registro de cada bando (`0x55cb72`, `0x55cc22..0x55cc2e`, `0x55f030..0x55f048`) 
 Método (regla 4 y 5): misma batalla emulada 10 000 veces con el bando dueño de 40 ciudades y de 2; si el % no cambia,
 no hay tal factor. Control: cambiar algo que sí cuenta (una unidad más) tiene que mover el %.
 
+## Pregunta del usuario: ¿la ciudad y sus defensas ayudan al defensor?
+
+**Respondida (5/11/2026): sí.** 3 contra 3 gnollcav, 10 000 peleas: el atacante gana 50,70 % en campo abierto,
+38,99 % contra una ciudad de nivel 1, 30,17 % contra nivel 2 y 21,64 % contra nivel 3 (`prueba_motor.py`, 2c).
+El nivel es +0xa4 de la ciudad (1-3; BuildLevel2/3 del .rul es su costo); entra al bono del grupo defensor en 0x468440
+con tope `FortifySiegeLimit` del .rul. Una primera medición había dado «no cambia nada»: era un error del motor, que no
+cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Default.rul` (o el que se le pase).
+
 ## Etapas
 1. **Motor**: `simcombate/motor.py` — carga exe + .SAV, arma dos pilas sintéticas, llama a `0x464ac0`/`0x464ea0`,
    devuelve la secuencia de muertes. Prueba: coincidir con `0x464a30` y con una batalla real del registro de IA.
@@ -76,6 +84,6 @@ no hay tal factor. Control: cambiar algo que sí cuenta (una unidad más) tiene 
   0x464a10 en 198 semillas; 10 000 batallas en ~2 s; pregunta de las ciudades respondida (arriba).
   Sin hacer: comparar con una batalla real del registro de IA (IA_BAT.CSV no guarda la semilla ni el estado previo,
   así que solo se podría comparar en promedio).
-  Abierto: cambiar +0xa4..+0xa8 de la ciudad (¿defensas?) no movió ni la ficha ni el %; hay que ubicar dónde entran
-  las defensas 1-3 antes de ponerlas en el tablero (etapa 3). Héroes, barcos y terreno aún no probados en el motor.
+  Defensas 1-3 de la ciudad: ubicadas y medidas (arriba). Ojo en la etapa 2: el .rul del escenario puede cambiar los
+  topes de [COMBAT]; usar el que use la partida. Héroes, barcos y terreno aún no probados en el motor.
 - Próximo paso: etapa 2 (datos).
