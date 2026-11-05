@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 117).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 119).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 114** y **tarea 116** (simulador de combate; la 116 reemplaza a la 115).
+0. **Tarea 118**, **tarea 114** y **tarea 116** (simulador de combate; la 116 reemplaza a la 115).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -17,16 +17,16 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **117.** Simulador de combate: chispas en cada golpe y recuadro del Factor (5/11/2026)
-1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.5.0**.
-2. Los recuadros FACTOR TOTAL: fondo negro, letra arena con sombra gris.
-3. Elefantes contra gnolls, **INICIAR COMBATE**: cada golpe muestra sus chispas con su sonido; los golpes que quitan
-   varias vidas muestran tantas chispas seguidas.
-4. Anotá si algo no coincide con el juego.
+- [ ] **118.** Simulador de combate: fondo de mármol y rebordes dorados (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.6.0**.
+2. El fondo de la ventana es la textura de mármol del juego, en mosaico.
+3. Los paneles, los botones y el cuadro de resultados tienen el reborde dorado del Visor de historia.
+4. Las letras de los recuadros FACTOR TOTAL son blancas.
+5. «Carpeta del juego…» está al lado de la casilla de ordenar, no en el extremo derecho, y la ventana es más angosta.
 Resultado:
 
 - [ ] **116.** Simulador de combate: efectos iguales a los del juego (5/11/2026)
-1. En `F:\sourceeposctualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
    **VERSIÓN 1.0.4.0**.
 2. Armá peleas contra gnolls con cada una de estas tropas de atacante y mirá el efecto cuando matan:
    - Elephants: la roca que se deshace en polvo.
@@ -156,6 +156,14 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **117.** Simulador de combate: chispas en cada golpe y recuadro del Factor (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.5.0**.
+2. Los recuadros FACTOR TOTAL: fondo negro, letra arena con sombra gris.
+3. Elefantes contra gnolls, **INICIAR COMBATE**: cada golpe muestra sus chispas con su sonido; los golpes que quitan
+   varias vidas muestran tantas chispas seguidas.
+4. Anotá si algo no coincide con el juego.
+Resultado: hecho 5/11/2026, «funciona perfecto, ahora sí se ve como en el juego real».
 - [x] **100.** IA: convoyes con barcos que solo tienen Carrier (4/11/2026)
 Cambio: la prueba de la tarea 90 estuvo mal armada: el barco tenía Landing y Carrier juntos, y así siempre conviene
 desembarcar en una playa. Ahora las guardadas **Scarpart_CA** y **Kor_CA** traen el barco con **Carrier solo**, como se

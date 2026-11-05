@@ -245,3 +245,6 @@ pantalla y lo dibuja con `o_forest.PCX`: arboleda tupida que cubre toda la casil
 son los mismos árboles sueltos sobre otro terreno). Para el jugador se ve como bosque y no da el bono de bosque.
 Falta: que el usuario decida si el parche las hace contar como bosque para WOODS/FOREST (cambia el equilibrio:
 47 armas, 585 casillas en Tanda_Kor).
+- 5/11/2026 (tablero 1.0.6.0): fondo de la ventana con EDPICTS\MARBLE.PCX del juego en mosaico; paneles, botones y
+  cuadro de resultados con el reborde dorado del Visor de historia (dorado ancho + línea negra); letras del Factor en
+  blanco; «Carpeta del juego…» junto a la casilla de ordenar, ventana más angosta (1186 px).
