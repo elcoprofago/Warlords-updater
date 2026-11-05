@@ -1,19 +1,28 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 109).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 110).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 108** (tanda de la computadora, desbande por oro).
-2. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
-3. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
-4. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
-5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+1. **Tarea 109** (visor de historia: % de mapa explorado).
+2. **Tarea 108** (tanda de la computadora, desbande por oro).
+3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
+4. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
+5. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
+6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
+1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.17.0**.
+2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «% de mapa explorado:» con el
+   bando elegido en el minimapa; al tocar otro escudo, cambia el número.
+3. Abrí una partida sin mapa oculto: ese renglón no aparece.
+4. **Exportar PDF…** de la partida oculta: debajo de los datos, una tabla con cada bando y su porcentaje.
+Resultado:
 
 - [ ] **108.** IA: medir cuántas veces se le desbandan tropas por falta de oro (4/11/2026)
 La 1.0.129.0 anota, solo en las tandas, cada ejército que deserta porque el bando se quedó sin oro.
