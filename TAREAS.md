@@ -17,6 +17,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **119.** Simulador de combate 1.0.7.0: relámpago, bola dorada, configuración y actualización (5/11/2026)
+1. Bajá el simulador de https://github.com/elcoprofago/Simulador-Combate/releases (Simulador-Combate.exe) y abrilo; el título dice **VERSIÓN 1.0.7.0**.
+2. La barra de Velocidad tiene la bola dorada del Visor de historia (se arrastra o se hace clic en el riel).
+3. El panel de arriba tiene el fondo de mármol, con el título, la casilla de ordenar y «Carpeta del juego…».
+4. Arriba a la derecha está el engranaje de configuración: abre «Configuración — VERSIÓN 1.0.7.0» con «Buscar actualización», los créditos y el correo. «Buscar actualización» tiene que decir que ya tenés la última.
+5. Armá una pelea con Blue Dragons (budragon) que mate: el relámpago suena con Lightning.wav.
+6. Después de que se publique el parche Alianzas nuevo, en el juego el relámpago también suena con Lightning.wav (el ácido sigue con el zumbido de antes).
+Resultado:
 - [ ] **118.** Simulador de combate: fondo de mármol y rebordes dorados (5/11/2026)
 1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice **VERSIÓN 1.0.6.0**.
 2. El fondo de la ventana es la textura de mármol del juego, en mosaico.

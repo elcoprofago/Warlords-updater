@@ -37,14 +37,14 @@ ANIM = {'chispas': (48, 0, 48, 48, 5), 'explosion': (0, 48, 49, 54, 12), 'flecha
 # código (ya convertido como en 0x406ed0) -> (lado que lo recibe, qué le pasa, animación, sonido)
 #   qué le pasa: un número = vidas que pierde; 'mitad' = vidas a la mitad; 'fuerza' = fuerza a la mitad; 'muere'
 EVENTO = {0: ('D', 1, 'chispas', 'DefHit'), 0x16: ('D', 2, 'chispas', 'DefHit'), 0x17: ('D', 3, 'chispas', 'DefHit'),
-          0x18: ('D', 4, 'chispas', 'DefHit'), 0x13: ('D', 'mitad', 'relampago_corto', 'zzzt'),
+          0x18: ('D', 4, 'chispas', 'DefHit'), 0x13: ('D', 'mitad', 'relampago_corto', 'Lightning'),
           1: ('A', 1, 'chispas', 'AttHit'), 0x19: ('A', 2, 'chispas', 'AttHit'), 0x1a: ('A', 3, 'chispas', 'AttHit'),
-          0x1b: ('A', 4, 'chispas', 'AttHit'), 0x12: ('A', 'mitad', 'relampago_corto', 'zzzt'),
+          0x1b: ('A', 4, 'chispas', 'AttHit'), 0x12: ('A', 'mitad', 'relampago_corto', 'Lightning'),
           0xd: ('D', 'fuerza', 'acido', 'zzzt'), 0x10: ('A', 'fuerza', 'acido', 'zzzt'),
           5: ('D', 'muere', 'explosion', 'DefDead'), 4: ('A', 'muere', 'explosion', 'AttDead'),
           8: ('D', 'muere', 'flechas', 'arrows'), 9: ('A', 'muere', 'flechas', 'arrows'),
           0xa: ('D', 'muere', 'daga', 'aagh'), 0xb: ('A', 'muere', 'daga', 'aagh'),
-          0xc: ('D', 'muere', 'relampago', 'zzzt'), 0xf: ('A', 'muere', 'relampago', 'zzzt'),
+          0xc: ('D', 'muere', 'relampago', 'Lightning'), 0xf: ('A', 'muere', 'relampago', 'Lightning'),
           0xe: ('D', 'muere', 'roca', 'DefDead'), 0x11: ('A', 'muere', 'roca', 'AttDead'),
           0x1c: ('D', 'muere', 'acido', 'zzzt'), 0x1d: ('A', 'muere', 'acido', 'zzzt'),
           0x14: ('D', 'muere', 'calavera', 'Slayer'), 0x15: ('A', 'muere', 'calavera', 'Slayer')}
@@ -183,6 +183,7 @@ class VentanaCombate(tk.Toplevel):
     def sonar(self, nombre):
         if not (self.sonido_si and winsound) or self.rapido: return
         p = self.fx.get(nombre.lower() + '.wav')
+        if not p and nombre == 'Lightning': p = self.fx.get('zzzt.wav')   # juego sin el parche que trae FX\Lightning.wav
         if p: self.sonar_ruta(p)
 
     def sonar_ruta(self, p):

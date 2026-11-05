@@ -248,3 +248,4 @@ Falta: que el usuario decida si el parche las hace contar como bosque para WOODS
 - 5/11/2026 (tablero 1.0.6.0): fondo de la ventana con EDPICTS\MARBLE.PCX del juego en mosaico; paneles, botones y
   cuadro de resultados con el reborde dorado del Visor de historia (dorado ancho + línea negra); letras del Factor en
   blanco; «Carpeta del juego…» junto a la casilla de ordenar, ventana más angosta (1186 px).
+- 5/11/2026 (tablero 1.0.7.0): barra de Velocidad con la bola dorada del Visor (dibujada, no es imagen del juego); encabezado sobre el mármol; engranaje de configuración del Monitor de IA con créditos y actualización en línea desde el repo público elcoprofago/Simulador-Combate (build.py y publicar.py, como el Monitor). El relámpago suena con FX\Lightning.wav (en el parche: RES de sonido 57, en lugar del zzzt en 0x446bff/0x446c33/0x446d03/0x446d37).

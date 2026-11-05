@@ -78,7 +78,7 @@ class Motor:
     muertes = staticmethod(muertes)
 
     def __init__(self, exe, sav, rul=None):
-        pe = pefile.PE(exe)
+        with open(exe, 'rb') as f: pe = pefile.PE(data=f.read())   # sin mapear el archivo: si no, queda tomado y el parche no puede reescribirlo
         img = pe.get_memory_mapped_image()
         mu = self.mu = Uc(UC_ARCH_X86, UC_MODE_32)
         size = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

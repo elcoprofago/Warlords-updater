@@ -3,7 +3,7 @@
 # del bando y héroe (subpanel: clase, nivel, elecciones, ítems y hechizos); subpanel de terreno y subpanel visual
 # (se guarda para la ventana de combate, etapa 4). INICIAR COMBATE arma el escenario (escenario.py) y muestra el % de
 # victorias y abre la ventana de combate (combate.py) con una batalla de muestra. Uso: python tablero.py
-import configparser, os, struct, sys, threading
+import configparser, json, os, struct, subprocess, sys, threading, urllib.request, webbrowser
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
@@ -13,10 +13,27 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.6.0'
+VERSION = '1.0.7.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
+REPO = 'elcoprofago/Simulador-Combate'   # repo público donde se publican las releases del .exe (el fuente vive acá)
+EXE_REL = 'Simulador-Combate.exe'
+# El ícono de configuración es el del Monitor de IA (ia\monitor-ia\assets); en el .exe va adentro (build.py).
+ASSETS = os.path.join(getattr(sys, '_MEIPASS', ''), 'assets') if getattr(sys, 'frozen', False) else \
+    os.path.join(os.path.dirname(CARPETA), 'ia', 'monitor-ia', 'assets')
+CORREO = 'ra.alvarito@gmail.com'
+
+def version_tupla(v):
+    return tuple(int(x) for x in v.split('.'))
+
+def version_de(exe):
+    """La versión que trae adentro un Simulador-Combate.exe (se le pregunta con --version; lo usa publicar.py)."""
+    marca = exe + '.version'
+    subprocess.run([exe, '--version', marca], timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
+    with open(marca) as f: v = f.read().strip()
+    os.remove(marca)
+    return v
 JUEGO0 = r'C:\Warlords3'
 ESTRUCTURAS = (('Nada', 0), ('Camino / puente', 1), ('Ciudad', 3))
 ORO = '#c8a040'
@@ -44,6 +61,24 @@ def elecciones(clase):
         elif hab not in SIN_VALOR: n += f' +{val}'
         out.append((n, costo))
     return out, list(struct.unpack_from('<9h', r, 0x3e8))
+
+class Deslizador(tk.Canvas):
+    """Barra deslizante con la bola dorada de la barra de rondas del Visor de historia (riel gris, bola dorada con
+    borde negro), en lugar del rectángulo azul de ttk.Scale."""
+    def __init__(self, padre, variable, desde, hasta, ancho=130):
+        fondo = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
+        super().__init__(padre, width=ancho, height=22, bg=fondo, highlightthickness=0, cursor='hand2')
+        self.var, self.desde, self.hasta, self.ancho = variable, desde, hasta, ancho
+        self.bind('<Button-1>', self.clic); self.bind('<B1-Motion>', self.clic)
+        variable.trace_add('write', lambda *a: self.dibujar()); self.dibujar()
+    def x(self, v): return 9 + (self.ancho - 18) * (v - self.desde) / (self.hasta - self.desde)
+    def clic(self, e):
+        v = round(self.desde + (e.x - 9) * (self.hasta - self.desde) / (self.ancho - 18))
+        self.var.set(max(self.desde, min(self.hasta, v)))
+    def dibujar(self):
+        self.delete('all'); x = self.x(self.var.get())
+        self.create_line(9, 11, self.ancho - 9, 11, fill='#777', width=3)
+        self.create_oval(x - 7, 4, x + 7, 18, fill=ORO, outline='#000')
 
 class RecuadroFactor(tk.Frame):
     """El Factor total de la pila: fondo negro, letra blanca con sombra gris, borde dorado (pedido del usuario,
@@ -255,17 +290,11 @@ class App(tk.Tk):
         if 'tablero' not in self.cfg: self.cfg['tablero'] = {}
         c = self.cfg['tablero']
         self.marmol = tk.Label(self, bd=0); self.marmol.place(x=0, y=0, relwidth=1, relheight=1); self.marmol.lower()
-        caja = reborde(self); caja.master.grid(row=0, column=0, columnspan=3, sticky='we', padx=10, pady=(10, 4))
-        top = ttk.Frame(caja, padding=6); top.pack(fill='x')
-        ttk.Label(top, text=TITULO, font=('Segoe UI', 12, 'bold')).pack(side='left')
-        self.estado = ttk.Label(top, text=''); self.estado.pack(side='right')
         self.juego = tk.StringVar(value=c.get('juego', JUEGO0))
         self.sav = tk.StringVar(value=c.get('partida', os.path.join(JUEGO0, 'SAVES', 'Tanda_Kor.SAV')))
-        fb = ttk.Frame(caja, padding=(6, 0, 6, 6)); fb.pack(fill='x')
         self.por_nombre = tk.BooleanVar(value=c.getboolean('por_nombre', False))
-        ttk.Checkbutton(fb, text='Ordenar las armas por NOMBRE COMÚN (si no, por nombre de archivo)', variable=self.por_nombre,
-                        command=self.reordenar).pack(side='left')
-        boton(fb, text='Carpeta del juego…', command=self.configurar).pack(side='left', padx=(24, 0))
+        self.marmol_im = None
+        self.encabezado(c)
         # Los paneles van directo sobre la ventana, cada uno en su reborde dorado: entre ellos se ve el mármol.
         cajas = [reborde(self) for _ in range(3)]
         for col, m in enumerate(cajas):
@@ -290,12 +319,118 @@ class App(tk.Tk):
     def poner_marmol(self):
         """Fondo de la ventana: MARBLE.PCX del juego (EDPICTS) en mosaico; sin él queda el color de siempre."""
         t = pcx(os.path.join(self.juego.get(), 'EDPICTS', 'MARBLE.PCX'))
-        if t is None: self.marmol.configure(image=''); return
+        if t is None: self.marmol_im = None; self.marmol.configure(image=''); self.pintar_encabezado(); return
         t = t.convert('RGB'); W, H = self.winfo_screenwidth(), self.winfo_screenheight()
         m = Image.new('RGB', (W, H))
         for y in range(0, H, t.height):
             for x in range(0, W, t.width): m.paste(t, (x, y))
+        self.marmol_im = m
         self.foto_marmol = ImageTk.PhotoImage(m); self.marmol.configure(image=self.foto_marmol, anchor='nw')
+        self.pintar_encabezado()
+
+    # ---- encabezado: sobre el mármol, con título, estado, casilla de orden, carpeta y configuración ----
+    def encabezado(self, c):
+        caja = reborde(self); caja.master.grid(row=0, column=0, columnspan=3, sticky='we', padx=10, pady=(10, 4))
+        cv = self.cab = tk.Canvas(caja, height=70, bg='#1b2a3a', highlightthickness=0); cv.pack(fill='x')
+        self.estado_txt = ''
+        self.b_carpeta = boton(cv, text='Carpeta del juego…', command=self.configurar)
+        imgs = {}
+        for e in ('normal', 'hover', 'active', 'disabled'):
+            try: imgs[e] = ImageTk.PhotoImage(Image.open(os.path.join(ASSETS, f'menu_settings_{e}.png')).convert('RGBA').resize((28, 28), Image.LANCZOS))
+            except OSError: pass
+        self.icono_cfg, self.cfg_abierta = imgs if len(imgs) == 4 else {}, False
+        cv.bind('<Configure>', lambda e: self.pintar_encabezado())
+
+    def pintar_encabezado(self):
+        cv = self.cab; cv.delete('all'); W = cv.winfo_width()
+        if self.marmol_im is not None and W > 1:
+            x0, y0 = cv.winfo_rootx() - self.winfo_rootx(), cv.winfo_rooty() - self.winfo_rooty()
+            self.foto_cab = ImageTk.PhotoImage(self.marmol_im.crop((x0, y0, x0 + W, y0 + 70)))
+            cv.create_image(0, 0, image=self.foto_cab, anchor='nw')
+        def sombra(x, y, t, f, anchor='w', tag=()):
+            cv.create_text(x + 1, y + 1, text=t, font=f, fill='#000000', anchor=anchor, tags=tag)
+            cv.create_text(x, y, text=t, font=f, fill='#ffffff', anchor=anchor, tags=tag)
+        sombra(10, 18, TITULO, ('Segoe UI', 12, 'bold'))
+        der = W - 10
+        if self.icono_cfg:
+            e = 'disabled' if self.cfg_abierta else 'normal'
+            cv.create_image(der, 18, image=self.icono_cfg[e], anchor='e', tags='cfg'); der -= 38
+            if not self.cfg_abierta:
+                cv.tag_bind('cfg', '<Enter>', lambda e: (cv.itemconfigure('cfg', image=self.icono_cfg['hover']), cv.configure(cursor='hand2')))
+                cv.tag_bind('cfg', '<Leave>', lambda e: (cv.itemconfigure('cfg', image=self.icono_cfg['normal']), cv.configure(cursor='')))
+                cv.tag_bind('cfg', '<ButtonPress-1>', lambda e: cv.itemconfigure('cfg', image=self.icono_cfg['active']))
+                cv.tag_bind('cfg', '<ButtonRelease-1>', lambda e: (cv.configure(cursor=''), self.configuracion()))
+        sombra(der, 18, self.estado_txt, ('Segoe UI', 9), anchor='e')
+        marca = '☑' if self.por_nombre.get() else '☐'
+        sombra(10, 50, f'{marca} Ordenar las armas por NOMBRE COMÚN (si no, por nombre de archivo)', ('Segoe UI', 9), tag='orden')
+        cv.tag_bind('orden', '<Button-1>', lambda e: (self.por_nombre.set(not self.por_nombre.get()), self.reordenar(), self.pintar_encabezado()))
+        cv.tag_bind('orden', '<Enter>', lambda e: cv.configure(cursor='hand2')); cv.tag_bind('orden', '<Leave>', lambda e: cv.configure(cursor=''))
+        x = cv.bbox('orden')[2] + 24 if cv.bbox('orden') else 420
+        cv.create_window(x, 50, window=self.b_carpeta, anchor='w')
+
+    def decir_estado(self, t):
+        self.estado_txt = t; self.pintar_encabezado()
+
+    # ---- configuración: actualización en línea y créditos (como el Monitor de IA y el Gestor de ventanas) ----
+    def configuracion(self):
+        if self.cfg_abierta: return
+        v = tk.Toplevel(self); v.title(f'Configuración — VERSIÓN {VERSION}'); v.transient(self); v.resizable(False, False)
+        self.cfg_abierta = True; self.pintar_encabezado()
+        def cerrada(e):
+            if e.widget is v:
+                self.cfg_abierta = False
+                if self.winfo_exists(): self.pintar_encabezado()
+        v.bind('<Destroy>', cerrada)
+        v.geometry(f'+{self.winfo_rootx() + self.winfo_width() - 470}+{self.winfo_rooty() + 90}')
+        fr = tk.Frame(v, padx=15, pady=12); fr.pack(fill='both')
+        tk.Label(fr, text='Actualización en línea', font=('Segoe UI', 10, 'bold')).pack(anchor='w')
+        tk.Label(fr, text=f'Versión instalada: {VERSION}').pack(anchor='w', pady=(6, 0))
+        estado = tk.Label(fr, text='', width=55, anchor='w', justify='left', wraplength=410)
+        tk.Button(fr, text='Buscar actualización', width=20, command=lambda: self.actualizar(v, estado)).pack(anchor='w', pady=(8, 0))
+        estado.pack(anchor='w', pady=(6, 0))
+        tk.Label(fr, text='RA Sistemas & Claude © 2026', fg='#696969').pack(anchor='w', pady=(14, 0))
+        correo = tk.Label(fr, text=CORREO, fg='#0066cc', cursor='hand2', font=('Segoe UI', 9, 'underline')); correo.pack(anchor='w')
+        correo.bind('<Button-1>', lambda e: webbrowser.open(f'mailto:{CORREO}'))
+        tk.Button(fr, text='Cerrar', width=10, command=v.destroy).pack(anchor='e', pady=(10, 0))
+        self.v_config = v
+
+    def actualizar(self, padre, estado):
+        """Baja la última release de REPO y reemplaza este .exe (como el Monitor de IA)."""
+        def decir(t): estado['text'] = t; padre.update_idletasks()
+        if not getattr(sys, 'frozen', False):
+            return decir('Corriendo desde el código: se actualiza con git.')
+        decir('Consultando GitHub…')
+        try:
+            with urllib.request.urlopen(f'https://api.github.com/repos/{REPO}/releases/latest', timeout=15) as r: rel = json.load(r)
+        except Exception as e:
+            return decir(f'No se pudo consultar GitHub: {e}')
+        etiqueta = rel['tag_name'].lstrip('v')
+        if version_tupla(etiqueta) <= version_tupla(VERSION):
+            return decir(f'Ya tenés la última versión ({VERSION}).')
+        exe = next((a for a in rel['assets'] if a['name'] == EXE_REL), None)
+        if not exe: return decir(f'La release {etiqueta} no trae {EXE_REL}.')
+        if not messagebox.askyesno(TITULO, f'Hay una versión nueva: {etiqueta} (tenés {VERSION}).\n'
+                                   '¿Bajarla e instalarla? El simulador se cierra y se vuelve a abrir.', parent=padre):
+            return decir('')
+        actual = sys.executable; nuevo = actual[:-4] + '.nuevo.exe'
+        decir(f'Bajando la versión {etiqueta}…')
+        try:
+            urllib.request.urlretrieve(exe['browser_download_url'], nuevo)
+            interna = version_de(nuevo)   # la release tiene que ser lo que dice su etiqueta
+            if interna != etiqueta: raise RuntimeError(f'la release {etiqueta} trae adentro la versión {interna}')
+        except Exception as e:
+            if os.path.exists(nuevo): os.remove(nuevo)
+            return decir(f'No se instaló la actualización: {e}')
+        # Un .bat espera a que este proceso cierre, reemplaza el .exe, lo abre de nuevo y se borra.
+        bat, pid = actual[:-4] + '.actualizar.bat', os.getppid()   # el cargador de PyInstaller: sale último
+        with open(bat, 'w', encoding='mbcs') as f:
+            f.write('@echo off\n:espera\n'
+                    f'tasklist /FI "PID eq {pid}" /NH | find "{pid}" >nul && (timeout /t 1 /nobreak >nul & goto espera)\n'
+                    f'move /y "{nuevo}" "{actual}" >nul\nstart "" "{actual}"\ndel "%~f0"\n')
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith(('_PYI', '_MEI'))}
+        env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        subprocess.Popen(['cmd', '/c', bat], creationflags=subprocess.CREATE_NO_WINDOW, env=env)
+        self.cerrar()
 
     def subpanel_terreno(self, padre):
         f = ttk.LabelFrame(padre, text='TERRENO (casilla del defensor)', padding=6); f.pack(fill='x')
@@ -314,7 +449,7 @@ class App(tk.Tk):
     def subpanel_visual(self, padre, c):
         f = ttk.LabelFrame(padre, text='VISUAL (ventana de combate)', padding=6); f.pack(fill='x', pady=(6, 0))
         ttk.Label(f, text='Velocidad').grid(row=0, column=0, sticky='w')
-        self.velocidad = tk.IntVar(value=c.getint('velocidad', 5)); ttk.Scale(f, from_=1, to=10, variable=self.velocidad).grid(row=0, column=1, sticky='we')
+        self.velocidad = tk.IntVar(value=c.getint('velocidad', 5)); Deslizador(f, self.velocidad, 1, 10).grid(row=0, column=1, sticky='w')
         self.efectos = tk.BooleanVar(value=c.getboolean('efectos', True)); ttk.Checkbutton(f, text='Efectos', variable=self.efectos).grid(row=1, column=0, sticky='w')
         self.sonido = tk.BooleanVar(value=c.getboolean('sonido', True)); ttk.Checkbutton(f, text='Sonido', variable=self.sonido).grid(row=1, column=1, sticky='w')
         ttk.Label(f, text='Tamaño').grid(row=2, column=0, sticky='w')
@@ -349,7 +484,7 @@ class App(tk.Tk):
         self.pa.poner_estado(d); self.pd.poner_estado(a)
 
     def cargar(self):
-        self.estado['text'] = 'Cargando el juego…'; self.boton.state(['disabled'])
+        self.decir_estado('Cargando el juego…'); self.boton.state(['disabled'])
         def tarea():
             try: sim, err = Simulador(self.juego.get(), self.sav.get()), None
             except Exception as e: sim, err = None, e
@@ -358,9 +493,9 @@ class App(tk.Tk):
 
     def cargado(self, sim, err):
         if err:
-            self.estado['text'] = 'No se pudo cargar'; messagebox.showerror(TITULO, f'No se pudo cargar el juego:\n{err}'); return
+            self.decir_estado('No se pudo cargar'); messagebox.showerror(TITULO, f'No se pudo cargar el juego:\n{err}'); return
         self.sim = sim; self.boton.state(['!disabled'])
-        self.estado['text'] = f'{len(sim.armas)} armas, {len(sim.barcos)} barcos, {len(sim.clases)} clases, {len(sim.items)} ítems, {len(sim.hechizos)} hechizos'
+        self.decir_estado(f'{len(sim.armas)} armas, {len(sim.barcos)} barcos, {len(sim.clases)} clases, {len(sim.items)} ítems, {len(sim.hechizos)} hechizos')
         self.terreno['values'] = list(sim.terrenos)
         if not self.terreno.get(): self.terreno.set('plains' if 'plains' in sim.terrenos else next(iter(sim.terrenos)))
         self.ver_agua()
@@ -415,4 +550,7 @@ class App(tk.Tk):
         self.destroy()
 
 if __name__ == '__main__':
+    if len(sys.argv) == 3 and sys.argv[1] == '--version':
+        with open(sys.argv[2], 'w') as f: f.write(VERSION)
+        sys.exit(0)
     App().mainloop()
