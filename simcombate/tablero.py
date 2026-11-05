@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.7.0'
+VERSION = '1.0.8.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -49,6 +49,30 @@ def boton(padre, **kw):
     """Un botón con reborde dorado; devuelve el marco a ubicar (el botón queda en .boton)."""
     m = reborde(padre); b = ttk.Button(m, **kw); b.pack(fill='both', expand=True); m.master.boton = b
     return m.master
+
+class BotonAzul(tk.Canvas):
+    """Botón dibujado: fondo azul claro, letra blanca con sombra negra. Acepta .state(['disabled'/'!disabled'])
+    como un ttk.Button."""
+    AZUL, AZUL_SOBRE, AZUL_APAGADO = '#5aa8e6', '#7cbcf0', '#9db4c6'
+    def __init__(self, padre, text, command, ancho=170, alto=30):
+        super().__init__(padre, width=ancho, height=alto, highlightthickness=0, bd=0, cursor='hand2')
+        self.texto, self.cmd, self.ancho, self.alto, self.activo, self.sobre = text, command, ancho, alto, True, False
+        self.bind('<Enter>', lambda e: self.poner(sobre=True)); self.bind('<Leave>', lambda e: self.poner(sobre=False))
+        self.bind('<ButtonRelease-1>', lambda e: self.activo and self.cmd())
+        self.dibujar()
+    def poner(self, sobre): self.sobre = sobre; self.dibujar()
+    def state(self, estados):
+        for e in estados:
+            if e == 'disabled': self.activo = False
+            elif e == '!disabled': self.activo = True
+        self.configure(cursor='hand2' if self.activo else ''); self.dibujar()
+    def dibujar(self):
+        self.delete('all')
+        c = self.AZUL_APAGADO if not self.activo else self.AZUL_SOBRE if self.sobre else self.AZUL
+        self.configure(bg=c)
+        f = ('Segoe UI', 10, 'bold'); x, y = self.ancho // 2, self.alto // 2
+        self.create_text(x + 2, y + 2, text=self.texto, font=f, fill='#000000')
+        self.create_text(x, y, text=self.texto, font=f, fill='#ffffff')
 
 def elecciones(clase):
     """Las 10 elecciones de una clase (.HER) y los puntos por nivel: [(texto, costo)], [puntos de cada subida]."""
@@ -307,7 +331,8 @@ class App(tk.Tk):
         fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
         self.n = ttk.Spinbox(fila, from_=10, to=100000, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
-        b = boton(fila, text='INICIAR COMBATE', command=self.iniciar); b.pack(side='left', padx=12); self.boton = b.boton
+        m = reborde(fila); m.master.pack(side='left', padx=12)
+        self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar); self.boton.pack()
         boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
