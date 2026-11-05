@@ -18,6 +18,7 @@ VICTORIA, LIMITE = 0x560e52, 0x560e50      # word 0..6 (textos 0x1bf); límite d
 RONDA, TOPE = 0x603d9, 0x603e5             # objeto 0x5032f8 (0x420850): +0x30 ronda, +0x54 tope de turnos (-1 = no)
 
 
+OPCIONES = 0x53c38e                        # byte de opciones de vista: 0x10 Hidden Map
 TERRENOS = 0x535ed0                        # word cantidad; desde +6 registros de 0x58: +0 nombre, +0x10 textura
 ESCUDO = 0xa0                              # en el registro del jugador: hojas B (fondo), O y C (figuras), 9 letras c/u
 
@@ -96,7 +97,15 @@ def cabecera(d, juego=tanda.JUEGO):
             'mapa': _cad(d[0x61:0x6d]), 'modo': d[0x48], 'ronda': struct.unpack_from('<h', d, RONDA)[0],
             'victoria': textos(0x1bf, juego)[struct.unpack_from('<h', d, offset(VICTORIA))[0]],
             # 0x420760: con límite en turnos el juego lo copia al tope; si no, el límite es en minutos (sin comprobar)
-            'limite': None if lim <= 0 else f'{lim} turnos' if tope == lim else f'{lim} min'}
+            'limite': None if lim <= 0 else f'{lim} turnos' if tope == lim else f'{lim} min',
+            'oculto': bool(d[offset(OPCIONES)] & 0x10)}   # Hidden Map (parches/vista-aliada/build.py, OPT)
+
+
+def explorado(m, k):
+    """Porcentaje de casillas del mapa m (mapa()) exploradas por el jugador k: lo mismo que el minimapa muestra
+    revelado. Es el del momento del guardado (el .SAV no guarda la exploración ronda por ronda)."""
+    n = sum(len(f) for f in m)
+    return 100 * sum(1 for f in m for c in f if c[1] >> k & 1) / n if n else 0
 
 
 def mapa(d):

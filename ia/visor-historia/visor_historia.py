@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.16.0'
+VERSION = '1.0.17.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -38,7 +38,8 @@ CONFIG = os.path.join(CARPETA, 'Visor-Historia.ini')
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', ''), 'assets') if getattr(sys, 'frozen', False) else \
     os.path.join(os.path.dirname(CARPETA), 'monitor-ia', 'assets')
 ICONO = getattr(sys, '_MEIPASS', '') if getattr(sys, 'frozen', False) else CARPETA
-DATOS = (('turnos', 'Turnos jugados:'), ('victoria', 'Victoria:'), ('mapa', 'Mapa:'), ('guardado', 'Último guardado:'))
+DATOS = (('turnos', 'Turnos jugados:'), ('victoria', 'Victoria:'), ('mapa', 'Mapa:'), ('guardado', 'Último guardado:'),
+         ('explorado', '% de mapa explorado:'))   # este, solo con Hidden Map
 
 
 def juego_de(sav):
@@ -195,6 +196,7 @@ class Visor:
                 row=f, column=c, sticky='w', padx=(0 if c == 0 else 16, 4), pady=(8 if f == 1 else 0, 0))
             self.datos[clave] = self.rotulo(dat, 'valor', wraplength=165, justify='left', font=('Segoe UI', 9))
             self.datos[clave].grid(row=f, column=c + 1, sticky='w', pady=(8 if f == 1 else 0, 0))
+            self.datos[clave].rot = self.rotulos[-2] if len(self.rotulos) > 1 else None
         self.aviso = self.rotulo(raiz, 'aviso', font=('Segoe UI', 9), wraplength=620, justify='left')
         # (solo ocupa lugar cuando hay aviso: ver abrir)
 
@@ -506,6 +508,9 @@ class Visor:
             self.aviso.pack(fill='x', padx=10, before=self.raya)
         else:
             self.aviso.pack_forget()
+        for w in (self.datos['explorado'], self.datos['explorado'].rot):   # solo en partidas con mapa oculto
+            if w is not None:
+                (w.grid if c['oculto'] else w.grid_remove)()
         self.fin = leer_fin(ruta)
         self.b_fin.configure(state='normal' if self.fin else 'disabled')
         self.buscar.set(self.buscar.get())   # recalcula las coincidencias
@@ -566,6 +571,8 @@ class Visor:
         cv.create_text(310, TIT_Y, text='History of Events', font=self.f_tit, fill='#20203a')
         self.texto_sombra(REN_X + 175, SUB_Y, f'EVENTS FOR TURN {self.ronda}', self.f_sub, 'n', '#8b6914')
         self.dibujar_minimapa()
+        self.datos['explorado']['text'] = (f"{historia.explorado(self.mapa, self.color):.0f}  "
+                                           f"({self.p.jugador(self.color)}, al guardar)") if self.p.cabecera['oculto'] else ''
         clave = self.buscar.get().strip().lower()
         y = REN_Y
         for j, s in self.rondas.get(self.ronda, []):
@@ -750,7 +757,7 @@ class Visor:
     # ---- exportar ----
     def renglones_export(self):
         c = self.p.cabecera
-        enc = [c['nombre']] + [f"{rot} {self.datos[k]['text']}" for k, rot in DATOS] \
+        enc = [c['nombre']] + [f"{rot} {self.datos[k]['text']}" for k, rot in DATOS if k != 'explorado'] \
             + ([self.aviso['text']] if self.aviso['text'] else [])
         cuerpo = []
         for r in range(1, c['ronda'] + 1):
@@ -783,6 +790,20 @@ class Visor:
         pdf.set_font('ui', '', 10)
         for s in enc[1:]:
             pdf.multi_cell(0, 5, s, new_x='LMARGIN', new_y='NEXT')
+        if self.p.cabecera['oculto']:   # mapa oculto: lo explorado por cada bando, como lo revela el minimapa
+            pdf.ln(3)
+            pdf.set_font('ui', 'B', 10)
+            pdf.cell(60, 6, 'SIDE', border=1)
+            pdf.cell(45, 6, '% de mapa explorado', border=1, align='C', new_x='LMARGIN', new_y='NEXT')
+            pdf.set_font('ui', '', 10)
+            for k in range(8):
+                if self.p.juega(k):
+                    pdf.cell(60, 6, self.p.jugador(k), border=1)
+                    pdf.cell(45, 6, f'{historia.explorado(self.mapa, k):.0f}', border=1, align='C',
+                             new_x='LMARGIN', new_y='NEXT')
+            pdf.set_font('ui', '', 8)
+            pdf.cell(0, 5, 'Al último guardado: el .SAV no registra la exploración turno a turno.',
+                     new_x='LMARGIN', new_y='NEXT')
         for r, rs in cuerpo:
             pdf.ln(3)
             pdf.set_font('ui', 'B', 12)
