@@ -5848,6 +5848,10 @@ aibn_bridge:
 # Economía (PENDIENTE-ia-economia, paso 1): 28 un ejército deserta por falta de oro (ds_evt; x, y = casilla del ejército,
 # n = oro del bando en ese momento). Lo hace 0x415910 al empezar el turno, con 20 % por ejército, si la bandera de
 # quiebra [0x536c1c + p * 0x1f8] quedó puesta (0x42244b: oro - mantenimiento + ingreso < 0).
+# Paso 2: 29 saldo del turno (ec_evt, en 0x422482, justo antes de que 0x4b9390 aplique ingreso - mantenimiento;
+# x = ingreso [0x5643f0 + 2p], y = mantenimiento [0x5643d8 + 2p], n = oro en ese momento). El oro de la tabla turno se
+# lee antes (0x4223ad), así que turno.oro - n = lo que se cobró al empezar el turno antes del saldo (producción), y
+# n + x - y - turno.oro del turno siguiente = lo gastado (o ganado, si da negativo) durante el turno.
 IA_A = place_data('ia_a', cstr_('a'))
 IA_MODE = place_data('ia_mode', bytes(8))
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
@@ -5916,6 +5920,29 @@ ds_evt = place('ds_evt', f'''
     call 0x4b9e20
     add esp, 4
     inc word ptr [0x4f9894]
+    ret
+''')
+
+EC_EVT = 29
+# ec_evt: reemplaza en 0x422482 "mov edx, [esp+0x20]; mov ax, [edx+0x5643f0]; sub ax, [edx+0x5643d8]" (edi = jugador,
+# [esp+0x1c] = p * 0x1f8, [esp+0x20] = 2p) y anota antes el evento 29. Deja edx y ax como el original.
+ec_evt = place('ec_evt', f'''
+    pushad
+    mov edx, dword ptr [esp + 0x44]
+    mov ecx, dword ptr [esp + 0x40]
+    push dword ptr [ecx + 0x536c14]
+    movsx eax, word ptr [edx + 0x5643d8]
+    push eax
+    movsx eax, word ptr [edx + 0x5643f0]
+    push eax
+    push edi
+    push {EC_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    popad
+    mov edx, dword ptr [esp + 0x24]
+    mov ax, word ptr [edx + 0x5643f0]
+    sub ax, word ptr [edx + 0x5643d8]
     ret
 ''')
 
@@ -15586,6 +15613,7 @@ def rel(va, n):  # bytes originales
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
+patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x422482))   # saldo del turno (evento 29)
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
