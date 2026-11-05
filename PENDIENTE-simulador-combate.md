@@ -158,8 +158,20 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   `DefDead`/`AttDead` y `Spell` para los eventos 0xc.. (esos nombres solo están en `DATA\*.RES`, no en el exe). Los
   `ARMY\<arma>00/01.wav` no se usan todavía. Las vidas mostradas son las de la unidad (bits 13-15), sin bonos de pelea.
   Probar en manos del usuario: TAREAS 113.
-- Próximo paso: etapa 5, aspecto del juego (fondos, marcos, botones y fuentes de los PCX/FNT del set; ver cómo lo hace
-  `ia/visor-historia/visor_historia.py` con DLG_BIG/DLG_MED). Pendiente aparte: identificar los eventos 0xc..
+- 5/11/2026: **etapa 5 empezada (ventana de combate) y pedidos del usuario sobre el tablero** (tablero 1.0.2.0).
+  La ventana de combate se dibuja sobre `SETS\Fantasy\DLG_CMBT.PCX` (el cuadro del dragón, 624x464; ×1,5 en «Grande»):
+  atacante en el panel izquierdo y defensor en el derecho (casilleros 2x4 con el fondo de casillero de CMBTPICS),
+  el duelo de las dos que pelean en el panel central, con las animaciones de CMBTPICS (espada con sangre = golpe,
+  calavera que estalla = muerte, relámpago = efecto especial), textos en Arial Bold con sombra, y los resultados en un
+  recuadro claro de borde dorado dentro del panel central. Coordenadas en el encabezado de `combate.py`.
+  Tablero: botón «Invertir atacante y defensor» (armas, cantidades, barco y héroe); check «Ordenar las armas por NOMBRE
+  COMÚN» (se guarda en el .ini; conserva lo elegido); el Factor total en un recuadro claro con borde dorado, Arial Bold
+  con sombra; se quitó «Ciudades del bando» (medido sin efecto en la pelea, ver arriba) y la fila de carpeta/partida:
+  queda el botón «Carpeta del juego…», que toma sola una partida de SAVES (el motor la necesita como memoria base; no
+  cambia la pelea). `python simcombate\prueba_tablero.py` y `prueba_combate.py` → TODO OK. Capturas revisadas.
+  Probar en manos del usuario: TAREAS 114.
+- Próximo paso: seguir la etapa 5 en el tablero (fondos y marcos del juego en vez de los controles de Windows: p. ej.
+  DLG_BIG/ARMYBG, BUT_MED para los botones). Pendiente aparte: identificar los eventos 0xc..
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:

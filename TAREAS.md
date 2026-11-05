@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 113).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 114).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 112** y **tarea 113** (simulador de combate: el tablero y la ventana de combate).
+0. **Tarea 114** (simulador de combate: aspecto del juego, Invertir, orden por nombre, Factor).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -17,7 +17,18 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
+- [ ] **114.** Simulador de combate: probar los cambios del 5/11 (5/11/2026)
+1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
+   **VERSIÓN 1.0.2.0**. Ya no está la fila de carpeta y partida ni «Ciudades del bando».
+2. Armá dos pilas y fijate el **FACTOR TOTAL** de cada lado, en el recuadro claro de borde dorado.
+3. Marcá y desmarcá «Ordenar las armas por NOMBRE COMÚN»: las listas cambian de orden y lo elegido queda.
+4. Apretá «Invertir atacante y defensor»: los dos lados se cambian (armas, cantidades, barco y héroe).
+5. **INICIAR COMBATE**: la batalla se ve en el cuadro del dragón del juego, atacante a la izquierda, defensor a la
+   derecha y el duelo en el medio, con la espada, la calavera y el relámpago del juego. Probá también «Grande».
+6. Anotá qué más querés que se parezca al juego (por ejemplo, el tablero con fondos y botones del juego).
+Resultado:
+
+- [x] **113.** Simulador de combate: probar la ventana de combate (5/11/2026)
 1. En `F:\source\repos\actualizador-warlords\simcombate` escribí `python tablero.py`; el título dice
    **VERSIÓN 1.0.1.0**.
 2. Armá una batalla y apretá **INICIAR COMBATE**: se abre la ventana de combate con las imágenes del juego,
@@ -45,7 +56,7 @@ El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare.
    (AmeWyrm) **49,7**; **Wyverns** **46,2**.
 Resultado:
 
-- [ ] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
+- [x] **109.** Visor de historia: ver el «% de mapa explorado» (4/11/2026)
 1. Abrí el Visor de historia → configuración → **Actualizar versión**: tiene que quedar en **1.0.18.0**.
 2. Abrí una partida con mapa oculto (por ejemplo `ABN_000_29`): arriba aparece «Explorado: xx %» con el
    bando elegido en el minimapa; al tocar otro escudo, cambia el número.

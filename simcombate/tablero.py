@@ -1,5 +1,5 @@
 # Tablero del simulador de combate (etapa 3 de PENDIENTE-simulador-combate.md): la ventana donde se arman las dos pilas.
-# Dos paneles gemelos (atacante y defensor) con 8 casilleros numerados = fight order (arma y cantidad), barco, ciudades
+# Dos paneles gemelos (atacante y defensor) con 8 casilleros numerados = fight order (arma y cantidad), barco
 # del bando y héroe (subpanel: clase, nivel, elecciones, ítems y hechizos); subpanel de terreno y subpanel visual
 # (se guarda para la ventana de combate, etapa 4). INICIAR COMBATE arma el escenario (escenario.py) y muestra el % de
 # victorias y abre la ventana de combate (combate.py) con una batalla de muestra. Uso: python tablero.py
@@ -12,7 +12,7 @@ from escenario import Simulador, Error, MAX_PILA   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate                 # noqa: E402
 
-VERSION = '1.0.1.0'
+VERSION = '1.0.2.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -31,8 +31,24 @@ def elecciones(clase):
         out.append((n, costo))
     return out, list(struct.unpack_from('<9h', r, 0x3e8))
 
+class RecuadroFactor(tk.Frame):
+    """El Factor total de la pila: recuadro de fondo claro con borde dorado (como el reborde del Visor de historia),
+    Arial Bold con sombra."""
+    def __init__(self, padre):
+        super().__init__(padre, bg='#c8a040', padx=3, pady=3)
+        negro = tk.Frame(self, bg='#000000', padx=1, pady=1); negro.pack(fill='x')
+        self.cv = tk.Canvas(negro, height=50, bg='#f4ecd0', highlightthickness=0); self.cv.pack(fill='x')
+        self.cv.bind('<Configure>', lambda e: self.dibujar()); self.t = ('', '')
+    def poner(self, grande, chico):
+        self.t = (grande, chico); self.dibujar()
+    def dibujar(self):
+        cv = self.cv; cv.delete('all'); w = cv.winfo_width() // 2
+        for dx, col in ((2, '#b0a080'), (0, '#5a3a10')):
+            cv.create_text(w + dx, 18 + dx, text=self.t[0], font=('Arial', 15, 'bold'), fill=col)
+        cv.create_text(w, 40, text=self.t[1], font=('Arial', 9, 'bold'), fill='#3a2a10')
+
 class Panel(ttk.LabelFrame):
-    """Un lado: 8 casilleros, barco, ciudades, héroe y coeficiente."""
+    """Un lado: 8 casilleros, barco, héroe y Factor total."""
     def __init__(self, app, padre, titulo):
         super().__init__(padre, text=titulo, padding=6)
         self.app = app; self.heroe = None
@@ -50,21 +66,37 @@ class Panel(ttk.LabelFrame):
         f = ttk.Frame(self); f.grid(row=9, column=0, columnspan=3, sticky='we', pady=(6, 0))
         ttk.Label(f, text='Barco').grid(row=0, column=0, sticky='w')
         self.barco = ttk.Combobox(f, width=28, state='readonly'); self.barco.grid(row=0, column=1, sticky='w')
-        ttk.Label(f, text='Ciudades del bando').grid(row=1, column=0, sticky='w')
-        self.ciudades = ttk.Spinbox(f, from_=0, to=100, width=5); self.ciudades.grid(row=1, column=1, sticky='w')
-        ttk.Label(f, text='(vacío = las de la partida)').grid(row=1, column=1, sticky='e')
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w')
         ttk.Button(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
-        self.coef = ttk.Label(self, text='', font=('Segoe UI', 9, 'bold')); self.coef.grid(row=10, column=0, columnspan=3, sticky='w', pady=(6, 0))
+        self.coef = RecuadroFactor(self); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
 
     def cargar_listas(self, sim):
-        self.nombres = {f'{a.archivo} — {a.nombre}': k for k, a in sorted(sim.armas.items(), key=lambda x: x[0])}
-        vals = [''] + list(self.nombres)
-        for cb in self.armas: cb['values'] = vals
-        self.nbarcos = {f'{a.archivo} — {a.nombre}': k for k, a in sorted(sim.barcos.items())}
+        """Llena los desplegables, ordenados por nombre común o por archivo según el tablero; conserva lo elegido."""
+        antes = self.estado() if hasattr(self, 'nombres') else None
+        comun = self.app.por_nombre.get()
+        def lista(tabla):
+            if comun: it = sorted(tabla.items(), key=lambda x: (x[1].nombre.lower(), x[0]))
+            else: it = sorted(tabla.items())
+            return {(f'{a.nombre} — {a.archivo}' if comun else f'{a.archivo} — {a.nombre}'): k for k, a in it}
+        self.nombres = lista(sim.armas); self.nbarcos = lista(sim.barcos)
+        self.rotulo = {k: t for t, k in self.nombres.items()}; self.rotulo_b = {k: t for t, k in self.nbarcos.items()}
+        for cb in self.armas: cb['values'] = [''] + list(self.nombres)
         self.barco['values'] = [''] + list(self.nbarcos)
+        if antes: self.poner_estado(antes)
+        self.recalcular()
+
+    def estado(self):
+        """Todo lo ingresado en este lado (para Invertir)."""
+        return dict(lado=self.lado(), con_heroe=self.con_heroe.get(), heroe=self.heroe)
+
+    def poner_estado(self, e):
+        for (a, n), cb, sp in zip(e['lado']['tropas'], self.armas, self.cant):
+            cb.set(self.rotulo.get(a, '') if a else ''); sp.set(n)
+        b = e['lado']['barco']; self.barco.set(self.rotulo_b.get(b, '') if b else '')
+        self.heroe = e['heroe']; self.con_heroe.set(e['con_heroe'])
+        if not self.heroe: self.txt_heroe['text'] = '(sin armar)'
         self.recalcular()
 
     def lado(self):
@@ -73,8 +105,7 @@ class Panel(ttk.LabelFrame):
             try: n = int(sp.get())
             except ValueError: n = 0
             tropas.append((self.nombres.get(cb.get()), n))
-        c = self.ciudades.get().strip()
-        return dict(tropas=tropas, barco=self.nbarcos.get(self.barco.get()), ciudades=int(c) if c.isdigit() else None,
+        return dict(tropas=tropas, barco=self.nbarcos.get(self.barco.get()),
                     heroe=self.heroe if self.con_heroe.get() and self.heroe else None)
 
     def recalcular(self):
@@ -84,10 +115,9 @@ class Panel(ttk.LabelFrame):
         for a, c in d['tropas']:
             if a and c > 0: tot += sim.armas[a].factor() * c; n += c
         h = d['heroe']
-        txt = f'{n} unidades' + (' + héroe' if h else '')
-        if n: txt += f'  ·  Factor medio {tot / n:.1f}  ·  total {tot:.0f}'
-        if n + (1 if h else 0) > MAX_PILA: txt += f'  ·  ¡MÁS DE {MAX_PILA}!'
-        self.coef['text'] = txt
+        det = (f'{n} unidad' if n == 1 else f'{n} unidades') + (' + héroe' if h else '') + (f'  ·  Factor medio {tot / n:.1f}' if n else '')
+        if n + (1 if h else 0) > MAX_PILA: det += f'  ·  ¡MÁS DE {MAX_PILA}!'
+        self.coef.poner(f'FACTOR TOTAL {tot:.0f}' if n else 'FACTOR TOTAL —', det)
         if self.heroe:
             cl = sim.clases[self.heroe['clase']]; el, _ = elecciones(cl)
             suma = lambda p: sum(int(el[i][0].split('+')[1]) for i in self.heroe['elecciones'] if el[i][0].startswith(p))
@@ -179,15 +209,13 @@ class App(tk.Tk):
         top = ttk.Frame(self, padding=6); top.pack(fill='x')
         ttk.Label(top, text=TITULO, font=('Segoe UI', 12, 'bold')).pack(side='left')
         self.estado = ttk.Label(top, text=''); self.estado.pack(side='right')
-        fb = ttk.Frame(self, padding=(6, 0)); fb.pack(fill='x')
-        ttk.Label(fb, text='Juego').grid(row=0, column=0, sticky='w')
-        self.juego = tk.StringVar(value=c.get('juego', JUEGO0)); ttk.Entry(fb, textvariable=self.juego, width=50).grid(row=0, column=1)
-        ttk.Button(fb, text='…', width=3, command=self.elegir_juego).grid(row=0, column=2)
-        ttk.Label(fb, text='Partida base').grid(row=1, column=0, sticky='w')
+        self.juego = tk.StringVar(value=c.get('juego', JUEGO0))
         self.sav = tk.StringVar(value=c.get('partida', os.path.join(JUEGO0, 'SAVES', 'Tanda_Kor.SAV')))
-        ttk.Entry(fb, textvariable=self.sav, width=50).grid(row=1, column=1)
-        ttk.Button(fb, text='…', width=3, command=self.elegir_sav).grid(row=1, column=2)
-        ttk.Button(fb, text='Cargar', command=self.cargar).grid(row=0, column=3, rowspan=2, padx=6)
+        fb = ttk.Frame(self, padding=(6, 0)); fb.pack(fill='x')
+        self.por_nombre = tk.BooleanVar(value=c.getboolean('por_nombre', False))
+        ttk.Checkbutton(fb, text='Ordenar las armas por NOMBRE COMÚN (si no, por nombre de archivo)', variable=self.por_nombre,
+                        command=self.reordenar).pack(side='left')
+        ttk.Button(fb, text='Carpeta del juego…', command=self.configurar).pack(side='right')
         mid = ttk.Frame(self, padding=6); mid.pack(fill='both')
         self.pa = Panel(self, mid, 'ATACANTE'); self.pa.grid(row=0, column=0, sticky='n', padx=4)
         self.pd = Panel(self, mid, 'DEFENSOR'); self.pd.grid(row=0, column=1, sticky='n', padx=4)
@@ -198,6 +226,7 @@ class App(tk.Tk):
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
         self.n = ttk.Spinbox(fila, from_=10, to=100000, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
         self.boton = ttk.Button(fila, text='INICIAR COMBATE', command=self.iniciar); self.boton.pack(side='left', padx=12)
+        ttk.Button(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
         self.salida = tk.Text(bot, height=12, width=120, wrap='word', state='disabled'); self.salida.pack(fill='both', expand=True, pady=(6, 0))
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
         self.after(100, self.cargar)
@@ -230,12 +259,28 @@ class App(tk.Tk):
         ttk.Radiobutton(f, text='Sobrevivientes y muertos', value='todos', variable=self.resultados).grid(row=4, column=0, columnspan=2, sticky='w')
         ttk.Radiobutton(f, text='Solo sobrevivientes', value='vivos', variable=self.resultados).grid(row=5, column=0, columnspan=2, sticky='w')
 
-    def elegir_juego(self):
-        d = filedialog.askdirectory(initialdir=self.juego.get())
-        if d: self.juego.set(os.path.normpath(d))
-    def elegir_sav(self):
-        f = filedialog.askopenfilename(initialdir=os.path.dirname(self.sav.get()), filetypes=[('Partida', '*.SAV')])
-        if f: self.sav.set(os.path.normpath(f))
+    def configurar(self):
+        """Carpeta del juego (de ahí salen armas, héroes, ítems, hechizos, imágenes y sonidos). El motor además necesita
+        una partida (.SAV) de esa carpeta como base de la memoria del juego emulado; se toma sola y no cambia la pelea
+        (las armas se cargan del ARMY, el terreno y la ciudad los pone el tablero)."""
+        d = filedialog.askdirectory(initialdir=self.juego.get(), title='Carpeta del juego (la que tiene DarklordAV.exe)')
+        if not d: return
+        d = os.path.normpath(d); self.juego.set(d)
+        saves = os.path.join(d, 'SAVES'); sav = os.path.join(saves, os.path.basename(self.sav.get()))
+        if not os.path.exists(sav):
+            hay = sorted(f for f in os.listdir(saves) if f.lower().endswith('.sav')) if os.path.isdir(saves) else []
+            if not hay: messagebox.showerror(TITULO, f'No hay partidas (.SAV) en {saves}: el motor necesita una.'); return
+            sav = os.path.join(saves, hay[0])
+        self.sav.set(sav); self.cargar()
+
+    def reordenar(self):
+        if self.sim:
+            for p in (self.pa, self.pd): p.cargar_listas(self.sim)
+
+    def invertir(self):
+        if not self.sim: return
+        a, d = self.pa.estado(), self.pd.estado()
+        self.pa.poner_estado(d); self.pd.poner_estado(a)
 
     def cargar(self):
         self.estado['text'] = 'Cargando el juego…'; self.boton.state(['disabled'])
@@ -295,7 +340,7 @@ class App(tk.Tk):
 
     def cerrar(self):
         c = self.cfg['tablero']
-        c.update(juego=self.juego.get(), partida=self.sav.get(), peleas=self.n.get(), velocidad=str(self.velocidad.get()),
+        c.update(juego=self.juego.get(), partida=self.sav.get(), por_nombre=str(self.por_nombre.get()), peleas=self.n.get(), velocidad=str(self.velocidad.get()),
                  efectos=str(self.efectos.get()), sonido=str(self.sonido.get()), tamano=self.tamano.get(),
                  resultados=self.resultados.get())
         try:
