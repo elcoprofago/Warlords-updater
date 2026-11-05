@@ -37,6 +37,7 @@ ITEM0, IREC, ITEMS_N, ITEMS_MAX = 0x55cb74, 0xd8, 0x55cb72, 40
 HECH0, HECREC, HECH_MAX = 0x55f030, 0x56, 40
 INMEDIATOS = {13, 16, 22, 25, 29, 35, 36, 58, 59, 60}
 CLASE0, CLREC = 0x5451d0, 1380
+TERR0 = 0x535ef8
 # [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
 # de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
 COMBATE = {'FinalBonusLimit': (0x56951a, 2), 'MoraleFearLimit': (0x56951e, 2), 'LeadershipChaosLimit': (0x569522, 2),
@@ -83,6 +84,7 @@ class Motor:
         self.heroes0 = bytes(mu.mem_read(HEROE0, HEROES * HREC))
         self.items0 = bytes(mu.mem_read(ITEMS_N, 2 + ITEMS_MAX * IREC))
         self.hech0 = bytes(mu.mem_read(HECH0, HECH_MAX * HECREC))
+        self.mapa0 = bytes(mu.mem_read(0x503e58, 0x32000))
         self.fallo = None
         def malo(m, acc, addr, sz, val, u):
             self.fallo = (acc, addr); return False
@@ -134,6 +136,44 @@ class Motor:
         return self.mu.reg_read(UC_X86_REG_EAX)
 
     def casilla(self, x, y): return 0x503e58 + (((y * 10) << self.sh) + x * 10)
+
+    # --- terreno ---
+    # Casilla (10 bytes): +0 bits 0-4 terreno (tabla TERR0 + t*0x58: +0 nombre, +0x14 clase, 1 = agua); +3 bits 0-2
+    # estructura (1 camino o puente si es agua, 3 ciudad), bit 0x40 capa de bosque (+6 bits 0-2 elige la capa en
+    # TERR0 + (25 + c)*0x58, la 0 es «woods»). El bono de combate del arma (0x467b33) vale si su nombre es OPEN o FIELD
+    # (ni ciudad, ni agua, ni bosque), CITY (estructura 3), WOODS o FOREST (capa de bosque: el terreno «forest» no
+    # cuenta), o el nombre del terreno o de la capa de la casilla.
+    def terrenos(self):
+        """{índice: nombre} de los terrenos de la partida (0..24)."""
+        r = {}
+        for t in range(25):
+            n = self.cad(TERR0 + t * 0x58)
+            if n: r[t] = n.decode('latin-1')
+        return r
+
+    def terreno(self, x, y):
+        b = bytes(self.mu.mem_read(self.casilla(x, y), 10)); t = b[0] & 31
+        return dict(terreno=t, nombre=self.cad(TERR0 + t * 0x58).decode('latin-1'),
+                    agua=self.w(TERR0 + t * 0x58 + 0x14) == 1, estructura=b[3] & 7, bosque=bool(b[3] & 0x40),
+                    capa=b[6] & 7)
+
+    def embarcar(self, ids, si=True):
+        """Pone (o saca) a las unidades en el barco del bando (ranura 15): bit 3 de +0x12, el que pone el juego al
+        entrar al agua (0x466949). Embarcada, la unidad pelea con min(su fuerza, la del barco) y min(sus vidas, las
+        del barco); los bonos y poderes del barco no cuentan (medido en prueba_barcos.py)."""
+        for u in ids:
+            a = UNIT0 + u * UREC + 0x12; v = struct.unpack('<H', self.mu.mem_read(a, 2))[0]
+            self.mu.mem_write(a, struct.pack('<H', (v | 8) if si else (v & ~8)))
+
+    def poner_terreno(self, x, y, terreno=None, estructura=None, bosque=None, capa=0):
+        """Cambia la casilla: terreno (índice de terrenos()), estructura (0 nada, 1 camino/puente, 3 ciudad) y bosque."""
+        a = self.casilla(x, y); b = bytearray(self.mu.mem_read(a, 10))
+        if terreno is not None: b[0] = (b[0] & ~31) | terreno
+        if estructura is not None: b[3] = (b[3] & ~7) | estructura
+        if bosque is not None:
+            b[3] = (b[3] | 0x40) if bosque else (b[3] & ~0x40)
+            if bosque: b[6] = (b[6] & ~7) | capa
+        self.mu.mem_write(a, bytes(b))
     def unidades(self):
         r = []
         for u in range(1, self.w(UNITS_N)):
@@ -176,7 +216,7 @@ class Motor:
     def limpiar(self):
         self.mu.mem_write(UNIT0, self.inicial); self.mu.mem_write(UNITS_N, struct.pack('<h', self.n0))
         self.mu.mem_write(HEROE0, self.heroes0); self.mu.mem_write(ITEMS_N, self.items0)
-        self.mu.mem_write(HECH0, self.hech0)
+        self.mu.mem_write(HECH0, self.hech0); self.mu.mem_write(0x503e58, self.mapa0)
 
     def lanzar(self, u, spl):
         """El héroe u lanza el hechizo (.SPL, datos.Hechizo.registro) con la rutina del juego 0x48f300 (sin cobrar maná).

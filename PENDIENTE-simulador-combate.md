@@ -65,7 +65,7 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
 - Unidades: tabla en 0x54fe50 (cantidad) y 0x54fe52 + u*28 (u >= 1): +0 x, +2 y, +0xb bit 2 especial (tabla
   0x568448), +0xc palabra = tipo (bits 0-4, 16 = héroe), dueño (5-8), **fuerza (9-12), vidas (13-15)** — la unidad
   lleva su fuerza y vidas, no las lee del tipo; +0x10 bits 8-13 índice de héroe (0x556bb2, registros de 0xb8);
-  +0x11 bit 0x40 viva; +0x12 banderas (bit 3 veterano, 0..2, 11, 12, 13, 15 van a la ficha).
+  +0x11 bit 0x40 viva; +0x12 banderas (bit 3 = embarcada, lo pone el juego al entrar al agua en 0x466949; 0..2, 11, 12, 13, 15 van a la ficha).
 - Tipos: 0x53c410 + (bando*16 + t)*0xfc: +0x90 nombre corto, +0x9a fuerza, +0x9b movimiento, +0x9c vidas,
   +0xa0 subtipo, +0xdf bono, +0xe6/+0xe8 habilidad y valor.
 - Atacantes: grupo elegido del jugador p en 0x56ea90 + p*0x4f0 (+0 primera unidad, +4 hasta 10 unidades, +0x18
@@ -114,7 +114,19 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   tocan a gnolls; control: Focus' lanzado por un héroe de otra pila da el mismo 88,66 %.
   Sin hacer: los efectos inmediatos (invocar 22, volar 13, etc.) no se aplican en el motor (tocan mapa y pantalla);
   `lanzar` los devuelve aparte: en el tablero, una invocación se representa poniendo las unidades invocadas.
-- Próximo paso: etapa 2, terreno (después barcos).
+- 5/11/2026: **etapa 2, terreno hecho.** `Motor.poner_terreno(x, y, terreno, estructura, bosque)`, `Motor.terreno`,
+  `Motor.terrenos` (`limpiar` ahora también restaura el mapa). `python simcombate\prueba_terreno.py` → TODO OK (~4 min):
+  cada bono de combate sube el % solo en su terreno (AmeWyrm hills 77,49 → 89,71 %, bluemage ice 3,25 → 33,42 %,
+  bladem woods 44,28 → 58,50 %); el juego mira solo la casilla del defensor (cambiar la del atacante no mueve nada).
+  Hallazgo: **el terreno «forest» no cuenta para los bonos WOODS/FOREST**: solo la capa de bosque (+3 bit 0x40).
+  OPEN/FIELD vale en todo lo que no sea ciudad, agua ni bosque; CITY en estructura 3; si no, el nombre del terreno.
+- 5/11/2026: **etapa 2, barcos hechos.** `Motor.embarcar(unidades)` (bit 3 de +0x12) + el barco en la ranura 15 del
+  bando (`cargar_arma(bando, 15, ...)`). `python simcombate\prueba_barcos.py` → TODO OK: con los 14 barcos, de los dos
+  lados, **la unidad embarcada pelea con min(su fuerza, la del barco) y min(sus vidas, las del barco)**, exactamente
+  igual que en tierra con esos valores; el barco nunca la mejora y sus bonos (water, City, Field) y poderes no cuentan.
+  Controles: el barco en la ranura sin embarcar, y en un puente, no cambian nada.
+- Próximo paso: etapa 3, el tablero. (Día/noche: el modo del parche aún no se midió en el motor; ver si la pelea
+  lo lee al armar el subpanel de terreno.)
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
