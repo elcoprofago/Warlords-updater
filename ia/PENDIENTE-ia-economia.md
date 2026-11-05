@@ -32,6 +32,13 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    que todavía no se anota. Evento 28 (ds_evt, gancho en 0x415995): x, y del ejército, n = oro en ese momento.
    Prueba emulada: `parches\vista-aliada\prueba_desbande.py` (3 guardadas, 8 colores: 438 deserciones anotadas
    = conteo propio; controles: azar 21 → ninguna; sin ia_on → desertan sin anotarse).
+   **Medido (5/11/2026, tandas 133 y 134, 1.0.129.0, 17 partidas completas, 136 bandos-partida):** 52
+   deserciones en 7 episodios (5 %): todas con oro 0, todas en un bando que ya se derrumbaba (perdía ciudades ese
+   turno o el anterior; p. ej. tanda 134 partida 6, color 3: 3→1 ciudades y 22→11 ejércitos en 2 turnos). 5 de 7
+   episodios en la IA nueva, 2 en la original; 6 de 7 en los turnos 24-30. Conclusión: en 30 turnos el desbande es
+   raro y es consecuencia de perder ciudades (se cae el ingreso), no de gastar de más con la economía sana. Una
+   reserva no lo evitaría; lo que pesa es no perder ciudades. Queda por ver en partidas más largas (paso 3).
+   Aparte: 3 partidas de la 134 quedaron «colgadas» en el turno 0 (la 133, mismo exe, ninguna): sin causa vista.
    Pendiente sin comprobar: qué marca el bit 0xf0 de +0x10 (¿ejércitos con mantenimiento?).
 2. **Medir el gasto.** Por turno y color: ingreso, mantenimiento, producción, héroes comprados (con y sin
    descuento), y lo que sobra. Ver si la tabla turno alcanza o hace falta otro evento.
@@ -44,5 +51,4 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: contar los eventos 28 de la tanda de TAREAS 108 (cerrar el paso 1) y seguir con el 2. Frase para
-retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 1: la tanda de la 108 terminó".
+Próximo paso: paso 2 (medir el gasto). Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 2".

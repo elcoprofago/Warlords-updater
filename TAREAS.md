@@ -24,12 +24,14 @@ Sorteo están acá (tarea 18).
 4. **Exportar PDF…** de la partida oculta: debajo de los datos, una tabla con cada bando y su porcentaje.
 Resultado:
 
-- [ ] **108.** IA: medir cuántas veces se le desbandan tropas por falta de oro (4/11/2026)
+- [x] **108.** IA: medir cuántas veces se le desbandan tropas por falta de oro (4/11/2026)
 La 1.0.129.0 anota, solo en las tandas, cada ejército que deserta porque el bando se quedó sin oro.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.129.0** o posterior.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
 3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
+Resultado: (Claude, 5/11/2026: tandas 133 y 134, 52 tropas desertaron en 7 casos, siempre con oro 0 y en un
+bando que ya estaba perdiendo sus ciudades. Es raro y viene de perder ciudades, no de gastar de más. 3 partidas de
+la 134 se colgaron al empezar; la 133 no tuvo ninguna.)
 
 - [x] **106.** Créditos del juego: revisar el listado y, cuando quiera, actualizar el estado (4/11/2026)
   - El listado de todas las personas, empresas y correos de los créditos está en `creditos\LISTADO.md`.
