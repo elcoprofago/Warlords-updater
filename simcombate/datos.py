@@ -62,3 +62,17 @@ def armas(carpeta):
     """Todas las armas del ARMY, en orden alfabético de archivo (sin distinguir mayúsculas)."""
     fs = sorted(glob.glob(os.path.join(carpeta, '*.ARM')), key=lambda f: os.path.basename(f).lower())
     return [Arma(f) for f in fs]
+
+class Clase:
+    """Clase de héroe (.HER, 1380 bytes, la copia que el juego pone en memoria; ver motor.CLASE0)."""
+    def __init__(self, ruta):
+        b = open(ruta, 'rb').read()
+        if len(b) < 1380: raise ValueError(f'{ruta}: {len(b)} bytes, se esperaban 1380')   # KALCHEM.HER trae 2 bytes de más
+        b = b[:1380]; self.ruta, self.registro, self.nombre = ruta, b, _cad(b[0:16])
+        self.fuerza, self.mov, self.vidas, self.vista = b[0xdc:0xe0]
+    def __repr__(self): return f'<Clase {os.path.basename(self.ruta)} {self.nombre!r} F{self.fuerza} V{self.vidas} M{self.mov}>'
+
+def clases(carpeta):
+    """Todas las clases del HERO, en orden alfabético de archivo."""
+    fs = sorted(glob.glob(os.path.join(carpeta, '*.her')), key=lambda f: os.path.basename(f).lower())
+    return [Clase(f) for f in fs]

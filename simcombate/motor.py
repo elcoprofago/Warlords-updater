@@ -14,6 +14,15 @@ FICHA, FSZ = 0x569a80, 0x5cc
 RES, RSZ = 0x56c8e0, 0x40c
 SEED, SEEDT = 0x500bf4, 0x500bf8                    # estado del azar 0x4deb20; SEEDT != 0 lo siembra con time()
 CIUDADES_N, CIUDAD0, CREC = 0x537e2a, 0x537e2c, 0xde   # ciudad c: +0xa4 viva (> 0), +0xa5 dueño
+# Héroes: la unidad es tipo 16 y +0x10 bits 8-13 elige su registro en HEROE0 + h*HREC: +0 bits 6-7 clase (0..3 del
+# bando), bit 5 sexo, bit 4 existe, bits 0-3 nivel - 1; +2 nombre; +0x12 experiencia; +0x14 10 casilleros de 16 bytes
+# (palabra habilidad, palabra valor; 20 = hechizo, con su nombre en +6); +0xb4 puntos sin gastar.
+# Clases: CLASE0 + (bando*4 + c)*CLREC es copia exacta del .HER (comprobado con las 32 de Tanda_Kor.SAV): +0 nombre,
+# +0xdc fuerza, mov, vidas, vista; +0x3d0 10 umbrales de experiencia; +0x3e8 puntos que da cada subida de nivel;
+# +0x3fc 10 elecciones de 16 bytes (habilidad, valor) y +0x49c su costo en puntos. 0x48efa0(unidad, elección) es la
+# rutina del juego que aplica una elección (fuerza, vidas y movimiento van a la unidad; el resto, a un casillero).
+HEROE0, HREC, HEROES = 0x556bb2, 0xb8, 64
+CLASE0, CLREC = 0x5451d0, 1380
 # [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
 # de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
 COMBATE = {'FinalBonusLimit': (0x56951a, 2), 'MoraleFearLimit': (0x56951e, 2), 'LeadershipChaosLimit': (0x569522, 2),
@@ -57,6 +66,7 @@ class Motor:
         self.sh = mu.mem_read(0x503e06, 1)[0]
         self.n0 = self.w(UNITS_N)
         self.inicial = bytes(mu.mem_read(UNIT0, (self.n0 + 64) * UREC))
+        self.heroes0 = bytes(mu.mem_read(HEROE0, HEROES * HREC))
         self.fallo = None
         def malo(m, acc, addr, sz, val, u):
             self.fallo = (acc, addr); return False
@@ -149,6 +159,73 @@ class Motor:
 
     def limpiar(self):
         self.mu.mem_write(UNIT0, self.inicial); self.mu.mem_write(UNITS_N, struct.pack('<h', self.n0))
+        self.mu.mem_write(HEROE0, self.heroes0)
+
+    # --- héroes ---
+    def cargar_clase(self, dueno, ranura, her):
+        """Pone un .HER (sus 1380 bytes) en la ranura de clase 0..3 del bando."""
+        if len(her) < CLREC: raise ValueError(f'.HER de {len(her)} bytes, se esperaban {CLREC}')
+        self.mu.mem_write(CLASE0 + (dueno * 4 + ranura) * CLREC, bytes(her[:CLREC]))
+
+    def clase(self, dueno, ranura):
+        a = CLASE0 + (dueno * 4 + ranura) * CLREC; r = bytes(self.mu.mem_read(a, CLREC))
+        el = []
+        for i in range(10):
+            hab, val = struct.unpack_from('<hh', r, 0x3fc + 16 * i)
+            el.append(dict(hab=hab, valor=val, costo=struct.unpack_from('<h', r, 0x49c + 2 * i)[0],
+                           hechizo=r[0x3fc + 16 * i + 6:0x3fc + 16 * i + 16].split(bytes(1))[0].decode('latin-1')
+                           if hab == 20 else '', dir=a + 0x3fc + 16 * i))
+        return dict(nombre=r[:16].split(bytes(1))[0].decode('latin-1'), fuerza=r[0xdc], mov=r[0xdd], vidas=r[0xde],
+                    vista=r[0xdf], umbrales=struct.unpack_from('<10h', r, 0x3d0),
+                    puntos=struct.unpack_from('<9h', r, 0x3e8), elecciones=el)
+
+    def puntos_nivel(self, dueno, ranura, nivel):
+        """Puntos que el héroe juntó al llegar a nivel (1..10): suma de lo que da cada subida (0x416c..)."""
+        return sum(self.clase(dueno, ranura)['puntos'][:nivel - 1])
+
+    def poner_heroe(self, dueno, ranura, nivel, elecciones, x, y, pila, sexo=0, nombre='Heroe'):
+        """Agrega un héroe de la clase ranura (0..3 del bando), nivel 1..10, con las elecciones (índices 0..9 de la
+        clase, repetibles) aplicadas por la rutina del juego. Los puntos gastados no pueden pasar de los del nivel.
+        Devuelve el índice de la unidad."""
+        c = self.clase(dueno, ranura)
+        if not 1 <= nivel <= 10: raise ValueError('nivel 1..10')
+        gasto, tiene = sum(c['elecciones'][i]['costo'] for i in elecciones), self.puntos_nivel(dueno, ranura, nivel)
+        if gasto > tiene: raise ValueError(f'las elecciones cuestan {gasto} puntos y el nivel {nivel} da {tiene}')
+        # 0x48efa0 suma sin tope y la unidad guarda la fuerza en 4 bits y las vidas en 3: 6 + 3*5 = 21 quedaría en 5.
+        f = c['fuerza'] + sum(c['elecciones'][i]['valor'] for i in elecciones if c['elecciones'][i]['hab'] == 8)
+        v = c['vidas'] + sum(c['elecciones'][i]['valor'] for i in elecciones if c['elecciones'][i]['hab'] == 14)
+        if f > 15 or v > 7: raise ValueError(f'fuerza {f} (máximo 15) o vidas {v} (máximo 7): no entran en la unidad')
+        usados = {(struct.unpack_from('<H', d['raw'], 0x10)[0] >> 8) & 63 for d in self.unidades()
+                  if d['tipo'] == 16 and d['activa']}
+        h = next(i for i in range(HEROES) if i not in usados)
+        rec = bytearray(HREC)
+        rec[0] = ranura << 6 | (sexo & 1) << 5 | 0x10 | (nivel - 1)
+        n = nombre.encode('latin-1')[:15]; rec[2:2 + len(n)] = n
+        struct.pack_into('<h', rec, 0x12, c['umbrales'][nivel - 1])
+        struct.pack_into('<hh', rec, 0x14, 1, 1)            # Leadership 1, como lo crea el juego (0x43afd7)
+        struct.pack_into('<h', rec, 0xb4, tiene - gasto)
+        self.mu.mem_write(HEROE0 + h * HREC, bytes(rec))
+        r = bytearray(self.plantilla())
+        struct.pack_into('<hh', r, 0, x, y)
+        struct.pack_into('<H', r, 0xc, 16 | dueno << 5 | (c['fuerza'] & 15) << 9 | (c['vidas'] & 7) << 13)
+        struct.pack_into('<H', r, 0xe, (c['mov'] & 0x7f) << 8 | (c['vista'] & 7) << 1)
+        struct.pack_into('<H', r, 0x10, (struct.unpack_from('<H', r, 0x10)[0] & 0xc080) | h << 8 | (c['mov'] & 0x7f))
+        struct.pack_into('<H', r, 0x12, 0)
+        struct.pack_into('<H', r, 8, pila << 8 & 0xffff); struct.pack_into('<H', r, 0x14, pila)
+        u = self.w(UNITS_N)
+        self.mu.mem_write(UNIT0 + u * UREC, bytes(r)); self.mu.mem_write(UNITS_N, struct.pack('<h', u + 1))
+        for i in elecciones: self.call(0x48efa0, [u, c['elecciones'][i]['dir']])
+        return u
+
+    def heroe(self, u):
+        """Lo que el juego ve del héroe u: fuerza, vidas, movimiento (+0x10, donde lo suma 0x48efa0), vista, nivel, clase y casilleros (habilidad, valor)."""
+        d = bytes(self.mu.mem_read(UNIT0 + u * UREC, UREC)); w = struct.unpack_from('<H', d, 0xc)[0]
+        h = (struct.unpack_from('<H', d, 0x10)[0] >> 8) & 63; rec = bytes(self.mu.mem_read(HEROE0 + h * HREC, HREC))
+        cas = [struct.unpack_from('<hh', rec, 0x14 + 16 * i) for i in range(10)]
+        return dict(h=h, fuerza=(w >> 9) & 15, vidas=w >> 13, mov=struct.unpack_from('<H', d, 0x10)[0] & 0x7f,
+                    vista=(struct.unpack_from('<H', d, 0xe)[0] >> 1) & 7,
+                    nivel=(rec[0] & 15) + 1, clase=rec[0] >> 6, casilleros=[c for c in cas if c[0]],
+                    puntos=struct.unpack_from('<h', rec, 0xb4)[0])
 
     def vaciar(self, *casillas):
         for d in self.unidades():

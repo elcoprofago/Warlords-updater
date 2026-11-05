@@ -92,7 +92,14 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   `Motor.cargar_arma(bando, ranura, Arma.registro)` pone cualquier `.ARM` en una ranura 0..15 del bando.
   `python simcombate\prueba_datos.py` → TODO OK: gnollcav cargado del `.ARM` en la ranura 12 da el mismo 50,70 % que el
   gnollcav que trae la partida; control: elephant en el atacante sube a 92,16 %.
-- Próximo paso: etapa 2, héroes (después ítems, hechizos y terreno).
+- 5/11/2026: **etapa 2, héroes hechos.** `Motor.poner_heroe(bando, clase 0..3, nivel 1..10, elecciones, x, y, pila)`
+  arma el héroe como el juego (fuerza, vidas, movimiento y vista de la clase; registro con nivel, experiencia y
+  Leadership 1) y aplica cada elección con la rutina del propio juego (0x48efa0); rechaza gastar más puntos que los del
+  nivel y una fuerza > 15 o vidas > 7. `Motor.cargar_clase` pone cualquier `.HER` en una ranura de clase;
+  `datos.clases` lee los 66 `.HER`. `python simcombate\prueba_heroes.py` → TODO OK: las 32 clases de la partida son
+  copia exacta de su `.HER`; cada elección de las 4 clases cambia lo que dice el `.HER`; Grak real y Grak sintético dan
+  el mismo 99,82 %; 3 gnollcav 50,70 % → con un KBarbarian nivel 1 88,66 % → nivel 10 con F15 94,73 % (control).
+- Próximo paso: etapa 2, ítems (después hechizos y terreno).
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
@@ -103,6 +110,17 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   barcaza, orcs_ram y Tanda_Kor.SAV), la partida pelea con el viejo. El simulador carga siempre el `.ARM` del ARMY.
 - Ranuras: la 15 es el barco del bando; en Tanda_Kor las 12-14 están vacías. Cada lado usa su propio bando, así que
   hay 16 ranuras por lado para los hasta 8 tipos del tablero.
-- Héroes (para seguir): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
+- **Héroes, resuelto** (detalle en el encabezado de `motor.py`): clases en 0x5451d0 + (bando*4 + c)*1380 = el `.HER`
+  (+0xdc fuerza, mov, vidas, vista; +0x3d0 umbrales de experiencia; +0x3e8 puntos por subida; +0x3fc 10 elecciones
+  (habilidad, valor) y +0x49c su costo). Registro del héroe (0xb8): +0 clase/sexo/nivel, +0x12 experiencia, +0x14 10
+  casilleros (habilidad, valor; 20 = hechizo con nombre en +6), +0xb4 puntos sin gastar. Subir de nivel (0x416c..)
+  suma puntos; elegir (0x40c7c0) los gasta y llama a 0x48efa0. El movimiento máximo va en la unidad +0x10 bits 0-6, la
+  vista en +0xe bits 1-3. El nivel no lo lee la pelea: solo cuentan los casilleros, fuerza y vidas.
+  **0x48efa0 no pone tope**: una fuerza de 21 queda en 5 (4 bits). Sin ver si la pantalla de subir de nivel del juego
+  lo impide; el simulador lo rechaza.
+- Ítems (para seguir): tabla 0x55cc22 + i*0xd8, cantidad en 0x55cb72; +0 héroe, +2 bits 0-1 = 1 lo lleva un héroe,
+  +0xa y +0x1a dos habilidades (palabra id, palabra valor), nombre en +0x2c. 0x409fb0 los suma por habilidad (los
+  «slayer» 0x2c..0x33 valen 2). Hechizos activos: 0x55f030 + i*0x36 (40), +2 unidad, +0x16 4 efectos (id, valor).
+- Héroes (notas de antes): la unidad héroe es tipo 16 y +0x10 bits 8-13 apunta a un registro de 0xb8 en 0x556bb2
   (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
   juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.
