@@ -125,8 +125,27 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   lados, **la unidad embarcada pelea con min(su fuerza, la del barco) y min(sus vidas, las del barco)**, exactamente
   igual que en tierra con esos valores; el barco nunca la mejora y sus bonos (water, City, Field) y poderes no cuentan.
   Controles: el barco en la ranura sin embarcar, y en un puente, no cambian nada.
-- Próximo paso: etapa 3, el tablero. (Día/noche: el modo del parche aún no se midió en el motor; ver si la pelea
-  lo lee al armar el subpanel de terreno.)
+- 5/11/2026: **día/noche medido: sí cambia la pelea.** El efecto noche del parche (monster, demon, undead: +2 a una
+  cosa sorteada por noche) está en 0x467240, que el motor ejecuta; `Motor.dia_noche(noche)` pone la opción (SHOPT bit 2)
+  y la vuelta par. 3 contra 3 gnollcav, 5000 peleas: archons 75,72 → 90,92 % de noche, bees 0,92 → 13,84 %; según la
+  noche el sorteo puede caer en algo que no cuenta (cavewyrm: 90,02 una noche, 85,38 otra = de día). Controles: sin la
+  opción o en vuelta impar no cambia; un arma sin esas clases (airship, gnollcav) no cambia.
+- 5/11/2026: **etapa 3, tablero hecho.** `simcombate/escenario.py` (Simulador: arma un escenario descrito en un dict,
+  sin ventana) y `simcombate/tablero.py` (la ventana, VERSIÓN 1.0.0.0). `python simcombate\prueba_escenario.py` →
+  TODO OK: las defensas de ciudad dan los mismos 38,99/30,17/21,64 % de la etapa 1; la grilla manda el orden de pelea
+  de los dos lados; la noche cambia archons y no gnollcav; héroe, pila de 9, agua sin barco, barco y puente;
+  y en 1500 batallas la secuencia de muertes coincide con el ganador. Probado en la ventana real (captura): dos pilas,
+  héroe con elecciones e ítem, INICIAR COMBATE muestra % y batalla de muestra.
+  Hallazgos: el **fight order** está en 0x536cfa + bando*0x1f8 (palabra por ranura; pelea primero el menor; 0x441520);
+  la ficha guarda las unidades ordenadas en +0xe + k*0x24 (atacante) y +0x12e + k*0x24 (defensor). Hay **más eventos de
+  muerte** que 4/5: 10/11 (Assassin) y 8/9 (vistos con moongard); `muertes` ahora se saca de los «entra» y del ganador.
+  Decisiones: casillero k → ranura k del bando con prioridad k; héroe en la clase 0; ciudad = la ciudad 0 de la
+  partida (del defensor, atacante al oeste); en agua sin puente, todos embarcados en el barco elegido. El
+  «coeficiente» de la pila es el Factor medio y total (el del héroe no tiene fórmula definida: se muestran F/V/M,
+  ítems y hechizos). El subpanel visual se guarda en `Simulador-Combate.ini` para la etapa 4.
+  Probar en manos del usuario: TAREAS 112.
+- Próximo paso: etapa 4, la ventana de combate (imágenes de las unidades del juego, tachar según `muertes`, sonidos;
+  falta identificar los eventos especiales 0xc.. para los efectos).
 
 ## Lo averiguado en la etapa 2 (datos)
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:

@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 111).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 112).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 112** (simulador de combate: probar el tablero).
 1. **Tarea 109** (visor de historia: % de mapa explorado).
 2. **Tarea 108** (tanda de la computadora, desbande por oro).
 3. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -15,6 +16,15 @@ Sorteo están acá (tarea 18).
 6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **112.** Simulador de combate: probar el tablero (5/11/2026)
+1. Abrí una consola en `F:\sourceeposctualizador-warlords\simcombate` y escribí `python tablero.py`.
+2. El título dice **SIMULADOR DE COMBATE — VERSIÓN 1.0.0.0** y arriba a la derecha aparece la cantidad de armas,
+   barcos, clases, ítems y hechizos.
+3. Armá una batalla que conozcas del juego: en cada lado elegí armas y cantidades (el casillero 1 pelea primero),
+   un héroe con «Héroe…» si querés, el terreno, y apretá **INICIAR COMBATE**.
+4. Fijate si el % y la batalla de muestra te parecen razonables; anotá lo que falte o moleste en el tablero.
+Resultado:
 
 - [ ] **111.** Simulador de combate: comparar el «Factor» con DarkCompare (5/11/2026)
 El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare. Para confirmar que da lo mismo:

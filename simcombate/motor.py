@@ -38,6 +38,8 @@ HECH0, HECREC, HECH_MAX = 0x55f030, 0x56, 40
 INMEDIATOS = {13, 16, 22, 25, 29, 35, 36, 58, 59, 60}
 CLASE0, CLREC = 0x5451d0, 1380
 TERR0 = 0x535ef8
+ORDEN = 0x536cfa                                    # fight order del bando b: ORDEN + b*0x1f8, 16 palabras
+SHOPT, VUELTA = 0x53c38c + 25, 0x5032f8 + 0x30      # opciones de la partida (bit 2 Day/Night) y número de vuelta
 # [COMBAT] del .rul (el juego lo lee al arrancar; sin esto los topes quedan en 0 y anulan, p. ej., las defensas
 # de la ciudad): clave -> (dirección, tipo) — 2 = par mín,máx de palabras, 0 = palabra, 1 = byte On/Off.
 COMBATE = {'FinalBonusLimit': (0x56951a, 2), 'MoraleFearLimit': (0x56951e, 2), 'LeadershipChaosLimit': (0x569522, 2),
@@ -52,14 +54,24 @@ REGIONES = ((0x503e00, 0x12), (0x503e58, 0x32000), (0x535ed0, 0xa96), (0x536b30,
 # Eventos del registro de 0x464ea0: 0 el defensor pierde una vida, 1 el atacante pierde una, 2/3 entra la siguiente
 # unidad del atacante/defensor, 4/5 muere la del atacante/defensor, 6 gana el atacante, 7 gana el defensor; el resto
 # son efectos especiales (0xc, 0xd, 0xf, 0x10, 0x11, 0x15, 0x17+) que la etapa 4 tendrá que identificar.
-EVENTOS = {0: 'D-1', 1: 'A-1', 2: 'entra A', 3: 'entra D', 4: 'muere A', 5: 'muere D', 6: 'gana A', 7: 'gana D'}
+# Hay más formas de morir que 4/5: 10/11 (Assassin: cae D / cae A) y 8/9 (vistos con moongard: cae D / cae A).
+EVENTOS = {0: 'D-1', 1: 'A-1', 2: 'entra A', 3: 'entra D', 4: 'muere A', 5: 'muere D', 6: 'gana A', 7: 'gana D',
+           8: 'cae D (especial)', 9: 'cae A (especial)', 10: 'asesinan a D', 11: 'asesinan a A'}
 
 def muertes(ev):
-    """[('A', i) | ('D', i)]: qué unidad (por orden de pelea) muere, en orden."""
-    r, na, nd = [], 0, 0
+    """[('A', i) | ('D', i)]: qué unidad (por orden de pelea) muere, en orden. Se saca de la estructura y no del código
+    de muerte (hay varios): cada «entra» de un lado después del primero = cayó la anterior de ese lado; «gana A»/«gana
+    D» = cae la última del otro lado (comprobado en prueba_escenario.py, 6)."""
+    r, na, nd, ea, ed = [], 0, 0, False, False
     for c in ev:
-        if c == 4: r.append(('A', na)); na += 1
-        elif c == 5: r.append(('D', nd)); nd += 1
+        if c == 2:
+            if ea: r.append(('A', na)); na += 1
+            ea = True
+        elif c == 3:
+            if ed: r.append(('D', nd)); nd += 1
+            ed = True
+        elif c == 6: r.append(('D', nd)); nd += 1
+        elif c == 7: r.append(('A', na)); na += 1
     return r
 
 class Motor:
@@ -363,6 +375,32 @@ class Motor:
             self.mu.mem_write(tmp, ficha); self.call(0x466c90, [tmp])
             g += self.call(0x464ea0, [tmp, r, 1]) & 1
         return g
+
+    # --- orden de pelea y día/noche ---
+    # Fight order: ORDEN + bando*0x1f8, una palabra por ranura de tipo (0..15); 0x466cf0 ordena la pila de menor a
+    # mayor (pelea primero el menor), igual para el atacante y el defensor (medido con la ficha: unidades en +0xe + k*0x24
+    # del atacante y +0x12e + k*0x24 del defensor).
+    def orden(self, dueno, ranuras):
+        """Las ranuras dadas pelean en ese orden (prioridad 0, 1, 2...); las demás, después."""
+        p = [100 + i for i in range(16)]
+        for k, r in enumerate(ranuras): p[r] = k
+        self.mu.mem_write(ORDEN + dueno * 0x1f8, struct.pack('<16h', *p))
+
+    def orden_ficha(self, ficha, lado):
+        """Índices de unidad de la ficha, en el orden en que pelean (lado 'A' o 'D')."""
+        o = 0xe if lado == 'A' else 0x12e; r = []
+        for k in range(8):
+            u = struct.unpack_from('<h', ficha, o + k * 0x24)[0]
+            if u <= 0: break
+            r.append(u)
+        return r
+
+    def dia_noche(self, noche):
+        """Opción Day/Night del parche (bit 2 de SHOPT) y vuelta par (noche) o impar (día). De noche, monster, demon y
+        undead suman +2 a una cosa sorteada por noche (nm_unit en 0x467240, que el motor ya ejecuta)."""
+        s = self.mu.mem_read(SHOPT, 1)[0]
+        self.mu.mem_write(SHOPT, bytes([s | 2 if noche else s & ~2]))
+        self.mu.mem_write(VUELTA, struct.pack('<h', 6 if noche else 7))
 
     def ciudades_de(self, dueno, n):
         """Deja n ciudades vivas al bando dueno (las primeras) y el resto neutrales; recuenta 0x536b20 (0x4407d0)."""
