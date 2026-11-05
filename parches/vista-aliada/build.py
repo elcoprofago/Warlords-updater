@@ -16185,6 +16185,18 @@ assert struct.unpack_from('<I', dispel, 0)[0] == 55 and dispel[4:11] == b'Dispel
 struct.pack_into('<I', dispel, 0, PO_SND)
 setstr(dispel, 4, 16, 'Burst')
 table_add(res, 3, PO_SND, bytes(dispel))
+# Sonido LI_SND = FX\Lightning.wav (sonidos\Lightning.wav del repo, el que sumó el usuario el 5/11/2026): el del
+# poder Lightning en la ventana de combate, que en el original usa «zzzt» (0x30), igual que Acid. 0x4465e0 tiene un
+# caso por sonido lógico; los del relámpago son 0x16 (muere el defensor, evento 0xc), 0x17 (golpe al defensor, 0x13),
+# 0x1b (muere el atacante, 0xf) y 0x1c (golpe al atacante, 0x12): se cambia su «push 0x30» por LI_SND. Los de Acid
+# (0x13, 0x15, 0x1a) siguen con zzzt.
+LI_SND = PO_SND + 1
+struct.pack_into('<I', dispel, 0, LI_SND)
+setstr(dispel, 4, 16, 'Lightning')
+table_add(res, 3, LI_SND, bytes(dispel))
+for _va in (0x446bff, 0x446c33, 0x446d03, 0x446d37):
+    patch(_va, b'j0', bytes((0x6a, LI_SND)))
+LIGHTNING = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'sonidos', 'Lightning.wav'), 'rb').read()
 BURST = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'sonidos', 'Burst.wav'), 'rb').read()
 PICTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts')
 po_pal = Image.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]
@@ -16545,6 +16557,7 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
+NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)
 # Listas de ítems de los mapas al azar (random\Grass del repo, editadas por el usuario el 23/10/2026: sin los ítems
 # de vuelo). Con ri_go cuentan sobre todo sus 8 especiales; los 32 comunes valen en el Darklord.exe original.
