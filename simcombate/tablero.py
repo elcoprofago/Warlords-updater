@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.16.0'
+VERSION = '1.0.17.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -459,7 +459,8 @@ class App(tk.Tk):
         def cerrada(e):
             if e.widget is v:
                 self.cfg_abierta = False
-                if self.winfo_exists(): self.pintar_encabezado()
+                try: self.pintar_encabezado()
+                except tk.TclError: pass   # la ventana principal se está cerrando
         v.bind('<Destroy>', cerrada)
         v.geometry(f'+{self.winfo_rootx() + self.winfo_width() - 470}+{self.winfo_rooty() + 90}')
         fr = tk.Frame(v, padx=15, pady=12); fr.pack(fill='both')
@@ -500,8 +501,8 @@ class App(tk.Tk):
             hecho = bloques * tam; total = total if total > 0 else exe.get('size', 0)
             if total:
                 pct = min(hecho * 100 / total, 100); barra['value'] = pct
-                estado['text'] = (f'Descargando la versión {etiqueta}: {min(hecho, total) / 1048576:.1f} de '
-                                  f'{total / 1048576:.1f} MB ({pct:.0f} %)').replace('.', ',')
+                mb = lambda b: f'{b / 1048576:.1f}'.replace('.', ',')
+                estado['text'] = f'Descargando la versión {etiqueta}: {mb(min(hecho, total))} de {mb(total)} MB ({pct:.0f} %)'
             padre.update()
         try:
             urllib.request.urlretrieve(exe['browser_download_url'], nuevo, avance)
