@@ -145,6 +145,13 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
      aparta 800 y los frenos de arriba lo respetan hasta gastarlo o descartar el destino.
    - Solo en la IA nueva (ia_on), para comparar contra la original en el paso 5.
 
-Próximo paso: ver qué ingreso da el tamaño de ciudad (si agrandar es inversión, el freno ahí debe ser más suave) y
-programar el piso y los frenos en vista-aliada, con prueba emulada.
+   Datos del usuario (6/11/2026): el costo a la mitad es cuando el bando tiene «engineering» o «artificer»
+   ([0x536c12] es entonces esa habilidad, sin comprobar en el exe); poner todas las ciudades en tamaño 3 gratis
+   (0x455afc) sería alguna modalidad de escenario al azar («crusade», para uno solo, o «battle of Titans»; no seguro).
+   **Agrandar no da ingreso (6/11/2026):** el ingreso del turno (0x43ff80) suma +0xa7 de las ciudades con
+   tamaño > 0, y la función que agranda no toca +0xa7; en ABN_000_29.SAV la mediana de +0xa7 es 23 en tamaño 1
+   (27 ciudades), 2 (24) y 3 (18). Agrandar compra defensa, no renta: se puede frenar igual que la compra de tipos.
+
+Próximo paso: programar el piso y los frenos (0x48bae5 y 0x405310, solo con ia_on) en vista-aliada, con prueba
+emulada; antes ver dónde decide la IA agrandar (quién arma el paquete que llega a 0x4b7e2f).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
