@@ -234,7 +234,7 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
   (nombre en +2; ahí aparecen nombres de habilidades como «flight», «fortify» y de ítems). Los `.HER` del HERO  miden 1380 bytes (clase: nombres por nivel, tabla de experiencia, habilidades por nivel). Falta ver cómo arma el
   juego el registro de 0xb8 a partir de la clase y el nivel, y qué lee de él 0x467240.
 
-## Para investigar (sesión aparte): el terreno «forest» no cuenta como bosque
+## Cerrado: el terreno «forest» no cuenta como bosque
 Hallado el 5/11/2026 en `prueba_terreno.py`. En 0x467b33 (código original, igual en `Darklord.exe`) los bonos de
 combate WOODS y FOREST tienen una rama propia que mira solo la capa de bosque (+3 bit 0x40); nunca comparan con el
 nombre del terreno, así que el terreno 3 «forest» (clase 4, la de las montañas) no da esos bonos.
@@ -243,8 +243,10 @@ Efecto: en Tanda_Kor hay 585 casillas de terreno «forest» y unas 70 con capa d
 Visto (5/11/2026): el terreno 3 es **bosque de verdad**. Su ficha (`TERRAIN\DATA\o_forest.TER`) lo llama «Forest» en
 pantalla y lo dibuja con `o_forest.PCX`: arboleda tupida que cubre toda la casilla (la capa «woods», `o_woods.PCX`,
 son los mismos árboles sueltos sobre otro terreno). Para el jugador se ve como bosque y no da el bono de bosque.
-Falta: que el usuario decida si el parche las hace contar como bosque para WOODS/FOREST (cambia el equilibrio:
-47 armas, 585 casillas en Tanda_Kor).
+Decidido por el usuario (6/11/2026): es el bosque denso e intransitable (visto en Scarpart); **no cuenta como bosque**
+para bonos de combate ni de movimiento y sigue intransitable. Nada que cambiar: su clase de terreno es 4, la de las
+montañas (0x535f0c + t*0x58), así que el juego ya lo trata como montaña, y «build» también (bd_ok lo rechaza, bd_okm
+lo acepta como paso de montaña al 25 %). Cerrado.
 - 5/11/2026 (tablero 1.0.6.0): fondo de la ventana con EDPICTS\MARBLE.PCX del juego en mosaico; paneles, botones y
   cuadro de resultados con el reborde dorado del Visor de historia (dorado ancho + línea negra); letras del Factor en
   blanco; «Carpeta del juego…» junto a la casilla de ordenar, ventana más angosta (1186 px).
