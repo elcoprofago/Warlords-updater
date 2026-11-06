@@ -11,16 +11,8 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 121** (tanda: en qué gasta el oro la IA): cuando la PC esté libre unas horas.
 
 # Pendientes
-
-- [ ] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
-La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.133.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -54,6 +46,13 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
+La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.133.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: tanda 137 (1.0.133.0, 10 partidas completas). Hecho 6/11/2026: el oro se va sobre todo en comprar tipos de unidad para las ciudades (61 %); ver ia\PENDIENTE-ia-economia.md, paso 4.1.
 
 - [x] **122.** Simulador de combate en la notebook (6/11/2026)
 La 1.0.20.0 arranca con cualquier partida de SAVES y tiene una flecha ▲/▼ que pliega juntos atacante, defensor y terreno.

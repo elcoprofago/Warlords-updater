@@ -106,9 +106,26 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    8 colores, 5 casos con topes: 144 controles; oro final, libro y registros iguales al original; sin ia_on nada).
    Al volver la tanda: sumar por dirección y por IA (original/nueva), ponerle nombre a cada dirección y recién ahí
    decidir dónde va el freno de la reserva.
+   **Medido (6/11/2026, tanda 137, 1.0.133.0, 10 partidas completas, eventos 30; IA original / nueva):**
+   | quién | qué es | IA original | IA nueva |
+   |---|---|---|---|
+   | 0x48bae5 | comprar un tipo de unidad para una ciudad (costo de +0xe2 del registro de unidad 0x53c410 con su % ; 300, 350, 520, 1000) | −98.630 | −79.450 |
+   | 0x4054e9 | pago fijo en una ciudad, mensaje 0x1b (100, 300, 400) — **sin comprobar qué es** | −40.080 | −33.770 |
+   | 0x43aec5 | comprar héroe (el color tiene un héroe más al turno siguiente: +0,97) | −13.847 | −6.504 |
+   | 0x4663ad / 0x4663cd | al perder una ciudad se le cobra al dueño y el que la toma recibe la mitad | −6.876 / +3.266 | −5.217 / +2.704 |
+   | 0x4756ad | dueño de un ejército, 166-900 — sin comprobar | −2.758 | −2.611 |
+   | 0x4b7ec8 | saldo del turno (ingreso − mantenimiento) aplicado por el paquete 0x151 | +84.928 | +71.204 |
+   | 0x4d6176 | oro al tomar ciudad, mensaje 0x15 (26-583) | +36.724 | +32.091 |
+   | 0x4ac4e9 / 0x438111 | premios grandes (311-3.041): ruinas o tesoros, sin comprobar | +22.071 / +17.157 | +13.074 / +11.158 |
+   Del gasto (~290.000 en total): **61 % comprar tipos de unidad**, 25 % el pago fijo en ciudad, 7 % héroes, 4 % lo
+   que se pierde con las ciudades. Las unidades en sí no cuestan al salir (no hay evento por unidad terminada): el
+   costo es la compra del tipo y después el mantenimiento. No aparecieron 0x455303, 0x48f1c8, 0x4afa9f, 0x4b6625,
+   0x4d2ac6, 0x4d6418 ni los del parche (puentes, caminos, trampas).
+   Para la reserva: el freno va en 0x48bae5 (no comprar un tipo nuevo si deja el oro por debajo del piso) y quizás
+   en 0x4054e9, que antes hay que identificar (leer 0x572ab0 mensaje 0x1b y quién llama a la función de 0x4054e9).
 5. **Banco de pruebas:** tandas IA de prueba contra original, con PV y desbandes, como en los pasos anteriores.
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: paso 4.1, analizar la tanda de TAREAS 121 (eventos 30 por dirección) y después diseñar la reserva.
+Próximo paso: identificar 0x4054e9 (pago fijo en ciudad) y diseñar la reserva con el freno en 0x48bae5.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
