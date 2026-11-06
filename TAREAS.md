@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 122).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 123).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,14 @@ Sorteo están acá (tarea 18).
 6. **Tarea 121** (tanda: en qué gasta el oro la IA): cuando la PC esté libre unas horas.
 
 # Pendientes
+
+- [ ] **122.** Simulador de combate en la notebook (6/11/2026)
+La 1.0.19.0 arranca con cualquier partida de SAVES y tiene flechas ▲/▼ para plegar cada panel.
+1. Abrí el simulador, ícono de engranaje → **Buscar actualización**: tiene que instalar la **1.0.19.0**.
+2. Tiene que cargar solo (arriba a la derecha dice cuántas armas hay) sin el error nro. 2.
+3. Plegá con ▲ los paneles que no uses: el tablero entero tiene que entrar en la pantalla. Al cerrar y abrir, lo
+   plegado se recuerda.
+Resultado:
 
 - [ ] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
 La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
