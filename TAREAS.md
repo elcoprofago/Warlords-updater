@@ -17,10 +17,10 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **122.** Simulador de combate en la notebook (6/11/2026)
-La 1.0.19.0 arranca con cualquier partida de SAVES y tiene flechas ▲/▼ para plegar cada panel.
-1. Abrí el simulador, ícono de engranaje → **Buscar actualización**: tiene que instalar la **1.0.19.0**.
+La 1.0.20.0 arranca con cualquier partida de SAVES y tiene una flecha ▲/▼ que pliega juntos atacante, defensor y terreno.
+1. Abrí el simulador, ícono de engranaje → **Buscar actualización**: tiene que instalar la **1.0.20.0** o posterior.
 2. Tiene que cargar solo (arriba a la derecha dice cuántas armas hay) sin el error nro. 2.
-3. Plegá con ▲ los paneles que no uses: el tablero entero tiene que entrar en la pantalla. Al cerrar y abrir, lo
+3. Plegá con ▲ (esquina del panel de terreno) el tablero, y con la otra ▲ los resultados: el tablero entero tiene que entrar en la pantalla. Al cerrar y abrir, lo
    plegado se recuerda.
 Resultado:
 

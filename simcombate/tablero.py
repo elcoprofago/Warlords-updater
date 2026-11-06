@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.19.0'
+VERSION = '1.0.20.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -95,15 +95,19 @@ def reborde(padre, color='#000000'):
     negro.pack(fill='both', expand=True)
     return negro
 
-def plegable(app, caja, contenido, clave):
-    """Flecha ▲/▼ en la esquina del reborde de un panel: lo contrae (queda solo su título) o lo vuelve a extender.
-    En pantallas bajas (notebook) el tablero entero no entra; lo plegado se recuerda en el .ini."""
-    exterior = caja.master; info = contenido.pack_info(); info.pop('in', None)
+def plegable(app, partes, clave):
+    """Una flecha ▲/▼ (en la esquina del último reborde) que contrae juntas todas las partes [(caja, contenido)]:
+    queda solo el título de cada una. En pantallas bajas (notebook) el tablero entero no entra; lo plegado se
+    recuerda en el .ini."""
+    caja = partes[-1][0]; exterior = caja.master; datos = []
+    for cj, contenido in partes:
+        info = contenido.pack_info(); info.pop('in', None)
+        datos.append((contenido, info, tk.Frame(cj, height=18, width=150, bg=cj['bg'])))   # un marco sin hijos no se achica en Tk
     f = tk.Label(exterior, bg=ORO, fg='#000000', font=('Segoe UI', 9, 'bold'), cursor='hand2', padx=3, pady=0, bd=1, relief='raised')
-    relleno = tk.Frame(caja, height=18, width=150, bg=caja['bg'])   # un marco que se queda sin hijos no se achica en Tk
     def poner(plegado):
-        if plegado: contenido.pack_forget(); relleno.pack(fill='x')
-        else: relleno.pack_forget(); contenido.pack(**info)
+        for contenido, info, relleno in datos:
+            if plegado: contenido.pack_forget(); relleno.pack(fill='x')
+            else: relleno.pack_forget(); contenido.pack(**info)
         f['text'] = '▼' if plegado else '▲'; app.plegados[clave] = plegado; f.lift()
     f.bind('<Button-1>', lambda e: poner(not app.plegados[clave]))
     f.place(relx=1, x=0, y=0, anchor='ne')
@@ -410,8 +414,7 @@ class App(tk.Tk):
         der = ttk.Frame(cajas[2], padding=4); der.pack(fill='both', expand=True)
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
         self.plegados = {}
-        plegable(self, cajas[0], self.pa, 'atacante'); plegable(self, cajas[1], self.pd, 'defensor')
-        plegable(self, cajas[2], der, 'campo')
+        plegable(self, [(cajas[0], self.pa), (cajas[1], self.pd), (cajas[2], der)], 'tablero')
         caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
         fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
@@ -421,7 +424,7 @@ class App(tk.Tk):
         boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
-        plegable(self, caja, self.salida, 'resultado')
+        plegable(self, [(caja, self.salida)], 'resultado')
         self.rowconfigure(3, weight=1); self.columnconfigure(2, weight=1)
         self.poner_marmol()
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
