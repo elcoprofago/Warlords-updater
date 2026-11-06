@@ -11,35 +11,15 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-5. **Tarea 120** (el atacado ve el combate): en la próxima partida en red con dos humanos.
-6. **Tarea 121** (tanda: en qué gasta el oro la IA): cuando la PC esté libre unas horas.
+5. **Tarea 121** (tanda: en qué gasta el oro la IA): cuando la PC esté libre unas horas.
 
 # Pendientes
-
-- [ ] **122.** Simulador de combate en la notebook (6/11/2026)
-La 1.0.20.0 arranca con cualquier partida de SAVES y tiene una flecha ▲/▼ que pliega juntos atacante, defensor y terreno.
-1. Abrí el simulador, ícono de engranaje → **Buscar actualización**: tiene que instalar la **1.0.20.0** o posterior.
-2. Tiene que cargar solo (arriba a la derecha dice cuántas armas hay) sin el error nro. 2.
-3. Plegá con ▲ (esquina del panel de terreno) el tablero, y con la otra ▲ los resultados: el tablero entero tiene que entrar en la pantalla. Al cerrar y abrir, lo
-   plegado se recuerda.
-Resultado:
 
 - [ ] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
 La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.133.0** o posterior.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
 3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
-- [ ] **120.** En red: el que es atacado ve la ventana de combate (5/11/2026)
-En el turno simultáneo de los humanos, cuando otro jugador te ataca, ahora se te abre la misma ventana de combate que
-ve él. Hacen falta dos PC con humanos (por ejemplo, vos y Nico).
-1. Actualizador, opción **9**, en las dos PC: vista-aliada tiene que estar en **1.0.132.0** o posterior.
-2. Partida en red, los dos humanos. En el turno simultáneo, uno ataca un ejército o una ciudad del otro.
-3. En la PC del **atacado**: ¿se abrió la ventana de combate, con el mismo resultado que vio el atacante?
-4. Cerrala y seguí jugando un par de turnos: la partida no tiene que «desincronizarse» (las dos PC tienen que ver
-   lo mismo en el mapa: ejércitos, ciudades, oro). Anotá si pasa algo raro.
-5. Control: un ataque de la **computadora** en su turno se tiene que ver igual que antes.
 Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
@@ -74,6 +54,25 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **122.** Simulador de combate en la notebook (6/11/2026)
+La 1.0.20.0 arranca con cualquier partida de SAVES y tiene una flecha ▲/▼ que pliega juntos atacante, defensor y terreno.
+1. Abrí el simulador, ícono de engranaje → **Buscar actualización**: tiene que instalar la **1.0.20.0** o posterior.
+2. Tiene que cargar solo (arriba a la derecha dice cuántas armas hay) sin el error nro. 2.
+3. Plegá con ▲ (esquina del panel de terreno) el tablero, y con la otra ▲ los resultados: el tablero entero tiene que entrar en la pantalla. Al cerrar y abrir, lo
+   plegado se recuerda.
+Resultado: marcada cumplida por el usuario el 6/11/2026.
+
+- [x] **120.** En red: el que es atacado ve la ventana de combate (5/11/2026)
+En el turno simultáneo de los humanos, cuando otro jugador te ataca, ahora se te abre la misma ventana de combate que
+ve él. Hacen falta dos PC con humanos (por ejemplo, vos y Nico).
+1. Actualizador, opción **9**, en las dos PC: vista-aliada tiene que estar en **1.0.132.0** o posterior.
+2. Partida en red, los dos humanos. En el turno simultáneo, uno ataca un ejército o una ciudad del otro.
+3. En la PC del **atacado**: ¿se abrió la ventana de combate, con el mismo resultado que vio el atacante?
+4. Cerrala y seguí jugando un par de turnos: la partida no tiene que «desincronizarse» (las dos PC tienen que ver
+   lo mismo en el mapa: ejércitos, ciudades, oro). Anotá si pasa algo raro.
+5. Control: un ataque de la **computadora** en su turno se tiene que ver igual que antes.
+Resultado: hecho 6/11/2026. Rojo (esta PC) atacó una ciudad del Blanco (notebook): en la notebook se vio el combate en tiempo real y después la ventana de las 4 opciones de la ciudad (ocupar, pillaje, saqueo, arrasar). Al elegir una, el juego responde «ya no sos el dueño de esta ciudad»: el vencido no decide nada y ve lo que hace el enemigo. Se deja así, a pedido del usuario.
 
 - [x] **110.** IA: medir en qué gasta el oro (5/11/2026)
 La 1.0.130.0 anota, solo en las tandas, cuánto oro entra y cuánto se paga de mantenimiento cada turno.
