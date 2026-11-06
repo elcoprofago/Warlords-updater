@@ -50,6 +50,22 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    negativo si ganó oro, p. ej. ruinas o saqueo); heroes(t+1) − heroes(t) = héroes comprados (sin distinguir
    descuento todavía). Prueba emulada: `parches\vista-aliada\prueba_saldo.py` (3 guardadas, 8 colores, 4 casos con y
    sin quiebra: 96 líneas correctas, quiebra y saldo iguales al original; control sin ia_on: nada anotado).
+   **Medido (6/11/2026, tandas 135 y 136, 1.0.132.0, 19 partidas completas, 3.526 turnos-color con t y t+1):**
+   | | IA original | IA nueva |
+   |---|---|---|
+   | ingreso total | 182.892 | 144.188 |
+   | mantenimiento | 60.412 (33 %) | 42.912 (30 %) |
+   | gastado en el turno | 111.931 (61 %) | 93.251 (65 %) |
+   | ahorrado | 10.549 (6 %) | 8.025 (6 %) |
+   Oro al empezar el turno: mediana 150 en los turnos 1-10, 11-20 y 21-30, en las dos IA, aunque el ingreso se
+   triplica (50 → 165). O sea: **la IA gasta todo lo que le sobra y no ahorra**; el mantenimiento crece con el
+   ejército (5 → 72 por turno) y se come cada vez más. Turnos con 800 o más: 4 % (IA nueva 1 de 434 en los turnos
+   21-30). Mantenimiento mayor que el ingreso: 44 de 3.526 turnos. Terminan el turno con menos de 50: 12 %.
+   Hallazgos de la medición: (a) «producción» = turno.oro − n dio 0 siempre: la tabla turno anota el oro en el
+   mismo momento que el evento 29, así que no se cobra nada antes; la producción se paga durante el turno y queda
+   dentro de «gastado». (b) Los 54 héroes nuevos aparecen en turnos con gasto 0 (mediana): su pago no cae en esta
+   ventana o vienen gratis (sin comprobar). Para separar producción de héroes y puentes haría falta otro evento
+   en el cobro de la producción; por ahora no hace falta: el diagnóstico ya es claro (gasta todo, en tropas).
 3. **Contrastar con partidas reales.** Usar el Visor de historia o las guardadas del ranking del clan para ver si
    más de tres héroes y el desbande aparecen ahí y no en las tandas.
 4. **Diseñar la reserva**, con lo medido: un piso de oro para el mantenimiento de los próximos turnos (contra el
@@ -59,5 +75,5 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: analizar la tanda de TAREAS 110 con los eventos 29 (cerrar el paso 2) y seguir con el 3.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 2: la tanda de la 110 terminó".
+Próximo paso: paso 3 (partidas reales: más de tres héroes y desbande fuera de las tandas).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 3".

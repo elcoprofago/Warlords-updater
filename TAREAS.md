@@ -7,7 +7,6 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 110** (IA: en qué gasta el oro).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -25,13 +24,6 @@ ve él. Hacen falta dos PC con humanos (por ejemplo, vos y Nico).
 4. Cerrala y seguí jugando un par de turnos: la partida no tiene que «desincronizarse» (las dos PC tienen que ver
    lo mismo en el mapa: ejércitos, ciudades, oro). Anotá si pasa algo raro.
 5. Control: un ataque de la **computadora** en su turno se tiene que ver igual que antes.
-Resultado:
-
-- [ ] **110.** IA: medir en qué gasta el oro (5/11/2026)
-La 1.0.130.0 anota, solo en las tandas, cuánto oro entra y cuánto se paga de mantenimiento cada turno.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.130.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
@@ -66,6 +58,13 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **110.** IA: medir en qué gasta el oro (5/11/2026)
+La 1.0.130.0 anota, solo en las tandas, cuánto oro entra y cuánto se paga de mantenimiento cada turno.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.130.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: tandas 135 y 136 (1.0.132.0, 19 partidas completas). Hecho 6/11/2026: la IA gasta casi todo lo que le sobra; ver ia\PENDIENTE-ia-economia.md, paso 2.
 
 - [x] **111.** Simulador de combate: comparar el «Factor» con DarkCompare (5/11/2026)
 El simulador calcula el Factor de cada arma con la misma cuenta que DarkCompare. Para confirmar que da lo mismo:
