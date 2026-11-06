@@ -15579,6 +15579,62 @@ g_data = rsrc_off(RSRC_RVA + g_lang[0][2])
 assert struct.unpack_from('<I', exe, g_data + 4)[0] == 34
 struct.pack_into('<II', exe, g_data, grp_va - BASE, len(grp))
 
+# Combate visto por el atacado (pedido del usuario, 5/11/2026): en el turno simultáneo de los humanos en red, el que
+# es atacado no veía la ventana de combate. Cada PC ejecuta el movimiento que llega por red (0x4b6e8e -> 0x49c9f0 ->
+# 0x469ed0) y la batalla con la semilla del atacante (0x4debd0), así que el resultado ya está en todas; el original
+# solo abre la ventana (0x405a10) donde el atacante es el jugador de la PC ([0x537ce8], en 0x469f5c). cv_chk la abre
+# también si: hay más de una PC (0x4dd390), el defensor ([ficha+1]) es [0x537ce8], es humano y se juega en esta PC.
+# La ventana usa el azar del juego (0x405a10 -> 0x406d10 -> 0x4d52d0 -> 0x4def30 -> 0x4deb20): se guarda y restaura
+# su estado (0x500bf4 semilla, 0x500bf8 «resembrar») para que las PC no se desincronicen. Con [0x537ce8] humano, la
+# espera de sincronización de la ventana (0x406cb0/0x406d10, paquete 0x1ad, para los combates de la computadora) no
+# corre. Las variables que pone la rama del atacante (0x4fc764, 0x56e940) no las lee la ventana; no se tocan. Después
+# sigue la rama original del que no ataca (0x469fa9).
+cv_chk = place('cv_chk', f'''
+    cmp word ptr [0x537ce8], si
+    je 0x469f65
+    pushad
+    call 0x4dd390
+    cmp ax, 1
+    jle cv_x
+    movsx eax, byte ptr [ebx + 1]
+    cmp eax, 8
+    jae cv_x
+    cmp ax, word ptr [0x537ce8]
+    jne cv_x
+    imul ecx, eax, {SIDE:#x}
+    cmp word ptr [ecx + {SIDE_HUMAN:#x}], -1
+    jne cv_x
+    movzx ecx, byte ptr [ecx + {SIDE_MACHINE:#x}]
+    call 0x4dd3a0
+    movsx eax, ax
+    cmp eax, ecx
+    jne cv_x
+    push dword ptr [0x500bf4]
+    push dword ptr [0x500bf8]
+    lea ecx, [edi + edi*2]
+    shl ecx, 3
+    sub ecx, edi
+    lea edx, [ecx + 0x5699c8]
+    add ecx, 0x569910
+    mov eax, edi
+    shl eax, 5
+    sub eax, edi
+    add eax, 0x56e988
+    push eax
+    push edx
+    push ecx
+    push ebp
+    push ebx
+    push esi
+    call 0x405a10
+    add esp, 0x18
+    pop dword ptr [0x500bf8]
+    pop dword ptr [0x500bf4]
+cv_x:
+    popad
+    jmp 0x469fa9
+''')
+
 blob = b''.join(caves.values())
 raw_size = (len(blob) + FILE_ALIGN - 1) // FILE_ALIGN * FILE_ALIGN
 exe += blob + b'\0' * (raw_size - len(blob))
@@ -15841,6 +15897,7 @@ patch(0x4aa6bf, asm('xor dword ptr [esp + 0x10], ebp; mov eax, dword ptr [esp + 
       asm(f'jmp {po_nsum:#x}', 0x4aa6bf))
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
 patch(0x49d151, asm('call 0x469ed0', 0x49d151), asm(f'call {po_enter:#x}', 0x49d151))
+patch(0x469f5c, asm('cmp word ptr [0x537ce8], si; jne 0x469fa9', 0x469f5c), asm(f'jmp {cv_chk:#x}', 0x469f5c))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
 patch(0x459d54, bytes.fromhex('8a4606a801'), asm(f'jmp {po_draw2:#x}', 0x459d54))
