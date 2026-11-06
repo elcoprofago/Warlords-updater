@@ -5973,6 +5973,126 @@ gl_skip:
     ret
 ''')
 
+# ---- Reserva de oro (PENDIENTE-ia-economia, paso 4): solo con ia_on y para los bandos de la computadora en prueba
+# (IA_MODE = 1). Piso = 2 x mantenimiento del turno [0x5643d8 + 2p], nunca menos de RS_MIN. La IA en prueba no compra
+# un tipo de unidad para una ciudad (0x48ba50, paquete de red, 61 % del gasto medido) ni agranda una ciudad (0x405310,
+# 25 %) si el oro le quedaría por debajo del piso; no hace nada ni cobra, y lo puede volver a pedir otro turno.
+# Evento 31 cada vez que frena (x = 1 tipo de unidad, 2 agrandar; y = costo; n = oro). Humanos, la IA original y
+# las partidas sin IA.INI, igual que el original. Los héroes (0x43aec5, 7 %) no se frenan.
+RS_MIN = 50
+RS_EVT = 31
+RS_UNIT, RS_GROW = 1, 2
+# rs_ok(p, costo, tipo) cdecl -> eax = 1 puede gastar, 0 no. Preserva el resto.
+rs_ok = place('rs_ok', f'''
+    push ebx
+    push ecx
+    push edx
+    mov eax, 1
+    cmp byte ptr [{IA_ON:#x}], 0
+    je rs_out
+    mov ebx, dword ptr [esp + 0x10]
+    cmp ebx, 8
+    jae rs_out
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne rs_out
+    imul ecx, ebx, 0x1f8
+    cmp word ptr [ecx + 0x536c12], -1
+    je rs_out
+    movsx edx, word ptr [ebx * 2 + 0x5643d8]
+    add edx, edx
+    cmp edx, {RS_MIN}
+    jge rs_floor
+    mov edx, {RS_MIN}
+rs_floor:
+    movsx ecx, word ptr [ecx + 0x536c14]
+    push ecx
+    sub ecx, dword ptr [esp + 0x18]
+    cmp ecx, edx
+    pop ecx
+    jge rs_out
+    push ecx
+    push dword ptr [esp + 0x18]
+    push dword ptr [esp + 0x20]
+    push ebx
+    push {RS_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    xor eax, eax
+rs_out:
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# rs_unit: entrada de 0x48ba50(ciudad, p, tipo, ?, ajuste), en lugar de "push ebx; push esi; mov si, [esp+0xc]" (7
+# bytes). Costo como el original: c = [0x53c4f2 + (16p + tipo) * 0xfc], c + c * ajuste / -10 (en 16 bits). Si la
+# ciudad no es de p sigue al original (que no hace nada).
+rs_unit = place('rs_unit', f'''
+    pushad
+    movsx ebx, word ptr [esp + 0x28]
+    movsx eax, word ptr [esp + 0x24]
+    imul eax, eax, 0xde
+    movzx eax, byte ptr [eax + 0x537ed1]
+    cmp eax, ebx
+    jne ru_go
+    movsx eax, word ptr [esp + 0x2c]
+    mov ecx, ebx
+    shl ecx, 4
+    add eax, ecx
+    imul eax, eax, 0xfc
+    movsx esi, word ptr [eax + 0x53c4f2]
+    movsx eax, word ptr [esp + 0x34]
+    imul eax, esi
+    cdq
+    mov ecx, -10
+    idiv ecx
+    add eax, esi
+    movsx eax, ax
+    push {RS_UNIT}
+    push eax
+    push ebx
+    call {rs_ok:#x}
+    add esp, 0xc
+    test eax, eax
+    jz ru_no
+ru_go:
+    popad
+    push ebx
+    push esi
+    mov si, word ptr [esp + 0xc]
+    jmp 0x48ba57
+ru_no:
+    popad
+    ret
+''')
+# rs_grow: entrada de 0x405310(ciudad, tamaño, costo), en lugar de "sub esp, 8; push ebx; push esi" (5 bytes). El dueño
+# es el de la ciudad (+0xa5), al que el original le cobra el costo en 0x4054e9.
+rs_grow = place('rs_grow', f'''
+    pushad
+    movsx eax, word ptr [esp + 0x24]
+    imul eax, eax, 0xde
+    movzx ebx, byte ptr [eax + 0x537ed1]
+    movsx eax, word ptr [esp + 0x2c]
+    test eax, eax
+    jle rg_go
+    push {RS_GROW}
+    push eax
+    push ebx
+    call {rs_ok:#x}
+    add esp, 0xc
+    test eax, eax
+    jz rg_no
+rg_go:
+    popad
+    sub esp, 8
+    push ebx
+    push esi
+    jmp 0x405315
+rg_no:
+    popad
+    ret
+''')
+
 # ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
 ia_evtb = place('ia_evtb', f'''
     push eax
@@ -15698,6 +15818,8 @@ patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223
 patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
 patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x422482))   # saldo del turno (evento 29)
 patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # cambio de oro (evento 30)
+patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50))   # reserva: comprar tipo de unidad
+patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserva: agrandar ciudad
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))

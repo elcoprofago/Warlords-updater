@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 123).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 124).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,15 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **123.** IA: que la computadora ahorre oro (6/11/2026)
+La 1.0.134.0 hace que la IA nueva no compre tipos de unidad ni agrande ciudades si se queda sin reserva para pagar
+sus tropas. Solo en las tandas.
+1. Cerrá el juego (DarklordAV.exe estaba abierto) y avisame: instalo y publico la 1.0.134.0.
+2. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.134.0** o posterior.
+3. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+4. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la

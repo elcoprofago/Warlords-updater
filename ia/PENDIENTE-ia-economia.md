@@ -160,6 +160,23 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    pone en la entrada de 0x405310, que corre en el anfitrión para todos los pedidos; con ia_on y dueño de la IA,
    si el oro menos el costo queda bajo el piso, no agranda ni cobra (la IA lo puede volver a pedir otro turno).
 
-Próximo paso: programar el piso y los frenos (entrada de 0x405310 y la compra de 0x48bae5, solo con ia_on y
-colores de la IA) en vista-aliada, con prueba emulada (control: humano y sin ia_on, sin cambios).
+   **Piso y frenos programados (6/11/2026, vista-aliada 1.0.134.0; falta publicar y la tanda, TAREAS 123).**
+   rs_ok(p, costo, tipo): con ia_on, IA_MODE[p] = 1 (en prueba) y bando de la computadora ([0x536c12] ≠ −1), piso =
+   2 × mantenimiento del turno [0x5643d8 + 2p], nunca menos de 50; si oro − costo < piso, no gasta. Frenos en la
+   entrada de 0x48ba50 (rs_unit; costo calculado como el original: [0x53c4f2 + (16p + tipo)·0xfc] con el ajuste del
+   5.º argumento ÷ −10) y de 0x405310 (rs_grow; costo = 3.er argumento, dueño = +0xa5 de la ciudad). Único
+   llamador de 0x48ba50: 0x4b72f9, el mismo despachador de red que 0x405310. Evento 31 cada vez que frena (x = 1 tipo
+   de unidad, 2 agrandar; y = costo; n = oro). Ahorro con destino (800 para un puente) todavía no: va cuando el
+   paso 5.2 de PENDIENTE-ia-innovaciones marque el puente a reconstruir.
+   Prueba emulada: `parchesista-aliada\prueba_reserva.py` (3 guardadas, 8 colores, 848 controles): frena justo
+   bajo el piso y sigue justo en el piso, con el mismo costo que cobra el original; controles humano, IA original,
+   sin ia_on, ciudad ajena y agrandar gratis: igual que el original y sin evento 31. prueba_oro.py sigue OK.
+   Corrección: la mitad de costo de agrandar (0x405235) es para los bandos de la computadora ([0x536c12] ≠ −1,
+   que es «no humano» en todo el parche), no «engineering/artificer»; esos atributos irían en el ajuste de 0x4057a0
+   (sin comprobar).
+   Al volver la tanda: comparar IA nueva contra original en PV, ciudades, desbandes (evento 28), oro al empezar el
+   turno y cuántas veces frena (evento 31) y en qué.
+
+Próximo paso: publicar 1.0.134.0 (estaba abierto DarklordAV.exe en C:\Warlords3: no se pudo instalar) y, con la
+tanda de TAREAS 123, el análisis de arriba.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
