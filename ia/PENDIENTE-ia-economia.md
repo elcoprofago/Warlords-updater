@@ -177,6 +177,5 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Al volver la tanda: comparar IA nueva contra original en PV, ciudades, desbandes (evento 28), oro al empezar el
    turno y cuántas veces frena (evento 31) y en qué.
 
-Próximo paso: publicar 1.0.134.0 (estaba abierto DarklordAV.exe en C:\Warlords3: no se pudo instalar) y, con la
-tanda de TAREAS 123, el análisis de arriba.
+Próximo paso: 1.0.134.0 publicada (6/11/2026); con la tanda de TAREAS 123, el análisis de arriba.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
