@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.18.0'
+VERSION = '1.0.19.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -94,6 +94,20 @@ def reborde(padre, color='#000000'):
     negro = tk.Frame(oro, bg=color, padx=1 if color == '#000000' else 3, pady=1 if color == '#000000' else 3)
     negro.pack(fill='both', expand=True)
     return negro
+
+def plegable(app, caja, contenido, clave):
+    """Flecha ▲/▼ en la esquina del reborde de un panel: lo contrae (queda solo su título) o lo vuelve a extender.
+    En pantallas bajas (notebook) el tablero entero no entra; lo plegado se recuerda en el .ini."""
+    exterior = caja.master; info = contenido.pack_info(); info.pop('in', None)
+    f = tk.Label(exterior, bg=ORO, fg='#000000', font=('Segoe UI', 9, 'bold'), cursor='hand2', padx=3, pady=0, bd=1, relief='raised')
+    relleno = tk.Frame(caja, height=18, width=150, bg=caja['bg'])   # un marco que se queda sin hijos no se achica en Tk
+    def poner(plegado):
+        if plegado: contenido.pack_forget(); relleno.pack(fill='x')
+        else: relleno.pack_forget(); contenido.pack(**info)
+        f['text'] = '▼' if plegado else '▲'; app.plegados[clave] = plegado; f.lift()
+    f.bind('<Button-1>', lambda e: poner(not app.plegados[clave]))
+    f.place(relx=1, x=0, y=0, anchor='ne')
+    poner(app.cfg['tablero'].getboolean(f'plegado_{clave}', False))
 
 def boton(padre, **kw):
     """Un botón con reborde dorado; devuelve el marco a ubicar (el botón queda en .boton)."""
@@ -395,6 +409,9 @@ class App(tk.Tk):
         self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack(fill='both')
         der = ttk.Frame(cajas[2], padding=4); der.pack(fill='both', expand=True)
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
+        self.plegados = {}
+        plegable(self, cajas[0], self.pa, 'atacante'); plegable(self, cajas[1], self.pd, 'defensor')
+        plegable(self, cajas[2], der, 'campo')
         caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
         fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
@@ -404,6 +421,7 @@ class App(tk.Tk):
         boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
+        plegable(self, caja, self.salida, 'resultado')
         self.rowconfigure(3, weight=1); self.columnconfigure(2, weight=1)
         self.poner_marmol()
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
@@ -573,12 +591,8 @@ class App(tk.Tk):
         d = filedialog.askdirectory(initialdir=self.juego.get(), title='Carpeta del juego (la que tiene DarklordAV.exe)')
         if not d: return
         d = os.path.normpath(d); self.juego.set(d)
-        saves = os.path.join(d, 'SAVES'); sav = os.path.join(saves, os.path.basename(self.sav.get()))
-        if not os.path.exists(sav):
-            hay = sorted(f for f in os.listdir(saves) if f.lower().endswith('.sav')) if os.path.isdir(saves) else []
-            if not hay: messagebox.showerror(TITULO, f'No hay partidas (.SAV) en {saves}: el motor necesita una.'); return
-            sav = os.path.join(saves, hay[0])
-        self.sav.set(sav); self.poner_marmol(); self.cargar()
+        self.sav.set(os.path.join(d, 'SAVES', os.path.basename(self.sav.get())))   # elegir_partida busca otra si falta
+        self.poner_marmol(); self.cargar()
 
     def reordenar(self):
         if self.sim:
@@ -589,7 +603,23 @@ class App(tk.Tk):
         a, d = self.pa.estado(), self.pd.estado()
         self.pa.poner_estado(d); self.pd.poner_estado(a)
 
+    def elegir_partida(self):
+        """El motor sirve con cualquier partida (.SAV): si la recordada no existe, toma la más reciente de SAVES."""
+        if os.path.isfile(self.sav.get()): return True
+        saves = os.path.join(self.juego.get(), 'SAVES')
+        hay = [os.path.join(saves, f) for f in os.listdir(saves) if f.lower().endswith('.sav')] if os.path.isdir(saves) else []
+        if not hay:
+            self.decir_estado('No se pudo cargar')
+            messagebox.showerror(TITULO, f'No hay partidas (.SAV) en {saves}.\nEl motor necesita una cualquiera '
+                                 '(guardá una partida en el juego) o elegí otra carpeta del juego.'); return False
+        self.sav.set(max(hay, key=os.path.getmtime)); return True
+
     def cargar(self):
+        if not os.path.isfile(os.path.join(self.juego.get(), 'DarklordAV.exe')):
+            self.decir_estado('No se pudo cargar')
+            messagebox.showerror(TITULO, f'No está DarklordAV.exe en {self.juego.get()}.\n'
+                                 'Elegí la carpeta del juego con «Carpeta del juego…».'); return
+        if not self.elegir_partida(): return
         self.decir_estado('Cargando el juego…'); self.boton.state(['disabled'])
         def tarea():
             try: sim, err = Simulador(self.juego.get(), self.sav.get()), None
@@ -666,6 +696,7 @@ class App(tk.Tk):
         c.update(juego=self.juego.get(), partida=self.sav.get(), por_nombre=str(self.por_nombre.get()), peleas=self.n.get(), velocidad=str(self.velocidad.get()),
                  efectos=str(self.efectos.get()), sonido=str(self.sonido.get()), tamano=self.tamano.get(),
                  resultados=self.resultados.get())
+        c.update({f'plegado_{k}': str(v) for k, v in self.plegados.items()})
         if self.sim:   # la última pelea armada, para la próxima vez (restaurar)
             c.update(atacante=json.dumps(self.pa.estado()), defensor=json.dumps(self.pd.estado()),
                      campo=json.dumps(self.escenario()['campo']))
