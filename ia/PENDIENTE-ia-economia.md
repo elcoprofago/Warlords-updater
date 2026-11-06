@@ -152,6 +152,14 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    tamaño > 0, y la función que agranda no toca +0xa7; en ABN_000_29.SAV la mediana de +0xa7 es 23 en tamaño 1
    (27 ciudades), 2 (24) y 3 (18). Agrandar compra defensa, no renta: se puede frenar igual que la compra de tipos.
 
-Próximo paso: programar el piso y los frenos (0x48bae5 y 0x405310, solo con ia_on) en vista-aliada, con prueba
-emulada; antes ver dónde decide la IA agrandar (quién arma el paquete que llega a 0x4b7e2f).
+   **Camino del pedido de agrandar (6/11/2026, exe original):** el paquete es el 0x1c8 (tabla de 0x4b6a30: índice
+   0x1c8 + 8 → caso 0x97 → 0x4b7e1e → 0x405310(ciudad, tamaño, costo)). Lo arma 0x4b9ca0(ciudad, tamaño, costo),
+   cuyo único llamador es 0x4b7451, dentro del mismo despachador (reenvío del anfitrión). El costo lo calcula
+   0x4051a0, que llaman 0x4041a0 (¿ventana de ciudad del humano?, llamada desde 0x401b54, 0x4040fa, 0x40e92f y
+   0x49acd4) y 0x404f30. **Sin ubicar todavía dónde decide la IA agrandar.** No hace falta para el freno: se
+   pone en la entrada de 0x405310, que corre en el anfitrión para todos los pedidos; con ia_on y dueño de la IA,
+   si el oro menos el costo queda bajo el piso, no agranda ni cobra (la IA lo puede volver a pedir otro turno).
+
+Próximo paso: programar el piso y los frenos (entrada de 0x405310 y la compra de 0x48bae5, solo con ia_on y
+colores de la IA) en vista-aliada, con prueba emulada (control: humano y sin ia_on, sin cambios).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
