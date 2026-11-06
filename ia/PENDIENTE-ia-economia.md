@@ -90,9 +90,25 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
 4. **Diseñar la reserva**, con lo medido: un piso de oro para el mantenimiento de los próximos turnos (contra el
    desbande), un tope de héroes salvo descuento, y un ahorro con destino (puente que abre camino, trampa, camino,
    ayuda a un aliado) cuando haya un uso concreto con valor.
+   **4.1 Primero, en qué se va el 61-65 % «gastado» (6/11/2026, vista-aliada 1.0.133.0; falta la tanda, TAREAS 121).**
+   Sin eso la reserva se diseña a ciegas: no se sabe si frenar producción, compras de unidades, héroes u otra cosa.
+   En el exe original, 0x4b9390 no toca el oro: arma el paquete 0x151 (0x4dd3b0). El oro de un color lo cambian
+   0x43fd60(jugador, cantidad) —suma, topes 0 y 32000 (0x7d00), libro 0x41bee0 en 0x503170 con 2 = gasto y 4 =
+   ingreso— y tres escrituras directas (0x433a00 add, 0x470016 y 0x4701ad mov). Llaman a 0x43fd60 16 lugares:
+   0x4054e9, 0x438111, 0x43aec5, 0x455303 (+10000: ¿truco?), 0x4663ad y 0x4663cd (cobra a uno y le da la mitad a
+   otro: ¿saqueo?), 0x4756ad y 0x4ac4e9 (dueño sacado del ejército, +0xe), 0x48bae5 (cantidad × porcentaje / -10),
+   0x48f1c8, 0x4afa9f, 0x4b6625, 0x4b7ec8, 0x4d2ac6, 0x4d6176 y 0x4d6418 (con mensaje 0x15/0x16 de 0x572ab0), más
+   los del parche (puentes 0x6cb9xx, caminos y trampas). Cuál es cuál está **sin comprobar**: se lee de la tanda
+   (qué dirección aparece al comprar un héroe o al terminar una unidad) y se confirma en el exe.
+   Evento 30 (gl_evt, en la entrada de 0x43fd60): x = dirección de retorno de quien llamó, y = cantidad (negativa
+   si gasta), n = oro antes. Las escrituras directas no se anotan todavía: si en la tanda la suma de eventos 30 no
+   cierra con «gastado» del paso 2, se agregan. Prueba emulada: `parches\vista-aliada\prueba_oro.py` (3 guardadas,
+   8 colores, 5 casos con topes: 144 controles; oro final, libro y registros iguales al original; sin ia_on nada).
+   Al volver la tanda: sumar por dirección y por IA (original/nueva), ponerle nombre a cada dirección y recién ahí
+   decidir dónde va el freno de la reserva.
 5. **Banco de pruebas:** tandas IA de prueba contra original, con PV y desbandes, como en los pasos anteriores.
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: paso 4 (diseñar la reserva con lo medido en los pasos 1 a 3).
+Próximo paso: paso 4.1, analizar la tanda de TAREAS 121 (eventos 30 por dirección) y después diseñar la reserva.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".

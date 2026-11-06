@@ -5946,6 +5946,33 @@ ec_evt = place('ec_evt', f'''
     ret
 ''')
 
+GL_EVT = 30
+# Paso 4 (PENDIENTE-ia-economia): 30 todo cambio de oro de un color por 0x43fd60(jugador, cantidad) (gl_evt; x = dirección
+# de retorno de quien la llamó, que dice en qué se gastó o de dónde vino; y = cantidad, negativa si gasta; n = oro
+# antes). Reemplaza en 0x43fd60 "push esi; mov si, [esp+8]" (6 bytes) y deja la pila y esi como el original.
+gl_evt = place('gl_evt', f'''
+    pushad
+    movsx eax, word ptr [esp + 0x28]
+    cmp eax, 8
+    jae gl_skip
+    imul ecx, eax, 0x1f8
+    push dword ptr [ecx + 0x536c14]
+    movsx edx, word ptr [esp + 0x30]
+    push edx
+    push dword ptr [esp + 0x2c]
+    push eax
+    push {GL_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+gl_skip:
+    popad
+    xchg esi, dword ptr [esp]
+    push esi
+    mov esi, dword ptr [esp + 4]
+    mov si, word ptr [esp + 0xc]
+    ret
+''')
+
 # ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
 ia_evtb = place('ia_evtb', f'''
     push eax
@@ -15670,6 +15697,7 @@ patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x44
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
 patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x422482))   # saldo del turno (evento 29)
+patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # cambio de oro (evento 30)
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))

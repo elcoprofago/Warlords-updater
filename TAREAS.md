@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 121).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 122).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -12,8 +12,16 @@ Sorteo están acá (tarea 18).
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 5. **Tarea 120** (el atacado ve el combate): en la próxima partida en red con dos humanos.
+6. **Tarea 121** (tanda: en qué gasta el oro la IA): cuando la PC esté libre unas horas.
 
 # Pendientes
+
+- [ ] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
+La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.133.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **120.** En red: el que es atacado ve la ventana de combate (5/11/2026)
 En el turno simultáneo de los humanos, cuando otro jugador te ataca, ahora se te abre la misma ventana de combate que
