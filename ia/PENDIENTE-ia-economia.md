@@ -127,5 +127,24 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: identificar 0x4054e9 (pago fijo en ciudad) y diseñar la reserva con el freno en 0x48bae5.
+   **0x4054e9 identificado (6/11/2026, exe original): es agrandar una ciudad.** Está en 0x405310(ciudad, tamaño
+   nuevo, costo): pone el tamaño en +0xa4 del registro de ciudad (0 = arrasada, máximo 3) y en los bits 0x300 de la
+   casilla del mapa (0x503e58), vacía las 4 ranuras de unidades de la ciudad («EMPTY», +0xaa, 9 bytes cada una),
+   avisa con el mensaje 0x1b y cobra con 0x43fd60. El costo lo calcula la función de 0x405200-0x405307 según
+   tamaño actual y nuevo: 1→2 = [0x569512], 2→3 = [0x569514], 1→3 = las dos sumadas; a la mitad si el jugador
+   tiene [0x536c12 + p·0x1f8] ≠ −1, y con un ajuste de porcentaje (0x4057a0, ÷ −10) como el de 0x48bae5. Los
+   100/300/400 de la tanda calzan con 1→2, 2→3 y 1→3. Llamadores: 0x4b7e2f (paquete de red: así lo pide la IA o el
+   humano) y 0x455afc (todas las ciudades de un color a tamaño 3 gratis; ¿escenario o truco?). Sin comprobar:
+   cuánto ingreso o producción da cada tamaño, y si vaciar las ranuras obliga a volver a comprar tipos de unidad
+   (eso sumaría a 0x48bae5).
+   **Diseño de la reserva (con lo medido):**
+   - Piso = mantenimiento de los próximos 2 turnos (y del evento 29; hoy 5-72 por turno), nunca menos de 50.
+   - Freno en 0x48bae5 (comprar un tipo de unidad) y en 0x405310 (agrandar ciudad): la IA no gasta si el oro
+     quedaría por debajo del piso + lo apartado con destino. No se toca 0x43aec5 (héroes, 7 %, nunca más de 3).
+   - Ahorro con destino: cuando la IA marca un puente a reconstruir (paso 5.2 de PENDIENTE-ia-innovaciones),
+     aparta 800 y los frenos de arriba lo respetan hasta gastarlo o descartar el destino.
+   - Solo en la IA nueva (ia_on), para comparar contra la original en el paso 5.
+
+Próximo paso: ver qué ingreso da el tamaño de ciudad (si agrandar es inversión, el freno ahí debe ser más suave) y
+programar el piso y los frenos en vista-aliada, con prueba emulada.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
