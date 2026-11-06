@@ -68,6 +68,25 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    en el cobro de la producción; por ahora no hace falta: el diagnóstico ya es claro (gasta todo, en tropas).
 3. **Contrastar con partidas reales.** Usar el Visor de historia o las guardadas del ranking del clan para ver si
    más de tres héroes y el desbande aparecen ahí y no en las tandas.
+   **Hecho (6/11/2026).** Guardadas de partidas en red reales que quedan en la PC: C:\Warlords\NETSAVES,
+   C:\Warlords3\NETSAVES, C:\Warlords\HISTORY y la papelera (NA_*, NAB_002, NA-004, xMapaPozos, xSORTEO, xvotacion,
+   xx; 34 archivos, unas 14 partidas, rondas 1 a 30; las abn_009 y BAN_001 ya no están). Leídas con
+   historia.Partida: héroes vivos (ranura 0x10 de los ejércitos de 0x54fe50), oro (+0xe4), humano (+0xe2 = -1) y el
+   historial (0xe surge un héroe, 0xf muere, 0x10 «is disbanded»). Script de la sesión, sin versionar (lectura única).
+   - **Héroes:** la IA nunca tiene más de 3 vivos a la vez (3 en NA_003 color 1 y xvotacion color 7); en toda la
+     partida le surgen como mucho 5, casi todos para reponer muertos (p. ej. NA_006 color 4: 5 surgidos, 4 muertos).
+     Los humanos, igual (máximo 3). **Más de tres héroes no aparece ni en las tandas ni en las partidas reales que
+     hay.** No se toca la compra de héroes por ahora; queda la sospecha para partidas de más de 30 rondas, de las
+     que no hay ninguna guardada.
+   - **Desbande:** el juego no lo anota en el historial ni en la guardada, y el evento 28 solo se anota en tandas
+     (con ia_on): en partidas reales no se puede contar. Lo que sí se ve coincide con el paso 1: la IA con oro 0 o
+     casi es siempre un bando que se derrumba (NAB_002 color 0: oro 0 y 17→15 ejércitos; NA-004 color 7: oro 3→0 y
+     30→18 ejércitos; NA_2 color 0: oro 18 y 10 ejércitos). Los bandos sanos de la IA cierran con 100 a 900.
+   - **Hallazgo aparte:** en xMapaPozos la IA **despide** héroes: colores 1 y 4, rondas 10 y 11, «is disbanded!»
+     poco después de tener un segundo héroe, con oro 400-900 (no por quiebra). Sin averiguar por qué (¿tope de la IA
+     original, o el héroe sin ejército?): mirarlo en el paso 4 antes de poner un tope propio.
+   Conclusión para el paso 4: lo medible es que la IA gasta todo (paso 2), no los héroes ni el desbande de bandos
+   sanos. La reserva se diseña para el gasto y los usos con destino; el tope de héroes queda en segundo plano.
 4. **Diseñar la reserva**, con lo medido: un piso de oro para el mantenimiento de los próximos turnos (contra el
    desbande), un tope de héroes salvo descuento, y un ahorro con destino (puente que abre camino, trampa, camino,
    ayuda a un aliado) cuando haya un uso concreto con valor.
@@ -75,5 +94,5 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Trampas, caminos y dádivas de la IA todavía no existen (paso 5 de PENDIENTE-ia-innovaciones): la reserva se
    diseña para poder sumarlos después.
 
-Próximo paso: paso 3 (partidas reales: más de tres héroes y desbande fuera de las tandas).
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 3".
+Próximo paso: paso 4 (diseñar la reserva con lo medido en los pasos 1 a 3).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
