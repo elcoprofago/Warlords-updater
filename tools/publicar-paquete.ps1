@@ -5,14 +5,14 @@ descomprime encima de la carpeta del juego sin borrar nada).
 
   .\tools\publicar-paquete.ps1 ARMY             # opcion 1   (tambien SPELL = 2, HERO = 3, ESCEN = 4, ITEMS = 5)
   .\tools\publicar-paquete.ps1 ARMY -Prueba     # arma y compara; no sube nada (resultado en dist\)
-  .\tools\publicar-paquete.ps1 ITEMS -Quitar 'ITEMS\Nuevos'   # acepta dejar afuera lo que el publicado trae
+  .\tools\publicar-paquete.ps1 ITEMS -Quitar 'ITEMS\viejo.ITM'   # acepta dejar afuera algo suelto que el publicado trae
 
 Pasos:
   1. Baja el zip publicado (el mas grande, ARMY, pesa unos 36 MB) y le saca el SHA-256 a cada archivo.
-  2. Junta los archivos de C:\Warlords3\<CARPETA>, dejando afuera lo que publicar-full.ps1 tambien deja afuera:
-     carpetas back (experimentos de quien arma el zip) y los .TMP/.lnk.
+  2. Junta solo los archivos sueltos de C:\Warlords3\<CARPETA>: ninguna subcarpeta (Nuevos, back, BMP,
+     error...), que el juego no lee. Tampoco .TMP ni .lnk.
   3. Compara con lo publicado: que cambia, que se agrega y que dejaria de repartirse. Esto ultimo corta la
-     publicacion salvo que se acepte con -Quitar (por carpeta o archivo) o este en una carpeta back: una PC
+     publicacion salvo que se acepte con -Quitar (por archivo) o este en una subcarpeta: una PC
      que ya lo tiene lo conserva, pero una instalacion nueva no lo recibiria.
   4. Si no cambia nada, no publica.
   5. Arma dist\<ZIP>.zip, comprueba que tenga exactamente lo elegido, lo sube (reemplaza el anterior), lo
@@ -61,9 +61,11 @@ finally { $z.Dispose(); Remove-Item -Force $pubZip }
 Write-Host "Publicado: $Nombre, $($publicado.Count) archivos"
 
 # ---------------------------------------------------------------- 2. que va en el zip
-function EsBack($rel) { ('\' + $rel) -match '\\_*back\\' }
+# Solo los archivos sueltos de la carpeta: ninguna subcarpeta (Nuevos, back, BMP, error...), que el juego no lee.
+# Pedido del usuario (6/11/2026): "No quiero nada que sobre, la carpeta nuevos y similares no van mas".
+function EnSubcarpeta($rel) { $rel.Split('\').Count -gt 2 }
 function Incluir($rel) {
-    if (EsBack $rel) { return $false }
+    if (EnSubcarpeta $rel) { return $false }
     $ext = [IO.Path]::GetExtension($rel)
     -not ($ext -eq '.tmp' -or $ext -eq '.lnk')
 }
@@ -99,7 +101,7 @@ $quitados = @($publicado.Keys | Where-Object { -not $nuevo.ContainsKey($_) } | S
 Resumen 'Cambian' $cambiados Cyan
 Resumen 'Se agregan' $agregados Cyan
 Resumen 'Trae el publicado y el nuevo NO' $quitados Yellow
-$sinAceptar = @($quitados | Where-Object { -not (EsBack $_) -and -not (Aceptado $_) -and [IO.Path]::GetExtension($_) -ne '.tmp' })
+$sinAceptar = @($quitados | Where-Object { -not (EnSubcarpeta $_) -and -not (Aceptado $_) -and [IO.Path]::GetExtension($_) -ne '.tmp' })
 if ($sinAceptar.Count) {
     $carpetas = @($sinAceptar | ForEach-Object { Split-Path -Parent $_ } | Sort-Object -Unique)
     Falla ("el zip nuevo dejaria de repartir $($sinAceptar.Count) archivo(s) que no estan en $dir (en $($carpetas -join ', ')). " +
