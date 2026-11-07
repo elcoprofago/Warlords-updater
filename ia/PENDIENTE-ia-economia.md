@@ -177,5 +177,27 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    Al volver la tanda: comparar IA nueva contra original en PV, ciudades, desbandes (evento 28), oro al empezar el
    turno y cuántas veces frena (evento 31) y en qué.
 
-Próximo paso: 1.0.134.0 publicada (6/11/2026); con la tanda de TAREAS 123, el análisis de arriba.
+   **Medido (6/11/2026, tanda 138, 1.0.134.0, 10 partidas completas; mismo plan que 135-137):**
+   | | original 138 | nueva 138 | nueva 137 (sin freno) |
+   |---|---|---|---|
+   | PV medio | 6,3 | 6,7 | 6,6 |
+   | puesto medio | 3,19 | 2,65 | 3,20 |
+   | ciudades al final | 5,1 | 4,5 | 5,1 |
+   | oro al empezar el turno (mediana) | 148 | 208 | 147 |
+   | turnos con < 50 / con ≥ 800 | 12,0 % / 3,8 % | 1,1 % / 6,2 % | 12,4 % / 2,5 % |
+   | compra de tipos / agrandar / héroes | −92.740 / −44.920 / −12.288 | −74.290 / −26.020 / −10.990 | −79.450 / −33.770 / −6.504 |
+   | deserciones (evento 28) | 6 en 2 episodios | 31 en 5 | 26 en 3 |
+   Frenos (evento 31): 348 compras de tipo (costo medio 375) y 127 agrandamientos (294). La reserva funciona: casi
+   desaparecen los turnos con la caja vacía y la IA nueva termina mejor ubicada (puesto 2,65 contra 3,19), con
+   menos ciudades. Parte de lo ahorrado se va en héroes (−6.504 → −10.990).
+   **Lo que el freno no cubre:** 26 de las 31 deserciones son de un solo bando (partida 964, color 2, IA nueva):
+   con 7 ciudades y sin comprar casi nada (frenado en los turnos 15-21), su mantenimiento subió de 65 a 306 por
+   turno mientras el ingreso quedaba en 163-212: el ejército crece con los tipos **ya comprados**, la producción no
+   cuesta al salir y el mantenimiento termina pasando al ingreso (turno 22). Mantenimiento mayor que el ingreso en
+   la 138: 22 turnos-color en la IA nueva, 16 en la original. Un piso de oro no lo evita: hace falta frenar la
+   **producción** cuando el mantenimiento se acerca al ingreso.
+
+Próximo paso (4.2): ubicar en el exe dónde una ciudad termina una unidad (el ejército nuevo que suma
+mantenimiento) y frenarla en la IA nueva cuando mantenimiento + costo de la unidad nueva > ~90 % del ingreso;
+evento propio y prueba emulada como en 1.0.134.0. Después, tanda igual a la 138.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".

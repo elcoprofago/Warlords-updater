@@ -14,15 +14,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **123.** IA: que la computadora ahorre oro (6/11/2026)
-La 1.0.134.0 hace que la IA nueva no compre tipos de unidad ni agrande ciudades si se queda sin reserva para pagar
-sus tropas. Solo en las tandas.
-1. ~~Cerrá el juego y avisame~~ — hecho: la 1.0.134.0 está publicada (6/11/2026).
-2. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.134.0** o posterior.
-3. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
-4. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
@@ -55,6 +46,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **123.** IA: que la computadora ahorre oro (6/11/2026)
+La 1.0.134.0 hace que la IA nueva no compre tipos de unidad ni agrande ciudades si se queda sin reserva para pagar
+sus tropas. Solo en las tandas.
+1. ~~Cerrá el juego y avisame~~ — hecho: la 1.0.134.0 está publicada (6/11/2026).
+2. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.134.0** o posterior.
+3. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+4. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: tanda 138 (1.0.134.0, 10 partidas completas). Hecho 6/11/2026: la IA nueva casi nunca se queda sin oro (turnos con menos de 50: 12 % → 1 %) y termina mejor ubicada; falta frenar la producción, que sigue llevando a la quiebra a algún bando. Ver ia\PENDIENTE-ia-economia.md.
 
 - [x] **121.** IA: ver en qué gasta el oro, compra por compra (6/11/2026)
 La 1.0.133.0 anota, solo en las tandas, cada vez que un color gana o gasta oro y en qué.
