@@ -197,7 +197,23 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    la 138: 22 turnos-color en la IA nueva, 16 en la original. Un piso de oro no lo evita: hace falta frenar la
    **producción** cuando el mantenimiento se acerca al ingreso.
 
-Próximo paso (4.2): ubicar en el exe dónde una ciudad termina una unidad (el ejército nuevo que suma
-mantenimiento) y frenarla en la IA nueva cuando mantenimiento + costo de la unidad nueva > ~90 % del ingreso;
-evento propio y prueba emulada como en 1.0.134.0. Después, tanda igual a la 138.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4".
+**Freno de producción (6/11/2026, vista-aliada 1.0.135.0; falta la tanda, TAREAS 124).**
+Dónde produce una ciudad (exe original): 0x43b930(p), paquete de red (llamado desde 0x4b7c1b), recorre las ciudades
+de p; +0xd8 = turnos que faltan, +0xd7 = tipo. Con +0xd8 = 1, en 0x43bdf2 crea la unidad (0x43b120, o 0x43b390 si va
+dirigida a otra ciudad, +0xd9/+0xda) y 0x4ae250 reinicia la cuenta con el tipo +0x9d. Ejércitos: 0x46c330 toma un
+registro libre. Mantenimiento de un ejército: bits 0xf0 de +0xe (= tipo +0x9e con ajustes de objetos, 0x43b6d0
+salida[4]); 0x4406b0 lo suma por color: mínimo 4 con el bit 8 de +0x12, y un tercio (mínimo 1) si está en una casilla
+de ciudad no arrasada, salvo con el bit 0 de +0xb (la producción no lo pone). O sea: se paga por dónde termina el
+turno, no por moverse; esperar en una ciudad ahorra dos tercios (sin comprobar en partida).
+Freno (pr_ok, pr_unit en 0x43bdf2): con ia_on, IA_MODE[p] = 1 y bando de la computadora, si 10 × (mantenimiento
+[0x5643d8 + 2p] + lo producido por p en este turno + mantenimiento entero de la unidad nueva) > 9 × ingreso
+[0x5643f0 + 2p], no crea ni reinicia: la cuenta queda en 1 y lo vuelve a intentar el turno siguiente. Evento 32
+(x = tipo, y = ese total, n = ingreso). La unidad nueva se cuenta entera (lo que paga al salir de la ciudad): puede
+frenar de más; la tanda lo dirá.
+Prueba emulada: `parchesista-aliada\prueba_produccion.py` (corre 0x43b930 real; 3 guardadas, 1.956 controles,
+TODO OK): sale justo en el límite y frena uno por debajo, acumula dentro del turno y se reinicia al siguiente;
+controles humano, IA original y sin ia_on igual que el original y sin evento 32.
+Idea para después: que la IA deje en una ciudad los ejércitos sin tarea (pagan un tercio).
+Al volver la tanda: comparar con la 138 (PV, puesto, ciudades, desbandes del evento 28, mantenimiento > ingreso,
+cuántas veces frena el evento 32).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.2: tanda de TAREAS 124".

@@ -6093,6 +6093,108 @@ rg_no:
     ret
 ''')
 
+# ---- Freno de producción (PENDIENTE-ia-economia, paso 4.2). El ejército crece con los tipos ya comprados: la
+# producción no cuesta al salir, pero cada unidad suma su mantenimiento. 0x43b930(p) (paquete de red, llamado desde
+# 0x4b7c1b) recorre las ciudades de p; en 0x43bdf2 una ciudad tiene la unidad lista (+0xd8 = 1, tipo +0xd7) y la crea
+# con 0x43b120 (o 0x43b390 si va dirigida a otra ciudad); después 0x4ae250 reinicia la cuenta. Mantenimiento de la
+# unidad = salida[4] de 0x43b6d0(ciudad, dueño, tipo, salida) (tipo +0x9e con los ajustes de objetos, 1-16), el mismo
+# valor que 0x43b120 pone en los bits 0xf0 de +0xe del ejército (0x4406b0 lo suma; en ciudad paga un tercio, aquí se
+# cuenta entero: es lo que paga al salir). Con ia_on, IA_MODE[p] = 1 y bando de la computadora: si
+# 10 x (mantenimiento [0x5643d8 + 2p] + lo producido en este turno + el de la unidad nueva) > 9 x ingreso
+# [0x5643f0 + 2p], la unidad no sale: se saltea la creación y el reinicio, y la ciudad la vuelve a intentar el turno
+# siguiente con la cuenta en 1. Evento 32 (x = tipo, y = mantenimiento con la unidad nueva, n = ingreso).
+PR_EVT = 32
+PR_ACC = place_data('pr_acc', bytes(16))   # mantenimiento producido en el turno, por color (word)
+PR_TRN = place_data('pr_trn', bytes(16))   # turno de pr_acc, por color (word)
+# pr_ok(ciudad, p, tipo) cdecl -> eax = 1 sale la unidad, 0 no. Preserva el resto.
+pr_ok = place('pr_ok', f'''
+    push ebp
+    mov ebp, esp
+    sub esp, 8
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    mov eax, 1
+    cmp byte ptr [{IA_ON:#x}], 0
+    je po_out
+    mov ebx, dword ptr [ebp + 0xc]
+    cmp ebx, 8
+    jae po_out
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne po_out
+    imul ecx, ebx, 0x1f8
+    cmp word ptr [ecx + 0x536c12], -1
+    je po_out
+    lea eax, [ebp - 8]
+    push eax
+    push dword ptr [ebp + 0x10]
+    push ebx
+    push dword ptr [ebp + 8]
+    call 0x43b6d0
+    add esp, 0x10
+    movzx esi, byte ptr [ebp - 4]
+    and esi, 0xf
+    mov ax, word ptr [0x503328]
+    cmp ax, word ptr [ebx * 2 + {PR_TRN:#x}]
+    je po_same
+    mov word ptr [ebx * 2 + {PR_TRN:#x}], ax
+    mov word ptr [ebx * 2 + {PR_ACC:#x}], 0
+po_same:
+    movsx edi, word ptr [ebx * 2 + 0x5643d8]
+    movsx eax, word ptr [ebx * 2 + {PR_ACC:#x}]
+    add edi, eax
+    add edi, esi
+    movsx edx, word ptr [ebx * 2 + 0x5643f0]
+    lea eax, [edi + edi * 4]
+    add eax, eax
+    lea ecx, [edx + edx * 8]
+    cmp eax, ecx
+    jle po_yes
+    push edx
+    push edi
+    push dword ptr [ebp + 0x10]
+    push ebx
+    push {PR_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    xor eax, eax
+    jmp po_out
+po_yes:
+    add word ptr [ebx * 2 + {PR_ACC:#x}], si
+    mov eax, 1
+po_out:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret
+''')
+# pr_unit: en 0x43bdf2, en lugar de "cmp byte ptr [esi + 0x537f05], 0" (7 bytes; bx = ciudad, esi = ciudad * 0xde).
+pr_unit = place('pr_unit', f'''
+    pushad
+    movzx eax, byte ptr [esi + 0x537f03]
+    push eax
+    movzx eax, byte ptr [esi + 0x537ed1]
+    push eax
+    movsx eax, bx
+    push eax
+    call {pr_ok:#x}
+    add esp, 0xc
+    test eax, eax
+    jz pu_no
+    popad
+    cmp byte ptr [esi + 0x537f05], 0
+    jmp 0x43bdf9
+pu_no:
+    popad
+    jmp 0x43bf68
+''')
+
 # ia_evtb(tipo, p, código de puente, n) cdecl: ia_evt con x, y de la casilla del código. Preserva todo.
 ia_evtb = place('ia_evtb', f'''
     push eax
@@ -15820,6 +15922,7 @@ patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x4
 patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # cambio de oro (evento 30)
 patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50))   # reserva: comprar tipo de unidad
 patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserva: agrandar ciudad
+patch(0x43bdf2, bytes.fromhex('80be057f530000'), asm(f'jmp {pr_unit:#x}; nop; nop', 0x43bdf2))   # freno de producción
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
