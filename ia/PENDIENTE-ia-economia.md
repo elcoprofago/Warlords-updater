@@ -168,7 +168,7 @@ aprenda a ahorrar oro ... Sospecho que tenemos un largo camino por recorrer con 
    llamador de 0x48ba50: 0x4b72f9, el mismo despachador de red que 0x405310. Evento 31 cada vez que frena (x = 1 tipo
    de unidad, 2 agrandar; y = costo; n = oro). Ahorro con destino (800 para un puente) todavía no: va cuando el
    paso 5.2 de PENDIENTE-ia-innovaciones marque el puente a reconstruir.
-   Prueba emulada: `parchesista-aliada\prueba_reserva.py` (3 guardadas, 8 colores, 848 controles): frena justo
+   Prueba emulada: `parches\vista-aliada\prueba_reserva.py` (3 guardadas, 8 colores, 848 controles): frena justo
    bajo el piso y sigue justo en el piso, con el mismo costo que cobra el original; controles humano, IA original,
    sin ia_on, ciudad ajena y agrandar gratis: igual que el original y sin evento 31. prueba_oro.py sigue OK.
    Corrección: la mitad de costo de agrandar (0x405235) es para los bandos de la computadora ([0x536c12] ≠ −1,
@@ -210,7 +210,7 @@ Freno (pr_ok, pr_unit en 0x43bdf2): con ia_on, IA_MODE[p] = 1 y bando de la comp
 [0x5643f0 + 2p], no crea ni reinicia: la cuenta queda en 1 y lo vuelve a intentar el turno siguiente. Evento 32
 (x = tipo, y = ese total, n = ingreso). La unidad nueva se cuenta entera (lo que paga al salir de la ciudad): puede
 frenar de más; la tanda lo dirá.
-Prueba emulada: `parchesista-aliada\prueba_produccion.py` (corre 0x43b930 real; 3 guardadas, 1.956 controles,
+Prueba emulada: `parches\vista-aliada\prueba_produccion.py` (corre 0x43b930 real; 3 guardadas, 1.956 controles,
 TODO OK): sale justo en el límite y frena uno por debajo, acumula dentro del turno y se reinicia al siguiente;
 controles humano, IA original y sin ia_on igual que el original y sin evento 32.
 Idea para después: que la IA deje en una ciudad los ejércitos sin tarea (pagan un tercio).
