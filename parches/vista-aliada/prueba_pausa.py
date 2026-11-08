@@ -19,7 +19,8 @@ MSG_TXT, MSG_END = 0x5885e8, 0x5885d8
 TEXT = b'Votacion en curso: partida en pausa\0'
 PZ_VARS = BASE + img.index(TEXT) + len(TEXT)
 PZ_ON, PZ_ARM = PZ_VARS, PZ_VARS + 1
-CLOSEPKT = img[PZ_VARS + 12 - BASE:PZ_VARS + 12 - BASE + 31]
+_c = img.index(b'VOT - cerrado') - 4
+CLOSEPKT = img[_c:_c + 31]
 PZ_DPTR = struct.unpack_from('<I', img, 0x4dea0e - BASE)[0]
 IMPORTS = {}
 for e in pe.DIRECTORY_ENTRY_IMPORT:

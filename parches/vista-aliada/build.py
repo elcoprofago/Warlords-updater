@@ -1012,6 +1012,10 @@ TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0x18a, 4, 'this army when the battle is on a bridge that ', 'XXXX '),
     (0x18a, 5, 'is still standing.', 'XXXX'),
     (0x168, 2, 'Rebuild City/Site', 'Build City/Site'),   # menú de la torre (pedido del usuario)
+    # Menú del disquete (pedido del usuario, 8/11/2026): Chat Mode y EMail Statistics no se usaban. En la línea de
+    # Chat va "Pausa" (ver Pausa manual); EMail queda sin texto y fuera del menú (diálogo 35, más abajo).
+    (0x164, 1, 'Pausa', 'Chat Mode'),
+    (0x164, 10, '', 'EMail Statistics'),
 ]
 strs = {}
 for g, i, s, _ in TEXTS:
@@ -8712,6 +8716,17 @@ DISPATCH = 0x5a9c5c   # DispatchMessageA
 pz_text = place_data('pz_text', cstr_(PZ_TEXT))
 pz_vars = place_data('pz_vars', bytes(12))   # +0 en pausa, +1 votación abierta, +4 último tick, +8 último estado
 PZ_ON, PZ_ARM, PZ_LAST, PZ_SEEN = pz_vars, pz_vars + 1, pz_vars + 4, pz_vars + 8
+# PZ_ON es una máscara: PZ_VOTO (la pausa de la Votación) y PZ_MANUAL (la de "Pausa" del menú del disquete, ver
+# Pausa manual más abajo). Cada una se arma y se suelta por su lado; la partida sigue cuando no queda ninguna.
+PZ_VOTO, PZ_MANUAL = 1, 2
+# Aviso en pantalla de la pausa manual; pz_find busca el que corresponde (pz_cur), no siempre el de la Votación.
+PP_TEXT = 'Partida en pausa: Espacio reanuda'
+pp_text = place_data('pp_text', cstr_(PP_TEXT))
+pz_cur = place_data('pz_cur', struct.pack('<I', pz_text))
+PP_PKT = 0x2a5                                       # carga: 1 pausar, 0 reanudar (dword)
+pp_pause = place_data('pp_pause', struct.pack('<I', 1))
+pp_resume = place_data('pp_resume', struct.pack('<I', 0))
+PP_REQ = place_data('pp_req', bytes(4))              # pz_disp pide reanudar (Espacio); lo manda tl_idle
 pz_closepkt_data = struct.pack('<I', 0) + cstr_('VOT - cerrado 0 0 --------')
 pz_closepkt = place_data('pz_closepkt', pz_closepkt_data)
 
@@ -8744,9 +8759,10 @@ pz_open = place('pz_open', f'''
     mov dword ptr [{PZ_SEEN:#x}], eax
     mov byte ptr [{PZ_ARM:#x}], 1
     cmp byte ptr [{PZ_ON:#x}], 0
-    jne po_end
+    jne po_or
     mov dword ptr [{PZ_LAST:#x}], eax
-    mov byte ptr [{PZ_ON:#x}], 1
+po_or:
+    or byte ptr [{PZ_ON:#x}], {PZ_VOTO}
 po_end:
     popad
     ret
@@ -8775,13 +8791,14 @@ pst_skip:
     cmp dword ptr [esi + 4], 0x206f6461
     jne pst_on
     mov byte ptr [{PZ_ARM:#x}], 0
-    mov byte ptr [{PZ_ON:#x}], 0
+    and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_VOTO:#x}
     jmp pst_end
 pst_on:
     cmp byte ptr [{PZ_ON:#x}], 0
-    jne pst_end
+    jne pst_or
     mov dword ptr [{PZ_LAST:#x}], eax
-    mov byte ptr [{PZ_ON:#x}], 1
+pst_or:
+    or byte ptr [{PZ_ON:#x}], {PZ_VOTO}
 pst_end:
     popad
     ret
@@ -8797,7 +8814,7 @@ pf_slot:
     mov esi, ecx
     shl esi, 6
     add esi, {MSG_TXT:#x}
-    mov edi, {pz_text:#x}
+    mov edi, dword ptr [{pz_cur:#x}]
 pf_cmp:
     mov al, byte ptr [esi]
     cmp al, byte ptr [edi]
@@ -8823,16 +8840,32 @@ pf_found:
 # Cada ~250 ms (desde tl_idle): vigilancia de los 60 s y el aviso (se pone si no está, se le estira el vencimiento si
 # está; al reanudar se lo deja vencer ya).
 PZ_SLOW = f'''
+    cmp byte ptr [{PP_REQ:#x}], 0
+    je pw_req
+    mov byte ptr [{PP_REQ:#x}], 0
+    push 4
+    push {pp_resume:#x}
+    push {PP_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+pw_req:
     cmp byte ptr [{PZ_ON:#x}], 0
     je pw_off
     call dword ptr [{GETTICK:#x}]
     mov ebx, eax
+    test byte ptr [{PZ_ON:#x}], {PZ_VOTO}
+    jz pw_show
     sub eax, dword ptr [{PZ_SEEN:#x}]
     cmp eax, {PZ_WATCH}
     jb pw_show
-    mov byte ptr [{PZ_ON:#x}], 0
-    jmp pw_off
+    and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_VOTO:#x}
+    jz pw_off
 pw_show:
+    mov dword ptr [{pz_cur:#x}], {pz_text:#x}
+    test byte ptr [{PZ_ON:#x}], {PZ_VOTO}
+    jnz pw_cur
+    mov dword ptr [{pz_cur:#x}], {pp_text:#x}
+pw_cur:
     call {pz_find:#x}
     test eax, eax
     js pw_post
@@ -8841,17 +8874,24 @@ pw_show:
     jmp pw_end
 pw_post:
     push 50
-    push {pz_text:#x}
+    push dword ptr [{pz_cur:#x}]
     call 0x4c2790
     add esp, 8
     jmp pw_end
 pw_off:
+    mov dword ptr [{pz_cur:#x}], {pz_text:#x}
+pw_offlp:
     call {pz_find:#x}
     test eax, eax
-    js pw_end
+    js pw_offnx
     mov ebx, eax
     call dword ptr [{GETTICK:#x}]
     mov dword ptr [ebx * 4 + {MSG_END:#x}], eax
+pw_offnx:
+    cmp dword ptr [{pz_cur:#x}], {pp_text:#x}
+    je pw_end
+    mov dword ptr [{pz_cur:#x}], {pp_text:#x}
+    jmp pw_offlp
 pw_end:
 '''
 
@@ -8921,6 +8961,15 @@ pz_disp = place('pz_disp', f'''
     mov eax, dword ptr [eax + 4]
     cmp eax, 0x100
     jb pd_pass
+    jne pd_key
+    test byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
+    jz pd_drop
+    mov eax, dword ptr [esp + 4]
+    cmp dword ptr [eax + 8], 0x20
+    jne pd_drop
+    mov byte ptr [{PP_REQ:#x}], 1
+    jmp pd_drop
+pd_key:
     cmp eax, 0x109
     jbe pd_drop
     cmp eax, 0x201
@@ -8934,6 +8983,42 @@ pd_pass:
     jmp dword ptr [{DISPATCH:#x}]
 ''')
 pz_dptr = place_data('pz_dptr', struct.pack('<I', pz_disp))
+
+# ---- Pausa manual (pedido del usuario, 8/11/2026). En el menú del disquete, "Pausa" ocupa la línea de Chat Mode (que
+# no se usaba; ver TEXTS): se habilita como ella, solo en partidas en red, y la puede pedir cualquier PC. Al clic, la PC
+# que la pidió guarda la partida como "<nombre>_<turno>_pausa" (0x439880, como el autoguardado de 0x4397f0, que en red
+# guarda en NETSAVES; el autoguardado del comienzo del turno no se toca) y manda PP_PKT 1; al recibirlo (el eco de
+# 0x4dd3b0 incluido) cada PC pausa con PZ_MANUAL, con el mismo mecanismo que la Votación (pz_tick, pz_disp, el aviso en
+# pantalla pp_text). Cualquier jugador reanuda con la barra espaciadora: pz_disp lo anota en PP_REQ y tl_idle manda
+# PP_PKT 0. La pausa manual no tiene la vigilancia de 60 s: dura hasta que alguien la levanta.
+pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pausa'))
+pp_name = place_data('pp_name', bytes(0x80))
+pp_click = place('pp_click', f'''
+    pushad
+    cmp word ptr [0x503de8], 2
+    jne pc_send
+    mov ecx, {GAMECLK:#x}
+    call 0x420a80
+    movsx eax, ax
+    push eax
+    push 0x503da0
+    push {pp_fmt:#x}
+    push {pp_name:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0x10
+    push 0
+    push {pp_name:#x}
+    call 0x439880
+    add esp, 8
+pc_send:
+    push 4
+    push {pp_pause:#x}
+    push {PP_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0xc
+    popad
+    ret
+''')
 
 # Entradas de los controles del reloj del turno: primero correr los vencimientos.
 pz_chk = {va: place(f'pz_chk_{va:x}', f'''
@@ -11686,10 +11771,12 @@ tm_set:
     jmp 0x4bd51c
 ''')
 
-# Despachador del menú (0x4bd520, eax = control).
+# Despachador del menú (0x4bd520, eax = control). La línea de Chat Mode (0xc) es ahora "Pausa".
 tl_disp = place('tl_disp', f'''
     cmp eax, {VOTE_HOT:#x}
     je td_vote
+    cmp eax, 0xc
+    je td_pause
     sub eax, 0xb
     cmp eax, 0xd
     ja 0x4bd533
@@ -11700,6 +11787,11 @@ td_vote:
     push 0
     call {tl_sendopen:#x}
     add esp, 4
+    ret
+td_pause:
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    call {pp_click:#x}
     ret
 ''')
 
@@ -11752,11 +11844,9 @@ dc_init = place('dc_init', f'''
     jmp 0x44dd5d
 ''')
 
-# Clic en Edit Side (0x44d3a0; evento 3 en 0x44d3e7, edx = control; los que no están entre 2 y 73 caen en
-# "ja 0x44db1c", que devuelve 0 y deja el diálogo abierto).
-dc_click = place('dc_click', f'''
-    cmp edx, {DC_BTN}
-    jne 0x44db1c
+# Abrir Herramientas\DarkCompare.exe --juego; si no se puede, el aviso de las herramientas. Preserva todo.
+dc_run = place('dc_run', f'''
+    pushad
     push {tl_pi:#x}
     push {tl_si:#x}
     push 0
@@ -11769,13 +11859,13 @@ dc_click = place('dc_click', f'''
     push {dc_exe:#x}
     call dword ptr [{CREATEPROC:#x}]
     test eax, eax
-    jz dc_fail
+    jz dr_fail
     push dword ptr [{tl_pi:#x}]
     call dword ptr [{CLOSEH:#x}]
     push dword ptr [{tl_pi + 4:#x}]
     call dword ptr [{CLOSEH:#x}]
-    jmp 0x44db1c
-dc_fail:
+    jmp dr_end
+dr_fail:
     push 0
     push 0
     push {dc_err:#x}
@@ -11784,10 +11874,154 @@ dc_fail:
     push 0
     call dword ptr [{CREATETH:#x}]
     test eax, eax
-    jz 0x44db1c
+    jz dr_end
     push eax
     call dword ptr [{CLOSEH:#x}]
+dr_end:
+    popad
+    ret
+''')
+
+# Clic en Edit Side (0x44d3a0; evento 3 en 0x44d3e7, edx = control; los que no están entre 2 y 73 caen en
+# "ja 0x44db1c", que devuelve 0 y deja el diálogo abierto).
+dc_click = place('dc_click', f'''
+    cmp edx, {DC_BTN}
+    jne 0x44db1c
+    call {dc_run:#x}
     jmp 0x44db1c
+''')
+
+# ---- "Comparador" en el menú del libro (pedido del usuario, 8/11/2026): diálogo 0x58 (RES 93), debajo de "Side
+# Lists", en el renglón libre de y 170 (texto BK_TXT, zona BK_HOT, ver más abajo). Abre lo mismo que el botón de Edit
+# Side. La consulta no pausa la partida: al empezar el turno de cualquier bando (ia_turn) dc_close busca la ventana
+# oculta de DarkCompare (título DC_CLOSE_TITLE, DarkCompare 1.0.0.6 o posterior) y le manda WM_CLOSE: el programa se
+# cierra solo y no queda encima del juego en el turno siguiente. Un DarkCompare anterior no tiene esa ventana: no se
+# cierra, y nada más (FindWindowA devuelve 0).
+BK_TXT, BK_HOT = 0x11, 0x12        # el diálogo 93 tiene los controles 1 a 0x10
+FINDWIN, POSTMSG = 0x5a9c68, 0x5a9c70
+DC_CLOSE_TITLE = 'DarkCompare.Juego.Cerrar'   # contrato con DarkCompare (Program.TituloCierre)
+bk_text = place_data('bk_text', cstr_('Comparador'))
+dc_ctitle = place_data('dc_ctitle', cstr_(DC_CLOSE_TITLE))
+dc_close = place('dc_close', f'''
+    pushad
+    push {dc_ctitle:#x}
+    push 0
+    call dword ptr [{FINDWIN:#x}]
+    test eax, eax
+    jz dcl_end
+    push 0
+    push 0
+    push 0x10
+    push eax
+    call dword ptr [{POSTMSG:#x}]
+dcl_end:
+    popad
+    ret
+''')
+# Alta del menú del libro (0x42bea0, fin en 0x42bf2e): la zona nueva nace oculta; mostrarla habilitada.
+bk_init = place('bk_init', f'''
+    push 0
+    push {BK_HOT}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    jmp 0x42bf38
+''')
+# Dibujo del menú del libro (0x42c0a0, fin en 0x42c2ac): esi = control bajo el puntero; [esp + 0xc] = escribir los
+# textos. Resaltado (0xf) con el puntero encima, si no el color normal (0x5c), como las otras líneas.
+bk_draw = place('bk_draw', f'''
+    cmp dword ptr [esp + 0xc], 0
+    je bk_col
+    push {bk_text:#x}
+    push {BK_TXT}
+    call 0x4dd240
+    add esp, 8
+bk_col:
+    push 0
+    push 0
+    mov ecx, 0x5c
+    cmp esi, {BK_HOT}
+    jne bk_set
+    mov ecx, 0xf
+bk_set:
+    push ecx
+    push {BK_TXT}
+    call 0x4dd2b0
+    add esp, 0x10
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    jmp 0x42c2b6
+''')
+# Despachador del menú del libro (0x42c2c0, [esp + 4] = control): BK_HOT cierra el menú y abre el Comparador.
+bk_disp = place('bk_disp', f'''
+    cmp dword ptr [esp + 4], {BK_HOT}
+    je bk_dc
+    mov eax, dword ptr [esp + 4]
+    sub esp, 0x29c
+    jmp 0x42c2ca
+bk_dc:
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    call {dc_run:#x}
+    ret
+''')
+
+# ---- Sello de certificación en Army List (pedido del usuario, 8/11/2026). Arriba a la derecha del diálogo 111 (fondo
+# DLG_BIG), en el hueco libre debajo de la barra del título, un botón SEAL (control nuevo; el diálogo tiene 1 a 0x1b)
+# con la medalla que mandó el usuario (medalla.png, en la hoja SEAL_FILE). Se ve cuando ninguna unidad del bando
+# mirado viola las reglas del validador (armcheck, las mismas que marcan cada unidad con el círculo rojo, que siguen
+# igual) y el bando tiene al menos una unidad; si no, el botón queda deshabilitado, y su cuadro deshabilitado es
+# transparente: no se ve nada. Al hacer clic no pasa nada (el despachador 0x4a21e0 devuelve 0 para los controles
+# mayores que 0x13). Se decide en al_seal, en lugar de altitle en 0x4a2cb6: corre al abrir Army List y al cambiar de
+# bando, con la lista de renglones ya armada (0x4a2cd0: [0x5730d8] renglones, 0x5730b0 casilla de cada uno, 0..15 las
+# unidades, negativos los títulos), y antes del redibujo del diálogo (0x4d82a0).
+SEAL = 0x1c
+SEAL_FILE = PZ_FILE + 1      # después de aviso.pcx (ver table_add, más abajo)
+SEAL_X, SEAL_Y, SEAL_W, SEAL_H = 532, 52, 56, 56
+al_seal = place('al_seal', f'''
+    pushad
+    mov ebx, 2
+    movsx ebp, word ptr [0x5730dc]
+    cmp ebp, 7
+    ja as_set
+    xor esi, esi
+    xor edi, edi
+as_lp:
+    movsx eax, word ptr [0x5730d8]
+    cmp esi, eax
+    jge as_end
+    cmp esi, 20
+    jae as_end
+    movsx eax, word ptr [esi*2 + 0x5730b0]
+    cmp eax, 15
+    ja as_nx
+    mov ecx, ebp
+    shl ecx, 4
+    add eax, ecx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    push ebp
+    push eax
+    call {armcheck:#x}
+    add esp, 8
+    test eax, eax
+    jnz as_set
+    inc edi
+as_nx:
+    inc esi
+    jmp as_lp
+as_end:
+    test edi, edi
+    jz as_set
+    xor ebx, ebx
+as_set:
+    push ebx
+    push {SEAL}
+    call 0x4dcec0
+    add esp, 8
+    popad
+    jmp {altitle:#x}
 ''')
 
 # ---------------------------------------------------------------- IA: base de pruebas (specs\ia-destrezas-v1.md)
@@ -14136,6 +14370,18 @@ bv_x:
     popad
     jmp 0x4b85bb
 ''')
+# Recepción de la pausa manual (antes que bd_recv; +0xc: 1 pausar, 0 reanudar). Vale de cualquier PC.
+pp_recv = place('pp_recv', f'''
+    cmp eax, {PP_PKT + 8:#x}
+    jne {bd_recv:#x}
+    cmp dword ptr [esi + 0xc], 0
+    je pp_off
+    or byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
+    jmp 0x4b85bb
+pp_off:
+    and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_MANUAL:#x}
+    jmp 0x4b85bb
+''')
 # al_surv(p) cdecl, desde ia_turn: por cada pila de p anotada como amenazada en un turno anterior, evento 12 con
 # x, y donde estaba y n = 1 si su líder sigue vivo y es de p, 0 si no. Preserva todo.
 al_surv = place('al_surv', f'''
@@ -14216,6 +14462,7 @@ tt_end:
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
     pushad
+    call {dc_close:#x}
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae it_out
@@ -16157,7 +16404,7 @@ patch(0x4def81, bytes.fromhex('034c0a046a4f'), asm(f'jmp {gname:#x}', 0x4def81))
 assert rel(0x4a2c24, 8) == asm('call 0x4dd120; add esp, 0xc', 0x4a2c24)
 patch(0x4a2c24, rel(0x4a2c24, 8), asm(f'jmp {armab:#x}', 0x4a2c24))
 patch(0x45a049, asm('call 0x45aa80', 0x45a049), asm(f'call {fldraw:#x}', 0x45a049))
-patch(0x4a2cb6, asm('call 0x4dd260', 0x4a2cb6), asm(f'call {altitle:#x}', 0x4a2cb6))
+patch(0x4a2cb6, asm('call 0x4dd260', 0x4a2cb6), asm(f'call {al_seal:#x}', 0x4a2cb6))
 assert rel(0x457200, 2) == asm('je 0x457214', 0x457200)
 patch(0x4571f8, bytes.fromhex('6683e20f6683fa08'), asm(f'jmp {fldirty:#x}', 0x4571f8))
 for va in (0x4a979e, 0x4ab7c5):
@@ -16280,7 +16527,7 @@ assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
 patch(0x46e892, asm('ja 0x46ed83', 0x46e892), asm(f'ja {tl_setclick:#x}', 0x46e892))
 assert rel(0x46ed83, 7) == bytes.fromhex('6633c05d5f5e5b')
 assert rel(0x4b6a16, 12) == bytes.fromhex('0fbf460483c0083d11020000')
-patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {bd_recv:#x}', 0x4b6a22))
+patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {pp_recv:#x}', 0x4b6a22))
 # Construir trampas (tr_*)
 patch(0x4affc2, asm('mov ecx, 0x588bd0', 0x4affc2), asm(f'jmp {tr_init:#x}', 0x4affc2))
 patch(0x4b0450, asm('mov ecx, 0x588bd0', 0x4b0450), asm(f'jmp {tr_hover:#x}', 0x4b0450))
@@ -16295,6 +16542,10 @@ patch(0x44dd53, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x44dd53), asm(f'jmp {dc
 assert rel(0x44dd5d, 2) == bytes.fromhex('5ec3')
 assert rel(0x44d3e7, 9) == bytes.fromhex('8b56048d42fe83f847')
 patch(0x44d3f0, asm('ja 0x44db1c', 0x44d3f0), asm(f'ja {dc_click:#x}', 0x44d3f0))
+# Menú del libro: "Comparador" (bk_*).
+patch(0x42bf2e, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x42bf2e), asm(f'jmp {bk_init:#x}', 0x42bf2e))
+patch(0x42c2ac, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x42c2ac), asm(f'jmp {bk_draw:#x}', 0x42c2ac))
+patch(0x42c2c0, asm('mov eax, dword ptr [esp + 4]; sub esp, 0x29c', 0x42c2c0), asm(f'jmp {bk_disp:#x}', 0x42c2c0))
 assert rel(0x44db1c, 3) == bytes.fromhex('6633c0')
 assert rel(0x44d357, 7) == bytes.fromhex('6a51') + asm('call 0x4d7980', 0x44d359)
 # Pausa mientras se vota (pz_*)
@@ -16451,9 +16702,12 @@ new_list[115] = [lbl, ind, lbl2, ind2, lbl3, ind3]
 # líneas pasan a 16 píxeles entre sí (de 46 a 238; el marco deja libre de 40 a 262); cada zona de clic, 4 píxeles
 # por encima de su texto y de 16 de alto, conserva su x y su ancho.
 r35 = records(res, 35)
-MENU = [(1, 0xb), (2, 0xc), ('new', 'new'), (0x15, 0x16), (3, 0xd), (4, 0xe), (5, 0xf), (6, 0x10), (7, 0x11),
+# EMail Statistics (0x15 / 0x16) sale del menú: sin texto (TEXTS) y con la zona de clic de alto 0 (siempre estuvo
+# deshabilitada); las 12 líneas que quedan van de 46 a 222.
+MENU = [(1, 0xb), (2, 0xc), ('new', 'new'), (3, 0xd), (4, 0xe), (5, 0xf), (6, 0x10), (7, 0x11),
         (8, 0x12), (9, 0x13), (0x17, 0x18), (10, 0x14)]
-assert sorted(i for pair in MENU if pair[0] != 'new' for i in pair) == sorted(r35)
+assert sorted([i for pair in MENU if pair[0] != 'new' for i in pair] + [0x15, 0x16]) == sorted(r35)
+struct.pack_into('<I', res, r35[0x16][0] + 0x1c, 0)
 p, t = r35[2]; assert t == 0x13
 vtxt = bytearray(res[p:p + 4 + SZ[0x13]])
 struct.pack_into('<I', vtxt, 4, VOTE_TXT)
@@ -16520,7 +16774,32 @@ setstr(dcb, 0x30, 16, 'Compare')
 setstr(dcb, 0x40, 64, 'Compare army units (DarkCompare)')
 new_list[86] = [dcb]
 
-for did in (115, 86, 35, 34, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
+# Diálogo 93 (menú del libro): "Comparador" (BK_TXT / BK_HOT), copias de Side Lists (texto 0xf en y 150, zona 0x10 5
+# píxeles más arriba) en el renglón libre de y 170, entre Side Lists y el de y 190.
+r93 = records(res, 93)
+assert sorted(r93) == list(range(1, BK_TXT))
+assert [struct.unpack_from('<I', res, r93[i][0] + 0xc)[0] for i in (0xf, 0x10, 0xd)] == [150, 145, 190]
+p, t = r93[0xf]; assert t == 0x13
+bktxt = bytearray(res[p:p + 4 + SZ[0x13]])
+struct.pack_into('<I', bktxt, 4, BK_TXT); struct.pack_into('<I', bktxt, 0xc, 170)
+p, t = r93[0x10]; assert t == 3
+bkhot = bytearray(res[p:p + 4 + SZ[3]])
+struct.pack_into('<I', bkhot, 4, BK_HOT); struct.pack_into('<I', bkhot, 0xc, 165)
+new_list[93] = [bktxt, bkhot]
+
+# Diálogo 111 (Army List): el sello SEAL, otra copia de Chat del diálogo 7, en SEAL_X/Y y de SEAL_W x SEAL_H; su dibujo,
+# en (0,0) de la hoja SEAL_FILE (más abajo).
+r111 = records(res, 111)
+assert sorted(r111) == list(range(1, SEAL))
+p, t = r7[80]
+seal = bytearray(res[p:p + 4 + SZ[1]])
+struct.pack_into('<IIII', seal, 4, SEAL, SEAL_X, SEAL_Y, 1)
+struct.pack_into('<5I', seal, 0x18, SEAL_FILE, 0, 0, SEAL_W, SEAL_H)
+setstr(seal, 0x30, 16, 'Certified')
+setstr(seal, 0x40, 64, 'Certified: no unit is forbidden by the Validator')
+new_list[111] = [seal]
+
+for did in (115, 111, 93, 86, 35, 34, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
     append(res, did, b''.join(new_list[did]))
 
 # Nombre del juego en los textos de los diálogos (ayudas de botón: +0x40, 64 bytes; texto tipo 0x12: +0x2c, se
@@ -16663,6 +16942,51 @@ pz_hoja.paste(_help.crop((0, 0, 45, 150)).resize((_e, PZ_H), Image.NEAREST), (0,
 pz_hoja.paste(_help.crop((45, 0, 205, 150)).resize((PZ_W - 2 * _e, PZ_H), Image.NEAREST), (_e, 0))
 pz_hoja.paste(_help.crop((205, 0, 250, 150)).resize((_e, PZ_H), Image.NEAREST), (PZ_W - _e, 0))
 pcx = io.BytesIO(); pz_hoja.save(pcx, 'PCX'); PZ_PCX = pcx.getvalue()
+# Hoja SEAL_FILE = SETS\Fantasy\sello.pcx (al_seal), con los campos de butt_std: los cuatro cuadros de un botón de
+# SEAL_W x SEAL_H, uno debajo del otro. Normal, apretado y con el puntero encima llevan la medalla igual (no tiene que
+# parecer un botón); el deshabilitado queda todo transparente (11). La medalla (medalla.png, la imagen del usuario) sale
+# de su fondo negro y gris (se recorre desde los bordes lo que es gris oscuro), se recorta y se lleva a 54 x 54
+# centrada. Army List se ve con la paleta del mapa, y BUTT_STD tiene la de la preparación: solo se usan los colores
+# que valen igual en las dos y que ya usan sus hojas (BUTT_STD, SetupScr, DLG_BIG, DLG_HELP).
+assert SEAL_FILE == PZ_FILE + 1
+def medalla_rgba(archivo, W, H):
+    m = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGB'); w, h = m.size
+    fondo = lambda c: abs(c[0] - c[1]) < 12 and abs(c[1] - c[2]) < 12 and max(c) <= 90
+    afuera, pila = set(), [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for x in (0, w - 1) for y in range(h)]
+    while pila:
+        x, y = pila.pop()
+        if (x, y) in afuera or not (0 <= x < w and 0 <= y < h) or not fondo(m.getpixel((x, y))): continue
+        afuera.add((x, y)); pila += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    a = Image.new('RGBA', m.size)
+    for y in range(h):
+        for x in range(w):
+            if (x, y) not in afuera: a.putpixel((x, y), m.getpixel((x, y)) + (255,))
+    a = a.crop(a.getbbox())
+    k = min(W / a.width, H / a.height)
+    a = a.resize((round(a.width * k), round(a.height * k)), Image.LANCZOS)
+    out = Image.new('RGBA', (W, H)); out.paste(a, ((W - a.width) // 2, (H - a.height) // 2))
+    return out
+_pal_mapa = Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
+_usados = set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())
+for _f in ('DLG_BIG', 'DLG_HELP'): _usados |= set(Image.open(rf'C:\Warlords3\SETS\Fantasy\{_f}.PCX').getdata())
+_seal_cols = sorted(i for i in _usados - {11} if pal[3 * i:3 * i + 3] == _pal_mapa[3 * i:3 * i + 3])
+assert len(_seal_cols) > 64
+_seal_memo = {}
+def _seal_col(rgb):
+    if rgb not in _seal_memo:
+        _seal_memo[rgb] = min(_seal_cols, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+    return _seal_memo[rgb]
+_med = medalla_rgba('medalla.png', SEAL_W - 2, SEAL_H - 2)
+seal_hoja = Image.new('P', (SEAL_W, 4 * SEAL_H), 11); seal_hoja.putpalette(butt.getpalette())
+for fila in (0, 1, 3):
+    for y in range(_med.height):
+        for x in range(_med.width):
+            r, g, b_, a_ = _med.getpixel((x, y))
+            if a_ >= 128: seal_hoja.putpixel((x + 1, fila * SEAL_H + y + 1), _seal_col((r, g, b_)))
+pcx = io.BytesIO(); seal_hoja.save(pcx, 'PCX'); SEAL_PCX = pcx.getvalue()
+struct.pack_into('<I', butt_std, 0, SEAL_FILE)
+setstr(butt_std, 4, 32, 'sello')
+table_add(res, 2, SEAL_FILE, bytes(butt_std))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -17044,6 +17368,7 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'sorteo.pcx')] = SORTEO_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
+NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

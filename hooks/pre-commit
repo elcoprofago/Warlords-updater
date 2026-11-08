@@ -11,6 +11,9 @@
 # 3) BLOQUEA: cambiar lo que la opcion 6 no pisa (NoPisar, RaizPropia, DataPropia en
 #    source/Actualizador/Actualizador.cs) sin cambiar tools/publicar-full.ps1 en el mismo commit:
 #    lo que no se pisa en ninguna PC tampoco tiene que salir en el zip de quien lo arma.
+# 5) RECUERDA (no bloquea): el titulo de la ventana de cierre de DarkCompare (DC_CLOSE_TITLE en
+#    parches/vista-aliada/build.py) es un contrato con el repo DarkCompare (TituloCierre en Program.cs):
+#    si cambia aca y no alla, el Comparador abierto desde el libro deja de cerrarse al empezar el turno.
 # 4) BLOQUEA: un archivo que sale de ARCHIVOS de vista-aliada en parches/parches.txt (un bono renombrado
 #    o quitado) sin estar en OBSOLETOS de parches/vista-aliada/build.py: el Actualizador no borra nada,
 #    y la copia vieja quedaria en las PC que ya lo tenian (DarklordAV.exe borra los OBSOLETOS al arrancar).
@@ -77,5 +80,10 @@ for f in $salen; do
            fallo=1 ;;
     esac
 done
+
+if git diff --cached -- parches/vista-aliada/build.py | grep -q '^[-+].*DC_CLOSE_TITLE'; then
+    echo "pre-commit (recordatorio): cambiaste DC_CLOSE_TITLE en build.py: el mismo titulo tiene que estar en" >&2
+    echo "  TituloCierre de DarkCompare (Program.cs), y DarkCompare publicado con ese cambio." >&2
+fi
 
 exit $fallo

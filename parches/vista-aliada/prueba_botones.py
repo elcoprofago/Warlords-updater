@@ -10,6 +10,7 @@
 # paquete, herramienta fuera de rango, el reloj sin cumplir, .ver trabado, otros controles de Edit Side y el RES
 # original sin los registros.
 import os, sys, struct, pefile
+from PIL import Image
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
@@ -122,7 +123,25 @@ def despacho(item, machine=0):
 print('-- menú de partida: clic')
 ver('anfitrión, Votacion', despacho(VOTE_HOT), [('cerrar',), ('red', 0x2a0, struct.pack('<I', 0))])
 ver('control: otra máquina, Votacion', despacho(VOTE_HOT, 1), [('cerrar',)])
-ver('control: Chat Mode', despacho(0xc), [('cerrar',), ('chat',)])
+ver('Pausa (ex Chat Mode), fuera de red: cierra el menú y avisa a todos, sin guardar', despacho(0xc),
+    [('cerrar',), ('red', 0x2a5, struct.pack('<I', 1))])
+def despacho_red(item):
+    mu = maquina(); out = []
+    mu.mem_write(0x503de8, struct.pack('<H', 2)); mu.mem_write(0x503da0, b'Clan\0')
+    interceptar(mu, 0x4d7d70, 0, lambda mu, a: ('cerrar',), out)
+    interceptar(mu, 0x4dd3b0, 0, lambda mu, a: ('red', a[0], bytes(mu.mem_read(a[1], a[2]))), out)
+    def turno(mu, a): return ('turno', hex(mu.reg_read(UC_X86_REG_ECX)))
+    turno.eax = 7
+    interceptar(mu, 0x420a80, 0, turno, out)
+    interceptar(mu, 0x439880, 0, lambda mu, a: ('guardar', cstr(mu, a[0]), a[1]), out)
+    mu.mem_write(0x5a9bec, struct.pack('<I', STUBS + 0x800))   # sprintf (cdecl), %s_%d_pausa
+    def sprintf(mu, a):
+        mu.mem_write(a[0], (cstr(mu, a[1]).replace('%s', '{}').replace('%d', '{}').format(cstr(mu, a[2]), a[3])).encode() + bytes(1))
+    interceptar(mu, STUBS + 0x800, 0, sprintf, None)
+    correr(mu, 0x4bd520, [item])
+    return out
+ver('Pausa en red: guarda Clan_7_pausa y avisa a todos', despacho_red(0xc),
+    [('cerrar',), ('turno', '0x5032f8'), ('guardar', 'Clan_7_pausa', 0), ('red', 0x2a5, struct.pack('<I', 1))])
 ver('control: control desconocido', despacho(0x30), [('cerrar',)])
 
 # ---------------------------------------------------------------- pantalla de preparación
@@ -319,6 +338,51 @@ mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 3)); mu.reg_write(UC_X86
 mu.emu_start(0x44d3e7, 0, count=4)
 ver('control: control 3 sigue a su tabla', hex(mu.reg_read(UC_X86_REG_EIP)), hex(0x44d3f6))
 
+# ---------------------------------------------------------------- Army List (sello)
+def rel(a): return a + 5 + struct.unpack_from('<i', img, a + 1 - BASE)[0]
+assert img[0x4a2cb6 - BASE] == 0xe8
+AL_SEAL = rel(0x4a2cb6)
+_k = img.index(b'\x55\x50\xe8', AL_SEAL - BASE); ARMCHECK = rel(BASE + _k + 2)
+_k = img.index(b'\x61\xe9', AL_SEAL - BASE); ALTITLE = rel(BASE + _k + 1)
+def sello(jugador, filas, malas):
+    """filas: casillas de la lista (negativas = títulos); malas: casillas que armcheck marca."""
+    mu = maquina(); out = []
+    mu.mem_write(0x5730dc, struct.pack('<h', jugador)); mu.mem_write(0x5730d8, struct.pack('<h', len(filas)))
+    for i, f in enumerate(filas): mu.mem_write(0x5730b0 + 2 * i, struct.pack('<h', f))
+    vistos = []
+    def chk(mu, a):
+        slot, pl = divmod(a[0] - 0x53c410, 0xfc)[0], a[1]
+        vistos.append((slot // 16, slot % 16, pl))
+    chk.eax = lambda: 4 if vistos and vistos[-1][1] in malas else 0
+    interceptar(mu, ARMCHECK, 0, chk, None)
+    interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('sello', a[0], a[1]), out)
+    interceptar(mu, ALTITLE, 0, lambda mu, a: ('titulo',), out)
+    correr(mu, AL_SEAL, [])
+    return out, vistos
+print('-- Army List: sello de certificación')
+ver('sin unidades prohibidas: sello visible (0) y sigue el título', sello(3, [-1, 0, 1, -2, 5], set()),
+    ([('sello', 0x1c, 0), ('titulo',)], [(3, 0, 3), (3, 1, 3), (3, 5, 3)]))
+ver('una prohibida: sello deshabilitado (2), deja de mirar', sello(3, [0, 1, 5], {1}),
+    ([('sello', 0x1c, 2), ('titulo',)], [(3, 0, 3), (3, 1, 3)]))
+ver('control: bando sin unidades: sin sello', sello(2, [-1, -2], set()), ([('sello', 0x1c, 2), ('titulo',)], []))
+ver('control: jugador fuera de rango: sin sello ni armcheck', sello(9, [0], set()), ([('sello', 0x1c, 2), ('titulo',)], []))
+
+# ---------------------------------------------------------------- pausa manual: recepción
+_t = b'Votacion en curso: partida en pausa\0'
+PZ_ON = BASE + img.index(_t) + len(_t)
+PP_RECV = 0x4b6a22 + 6 + struct.unpack_from('<i', img, 0x4b6a22 + 2 - BASE)[0]
+def pp_recv(tipo, dato, antes, hasta=0x4b85bb):
+    mu = maquina(); mu.mem_write(PZ_ON, bytes([antes]))
+    mu.mem_write(PKT, struct.pack('<III', 0, 0, 0) + struct.pack('<I', dato))
+    mu.reg_write(UC_X86_REG_EAX, tipo + 8); mu.reg_write(UC_X86_REG_ESI, PKT)
+    mu.emu_start(PP_RECV, hasta, count=10)
+    return hex(mu.reg_read(UC_X86_REG_EIP)), mu.mem_read(PZ_ON, 1)[0]
+print('-- pausa manual: recepción')
+ver('pausa: prende el bit manual (2) sin tocar el de la votación', pp_recv(0x2a5, 1, 1), ('0x4b85bb', 3))
+ver('reanudar: apaga solo el bit manual', pp_recv(0x2a5, 0, 3), ('0x4b85bb', 1))
+_bd = img.index(b'\x3d' + struct.pack('<I', 0x2a4 + 8)) + BASE
+ver('control: otro paquete sigue la cadena (bd_recv) sin tocar la pausa', pp_recv(0x2a4, 1, 0, _bd), (hex(_bd), 0))
+
 # ---------------------------------------------------------------- RES
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
       0xb: 0x64, 0xc: 0x64, 0xd: 0x3c, 0xe: 0x30, 0x11: 0x14, 0x12: 0x68, 0x13: 0x28, 0x14: 0x2c, 0x15: 0xac}
@@ -337,9 +401,10 @@ NUEVO, ORIG = os.path.join(DIR, 'DATA', 'WAR3AV.RES'), r'C:\Warlords3\DATA\War3.
 print('-- RES')
 n35, o35 = recs(NUEVO, 35), recs(ORIG, 35)
 ver('menú: 26 registros (24 + 2)', (len(n35), len(o35)), (26, 24))
-ys = sorted(struct.unpack_from('<I', r, 0xc)[0] for i, r in n35.items() if r[0] == 0x13)
-ver('menú: textos cada 16 píxeles', ys, list(range(46, 239, 16)))
-ver('menú: Votacion debajo de Chat Mode', [struct.unpack_from('<I', n35[i], 0xc)[0] for i in (2, VOTE_TXT, 0x15)], [62, 78, 94])
+ys = sorted(struct.unpack_from('<I', r, 0xc)[0] for i, r in n35.items() if r[0] == 0x13 and i != 0x15)
+ver('menú: textos cada 16 píxeles (sin el de EMail Statistics, que queda vacío)', ys, list(range(46, 223, 16)))
+ver('menú: Votacion debajo de Pausa', [struct.unpack_from('<I', n35[i], 0xc)[0] for i in (2, VOTE_TXT)], [62, 78])
+ver('menú: la zona de EMail Statistics no tiene alto', struct.unpack_from('<I', n35[0x16], 0x1c)[0], 0)
 ver('menú: zona de Votacion', struct.unpack_from('<6I', n35[VOTE_HOT], 8), (26, 74, 1, 0, 138, 16))
 ver('control: zona de Help conserva x y ancho', struct.unpack_from('<6I', n35[0xb], 8), (28, 42, 1, 0, 136, 16))
 n7, o7 = recs(NUEVO, 7), recs(ORIG, 7)
@@ -357,7 +422,26 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: cuatro más (165 a 168; el 168 es el de pozos)', (len(fn), len(fo)), (169, 165))
+ver('archivos: seis más (165 a 170; 168 pozos, 169 aviso, 170 sello)', (len(fn), len(fo)), (171, 165))
+ver('archivo 170: sello en SETS\\Fantasy', (struct.unpack_from('<I', fn[170])[0], fn[170][4:10]), (170, b'sello\0'))
+n111, o111 = recs(NUEVO, 111), recs(ORIG, 111)
+ver('Army List: un registro más, el sello (0x1c)', sorted(set(n111) - set(o111)), [0x1c])
+ver('Army List: sello arriba a la derecha', struct.unpack_from('<11I', n111[0x1c], 0), (1, 0x1c, 532, 52, 1, 1, 170, 0, 0, 56, 56))
+x0, y0, x1, y1 = rect(n111[0x1c])
+ver('Army List: sello dentro del diálogo y sin tapar otro control', (x1 <= 620,
+    [i for i, r in n111.items() if r[0] in (1, 3) and i != 0x1c and not (rect(r)[2] <= x0 or x1 <= rect(r)[0] or rect(r)[3] <= y0 or y1 <= rect(r)[1])]),
+    (True, []))
+ver('control: registros originales de Army List intactos', all(n111[i] == o111[i] for i in o111), True)
+se = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sello.pcx'))
+ver('sello.pcx: 4 cuadros de 56x56; el deshabilitado (3.º) todo transparente', (se.size, set(se.crop((0, 112, 56, 168)).getdata())),
+    ((56, 224), {11}))
+ver('sello.pcx: normal, apretado y puntero encima iguales y con dibujo',
+    [list(se.crop((0, 56 * k, 56, 56 * k + 56)).getdata()) == list(se.crop((0, 0, 56, 56)).getdata()) for k in (1, 3)]
+    + [len(set(se.crop((0, 0, 56, 56)).getdata())) > 20], [True, True, True])
+n93, o93 = recs(NUEVO, 93), recs(ORIG, 93)
+ver('libro: dos registros más (texto 0x11 y zona 0x12) en el renglón de y 170',
+    [(i, struct.unpack_from('<I', n93[i], 0xc)[0]) for i in sorted(set(n93) - set(o93))], [(0x11, 170), (0x12, 165)])
+ver('control: registros originales del libro intactos', all(n93[i] == o93[i] for i in o93), True)
 ver('archivo 166: sorteo en SETS\\Fantasy', (struct.unpack_from('<I', fn[166])[0], fn[166][4:11], struct.unpack_from('<6I', fn[166], 36)),
     (166, b'sorteo\0', (16, 1, 0, 0, 0, 0)))
 TITULO = {1: b'startav', 138: b'startav1', 139: b'startav2'}   # fondos del menú con el título (1.0.19.0)
@@ -388,6 +472,6 @@ ver('darkcomp.pcx: 4 cuadros de 64x64, paleta de DLG_BIG (fondo de Edit Side)', 
     ('P', (64, 256), Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
-ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 2)
+ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 3)
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

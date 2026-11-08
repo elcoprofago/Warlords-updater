@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 128).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 129).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
 0. **Tarea 127** (tanda de la IA: qué hacen los ejércitos que pagan mantenimiento fuera de las ciudades).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
@@ -14,6 +15,20 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.139.0** o posterior) y opción **10** (DarkCompare **1.0.0.6** o
+   posterior).
+2. Libro: el menú tiene que mostrar **Comparador** debajo de Side Lists. Al elegirlo se abre el Comparador.
+   Terminá el turno con el Comparador abierto: se tiene que cerrar solo cuando empieza el turno siguiente.
+3. Disquete: ya no están **Chat Mode** ni **EMail Statistics**; en el lugar de Chat Mode está **Pausa**.
+4. En una partida en red con otra PC: **Pausa** en una de las dos. En las dos aparece arriba «Partida en pausa:
+   Espacio reanuda» y no se puede jugar. Revisá en `Warlords3\NETSAVES` que haya una partida guardada con
+   `_pausa` en el nombre. Apretá **Espacio** en cualquiera de las dos: se reanuda en ambas.
+5. Army List: en un bando sin unidades prohibidas por el Validador, arriba a la derecha se ve la medalla. En uno con
+   alguna unidad marcada con círculo rojo, la medalla no aparece. Cambiá de bando con las flechas y fijate que
+   aparezca y desaparezca según corresponda.
+Resultado:
 
 - [ ] **127.** IA: qué hacen sus ejércitos fuera de las ciudades (8/11/2026)
 La 1.0.138.0 no cambia cómo juega la computadora: solo anota qué tarea tenía cada ejército que termina el turno

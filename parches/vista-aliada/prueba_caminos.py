@@ -29,6 +29,7 @@ TR_CLICK = dest(0x4b0487)
 _j = img.index(b'\x85\xc0\x0f\x84', TR_CLICK - BASE)
 BD_PICK = dest(BASE + _j - 5)
 BD_RECV = dest(0x4b6a22, 2)
+if img[BD_RECV - BASE] == 0x3d and d32(BD_RECV + 1) == 0x2a5 + 8: BD_RECV = dest(BD_RECV + 5, 2)   # pp_recv (pausa manual) va primero
 assert img[BD_RECV - BASE] == 0x3d and d32(BD_RECV + 1) == 0x2a4 + 8
 BD_MARK, BD_PKT = 0x7ffe, 0x2a4
 CIUDAD = 200                      # costo de fundar una ciudad ([0x56950e]); precio = CIUDAD * paso / 20
