@@ -5,13 +5,18 @@
 #   2. corre 0x42244b..0x42249b en el exe parcheado y compara la línea del evento 33 con el modelo
 #      (x = lo que pagan enteros los de fuera, y = el tercio que pagarían en una ciudad, n = cuántos son);
 #   3. con un ejército movido a mano a una ciudad y fuera de toda ciudad; control sin ia_on: nada anotado.
-# Uso: python prueba_mantenimiento.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
+#   4. evento 34 (paso 4.5): con ME_TAB cargada a mano (meta de la ronda, de la anterior, vieja o sin dato), el ahorro
+#      (entero − tercio) por meta de los de fuera coincide con el modelo; y me_set (en 0x40cc3f) anota meta + 1 y la
+#      ronda para los ejércitos de la pila y deja eax y [esp+0x10] como el original; sin ia_on no anota.
+# Uso: python prueba_mantenimiento.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <me_tab hex> <me_set hex>
+#      <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 AV, ORIG, IA_ON, IA_MODE = sys.argv[1], sys.argv[2], int(sys.argv[3], 16), int(sys.argv[4], 16)
-SAVS = sys.argv[5:]
+ME_TAB, ME_SET = int(sys.argv[5], 16), int(sys.argv[6], 16)
+SAVS = sys.argv[7:]
 imgs = {k: pefile.PE(f).get_memory_mapped_image() for k, f in (('av', AV), ('orig', ORIG))}
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4}
 STUB, RET = 0xdeac0000, 0x42249b
@@ -69,6 +74,21 @@ def modelo(m, p):
     return total, [fx, fy, fn]
 
 
+def me_de(i):
+    # (meta, ronda) cargada en ME_TAB para el ejército i, o None
+    k = i % 4
+    return None if k == 0 else (i % 10, {1: 7, 2: 6, 3: 5}[k])
+
+
+def modelo34(m, p):
+    r = {}
+    for i, o, mt, ciudad, _ in ejercitos(m):
+        if o != p or mt == 0 or ciudad: continue
+        d = me_de(i); c = d[0] if d and d[1] in (6, 7) else 10
+        a = r.setdefault(c, [0, 0]); a[0] += mt - max(1, mt // 3); a[1] += 1
+    return [[34, c] + r[c] for c in sorted(r)]
+
+
 def maquina(img, m):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
@@ -90,6 +110,9 @@ def corrida(m, p, on):
     mu.mem_write(0x503328, struct.pack('<h', 7))
     mu.mem_write(0x5643f0 + 2 * p, struct.pack('<h', 100)); mu.mem_write(0x5643d8 + 2 * p, struct.pack('<h', 20))
     mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([1] * 8))
+    for i in range(h(m, 0x54fe50)):
+        d = me_de(i)
+        if d: mu.mem_write(ME_TAB + 2 * i, bytes([d[0] + 1, d[1]]))
     names = list(IAT)
     for k, n in enumerate(names):
         mu.mem_write(IAT[n], struct.pack('<I', STUB + k * 16)); mu.mem_write(STUB + k * 16, b'\xc3')
@@ -118,7 +141,7 @@ def corrida(m, p, on):
     mu.reg_write(UC_X86_REG_ESP, sp)
     mu.emu_start(0x42244b, RET, count=2_000_000)
     pres = all(mu.reg_read(r) == v for r, v in regs.items()) and mu.reg_read(UC_X86_REG_ESP) == sp - 8
-    return [l[3:] for l in lines if l[3] == 33], pres
+    return [l[3:] for l in lines if l[3] == 33], pres, [l[3:] for l in lines if l[3] == 34]
 
 
 ok = True; nctl = 0
@@ -137,11 +160,15 @@ for sav in SAVS:
     for p in range(8):
         tot, esp = modelo(m, p)
         check(tot == orig[p], f'color {p}: modelo {tot} = 0x4406b0 original {orig[p]}')
-        l, pres = corrida(m, p, 1)
+        l, pres, l34 = corrida(m, p, 1)
         check(l == [[33] + esp] and pres, f'color {p}: evento 33 {l} = modelo {esp}')
+        e34 = [[a[0], a[1], a[2], a[3]] for a in modelo34(m, p)]
+        check(l34 == e34, f'color {p}: evento 34 {l34} = modelo {e34}')
+        check(sum(a[2] for a in l34) == esp[0] - esp[1] and sum(a[3] for a in l34) == esp[2],
+              f'color {p}: el 34 suma lo mismo que el 33')
         print(f'  color {p}: mantenimiento {orig[p]}; fuera de ciudad {esp[2]} ejércitos que pagan {esp[0]} '
               f'(en una ciudad pagarían {esp[1]})')
-        l, pres = corrida(m, p, 0)
+        l, pres, *_ = corrida(m, p, 0)
         check(l == [] and pres, f'color {p}, sin ia_on: nada anotado')
     # un ejército movido a mano: a la casilla de un ejército que está en ciudad, y a una casilla fuera de toda ciudad
     en_ciudad = [e for e in ej if e[3]]
@@ -156,7 +183,25 @@ for sav in SAVS:
             wr(m2, e + 2, rd(m, r + 2, 4))
             dentro = [x for x in ejercitos(m2) if x[0] == i][0][3]
             check((destino == 'ciudad') == dentro, f'ejército {i} quedó {"en" if dentro else "fuera de"} ciudad')
-            tot, esp = modelo(m2, o); l, pres = corrida(m2, o, 1)
+            tot, esp = modelo(m2, o); l, pres, *_ = corrida(m2, o, 1)
             check(tot == original_4406b0(m2)[o] and l == [[33] + esp] and pres,
                   f'ejército {i} (color {o}, mantenimiento {mt}) {destino}: {l} = modelo {esp}')
+# me_set: pila falsa con ejércitos 3, 0 (vacío), -1, 5000 (fuera de tabla), 17; meta 7 en [esp+0x1a] del llamador
+for on in (1, 0):
+    for meta in (0, 1, 7, 9):
+        mu = maquina(imgs['av'], load(SAVS[0]))
+        mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(0x503328, struct.pack('<h', 12))
+        rec = 0x10040000; mu.mem_write(rec + 0xc, struct.pack('<8h', 3, 0, -1, 5000, 17, 0, 0, 0))
+        mu.mem_write(0x5020d4, struct.pack('<I', rec))
+        sp = 0x10080000; fr = bytearray(0x40); struct.pack_into('<h', fr, 0x1e, meta); struct.pack_into('<H', fr, 0x14, 0xbeef)
+        mu.mem_write(sp, bytes(fr)); mu.mem_write(sp, struct.pack('<I', 0xdead0000)); mu.mem_map(0xdead0000, 0x1000)
+        mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBX, 0x1234)
+        mu.emu_start(ME_SET, 0xdead0000, count=10000)
+        tab = struct.unpack('<4096H', mu.mem_read(ME_TAB, 8192))
+        want = (meta + 1) | (12 << 8) if on else 0
+        check(tab[3] == want and tab[17] == want and sum(1 for t in tab if t) == (2 if on else 0),
+              f'me_set ia_on={on} meta {meta}: tabla {tab[3]:#x} {tab[17]:#x}')
+        check(mu.reg_read(UC_X86_REG_EAX) == meta and struct.unpack('<H', mu.mem_read(sp + 0x14, 2))[0] == 0
+              and mu.reg_read(UC_X86_REG_EBX) == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp + 4,
+              f'me_set ia_on={on} meta {meta}: eax y [esp+0x10] como el original')
 print(f'{nctl} controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)

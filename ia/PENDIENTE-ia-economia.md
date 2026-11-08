@@ -295,4 +295,21 @@ Resultados (no cambia el juego): nueva puesto 2,89, PV 7,67, 5,4 ciudades, 9 pri
 Deserciones (evento 28): 14 en 4 bandos (10 de la original).
 Próximo paso (4.5): evento 34 en 0x40ca70 con la meta elegida para cada pila de la IA que termina fuera de ciudad, para
 saber cuánto del techo es de pilas sin tarea (meta «Form» o ninguna) y cuánto de pilas que atacan o exploran.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.5".
+**Paso 4.5, medir la meta de los de fuera (8/11/2026, vista-aliada 1.0.138.0; falta la tanda, TAREAS 127).**
+me_set, en 0x40cc3f de 0x40ca70 (justo antes del salto por la tabla de metas 0x40d02c, con la meta ya elegida por el
+planificador o por arg): anota en ME_TAB[ejército] meta + 1 y el byte bajo de la ronda [0x503328] para los 8
+ejércitos de la pila [0x5020d4] + 0xc. mt_evt, para cada ejército de fuera de ciudad, toma esa meta si es de esta
+ronda o de la anterior (si no, 10 = sin decisión) y anota el evento 34 por meta: x = meta (0 ninguna, 1 Form, 2 ruina,
+3 neutral, 4 ítem, 5 héroe, 6 misión, 7 ciudad enemiga, 8 sitio, 9 reconstruir, 10 sin decisión), y = ahorro
+(entero − tercio), n = cuántos. La suma de los 34 de un color es x − y y n del 33. Solo anota.
+Sin comprobar: si las pilas que ai_ally/ai_ord resuelven sin pasar por 0x40c990 (refugio, defensa de aliadas)
+quedan con la meta de la ronda anterior o como 10; la tanda lo dirá por el tamaño del 10.
+Prueba emulada: prueba_mantenimiento.py ampliada (208 controles TODO OK: 34 = modelo por meta y suma igual al 33;
+me_set anota meta + 1 y la ronda, se salta índices ≤ 0 o fuera de tabla, deja eax y [esp+0x10] como el original;
+sin ia_on no anota). prueba_saldo.py ajustada (después del 33 vienen los 34): OK; prueba_produccion (1.812),
+prueba_reserva (1.168) y prueba_oro OK.
+Uso: `python prueba_mantenimiento.py <AV> <orig> 6c9dfb 6c9df3 6c9ee0 6cbee0 <SAV>...` (me_tab, me_set).
+Al volver la tanda: por IA y tramo, reparto del ahorro (y del 34) por meta. Lo de metas 0, 1 y 10 es el ahorro
+alcanzable sin quitarle tareas; si pasa el 3 % del ingreso, programar que esas pilas esperen en la ciudad propia
+más cercana que alcancen este turno.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.5: volvió la tanda".

@@ -5923,6 +5923,43 @@ ds_evt = place('ds_evt', f'''
     ret
 ''')
 
+ME_EVT = 34
+# Paso 4.5 (PENDIENTE-ia-economia), medición: meta elegida por la pila de cada ejército de fuera de ciudad.
+# me_set, en 0x40cc3f de 0x40ca70 (justo antes del salto por la tabla de metas 0x40d02c; [esp+0x1a] = meta, 0 =
+# ninguna, 1 Form, 2 ruina, 3 neutral, 4 ítem, 5 héroe, 6 misión, 7 ciudad enemiga, 8 sitio, 9 reconstruir), anota
+# en ME_TAB[ejército] (palabra) meta + 1 y el byte bajo de la ronda [0x503328], para los 8 ejércitos de la pila
+# [0x5020d4] + 0xc. Repite lo reemplazado: "movsx eax, [esp+0x1a]; mov word ptr [esp+0x10], 0". Solo con ia_on.
+# mt_evt suma por meta (10 = sin decisión en esta ronda ni la anterior) el ahorro de cada ejército de fuera de ciudad
+# (entero − tercio) y anota el evento 34: x = meta, y = ese ahorro, n = cuántos. Solo anota; no cambia nada.
+ME_N = 4096
+ME_TAB = place_data('me_tab', bytes(ME_N * 2))
+me_set = place('me_set', f'''
+    pushad
+    cmp byte ptr [{IA_ON:#x}], 0
+    je me_skip
+    movsx ebx, word ptr [esp + 0x3e]
+    inc ebx
+    mov bh, byte ptr [0x503328]
+    mov esi, dword ptr [0x5020d4]
+    xor ecx, ecx
+me_lp:
+    movsx eax, word ptr [esi + ecx*2 + 0xc]
+    test eax, eax
+    jle me_nx
+    cmp eax, {ME_N}
+    jae me_nx
+    mov word ptr [eax*2 + {ME_TAB:#x}], bx
+me_nx:
+    inc ecx
+    cmp ecx, 8
+    jb me_lp
+me_skip:
+    popad
+    movsx eax, word ptr [esp + 0x1e]
+    mov word ptr [esp + 0x14], 0
+    ret
+''')
+
 MT_EVT = 33
 # Paso 4.4 (PENDIENTE-ia-economia), medición: 33 mantenimiento de los ejércitos de p fuera de una casilla de ciudad
 # (mt_evt, desde ec_evt, después del evento 29). Mismo recorrido que 0x4406b0: vivos (+0x13 & 0x40), dueño
@@ -5932,9 +5969,13 @@ MT_EVT = 33
 mt_evt = place('mt_evt', f'''
     push ebp
     mov ebp, esp
-    sub esp, 4
+    sub esp, 0x60
     pushad
     mov dword ptr [ebp - 4], 0
+    lea edi, [ebp - 0x60]
+    mov ecx, 22
+    xor eax, eax
+    rep stosd
     xor esi, esi
     xor edi, edi
     movsx ecx, word ptr [0x54fe50]
@@ -5985,6 +6026,7 @@ mt_m:
 mt_out:
     add esi, eax
     inc dword ptr [ebp - 4]
+    mov ebx, eax
     xor edx, edx
     push ecx
     mov ecx, 3
@@ -5995,6 +6037,25 @@ mt_out:
     mov eax, 1
 mt_t:
     add edi, eax
+    sub ebx, eax
+    mov edx, 10
+    cmp ecx, {ME_N}
+    jae mt_c
+    movzx eax, word ptr [ecx*2 + {ME_TAB:#x}]
+    test al, al
+    jz mt_c
+    cmp al, 10
+    ja mt_c
+    mov dl, byte ptr [0x503328]
+    sub dl, ah
+    cmp dl, 1
+    mov edx, 10
+    ja mt_c
+    movzx edx, al
+    dec edx
+mt_c:
+    add dword ptr [ebp + edx*4 - 0x60], ebx
+    inc dword ptr [ebp + edx*4 - 0x34]
     jmp mt_loop
 mt_done:
     push dword ptr [ebp - 4]
@@ -6004,6 +6065,22 @@ mt_done:
     push {MT_EVT}
     call {ia_evt:#x}
     add esp, 0x14
+    xor ebx, ebx
+mt_e:
+    mov eax, dword ptr [ebp + ebx*4 - 0x34]
+    test eax, eax
+    jz mt_en
+    push eax
+    push dword ptr [ebp + ebx*4 - 0x60]
+    push ebx
+    push dword ptr [ebp + 8]
+    push {ME_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+mt_en:
+    inc ebx
+    cmp ebx, 11
+    jb mt_e
     popad
     mov esp, ebp
     pop ebp
@@ -16018,6 +16095,7 @@ def rel(va, n):  # bytes originales
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
+patch(0x40cc3f, bytes.fromhex('0fbf44241a66c74424100000'), asm(f'call {me_set:#x}', 0x40cc3f) + bytes([0x90]) * 7)   # meta de cada pila (evento 34)
 patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x422482))   # saldo del turno (evento 29)
 patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # cambio de oro (evento 30)
 patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50))   # reserva: comprar tipo de unidad
