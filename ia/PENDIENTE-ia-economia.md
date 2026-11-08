@@ -284,4 +284,15 @@ cada color (p. ej. color 6: 22 ejércitos, 67 de 147; en una ciudad pagarían 29
 Al volver la tanda: por IA y por tramo de turnos, x / mantenimiento (evento 29, y) y (x − y) / ingreso. Si el techo
 del ahorro es chico (menos del 5 % del ingreso), la idea no vale y se descarta; si es grande, ver qué metas tienen
 esas pilas (hace falta otro evento en 0x40ca70 con la meta elegida) antes de cambiar nada.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.4: volvió la tanda".
+**Medido (8/11/2026, tanda 144, 1.0.137.0, 10 partidas completas):** evento 33 cruzado con el 29 por color y turno.
+| | tramo | fuera / mantenimiento | techo (x − y) / ingreso | pilas fuera (media) | turnos-color con techo > 5 % |
+|---|---|---|---|---|---|
+| original | 1-10 / 11-20 / 21-30 | 21 % / 26 % / 30 % | 1,2 % / 5,5 % / 9,6 % | 0,1 / 0,9 / 2,0 | 7 % / 27 % / 36 % |
+| nueva | 1-10 / 11-20 / 21-30 | 31 % / 32 % / 44 % | 2,4 % / 7,7 % / 15,3 % | 0,2 / 1,5 / 4,1 | 10 % / 35 % / 48 % |
+Total: 35 % del mantenimiento lo pagan ejércitos fuera de ciudad; el techo del ahorro es el 8,5 % del ingreso (en la
+nueva, 15 % en los turnos 21-30). **Supera el 5 %: la idea sigue.** Es un techo: muchas de esas pilas atacan o exploran.
+Resultados (no cambia el juego): nueva puesto 2,89, PV 7,67, 5,4 ciudades, 9 primeros; original 3,46 / 4,92 / 3,5 / 3.
+Deserciones (evento 28): 14 en 4 bandos (10 de la original).
+Próximo paso (4.5): evento 34 en 0x40ca70 con la meta elegida para cada pila de la IA que termina fuera de ciudad, para
+saber cuánto del techo es de pilas sin tarea (meta «Form» o ninguna) y cuánto de pilas que atacan o exploran.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.5".
