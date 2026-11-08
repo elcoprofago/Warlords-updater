@@ -15192,6 +15192,249 @@ hi_govic = place('hi_govic', f'''
 hv_go:
     jmp {ia_vic:#x}
 ''')
+# Ventana de fin de partida (pantalla 43 = diálogo 46, pedido del usuario 8/11/2026):
+# - Título (control 1, puesto en 0x482c1d): «Partida finalizada d/m/aaaa» con la fecha de esta PC (GetLocalTime, que
+#   el juego no importa: se busca una vez en la tabla de exportaciones de KERNEL32 con GetModuleHandleA y strncmp; si
+#   no aparece, va sin fecha), en la fuente 1 (la de listas y etiquetas, cambiada en el RES) y en dorado (137).
+# - Columna «Armas» entre PV y Ciudades: ejércitos vivos (bit 0x40 de +0x13) de cada color, héroes incluidos. Las
+#   columnas pasan de 0x8c/0xb9/0xe6 a GO_X_VP/GO_X_CI/GO_X_OR, con Armas en GO_X_AR.
+# - Al lado del escudo, arriba a la derecha (como superíndice), el pergamino de alianza de Diplomacia (imagen 0xae,
+#   achicada en GO_IMG) si el bando tiene un aliado mutuo (ALLIES_CORE, con Diplomacia activada) que sigue en juego.
+# - Abajo, centrado: «corresponde a la partida "<nombre>"» con el nombre base de la partida en red ([0x503da0]);
+#   sin nombre (partida local) no se escribe.
+GO_X_VP, GO_X_AR, GO_X_CI, GO_X_OR = 0x82, 0xa8, 0xce, 0xf4
+GO_PIE_DX, GO_PIE_DY = 123, 262        # centro del diálogo (175 - 52) y encima del botón Done (376 - 92 - 22)
+GO_IMG = RAM_IMG + 1
+GO_FILE = SEAL_FILE + 1
+GO_GOLD = 137
+GO_K32 = place_data('go_k32', cstr_('KERNEL32.DLL'))
+GO_GLTN = place_data('go_gltn', cstr_('GetLocalTime'))
+GO_GLT = place_data('go_glt', bytes(4))
+GO_ST = place_data('go_st', bytes(16))
+GO_T0 = place_data('go_t0', cstr_('Partida finalizada'))
+GO_TFMT = place_data('go_tfmt', cstr_('Partida finalizada %d/%d/%d'))
+GO_TBUF = place_data('go_tbuf', bytes(48))
+GO_ARMAS = place_data('go_armas', cstr_('Armas'))
+GO_PFMT = place_data('go_pfmt', cstr_('corresponde a la partida "%s"'))
+GO_PBUF = place_data('go_pbuf', bytes(128))
+GETMOD, STRNCMP = 0x5a984c, 0x5a9bf0
+go_resolve = place('go_resolve', f'''
+    cmp dword ptr [{GO_GLT:#x}], 0
+    jne gr_ret
+    pushad
+    push {GO_K32:#x}
+    call dword ptr [{GETMOD:#x}]
+    test eax, eax
+    jz gr_out
+    mov ebx, eax
+    mov eax, dword ptr [ebx + 0x3c]
+    mov ebp, dword ptr [ebx + eax + 0x78]
+    mov esi, ebp
+    add esi, ebx
+    xor edi, edi
+gr_loop:
+    cmp edi, dword ptr [esi + 0x18]
+    jae gr_out
+    mov eax, dword ptr [esi + 0x20]
+    add eax, ebx
+    mov eax, dword ptr [eax + edi*4]
+    add eax, ebx
+    push 13
+    push {GO_GLTN:#x}
+    push eax
+    call dword ptr [{STRNCMP:#x}]
+    add esp, 0xc
+    test eax, eax
+    jz gr_found
+    inc edi
+    jmp gr_loop
+gr_found:
+    mov eax, dword ptr [esi + 0x24]
+    add eax, ebx
+    movzx eax, word ptr [eax + edi*2]
+    mov edx, dword ptr [esi + 0x1c]
+    add edx, ebx
+    mov eax, dword ptr [edx + eax*4]
+    mov edx, eax
+    sub edx, ebp
+    mov ecx, dword ptr [ebx + 0x3c]
+    cmp edx, dword ptr [ebx + ecx + 0x7c]
+    jb gr_out
+    add eax, ebx
+    mov dword ptr [{GO_GLT:#x}], eax
+gr_out:
+    popad
+gr_ret:
+    ret
+''')
+go_tit = place('go_tit', f'''
+    call {go_resolve:#x}
+    mov eax, dword ptr [{GO_GLT:#x}]
+    test eax, eax
+    jz gt_sin
+    push {GO_ST:#x}
+    call eax
+    movzx eax, word ptr [{GO_ST:#x}]
+    push eax
+    movzx eax, word ptr [{GO_ST + 2:#x}]
+    push eax
+    movzx eax, word ptr [{GO_ST + 6:#x}]
+    push eax
+    push {GO_TFMT:#x}
+    push {GO_TBUF:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0x14
+    push {GO_TBUF:#x}
+    jmp gt_set
+gt_sin:
+    push {GO_T0:#x}
+gt_set:
+    push 1
+    call 0x4dd240
+    add esp, 8
+    push 0
+    push 0
+    push {GO_GOLD}
+    push 1
+    call 0x4dd2b0
+    add esp, 0x10
+    jmp 0x482c39
+''')
+go_hdr = place('go_hdr', f'''
+    mov word ptr [ebp - 0x12], si
+    add esp, 0xc
+    push {GO_ARMAS:#x}
+    push edi
+    movsx eax, word ptr [ebp + 8]
+    add eax, {GO_X_AR}
+    push eax
+    call 0x4dd140
+    add esp, 0xc
+    jmp 0x4830b4
+''')
+# cdecl (color) -> eax = ejércitos vivos de ese color. Preserva todo menos eax.
+go_cuenta = place('go_cuenta', '''
+    push ecx
+    push edx
+    push ebx
+    xor ebx, ebx
+    mov ecx, 1
+gc_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge gc_out
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz gc_next
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, dword ptr [esp + 16]
+    jne gc_next
+    inc ebx
+gc_next:
+    inc ecx
+    jmp gc_loop
+gc_out:
+    mov eax, ebx
+    pop ebx
+    pop edx
+    pop ecx
+    ret
+''')
+go_row = place('go_row', f'''
+    add esp, 0xc
+    movsx eax, word ptr [ebp + esi*2 - 0x24]
+    push eax
+    call {go_cuenta:#x}
+    add esp, 4
+    push eax
+    push 0x4f9090
+    lea eax, [ebp - 0x1cc]
+    push eax
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    lea eax, [ebp - 0x1cc]
+    push eax
+    push edi
+    movsx eax, word ptr [ebp + 8]
+    add eax, {GO_X_AR}
+    push eax
+    call 0x4dd140
+    add esp, 0xc
+    push 1
+    push 0
+    jmp 0x48320a
+''')
+go_ali = place('go_ali', f'''
+    add esp, 0xc
+    test byte ptr [{DIPLO_OPT:#x}], 8
+    jz ga_back
+    push ebx
+    push ecx
+    push edx
+    mov ecx, ebx
+{ALLIES_CORE.replace('allies_', 'goal_')}
+    xor eax, eax
+ga_loop:
+    bt edx, eax
+    jnc ga_next
+    imul ecx, eax, 0x1f8
+    cmp byte ptr [ecx + 0x536b30], 0
+    je ga_next
+    cmp byte ptr [ecx + 0x536b31], 0
+    je ga_next
+    lea eax, [edi - 5]
+    push eax
+    mov eax, dword ptr [ebp - 0x2c]
+    add eax, 8
+    push eax
+    push {GO_IMG}
+    call 0x4dd080
+    add esp, 0xc
+    jmp ga_end
+ga_next:
+    inc eax
+    cmp eax, 8
+    jb ga_loop
+ga_end:
+    pop edx
+    pop ecx
+    pop ebx
+ga_back:
+    mov eax, ebx
+    shl eax, 6
+    jmp 0x48313d
+''')
+go_pie = place('go_pie', f'''
+    cmp byte ptr [0x503da0], 0
+    je gp_out
+    push 0x503da0
+    push {GO_PFMT:#x}
+    push {GO_PBUF:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    push 1
+    push 0
+    push 0xa
+    push 0xf
+    push 1
+    call 0x4dd0f0
+    add esp, 0x14
+    push {GO_PBUF:#x}
+    movsx eax, word ptr [ebp + 0xc]
+    add eax, {GO_PIE_DY}
+    push eax
+    movsx eax, word ptr [ebp + 8]
+    add eax, {GO_PIE_DX}
+    push eax
+    call 0x4dd140
+    add esp, 0xc
+gp_out:
+    test byte ptr [0x53c38f], 1
+    jmp 0x483264
+''')
+
 # La barra de chat acepta «.» además de «#» para dirigir el mensaje («.3 ataca X»): el punto se escribe sin AltGr
 # en cualquier distribución de teclado. El resto del texto lo lee igual (desde [ebp + 1]).
 ch_pfx = place('ch_pfx', f'''
@@ -16371,6 +16614,13 @@ patch(0x4476d9, asm('call 0x49fec0', 0x4476d9), asm(f'call {ia_nodip:#x}', 0x447
 patch(0x4e0799, rel(0x4e0799, 14), asm('mov esi, 0x7fffffff', 0x4e0799) + bytes([0x90]) * 9)
 patch(0x482fd6, asm('mov si, word ptr [ebp + 0xc]; push 1', 0x482fd6), asm(f'jmp {hi_gofin:#x}', 0x482fd6))
 patch(0x482790, asm('call 0x482c10', 0x482790), asm(f'call {hi_govic:#x}', 0x482790))
+patch(0x482c1d, bytes.fromhex('6a00b980985800'), asm(f'jmp {go_tit:#x}', 0x482c1d) + b'\x90' * 2)
+for _va, _old, _new in ((0x483023, 0x8c, GO_X_VP), (0x483050, 0xb9, GO_X_CI), (0x483083, 0xe6, GO_X_OR)):
+    patch(_va, b'\x66\x05' + struct.pack('<H', _old), b'\x66\x05' + struct.pack('<H', _new))
+patch(0x4830ad, bytes.fromhex('668975ee83c40c'), asm(f'jmp {go_hdr:#x}', 0x4830ad) + b'\x90' * 2)
+patch(0x483135, bytes.fromhex('83c40c8bc3c1e006'), asm(f'jmp {go_ali:#x}', 0x483135) + b'\x90' * 3)
+patch(0x483203, bytes.fromhex('83c40c6a016a00'), asm(f'jmp {go_row:#x}', 0x483203) + b'\x90' * 2)
+patch(0x48325d, bytes.fromhex('f6058fc3530001'), asm(f'jmp {go_pie:#x}', 0x48325d) + b'\x90' * 2)
 patch(0x4aa0a6, asm('call 0x4397f0', 0x4aa0a6), asm(f'call {hi_auto:#x}', 0x4aa0a6))
 patch(0x441cf0, bytes.fromhex('83ec0833c9'), asm(f'jmp {vcopy:#x}', 0x441cf0))
 patch(0x459790, asm('sub esp, 0x14; mov word ptr [esp + 6], 0', 0x459790), asm(f'jmp {dn_pre:#x}', 0x459790) + bytes([0x90]) * 5)
@@ -16987,6 +17237,25 @@ pcx = io.BytesIO(); seal_hoja.save(pcx, 'PCX'); SEAL_PCX = pcx.getvalue()
 struct.pack_into('<I', butt_std, 0, SEAL_FILE)
 setstr(butt_std, 4, 32, 'sello')
 table_add(res, 2, SEAL_FILE, bytes(butt_std))
+# Ventana de fin de partida (ver go_tit): el título (diálogo 46, control 1) pasa de la fuente 2 a la 1. Hoja GO_FILE =
+# PICTS\alianza.pcx con los campos de picts (56) y la imagen GO_IMG: el pergamino de alianza (imagen 0xae, picts en
+# (212,0), 24x21) a la mitad, 12x11, con los mismos índices de color (11 = transparente).
+_p, _t = records(res, 46)[1]
+assert _t == 0x13 and res[_p + 0x20] == 2
+res[_p + 0x20] = 1
+o4, _ = table(res, 4)
+assert struct.unpack_from('<8i', res, o4 + 20 + 0xae * 32) == (0xae, 56, 1, 0, 212, 0, 24, 21)
+_picts = Image.open(r'C:\Warlords3\PICTS\picts.pcx')
+_ali = _picts.crop((212, 0, 236, 21)).resize((12, 11), Image.NEAREST)
+go_hoja = Image.new('P', (12, 11), 11); go_hoja.putpalette(_picts.getpalette()); go_hoja.paste(_ali, (0, 0))
+pcx = io.BytesIO(); go_hoja.save(pcx, 'PCX'); GO_PCX = pcx.getvalue()
+o2, _ = table(res, 2)
+_pr = bytearray(res[o2 + 20 + 56 * 60:o2 + 20 + 57 * 60])
+assert _pr[4:16] == b'picts\\picts\0'
+struct.pack_into('<I', _pr, 0, GO_FILE)
+setstr(_pr, 4, 32, 'picts\\alianza')
+table_add(res, 4, GO_IMG, struct.pack('<8i', GO_IMG, GO_FILE, 1, 0, 0, 0, 12, 11))   # la 4 va después de la 2
+table_add(res, 2, GO_FILE, bytes(_pr))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -17369,6 +17638,7 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'darkcomp.pcx')] = DC_PCX
 NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
+NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

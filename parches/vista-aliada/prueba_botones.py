@@ -422,7 +422,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: seis más (165 a 170; 168 pozos, 169 aviso, 170 sello)', (len(fn), len(fo)), (171, 165))
+ver('archivos: siete más (165 a 171; 168 pozos, 169 aviso, 170 sello, 171 alianza)', (len(fn), len(fo)), (172, 165))
 ver('archivo 170: sello en SETS\\Fantasy', (struct.unpack_from('<I', fn[170])[0], fn[170][4:10]), (170, b'sello\0'))
 n111, o111 = recs(NUEVO, 111), recs(ORIG, 111)
 ver('Army List: un registro más, el sello (0x1c)', sorted(set(n111) - set(o111)), [0x1c])

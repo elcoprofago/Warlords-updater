@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 129).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 130).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
 0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
 0. **Tarea 127** (tanda de la IA: qué hacen los ejércitos que pagan mantenimiento fuera de las ciudades).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -15,6 +16,17 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **129.** Ventana de fin de partida (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.140.0** o posterior).
+2. Terminá una partida en red (o cargá una a punto de terminar) hasta que aparezca la ventana con la tabla de bandos.
+3. Arriba tiene que decir «Partida finalizada» con la fecha de hoy (por ejemplo 8/11/2026), en letra chica dorada.
+4. La tabla tiene la columna **Armas** entre VPs y CITIES, con la cantidad de unidades vivas de cada bando. Fijate
+   que los nombres largos de los bandos no se pisen con la columna VPs.
+5. Los bandos que terminaron aliados entre sí llevan el pergamino de alianza (el de Diplomacia), chiquito, arriba a
+   la derecha del escudo. Los que no tienen aliados, no.
+6. Abajo, centrado y encima del botón Done: «corresponde a la partida "NOMBRE"», con el nombre de la partida.
+Resultado:
 
 - [ ] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.139.0** o posterior) y opción **10** (DarkCompare **1.0.0.6** o
