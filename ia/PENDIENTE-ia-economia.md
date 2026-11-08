@@ -235,7 +235,7 @@ evitando la caja vacía. Pero **se pierde la ventaja de la 138**: el puesto qued
 (18) de bandos que perdieron ciudades en los 2 turnos anteriores: se cae el ingreso, no es producción de más.
 Sospecha: el freno corta tropas justo en los turnos 20-29, cuando se decide la partida, y frena de más porque
 cuenta la unidad nueva con su mantenimiento entero aunque se quede en la ciudad (paga un tercio).
-**Paso 4.3: freno aflojado (7/11/2026, vista-aliada 1.0.136.0; falta la tanda, TAREAS 125).**
+**Paso 4.3: freno aflojado (7/11/2026, vista-aliada 1.0.136.0; medido en las tandas 142-143, TAREAS 125).**
 pr_ok cuenta la unidad nueva como la cobra 0x4406b0 en una casilla de ciudad (comprobado en el exe original,
 0x440797: `idiv 3`, truncado, mínimo 1; 0 si el mantenimiento es 0) y frena solo si mantenimiento + lo producido en
 el turno + ese tercio > ingreso (antes 10 × … > 9 × ingreso, con la unidad entera). Lo acumulado en el turno también
@@ -245,4 +245,26 @@ Uso: `python prueba_produccion.py C:\Warlords3\DarklordAV.exe C:\Warlords3\Darkl
 Al volver la tanda: comparar con 138 (sin freno de producción) y 140-141 (freno al 90 % con la unidad entera) en
 puesto, PV, ciudades, deserciones (evento 28), mantenimiento > ingreso y veces que frena (evento 32, y en qué turnos).
 Si vuelven las deserciones, el punto medio es el 100 % con la unidad entera, o el tercio con 90 %.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.3: volvió la tanda".
+**Medido (8/11/2026, tandas 142 y 143, 1.0.136.0, 20 partidas completas):**
+| | original 142-143 | nueva 142-143 | nueva 140-141 (freno al 90 %, unidad entera) | nueva 138 (sin freno) |
+|---|---|---|---|---|
+| PV medio | 6,40 | 6,42 | 6,60 | 6,70 |
+| puesto medio | 3,08 | 2,95 | 3,10 | 2,65 |
+| ciudades al final | 5,1 | 4,6 | 4,7 | 4,5 |
+| primeros puestos | 11 | 9 | 10 (orig. 13) | 6 (orig. 4) |
+| oro al empezar el turno (mediana) | 148 | 204 | 203 | 208 |
+| turnos con < 50 / con ≥ 800 | 13,4 % / 4,8 % | 0,9 % / 3,8 % | 0,9 % / 3,8 % | 1,1 % / 6,2 % |
+| mantenimiento > ingreso | 40 de 1.884 | 42 de 1.916 | 25 de 1.956 | 22 de 930 |
+| deserciones (evento 28) | 16 en 3 bandos | 17 en 3 bandos | 0 | 31 en 1 bando |
+Frenos: evento 32 132 veces en 19 bandos-partida (98 en los turnos 20-29; antes 200 en 33); evento 31 913.
+Lectura: aflojar el freno recupera algo de puesto (2,95 contra 3,08 de la original en las mismas partidas; en la
+140-141 estaban iguales), sin volver a la ventaja de la 138. **Las 17 deserciones no son producción de más**: los 3
+bandos venían perdiendo ciudades (6→4→2, 3→2→1, 6→6→2 en los 2 turnos previos) y el freno ya estaba frenando
+(2 a 23 eventos 32 en los 3 turnos anteriores). Se cae el ingreso de golpe y el ejército ya existente no se paga;
+la original tiene lo mismo (16 en 3 bandos, también tras perder ciudades). De los 42 mantenimiento > ingreso, 26
+siguen a una pérdida de ciudades. **Se queda la 1.0.136.0** (freno al 100 % con el tercio): cumple el objetivo
+del freno, que es no fabricar lo que no se puede pagar.
+Lo que queda del desbande es del colapso, no del gasto. Próximo paso (4.4): la idea de arriba, que la IA deje en
+una ciudad los ejércitos sin tarea (pagan un tercio): baja el mantenimiento en todo momento y deja margen para
+cuando se pierden ciudades. Primero ubicar en el exe dónde la IA decide el destino de un ejército sin tarea.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.4".

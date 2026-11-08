@@ -7,22 +7,12 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 125** (tanda de la IA con el freno de producción aflojado).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
-
-- [ ] **125.** IA: freno de producción más flojo (7/11/2026)
-La 1.0.136.0 deja salir más tropas que la 1.0.135.0: cuenta la unidad nueva por lo que paga en la ciudad (un tercio)
-y frena recién cuando el mantenimiento pasaría del 100 % de lo que el bando cobra (antes, 90 %). Solo en las tandas.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.136.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Si podés, dos tandas
-   seguidas (20 partidas), como la vez pasada.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -56,6 +46,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **125.** IA: freno de producción más flojo (7/11/2026)
+La 1.0.136.0 deja salir más tropas que la 1.0.135.0: cuenta la unidad nueva por lo que paga en la ciudad (un tercio)
+y frena recién cuando el mantenimiento pasaría del 100 % de lo que el bando cobra (antes, 90 %). Solo en las tandas.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.136.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Si podés, dos tandas
+   seguidas (20 partidas), como la vez pasada.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado (8/11/2026, tandas 142-143): la computadora quedó mejor ubicada que con el freno anterior (puesto 2,95 contra 3,08 de la original). Las deserciones que volvieron son de bandos que venían perdiendo ciudades, no de fabricar de más. Se queda esta versión.
 
 - [x] **124.** IA: que la computadora no fabrique más tropas de las que puede pagar (6/11/2026)
 La 1.0.135.0 hace que una ciudad de la IA nueva no saque la unidad lista si el mantenimiento del ejército pasaría del
