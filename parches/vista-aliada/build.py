@@ -5923,6 +5923,93 @@ ds_evt = place('ds_evt', f'''
     ret
 ''')
 
+MT_EVT = 33
+# Paso 4.4 (PENDIENTE-ia-economia), medición: 33 mantenimiento de los ejércitos de p fuera de una casilla de ciudad
+# (mt_evt, desde ec_evt, después del evento 29). Mismo recorrido que 0x4406b0: vivos (+0x13 & 0x40), dueño
+# (+0xe & 0x1e0) >> 5, casilla válida, mantenimiento (+0x10 & 0xf0) >> 4 (mínimo 4 con +0x14 & 8); fuera de ciudad =
+# casilla sin (word +2 & 0x700) == 0x300 y (byte +9 & 3). Solo los de mantenimiento > 0. x = lo que pagan enteros,
+# y = lo que pagarían en una ciudad (tercio truncado, mínimo 1), n = cuántos son. Solo anota; no cambia nada.
+mt_evt = place('mt_evt', f'''
+    push ebp
+    mov ebp, esp
+    sub esp, 4
+    pushad
+    mov dword ptr [ebp - 4], 0
+    xor esi, esi
+    xor edi, edi
+    movsx ecx, word ptr [0x54fe50]
+mt_loop:
+    dec ecx
+    js mt_done
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz mt_loop
+    movzx eax, word ptr [edx + 0x54fe5e]
+    and eax, 0x1e0
+    cmp eax, 0x100
+    jae mt_loop
+    shr eax, 5
+    cmp eax, dword ptr [ebp + 8]
+    jne mt_loop
+    movsx ebx, word ptr [edx + 0x54fe52]
+    test ebx, ebx
+    js mt_loop
+    movsx eax, word ptr [edx + 0x54fe54]
+    test eax, eax
+    js mt_loop
+    push ecx
+    lea eax, [eax + eax * 4]
+    add eax, eax
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    lea ebx, [ebx + ebx * 4]
+    lea ebx, [eax + ebx * 2 + 0x503e58]
+    movzx eax, word ptr [edx + 0x54fe60]
+    and eax, 0xf0
+    shr eax, 4
+    test byte ptr [edx + 0x54fe64], 8
+    jz mt_m
+    cmp eax, 4
+    jg mt_m
+    mov eax, 4
+mt_m:
+    pop ecx
+    test eax, eax
+    jz mt_loop
+    movzx edx, word ptr [ebx + 2]
+    and edx, 0x700
+    cmp edx, 0x300
+    jne mt_out
+    test byte ptr [ebx + 9], 3
+    jnz mt_loop
+mt_out:
+    add esi, eax
+    inc dword ptr [ebp - 4]
+    xor edx, edx
+    push ecx
+    mov ecx, 3
+    div ecx
+    pop ecx
+    cmp eax, 1
+    jge mt_t
+    mov eax, 1
+mt_t:
+    add edi, eax
+    jmp mt_loop
+mt_done:
+    push dword ptr [ebp - 4]
+    push edi
+    push esi
+    push dword ptr [ebp + 8]
+    push {MT_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    popad
+    mov esp, ebp
+    pop ebp
+    ret
+''')
+
 EC_EVT = 29
 # ec_evt: reemplaza en 0x422482 "mov edx, [esp+0x20]; mov ax, [edx+0x5643f0]; sub ax, [edx+0x5643d8]" (edi = jugador,
 # [esp+0x1c] = p * 0x1f8, [esp+0x20] = 2p) y anota antes el evento 29. Deja edx y ax como el original.
@@ -5939,6 +6026,9 @@ ec_evt = place('ec_evt', f'''
     push {EC_EVT}
     call {ia_evt:#x}
     add esp, 0x14
+    push edi
+    call {mt_evt:#x}
+    add esp, 4
     popad
     mov edx, dword ptr [esp + 0x24]
     mov ax, word ptr [edx + 0x5643f0]

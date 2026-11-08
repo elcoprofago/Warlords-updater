@@ -2,6 +2,7 @@
 # (quiebra y saldo al empezar el turno) en el exe parcheado y en el original, sobre partidas guardadas, con ingreso y
 # mantenimiento puestos a mano, y compara: la línea anotada (x = ingreso, y = mantenimiento, n = oro) y que la quiebra
 # (0x415a00) y el saldo que recibe 0x4b9390 sean iguales a los del original. Control: sin ia_on no se anota nada.
+# Desde 1.0.137.0 sigue al 29 la línea del evento 33 (la comprueba prueba_mantenimiento.py).
 # Uso: python prueba_saldo.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
@@ -72,7 +73,7 @@ for sav in SAVS:
             l1, c1, p1, d1 = corrida(imgs['av'], sav, p, ing, man, 1, oro)
             l0, c0, p0, d0 = corrida(imgs['orig'], sav, p, ing, man, 1, oro)
             o = struct.unpack('<i', load(sav)[0x536b30][(0x536c14 + p * 0x1f8 - 0x536b30):][:4])[0] if oro is None else oro
-            check(l1 == [[7, p, 1, 29, ing, man, o]] and c1 == c0 and p1 and p0 and d1 == d0,
+            check(l1[:1] == [[7, p, 1, 29, ing, man, o]] and len(l1) == 2 and l1[1][3] == 33 and c1 == c0 and p1 and p0 and d1 == d0,
                   f'color {p}, ingreso {ing}, mantenimiento {man}, oro {o}: anotado {l1}, llamadas {c1} = original')
         l1, c1, p1, _ = corrida(imgs['av'], sav, p, 120, 40, 0)
         check(l1 == [] and p1, f'color {p}, sin ia_on: nada anotado')

@@ -1,18 +1,28 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 126).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 127).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 126** (tanda de la IA para medir cuánto pagan sus ejércitos fuera de las ciudades).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **126.** IA: medir cuánto pagan sus ejércitos fuera de las ciudades (8/11/2026)
+La 1.0.137.0 no cambia cómo juega la computadora: solo anota, cada turno, cuánto mantenimiento pagan sus ejércitos que
+no están en una ciudad (adentro pagan un tercio). Con eso se decide si conviene que deje en las ciudades a los que no
+tienen nada que hacer. Solo en las tandas.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.137.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la

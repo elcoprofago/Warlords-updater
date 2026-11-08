@@ -267,4 +267,21 @@ del freno, que es no fabricar lo que no se puede pagar.
 Lo que queda del desbande es del colapso, no del gasto. Próximo paso (4.4): la idea de arriba, que la IA deje en
 una ciudad los ejércitos sin tarea (pagan un tercio): baja el mantenimiento en todo momento y deja margen para
 cuando se pierden ciudades. Primero ubicar en el exe dónde la IA decide el destino de un ejército sin tarea.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.4".
+**Paso 4.4, primero medir (8/11/2026, vista-aliada 1.0.137.0; falta la tanda, TAREAS 126).**
+Lo que ya hace el juego: una pila sin otra meta va a «Form» (meta 1, juntarse en una ciudad, 0x40db40); o sea, la IA
+ya lleva a las ciudades a las pilas sin nada que hacer. No hay guardadas de mitad de tanda (solo la inicial y los
+resultados), así que no se sabe cuánto paga la IA por ejércitos que terminan el turno afuera.
+Evento 33 (mt_evt, llamado desde ec_evt después del 29, solo anota): por color, el mismo recorrido que 0x4406b0;
+x = mantenimiento entero de los ejércitos fuera de una casilla de ciudad, y = lo que pagarían en una ciudad (tercio
+truncado, mínimo 1), n = cuántos son. x − y = el techo de lo que ahorraría llevarlos a todos a una ciudad (de más:
+muchos están afuera porque van a atacar o explorar).
+Prueba emulada: `parches\vista-aliada\prueba_mantenimiento.py` (120 controles TODO OK con IA_ROTADA, Tanda_Kor_CA,
+roads02, ABN_000_29 y agua03): un modelo en Python da el mismo mantenimiento que el 0x4406b0 original en cada color,
+el evento 33 coincide con el modelo, un ejército movido a mano a una ciudad o afuera cambia lo esperado, sin ia_on no
+anota. prueba_saldo.py ajustada (después del 29 viene el 33): OK; prueba_produccion (3.272) y prueba_reserva (1.664) OK.
+Referencia, partida real ABN_000_29 (turno 29): los de fuera de ciudad pagan del 15 % al 65 % del mantenimiento de
+cada color (p. ej. color 6: 22 ejércitos, 67 de 147; en una ciudad pagarían 29).
+Al volver la tanda: por IA y por tramo de turnos, x / mantenimiento (evento 29, y) y (x − y) / ingreso. Si el techo
+del ahorro es chico (menos del 5 % del ingreso), la idea no vale y se descarta; si es grande, ver qué metas tienen
+esas pilas (hace falta otro evento en 0x40ca70 con la meta elegida) antes de cambiar nada.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.4: volvió la tanda".
