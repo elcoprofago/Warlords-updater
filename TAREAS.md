@@ -14,13 +14,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **124.** IA: que la computadora no fabrique más tropas de las que puede pagar (6/11/2026)
-La 1.0.135.0 hace que una ciudad de la IA nueva no saque la unidad lista si el mantenimiento del ejército pasaría del
-90 % de lo que el bando cobra por turno; la unidad espera en la ciudad hasta que alcance. Solo en las tandas.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.135.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
@@ -53,6 +46,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **124.** IA: que la computadora no fabrique más tropas de las que puede pagar (6/11/2026)
+La 1.0.135.0 hace que una ciudad de la IA nueva no saque la unidad lista si el mantenimiento del ejército pasaría del
+90 % de lo que el bando cobra por turno; la unidad espera en la ciudad hasta que alcance. Solo en las tandas.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.135.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado (Claude, 7/11/2026: tandas 140 y 141, 20 partidas): 0 deserciones en la IA nueva (antes 31), pero
+perdió la ventaja de puesto (3,10 contra 3,13 de la original). Se afloja el freno en la próxima versión.
 
 - [x] **123.** IA: que la computadora ahorre oro (6/11/2026)
 La 1.0.134.0 hace que la IA nueva no compre tipos de unidad ni agrande ciudades si se queda sin reserva para pagar

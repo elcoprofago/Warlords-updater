@@ -216,4 +216,25 @@ controles humano, IA original y sin ia_on igual que el original y sin evento 32.
 Idea para después: que la IA deje en una ciudad los ejércitos sin tarea (pagan un tercio).
 Al volver la tanda: comparar con la 138 (PV, puesto, ciudades, desbandes del evento 28, mantenimiento > ingreso,
 cuántas veces frena el evento 32).
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.2: tanda de TAREAS 124".
+**Medido (7/11/2026, tandas 140 y 141, 1.0.135.0, 20 partidas completas; la 139 se cortó con 2 partidas sin terminar):**
+| | original 140-141 | nueva 140-141 | nueva 138 (sin freno de producción) |
+|---|---|---|---|
+| PV medio | 7,14 | 6,60 | 6,70 |
+| puesto medio | 3,13 | 3,10 | 2,65 |
+| ciudades al final | 5,3 | 4,7 | 4,5 |
+| oro al empezar el turno (mediana) | 150 | 203 | 208 |
+| turnos con < 50 / con ≥ 800 | 12,9 % / 3,7 % | 0,9 % / 3,8 % | 1,1 % / 6,2 % |
+| mantenimiento > ingreso (turnos-color) | 28 de 1.987 | 25 de 1.956 | 22 de 930 |
+| deserciones (evento 28) | 17 en 2 bandos | **0** | 31 en 1 bando |
+Frenos: evento 31 (reserva) 1.024 veces; evento 32 (producción) 200 veces en 33 bandos-partida, 146 de ellas en los
+turnos 20-29. Gasto (20 partidas, original / nueva): tipos de unidad −184.070 / −170.950, agrandar −87.160 /
+−64.620, héroes −18.923 en la nueva.
+Lectura: **el freno de producción elimina el desbande** (0 deserciones en 20 partidas), y la reserva sigue
+evitando la caja vacía. Pero **se pierde la ventaja de la 138**: el puesto queda igual que la original (3,10 contra
+3,13), con menos PV y menos ciudades. Los 25 casos de mantenimiento mayor que el ingreso que quedan son casi todos
+(18) de bandos que perdieron ciudades en los 2 turnos anteriores: se cae el ingreso, no es producción de más.
+Sospecha: el freno corta tropas justo en los turnos 20-29, cuando se decide la partida, y frena de más porque
+cuenta la unidad nueva con su mantenimiento entero aunque se quede en la ciudad (paga un tercio).
+**Próximo paso (4.3):** aflojar el freno: contar la unidad nueva a un tercio (lo que paga en la ciudad) y subir el
+límite del 90 % al 100 % del ingreso; tanda y comparar con 138 y 140-141 (puesto, PV, deserciones).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.3".
