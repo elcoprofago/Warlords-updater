@@ -6098,10 +6098,11 @@ rg_no:
 # 0x4b7c1b) recorre las ciudades de p; en 0x43bdf2 una ciudad tiene la unidad lista (+0xd8 = 1, tipo +0xd7) y la crea
 # con 0x43b120 (o 0x43b390 si va dirigida a otra ciudad); después 0x4ae250 reinicia la cuenta. Mantenimiento de la
 # unidad = salida[4] de 0x43b6d0(ciudad, dueño, tipo, salida) (tipo +0x9e con los ajustes de objetos, 1-16), el mismo
-# valor que 0x43b120 pone en los bits 0xf0 de +0xe del ejército (0x4406b0 lo suma; en ciudad paga un tercio, aquí se
-# cuenta entero: es lo que paga al salir). Con ia_on, IA_MODE[p] = 1 y bando de la computadora: si
-# 10 x (mantenimiento [0x5643d8 + 2p] + lo producido en este turno + el de la unidad nueva) > 9 x ingreso
-# [0x5643f0 + 2p], la unidad no sale: se saltea la creación y el reinicio, y la ciudad la vuelve a intentar el turno
+# valor que 0x43b120 pone en los bits 0xf0 de +0xe del ejército. 0x4406b0 lo suma y en una casilla de ciudad cobra un
+# tercio truncado, mínimo 1 (0 si es 0): la unidad nueva nace en la ciudad y se cuenta así (paso 4.3; en la 4.2 iba
+# entera y frenaba de más). Con ia_on, IA_MODE[p] = 1 y bando de la computadora: si
+# mantenimiento [0x5643d8 + 2p] + lo producido en este turno + el tercio de la unidad nueva > ingreso
+# [0x5643f0 + 2p] (paso 4.3; en la 4.2, 90 % del ingreso), la unidad no sale: se saltea la creación y el reinicio, y la ciudad la vuelve a intentar el turno
 # siguiente con la cuenta en 1. Evento 32 (x = tipo, y = mantenimiento con la unidad nueva, n = ingreso).
 PR_EVT = 32
 PR_ACC = place_data('pr_acc', bytes(16))   # mantenimiento producido en el turno, por color (word)
@@ -6136,6 +6137,18 @@ pr_ok = place('pr_ok', f'''
     add esp, 0x10
     movzx esi, byte ptr [ebp - 4]
     and esi, 0xf
+    test esi, esi
+    jz po_t3
+    mov eax, esi
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    cmp eax, 1
+    jae po_t1
+    mov eax, 1
+po_t1:
+    mov esi, eax
+po_t3:
     mov ax, word ptr [0x503328]
     cmp ax, word ptr [ebx * 2 + {PR_TRN:#x}]
     je po_same
@@ -6147,10 +6160,7 @@ po_same:
     add edi, eax
     add edi, esi
     movsx edx, word ptr [ebx * 2 + 0x5643f0]
-    lea eax, [edi + edi * 4]
-    add eax, eax
-    lea ecx, [edx + edx * 8]
-    cmp eax, ecx
+    cmp edi, edx
     jle po_yes
     push edx
     push edi

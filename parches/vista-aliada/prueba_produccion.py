@@ -2,7 +2,8 @@
 # producción real 0x43b930(p) sobre partidas guardadas, con todas las ciudades de p a punto de terminar su unidad
 # (+0xd8 = 1), en el exe parcheado y en el original. Las creaciones (0x43b120 y 0x43b390, dirigida) y el reinicio de la
 # cuenta (0x4ae250) se interceptan y se anotan. Regla: con ia_on, IA en prueba y bando de la computadora, una ciudad
-# produce solo si 10 x (mantenimiento + lo producido en el turno + mantenimiento de la unidad nueva) <= 9 x ingreso;
+# produce solo si mantenimiento + lo producido en el turno + tercio de la unidad nueva (truncado, mínimo 1; paso 4.3)
+# <= ingreso;
 # si no, no crea ni reinicia, deja la cuenta en 1 y anota el evento 32 (x = tipo, y = total, n = ingreso).
 # Controles que deben seguir como el original: humano, IA original (ia_mode 0), sin ia_on, ingreso holgado.
 # Uso: python prueba_produccion.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
@@ -87,6 +88,9 @@ def mant_unidad(sav, p, ciudad, tipo):   # salida[4] de 0x43b6d0 en el original,
     return mu.mem_read(0x20000000 + 4, 1)[0] & 0xf
 
 ok = True; n = 0
+def tercio(m):   # como 0x4406b0 en una casilla de ciudad
+    return max(1, m // 3) if m > 0 else 0
+
 def check(c, msg):
     global ok, n; n += 1
     if not c: print('    FALLA', msg)
@@ -103,7 +107,7 @@ for sav in SAVS:
                 and mu0.mem_read(CITY + i * CSZ + 0xa4, 1)[0] > 0]
         if not mias: continue
         tipos = {i: mu0.mem_read(CITY + i * CSZ + 0xd7, 1)[0] for i in mias}
-        u = {i: mant_unidad(sav, p, i, tipos[i]) for i in mias}
+        u = {i: tercio(mant_unidad(sav, p, i, tipos[i])) for i in mias}
         _, r0, _ = corrida(mu0, 0x43b930, (p,))
         hechas0 = [c for a, c, _ in r0 if a == 0x43b120]
         check(hechas0 == mias, f'{sav} c{p}: el original produce en {hechas0}, se esperaba {mias}')
@@ -112,7 +116,7 @@ for sav in SAVS:
             tot = [mant + sum(u[i] for i in mias[:k]) for k in range(len(mias) + 1)]
             casos = [(30000, len(mias)), (0, 0 if mant or u[mias[0]] else None)]
             for k in range(1, len(mias) + 1):
-                ing = -(-10 * tot[k] // 9)   # el menor ingreso con 10 x total <= 9 x ingreso
+                ing = tot[k]   # el menor ingreso con total <= ingreso
                 casos += [(ing, k), (ing - 1, k - 1)]
             for ing, k in casos:
                 if k is None: continue
@@ -120,7 +124,7 @@ for sav in SAVS:
                 # entrar otras más baratas: se calcula ciudad por ciudad
                 acc, sale, frena = mant, [], []
                 for i in mias:
-                    if 10 * (acc + u[i]) <= 9 * ing: acc += u[i]; sale.append(i)
+                    if acc + u[i] <= ing: acc += u[i]; sale.append(i)
                     else: frena.append((i, acc + u[i]))
                 mu, _ = maquina(imgs['av'], sav, p, ing, mant, False, 1, 1)
                 l, r, pr = corrida(mu, 0x43b930, (p,))
@@ -136,7 +140,7 @@ for sav in SAVS:
                     _, r2, _ = corrida(mu, 0x43b930, (p,))
                     acc2, sale2 = acc, []
                     for i in mias:
-                        if 10 * (acc2 + u[i]) <= 9 * ing: acc2 += u[i]; sale2.append(i)
+                        if acc2 + u[i] <= ing: acc2 += u[i]; sale2.append(i)
                     check([c for a, c, _ in r2 if a == 0x43b120] == sale2, f'{sav} c{p} ing {ing}: 2.a pasada {r2} vs {sale2}')
                     # turno siguiente: se reinicia lo acumulado
                     mu.mem_write(0x503328, struct.pack('<h', 8))

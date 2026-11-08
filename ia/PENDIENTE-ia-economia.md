@@ -235,6 +235,14 @@ evitando la caja vacía. Pero **se pierde la ventaja de la 138**: el puesto qued
 (18) de bandos que perdieron ciudades en los 2 turnos anteriores: se cae el ingreso, no es producción de más.
 Sospecha: el freno corta tropas justo en los turnos 20-29, cuando se decide la partida, y frena de más porque
 cuenta la unidad nueva con su mantenimiento entero aunque se quede en la ciudad (paga un tercio).
-**Próximo paso (4.3):** aflojar el freno: contar la unidad nueva a un tercio (lo que paga en la ciudad) y subir el
-límite del 90 % al 100 % del ingreso; tanda y comparar con 138 y 140-141 (puesto, PV, deserciones).
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.3".
+**Paso 4.3: freno aflojado (7/11/2026, vista-aliada 1.0.136.0; falta la tanda, TAREAS 125).**
+pr_ok cuenta la unidad nueva como la cobra 0x4406b0 en una casilla de ciudad (comprobado en el exe original,
+0x440797: `idiv 3`, truncado, mínimo 1; 0 si el mantenimiento es 0) y frena solo si mantenimiento + lo producido en
+el turno + ese tercio > ingreso (antes 10 × … > 9 × ingreso, con la unidad entera). Lo acumulado en el turno también
+suma el tercio. prueba_produccion.py ajustada a la regla nueva: 1.812 controles TODO OK (ABN_000_29, agua03 e
+IA_ROTADA de C:\Warlords3\Saves; ia_on 0x6c9dfb, ia_mode 0x6c9df3); prueba_reserva.py sigue OK (1.168).
+Uso: `python prueba_produccion.py C:\Warlords3\DarklordAV.exe C:\Warlords3\Darklord.exe 6c9dfb 6c9df3 <SAV>...`.
+Al volver la tanda: comparar con 138 (sin freno de producción) y 140-141 (freno al 90 % con la unidad entera) en
+puesto, PV, ciudades, deserciones (evento 28), mantenimiento > ingreso y veces que frena (evento 32, y en qué turnos).
+Si vuelven las deserciones, el punto medio es el 100 % con la unidad entera, o el tercio con 90 %.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.3: volvió la tanda".
