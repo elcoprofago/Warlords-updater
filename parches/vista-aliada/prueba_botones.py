@@ -433,8 +433,10 @@ ver('Army List: sello dentro del diálogo y sin tapar otro control', (x1 <= 620,
     (True, []))
 ver('control: registros originales de Army List intactos', all(n111[i] == o111[i] for i in o111), True)
 se = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sello.pcx'))
-ver('sello.pcx: 4 cuadros de 56x56; el deshabilitado (3.º) todo transparente', (se.size, set(se.crop((0, 112, 56, 168)).getdata())),
-    ((56, 224), {11}))
+ver('sello.pcx: 4 cuadros de 56x56; el deshabilitado (3.º) = fondo de DLG_BIG bajo el botón (tapa el sello anterior)',
+    (se.size, list(se.crop((0, 112, 56, 168)).getdata()) ==
+     list(Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'DLG_BIG.PCX')).crop((532, 52, 588, 108)).getdata())),
+    ((56, 224), True))
 ver('sello.pcx: normal, apretado y puntero encima iguales y con dibujo',
     [list(se.crop((0, 56 * k, 56, 56 * k + 56)).getdata()) == list(se.crop((0, 0, 56, 56)).getdata()) for k in (1, 3)]
     + [len(set(se.crop((0, 0, 56, 56)).getdata())) > 20], [True, True, True])

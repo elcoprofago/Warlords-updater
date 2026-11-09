@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.18.0'
+VERSION = '1.0.19.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -60,7 +60,8 @@ def leer_fin(sav):
             break
     else:
         return None
-    fin = {'cierre': '', 'turno': '', 'bandos': [], 'texto': ''}
+    fin = {'cierre': '', 'turno': '', 'bandos': [], 'texto': '', 'nombre': n, 'armas': {}, 'aliados': {},
+           'fecha': time.strftime('%d/%m/%Y', time.localtime(os.path.getmtime(ruta)))}   # el .FIN se escribe al terminar
     with open(ruta, encoding='mbcs', errors='replace') as f:
         for renglon in f:
             clave, _, valor = renglon.rstrip('\n').partition('=')
@@ -71,7 +72,46 @@ def leer_fin(sav):
                     pass
             elif clave in fin:
                 fin[clave] = valor
+    # Armas y alianzas, como la ventana del juego (vista-aliada 1.0.140.0), de la última guardada de la partida en la
+    # misma carpeta (<nombre>_<turno>.SAV de turno mayor); si no está, de la que se abrió.
+    turnos = []
+    for f in os.listdir(os.path.dirname(ruta)):
+        b, ext = os.path.splitext(f)
+        if ext.upper() == '.SAV' and b.lower().startswith(n.lower() + '_') and b[len(n) + 1:].isdigit():
+            turnos.append((int(b[len(n) + 1:]), f))
+    ultima = os.path.join(os.path.dirname(ruta), max(turnos)[1]) if turnos else sav
+    try:
+        with open(ultima, 'rb') as f:
+            fin['armas'], fin['aliados'] = armas_y_aliados(f.read())
+    except (OSError, TypeError, IndexError):
+        pass
     return fin
+
+
+def armas_y_aliados(d):
+    """De un .SAV: {color: ejércitos vivos, héroes incluidos} y {color: tiene un aliado mutuo en juego} (solo con
+    Diplomacia activada), con las mismas reglas que go_cuenta y go_ali del parche."""
+    def rd(va, n):
+        off = 0x6d
+        for b, t in tanda.SAV_BLOQUES:
+            if b <= va and va + n <= b + t:
+                return d[off + va - b:off + va - b + n]
+            off += t
+    armas = dict.fromkeys(range(8), 0)
+    n = int.from_bytes(rd(0x54fe50, 2), 'little', signed=True)
+    for i in range(1, n):
+        r = rd(0x54fe50 + i * 0x1c, 0x1c)
+        if r[0x13] & 0x40:
+            c = (int.from_bytes(r[0xe:0x10], 'little') >> 5) & 0xf
+            if c < 8:
+                armas[c] += 1
+    vivo = lambda c: rd(0x536b30 + c * 0x1f8, 2) [0] and rd(0x536b30 + c * 0x1f8, 2)[1]
+    aliados = {}
+    if rd(0x53c393, 1)[0] & 8:
+        for a in range(8):
+            aliados[a] = any(b != a and vivo(b) and rd(0x55ee4c + a * 56 + b, 1)[0] == 0
+                             and rd(0x55ee4c + b * 56 + a, 1)[0] == 0 for b in range(8))
+    return armas, aliados
 
 
 def pcx_rgba(ruta):
@@ -532,6 +572,17 @@ class Visor:
                     esc.alpha_composite(pcx_rgba(ruta))
             self.escudos[k] = (esc.crop((33, 1, 44, 15)), esc.crop((1, 1, 32, 37)))   # 11x14 y 31x36
             self.colores[k] = COLOR.get(hojas[0][1:].lower(), NEUTRAL)
+        # el pergamino de alianza de Diplomacia (picts.pcx, imagen 0xae en (212,0), 24x21; 11 = transparente), a la
+        # mitad, como en la ventana de fin del juego
+        self.pergamino = None
+        pp = os.path.join(j, 'PICTS', 'picts.pcx')
+        if os.path.exists(pp):
+            im = Image.open(pp); rec = im.crop((212, 0, 236, 21)); rgba = rec.convert('RGBA'); px = rgba.load()
+            for y in range(21):
+                for x in range(24):
+                    if rec.getpixel((x, y)) == 11:
+                        px[x, y] = (0, 0, 0, 0)
+            self.pergamino = rgba.resize((12, 11), Image.NEAREST)
         # Color de cada terreno del mapa: el del mapa estratégico del juego (STRAT_L.BMP) según el nombre del terreno;
         # los que no están ahí, el promedio de su textura
         self.tcol = []
@@ -689,9 +740,12 @@ class Visor:
         img(pcx_rgba(os.path.join(sets, 'DLG_MED.PCX')).crop((0, 0, 520, 376)), 0, 0)   # el cuadro; el resto del PCX es blanco
         cierre = fin['cierre']
         limite = ''.join(c for c in str(p.cabecera['limite'] or '') if c.isdigit())   # viene como «35 turnos»
-        titulo = {'podio': 'Game Over!', 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
-        cv.create_text(258, 25, text=titulo, font=self.f_tit if cierre == 'acuerdo' else ('Times New Roman', 18, 'bold'),
-                       fill='#20206a')
+        titulo = {'podio': f"Partida finalizada {fin['fecha']}", 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
+        if cierre == 'podio':   # como el juego desde vista-aliada 1.0.140.0: con la fecha, en dorado
+            txt(258, 25, titulo, ('Times New Roman', 16, 'bold'), 'center', fill='#e0b030')
+        else:
+            cv.create_text(258, 25, text=titulo, font=self.f_tit if cierre == 'acuerdo' else ('Times New Roman', 18, 'bold'),
+                           fill='#20206a')
         linea = {'podio': f'{limite} turns have passed!' if limite else f"Turn {fin['turno']}",
                  'aliada': 'Total victory!' if len(fin['bandos']) == 1 else 'An allied victory!', 'acuerdo': f"Terminada por acuerdo/votación al {fin['turno']}.º turno"}
         if cierre == 'acuerdo':   # la letra de los sucesos, más chica, en bermellón
@@ -715,9 +769,9 @@ class Visor:
                 img(Image.open(pv).convert('RGB').resize((198, 240)), 161, 95)
         else:
             f = ('Segoe UI', 10)
-            col = (95, 145, 330, 390, 455)   # puesto, escudo + SIDE, VPs, CITIES, GOLD (estas tres centradas)
+            col = (95, 145, 300, 352, 404, 460)   # puesto, escudo + SIDE, VPs, Armas, CITIES, GOLD (centradas)
             y = 88
-            for x, rot in zip(col[1:], ('SIDE', 'VPs', 'CITIES', 'GOLD')):
+            for x, rot in zip(col[1:], ('SIDE', 'VPs', 'Armas', 'CITIES', 'GOLD')):
                 txt(x, y, rot, f, 'nw' if rot == 'SIDE' else 'n')
             y += 30
             puesto = 0
@@ -728,11 +782,15 @@ class Visor:
                     txt(col[0], y, str(puesto), f, 'n')
                 if k in self.escudos:
                     img(self.escudos[k][0], col[1], y + 2)
+                if fin['aliados'].get(k) and self.pergamino:   # terminó con un aliado en juego
+                    img(self.pergamino, col[1] + 12, y - 4)
                 txt(col[1] + 20, y, p.jugador(k) if 0 <= k < 8 else '?', f,
                     fill='#%02x%02x%02x' % (c if sum(c := self.colores.get(k, NEUTRAL)) > 200 else (120, 120, 120)))   # negro → gris
-                for x, n in zip(col[2:], (puntos, ciudades, oro)):
+                for x, n in zip(col[2:], (puntos, fin['armas'].get(k, ''), ciudades, oro)):
                     txt(x, y, str(n), f, 'n')
                 y += 26
+        pie = f"corresponde a la partida \"{fin['nombre']}\"" + ('' if cierre == 'podio' else f" — finalizada {fin['fecha']}")
+        txt(260, 292 if cierre == 'podio' else 74, pie, ('Segoe UI', 8), 'n')   # el adorno de abajo del marco tapa más abajo
         v.bind('<Escape>', lambda e: v.destroy())
         v.bind('<Return>', lambda e: v.destroy())
 

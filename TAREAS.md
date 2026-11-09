@@ -1,12 +1,14 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 132).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 134).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 133** (Visor de historia: fecha, Armas y alianzas en el resultado).
+0. **Tarea 132** (sello nuevo de Army List).
 0. **Tarea 131** (el sello de Army List ya no queda pintado en un bando con unidades prohibidas).
 0. **Tarea 130** (tanda de la IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea).
 0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
@@ -17,6 +19,22 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
+1. Actualizador: Visor de historia **1.0.19.0** o posterior (el título de la ventana lo dice).
+2. Abrí una partida terminada de `Warlords\HISTORY` (por ejemplo `NA_2_36.SAV`) y el botón del resultado.
+3. Tiene que decir arriba «Partida finalizada» con la fecha en dorado, la columna **Armas** entre VPs y CITIES, el
+   pergamino de alianza al lado del escudo de los que terminaron aliados (en NA_2: Coprofagos y Dog Tribe) y abajo
+   «corresponde a la partida "NA_2"».
+4. Las armas y alianzas salen de la última guardada de esa partida en HISTORY; la fecha, de cuándo se escribió el
+   archivo `.FIN`. Fijate si los números te parecen razonables para cómo terminó.
+Resultado:
+
+- [ ] **132.** Sello nuevo de Army List (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.143.0** o posterior).
+2. Army List en un bando sin unidades prohibidas: arriba a la derecha tiene que verse el sello dorado «CERTIFIED» con
+   la estrella azul en el centro, en lugar de la medalla. Fijate si se lee bien a ese tamaño.
+Resultado:
 
 - [ ] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.142.0** o posterior).

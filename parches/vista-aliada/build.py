@@ -11997,7 +11997,7 @@ bk_dc:
 
 # ---- Sello de certificación en Army List (pedido del usuario, 8/11/2026). Arriba a la derecha del diálogo 111 (fondo
 # DLG_BIG), en el hueco libre debajo de la barra del título, un botón SEAL (control nuevo; el diálogo tiene 1 a 0x1b)
-# con la medalla que mandó el usuario (medalla.png, en la hoja SEAL_FILE). Se ve cuando ninguna unidad del bando
+# con el sello de sello_img.py (certif.png y centro.png, del usuario; en la hoja SEAL_FILE). Se ve cuando ninguna unidad del bando
 # mirado viola las reglas del validador (armcheck, las mismas que marcan cada unidad con el círculo rojo, que siguen
 # igual) y el bando tiene al menos una unidad; si no, el botón queda deshabilitado, y su cuadro deshabilitado es
 # el fondo del diálogo: no se ve nada. Al hacer clic no pasa nada (el despachador 0x4a21e0 devuelve 0 para los controles
@@ -17241,28 +17241,10 @@ pz_hoja.paste(_help.crop((205, 0, 250, 150)).resize((_e, PZ_H), Image.NEAREST), 
 pcx = io.BytesIO(); pz_hoja.save(pcx, 'PCX'); PZ_PCX = pcx.getvalue()
 # Hoja SEAL_FILE = SETS\Fantasy\sello.pcx (al_seal), con los campos de butt_std: los cuatro cuadros de un botón de
 # SEAL_W x SEAL_H, uno debajo del otro. Normal, apretado y con el puntero encima llevan la medalla igual (no tiene que
-# parecer un botón); el deshabilitado queda todo transparente (11). La medalla (medalla.png, la imagen del usuario) sale
-# de su fondo negro y gris (se recorre desde los bordes lo que es gris oscuro), se recorta y se lleva a 54 x 54
-# centrada. Army List se ve con la paleta del mapa, y BUTT_STD tiene la de la preparación: solo se usan los colores
+# parecer un botón); el deshabilitado es el fondo de DLG_BIG (ver abajo). El sello (sello_img.py: certif.png con
+# centro.png en el medio, imágenes del usuario) se lleva a 54 x 54 centrado. Army List se ve con la paleta del mapa, y BUTT_STD tiene la de la preparación: solo se usan los colores
 # que valen igual en las dos y que ya usan sus hojas (BUTT_STD, SetupScr, DLG_BIG, DLG_HELP).
 assert SEAL_FILE == PZ_FILE + 1
-def medalla_rgba(archivo, W, H):
-    m = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGB'); w, h = m.size
-    fondo = lambda c: abs(c[0] - c[1]) < 12 and abs(c[1] - c[2]) < 12 and max(c) <= 90
-    afuera, pila = set(), [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for x in (0, w - 1) for y in range(h)]
-    while pila:
-        x, y = pila.pop()
-        if (x, y) in afuera or not (0 <= x < w and 0 <= y < h) or not fondo(m.getpixel((x, y))): continue
-        afuera.add((x, y)); pila += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-    a = Image.new('RGBA', m.size)
-    for y in range(h):
-        for x in range(w):
-            if (x, y) not in afuera: a.putpixel((x, y), m.getpixel((x, y)) + (255,))
-    a = a.crop(a.getbbox())
-    k = min(W / a.width, H / a.height)
-    a = a.resize((round(a.width * k), round(a.height * k)), Image.LANCZOS)
-    out = Image.new('RGBA', (W, H)); out.paste(a, ((W - a.width) // 2, (H - a.height) // 2))
-    return out
 _pal_mapa = Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
 _usados = set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())
 for _f in ('DLG_BIG', 'DLG_HELP'): _usados |= set(Image.open(rf'C:\Warlords3\SETS\Fantasy\{_f}.PCX').getdata())
@@ -17273,7 +17255,10 @@ def _seal_col(rgb):
     if rgb not in _seal_memo:
         _seal_memo[rgb] = min(_seal_cols, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _seal_memo[rgb]
-_med = medalla_rgba('medalla.png', SEAL_W - 2, SEAL_H - 2)
+from sello_img import sello_rgba   # certif.png con centro.png en el medio (pedido del usuario, 8/11/2026)
+_s = sello_rgba(); _k = min((SEAL_W - 2) / _s.width, (SEAL_H - 2) / _s.height)
+_s = _s.resize((round(_s.width * _k), round(_s.height * _k)), Image.LANCZOS)
+_med = Image.new('RGBA', (SEAL_W - 2, SEAL_H - 2)); _med.paste(_s, ((SEAL_W - 2 - _s.width) // 2, (SEAL_H - 2 - _s.height) // 2))
 seal_hoja = Image.new('P', (SEAL_W, 4 * SEAL_H), 11); seal_hoja.putpalette(butt.getpalette())
 for fila in (0, 1, 3):
     for y in range(_med.height):
