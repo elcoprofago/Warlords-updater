@@ -408,7 +408,7 @@ Hecho en 1.0.151.0: la puerta (camino sobre el muro) cuesta el 25 % de una ciuda
 solo el dueño y sus aliados (`po_pf`, con `fogally`). Probado en `prueba_obras.py`.
 
 Hecho en 1.0.152.0 (9/11/2026):
-- **Gráficos nuevos** (`parchesista-aliada\obras_img.py`): render por vóxeles, de arriba y de frente como el
+- **Gráficos nuevos** (`parches\vista-aliada\obras_img.py`): render por vóxeles, de arriba y de frente como el
   juego, con sombra al sureste. Cada obra se dibuja en un lienzo de 3x3 casillas cortado en 9 piezas; `ob_draw`
   pinta en cada celda las piezas de la obra propia y de sus 8 vecinas (así la torre asoma sobre la casilla de arriba
   y los muros empalman sin cortes aunque el juego repinte solo algunas celdas). Las piezas van en las filas 1..4 de la
