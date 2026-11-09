@@ -377,5 +377,7 @@ Hecha en vista-aliada 1.0.148.0 (9/11/2026): tipos 4 torre y 5 faro (tope 64 obr
 ciudad (a confirmar, TAREAS 137); se construye en la casilla del líder y no sobre un camino. Prueba: `prueba_obras.py`.
 
 **Etapa B: murallas.** Muro de piedra = intransitable en el grafo de pasos salvo con camino; camino sobre muro =
-2 × montaña (10 veinteavos). Empalizada: falta definir con el usuario qué quiere decir «defensa de 3 grupos de
-infantería pesada por casilla».
+2 × montaña (10 veinteavos). Empalizada (respuesta del usuario, 9/11/2026): cada casilla de muralla construida tiene esas
+defensas, como si la defendieran 3 grupos de infantería pesada que el atacante tiene que vencer; solo la construyen
+unidades con «build»; cuesta el doble de un paso montañoso (2 × 5 veinteavos = 50 % de fundar una ciudad).
+Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), después las murallas.
