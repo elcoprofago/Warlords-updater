@@ -386,6 +386,8 @@ Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), despu�
 1. *Muro de piedra* (tipo 7): obra de la tabla `ob_*`. En el grafo de pasos (0x4a4f20) la casilla es intransitable
    para todos salvo que tenga camino; poner camino sobre un muro cuesta 10 veinteavos (2 × montaña). Se construye
    como la torre (posición nueva de `bd_pick`), precio 10 veinteavos. Prueba: `prueba_murallas.py`.
+   Hecho en vista-aliada 1.0.150.0 (posición 8 de `bd_pick`, `po_pf` lo bloquea, `bd_ok` admite camino encima a
+   OB_MCAM; ni visión ni +1 de defensa). Arreglado de paso: `bd_check` probaba el faro en (0, y).
 2. *Empalizada* (tipo 6): precio 10 veinteavos. Un bando que no es el dueño ni su aliado no entra caminando: tiene
    que atacarla. La batalla (0x469ed0 → 0x464ac0 arma la ficha) suma a los defensores 3 grupos del tipo de
    infantería pesada del bando dueño (unidades virtuales: no existen fuera de la batalla, no cobran mantenimiento),

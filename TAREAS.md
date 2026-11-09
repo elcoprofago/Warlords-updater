@@ -14,6 +14,17 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **139.** Muro de piedra (vista-aliada 1.0.150.0, 9/11/2026)
+Con una unidad con «Build» en tierra libre, al seguir apretando construir aparece **«Building a stone wall»**
+(después de la torre y el faro). Cuesta la mitad de fundar una ciudad (no lo habías dicho; decime si querés otro).
+Probar en Warlords3:
+- que se dibuje el muro en la casilla y que **ningún ejército** (tuyo, aliado, enemigo ni de la computadora) pueda
+  pasar por ella;
+- que con la misma unidad parada en el muro se pueda construir un **camino** encima (cuesta el doble que en montaña)
+  y que, con el camino, ya se pueda pasar;
+- que se conserve al guardar y cargar.
+Nota: el muro se dibuja como un tramo horizontal; si lo ponés en una fila vertical, decime cómo se ve.
+
 - [ ] **138.** Tope de 3 pausas por jugador (vista-aliada 1.0.149.0, 9/11/2026)
 En una partida en red con otra PC (las dos con la 1.0.149.0): desde una PC, **Pausa** y **Espacio** para reanudar,
 tres veces. La cuarta vez, **Pausa** no hace nada en esa PC. Desde la otra PC todavía tiene que poder pausar 3 veces.

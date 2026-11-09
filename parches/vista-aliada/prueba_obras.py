@@ -24,8 +24,9 @@ def picks(x, y, n, prep=None):
         ok = mu.reg_read(UC_X86_REG_EAX)
         r.append((*struct.unpack('<hh', mu.mem_read(BD_X, 4)), struct.unpack('<H', mu.mem_read(BD_PW, 2))[0]) if ok else (0,))
     return r
-ver('llanura lejos del agua: camino, torre, camino', picks(5, 7, 3), [(5, 7, 0), (5, 7, TORRE), (5, 7, 0)])
-ver('a orillas del agua (x = 29): camino, torre, faro, camino', picks(29, 7, 4), [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO), (29, 7, 0)])
+MURO = 0x4007
+ver('llanura lejos del agua: camino, torre, muro, camino', picks(5, 7, 4), [(5, 7, 0), (5, 7, TORRE), (5, 7, MURO), (5, 7, 0)])
+ver('a orillas del agua (x = 29): camino, torre, faro, muro, camino', picks(29, 7, 5), [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO), (29, 7, MURO), (29, 7, 0)])
 ver('control: tabla llena: solo camino', picks(5, 7, 2, lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64))), [(5, 7, 0)] * 2)
 
 print('-- precio')
@@ -54,6 +55,24 @@ ver('control: tipo 6 inexistente', obra(pw=0x4006)[:2], ([], 0))
 ver('control: agua', obra(x=33)[:2], ([], 0))
 ver('control: sobre camino', obra(x=10)[:2], ([], 0))
 ver('control: tabla llena', obra(prep=lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64)))[:2], ([], 64))
+
+print('-- muro de piedra')
+def muro_y_camino(oro=1000, x=5):
+    g, c = recibir(pw=MURO, oro=oro, x=x)
+    mu = g.mu; c1 = list(c)
+    mu.mem_write(PKT + 0xc, struct.pack('<4h', 2, x, 7, 0))
+    g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
+    n = struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
+    return c1, n, c[len(c1):], g.tile(x, 7)[3] & 7
+ver('muro en (5, 7): cobra 100; después un camino encima cobra 100 (2 x montaña) y pone la estructura 1',
+    muro_y_camino(), ([(2, -100)], 1, [(2, -100)], 1))
+def torre_sobre_muro():
+    g, c = recibir(pw=MURO, oro=1000)
+    mu = g.mu; n0 = len(c)
+    mu.mem_write(PKT + 0xc, struct.pack('<4h', 2, 5, 7, TORRE))
+    g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
+    return c[n0:], struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
+ver('control: torre sobre el muro no (ni cobra ni anota)', torre_sobre_muro(), ([], 1))
 
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
 PP_RECV = dest(0x4b6a22, 2)

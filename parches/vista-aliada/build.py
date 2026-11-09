@@ -4236,6 +4236,8 @@ bd_piecetab = place_data('bd_piecetab', bytes(BD_PIECES))
 # niebla a OB_VISTA casillas para su dueño y sus aliados (ob_fog), dan +1 a la fuerza de los defensores que no son
 # héroes (bridgeab) y pasan al bando que entra, si no es aliado del dueño (ob_step). La pila sigue siendo de 8.
 OB_MAX, OB_REC, OB_TORRE, OB_FARO = 64, 8, 4, 5
+OB_EMPAL, OB_MURO = 6, 7                       # etapa B: empalizada y muro de piedra (mismo precio OB_FRAC)
+OB_MCAM = 10                                   # camino sobre un muro: 2 x montaña (BD_MNT = 5 veinteavos)
 OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedido sin precio; a confirmar, TAREAS 137)
 OB_VISTA = {OB_TORRE: 5, OB_FARO: 6}
 OB_BLOQUE = 10
@@ -4250,6 +4252,7 @@ ob_magic = place_data('ob_magic', bytes(4))
 ob_map = place_data('ob_map', bytes(OB_MAPSZ))
 ob_twtxt = place_data('ob_twtxt', cstr_('Building a watchtower'))
 ob_fatxt = place_data('ob_fatxt', cstr_('Building a lighthouse'))
+ob_mutxt = place_data('ob_mutxt', cstr_('Building a stone wall'))
 ob_rebuild = place('ob_rebuild', f'''
     pushad
     mov edi, {ob_map:#x}
@@ -4332,6 +4335,8 @@ ofg_l:
     cmp esi, dword ptr [{OB_N:#x}]
     jae 0x441718
     lea edi, [esi*8 + {OB_TAB:#x}]
+    cmp byte ptr [edi + 4], {OB_FARO}
+    ja ofg_nx
     movzx ecx, byte ptr [edi + 6]
     cmp ecx, eax
     je ofg_see
@@ -4388,7 +4393,7 @@ bd_ok = place('bd_ok', f'''
     call {ob_at:#x}
     test eax, eax
     pop eax
-    jnz bdo_no
+    jnz bdo_wall
     call {br_tile:#x}
     test eax, eax
     jz bdo_no
@@ -4421,6 +4426,19 @@ bd_ok = place('bd_ok', f'''
     jmp bdo_out
 bdo_hard:
     mov eax, {BD_HARD}
+    jmp bdo_out
+bdo_wall:
+    push eax
+    call {ob_at:#x}
+    cmp byte ptr [eax + 4], {OB_MURO}
+    pop eax
+    jne bdo_no
+    call {br_tile:#x}
+    test eax, eax
+    jz bdo_no
+    test byte ptr [eax + 3], 7
+    jnz bdo_no
+    mov eax, {OB_MCAM}
     jmp bdo_out
 bdo_no:
     xor eax, eax
@@ -4473,6 +4491,11 @@ ob_okt = place('ob_okt', f'''
     mov edi, edx
     cmp dword ptr [{OB_N:#x}], {OB_MAX}
     jae oko_no
+    push eax
+    call {ob_at:#x}
+    test eax, eax
+    pop eax
+    jnz oko_no
     call {bd_ok:#x}
     test eax, eax
     jz oko_no
@@ -5164,7 +5187,7 @@ pa_nmx:
 # última ofrecida, así el «No» del diálogo y otro clic pasan a la siguiente. Deja BD_X, BD_Y, BD_DIR (4 = la del
 # líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto. Las posiciones 0-4 piden BD_HASB; la 5 es el
 # puerto (pt_lead: ciudad propia del líder), con BD_DIR = 0xff (sin flecha); la 6 y la 7, torre y faro en la casilla
-# del líder (ob_okt, piden BD_HASB), con BD_DIR = 0xff y BD_PW = 0x4000 | tipo.
+# del líder (ob_okt, piden BD_HASB), con BD_DIR = 0xff y BD_PW = 0x4000 | tipo; la 8, el muro de piedra.
 bd_pick = place('bd_pick', f'''
     push ebx
     push ecx
@@ -5181,11 +5204,11 @@ bd_pick = place('bd_pick', f'''
     jne bpk_go
     movzx esi, byte ptr [{BD_POS:#x}]
     inc esi
-    cmp esi, 8
+    cmp esi, 9
     jb bpk_go
     xor esi, esi
 bpk_go:
-    mov ebx, 8
+    mov ebx, 9
 bpk_l:
     mov word ptr [{BD_PW:#x}], 0
     cmp esi, 6
@@ -5247,6 +5270,10 @@ bpk_ob:
     cmp byte ptr [{BD_HASB:#x}], 0
     je bpk_nx
     lea ecx, [esi + {OB_TORRE - 6}]
+    cmp ecx, {OB_EMPAL}
+    jne bpk_ty
+    mov ecx, {OB_MURO}
+bpk_ty:
     mov eax, edi
     mov edx, ebp
     call {ob_okt:#x}
@@ -5261,7 +5288,7 @@ bpk_ob:
 bpk_nx:
     mov word ptr [{BD_PW:#x}], 0
     inc esi
-    cmp esi, 8
+    cmp esi, 9
     jb bpk_nw
     xor esi, esi
 bpk_nw:
@@ -5350,7 +5377,15 @@ bk_nb:
     call {ob_okt:#x}
     test eax, eax
     jnz bk_pos
+    mov eax, edi
+    mov edx, ebp
     mov ecx, {OB_FARO}
+    call {ob_okt:#x}
+    test eax, eax
+    jnz bk_pos
+    mov eax, edi
+    mov edx, ebp
+    mov ecx, {OB_MURO}
     call {ob_okt:#x}
     test eax, eax
     jnz bk_pos
@@ -8676,6 +8711,9 @@ brx_road:
     mov eax, {ob_fatxt:#x}
     cmp word ptr [{BD_PW:#x}], {0x4000 | OB_FARO:#x}
     je 0x4b6516
+    mov eax, {ob_mutxt:#x}
+    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_MURO:#x}
+    je 0x4b6516
     mov eax, {bd_pttxt:#x}
     test word ptr [{BD_PW:#x}], 0x8000
     jnz 0x4b6516
@@ -8958,6 +8996,9 @@ bab_no:
     mov edx, ebp
     call {ob_at:#x}
     test eax, eax
+    jz bab_z
+    cmp byte ptr [eax + 4], {OB_MURO}
+bab_z:
     pop eax
     jz bab_w
     inc ecx
@@ -11243,7 +11284,9 @@ PO_REMO0 = 13                # remolino grande: 4 fases x 9 piezas (3x3), desde 
 PO_MINAGUA = PO_REMO0 + 36   # mina submarina
 PO_TORRE = PO_MINAGUA + 1    # obras (PENDIENTE-construcciones, parte 2): torre de vigía
 PO_FARO = PO_TORRE + 1       # faro costero
-PO_FRAMES = PO_FARO + 1
+PO_EMPAL = PO_FARO + 1       # empalizada (etapa B)
+PO_MURO = PO_EMPAL + 1       # muro de piedra
+PO_FRAMES = PO_MURO + 1
 # po_vecs[k]: (dy << 4) | (dx & 15) de la pieza k = (dy + 1) * 3 + (dx + 1), con (dx, dy) = celda - remolino
 po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
@@ -11647,9 +11690,23 @@ pf2_out:
 # armada). Las tumbas y las trampas gastadas no cuentan. Excepción: la ruta expresa de un humano (0x536c12 = -1) a esa
 # misma casilla (el destino del camino, [0x5878d4] / [0x5878d8]) sí llega, y cae. La computadora no tiene esa
 # excepción: nunca entra en uno que ve, tampoco por el ítem que dejó un caído. Lo usan también el mapa de distancias
-# de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
+# de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Un muro de piedra (OB_MURO) sin camino es intransitable para
+# todos, también como destino. Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
 # reemplazado (0x4a5d34..0x4a5d40).
 po_pf = place('po_pf', f'''
+    movsx eax, di
+    movsx edx, bx
+    call {ob_at:#x}
+    test eax, eax
+    jz ppf_nw
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne ppf_nw
+    movsx eax, di
+    movsx edx, bx
+    call {br_tile:#x}
+    test byte ptr [eax + 3], 7
+    jz 0x4a5e31
+ppf_nw:
     movsx eax, di
     movsx edx, bx
     test eax, eax
@@ -14875,8 +14932,10 @@ bv_ob:
     and ecx, 0xff
     cmp ecx, {OB_TORRE}
     jb bv_x
-    cmp ecx, {OB_FARO}
+    cmp ecx, {OB_MURO}
     ja bv_x
+    cmp ecx, {OB_EMPAL}
+    je bv_x
     mov eax, esi
     mov edx, edi
     call {ob_okt:#x}
@@ -18041,9 +18100,32 @@ def torre(faro=False):
         for x in range(21, 26):
             if y > 35 or 22 <= x <= 24: px[x, y] = (45, 30, 15)
     return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
+# Muro de piedra y empalizada (etapa B): un tramo que cruza la casilla de lado a lado (empalma con el vecino), con
+# almenas el muro y estacas aguzadas la empalizada; sombra al sureste como la torre.
+def muro(empal=False):
+    im = Image.new('RGB', (48, 48), (255, 0, 255)); px = im.load(); rnd = random.Random(7)
+    TOP, BASE = (14 if empal else 18), 34
+    for y in range(TOP, BASE + 1):
+        for x in range(48):
+            if empal:
+                k = x % 6
+                if k == 5: continue
+                if y < TOP + 4 and abs(k - 2) > (y - TOP): continue
+                luz = (1.15 if k < 2 else 0.8) * rnd.uniform(0.85, 1.1)
+                c = (125, 85, 45)
+                if y in (TOP + 8, BASE - 5): c, luz = (70, 50, 30), 1
+            else:
+                if y < TOP + 4 and (x // 4) % 2: continue
+                luz = rnd.uniform(0.85, 1.1) * (0.65 if y % 5 == 0 or (x + (y // 5) * 4) % 9 == 0 else 1)
+                c = (155, 150, 140)
+            px[x, y] = tuple(min(255, int(v * luz)) for v in c)
+    for y in range(BASE + 1, BASE + 5):
+        for x in range(48):
+            if px[x, y] == (255, 0, 255): px[x, y] = (20, 18, 12)
+    return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
 po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
-           + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True)])
+           + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True), muro(True), muro()])
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))
