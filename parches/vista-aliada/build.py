@@ -14089,6 +14089,35 @@ tsk_out:
     pop ecx
     ret
 ''')
+# tr_free (pedido del usuario, 9/11/2026: NA_157 llenó los PO_MAX lugares con 49 trampas): con la tabla llena, eax =
+# la primera trampa gastada de la tabla (su lugar se reusa para la nueva y ese agujero con humo desaparece), 0 si no
+# hay. El formato del .SAV no cambia. Preserva el resto.
+tr_free = place('tr_free', f'''
+    push ecx
+    push edx
+    xor ecx, ecx
+tfr_loop:
+    cmp ecx, dword ptr [{PO_N:#x}]
+    jae tfr_no
+    lea eax, [ecx*8 + {PO_TAB:#x}]
+    cmp byte ptr [eax + 4], {PO_TRAMPA}
+    jne tfr_next
+    mov dl, byte ptr [eax + 5]
+    test dl, {TR_DOBLE}
+    jnz tfr_next
+    and dl, {TR_CUENTA}
+    cmp dl, {TR_USOS}
+    jae tfr_out
+tfr_next:
+    inc ecx
+    jmp tfr_loop
+tfr_no:
+    xor eax, eax
+tfr_out:
+    pop edx
+    pop ecx
+    ret
+''')
 # Desde br_menu (edi = x, ebp = y del líder). Preserva todo.
 tr_check = place('tr_check', f'''
     pushad
@@ -14104,7 +14133,11 @@ tr_check = place('tr_check', f'''
     test eax, eax
     jnz tk_ok
     cmp dword ptr [{PO_N:#x}], {PO_MAX}
-    jae tk_out
+    jb tk_room
+    call {tr_free:#x}
+    test eax, eax
+    jz tk_out
+tk_room:
     mov ebp, {PO_TRAMPA}
     call {pg_ok:#x}
     jnz tk_out
@@ -14296,7 +14329,11 @@ tr_recv = place('tr_recv', f'''
     test eax, eax
     jnz tv_pay
     cmp dword ptr [{PO_N:#x}], {PO_MAX}
-    jae tv_x1
+    jb tv_room
+    call {tr_free:#x}
+    test eax, eax
+    jz tv_x1
+tv_room:
     mov ebp, {PO_TRAMPA}
     call {pg_ok:#x}
     jnz tv_x1
@@ -14335,6 +14372,12 @@ tv_re:
 tv_new:
     mov eax, dword ptr [{PO_N:#x}]
     lea edx, [eax*8 + {PO_TAB:#x}]
+    cmp eax, {PO_MAX}
+    jb tv_add
+    call {tr_free:#x}
+    mov edx, eax
+    dec dword ptr [{PO_N:#x}]
+tv_add:
     mov word ptr [edx], si
     mov word ptr [edx + 2], di
     mov byte ptr [edx + 4], {PO_TRAMPA}

@@ -14,7 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **136.** Trampas sobre trampas gastadas y constructores en red (vista-aliada 1.0.146.0, 9/11/2026)
+- [ ] **136.** Trampas sobre trampas gastadas y constructores en red (vista-aliada 1.0.147.0, 9/11/2026)
 **Trampas.** Ahora se puede sembrar una trampa nueva encima de una gastada (el agujero con humo), sea tuya o de
 otro jugador, también dentro de una ciudad. La nueva es tuya, queda oculta y cuesta lo mismo que una trampa común.
 Apilar dos trampas en la misma casilla ya se podía desde la 1.0.124.0, con estas condiciones:
@@ -23,11 +23,13 @@ Apilar dos trampas en la misma casilla ya se podía desde la 1.0.124.0, con esta
 - en una **ciudad** no se apila (lo pediste el 4/11: una sola trampa por casilla de ciudad);
 - el tope es 2.
 Si cuando no pudiste se daba alguna de esas condiciones, contame cuál, y la cambio.
+**NA_157:** la tabla de pozos y trampas estaba llena (64 de 64, con 49 trampas). Desde la **1.0.147.0**, con la
+tabla llena, la trampa nueva toma el lugar de una trampa gastada de cualquier parte del mapa (ese agujero desaparece).
 **Constructores en red.** Una partida guarda su propia copia de las armas del momento en que se creó; la carpeta
-ARMY nueva solo vale para partidas **nuevas**. En dia-noche3.SAV (la del 8/11) no hay ninguna unidad con «build»:
+ARMY nueva solo vale para partidas **nuevas**. En dia-noche3.SAV (la del 8/11) y en NA_157 no hay ninguna unidad con «build»:
 ni Dwarf Sappers, ni Royal Sappers, ni Scavens, etc. Y las Archers de esa partida no traen el bono.
 Ojo: en ARMY\goblins.ARM, «build» quedó como bono de **combate** y no como de **movimiento**: así no construye.
-1. Actualizador, opción **9**: vista-aliada tiene que quedar en **1.0.146.0**, en todas las PC.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar en **1.0.147.0**, en todas las PC.
 2. Trampas: sembrá una, hacela explotar hasta que quede el agujero con humo, y sembrá otra encima. Tiene que
    cobrarse y quedar oculta para los demás.
 3. Constructores: empezá una partida **nueva** (en red), con un bando que tenga alguna de esas unidades. Con el

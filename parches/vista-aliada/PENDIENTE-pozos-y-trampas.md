@@ -565,3 +565,9 @@ Pedido del usuario: «las trampas no se pueden sembrar sobre pozos ya detonados;
 incluida, sin tope de tabla porque reusa el registro); `tr_recv` la rearma: +5 = 0, +6 = solo el bit del que siembra,
 +7 = el que siembra. Pruebas en prueba_trampas.py. Apilar sigue como en la 1.0.124/126 (propia, activa, fuera de
 ciudad, tope 2); el usuario dice que no pudo poner dos: falta saber en qué caso (tarea 136).
+
+## 1.0.147.0 (9/11/2026): tabla llena
+
+NA_157 tenía la tabla con sus 64 lugares ocupados (49 trampas, muchas gastadas). Con la tabla llena, una trampa
+nueva toma el lugar de la primera trampa gastada (sin doble) de la tabla; ese agujero gastado desaparece del mapa.
+El formato del .SAV no cambia. Pruebas: prueba_trampas.py (tabla llena con gastada en otro lado; control: doble).
