@@ -4206,6 +4206,7 @@ bd_vars = place_data('bd_vars', bytes(16))
 BD_X, BD_Y, BD_LX, BD_LY, BD_DIR = bd_vars, bd_vars + 2, bd_vars + 4, bd_vars + 6, bd_vars + 8
 BD_POS, BD_PW = bd_vars + 9, bd_vars + 10   # posición en la rotación (0 = la del líder, 1-4 = N, E, S, O, 5 = puerto); 0 camino, 0x100|dir puente, 0x8000|ciudad puerto
 BD_HASB = bd_vars + 12                      # 1 si el grupo tiene un ejército con «build» (camino y puente lo piden; el puerto no)
+BD_CAT = bd_vars + 13                       # filtro de bd_pick (botonera de la torre): 0 todas; 1 camino, 2 puente, 3 puerto, 4 torre, 5 faro, 6 muro
 bd_dlgtxt = place_data('bd_dlgtxt', cstr_('Building a road'))
 bd_brtxt = place_data('bd_brtxt', cstr_('Building a bridge'))
 # Puente nuevo (punto 8): tira recta de 1 a BD_BRMAX casillas de clase agua sin estructura, edificio ni puente
@@ -5311,6 +5312,27 @@ bpk_nw:
     xor eax, eax
     jmp bpk_out
 bpk_hit:
+    cmp byte ptr [{BD_CAT:#x}], 0
+    je bpk_cok
+    movzx eax, word ptr [{BD_PW:#x}]
+    mov ecx, 1
+    test eax, eax
+    jz bpk_cc
+    mov ecx, 3
+    test eax, 0x8000
+    jnz bpk_cc
+    mov ecx, 2
+    test eax, 0x4000
+    jz bpk_cc
+    and eax, 0xff
+    lea ecx, [eax - {OB_TORRE - 4}]
+    cmp eax, {OB_MURO}
+    jne bpk_cc
+    mov ecx, 6
+bpk_cc:
+    cmp cl, byte ptr [{BD_CAT:#x}]
+    jne bpk_nx
+bpk_cok:
     mov eax, esi
     mov byte ptr [{BD_POS:#x}], al
     mov word ptr [{BD_LX:#x}], di
@@ -14819,19 +14841,181 @@ tk_out:
     ret
 ''')
 caves['tr_chkp'] = struct.pack('<I', tr_check)
-# Habilitación (en 0x4affc2 de 0x4afec0, al abrir el menú, después de 0x4b0660).
-tr_init = place('tr_init', f'''
-    cmp byte ptr [{TR_FLAG:#x}], 1
+# ---- Botonera de construir (PENDIENTE-construcciones.md, pedido del 9/11/2026). El botón de la torrecita (en las dos
+# barras del grupo: caso 19 de 0x41c8d0 y caso 11 de 0x4204a0, que hacían «Rebuild City/Site») abre el menú de órdenes
+# (0x4afc20, diálogo 0x1f) en modo construir (BM_ON = 1): sus 13 renglones pasan a ser las obras, cada una encendida
+# solo si se puede hacer desde la casilla del líder. Reconstruir corre el código original del botón (0x41ca5a); las
+# demás eligen directamente su tipo de obra (BD_CAT filtra la rotación de bd_pick: otro clic en el mismo renglón pasa
+# a la siguiente casilla o dirección de ese tipo) y abren el diálogo de reconstruir como antes. «Build» y «Build Trap»
+# salen del menú de órdenes (BM_ON = 0: sin texto y apagados). La empalizada todavía no se construye (etapa B, falta
+# la batalla).
+bm_vars = place_data('bm_vars', bytes(32))
+BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
+BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall', 'Trap']
+BM_TXT = [0x15] + list(range(1, 11)) + [TR_TXT, BD_TXT]          # renglones de arriba abajo (ORD del diálogo 34)
+BM_HOT = [0x16] + list(range(0xb, 0x15)) + [TR_HOT, BD_HOT]
+bm_empty = place_data('bm_empty', b'\0')
+bm_strs = place_data('bm_strs', struct.pack('<13I', *([place_data(f'bm_s{i}', cstr_(t)) for i, t in enumerate(BM_ROWS)]
+                                                     + [bm_empty] * (13 - len(BM_ROWS)))))
+bm_txt = place_data('bm_txt', struct.pack('<13I', *BM_TXT))
+bm_hot = place_data('bm_hot', struct.pack('<13I', *BM_HOT))
+# bm_calc: llena BM_EN con TR_X / TR_Y (el líder, de tr_check) y las banderas de bd_check / tr_check. Preserva todo.
+# Renglón 0 reconstruir (ciudad en la casilla, o sitio / puente derribado con br_rebuildlk), 1-6 los tipos de BD_CAT
+# (bd_pick desde el principio, sin perder la rotación guardada), 7 trampa (TR_FLAG).
+bm_calc = place('bm_calc', f"""
+    pushad
+    mov edi, {BM_EN:#x}
+    xor eax, eax
+    mov ecx, 13
+    rep stosb
+    movsx esi, word ptr [{TR_X:#x}]
+    movsx edi, word ptr [{TR_Y:#x}]
+    test esi, esi
+    js bmc_out
+    push edi
+    push esi
+    call 0x440be0
+    add esp, 8
+    test ax, ax
+    jge bmc_reb
+    push edi
+    push esi
+    call {br_rebuildlk:#x}
+    add esp, 8
+    test ax, ax
+    jl bmc_trap
+bmc_reb:
+    mov byte ptr [{BM_EN:#x}], 1
+bmc_trap:
+    mov al, byte ptr [{TR_FLAG:#x}]
+    mov byte ptr [{BM_EN + 7:#x}], al
+    cmp byte ptr [{BD_FLAG:#x}], 0
+    je bmc_out
+    mov eax, dword ptr [{bd_vars:#x}]
+    mov dword ptr [{BM_SAVE:#x}], eax
+    mov eax, dword ptr [{bd_vars + 4:#x}]
+    mov dword ptr [{BM_SAVE + 4:#x}], eax
+    mov eax, dword ptr [{bd_vars + 8:#x}]
+    mov dword ptr [{BM_SAVE + 8:#x}], eax
+    mov ebx, 1
+bmc_cat:
+    mov word ptr [{BD_LX:#x}], 0x8000
+    mov byte ptr [{BD_CAT:#x}], bl
+    call {bd_pick:#x}
+    mov byte ptr [ebx + {BM_EN:#x}], al
+    inc ebx
+    cmp ebx, 7
+    jb bmc_cat
+    mov eax, dword ptr [{BM_SAVE:#x}]
+    mov dword ptr [{bd_vars:#x}], eax
+    mov eax, dword ptr [{BM_SAVE + 4:#x}]
+    mov dword ptr [{bd_vars + 4:#x}], eax
+    mov eax, dword ptr [{BM_SAVE + 8:#x}]
+    mov dword ptr [{bd_vars + 8:#x}], eax
+bmc_out:
+    popad
+    ret
+""")
+# bm_init (desde tr_init, en modo construir): enciende o apaga los 13 renglones.
+bm_init = place('bm_init', f"""
+    call {bm_calc:#x}
+    pushad
+    xor ebx, ebx
+bmi_l:
+    cmp byte ptr [ebx + {BM_EN:#x}], 1
     sbb eax, eax
     and eax, 2
     push eax
+    push dword ptr [ebx*4 + {bm_hot:#x}]
+    call 0x4dcec0
+    add esp, 8
+    inc ebx
+    cmp ebx, 13
+    jb bmi_l
+    popad
+    mov ecx, 0x588bd0
+    jmp 0x4affc7
+""")
+# bm_hover (reemplaza 0x4b0130(crear, x, y) en modo construir): textos al crear y color de cada renglón (0xf bajo el
+# mouse, 0x5c encendido, 0x56 apagado); redibuja como el original.
+bm_hover = place('bm_hover', f"""
+    pushad
+    cmp dword ptr [esp + 0x24], 0
+    je bmh_col
+    xor ebx, ebx
+bmh_t:
+    push dword ptr [ebx*4 + {bm_strs:#x}]
+    push dword ptr [ebx*4 + {bm_txt:#x}]
+    call 0x4dd240
+    add esp, 8
+    inc ebx
+    cmp ebx, 13
+    jb bmh_t
+bmh_col:
+    movsx eax, word ptr [esp + 0x2c]
+    movsx ecx, word ptr [esp + 0x28]
+    push 2
+    push eax
+    push ecx
+    call 0x4dcee0
+    add esp, 0xc
+    mov esi, eax
+    xor ebx, ebx
+bmh_c:
+    mov eax, 0x56
+    cmp byte ptr [ebx + {BM_EN:#x}], 0
+    je bmh_set
+    mov eax, 0x5c
+    cmp esi, dword ptr [ebx*4 + {bm_hot:#x}]
+    jne bmh_set
+    mov eax, 0xf
+bmh_set:
+    push 0
+    push 0
+    push eax
+    push dword ptr [ebx*4 + {bm_txt:#x}]
+    call 0x4dd2b0
+    add esp, 0x10
+    inc ebx
+    cmp ebx, 13
+    jb bmh_c
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    popad
+    ret
+""")
+bm_entry = place('bm_entry', f"""
+    cmp byte ptr [{BM_ON:#x}], 0
+    jne {bm_hover:#x}
+    sub esp, 0x14
+    lea eax, [esp]
+    jmp 0x4b0137
+""")
+# Torrecita (casos de los botones; en la pila, esi y edi del manejador): abre el menú en modo construir.
+bm_tower = place('bm_tower', f"""
+    mov byte ptr [{BM_ON:#x}], 1
+    push -1
+    push -1
+    call 0x4afc20
+    add esp, 8
+    pop edi
+    pop esi
+    ret
+""")
+# Clic derecho en el mapa (0x4bf02d): el menú de órdenes de siempre.
+bm_norm = place('bm_norm', f"""
+    mov byte ptr [{BM_ON:#x}], 0
+    jmp 0x4afc20
+""")
+# Habilitación (en 0x4affc2 de 0x4afec0, al abrir el menú, después de 0x4b0660).
+tr_init = place('tr_init', f'''
+    cmp byte ptr [{BM_ON:#x}], 0
+    jne {bm_init:#x}
+    push 2
     push {TR_HOT:#x}
     call 0x4dcec0
     add esp, 8
-    cmp byte ptr [{BD_FLAG:#x}], 1
-    sbb eax, eax
-    and eax, 2
-    push eax
+    push 2
     push {BD_HOT:#x}
     call 0x4dcec0
     add esp, 8
@@ -14842,11 +15026,11 @@ tr_init = place('tr_init', f'''
 tr_hover = place('tr_hover', f'''
     cmp dword ptr [esp + 0x1c], 0
     je th_col
-    push {tr_menutxt:#x}
+    push {bm_empty:#x}
     push {TR_TXT:#x}
     call 0x4dd240
     add esp, 8
-    push {bd_menutxt:#x}
+    push {bm_empty:#x}
     push {BD_TXT:#x}
     call 0x4dd240
     add esp, 8
@@ -14890,6 +15074,8 @@ th_set:
 ''')
 # Clic (en 0x4b0487 de 0x4b0460; eax = zona): cierra el menú y abre el diálogo de reconstruir con TR_MARK.
 tr_click = place('tr_click', f'''
+    cmp byte ptr [{BM_ON:#x}], 0
+    jne tc_bm
     cmp eax, {TR_HOT:#x}
     je tc_trap
     cmp eax, {BD_HOT:#x}
@@ -14911,6 +15097,33 @@ tc_trap:
 tc_road:
     cmp byte ptr [{BD_FLAG:#x}], 0
     je 0x4b0496
+    call {bd_pick:#x}
+    test eax, eax
+    jz 0x4b0496
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    mov word ptr [0x587e5c], {BD_MARK:#x}
+    call 0x4b6180
+    pop edi
+    pop esi
+    ret
+tc_bm:
+    xor ecx, ecx
+tc_bml:
+    cmp eax, dword ptr [ecx*4 + {bm_hot:#x}]
+    je tc_bmf
+    inc ecx
+    cmp ecx, 13
+    jb tc_bml
+    jmp 0x4b0496
+tc_bmf:
+    cmp byte ptr [ecx + {BM_EN:#x}], 0
+    je 0x4b0496
+    test ecx, ecx
+    jz 0x41ca5a
+    cmp ecx, 7
+    je tc_trap
+    mov byte ptr [{BD_CAT:#x}], cl
     call {bd_pick:#x}
     test eax, eax
     jz 0x4b0496
@@ -17634,6 +17847,11 @@ patch(0x4b0450, asm('mov ecx, 0x588bd0', 0x4b0450), asm(f'jmp {tr_hover:#x}', 0x
 patch(0x4b0487, asm('sub eax, 0xb; cmp eax, 0xb; ja 0x4b0496', 0x4b0487),
       asm(f'jmp {tr_click:#x}', 0x4b0487))
 patch(0x4b6236, asm('call 0x4b9ce0', 0x4b6236), asm(f'call {tr_send:#x}', 0x4b6236))
+# Botonera de construir (bm_*): la torrecita abre el menú de órdenes en modo construir.
+patch(0x4b0130, rel(0x4b0130, 7), asm(f'jmp {bm_entry:#x}', 0x4b0130))
+patch(0x4bf02d, asm('call 0x4afc20', 0x4bf02d), asm(f'call {bm_norm:#x}', 0x4bf02d))
+patch(0x41cad8 + 10 * 4, struct.pack('<I', 0x41ca5a), struct.pack('<I', bm_tower))
+patch(0x4206a0 + 2 * 4, struct.pack('<I', 0x42050e), struct.pack('<I', bm_tower))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
 patch(0x4dea40, asm('mov ecx, 0x5a6f50', 0x4dea40), asm(f'jmp {tl_idle:#x}', 0x4dea40))
 assert rel(0x4dd3a0, 7) == bytes.fromhex('66a1fc995800c3')
@@ -17912,10 +18130,7 @@ RES_TEXTS = [  # (diálogo, id, tipo, desplazamiento, tamaño, original, nuevo)
     (8, 35, 0x15, 0x40, 64, 'Begin playing Warlords 3', f'Begin playing {GAME}'),
     (54, 7, 0x15, 0x40, 64, 'Exit Warlords 3', f'Exit {GAME}'),
     (126, 3, 0x15, 0x40, 64, 'Quit from Warlords 3', f'Quit from {GAME}'),
-    # Botón de la torre (reconstruir ciudades y sitios), en las dos barras: «Rebuild», para no confundirlo con
-    # «Build Road» del menú de órdenes (pedido del usuario, 3/11/2026). Campo de 16 bytes.
-    (39, 19, 3, 0x20, 16, 'Build', 'Rebuild'),
-    (41, 2, 3, 0x20, 16, 'Build', 'Rebuild'),
+    # Botón de la torre: desde 1.0.153.0 abre la botonera de construir y reconstruir (bm_*); vuelve a decir «Build».
 ]
 for did, cid, typ, off, size, old, new in RES_TEXTS:
     p, t = records(res, did)[cid]

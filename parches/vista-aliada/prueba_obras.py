@@ -32,6 +32,37 @@ ver('a orillas del agua (x = 29): camino, torre, faro, muro x 8, camino', picks(
     [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO)] + [(29, 7, m) for m in MUROS] + [(29, 7, 0)])
 ver('control: tabla llena: solo camino', picks(5, 7, 2, lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64))), [(5, 7, 0)] * 2)
 
+print('-- botonera de la torre: bd_pick filtrado por tipo (BD_CAT)')
+BD_CAT = BD_X + 13
+def cat(c):
+    return lambda g: g.mu.mem_write(BD_CAT, bytes([c]))
+ver('camino: solo camino', picks(29, 7, 3, cat(1)), [(29, 7, 0)] * 3)
+ver('torre: solo torre', picks(29, 7, 2, cat(4)), [(29, 7, TORRE)] * 2)
+ver('faro a orillas del agua: solo faro', picks(29, 7, 2, cat(5)), [(29, 7, FARO)] * 2)
+ver('muro: las 8 direcciones y vuelve a la primera', picks(29, 7, 9, cat(6)), [(29, 7, m) for m in MUROS + MUROS[:1]])
+ver('control: faro lejos del agua: nada', picks(5, 7, 2, cat(5)), [(0,)] * 2)
+ver('control: puerto sin ciudad: nada', picks(5, 7, 1, cat(3)), [(0,)])
+ver('control: sin filtro (0): rotación completa', picks(5, 7, 3, cat(0)), [(5, 7, 0), (5, 7, TORRE), (5, 7, MUROS[0])])
+# bm_calc: tr_init (0x4affc2) empieza con «cmp byte [BM_ON], 0; jne bm_init» y bm_init con «call bm_calc».
+TR_INIT = dest(0x4affc2)
+assert img[TR_INIT - BASE:TR_INIT - BASE + 2] == b'\x80\x3d'
+BM_ON = d32(TR_INIT + 2); BM_EN = BM_ON + 1
+BM_INIT = dest(TR_INIT + 7, 2)
+BM_CALC = dest(BM_INIT)
+def renglones(x, y, flag=1, trap=0):
+    g = Juego(); mu = g.mu
+    mu.mem_write(BD_HASB, b'\1'); mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    mu.mem_write(BD_FLAG, bytes([flag])); mu.mem_write(TR_FLAG, bytes([trap]))
+    mu.mem_write(BD_X, bytes(range(1, 13)))          # rotación guardada: tiene que quedar igual
+    g.correr(BM_CALC, RET, struct.pack('<I', RET))
+    return list(mu.mem_read(BM_EN, 13)), bytes(mu.mem_read(BD_X, 12)) == bytes(range(1, 13))
+#              reconstruir camino puente puerto torre faro muro trampa, 5 vacíos
+ver('orilla (29, 7): camino, torre, faro, muro; la rotación queda como estaba', renglones(29, 7),
+    ([0, 1, 0, 0, 1, 1, 1, 0] + [0] * 5, True))
+ver('con trampa posible', renglones(5, 7, trap=1), ([0, 1, 0, 0, 1, 0, 1, 1] + [0] * 5, True))
+ver('control: BD_FLAG = 0 (no es su turno): solo lo que no depende de él', renglones(29, 7, flag=0),
+    ([0] * 13, True))
+
 print('-- precio')
 def precio(pw):
     g = Juego(); mu = g.mu

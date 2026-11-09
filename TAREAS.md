@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 142).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 143).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **142.** Probar la botonera de construir (vista-aliada 1.0.153.0). En `C:\Warlords3`, actualizar el parche y
+  elegir un grupo con constructor. Apretar el botón de la torrecita (almena roja, a la izquierda de «pasar turno»):
+  debe abrir una lista con Rebuild City/Site, Road, Bridge, Port, Watchtower, Lighthouse, Stone Wall y Trap. Mirar:
+  (a) que solo se puedan elegir las obras posibles en esa casilla (las otras, en gris); (b) que al elegir una se
+  abra la ventana de construir esa obra, y que repetir el mismo renglón pase a otro lugar o dirección; (c) que el
+  clic derecho en el mapa ya no muestre «Build» ni «Build Trap»; (d) que reconstruir una ciudad arrasada siga
+  funcionando. Anotar acá lo que falle (mejor con captura).
 - [ ] **141.** Probar los gráficos nuevos de las obras y el muro en 8 direcciones (vista-aliada 1.0.152.0). En
   `C:\Warlords3`, actualizar el parche con el Actualizador y abrir una partida con un grupo que tenga constructor.
   Apretar construir varias veces: después de la torre (y el faro, a orillas del agua) aparecen 8 opciones de muro,

@@ -435,3 +435,10 @@ puente, torre, faro, muro): muy engorroso en plena batalla. El usuario pide:
   faro, muro de piedra, empalizada) en vez de recorrerlas de a una.
 Antes de tocarlo: averiguar qué hace hoy ese botón (su manejador en el exe) y dónde dejarlo, si hace falta.
 Captura del usuario: el botón señalado es el de la almena roja, arriba a la derecha de los de mover y acampar.
+
+**Hecho en vista-aliada 1.0.153.0 (9/11/2026).** La torrecita (en las dos barras del grupo) abre el menú de órdenes en
+modo construir (`bm_*` en `build.py`): Rebuild City/Site, Road, Bridge, Port, Watchtower, Lighthouse, Stone Wall y
+Trap, cada renglón encendido solo si esa obra se puede hacer desde la casilla del líder. Otro clic en el mismo renglón
+pasa a la siguiente casilla o dirección de ese tipo (`BD_CAT` filtra la rotación de `bd_pick`). «Build» y «Build
+Trap» salieron del menú del clic derecho. Falta: la empalizada (espera la batalla, etapa B). Prueba: tarea 142.
+Pendiente técnico: instalar en `C:\Warlords3`, correr todas las `prueba_*.py` y publicar (el juego estaba abierto).
