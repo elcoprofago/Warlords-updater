@@ -11503,7 +11503,9 @@ ods_no:
 # ob_wmask: ebx = registro de un muro o empalizada, eax = x, edx = y -> eax = brazos (bit d = dirección d de la rosa
 # N, NE, E, SE, S, SO, O, NO): la dirección elegida al construir y su opuesta (+5 = dirección + 1; 0 en las de antes de
 # 1.0.152.0), y cada vecina con una obra del mismo tipo; una diagonal, solo si ninguna de las dos casillas que la
-# flanquean tiene una (así una esquina no hace triángulo). Sin nada, E-O. Preserva el resto.
+# flanquean tiene una (así una esquina no hace triángulo). Sin nada, E-O. El muro de piedra (con una torre en cada
+# casilla) solo va hacia vecinas con muro, y solo es torre (pedido del 9/11/2026: los brazos sueltos hacia la
+# dirección elegida pintaban torres fantasma en la casilla de al lado). Preserva el resto.
 ob_wmask = place('ob_wmask', f'''
     push ebx
     push ecx
@@ -11515,6 +11517,8 @@ ob_wmask = place('ob_wmask', f'''
     mov edi, edx
     movzx ecx, byte ptr [ebx + 4]
     xor ebp, ebp
+    cmp ecx, {OB_MURO}
+    je owm_nb
     movzx eax, byte ptr [ebx + 5]
     test eax, eax
     jz owm_nb
@@ -11552,6 +11556,8 @@ owm_nx:
     mov eax, ebp
     test eax, eax
     jnz owm_out
+    cmp ecx, {OB_MURO}
+    je owm_out
     mov eax, 0x44
 owm_out:
     pop ebp
@@ -14870,12 +14876,16 @@ caves['tr_chkp'] = struct.pack('<I', tr_check)
 # (0x4afc20, diálogo 0x1f) en modo construir (BM_ON = 1): sus 13 renglones pasan a ser las obras, cada una encendida
 # solo si se puede hacer desde la casilla del líder. Reconstruir corre el código original del botón (0x41ca5a); las
 # demás eligen directamente su tipo de obra (BD_CAT filtra la rotación de bd_pick: otro clic en el mismo renglón pasa
-# a la siguiente casilla o dirección de ese tipo) y abren el diálogo de reconstruir como antes. «Build» y «Build Trap»
-# salen del menú de órdenes (BM_ON = 0: sin texto y apagados). La empalizada todavía no se construye (etapa B, falta
+# a la siguiente casilla o dirección de ese tipo) y abren el diálogo de reconstruir como antes. «Build»
+# sale del menú de órdenes (BM_ON = 0: sin texto y apagado); «Build Trap» quedó en el menú de órdenes (pedido del 9/11/2026). La empalizada todavía no se construye (etapa B, falta
 # la batalla).
+# El menú de construir abre su propio diálogo BM_DLG (pedido del 9/11/2026: quedaba mucho espacio libre debajo): los
+# mismos controles (recurso 34) sobre un marco más bajo, BM_FILE = SETS\Fantasy\dlg_bm.pcx (DLG_PU11 sin el medio).
+BM_DLG = 133                 # siguiente id de la tabla de diálogos (tipo 6; ver table_add, más abajo)
+BM_H = 53 + 15 * 6 + 10 + 51    # último renglón (el 7.º) en 53 + 15 * 6, y el mismo margen de abajo que el original
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
-BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall', 'Trap']
+BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
 BM_TXT = [0x15] + list(range(1, 11)) + [TR_TXT, BD_TXT]          # renglones de arriba abajo (ORD del diálogo 34)
 BM_HOT = [0x16] + list(range(0xb, 0x15)) + [TR_HOT, BD_HOT]
 bm_empty = place_data('bm_empty', b'\0')
@@ -14911,8 +14921,6 @@ bm_calc = place('bm_calc', f"""
 bmc_reb:
     mov byte ptr [{BM_EN:#x}], 1
 bmc_trap:
-    mov al, byte ptr [{TR_FLAG:#x}]
-    mov byte ptr [{BM_EN + 7:#x}], al
     cmp byte ptr [{BD_FLAG:#x}], 0
     je bmc_out
     mov eax, dword ptr [{bd_vars:#x}]
@@ -15016,12 +15024,50 @@ bm_entry = place('bm_entry', f"""
     jmp 0x4b0137
 """)
 # Torrecita (casos de los botones; en la pila, esi y edi del manejador): abre el menú en modo construir.
+# bm_open: copia de 0x4afc20 (abrir el menú de órdenes en -1, -1) con el diálogo BM_DLG en vez de 0x1f.
+bm_open = place('bm_open', f"""
+    sub esp, 8
+    mov eax, 0xffffffff
+    mov dword ptr [esp + 4], eax
+    mov dword ptr [esp], eax
+    xor eax, eax
+    mov byte ptr [0x587aac], al
+    mov word ptr [0x587ab0], ax
+    push 0
+    push -1
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 0x10]
+    push 0x4b0120
+    mov ecx, 0x588bd0
+    push 0x4b00e0
+    push 0x4affd0
+    push 0x4afec0
+    push 0x4afd00
+    push {BM_DLG}
+    call 0x4d7980
+    mov dword ptr [esp + 4], -1
+    mov dword ptr [esp], -1
+    lea edx, [esp]
+    lea ecx, [esp + 4]
+    push edx
+    push ecx
+    mov ecx, 0x588bd0
+    call 0x4d8230
+    mov ecx, 0x588bd0
+    call 0x4d82a0
+    push dword ptr [esp]
+    push dword ptr [esp + 8]
+    push 1
+    call 0x4b0130
+    add esp, 0xc
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    add esp, 8
+    ret
+""")
 bm_tower = place('bm_tower', f"""
     mov byte ptr [{BM_ON:#x}], 1
-    push -1
-    push -1
-    call 0x4afc20
-    add esp, 8
+    call {bm_open:#x}
     pop edi
     pop esi
     ret
@@ -15035,7 +15081,10 @@ bm_norm = place('bm_norm', f"""
 tr_init = place('tr_init', f'''
     cmp byte ptr [{BM_ON:#x}], 0
     jne {bm_init:#x}
-    push 2
+    cmp byte ptr [{TR_FLAG:#x}], 1
+    sbb eax, eax
+    and eax, 2
+    push eax
     push {TR_HOT:#x}
     call 0x4dcec0
     add esp, 8
@@ -15050,7 +15099,7 @@ tr_init = place('tr_init', f'''
 tr_hover = place('tr_hover', f'''
     cmp dword ptr [esp + 0x1c], 0
     je th_col
-    push {bm_empty:#x}
+    push {tr_menutxt:#x}
     push {TR_TXT:#x}
     call 0x4dd240
     add esp, 8
@@ -18337,6 +18386,23 @@ struct.pack_into('<I', _pr, 0, GO_FILE)
 setstr(_pr, 4, 32, 'picts\\alianza')
 table_add(res, 4, GO_IMG, struct.pack('<8i', GO_IMG, GO_FILE, 1, 0, 0, 0, GO_W, GO_H))   # la 4 va después de la 2
 table_add(res, 2, GO_FILE, bytes(_pr))
+# Marco del menú de construir (BM_DLG, BM_FILE; ver bm_open): DLG_PU11 con los primeros BM_H - 44 renglones y los 44
+# últimos (el borde de abajo); el corte cae en el mármol liso, entre los costados rectos.
+BM_FILE = GO_FILE + 1
+_pu = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_PU11.PCX')
+assert _pu.size == (182, 284)
+bm_hoja = Image.new('P', (182, BM_H), 11); bm_hoja.putpalette(_pu.getpalette())
+bm_hoja.paste(_pu.crop((0, 0, 182, BM_H - 44)), (0, 0)); bm_hoja.paste(_pu.crop((0, 240, 182, 284)), (0, BM_H - 44))
+pcx = io.BytesIO(); bm_hoja.save(pcx, 'PCX'); BM_PCX = pcx.getvalue()
+o2, _ = table(res, 2)
+_pr = bytearray(res[o2 + 20 + 104 * 60:o2 + 20 + 105 * 60])
+assert _pr[4:13].lower() == b'dlg_pu11\0', bytes(_pr[:40])
+struct.pack_into('<I', _pr, 0, BM_FILE)
+setstr(_pr, 4, 32, 'dlg_bm')
+table_add(res, 2, BM_FILE, bytes(_pr))
+o6, _ = table(res, 6)
+assert struct.unpack_from('<8i', res, o6 + 20 + 31 * 32) == (31, 104, 34, 182, 284, 0, 0, 1)
+table_add(res, 6, BM_DLG, struct.pack('<8i', BM_DLG, BM_FILE, 34, 182, BM_H, 0, 0, 1))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -18802,6 +18868,7 @@ NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
+NUEVOS[os.path.join('SETS', 'Fantasy', 'dlg_bm.pcx')] = BM_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

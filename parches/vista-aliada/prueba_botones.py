@@ -422,7 +422,18 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: siete más (165 a 171; 168 pozos, 169 aviso, 170 sello, 171 alianza)', (len(fn), len(fo)), (172, 165))
+ver('archivos: ocho más (165 a 172; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 dlg_bm)', (len(fn), len(fo)), (173, 165))
+ver('archivo 172: marco del menú de construir, copia del 104 (dlg_pu11) con otro nombre',
+    (struct.unpack_from('<I', fn[172])[0], fn[172][4:11], fn[172][36:] == fn[104][36:]), (172, b'dlg_bm\0', True))
+def dialogos(path):
+    d = open(path, 'rb').read(); o = 8
+    while True:
+        h = struct.unpack_from('<5I', d, o)
+        if h[0] == 6 and h[1] == 0: return [struct.unpack_from('<8i', d, o + 20 + 32 * i) for i in range(h[2])]
+        o += 20 + h[4]
+dn = dialogos(NUEVO)
+ver('diálogo 133: el menú de construir, controles 34 sobre dlg_bm, 204 de alto', dn[133], (133, 172, 34, 182, 204, 0, 0, 1))
+ver('control: el 31 (menú de órdenes) sigue igual', dn[31], (31, 104, 34, 182, 284, 0, 0, 1))
 ver('archivo 170: sello en SETS\\Fantasy', (struct.unpack_from('<I', fn[170])[0], fn[170][4:10]), (170, b'sello\0'))
 n111, o111 = recs(NUEVO, 111), recs(ORIG, 111)
 ver('Army List: un registro más, el sello (0x1c)', sorted(set(n111) - set(o111)), [0x1c])

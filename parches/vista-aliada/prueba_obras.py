@@ -59,7 +59,8 @@ def renglones(x, y, flag=1, trap=0):
 #              reconstruir camino puente puerto torre faro muro trampa, 5 vacíos
 ver('orilla (29, 7): camino, torre, faro, muro; la rotación queda como estaba', renglones(29, 7),
     ([0, 1, 0, 0, 1, 1, 1, 0] + [0] * 5, True))
-ver('con trampa posible', renglones(5, 7, trap=1), ([0, 1, 0, 0, 1, 0, 1, 1] + [0] * 5, True))
+ver('con trampa posible: la trampa ya no está en este menú (volvió al de órdenes)', renglones(5, 7, trap=1),
+    ([0, 1, 0, 0, 1, 0, 1, 0] + [0] * 5, True))
 ver('control: BD_FLAG = 0 (no es su turno): solo lo que no depende de él', renglones(29, 7, flag=0),
     ([0] * 13, True))
 

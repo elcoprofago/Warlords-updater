@@ -469,3 +469,12 @@ a la torre usa los ladrillos de la torre (u = ángulo × RT); la cara del extrem
 El juego pinta las casillas de norte a sur: un tramo de la casilla de más al sur tapaba la torre de su vecina del norte
 (calzada y almenas cortadas en los cruces). Cada tramo se dibuja ahora junto con las dos torres que une (_muro_piedra),
 así lo de adelante tapa a lo de atrás en cualquier orden. prev2.py del scratchpad imita ese orden (od_ord).
+
+### 1.0.161.0 (9/11/2026)
+- Muros entrecortados: ob_wmask sumaba siempre el brazo de la dirección de construcción, aunque esa casilla estuviera
+  vacía; desde 1.0.160 cada brazo trae la torre vecina, así que aparecían torres y tramos fantasma. En el muro de
+  piedra solo cuentan los vecinos con muro; uno aislado es solo la torre.
+- Gris del muro más claro (ladrillos 87..127, como las ciudades de cit_*.PCX: 63..159, mucho 103).
+- «Build Trap» volvió al menú de órdenes (TR_HOT); la botonera de construir tiene 7 renglones.
+- La botonera de construir abre su propio diálogo, BM_DLG = 133 (bm_open, copia de 0x4afc20): los controles del 34
+  sobre SETS\Fantasy\dlg_bm.pcx (archivo 172), que es DLG_PU11 de 204 de alto en lugar de 284.

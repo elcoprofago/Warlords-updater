@@ -14,7 +14,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.160.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
+- [ ] **144.** Probar los arreglos del 9/11 (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche.
+  (a) Clic derecho sobre un grupo: «Build Trap» vuelve a estar en el menú de órdenes, en el botón de antes.
+  (b) Botón de la torrecita: la lista de construcciones ya no debe tener espacio libre grande debajo, y Trap ya no
+  aparece ahí. (c) Muros: ya no deben verse entrecortados ni con torres sueltas de más; un muro aislado es una
+  sola torre. El gris es más claro, parecido al de las ciudades. Anotar acá lo que se vea mal (mejor con captura).
+- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
   grupo con constructor sobre un camino y construir un muro de piedra: ahora se puede, y queda como puerta (pasan
   tus ejércitos y los de tus aliados). (b) Mirar que el muro tenga más o menos el alto de una ruina y que ya no tenga
   manchas blancas ni verdes, ni rayas tipo código de barras, y que la calzada de arriba sea gris oscuro con la textura del camino. (c) Mirar que el frente se parezca al de la ruina: hiladas de ladrillos que siguen al muro también en diagonal, una línea oscura bajo la calzada y almenas cuadradas claras arriba; en cada casilla una torre redonda de ladrillos con almenas (también en las puntas de los tramos, que ya no deben verse con rayas). Anotar acá lo que se vea mal (mejor con captura).

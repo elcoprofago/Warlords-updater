@@ -140,21 +140,21 @@ def _torre_muro(cx, cy):
 def _ladrillo(u, v, luz):
     """Frente como el de la ruina grande: v = 0 moldura, 1 sombra, 2 línea negra; desde 3 hiladas de 4 (3 de piedra y
     1 de junta) con ladrillos de 6 + junta trabados media pieza; u corre a lo largo de la cara."""
-    if v == 0: return _mul((132, 132, 132), luz)
-    if v == 1: return _mul((96, 96, 98), luz)
+    if v == 0: return _mul((152, 152, 152), luz)
+    if v == 1: return _mul((114, 114, 116), luz)
     if v == 2: return _mul((24, 22, 22), luz)
     fila, r = divmod(v - 3, 4)
-    if r == 3: return _mul((45, 43, 43), luz)
+    if r == 3: return _mul((63, 61, 61), luz)
     pieza, q = divmod(u + (3 if fila % 2 else 0), 7)
-    if q == 6: return _mul((45, 43, 43), luz)
-    k = (63, 79, 87, 95, 71, 103)[(pieza * 5 + fila * 3) % 6]
-    if r == 0: k = min(183, int(k * 1.5))           # canto de arriba, claro
+    if q == 6: return _mul((63, 61, 61), luz)
+    k = (87, 103, 111, 119, 95, 127)[(pieza * 5 + fila * 3) % 6]
+    if r == 0: k = min(191, int(k * 1.4))           # canto de arriba, claro
     k = int(k * (1.0 - 0.05 * q))                   # se oscurece hacia la derecha
     return _mul((k, k, k + (2 if k % 2 else 0)), luz)
 
 
 def _parapeto(t, oscura, luz):
-    c = (168, 150, 136, 122, 112, 104)[min(t, 5)]
+    c = (184, 168, 154, 140, 130, 122)[min(t, 5)]
     if oscura: c = int(c * 0.8)
     return _mul((c, c, c), luz)
 
@@ -229,26 +229,26 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
                 luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             if z >= base:                                   # parapeto y almenas
                 t = alto[(gx, gy)] - z
-                c = (168, 150, 136, 122, 112, 104)[min(t, 5)]
+                c = (184, 168, 154, 140, 130, 122)[min(t, 5)]
                 if alto[(gx, gy)] > base + 2 and (int(a) if d is not None else u) % 8 >= 4: c = int(c * 0.8)
                 return _mul((c, c, c), luz)
             v = base - 1 - z
-            if v == 0: return _mul((132, 132, 132), luz)
-            if v == 1: return _mul((96, 96, 98), luz)
+            if v == 0: return _mul((152, 152, 152), luz)
+            if v == 1: return _mul((114, 114, 116), luz)
             if v == 2: return _mul((24, 22, 22), luz)
             v -= 3
             fila, r = divmod(v, 4)
-            if r == 3: return _mul((45, 43, 43), luz)
+            if r == 3: return _mul((63, 61, 61), luz)
             uu = u + (3 if fila % 2 else 0)
             pieza, q = divmod(uu, 7)
-            if q == 6: return _mul((45, 43, 43), luz)
-            k = (63, 79, 87, 95, 71, 103)[(pieza * 5 + fila * 3) % 6]
-            if r == 0: k = min(183, int(k * 1.5))           # canto de arriba, claro
+            if q == 6: return _mul((63, 61, 61), luz)
+            k = (87, 103, 111, 119, 95, 127)[(pieza * 5 + fila * 3) % 6]
+            if r == 0: k = min(191, int(k * 1.4))           # canto de arriba, claro
             k = int(k * (1.0 - 0.05 * q))                   # se oscurece hacia la derecha
             return _mul((k, k, k + (2 if k % 2 else 0)), luz)
 
         def arriba(gx, gy):
-            if alto[(gx, gy)] > base: return (176, 176, 172) if alto[(gx, gy)] > base + 2 else (140, 140, 138)
+            if alto[(gx, gy)] > base: return (190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154)
             return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
@@ -295,7 +295,7 @@ def _muro_piedra(lz, d, sombra, prohibido):
 
     def arriba(gx, gy):
         base = HM if (gx, gy) in tramo else HM + 4
-        if alto[(gx, gy)] > base: return (176, 176, 172) if alto[(gx, gy)] > base + 2 else (140, 140, 138)
+        if alto[(gx, gy)] > base: return (190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154)
         return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
