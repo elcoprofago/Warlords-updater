@@ -15245,11 +15245,15 @@ hv_go:
 #   no aparece, va sin fecha), en la fuente 1 (la de listas y etiquetas, cambiada en el RES) y en dorado (137).
 # - Columna «Armas» entre PV y Ciudades: ejércitos vivos (bit 0x40 de +0x13) de cada color, héroes incluidos. Las
 #   columnas pasan de 0x8c/0xb9/0xe6 a GO_X_VP/GO_X_CI/GO_X_OR, con Armas en GO_X_AR.
-# - Al lado del escudo, arriba a la derecha (como superíndice), el pergamino de alianza de Diplomacia (imagen 0xae,
+# - En su columna (GO_X_PG), entre el nombre y PV, el pergamino de alianza de Diplomacia (imagen 0xae,
 #   achicada en GO_IMG) si el bando tiene un aliado mutuo (ALLIES_CORE, con Diplomacia activada) que sigue en juego.
 # - Abajo, centrado: «corresponde a la partida "<nombre>"» con el nombre base de la partida en red ([0x503da0]);
 #   sin nombre (partida local) no se escribe.
-GO_X_VP, GO_X_AR, GO_X_CI, GO_X_OR = 0x82, 0xa8, 0xce, 0xf4
+# El pergamino va en su propia columna, GO_X_PG, entre el nombre y PV, a la altura del escudo (pedido del usuario,
+# 8/11/2026: como superíndice no quedaba bien); las columnas de números se corren a la derecha.
+GO_X_PG = 0x80
+GO_X_VP, GO_X_AR, GO_X_CI, GO_X_OR = 0x9c, 0xc0, 0xe4, 0x108
+GO_W, GO_H = 16, 14                    # alto del escudo chico (imagen 0x69: 11x14); ancho según el pergamino (24x21)
 GO_PIE_DX, GO_PIE_DY = 123, 262        # centro del diálogo (175 - 52) y encima del botón Done (376 - 92 - 22)
 GO_IMG = RAM_IMG + 1
 GO_FILE = SEAL_FILE + 1
@@ -15431,10 +15435,9 @@ ga_loop:
     je ga_next
     cmp byte ptr [ecx + 0x536b31], 0
     je ga_next
-    lea eax, [edi - 5]
-    push eax
-    mov eax, dword ptr [ebp - 0x2c]
-    add eax, 8
+    push edi
+    movsx eax, word ptr [ebp + 8]
+    add eax, {GO_X_PG}
     push eax
     push {GO_IMG}
     call 0x4dd080
@@ -17278,22 +17281,22 @@ setstr(butt_std, 4, 32, 'sello')
 table_add(res, 2, SEAL_FILE, bytes(butt_std))
 # Ventana de fin de partida (ver go_tit): el título (diálogo 46, control 1) pasa de la fuente 2 a la 1. Hoja GO_FILE =
 # PICTS\alianza.pcx con los campos de picts (56) y la imagen GO_IMG: el pergamino de alianza (imagen 0xae, picts en
-# (212,0), 24x21) a la mitad, 12x11, con los mismos índices de color (11 = transparente).
+# (212,0), 24x21) achicada a GO_W x GO_H, con los mismos índices de color (11 = transparente).
 _p, _t = records(res, 46)[1]
 assert _t == 0x13 and res[_p + 0x20] == 2
 res[_p + 0x20] = 1
 o4, _ = table(res, 4)
 assert struct.unpack_from('<8i', res, o4 + 20 + 0xae * 32) == (0xae, 56, 1, 0, 212, 0, 24, 21)
 _picts = Image.open(r'C:\Warlords3\PICTS\picts.pcx')
-_ali = _picts.crop((212, 0, 236, 21)).resize((12, 11), Image.NEAREST)
-go_hoja = Image.new('P', (12, 11), 11); go_hoja.putpalette(_picts.getpalette()); go_hoja.paste(_ali, (0, 0))
+_ali = _picts.crop((212, 0, 236, 21)).resize((GO_W, GO_H), Image.NEAREST)
+go_hoja = Image.new('P', (GO_W, GO_H), 11); go_hoja.putpalette(_picts.getpalette()); go_hoja.paste(_ali, (0, 0))
 pcx = io.BytesIO(); go_hoja.save(pcx, 'PCX'); GO_PCX = pcx.getvalue()
 o2, _ = table(res, 2)
 _pr = bytearray(res[o2 + 20 + 56 * 60:o2 + 20 + 57 * 60])
 assert _pr[4:16] == b'picts\\picts\0'
 struct.pack_into('<I', _pr, 0, GO_FILE)
 setstr(_pr, 4, 32, 'picts\\alianza')
-table_add(res, 4, GO_IMG, struct.pack('<8i', GO_IMG, GO_FILE, 1, 0, 0, 0, 12, 11))   # la 4 va después de la 2
+table_add(res, 4, GO_IMG, struct.pack('<8i', GO_IMG, GO_FILE, 1, 0, 0, 0, GO_W, GO_H))   # la 4 va después de la 2
 table_add(res, 2, GO_FILE, bytes(_pr))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro

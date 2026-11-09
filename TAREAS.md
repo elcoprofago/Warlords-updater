@@ -20,6 +20,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **134.** Pergamino de alianza como columna propia, del tamaño del escudo (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.144.0** o posterior) y Visor de historia **1.0.20.0** o posterior.
+2. Terminá una partida con dos bandos aliados (o abrí `NA_2_36.SAV` en el Visor y el botón del resultado).
+3. En la ventana del final, el pergamino tiene que aparecer a la derecha del nombre del bando, alineado como una
+   columna más y de la misma altura que el escudo, no como superíndice. VPs, Armas, CITIES y GOLD se corren a la
+   derecha sin pisarse.
+Resultado:
+
 - [ ] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
 1. Actualizador: Visor de historia **1.0.19.0** o posterior (el título de la ventana lo dice).
 2. Abrí una partida terminada de `Warlords\HISTORY` (por ejemplo `NA_2_36.SAV`) y el botón del resultado.

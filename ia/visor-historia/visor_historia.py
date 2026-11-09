@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.19.0'
+VERSION = '1.0.20.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -573,7 +573,7 @@ class Visor:
             self.escudos[k] = (esc.crop((33, 1, 44, 15)), esc.crop((1, 1, 32, 37)))   # 11x14 y 31x36
             self.colores[k] = COLOR.get(hojas[0][1:].lower(), NEUTRAL)
         # el pergamino de alianza de Diplomacia (picts.pcx, imagen 0xae en (212,0), 24x21; 11 = transparente), a la
-        # mitad, como en la ventana de fin del juego
+        # altura del escudo chico (14), como en la ventana de fin del juego
         self.pergamino = None
         pp = os.path.join(j, 'PICTS', 'picts.pcx')
         if os.path.exists(pp):
@@ -582,7 +582,7 @@ class Visor:
                 for x in range(24):
                     if rec.getpixel((x, y)) == 11:
                         px[x, y] = (0, 0, 0, 0)
-            self.pergamino = rgba.resize((12, 11), Image.NEAREST)
+            self.pergamino = rgba.resize((16, 14), Image.NEAREST)
         # Color de cada terreno del mapa: el del mapa estratégico del juego (STRAT_L.BMP) según el nombre del terreno;
         # los que no están ahí, el promedio de su textura
         self.tcol = []
@@ -782,8 +782,8 @@ class Visor:
                     txt(col[0], y, str(puesto), f, 'n')
                 if k in self.escudos:
                     img(self.escudos[k][0], col[1], y + 2)
-                if fin['aliados'].get(k) and self.pergamino:   # terminó con un aliado en juego
-                    img(self.pergamino, col[1] + 12, y - 4)
+                if fin['aliados'].get(k) and self.pergamino:   # terminó con un aliado en juego: su columna, antes de VPs
+                    img(self.pergamino, col[2] - 38, y + 2)
                 txt(col[1] + 20, y, p.jugador(k) if 0 <= k < 8 else '?', f,
                     fill='#%02x%02x%02x' % (c if sum(c := self.colores.get(k, NEUTRAL)) > 200 else (120, 120, 120)))   # negro → gris
                 for x, n in zip(col[2:], (puntos, fin['armas'].get(k, ''), ciudades, oro)):

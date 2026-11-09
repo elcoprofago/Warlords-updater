@@ -173,16 +173,16 @@ print('-- podio')
 _r = podio([(0, 1, 30, 5, 100, 1), (3, 2, 20, 4, 50, 1), (5, 3, 10, 1, 7, 1)],
            [(0, 1), (0, 1), (0, 0), (3, 1), (5, 1), (5, 1), (5, 1), (6, 1)], [(0, 3), (3, 0)])
 ver('encabezado: Armas entre PV y Ciudades, columnas corridas', [x for x in _r if x[2] == 5],
-    [('izq', 30, 5, 'SIDE'), ('col', 0x82, 5, 'VPs'), ('col', 0xce, 5, 'CITIES'), ('col', 0xf4, 5, 'GOLD'),
-     ('col', 0xa8, 5, 'Armas')])
-ver('armas: vivos de cada color (muertos y de otro color no)', [x[3] for x in _r if x[0] == 'col' and x[1] == 0xa8][1:],
+    [('izq', 30, 5, 'SIDE'), ('col', 0x9c, 5, 'VPs'), ('col', 0xe4, 5, 'CITIES'), ('col', 0x108, 5, 'GOLD'),
+     ('col', 0xc0, 5, 'Armas')])
+ver('armas: vivos de cada color (muertos y de otro color no)', [x[3] for x in _r if x[0] == 'col' and x[1] == 0xc0][1:],
     ['2', '1', '3'])
 ver('valores en las columnas nuevas (fila 1)', [x for x in _r if x[2] == 0x23 and x[0] == 'col'],
-    [('col', 10, 0x23, '1'), ('col', 0x82, 0x23, '30'), ('col', 0xce, 0x23, '5'), ('col', 0xa8, 0x23, '2'),
-     ('col', 0xf4, 0x23, '100')])
+    [('col', 10, 0x23, '1'), ('col', 0x9c, 0x23, '30'), ('col', 0xe4, 0x23, '5'), ('col', 0xc0, 0x23, '2'),
+     ('col', 0x108, 0x23, '100')])
 ver('marca de alianza solo en los aliados mutuos en juego (0 y 3)', [x for x in _r if x[0] == 'img'],
-    [('img', 0x69, 30, 0x23), ('img', GO_IMG, 38, 0x23 - 5), ('img', 0x69 + 3, 30, 0x41),
-     ('img', GO_IMG, 38, 0x41 - 5), ('img', 0x69 + 5, 30, 0x5f)])
+    [('img', 0x69, 30, 0x23), ('img', GO_IMG, 0x80, 0x23), ('img', 0x69 + 3, 30, 0x41),
+     ('img', GO_IMG, 0x80, 0x41), ('img', 0x69 + 5, 30, 0x5f)])
 ver('pie centrado con el nombre de la partida', _r[-1], ('col', 123, 262, 'corresponde a la partida "NA_052"'))
 _img = lambda r: [x[1] for x in r if x[0] == 'img']
 _b = [(0, 1, 30, 5, 100, 1), (3, 2, 20, 4, 50, 1)]
@@ -209,10 +209,10 @@ def res_ver(path):
     return font, im, fi
 print('-- RES')
 ver('título en la fuente 1; imagen 207 = hoja 171 picts\\alianza 12x11', res_ver(os.path.join(DIR, 'DATA', 'WAR3AV.RES')),
-    (1, (GO_IMG, 171, 1, 0, 0, 0, 12, 11), b'picts\\alianza'))
+    (1, (GO_IMG, 171, 1, 0, 0, 0, 16, 14), b'picts\\alianza'))
 ver('control: RES original', res_ver(os.path.join(DIR, 'DATA', 'War3.RES')), (2, None, None))
 _h = Image.open(os.path.join(DIR, 'PICTS', 'alianza.pcx'))
-ver('hoja: 12x11 con transparente en las esquinas', (_h.size, _h.getpixel((0, 0)), _h.getpixel((11, 10))), ((12, 11), 11, 11))
+ver('hoja: 16x14 con transparente en las esquinas', (_h.size, _h.getpixel((0, 0)), _h.getpixel((15, 13))), ((16, 14), 11, 11))
 
 print('MAL:', mal) if mal else print('todo OK')
 sys.exit(1 if mal else 0)
