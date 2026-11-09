@@ -140,9 +140,14 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
             k = int(a) % 4 if d is not None else int(gx) % 4
             h = base + 2 - (0 if k in (1, 2) else 3)               # estacas aguzadas
         else:
-            borde = abs(w) > ancho / 2 - 3.5
-            k = int(a if d is not None else gx) // 4 % 2
-            h = base + (5 if borde and k == 0 else 0)            # almenas en los bordes
+            # Parapeto de 3 de grueso en los dos bordes (2 más alto que la calzada) con almenas de 5 cada 8 (4 más);
+            # en el centro, solo pilares en las 4 esquinas, para no cortar la calzada de ningún brazo.
+            if d is None:
+                borde = abs(gx - C + 0.5) > ancho / 2 - 3.5 and abs(gy - C + 0.5) > ancho / 2 - 3.5
+                h = base + (6 if borde else 0)
+            else:
+                borde = abs(w) > ancho / 2 - 3
+                h = base + ((6 if a % 8 < 5 else 2) if borde else 0)
         alto[(gx, gy)] = h
         coord[(gx, gy)] = (a, w)
     if sombra: lz.sombra(alto, prohibido)
@@ -158,14 +163,37 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         def arriba(gx, gy):
             return (150, 108, 60)
     else:
-        # Sin rayas tipo «código de barras» (pedido del 9/11/2026): la textura de piedra se toma con la coordenada
-        # de la cara que se ve (x en el frente, y en los costados) y la altura en pantalla, así las hiladas quedan
-        # horizontales y continuas; la parte de arriba es piedra lisa con apenas ruido, no la banda de almenas.
+        # Como el frente de la ruina grande (pedido del 9/11/2026): hiladas de 4 (3 de piedra y 1 de junta oscura),
+        # ladrillos de 6 + junta, trabados media pieza por hilada, con el canto de arriba claro como en la ruina;
+        # bajo la calzada una moldura clara y una línea de sombra; arriba parapeto y almenas de piedra clara. Las
+        # hiladas se cuentan desde la calzada hacia abajo (v) y a lo largo del muro (u = a), así siguen al muro en
+        # cualquier dirección, también en diagonal.
         def cara(gx, gy, z, lado):
-            u = gx if lado == 0 else gy
-            return _mul(lz.piedra(u, gy - z), (1.0, 0.7, 0.85)[lado])
+            a, w = coord[(gx, gy)]
+            u = int(a) if d is not None else gx - C
+            luz = (1.0, 0.7, 0.85)[lado]
+            if z >= base:                                   # parapeto y almenas
+                t = alto[(gx, gy)] - z
+                c = (168, 150, 136, 122, 112, 104)[min(t, 5)]
+                if alto[(gx, gy)] > base + 2 and d is not None and a % 8 >= 4: c = int(c * 0.8)
+                return _mul((c, c, c), luz)
+            v = base - 1 - z
+            if v == 0: return _mul((132, 132, 132), luz)
+            if v == 1: return _mul((96, 96, 98), luz)
+            if v == 2: return _mul((24, 22, 22), luz)
+            v -= 3
+            fila, r = divmod(v, 4)
+            if r == 3: return _mul((45, 43, 43), luz)
+            uu = u + (3 if fila % 2 else 0)
+            pieza, q = divmod(uu, 7)
+            if q == 6: return _mul((45, 43, 43), luz)
+            k = (63, 79, 87, 95, 71, 103)[(pieza * 5 + fila * 3) % 6]
+            if r == 0: k = min(183, int(k * 1.5))           # canto de arriba, claro
+            k = int(k * (1.0 - 0.05 * q))                   # se oscurece hacia la derecha
+            return _mul((k, k, k + (2 if k % 2 else 0)), luz)
 
         def arriba(gx, gy):
+            if alto[(gx, gy)] > base: return (176, 176, 172) if alto[(gx, gy)] > base + 2 else (140, 140, 138)
             return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 

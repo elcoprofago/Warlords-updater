@@ -14,10 +14,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.156.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
+- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.157.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
   grupo con constructor sobre un camino y construir un muro de piedra: ahora se puede, y queda como puerta (pasan
   tus ejércitos y los de tus aliados). (b) Mirar que el muro tenga más o menos el alto de una ruina y que ya no tenga
-  manchas blancas ni verdes, ni rayas tipo código de barras, y que la calzada de arriba sea gris oscuro con la textura del camino. Anotar acá lo que se vea mal (mejor con captura).
+  manchas blancas ni verdes, ni rayas tipo código de barras, y que la calzada de arriba sea gris oscuro con la textura del camino. (c) Mirar que el frente se parezca al de la ruina: hiladas de ladrillos que siguen al muro también en diagonal, una línea oscura bajo la calzada y almenas cuadradas claras arriba. Anotar acá lo que se vea mal (mejor con captura).
 - [ ] **142.** Probar la botonera de construir (vista-aliada 1.0.153.0). En `C:\Warlords3`, actualizar el parche y
   elegir un grupo con constructor. Apretar el botón de la torrecita (almena roja, a la izquierda de «pasar turno»):
   debe abrir una lista con Rebuild City/Site, Road, Bridge, Port, Watchtower, Lighthouse, Stone Wall y Trap. Mirar:

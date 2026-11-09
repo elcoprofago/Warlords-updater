@@ -450,3 +450,8 @@ grande), almenas más grandes, y sin los píxeles casi blancos ni la hiedra verd
 vista-aliada 1.0.155.0: sin las rayas tipo «código de barras» (textura por la cara que se ve, hiladas
 horizontales; arriba piedra lisa).
 vista-aliada 1.0.156.0: la calzada de arriba del muro con la textura del camino de tierra (road0.PCX) en gris oscuro.
+
+### 1.0.157.0 (9/11/2026)
+Muro de piedra rehecho para parecerse a la ruina: hiladas de 4 px (junta oscura), ladrillos de 6 trabados, contados a lo
+largo del muro (u = a) y desde la calzada hacia abajo, así siguen las diagonales; moldura clara y línea negra bajo la
+calzada; parapeto de 3 en los bordes con almenas de 5 cada 8; en el centro solo pilares en las esquinas.
