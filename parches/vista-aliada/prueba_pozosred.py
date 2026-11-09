@@ -71,6 +71,7 @@ def tabla(k):   # k registros de juguete dentro del mapa de 40 x 30
     return b''.join(struct.pack('<hhBBBB', i % 40, i // 40 + 1, i % 4, i & 3, 1 << (i % 8), i % 8) for i in range(k))
 
 # ---------------------------------------------------------------- envío
+OB_TAB = BASE + img.index(b'OBRA' + bytes(516)) + 8   # el bloque 10 (obras) sale detrás, vacío
 def envio(n, k=None):
     g = Juego()
     enviados = []
@@ -79,10 +80,10 @@ def envio(n, k=None):
     g.wr(PO_N, struct.pack('<i', n)); g.wr(PO_TAB, tabla(k if k is not None else min(n, PO_MAX)))
     g.correr(0x4aa299, 0x4aa29e)
     return enviados
-ver('envío: bloque 9 con 3 registros, después 0x4baf20', envio(3), [(9, 3, PO_TAB, 24), 'fin'])
-ver('envío: tabla vacía igual sale (el receptor vacía la suya)', envio(0), [(9, 0, PO_TAB, 0), 'fin'])
-ver('envío: tabla llena', envio(PO_MAX), [(9, PO_MAX, PO_TAB, PO_MAX * 8), 'fin'])
-ver('envío: cantidad rota sale vacía', envio(500, 0), [(9, 0, PO_TAB, 0), 'fin'])
+ver('envío: bloque 9 con 3 registros, después 0x4baf20', envio(3), [(9, 3, PO_TAB, 24), (10, 0, OB_TAB, 0), 'fin'])
+ver('envío: tabla vacía igual sale (el receptor vacía la suya)', envio(0), [(9, 0, PO_TAB, 0), (10, 0, OB_TAB, 0), 'fin'])
+ver('envío: tabla llena', envio(PO_MAX), [(9, PO_MAX, PO_TAB, PO_MAX * 8), (10, 0, OB_TAB, 0), 'fin'])
+ver('envío: cantidad rota sale vacía', envio(500, 0), [(9, 0, PO_TAB, 0), (10, 0, OB_TAB, 0), 'fin'])
 
 # ---------------------------------------------------------------- recepción
 BUF = 0x180000

@@ -354,3 +354,28 @@ Retomar con: *"Seguimos con PENDIENTE-construcciones.md, pedido del 9/11"*.
   falta partida nueva. goblins.ARM tiene «build» en la ranura de combate (+0xd6), no en las de movimiento (+0xb2).
 - Próximo: parte 2 (murallas, torres, faros), después la 3 (pausas). Frase: "Seguimos con
   PENDIENTE-construcciones.md, pedido del 9/11, parte 2".
+
+### Parte 2, diseño (9/11/2026)
+
+**Tabla propia de obras** (`ob_*`, como la de pozos pero aparte: la de pozos tiene 64 lugares que ya se llenan con
+trampas, y muchos consumidores de pozos suponen sus 4 tipos). Registro de 8 B: x, y, tipo, estado, dueño, libre.
+`ob_map`: un byte por casilla (índice + 1). Tope 255. Va al .SAV detrás del bloque POZO ('OBRA' + cantidad + tabla;
+un .SAV sin el bloque carga sin obras), viaja por red como bloque 10 al empezar y entra en la suma de sincronía.
+Tipos: 1 torre, 2 faro, 3 empalizada, 4 muro de piedra.
+
+**Etapa A: torre y faro** (constructor con «build», en la casilla del líder; tierra sin estructura de ciudad/sitio
+ni otra obra; el faro, además, con agua en alguna de las 4 vecinas). Destinos nuevos de la rotación de `bd_pick`.
+- Visión (gancho al final de 0x441540, que despeja la niebla con 0x441720(x, y, radio)): radio 5 la torre, 6 el
+  faro, para el dueño y sus aliados con vista aliada. Sin niebla no hay nada que hacer.
+- Defensa: +1 de fuerza a cada defensor de la batalla cuya casilla tiene la obra (en `bridgeab`, 0x467d0e;
+  defensor = 5.º argumento de 0x467240 en 0).
+- Dueño: el que construye; pasa al bando que entra en la casilla (gancho de paso, corre igual en todas las PC).
+- 8 unidades: ya es el tope de una casilla; no hace falta nada.
+- Dibujo: cuadro propio en la hoja del parche (torre a partir de una ruina; faro propio).
+
+Hecha en vista-aliada 1.0.148.0 (9/11/2026): tipos 4 torre y 5 faro (tope 64 obras), precio 50 % de fundar una
+ciudad (a confirmar, TAREAS 137); se construye en la casilla del líder y no sobre un camino. Prueba: `prueba_obras.py`.
+
+**Etapa B: murallas.** Muro de piedra = intransitable en el grafo de pasos salvo con camino; camino sobre muro =
+2 × montaña (10 veinteavos). Empalizada: falta definir con el usuario qué quiere decir «defensa de 3 grupos de
+infantería pesada por casilla».

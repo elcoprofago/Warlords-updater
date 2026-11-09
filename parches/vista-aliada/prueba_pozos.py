@@ -114,8 +114,8 @@ sav = guardar(g)
 VT_FIN = 0x21 + 8 + VT_MAX * 0x1c
 ver('guardado: lo del original, VOTA y después POZO, cantidad y tabla',
     (sav[:0x21] == b'PRINCIPIO' + OPC, sav[0x21:0x25], struct.unpack_from('<i', sav, 0x25)[0], sav[VT_FIN:VT_FIN + 4],
-     struct.unpack_from('<i', sav, VT_FIN + 4)[0], len(sav) - VT_FIN - 8),
-    (True, b'VOTA', 1, b'POZO', 3, PO_MAX * PO_REC))
+     struct.unpack_from('<i', sav, VT_FIN + 4)[0], sav[VT_FIN + 8 + PO_MAX * PO_REC:][:4], len(sav) - VT_FIN - 8),
+    (True, b'VOTA', 1, b'POZO', 3, b'OBRA', 2 * PO_MAX * PO_REC + 8))   # detrás va la tabla de obras (torres y faros)
 ver('  el original no escribe nada más', len(guardar(Juego(ORIG))), 0x21)
 MAPA = {(5, 7): 1, (39, 29): 2, (0, 0): 3}
 ver('cargado: la tabla vuelve y po_map se rearma', cargar_sav(Juego(), sav), (REGS, MAPA, True))
@@ -123,7 +123,7 @@ ver('  la Votación también', (lambda g: (cargar_sav(g, sav), struct.unpack('<i
 ver('control: .SAV viejo (sin VOTA): vacía', cargar_sav(Juego(), sav[:0x21]), ([], {}, True))
 ver('control: .SAV con VOTA y sin POZO: vacía', cargar_sav(Juego(), sav[:VT_FIN]), ([], {}, True))
 ver('control: otra marca: vacía', cargar_sav(Juego(), sav[:VT_FIN] + b'XOZO' + sav[VT_FIN + 4:]), ([], {}, True))
-ver('control: tabla cortada: vacía', cargar_sav(Juego(), sav[:-1]), ([], {}, True))
+ver('control: tabla cortada: vacía', cargar_sav(Juego(), sav[:VT_FIN + 8 + PO_MAX * PO_REC - 1]), ([], {}, True))
 ver('control: cantidad mayor que el tope: vacía',
     cargar_sav(Juego(), sav[:VT_FIN + 4] + struct.pack('<i', PO_MAX + 1) + sav[VT_FIN + 8:]), ([], {}, True))
 ver('control: VOTA cortada: tampoco lee POZO', cargar_sav(Juego(), sav[:0x30] + sav[VT_FIN:])[:2], ([], {}))

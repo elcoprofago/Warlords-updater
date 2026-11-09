@@ -14,6 +14,16 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **137.** Torres y faros (vista-aliada 1.0.148.0, 9/11/2026)
+Una unidad con «Build» parada en tierra libre (sin camino, ciudad ni sitio) ofrece, al seguir apretando el botón
+de construir: camino, **torre de vigía** y, si hay agua al lado, **faro costero**. Cada uno cuesta la mitad de
+fundar una ciudad. Probar en Warlords3, con niebla activada:
+- que se dibuje en la casilla y descubra el mapa alrededor (torre 5 casillas, faro 6), también para tu aliado;
+- que los defensores parados ahí ganen +1 de fuerza en combate;
+- que si un enemigo entra en la casilla, la obra pase a ser suya;
+- que se conserve al guardar y cargar la partida, y en una partida en red.
+Decime si el precio (la mitad de una ciudad) te parece bien o cuánto querés que cueste.
+
 - [ ] **136.** Trampas sobre trampas gastadas y constructores en red (vista-aliada 1.0.147.0, 9/11/2026)
 **Trampas.** Ahora se puede sembrar una trampa nueva encima de una gastada (el agujero con humo), sea tuya o de
 otro jugador, también dentro de una ciudad. La nueva es tuya, queda oculta y cuesta lo mismo que una trampa común.

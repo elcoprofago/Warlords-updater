@@ -4226,10 +4226,166 @@ bd_dxy = place_data('bd_dxy', bytes([0, 0xff, 1, 0, 0, 1, 0xff, 0]))
 # de 5 mapas (hoja 0): los caminos no empalman con ciudades ni sitios, solo con caminos y puentes.
 BD_PIECES = [1, 26, 25, 16, 27, 2, 8, 6, 24, 17, 1, 3, 9, 5, 4, 0]
 bd_piecetab = place_data('bd_piecetab', bytes(BD_PIECES))
+# ---- Obras (PENDIENTE-construcciones, parte 2, etapa A): torre de vigía y faro costero. Tabla propia, aparte de la
+# de pozos (llena en NA_157): OB_MAX registros de 8 bytes: x, y (palabras), +4 tipo (OB_TORRE u OB_FARO; mayor que
+# PO_REMOLINO, así pw_put la copia tal cual), +5 libre, +6 dueño (bando), +7 libre. ob_map: 1 byte por casilla =
+# registro + 1. En el .SAV va detrás de la tabla de pozos ('OBRA', cantidad, tabla); por red, el bloque OB_BLOQUE detrás
+# del de pozos, y entra en la suma de sincronía. Las construye un grupo con «build» en la casilla del líder (tierra sin
+# camino, ciudad, ruina, sitio, edificio ni otra obra; el faro, además, con agua en una de las 4 vecinas): posiciones
+# 6 y 7 de la rotación de bd_pick, BD_PW = 0x4000 | tipo, precio OB_FRAC veinteavos de fundar una ciudad. Despejan la
+# niebla a OB_VISTA casillas para su dueño y sus aliados (ob_fog), dan +1 a la fuerza de los defensores que no son
+# héroes (bridgeab) y pasan al bando que entra, si no es aliado del dueño (ob_step). La pila sigue siendo de 8.
+OB_MAX, OB_REC, OB_TORRE, OB_FARO = 64, 8, 4, 5
+OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedido sin precio; a confirmar, TAREAS 137)
+OB_VISTA = {OB_TORRE: 5, OB_FARO: 6}
+OB_BLOQUE = 10
+OB_MAPSZ = 0x32000 // 10
+ob_save = place_data('ob_save', b'OBRA' + bytes(4 + OB_MAX * OB_REC))
+OB_SAVELEN = 8 + OB_MAX * OB_REC
+OB_N, OB_TAB = ob_save + 4, ob_save + 8
+ob_magic = place_data('ob_magic', bytes(4))
+ob_map = place_data('ob_map', bytes(OB_MAPSZ))
+ob_twtxt = place_data('ob_twtxt', cstr_('Building a watchtower'))
+ob_fatxt = place_data('ob_fatxt', cstr_('Building a lighthouse'))
+ob_rebuild = place('ob_rebuild', f'''
+    pushad
+    mov edi, {ob_map:#x}
+    mov ecx, {OB_MAPSZ // 4}
+    xor eax, eax
+    rep stosd
+    xor ebx, ebx
+obr_loop:
+    cmp ebx, dword ptr [{OB_N:#x}]
+    jae obr_end
+    movsx eax, word ptr [ebx*8 + {OB_TAB:#x}]
+    movsx edx, word ptr [ebx*8 + {OB_TAB + 2:#x}]
+    call {br_tile:#x}
+    test eax, eax
+    jz obr_next
+    movsx eax, word ptr [ebx*8 + {OB_TAB:#x}]
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {OB_MAPSZ}
+    jae obr_next
+    lea eax, [ebx + 1]
+    mov byte ptr [edx + {ob_map:#x}], al
+obr_next:
+    inc ebx
+    jmp obr_loop
+obr_end:
+    popad
+    ret
+''')
+# ob_at: eax = x, edx = y -> eax = registro de la obra de esa casilla, o 0. Preserva el resto.
+ob_at = place('ob_at', f'''
+    push ecx
+    push edx
+    push eax
+    call {br_tile:#x}
+    test eax, eax
+    pop eax
+    jz oba_no
+    mov cl, byte ptr [0x503e06]
+    shl edx, cl
+    add edx, eax
+    cmp edx, {OB_MAPSZ}
+    jae oba_no
+    movzx eax, byte ptr [edx + {ob_map:#x}]
+    test eax, eax
+    jz oba_out
+    lea eax, [eax*8 + {OB_TAB - 8:#x}]
+    jmp oba_out
+oba_no:
+    xor eax, eax
+oba_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# ob_fogme: si hay niebla, la vuelve a calcular para quien mira ([0x560b20]; 0x441540). Preserva todo.
+ob_fogme = place('ob_fogme', f'''
+    pushad
+    movsx eax, word ptr [0x560b20]
+    cmp eax, 8
+    jae obf_out
+    test byte ptr [0x53c38e], 0x20
+    jz obf_out
+    push eax
+    call 0x441540
+    add esp, 4
+obf_out:
+    popad
+    ret
+''')
+# ob_fog (en 0x44170f, al terminar el recorrido de ejércitos de 0x441540; bx = quien mira): despeja alrededor de cada
+# obra suya o de un aliado (fogally), con radio OB_VISTA (0x441720(x, y, radio), como un ejército).
+ob_fog = place('ob_fog', f'''
+    cmp si, word ptr [0x54fe50]
+    jl 0x4416a8
+    movsx eax, bx
+    xor esi, esi
+ofg_l:
+    cmp esi, dword ptr [{OB_N:#x}]
+    jae 0x441718
+    lea edi, [esi*8 + {OB_TAB:#x}]
+    movzx ecx, byte ptr [edi + 6]
+    cmp ecx, eax
+    je ofg_see
+    mov edx, eax
+    call {fogally:#x}
+    jne ofg_nx
+ofg_see:
+    push eax
+    mov ecx, {OB_VISTA[OB_TORRE]}
+    cmp byte ptr [edi + 4], {OB_FARO}
+    jne ofg_r
+    mov ecx, {OB_VISTA[OB_FARO]}
+ofg_r:
+    push ecx
+    movsx ecx, word ptr [edi + 2]
+    push ecx
+    movsx ecx, word ptr [edi]
+    push ecx
+    call 0x441720
+    add esp, 12
+    pop eax
+ofg_nx:
+    inc esi
+    jmp ofg_l
+''')
+# ob_step: eax = x, edx = y, ecx = bando que llega -> si ahí hay una obra de otro bando que no es su aliado, pasa a él.
+# Preserva todo.
+ob_step = place('ob_step', f'''
+    pushad
+    cmp ecx, 8
+    jae obs_out
+    call {ob_at:#x}
+    test eax, eax
+    jz obs_out
+    movzx ebx, byte ptr [eax + 6]
+    cmp ebx, ecx
+    je obs_out
+    mov edx, ecx
+    mov ecx, ebx
+    call {fogally:#x}
+    je obs_out
+    mov byte ptr [eax + 6], dl
+    call {ob_fogme:#x}
+    call {REDRAW:#x}
+obs_out:
+    popad
+    ret
+''')
 # bd_ok: eax = x, edx = y -> eax = costo de paso del terreno si ahí se puede poner un camino, 0 si no. Preserva el resto.
 bd_ok = place('bd_ok', f'''
     push ecx
     push edx
+    push eax
+    call {ob_at:#x}
+    test eax, eax
+    pop eax
+    jnz bdo_no
     call {br_tile:#x}
     test eax, eax
     jz bdo_no
@@ -4304,6 +4460,50 @@ bd_any = place('bd_any', f'''
 bdy_m:
     pop eax
     jmp {bd_okm:#x}
+''')
+# ob_okt: eax = x, edx = y, ecx = tipo -> eax = 1 si ahí se puede construir esa obra, 0 si no. Preserva el resto.
+ob_okt = place('ob_okt', f'''
+    push ebx
+    push esi
+    push edi
+    mov esi, eax
+    mov edi, edx
+    cmp dword ptr [{OB_N:#x}], {OB_MAX}
+    jae oko_no
+    call {bd_ok:#x}
+    test eax, eax
+    jz oko_no
+    cmp ecx, {OB_FARO}
+    jne oko_si
+    xor ebx, ebx
+oko_nb:
+    movsx eax, byte ptr [ebx*2 + {bd_dxy:#x}]
+    movsx edx, byte ptr [ebx*2 + {bd_dxy + 1:#x}]
+    add eax, esi
+    add edx, edi
+    call {br_tile:#x}
+    test eax, eax
+    jz oko_nx
+    movzx eax, word ptr [eax]
+    and eax, 0x1f
+    imul eax, eax, 0x58
+    cmp word ptr [eax + 0x535f0c], 1
+    je oko_si
+oko_nx:
+    inc ebx
+    cmp ebx, 4
+    jb oko_nb
+oko_no:
+    xor eax, eax
+    jmp oko_out
+oko_si:
+    mov eax, 1
+oko_out:
+    mov edx, edi
+    pop edi
+    pop esi
+    pop ebx
+    ret
 ''')
 # bd_price: eax = fracción (veinteavos), ecx = bando -> eax = precio en oro. Preserva el resto. La base es lo que
 # ese bando paga por fundar una ciudad, calculado como el juego (0x4051a0): [0x56950e], a la mitad si el bando
@@ -4960,7 +5160,8 @@ pa_nmx:
 # 4 vecinas N, E, S, O (montaña: camino; agua: puente, bd_brscan). Si el líder no se movió, sigue después de la
 # última ofrecida, así el «No» del diálogo y otro clic pasan a la siguiente. Deja BD_X, BD_Y, BD_DIR (4 = la del
 # líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto. Las posiciones 0-4 piden BD_HASB; la 5 es el
-# puerto (pt_lead: ciudad propia del líder), con BD_DIR = 0xff (sin flecha).
+# puerto (pt_lead: ciudad propia del líder), con BD_DIR = 0xff (sin flecha); la 6 y la 7, torre y faro en la casilla
+# del líder (ob_okt, piden BD_HASB), con BD_DIR = 0xff y BD_PW = 0x4000 | tipo.
 bd_pick = place('bd_pick', f'''
     push ebx
     push ecx
@@ -4977,13 +5178,15 @@ bd_pick = place('bd_pick', f'''
     jne bpk_go
     movzx esi, byte ptr [{BD_POS:#x}]
     inc esi
-    cmp esi, 6
+    cmp esi, 8
     jb bpk_go
     xor esi, esi
 bpk_go:
-    mov ebx, 6
+    mov ebx, 8
 bpk_l:
     mov word ptr [{BD_PW:#x}], 0
+    cmp esi, 6
+    jae bpk_ob
     cmp esi, 5
     je bpk_port
     cmp byte ptr [{BD_HASB:#x}], 0
@@ -5037,10 +5240,25 @@ bpk_port:
     mov word ptr [{BD_Y:#x}], dx
     mov byte ptr [{BD_DIR:#x}], 0xff
     jmp bpk_hit
+bpk_ob:
+    cmp byte ptr [{BD_HASB:#x}], 0
+    je bpk_nx
+    lea ecx, [esi + {OB_TORRE - 6}]
+    mov eax, edi
+    mov edx, ebp
+    call {ob_okt:#x}
+    test eax, eax
+    jz bpk_nx
+    mov word ptr [{BD_X:#x}], di
+    mov word ptr [{BD_Y:#x}], bp
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    or ecx, 0x4000
+    mov word ptr [{BD_PW:#x}], cx
+    jmp bpk_hit
 bpk_nx:
     mov word ptr [{BD_PW:#x}], 0
     inc esi
-    cmp esi, 6
+    cmp esi, 8
     jb bpk_nw
     xor esi, esi
 bpk_nw:
@@ -5123,6 +5341,16 @@ bk_nb:
     inc esi
     cmp esi, 4
     jb bk_nb
+    mov eax, edi
+    mov edx, ebp
+    mov ecx, {OB_TORRE}
+    call {ob_okt:#x}
+    test eax, eax
+    jnz bk_pos
+    mov ecx, {OB_FARO}
+    call {ob_okt:#x}
+    test eax, eax
+    jnz bk_pos
 bk_port:
     mov eax, edi
     mov edx, ebp
@@ -8439,6 +8667,12 @@ brx_road:
     mov eax, {bd_dlgtxt:#x}
     cmp word ptr [{BD_PW:#x}], 0
     je 0x4b6516
+    mov eax, {ob_twtxt:#x}
+    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_TORRE:#x}
+    je 0x4b6516
+    mov eax, {ob_fatxt:#x}
+    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_FARO:#x}
+    je 0x4b6516
     mov eax, {bd_pttxt:#x}
     test word ptr [{BD_PW:#x}], 0x8000
     jnz 0x4b6516
@@ -8471,6 +8705,9 @@ brc_road:
     call {bd_any:#x}
     jmp brc_pr
 brc_bridge:
+    mov eax, {OB_FRAC}
+    test word ptr [{BD_PW:#x}], 0x4000
+    jnz brc_pr
     mov eax, {PT_FRAC}
     test word ptr [{BD_PW:#x}], 0x8000
     jnz brc_pr
@@ -8681,6 +8918,8 @@ bvd_next:
 # palabra 0x535f0c del tipo, ya cargada) con estructura 1 ([+3] & 7, la misma definición que el constructor de
 # caminos en 0x4a5135). Un puente derribado tiene estructura 0: no cuenta. No vale para héroes ([esp+0x26] = 0x10).
 # Sin bono ni puente, registros y pila quedan como en el original. El nombre lo dan los textos 0x18a (TEXTS).
+# Obras (torre y faro): +1 a cada defensor que no es héroe (5.º argumento [esp+0xc0] = 0) si la casilla de la batalla
+# (ebx = x, ebp = y) tiene una.
 BRIDGE_AB = 34
 bridgeab = place('bridgeab', f'''
     push ecx
@@ -8706,8 +8945,22 @@ bab_chk:
     test edx, edx
     jz bab_no
     add ecx, edx
-    jmp bab_put
 bab_no:
+    cmp word ptr [esp + 0x2e], 0x10
+    je bab_w
+    cmp dword ptr [esp + 0xc0], 0
+    jne bab_w
+    push eax
+    mov eax, ebx
+    mov edx, ebp
+    call {ob_at:#x}
+    test eax, eax
+    pop eax
+    jz bab_w
+    inc ecx
+bab_w:
+    test ecx, ecx
+    jnz bab_put
     cmp byte ptr [esp + 0x19], 0
     je bab_out
 bab_put:
@@ -9462,6 +9715,28 @@ pol_bad:
     mov dword ptr [{PO_N:#x}], 0
 pol_end:
     call {po_rebuild:#x}
+    mov dword ptr [{OB_N:#x}], 0
+    mov dword ptr [{ob_magic:#x}], 0
+    push 4
+    push {ob_magic:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 4
+    jne obl_end
+    cmp dword ptr [{ob_magic:#x}], 0x4152424f
+    jne obl_end
+    push {4 + OB_MAX * OB_REC}
+    push {OB_N:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, {4 + OB_MAX * OB_REC}
+    jne obl_bad
+    cmp dword ptr [{OB_N:#x}], {OB_MAX}
+    jbe obl_end
+obl_bad:
+    mov dword ptr [{OB_N:#x}], 0
+obl_end:
+    call {ob_rebuild:#x}
     popad
     ret
 ''')
@@ -9486,11 +9761,25 @@ pns_ok:
     push {PO_BLOQUE}
     call 0x4aa2c0
     add esp, 16
+    mov eax, dword ptr [{OB_N:#x}]
+    cmp eax, {OB_MAX}
+    jbe pns_ob
+    xor eax, eax
+pns_ob:
+    lea ecx, [eax*8]
+    push ecx
+    push {OB_TAB:#x}
+    push eax
+    push {OB_BLOQUE}
+    call 0x4aa2c0
+    add esp, 16
     jmp 0x4baf20
 ''')
 
 # En 0x4aa361 (cx = id de un bloque que empieza; [esp+0x14] = cantidad).
 po_nrecv = place('po_nrecv', f'''
+    cmp cx, {OB_BLOQUE}
+    je pnr_ob
     cmp cx, {PO_BLOQUE}
     jne pnr_orig
     movsx eax, word ptr [esp + 0x14]
@@ -9500,6 +9789,15 @@ po_nrecv = place('po_nrecv', f'''
 pnr_ok:
     mov dword ptr [{PO_N:#x}], eax
     mov edx, {PO_TAB:#x}
+    jmp 0x4aa3ed
+pnr_ob:
+    movsx eax, word ptr [esp + 0x14]
+    cmp eax, {OB_MAX}
+    jbe pnr_obok
+    xor eax, eax
+pnr_obok:
+    mov dword ptr [{OB_N:#x}], eax
+    mov edx, {OB_TAB:#x}
     jmp 0x4aa3ed
 pnr_orig:
     movsx eax, cx
@@ -9512,6 +9810,10 @@ pnr_orig:
 # En 0x4aa421, después de copiar un paquete: si era de la tabla, rearma po_map.
 po_nrecvd = place('po_nrecvd', f'''
     mov dword ptr [0x4ff03c], edx
+    cmp word ptr [0x4ff030], {OB_BLOQUE}
+    jne pnd_po
+    call {ob_rebuild:#x}
+pnd_po:
     cmp word ptr [0x4ff030], {PO_BLOQUE}
     jne 0x4aa427
     call {po_rebuild:#x}
@@ -9529,6 +9831,17 @@ pnm_ok:
     lea eax, [eax*8 + 4]
     push eax
     push {PO_N:#x}
+    call 0x4aa6d0
+    add esp, 8
+    xor dword ptr [esp + 0x10], eax
+    mov eax, dword ptr [{OB_N:#x}]
+    cmp eax, {OB_MAX}
+    jbe pnm_ob
+    xor eax, eax
+pnm_ob:
+    lea eax, [eax*8 + 4]
+    push eax
+    push {OB_N:#x}
     call 0x4aa6d0
     add esp, 8
     xor dword ptr [esp + 0x10], eax
@@ -9757,6 +10070,8 @@ pk_no:
 po_gen = place('po_gen', f'''
     pushad
     mov dword ptr [{PO_N:#x}], 0
+    mov dword ptr [{OB_N:#x}], 0
+    call {ob_rebuild:#x}
     test byte ptr [0x53c393], 0x10
     jz pg_end
     movsx eax, word ptr [0x558872]
@@ -10150,6 +10465,10 @@ po_step = place('po_step', f'''
     call 0x4a1ce0
     add esp, 0x10
     pushad
+    movsx eax, word ptr [esp + 0x28]
+    movsx edx, word ptr [esp + 0x2c]
+    movsx ecx, word ptr [esp + 0x24]
+    call {ob_step:#x}
     test byte ptr [0x53c393], 0x10
     jz pd_end
     test byte ptr [0x53c393], 0x20
@@ -10893,7 +11212,9 @@ qta:
 PO_FILE = RAM_FILE + 3       # después de sorteo.pcx y darkcomp.pcx (ver table_add, más abajo)
 PO_REMO0 = 13                # remolino grande: 4 fases x 9 piezas (3x3), desde el cuadro 13
 PO_MINAGUA = PO_REMO0 + 36   # mina submarina
-PO_FRAMES = PO_MINAGUA + 1
+PO_TORRE = PO_MINAGUA + 1    # obras (PENDIENTE-construcciones, parte 2): torre de vigía
+PO_FARO = PO_TORRE + 1       # faro costero
+PO_FRAMES = PO_FARO + 1
 # po_vecs[k]: (dy << 4) | (dx & 15) de la pieza k = (dy + 1) * 3 + (dx + 1), con (dx, dy) = celda - remolino
 po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
@@ -11144,6 +11465,18 @@ pw_tumba:
 pw_sheet:
     call {pw_put:#x}
 pw_end:
+    cmp byte ptr [{po_mode:#x}], 0
+    je pw_fin
+    movsx eax, word ptr [{po_cx:#x}]
+    movsx edx, word ptr [{po_cx + 2:#x}]
+    call {ob_at:#x}
+    test eax, eax
+    jz pw_fin
+    mov ebx, eax
+    movzx edi, byte ptr [ebx + 4]
+    add edi, {PO_TORRE - OB_TORRE}
+    call {pw_put:#x}
+pw_fin:
     popad
     cmp byte ptr [{po_mode:#x}], 0
     jne pw_p2
@@ -11490,6 +11823,11 @@ vt_savef = place('vt_savef', f'''
     push ecx
     push {PO_SAVELEN}
     push {po_save:#x}
+    call 0x4dfd70
+    pop ecx
+    push ecx
+    push {OB_SAVELEN}
+    push {ob_save:#x}
     call 0x4dfd70
     pop ecx
     jmp 0x4dfdc0
@@ -14417,6 +14755,8 @@ bd_recv = place('bd_recv', f'''
     movzx ebp, word ptr [esi + 0x12]
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
+    test ebp, 0x4000
+    jnz bv_ob
     test ebp, 0x8000
     jnz bv_pt
     test ebp, 0x100
@@ -14500,6 +14840,46 @@ bv_pt:
     mov eax, esi
     mov edx, edi
     call {pt_apply:#x}
+    jmp bv_redo
+bv_ob:
+    mov ecx, ebp
+    and ecx, 0xff
+    cmp ecx, {OB_TORRE}
+    jb bv_x
+    cmp ecx, {OB_FARO}
+    ja bv_x
+    mov eax, esi
+    mov edx, edi
+    call {ob_okt:#x}
+    test eax, eax
+    jz bv_x
+    mov eax, {OB_FRAC}
+    push ecx
+    mov ecx, ebx
+    call {bd_price:#x}
+    pop ecx
+    mov ebp, eax
+    imul eax, ebx, {SIDE:#x}
+    cmp ebp, dword ptr [eax + 0x536c14]
+    jg bv_x
+    neg ebp
+    push ecx
+    push ebp
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    pop ecx
+    mov eax, dword ptr [{OB_N:#x}]
+    lea edx, [eax*8 + {OB_TAB:#x}]
+    mov word ptr [edx], si
+    mov word ptr [edx + 2], di
+    mov byte ptr [edx + 4], cl
+    mov byte ptr [edx + 5], 0
+    mov byte ptr [edx + 6], bl
+    mov byte ptr [edx + 7], 0
+    inc dword ptr [{OB_N:#x}]
+    call {ob_rebuild:#x}
+    call {ob_fogme:#x}
     jmp bv_redo
 bv_xp:
     pop ecx
@@ -16790,6 +17170,7 @@ patch(0x465ca5, asm('call 0x4764b0', 0x465ca5), asm(f'call {reports:#x}', 0x465c
 patch(0x4415ed, bytes.fromhex('3bca0f8598000000'), asm(f'jmp {fogcity:#x}', 0x4415ed))
 assert rel(0x4416fa, 4) == bytes.fromhex('66250e00')
 patch(0x4416ef, bytes.fromhex('3be8751a668b8760fe5400'), asm(f'jmp {fogarmy:#x}', 0x4416ef))
+patch(0x44170f, asm('cmp si, word ptr [0x54fe50]; jl 0x4416a8', 0x44170f), asm(f'jmp {ob_fog:#x}', 0x44170f))
 patch(0x4def81, bytes.fromhex('034c0a046a4f'), asm(f'jmp {gname:#x}', 0x4def81))
 assert rel(0x4a2c24, 8) == asm('call 0x4dd120; add esp, 0xc', 0x4a2c24)
 patch(0x4a2c24, rel(0x4a2c24, 8), asm(f'jmp {armab:#x}', 0x4a2c24))
@@ -17571,9 +17952,62 @@ def mina(agua=False):
             v = 30 + 130 * luz + (70 if luz > 0.95 else 0)
             im.putpixel((x, y), color(v, 1.08))
     return im
+import math as _m
+# Torre de vigía y faro costero (PENDIENTE-construcciones, parte 2, 9/11/2026): cilindro de piedra iluminado desde la
+# izquierda, con sombra al sureste; la torre lleva almenas y el faro franjas rojas y blancas con la linterna encendida.
+def torre(faro=False):
+    im = Image.new('RGB', (48, 48), (255, 0, 255)); px = im.load(); rnd = random.Random(5)
+    CX, X0, X1 = 23.5, 16, 31            # cuerpo
+    TOP, BASE = (12 if faro else 9), 41
+    for yy in range(TOP, BASE + 1):          # sombra proyectada: el cuerpo corrido
+        h = BASE - yy
+        for xx in range(X0, X1 + 1):
+            sx, sy = xx + int(h * 0.55) + 2, BASE + int(h * 0.18) + 1
+            if 0 <= sx < 48 and 0 <= sy < 48: px[sx, sy] = (20, 18, 12)
+    def piedra(x, y, k=1.0, roja=False):
+        u = (x - CX) / ((X1 - X0) / 2 + 0.5)
+        luz = max(0.25, 1 - 0.75 * (u + 0.6) ** 2 / 2.6) if abs(u) <= 1 else 0.25
+        luz *= rnd.uniform(0.9, 1.08) * k
+        if (y % 5 == 0) or ((x + (y // 5) * 3) % 7 == 0 and not faro): luz *= 0.7
+        if faro:
+            c = (200, 40, 35) if ((y - TOP) // 6) % 2 else (225, 222, 210)
+        else: c = (150, 145, 135)
+        return tuple(min(255, int(v * luz)) for v in c)
+    for y in range(TOP, BASE + 1):
+        for x in range(X0, X1 + 1):
+            px[x, y] = piedra(x, y)
+    for x in range(X0, X1 + 1):              # base redondeada
+        d = int(2 * _m.sqrt(max(0, 1 - ((x - CX) / 8) ** 2)))
+        for k in range(1, d + 1): px[x, BASE + k] = piedra(x, BASE + k)
+    if faro:
+        for y in range(TOP - 2, TOP + 1):    # balcón
+            for x in range(X0 - 2, X1 + 3): px[x, y] = (60, 55, 50)
+        for y in range(TOP - 8, TOP - 2):    # linterna
+            for x in range(X0 + 3, X1 - 2):
+                f = 1 - abs(x - CX) / 7
+                px[x, y] = (255, int(200 + 50 * f), int(60 + 120 * f)) if (x - X0) % 4 else (50, 45, 40)
+        for y in range(TOP - 12, TOP - 8):   # cúpula
+            w = (y - (TOP - 13)) * 1.6
+            for x in range(48):
+                if abs(x - CX) <= w: px[x, y] = (110, 30, 25) if x > CX else (170, 50, 40)
+        for x in range(8, 40):                # destello
+            if abs(x - CX) > 8 and (x % 2 == 0): px[x, TOP - 5] = (255, 240, 140)
+    else:
+        for y in range(TOP - 4, TOP + 2):    # almenas sobre un reborde más ancho
+            for x in range(X0 - 2, X1 + 3):
+                if y < TOP - 1 and ((x - X0 + 2) // 3) % 2: continue
+                px[x, y] = piedra(x, y, 1.05)
+        for y in range(TOP + 2, TOP + 3):
+            for x in range(X0 - 1, X1 + 2): px[x, y] = (40, 38, 35)
+    for y in range(22, 29):                   # ventana / puerta
+        for x in range(21, 25): px[x, y] = (15, 12, 10)
+    for y in range(34, BASE + 1):
+        for x in range(21, 26):
+            if y > 35 or 22 <= x <= 24: px[x, y] = (45, 30, 15)
+    return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
 po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
-           + [tumba, lapida, cruz] + remo_piezas + [mina(True)])
+           + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True)])
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))

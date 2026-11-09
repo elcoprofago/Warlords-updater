@@ -192,7 +192,7 @@ def picks(x, y, n, prep=None, moverse=None):
         ok = mu.reg_read(UC_X86_REG_EAX)
         r.append((ok, *struct.unpack('<hh', mu.mem_read(BD_X, 4)), mu.mem_read(BD_DIR, 1)[0]) if ok else (0,))
     return r
-ver('líder en llanura libre: siempre su casilla', picks(5, 7, 2), [(1, 5, 7, 4)] * 2)
+ver('líder en llanura libre: siempre su casilla', picks(5, 7, 2), [(1, 5, 7, 4), (1, 5, 7, 255)])   # el segundo clic ofrece la torre
 ver('volador sobre montaña: N, E, S, O y vuelve a N', picks(21, 7, 5),
     [(1, 21, 6, 0), (1, 22, 7, 1), (1, 21, 8, 2), (1, 20, 7, 3), (1, 21, 6, 0)])
 cam19 = lambda g: g.setb(19, 7, 3, 0x19)
@@ -281,7 +281,7 @@ def picks_pw(x, y, n, prep):
     return r
 ver('bd_pick en camino junto al lago: puente al este, una y otra vez', picks_pw(29, 15, 2, lago), [(1, 30, 15, 1, 0x101)] * 2)
 ver('  sin camino: su casilla (camino) y luego el puente', picks_pw(29, 15, 3, lambda g: lago(g, False)),
-    [(1, 29, 15, 4, 0), (1, 30, 15, 1, 0x101), (1, 29, 15, 4, 0)])
+    [(1, 29, 15, 4, 0), (1, 30, 15, 1, 0x101), (1, 29, 15, 255, 0x4004)])   # después, la torre
 ver('  puente vertical al sur', picks_pw(31, 2, 1, lago), [(1, 31, 3, 2, 0x102)])
 def costo_pw(x, y, pw):
     g = Juego(); mu = g.mu; lago(g)
