@@ -9,7 +9,6 @@ Sorteo están acá (tarea 18).
 ## Orden sugerido
 0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
 0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
-0. **Tarea 127** (tanda de la IA: qué hacen los ejércitos que pagan mantenimiento fuera de las ciudades).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -40,14 +39,6 @@ Resultado:
 5. Army List: en un bando sin unidades prohibidas por el Validador, arriba a la derecha se ve la medalla. En uno con
    alguna unidad marcada con círculo rojo, la medalla no aparece. Cambiá de bando con las flechas y fijate que
    aparezca y desaparezca según corresponda.
-Resultado:
-
-- [ ] **127.** IA: qué hacen sus ejércitos fuera de las ciudades (8/11/2026)
-La 1.0.138.0 no cambia cómo juega la computadora: solo anota qué tarea tenía cada ejército que termina el turno
-fuera de una ciudad. Con eso se sabe cuánto se ahorraría guardando en una ciudad solo a los que no tienen nada que hacer.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.138.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
@@ -82,6 +73,14 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **127.** IA: qué hacen sus ejércitos fuera de las ciudades (8/11/2026)
+La 1.0.138.0 no cambia cómo juega la computadora: solo anota qué tarea tenía cada ejército que termina el turno
+fuera de una ciudad. Con eso se sabe cuánto se ahorraría guardando en una ciudad solo a los que no tienen nada que hacer.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.138.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: (8/11/2026): tanda 145, 9 partidas completas (una se colgó al empezar, sin datos). De los ejércitos de la IA que terminan el turno fuera de una ciudad, 6 o 7 de cada 10 no tenían ninguna tarea registrada; el ahorro posible con ellos es grande (4 % del ingreso en la IA original, 7,6 % en la nueva). Antes de cambiar nada falta saber quién mueve a esos ejércitos: lo averiguo yo en el código.
 
 - [x] **126.** IA: medir cuánto pagan sus ejércitos fuera de las ciudades (8/11/2026)
 La 1.0.137.0 no cambia cómo juega la computadora: solo anota, cada turno, cuánto mantenimiento pagan sus ejércitos que

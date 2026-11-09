@@ -312,4 +312,20 @@ Uso: `python prueba_mantenimiento.py <AV> <orig> 6c9dfb 6c9df3 6c9ee0 6cbee0 <SA
 Al volver la tanda: por IA y tramo, reparto del ahorro (y del 34) por meta. Lo de metas 0, 1 y 10 es el ahorro
 alcanzable sin quitarle tareas; si pasa el 3 % del ingreso, programar que esas pilas esperen en la ciudad propia
 más cercana que alcancen este turno.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.5: volvió la tanda".
+**Medido (8/11/2026, tanda 145, 1.0.138.0, 9 partidas; la n.º 7 colgada en el turno 0, sin eventos).** Los 34 de
+cada color suman igual que el 33 en los 466 turnos-color con ejércitos afuera. Ahorro (x − y) / ingreso por meta:
+| | tramo | techo | sin decisión (10) | ruina | ciudad enemiga | misión | héroe | Form | resto |
+|---|---|---|---|---|---|---|---|---|---|
+| original | 1-10 / 11-20 / 21-30 | 1,1 / 7,5 / 9,2 % | 0,5 / 4,0 / 6,0 % (36 / 51 / 63 % de los ej.) | 0,3 / 1,1 / 0,9 % | 0 / 0,3 / 0,7 % | 0,1 / 0,8 / 0,5 % | 0,1 / 0,3 / 0,4 % | ≤ 0,1 % | ≤ 0,5 % |
+| nueva | 1-10 / 11-20 / 21-30 | 2,2 / 12,4 / 15,2 % | 1,2 / 7,4 / 10,9 % (51 / 60 / 72 % de los ej.) | 0,5 / 2,2 / 1,3 % | 0 / 0,6 / 1,0 % | 0,3 / 0,8 / 0,2 % | 0,1 / 0,5 / 0,7 % | ≤ 0,1 % | ≤ 0,8 % |
+Toda la partida: original techo 7,1 %, metas 0 + 1 + 10 = 4,3 %; nueva 11,5 %, metas 0 + 1 + 10 = 7,7 %. Pasa el 3 %,
+pero casi todo es la meta 10 (ninguna decisión de 0x40ca70 esta ronda ni la anterior), y la meta 0 no aparece:
+**no se sabe todavía si el 10 son pilas ociosas o pilas que mueve otro camino** (ai_ally/ai_ord: refugio, defensa
+de aliadas, guarnición; o pilas que el planificador no visita). Programar que esperen en una ciudad sin saberlo
+podría quitarles tareas reales. Resultados (no cambia el juego): nueva puesto 2,86, PV 6,03, 4,2 ciudades,
+4 primeros; original 3,13 / 6,89 / 5,4 / 5. Deserciones (evento 28): 4, todas de un color.
+Próximo paso (4.6): partir el 10. En mt_evt, para los ejércitos sin meta reciente, anotar quién los movió por última
+vez (marca en los caminos de ai_ally/ai_ord que mueven pilas sin pasar por 0x40c990) y si se movieron este turno;
+el resto del 10 (sin marca y quietos) es lo ocioso de verdad. Con eso, si lo ocioso pasa el 3 % del ingreso, el
+cambio de 4.5 (esperar en la ciudad propia más cercana alcanzable este turno) solo para esas pilas.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.6".
