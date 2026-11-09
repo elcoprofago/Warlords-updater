@@ -324,3 +324,24 @@ Cambios respecto del diseño de arriba:
 **Próximo paso:** resultado de la tarea 99. Si las casillas liberadas o el puerto se ven mal, ajustar la plantilla
 de `pt_apply`. Etapa 2 (la IA convierte ciudades) y miniatura propia, solo si el usuario lo pide. Frase para
 retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tarea 99".
+
+## Pedido del 9/11/2026 (sin empezar)
+
+1. **Revisar fallas reportadas por el usuario:**
+   - Las trampas no se pueden sembrar sobre pozos ya detonados: quitar ese límite.
+   - No se pueden poner dos trampas en la misma casilla: permitirlo.
+   - En partida multijugador, las unidades con bono «build» no pueden construir caminos, puentes
+     ni pasos de montaña, aun con el último vista-aliada y ARMY.zip actualizado (publicado el
+     9/11/2026). Averiguar la causa (¿bono no leído en multijugador? ¿orden bloqueada por el
+     Puente/sincronización? ¿ARMY local distinto?).
+2. **Construcciones nuevas, misma lógica casilla por casilla que caminos/puentes:**
+   - Murallas: (i) empalizada, defensa equivalente a tres grupos de infantería pesada por
+     casilla; (ii) muro de piedra, impasable salvo atravesándolo con camino, que cuesta el doble
+     que construir camino en montaña.
+   - Torre de vigilancia: 1 casilla, hasta 8 unidades, +1 de defensa, +5 de visión.
+   - Faro costero: igual que la torre, +6 de visión.
+   - Gráficos a cargo de Claude: muros tomando cortes de ciudades; torres reciclando o
+     modificando ruinas; faro propio.
+3. **Limitar la pausa de la partida a 3 por jugador.**
+
+Retomar con: *"Seguimos con PENDIENTE-construcciones.md, pedido del 9/11"*.
