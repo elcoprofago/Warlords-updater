@@ -449,3 +449,4 @@ grande), almenas más grandes, y sin los píxeles casi blancos ni la hiedra verd
 `obras_img.py`). Prueba: tarea 143.
 vista-aliada 1.0.155.0: sin las rayas tipo «código de barras» (textura por la cara que se ve, hiladas
 horizontales; arriba piedra lisa).
+vista-aliada 1.0.156.0: la calzada de arriba del muro con la textura del camino de tierra (road0.PCX) en gris oscuro.

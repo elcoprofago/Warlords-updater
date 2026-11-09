@@ -72,6 +72,19 @@ def _limpia(c, u, v):
     return c
 
 
+_CALZ = []
+def _calzada(gx, gy):
+    # Calzada de arriba del muro (pedido del 9/11/2026): la textura del camino de tierra del juego (road0.PCX de
+    # TERRAIN/DATA, el tramo horizontal de la primera pieza, x 0..95, y 18..31) pasada a gris oscuro.
+    if not _CALZ:
+        im = Image.open(r'C:/Warlords3/TERRAIN/DATA/road0.PCX').convert('RGB')
+        for y in range(18, 32):
+            _CALZ.append([im.getpixel((x, y)) for x in range(96)])
+    r, g, b = _CALZ[gy % 14][gx % 96]
+    k = int((0.3 * r + 0.59 * g + 0.11 * b) * 0.62)
+    return (k, k, k + 3)
+
+
 def _mul(c, k):
     return tuple(max(0, min(255, int(v * k))) for v in c)
 
@@ -153,8 +166,7 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
             return _mul(lz.piedra(u, gy - z), (1.0, 0.7, 0.85)[lado])
 
         def arriba(gx, gy):
-            k = 128 + 6 * ((gx * 7 + gy * 13) % 3)
-            return (k, k - 2, k - 8)
+            return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
 
