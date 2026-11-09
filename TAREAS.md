@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 137).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 142).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **141.** Probar los gráficos nuevos de las obras y el muro en 8 direcciones (vista-aliada 1.0.152.0). En
+  `C:\Warlords3`, actualizar el parche con el Actualizador y abrir una partida con un grupo que tenga constructor.
+  Apretar construir varias veces: después de la torre (y el faro, a orillas del agua) aparecen 8 opciones de muro,
+  cada una con su flechita (N, NE, E, SE, S, SO, O, NO). Levantar varios bloques seguidos en distintas direcciones,
+  incluida una diagonal. Mirar: (a) que cada bloque quede unido con el anterior, sin cortes; (b) que el tramo de
+  norte a sur se vea con buen ancho; (c) que la torre y el faro se vean enteros, asomando sobre la casilla de arriba,
+  también después de mover un ejército por encima o al costado; (d) la empalizada. Anotar acá lo que se vea mal
+  (mejor con una captura).
 - [ ] **140.** Puerta en el muro solo para aliados (vista-aliada 1.0.151.0, 9/11/2026)
 Construir un muro y, con la misma unidad parada encima, un camino (la «puerta»): debe costar el **25 % de fundar
 una ciudad** (el muro sigue costando el 50 %). Probar en Warlords3 que por la puerta pasan **tus** ejércitos y los

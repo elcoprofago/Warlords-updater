@@ -25,8 +25,11 @@ def picks(x, y, n, prep=None):
         r.append((*struct.unpack('<hh', mu.mem_read(BD_X, 4)), struct.unpack('<H', mu.mem_read(BD_PW, 2))[0]) if ok else (0,))
     return r
 MURO = 0x4007
-ver('llanura lejos del agua: camino, torre, muro, camino', picks(5, 7, 4), [(5, 7, 0), (5, 7, TORRE), (5, 7, MURO), (5, 7, 0)])
-ver('a orillas del agua (x = 29): camino, torre, faro, muro, camino', picks(29, 7, 5), [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO), (29, 7, MURO), (29, 7, 0)])
+MUROS = [MURO | (d + 1) << 8 for d in range(8)]      # muro en 8 direcciones (N..NO), dirección + 1 en el byte alto
+ver('llanura lejos del agua: camino, torre, muro x 8 direcciones, camino', picks(5, 7, 11),
+    [(5, 7, 0), (5, 7, TORRE)] + [(5, 7, m) for m in MUROS] + [(5, 7, 0)])
+ver('a orillas del agua (x = 29): camino, torre, faro, muro x 8, camino', picks(29, 7, 12),
+    [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO)] + [(29, 7, m) for m in MUROS] + [(29, 7, 0)])
 ver('control: tabla llena: solo camino', picks(5, 7, 2, lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64))), [(5, 7, 0)] * 2)
 
 print('-- precio')
@@ -73,6 +76,11 @@ def torre_sobre_muro():
     g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
     return c[n0:], struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
 ver('control: torre sobre el muro no (ni cobra ni anota)', torre_sobre_muro(), ([], 1))
+def muro_dir(pw):
+    g, c = recibir(pw=pw, oro=1000)
+    return c, bytes(g.mu.mem_read(OB_TAB, 8))[4:6]
+ver('muro hacia el este (dirección 2): cobra 100 y guarda tipo 7, dirección + 1 = 3', muro_dir(MUROS[2]), ([(2, -100)], bytes([7, 3])))
+ver('control: muro sin dirección (viejo) guarda 0', muro_dir(MURO), ([(2, -100)], bytes([7, 0])))
 
 print('-- puerta: solo pasan el dueño y sus aliados (po_pf)')
 from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_READ

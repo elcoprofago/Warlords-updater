@@ -4220,7 +4220,10 @@ bd_brtab = place_data('bd_brtab', struct.pack('<12H', _pw(2, 6), _pw(2, 7), _pw(
 # Flecha roja recta de PICTS\mvarrow.pcx (archivo 163 de la tabla de War3.RES, celdas de 32x32) por dirección N, E,
 # S, O: la dibuja br_rebdraw en el recuadro de imagen del diálogo, en vez de nombrar la dirección (pedido del usuario).
 BD_ARROW_FILE = 163
-bd_arrows = place_data('bd_arrows', struct.pack('<8H', 0, 128, 64, 192, 128, 0, 192, 64))
+bd_arrows = place_data('bd_arrows', struct.pack('<32H', 0, 128, 64, 192, 128, 0, 192, 64, *([0] * 8),
+                                                0, 128, 32, 160, 64, 192, 96, 224, 128, 0, 160, 32, 192, 64, 224, 96))
+# BD_DIR 8..15 = muro de piedra en la dirección BD_DIR - 8 de la rosa N, NE, E, SE, S, SO, O, NO (flechas rectas de
+# mvarrow: N (0,128), NE (32,160), E (64,192), SE (96,224), S (128,0), SO (160,32), O (192,64), NO (224,96)).
 bd_dxy = place_data('bd_dxy', bytes([0, 0xff, 1, 0, 0, 1, 0xff, 0]))
 # Pieza de camino (fila*8 + columna de la hoja) por vecinos con estructura 1: N 1, E 2, S 4, O 8. Medido en los .SAV
 # de 5 mapas (hoja 0): los caminos no empalman con ciudades ni sitios, solo con caminos y puentes.
@@ -5187,7 +5190,9 @@ pa_nmx:
 # última ofrecida, así el «No» del diálogo y otro clic pasan a la siguiente. Deja BD_X, BD_Y, BD_DIR (4 = la del
 # líder), BD_POS y BD_PW; eax = 0 si no hay ninguna. Preserva el resto. Las posiciones 0-4 piden BD_HASB; la 5 es el
 # puerto (pt_lead: ciudad propia del líder), con BD_DIR = 0xff (sin flecha); la 6 y la 7, torre y faro en la casilla
-# del líder (ob_okt, piden BD_HASB), con BD_DIR = 0xff y BD_PW = 0x4000 | tipo; la 8, el muro de piedra.
+# del líder (ob_okt, piden BD_HASB), con BD_DIR = 0xff y BD_PW = 0x4000 | tipo; de la 8 a la 15, el muro de piedra
+# en la dirección d = posición - 8 (N, NE, E, SE, S, SO, O, NO), con BD_DIR = 8 + d (su flecha) y
+# BD_PW = 0x4000 | (d + 1) << 8 | OB_MURO; la dirección va al registro (+5) y une el muro con sus vecinos (ob_wmask).
 bd_pick = place('bd_pick', f'''
     push ebx
     push ecx
@@ -5204,11 +5209,11 @@ bd_pick = place('bd_pick', f'''
     jne bpk_go
     movzx esi, byte ptr [{BD_POS:#x}]
     inc esi
-    cmp esi, 9
+    cmp esi, 16
     jb bpk_go
     xor esi, esi
 bpk_go:
-    mov ebx, 9
+    mov ebx, 16
 bpk_l:
     mov word ptr [{BD_PW:#x}], 0
     cmp esi, 6
@@ -5270,25 +5275,32 @@ bpk_ob:
     cmp byte ptr [{BD_HASB:#x}], 0
     je bpk_nx
     lea ecx, [esi + {OB_TORRE - 6}]
-    cmp ecx, {OB_EMPAL}
-    jne bpk_ty
-    mov ecx, {OB_MURO}
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    cmp esi, 8
+    jb bpk_ty
+    mov ecx, esi
+    mov byte ptr [{BD_DIR:#x}], cl
+    sub ecx, 7
+    shl ecx, 8
+    or ecx, {OB_MURO}
 bpk_ty:
+    push ecx
+    and ecx, 0xff
     mov eax, edi
     mov edx, ebp
     call {ob_okt:#x}
+    pop ecx
     test eax, eax
     jz bpk_nx
     mov word ptr [{BD_X:#x}], di
     mov word ptr [{BD_Y:#x}], bp
-    mov byte ptr [{BD_DIR:#x}], 0xff
     or ecx, 0x4000
     mov word ptr [{BD_PW:#x}], cx
     jmp bpk_hit
 bpk_nx:
     mov word ptr [{BD_PW:#x}], 0
     inc esi
-    cmp esi, 9
+    cmp esi, 16
     jb bpk_nw
     xor esi, esi
 bpk_nw:
@@ -8650,8 +8662,13 @@ br_rebdraw = place('br_rebdraw', f'''
     cmp word ptr [0x587e5c], {BD_MARK:#x}
     jne brw_site
     movzx eax, byte ptr [{BD_DIR:#x}]
-    cmp eax, 4
+    cmp eax, 16
     jae 0x4b64e3
+    cmp eax, 4
+    jb brw_arrow
+    cmp eax, 8
+    jb 0x4b64e3
+brw_arrow:
     mov ecx, dword ptr [esp + 0xc]
     add ecx, 8
     push ecx
@@ -8712,8 +8729,11 @@ brx_road:
     cmp word ptr [{BD_PW:#x}], {0x4000 | OB_FARO:#x}
     je 0x4b6516
     mov eax, {ob_mutxt:#x}
-    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_MURO:#x}
-    je 0x4b6516
+    cmp byte ptr [{BD_PW:#x}], {OB_MURO}
+    jne brx_nomu
+    test word ptr [{BD_PW:#x}], 0x4000
+    jnz 0x4b6516
+brx_nomu:
     mov eax, {bd_pttxt:#x}
     test word ptr [{BD_PW:#x}], 0x8000
     jnz 0x4b6516
@@ -11290,7 +11310,8 @@ PO_FRAMES = PO_MURO + 1
 # po_vecs[k]: (dy << 4) | (dx & 15) de la pieza k = (dy + 1) * 3 + (dx + 1), con (dx, dy) = celda - remolino
 po_vecs = place_data('po_vecs', bytes(((k // 3 - 1) << 4 | (k % 3 - 1) & 15) & 0xff for k in range(9)))
 po_nosheet = place_data('po_nosheet', bytes(4))
-po_cx = place_data('po_cx', bytes(8))   # casilla (x, y) y lugar en pantalla (x, y) de la celda que se dibuja
+po_cx = place_data('po_cx', bytes(8))
+po_sy = place_data('po_sy', bytes(4))     # fila de la hoja (y en píxeles) para pw_put; 0 salvo en od_put   # casilla (x, y) y lugar en pantalla (x, y) de la celda que se dibuja
 # De noche (opción Day/Night, SHOPT & 2, vuelta par; pedido del usuario, 28/10/2026) el pozo y el remolino no se
 # copian: 0x4ee3c0 recolorea el fondo con po_ntab usando su dibujo de máscara (como cam_blit), así queda solo una
 # sombra de su forma (el fondo al 65 %), que la noche oscurece después como al resto. Trampas y tumbas, como siempre.
@@ -11346,7 +11367,7 @@ pp_blit:
     push 0x27
     push 48
     push 48
-    push 0
+    push dword ptr [{po_sy:#x}]
     imul edi, edi, 48
     push edi
     push {PO_FILE}
@@ -11370,6 +11391,207 @@ pp_copy:
     call 0x4dd530
     add esp, 0x20
 pp_end:
+    ret
+''')
+# Obras grandes y en perspectiva (pedido del 9/11/2026 después de 1.0.150.0; gráficos en obras_img.py). Cada obra es
+# una imagen de 3x3 casillas centrada en la suya (capa), cortada en 9 piezas de 48x48 que van en las filas 1.. de la
+# hoja PO_FILE, OD_PORFILA capas por fila: pieza p de la capa L en x = ((L % OD_PORFILA) * 9 + p) * 48,
+# y = (1 + L // OD_PORFILA) * 48. Capas: 0 torre, 1 faro, 2 centro de la empalizada, 3..10 sus brazos N, NE, E, SE, S,
+# SO, O, NO, 11 centro del muro, 12..19 sus brazos. od_full: un bit por pieza (L * 9 + p) que no está vacía.
+# ob_draw (2.ª pasada, celda P = po_cx): por cada obra W en P o en sus 8 vecinas, de atrás (norte) hacia adelante,
+# pinta su pieza p = (P - W) + (1, 1). Muro y empalizada: el centro y un brazo por cada bit de ob_wmask, en el orden
+# N, NO, NE, O, E, centro, SO, SE, S (lo de atrás primero). Como las celdas se redibujan de a una (bit 0x20 de la
+# celda), cada una repinta lo suyo de las obras vecinas y nada queda cortado.
+OD_PORFILA, OD_CAPAS = 5, 20
+OD_BASE = {OB_TORRE: 0, OB_FARO: 1, OB_EMPAL: 2, OB_MURO: 11}
+od_full = place_data('od_full', bytes((OD_CAPAS * 9 + 7) // 8))
+od_off = place_data('od_off', bytes(((k % 3 - 1) & 0xff) for k in range(9)))
+od_offy = place_data('od_offy', bytes(((k // 3 - 1) & 0xff) for k in range(9)))
+od_rdx = place_data('od_rdx', bytes(v & 0xff for v in (0, 1, 1, 1, 0, -1, -1, -1)))
+od_rdy = place_data('od_rdy', bytes(v & 0xff for v in (-1, -1, 0, 1, 1, 1, 0, -1)))
+od_ord = place_data('od_ord', bytes((0, 7, 1, 6, 2, 8, 5, 3, 4)))
+od_base = place_data('od_base', bytes(OD_BASE[t] for t in (OB_TORRE, OB_FARO, OB_EMPAL, OB_MURO)))
+od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara
+# Obras grandes (ob_draw): las capas de obras_img.py (3x3 casillas cada una), en la paleta del mapa con los colores de
+# po_usar más los de la ruina grande (de ahí salen la piedra y las almenas del muro). Los cuadros PO_TORRE..PO_MURO de
+# la fila 0 quedan de antes, sin uso.
+import obras_img
+from PIL import Image as _I
+po_pal = _I.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]   # el mismo que más abajo (hoja PO_FILE)
+po_usar = sorted(set(_I.open(r'C:\Warlords3\TERRAIN\DATA\cit_anim.PCX').tobytes())
+                 | set(_I.open(r'C:\Warlords3\RUINS\cave.PCX').tobytes()) - {11, 101})
+_rl = _I.open(os.path.join(r'C:\Warlords3\RUINS', 'ruin_lrg.PCX'))
+assert _rl.getpalette()[:768] == po_pal
+_rl = _rl.crop((1, 1, 88, 89))
+_od_usar = sorted(set(po_usar) | set(_rl.tobytes()) - {11, 101})
+_od_memo = {}
+def _od_color(rgb):
+    if rgb not in _od_memo:
+        _od_memo[rgb] = min(_od_usar, key=lambda i: sum((po_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+    return _od_memo[rgb]
+od_capas = [obras_img.torre(_rl, _od_color, po_pal), obras_img.torre(_rl, _od_color, po_pal, True)]
+for _e in (True, False):   # empalizada (capas 2..10), muro (11..19)
+    _pr = obras_img.cuerpos_muro(_e)
+    od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, _pr) for d in [None] + list(range(8))]
+assert len(od_capas) == OD_CAPAS and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
+_full = bytearray(len(caves['od_full']))
+for L, im in enumerate(od_capas):
+    for pz in range(9):
+        if any(v != 11 for v in im.crop((48 * (pz % 3), 48 * (pz // 3), 48 * (pz % 3) + 48, 48 * (pz // 3) + 48)).tobytes()):
+            _full[(L * 9 + pz) // 8] |= 1 << ((L * 9 + pz) % 8)
+caves['od_full'] = bytes(_full)
+# od_same: eax = x, edx = y, ecx = tipo -> ZF = 1 si en esa casilla hay una obra de ese tipo. Preserva todo.
+od_same = place('od_same', f'''
+    push eax
+    call {ob_at:#x}
+    test eax, eax
+    jz ods_no
+    cmp byte ptr [eax + 4], cl
+    pop eax
+    ret
+ods_no:
+    inc eax
+    pop eax
+    ret
+''')
+# ob_wmask: ebx = registro de un muro o empalizada, eax = x, edx = y -> eax = brazos (bit d = dirección d de la rosa
+# N, NE, E, SE, S, SO, O, NO): la dirección elegida al construir y su opuesta (+5 = dirección + 1; 0 en las de antes de
+# 1.0.152.0), y cada vecina con una obra del mismo tipo; una diagonal, solo si ninguna de las dos casillas que la
+# flanquean tiene una (así una esquina no hace triángulo). Sin nada, E-O. Preserva el resto.
+ob_wmask = place('ob_wmask', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    mov esi, eax
+    mov edi, edx
+    movzx ecx, byte ptr [ebx + 4]
+    xor ebp, ebp
+    movzx eax, byte ptr [ebx + 5]
+    test eax, eax
+    jz owm_nb
+    dec eax
+    and eax, 7
+    bts ebp, eax
+    add eax, 4
+    and eax, 7
+    bts ebp, eax
+owm_nb:
+    xor ebx, ebx
+owm_l:
+    movsx eax, byte ptr [ebx + {od_rdx:#x}]
+    movsx edx, byte ptr [ebx + {od_rdy:#x}]
+    add eax, esi
+    add edx, edi
+    call {od_same:#x}
+    jne owm_nx
+    test ebx, 1
+    jz owm_set
+    mov edx, edi
+    call {od_same:#x}
+    je owm_nx
+    mov eax, esi
+    movsx edx, byte ptr [ebx + {od_rdy:#x}]
+    add edx, edi
+    call {od_same:#x}
+    je owm_nx
+owm_set:
+    bts ebp, ebx
+owm_nx:
+    inc ebx
+    cmp ebx, 8
+    jb owm_l
+    mov eax, ebp
+    test eax, eax
+    jnz owm_out
+    mov eax, 0x44
+owm_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# od_put: ecx = capa; pieza en [od_vars]; ebx = registro (para pw_put). Pinta la pieza si no está vacía. Preserva todo.
+od_put = place('od_put', f'''
+    pushad
+    movzx eax, byte ptr [{od_vars:#x}]
+    lea edx, [ecx + ecx*8]
+    add edx, eax
+    bt dword ptr [{od_full:#x}], edx
+    jnc odp_out
+    mov eax, ecx
+    xor edx, edx
+    mov ecx, {OD_PORFILA}
+    div ecx
+    lea edi, [edx + edx*8]
+    movzx ecx, byte ptr [{od_vars:#x}]
+    add edi, ecx
+    inc eax
+    imul eax, eax, 48
+    mov dword ptr [{po_sy:#x}], eax
+    call {pw_put:#x}
+    mov dword ptr [{po_sy:#x}], 0
+odp_out:
+    popad
+    ret
+''')
+ob_draw = place('ob_draw', f'''
+    pushad
+    xor esi, esi
+odw_l:
+    movsx eax, byte ptr [esi + {od_off:#x}]
+    movsx edx, byte ptr [esi + {od_offy:#x}]
+    movsx ecx, word ptr [{po_cx:#x}]
+    add eax, ecx
+    movsx ecx, word ptr [{po_cx + 2:#x}]
+    add edx, ecx
+    push eax
+    call {ob_at:#x}
+    mov ebx, eax
+    pop eax
+    test ebx, ebx
+    jz odw_nx
+    mov ecx, 8
+    sub ecx, esi
+    mov byte ptr [{od_vars:#x}], cl
+    movzx ecx, byte ptr [ebx + 4]
+    sub ecx, {OB_TORRE}
+    cmp ecx, 3
+    ja odw_nx
+    movzx ecx, byte ptr [ecx + {od_base:#x}]
+    cmp byte ptr [ebx + 4], {OB_EMPAL}
+    jae odw_wall
+    call {od_put:#x}
+    jmp odw_nx
+odw_wall:
+    mov byte ptr [{od_vars + 1:#x}], cl
+    call {ob_wmask:#x}
+    mov edi, eax
+    xor ebp, ebp
+odw_a:
+    movzx eax, byte ptr [ebp + {od_ord:#x}]
+    movzx ecx, byte ptr [{od_vars + 1:#x}]
+    cmp eax, 8
+    je odw_put
+    bt edi, eax
+    jnc odw_an
+    lea ecx, [ecx + eax + 1]
+odw_put:
+    call {od_put:#x}
+odw_an:
+    inc ebp
+    cmp ebp, 9
+    jb odw_a
+odw_nx:
+    inc esi
+    cmp esi, 9
+    jb odw_l
+    popad
     ret
 ''')
 # Las trampas se pintan en la 2.ª pasada (pedido del usuario, 4/11/2026: en una ciudad quedaban tapadas): po_draw2,
@@ -11539,15 +11761,7 @@ pw_sheet:
 pw_end:
     cmp byte ptr [{po_mode:#x}], 0
     je pw_fin
-    movsx eax, word ptr [{po_cx:#x}]
-    movsx edx, word ptr [{po_cx + 2:#x}]
-    call {ob_at:#x}
-    test eax, eax
-    jz pw_fin
-    mov ebx, eax
-    movzx edi, byte ptr [ebx + 4]
-    add edi, {PO_TORRE - OB_TORRE}
-    call {pw_put:#x}
+    call {ob_draw:#x}
 pw_fin:
     popad
     cmp byte ptr [{po_mode:#x}], 0
@@ -14939,6 +15153,14 @@ bv_pt:
     call {pt_apply:#x}
     jmp bv_redo
 bv_ob:
+    mov eax, ebp
+    shr eax, 8
+    and eax, 0xf
+    cmp eax, 8
+    jbe bv_dok
+    xor eax, eax
+bv_dok:
+    mov byte ptr [{od_vars + 4:#x}], al
     mov ecx, ebp
     and ecx, 0xff
     cmp ecx, {OB_TORRE}
@@ -14973,7 +15195,8 @@ bv_ob:
     mov word ptr [edx], si
     mov word ptr [edx + 2], di
     mov byte ptr [edx + 4], cl
-    mov byte ptr [edx + 5], 0
+    mov al, byte ptr [{od_vars + 4:#x}]
+    mov byte ptr [edx + 5], al
     mov byte ptr [edx + 6], bl
     mov byte ptr [edx + 7], 0
     inc dword ptr [{OB_N:#x}]
@@ -18134,12 +18357,18 @@ def muro(empal=False):
         for x in range(48):
             if px[x, y] == (255, 0, 255): px[x, y] = (20, 18, 12)
     return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
-po_hoja = Image.new('P', (48 * PO_FRAMES, 48), 11); po_hoja.putpalette(po_pal)
+po_hoja = Image.new('P', (48 * PO_FRAMES, 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA)), 11); po_hoja.putpalette(po_pal)
+assert OD_PORFILA * 9 <= PO_FRAMES
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
            + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True), muro(True), muro()])
 assert len(cuadros) == PO_FRAMES
 for i, im in enumerate(cuadros):
     po_hoja.paste(im, (48 * i, 0))
+for L, im in enumerate(od_capas):
+    for pz in range(9):
+        if caves['od_full'][(L * 9 + pz) // 8] >> ((L * 9 + pz) % 8) & 1:
+            po_hoja.paste(im.crop((48 * (pz % 3), 48 * (pz // 3), 48 * (pz % 3) + 48, 48 * (pz // 3) + 48)),
+                          (((L % OD_PORFILA) * 9 + pz) * 48, (1 + L // OD_PORFILA) * 48))
 pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
 
 # Título del menú principal: la imagen titulo.pcx ("Era de Alianzas" dorado sobre blanco, 65 de alto: lo más grande que entra sin tocar el marco) va pintada en el fondo, en

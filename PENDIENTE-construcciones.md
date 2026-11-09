@@ -407,13 +407,21 @@ Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), despu�
 Hecho en 1.0.151.0: la puerta (camino sobre el muro) cuesta el 25 % de una ciudad (OB_MCAM = 5). Por la puerta pasan
 solo el dueño y sus aliados (`po_pf`, con `fogally`). Probado en `prueba_obras.py`.
 
-Falta:
-- **Gráficos más grandes, vistos desde arriba y en perspectiva** (como dibuja el juego), no de costado. Para el muro
-  de piedra se puede reusar la ruina de `RUINS\ruin_lrg.PCX` / `ruin_sml.PCX`. Hoy los cuadros son de 48x48 en
-  `RUINS\pozos.pcx` (`torre()`, `muro()` en build.py).
-- **Muro en 8 direcciones con flechitas**, como los puentes: elegir la dirección al construir, y que cada bloque se
-  una con el vecino (N, NE, E, SE, S, SO, O, NO), igual que los caminos.
-- La empalizada (3 grupos de infantería pesada virtuales por casilla), sin cambios.
+Hecho en 1.0.152.0 (9/11/2026):
+- **Gráficos nuevos** (`parchesista-aliada\obras_img.py`): render por vóxeles, de arriba y de frente como el
+  juego, con sombra al sureste. Cada obra se dibuja en un lienzo de 3x3 casillas cortado en 9 piezas; `ob_draw`
+  pinta en cada celda las piezas de la obra propia y de sus 8 vecinas (así la torre asoma sobre la casilla de arriba
+  y los muros empalman sin cortes aunque el juego repinte solo algunas celdas). Las piezas van en las filas 1..4 de la
+  hoja de `RUINS\pozos.pcx`. Muro de piedra con la piedra y las almenas de `RUINSuin_lrg.PCX`; torre redonda con
+  almenas; faro a franjas con linterna encendida. El tramo de piedra que corre de norte a sur es más ancho (pedido
+  del usuario: de costado se veía muy fino).
+- **Muro en 8 direcciones**: en `bd_pick` las posiciones 8..15 son el muro hacia N, NE, E, SE, S, SO, O, NO, con las
+  flechas de `mvarrow.pcx` (`bd_arrows` 8..15). `BD_PW = 0x4000 | (d + 1) << 8 | OB_MURO`; `bv_ob` guarda d + 1 en el
+  byte +5 del registro. Cada bloque se une con la dirección elegida, su opuesta y los vecinos de su mismo tipo
+  (`ob_wmask`; la diagonal solo si ningún vecino ortogonal la cubre). Los muros viejos (sin dirección) se unen solo
+  con sus vecinos. Probado en `prueba_obras.py`.
+- La empalizada, sin cambios de reglas (también se dibuja con el gráfico nuevo y se une igual).
+Prueba en el juego: tarea 141 de `TAREAS.md`.
 
 ## Botonera de construir (pedido del 9/11/2026, va DESPUÉS de los gráficos y el muro en 8 direcciones)
 
