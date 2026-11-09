@@ -558,3 +558,10 @@ Pruebas: prueba_pozos (pasadas 1 y 2, paso 7). Falta verlo en el juego: tarea 10
 ## 1.0.126.0 (4/11/2026)
 - En una ciudad la trampa explota una sola vez (se gasta, aunque fuera doble) y no se puede apilar (`po_urb`, bit 0x8000 de la casilla). La lupa muestra «1 of 1». Motivo: al conquistar sale la ventana de producción y no se podían consultar las explosiones restantes.
 - Visor de historia 1.0.16.0: los eventos de votación (tipo 0x13) hacían fallar la apertura de roads02.sav.
+
+## 1.0.146.0 (9/11/2026): sembrar sobre una trampa gastada
+Pedido del usuario: «las trampas no se pueden sembrar sobre pozos ya detonados; quiero que no exista ese límite».
+`tr_stk` devuelve también una trampa gastada (cuenta >= TR_USOS), de cualquier bando y en cualquier casilla (ciudad
+incluida, sin tope de tabla porque reusa el registro); `tr_recv` la rearma: +5 = 0, +6 = solo el bit del que siembra,
++7 = el que siembra. Pruebas en prueba_trampas.py. Apilar sigue como en la 1.0.124/126 (propia, activa, fuera de
+ciudad, tope 2); el usuario dice que no pudo poner dos: falta saber en qué caso (tarea 136).

@@ -345,3 +345,12 @@ retomar: "Seguimos con PENDIENTE-construcciones.md, paso G, resultado de la tare
 3. **Limitar la pausa de la partida a 3 por jugador.**
 
 Retomar con: *"Seguimos con PENDIENTE-construcciones.md, pedido del 9/11"*.
+
+### Parte 1, 9/11/2026 (vista-aliada 1.0.146.0)
+- Trampas sobre gastadas: hecho (ver parches/vista-aliada/PENDIENTE-pozos-y-trampas.md).
+- Dos en la misma casilla: ya existía apilar (propia, activa, fuera de ciudad); se espera el caso concreto (tarea 136).
+- «Build» en red: no es del parche. bd_check lee el bono del registro de armas de la partida (0x53c410), que se copia
+  del .ARM al crear la partida. dia-noche3.SAV no tiene ninguna unidad con «build» (sí Archers, sin el bono). Hace
+  falta partida nueva. goblins.ARM tiene «build» en la ranura de combate (+0xd6), no en las de movimiento (+0xb2).
+- Próximo: parte 2 (murallas, torres, faros), después la 3 (pausas). Frase: "Seguimos con
+  PENDIENTE-construcciones.md, pedido del 9/11, parte 2".

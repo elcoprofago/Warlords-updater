@@ -14043,6 +14043,8 @@ bd_menutxt = place_data('bd_menutxt', cstr_('Build'))
 tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
 # tr_stk (apilar, pedido del usuario, 4/11/2026): esi = x, edi = y, ebx = bando -> eax = registro de la trampa de
 # ese bando en la casilla si se le puede poner otra encima (activa y todavía no doble), 0 si no. Preserva el resto.
+# Desde 1.0.146.0 (pedido del usuario, 9/11/2026) también devuelve una trampa gastada, de cualquier bando y en
+# cualquier casilla (ciudad incluida): tr_recv la vuelve a armar como trampa nueva del que siembra (+5 = 0, solo su bit).
 tr_stk = place('tr_stk', f'''
     push ecx
     xor eax, eax
@@ -14066,6 +14068,10 @@ tr_stk = place('tr_stk', f'''
     lea eax, [eax*8 + {PO_TAB - 8:#x}]
     cmp byte ptr [eax + 4], {PO_TRAMPA}
     jne tsk_no
+    mov cl, byte ptr [eax + 5]
+    and cl, {TR_CUENTA}
+    cmp cl, {TR_USOS}
+    jae tsk_out
     movzx ecx, byte ptr [eax + 7]
     cmp ecx, ebx
     jne tsk_no
@@ -14311,7 +14317,20 @@ tv_pay:
     pop edx
     test edx, edx
     jz tv_new
+    mov al, byte ptr [edx + 5]
+    and al, {TR_CUENTA}
+    cmp al, {TR_USOS}
+    jae tv_re
     or byte ptr [edx + 5], {TR_DOBLE}
+    jmp tv_x
+tv_re:
+    mov byte ptr [edx + 5], 0
+    mov cl, bl
+    mov al, 1
+    shl al, cl
+    mov byte ptr [edx + 6], al
+    mov byte ptr [edx + 7], bl
+    call {REDRAW:#x}
     jmp tv_x
 tv_new:
     mov eax, dword ptr [{PO_N:#x}]

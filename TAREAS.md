@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 136).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 137).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,26 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **136.** Trampas sobre trampas gastadas y constructores en red (vista-aliada 1.0.146.0, 9/11/2026)
+**Trampas.** Ahora se puede sembrar una trampa nueva encima de una gastada (el agujero con humo), sea tuya o de
+otro jugador, también dentro de una ciudad. La nueva es tuya, queda oculta y cuesta lo mismo que una trampa común.
+Apilar dos trampas en la misma casilla ya se podía desde la 1.0.124.0, con estas condiciones:
+- la de abajo tiene que ser **tuya** y **seguir activa** (le queda al menos una explosión);
+- hay que tener al líder del grupo **parado sobre ella**;
+- en una **ciudad** no se apila (lo pediste el 4/11: una sola trampa por casilla de ciudad);
+- el tope es 2.
+Si cuando no pudiste se daba alguna de esas condiciones, contame cuál, y la cambio.
+**Constructores en red.** Una partida guarda su propia copia de las armas del momento en que se creó; la carpeta
+ARMY nueva solo vale para partidas **nuevas**. En dia-noche3.SAV (la del 8/11) no hay ninguna unidad con «build»:
+ni Dwarf Sappers, ni Royal Sappers, ni Scavens, etc. Y las Archers de esa partida no traen el bono.
+Ojo: en ARMY\goblins.ARM, «build» quedó como bono de **combate** y no como de **movimiento**: así no construye.
+1. Actualizador, opción **9**: vista-aliada tiene que quedar en **1.0.146.0**, en todas las PC.
+2. Trampas: sembrá una, hacela explotar hasta que quede el agujero con humo, y sembrá otra encima. Tiene que
+   cobrarse y quedar oculta para los demás.
+3. Constructores: empezá una partida **nueva** (en red), con un bando que tenga alguna de esas unidades. Con el
+   líder del grupo sobre pasto, en el menú de órdenes tiene que aparecer «Build».
+Resultado:
 
 - [ ] **135.** IA: cuántos ejércitos quedan «huérfanos» fuera de las ciudades (9/11/2026)
 La 1.0.145.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que la computadora dejó de mover,
