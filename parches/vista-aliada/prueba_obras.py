@@ -55,5 +55,22 @@ ver('control: agua', obra(x=33)[:2], ([], 0))
 ver('control: sobre camino', obra(x=10)[:2], ([], 0))
 ver('control: tabla llena', obra(prep=lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64)))[:2], ([], 64))
 
+print('-- tope de 3 pausas manuales por jugador (pp_recv)')
+PP_RECV = dest(0x4b6a22, 2)
+_k = img.index(b'\x80\x0d', PP_RECV - BASE); PZ_ON = d32(BASE + _k + 2)
+PP_CNT = OB_TAB + 64 * 8
+def pausas(cargas, prep=None):
+    g = Juego(); mu = g.mu
+    if prep: prep(g)
+    r = []
+    for c in cargas:
+        mu.mem_write(PZ_ON, b'\0'); mu.mem_write(PKT + 0xc, struct.pack('<I', c))
+        g.correr(PP_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, 0x2a5 + 8), (UC_X86_REG_ESI, PKT)])
+        r.append(mu.mem_read(PZ_ON, 1)[0] & 2)
+    return r, bytes(mu.mem_read(PP_CNT, 8))
+ver('jugador 2 pausa 4 veces: las 3 primeras pausan, la cuarta no', pausas([0x201] * 4), ([2, 2, 2, 0], bytes([0, 0, 3, 0, 0, 0, 0, 0])))
+ver('  cada jugador tiene las suyas', pausas([0x201] * 3 + [0x501, 0x201]), ([2, 2, 2, 2, 0], bytes([0, 0, 3, 0, 0, 1, 0, 0])))
+ver('control: reanudar (0) siempre vale y no cuenta', pausas([0, 0, 0, 0], lambda g: g.mu.mem_write(PP_CNT + 2, b'\3'))[1][2], 3)
+
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

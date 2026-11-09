@@ -4240,9 +4240,12 @@ OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedi
 OB_VISTA = {OB_TORRE: 5, OB_FARO: 6}
 OB_BLOQUE = 10
 OB_MAPSZ = 0x32000 // 10
-ob_save = place_data('ob_save', b'OBRA' + bytes(4 + OB_MAX * OB_REC))
-OB_SAVELEN = 8 + OB_MAX * OB_REC
+# Detrás de la tabla, PP_CNT: pausas manuales usadas por cada jugador (tope PP_MAX; parte 3 del pedido del 9/11/2026).
+PP_MAX = 3
+ob_save = place_data('ob_save', b'OBRA' + bytes(4 + OB_MAX * OB_REC + 8))
+OB_SAVELEN = 8 + OB_MAX * OB_REC + 8
 OB_N, OB_TAB = ob_save + 4, ob_save + 8
+PP_CNT = OB_TAB + OB_MAX * OB_REC
 ob_magic = place_data('ob_magic', bytes(4))
 ob_map = place_data('ob_map', bytes(OB_MAPSZ))
 ob_twtxt = place_data('ob_twtxt', cstr_('Building a watchtower'))
@@ -9300,10 +9303,22 @@ pz_dptr = place_data('pz_dptr', struct.pack('<I', pz_disp))
 # 0x4dd3b0 incluido) cada PC pausa con PZ_MANUAL, con el mismo mecanismo que la Votación (pz_tick, pz_disp, el aviso en
 # pantalla pp_text). Cualquier jugador reanuda con la barra espaciadora: pz_disp lo anota en PP_REQ y tl_idle manda
 # PP_PKT 0. La pausa manual no tiene la vigilancia de 60 s: dura hasta que alguien la levanta.
+# Tope (9/11/2026): PP_MAX pausas por jugador. La carga lleva quien pausa ([0x560b20]) en el byte 1; cada PC cuenta en
+# PP_CNT al recibir (todas reciben lo mismo) y descarta la que pasa el tope; pp_click ni la pide. PP_CNT va al .SAV
+# detrás de la tabla de obras y vuelve a cero en partida nueva.
 pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pausa'))
 pp_name = place_data('pp_name', bytes(0x80))
 pp_click = place('pp_click', f'''
     pushad
+    movsx eax, word ptr [0x560b20]
+    cmp eax, 8
+    jae pc_who
+    cmp byte ptr [eax + {PP_CNT:#x}], {PP_MAX}
+    jae pc_out
+    shl eax, 8
+    or eax, 1
+    mov dword ptr [{pp_pause:#x}], eax
+pc_who:
     cmp word ptr [0x503de8], 2
     jne pc_send
     mov ecx, {GAMECLK:#x}
@@ -9325,6 +9340,7 @@ pc_send:
     push {PP_PKT:#x}
     call 0x4dd3b0
     add esp, 0xc
+pc_out:
     popad
     ret
 ''')
@@ -9716,6 +9732,8 @@ pol_bad:
 pol_end:
     call {po_rebuild:#x}
     mov dword ptr [{OB_N:#x}], 0
+    mov dword ptr [{PP_CNT:#x}], 0
+    mov dword ptr [{PP_CNT + 4:#x}], 0
     mov dword ptr [{ob_magic:#x}], 0
     push 4
     push {ob_magic:#x}
@@ -9732,7 +9750,16 @@ pol_end:
     cmp eax, {4 + OB_MAX * OB_REC}
     jne obl_bad
     cmp dword ptr [{OB_N:#x}], {OB_MAX}
-    jbe obl_end
+    ja obl_bad
+    push 8
+    push {PP_CNT:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 8
+    je obl_end
+    mov dword ptr [{PP_CNT:#x}], 0
+    mov dword ptr [{PP_CNT + 4:#x}], 0
+    jmp obl_end
 obl_bad:
     mov dword ptr [{OB_N:#x}], 0
 obl_end:
@@ -10071,6 +10098,8 @@ po_gen = place('po_gen', f'''
     pushad
     mov dword ptr [{PO_N:#x}], 0
     mov dword ptr [{OB_N:#x}], 0
+    mov dword ptr [{PP_CNT:#x}], 0
+    mov dword ptr [{PP_CNT + 4:#x}], 0
     call {ob_rebuild:#x}
     test byte ptr [0x53c393], 0x10
     jz pg_end
@@ -14893,6 +14922,13 @@ pp_recv = place('pp_recv', f'''
     jne {bd_recv:#x}
     cmp dword ptr [esi + 0xc], 0
     je pp_off
+    movzx eax, byte ptr [esi + 0xd]
+    cmp eax, 8
+    jae pp_on
+    cmp byte ptr [eax + {PP_CNT:#x}], {PP_MAX}
+    jae 0x4b85bb
+    inc byte ptr [eax + {PP_CNT:#x}]
+pp_on:
     or byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
     jmp 0x4b85bb
 pp_off:

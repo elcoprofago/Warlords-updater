@@ -115,7 +115,7 @@ VT_FIN = 0x21 + 8 + VT_MAX * 0x1c
 ver('guardado: lo del original, VOTA y después POZO, cantidad y tabla',
     (sav[:0x21] == b'PRINCIPIO' + OPC, sav[0x21:0x25], struct.unpack_from('<i', sav, 0x25)[0], sav[VT_FIN:VT_FIN + 4],
      struct.unpack_from('<i', sav, VT_FIN + 4)[0], sav[VT_FIN + 8 + PO_MAX * PO_REC:][:4], len(sav) - VT_FIN - 8),
-    (True, b'VOTA', 1, b'POZO', 3, b'OBRA', 2 * PO_MAX * PO_REC + 8))   # detrás va la tabla de obras (torres y faros)
+    (True, b'VOTA', 1, b'POZO', 3, b'OBRA', 2 * PO_MAX * PO_REC + 16))   # + 8 de las pausas usadas   # detrás va la tabla de obras (torres y faros)
 ver('  el original no escribe nada más', len(guardar(Juego(ORIG))), 0x21)
 MAPA = {(5, 7): 1, (39, 29): 2, (0, 0): 3}
 ver('cargado: la tabla vuelve y po_map se rearma', cargar_sav(Juego(), sav), (REGS, MAPA, True))

@@ -14,6 +14,11 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **138.** Tope de 3 pausas por jugador (vista-aliada 1.0.149.0, 9/11/2026)
+En una partida en red con otra PC (las dos con la 1.0.149.0): desde una PC, **Pausa** y **Espacio** para reanudar,
+tres veces. La cuarta vez, **Pausa** no hace nada en esa PC. Desde la otra PC todavía tiene que poder pausar 3 veces.
+Guardá, cargá la partida y comprobá que la cuenta sigue (la PC que ya usó sus 3 no puede pausar).
+
 - [ ] **137.** Torres y faros (vista-aliada 1.0.148.0, 9/11/2026)
 Una unidad con «Build» parada en tierra libre (sin camino, ciudad ni sitio) ofrece, al seguir apretando el botón
 de construir: camino, **torre de vigía** y, si hay agua al lado, **faro costero**. Cada uno cuesta la mitad de
