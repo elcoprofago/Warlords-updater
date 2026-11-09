@@ -142,6 +142,8 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         huella = _huella_brazo(d, ancho)
         base = H if empal else HM
     alto, coord = {}, {}
+    if d is not None and not empal:     # el tramo arranca en el borde de la torre: no la tapa con sus costados
+        huella = {q: aw for q, aw in huella.items() if math.hypot(q[0] - C + 0.5, q[1] - C + 0.5) > RT - 0.5}
     for (gx, gy), (a, w) in huella.items():
         if empal:
             k = int(a) % 4 if d is not None else int(gx) % 4
@@ -159,6 +161,7 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         alto[(gx, gy)] = h
         coord[(gx, gy)] = (a, w)
     if sombra: lz.sombra(alto, prohibido)
+    amax = max((a for a, w in coord.values()), default=0)
 
     if empal:
         def cara(gx, gy, z, lado):
@@ -179,7 +182,10 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         def cara(gx, gy, z, lado):
             a, w = coord[(gx, gy)]
             if d is not None:
-                u = int(a)
+                # en la cara del extremo del tramo (la que topa con la torre vecina) los ladrillos corren a lo ancho
+                u = int(a) if a < amax - 1.5 else int(w + 50)
+                nx, ny = gx - C + 0.5, gy - C + 0.5
+                if math.hypot(nx, ny) < RT + 2.5: u = int((math.atan2(ny, nx) + math.pi) * RT)   # junto a la torre
                 luz = (1.0, 0.7, 0.85)[lado]
             else:                                           # torre: ladrillos alrededor, luz según hacia dónde mira
                 nx, ny = gx - C + 0.5, gy - C + 0.5

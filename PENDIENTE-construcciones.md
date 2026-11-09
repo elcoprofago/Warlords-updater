@@ -460,3 +460,7 @@ calzada; parapeto de 3 en los bordes con almenas de 5 cada 8; en el centro solo 
 Las puntas de los tramos mostraban rayas (el centro cuadrado usaba u = gx también en los costados). El centro del muro
 de piedra pasa a ser una torre redonda (radio RT = 15, 4 más alta que el muro) con ladrillos contados alrededor
 (u = ángulo × RT), luz según la normal y almenas en el borde.
+
+### 1.0.159.0 (9/11/2026)
+Quedaban rayas donde el tramo topa con la torre: los tramos ya no se dibujan dentro de la torre, y la cara del tramo junto
+a la torre usa los ladrillos de la torre (u = ángulo × RT); la cara del extremo lejano los cuenta a lo ancho (u = w).
