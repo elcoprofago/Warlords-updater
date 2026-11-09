@@ -401,3 +401,16 @@ Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), despu�
    crear 3 ejércitos reales temporales del dueño en la casilla (con la función del juego que crea un ejército) y,
    al terminar 0x469ed0, borrar los que sobrevivan; así la batalla, la animación y las probabilidades los tratan
    como tropa común. Falta: la función de alta/baja de ejércitos y el tipo «infantería pesada» de cada bando.
+
+## Pedido del 9/11/2026 (después de 1.0.150.0)
+
+Hecho en 1.0.151.0: la puerta (camino sobre el muro) cuesta el 25 % de una ciudad (OB_MCAM = 5). Por la puerta pasan
+solo el dueño y sus aliados (`po_pf`, con `fogally`). Probado en `prueba_obras.py`.
+
+Falta:
+- **Gráficos más grandes, vistos desde arriba y en perspectiva** (como dibuja el juego), no de costado. Para el muro
+  de piedra se puede reusar la ruina de `RUINS\ruin_lrg.PCX` / `ruin_sml.PCX`. Hoy los cuadros son de 48x48 en
+  `RUINS\pozos.pcx` (`torre()`, `muro()` en build.py).
+- **Muro en 8 direcciones con flechitas**, como los puentes: elegir la dirección al construir, y que cada bloque se
+  una con el vecino (N, NE, E, SE, S, SO, O, NO), igual que los caminos.
+- La empalizada (3 grupos de infantería pesada virtuales por casilla), sin cambios.
