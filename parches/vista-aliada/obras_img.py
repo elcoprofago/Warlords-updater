@@ -145,16 +145,16 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         def arriba(gx, gy):
             return (150, 108, 60)
     else:
+        # Sin rayas tipo «código de barras» (pedido del 9/11/2026): la textura de piedra se toma con la coordenada
+        # de la cara que se ve (x en el frente, y en los costados) y la altura en pantalla, así las hiladas quedan
+        # horizontales y continuas; la parte de arriba es piedra lisa con apenas ruido, no la banda de almenas.
         def cara(gx, gy, z, lado):
-            a, w = coord[(gx, gy)]
-            u = int(a) if d is not None else gx
-            if alto[(gx, gy)] - z <= 5 and alto[(gx, gy)] > base:
-                return _mul(lz.almena(u, alto[(gx, gy)] - z), (1.0, 0.7, 0.85)[lado])
-            return _mul(lz.piedra(u, alto[(gx, gy)] - z), (1.0, 0.7, 0.85)[lado])
+            u = gx if lado == 0 else gy
+            return _mul(lz.piedra(u, gy - z), (1.0, 0.7, 0.85)[lado])
 
         def arriba(gx, gy):
-            a, w = coord[(gx, gy)]
-            return _mul(lz.almena(int(a) + 2, 1), 1.05)
+            k = 128 + 6 * ((gx * 7 + gy * 13) % 3)
+            return (k, k - 2, k - 8)
     lz.voxeles(alto, cara, arriba)
 
 

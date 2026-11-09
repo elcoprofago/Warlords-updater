@@ -447,3 +447,5 @@ Pendiente técnico: instalar en `C:\Warlords3`, correr todas las `prueba_*.py` y
 (no puente), y queda hecho puerta (`ob_okt`). Gráfico: muro de 16 de ancho y 32 de alto (como el frente de la ruina
 grande), almenas más grandes, y sin los píxeles casi blancos ni la hiedra verde de la textura (`_limpia` en
 `obras_img.py`). Prueba: tarea 143.
+vista-aliada 1.0.155.0: sin las rayas tipo «código de barras» (textura por la cara que se ve, hiladas
+horizontales; arriba piedra lisa).

@@ -375,7 +375,7 @@ def pp_recv(tipo, dato, antes, hasta=0x4b85bb):
     mu = maquina(); mu.mem_write(PZ_ON, bytes([antes]))
     mu.mem_write(PKT, struct.pack('<III', 0, 0, 0) + struct.pack('<I', dato))
     mu.reg_write(UC_X86_REG_EAX, tipo + 8); mu.reg_write(UC_X86_REG_ESI, PKT)
-    mu.emu_start(PP_RECV, hasta, count=10)
+    mu.emu_start(PP_RECV, hasta, count=200)
     return hex(mu.reg_read(UC_X86_REG_EIP)), mu.mem_read(PZ_ON, 1)[0]
 print('-- pausa manual: recepción')
 ver('pausa: prende el bit manual (2) sin tocar el de la votación', pp_recv(0x2a5, 1, 1), ('0x4b85bb', 3))

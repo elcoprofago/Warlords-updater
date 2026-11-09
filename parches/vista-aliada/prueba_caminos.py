@@ -87,6 +87,15 @@ class Juego:
         assert mu.reg_read(UC_X86_REG_EIP) == stop, hex(mu.reg_read(UC_X86_REG_EIP))
 
 print('-- menú: bd_check desde br_menu')
+# Desde 1.0.154.0 el muro de piedra se puede construir sobre un camino: las pruebas de camino y puente sobre una
+# casilla con camino llenan la tabla de obras (lleno), así no se ofrece obra y siguen probando lo suyo.
+_OB = b'OBRA'
+_OBN = BASE + img.index(_OB) + 4
+def lleno(prep=None):
+    def f(g, *a):
+        if prep: prep(g, *a)
+        g.mu.mem_write(_OBN, struct.pack('<I', 64))
+    return f
 def menu(ejs, x=5, y=7, turno=0, p=0, prep=None):
     g = Juego(); mu = g.mu
     if prep: prep(g)
@@ -116,7 +125,8 @@ ver('control: agua', menu(B, x=33), 0)
 ver('control: montaña sin montaña vecina libre (pared de 3 con camino a los lados)', menu(B, x=21, prep=lambda g: [g.setb(x, y, 3, 0x19) for x in (20, 22) for y in (6, 7, 8)] + [g.setb(21, y, 3, 0x19) for y in (6, 8)]), 0)
 ver('C.2: parado en camino junto a la montaña: se puede', menu(B, x=19, prep=lambda g: g.setb(19, 7, 3, 0x19)), 1)
 ver('C.2: (volador) sobre montaña con montañas alrededor: se puede', menu(B, x=21), 1)
-ver('control C.2: en camino lejos de montañas', menu(B, x=10), 0)
+ver('control C.2: en camino lejos de montañas', menu(B, x=10, prep=lleno()), 0)
+ver('  con lugar en la tabla: se puede (muro de piedra sobre el camino)', menu(B, x=10), 1)
 ver('control: ciudad (estructura 3)', menu(B, prep=lambda g: g.setb(5, 7, 3, 0x1b)), 0)
 ver('control: edificio (palabra 0 & 0x4000)', menu(B, prep=lambda g: g.mu.mem_write(casilla(5, 7), struct.pack('<H', 0x4000))), 0)
 ver('control: no es su turno', menu(B, turno=1), 0)
@@ -196,9 +206,10 @@ ver('líder en llanura libre: siempre su casilla', picks(5, 7, 2), [(1, 5, 7, 4)
 ver('volador sobre montaña: N, E, S, O y vuelve a N', picks(21, 7, 5),
     [(1, 21, 6, 0), (1, 22, 7, 1), (1, 21, 8, 2), (1, 20, 7, 3), (1, 21, 6, 0)])
 cam19 = lambda g: g.setb(19, 7, 3, 0x19)
-ver('en camino junto a la montaña: solo el este, una y otra vez', picks(19, 7, 2, cam19), [(1, 20, 7, 1)] * 2)
+ver('en camino junto a la montaña: solo el este, una y otra vez', picks(19, 7, 2, lleno(cam19)), [(1, 20, 7, 1)] * 2)
 ver('  se mueve: empieza de nuevo por el norte', picks(21, 7, 2, moverse=(1, (21, 12))), [(1, 21, 6, 0), (1, 21, 11, 0)])
-ver('control: en camino lejos de montañas, nada', picks(10, 7, 1), [(0,)])
+ver('control: en camino lejos de montañas, nada', picks(10, 7, 1, lleno()), [(0,)])
+ver('  con lugar en la tabla: el muro en su casilla (dirección N)', picks(10, 7, 1), [(1, 10, 7, 8)])
 
 print('-- red: bd_recv')
 PKT = 0x150000
@@ -266,8 +277,8 @@ def lago(g, camino=True):
     if camino:
         for x, y in ((29, 15), (29, 20), (31, 2), (30, 25)): g.setb(x, y, 3, 0x19); g.setp8(x, y, 0)
 ver('menú: en camino a orillas del lago: se puede (puente)', menu(B, x=29, y=15, prep=lago), 1)
-ver('control: en camino frente al mar abierto: no', menu(B, x=29, y=7, prep=lambda g: g.setb(29, 7, 3, 0x19)), 0)
-ver('control: 9 casillas de agua no llegan: no', menu(B, x=29, y=20, prep=lago), 0)
+ver('control: en camino frente al mar abierto: no', menu(B, x=29, y=7, prep=lleno(lambda g: g.setb(29, 7, 3, 0x19))), 0)
+ver('control: 9 casillas de agua no llegan: no', menu(B, x=29, y=20, prep=lleno(lago)), 0)
 def picks_pw(x, y, n, prep):
     g = Juego(); mu = g.mu; prep(g)
     mu.mem_write(BD_HASB, b'')
@@ -279,7 +290,7 @@ def picks_pw(x, y, n, prep):
         r.append((ok, *struct.unpack('<hh', mu.mem_read(BD_X, 4)), mu.mem_read(BD_DIR, 1)[0],
                   struct.unpack('<H', mu.mem_read(BD_PW, 2))[0]) if ok else (0,))
     return r
-ver('bd_pick en camino junto al lago: puente al este, una y otra vez', picks_pw(29, 15, 2, lago), [(1, 30, 15, 1, 0x101)] * 2)
+ver('bd_pick en camino junto al lago: puente al este, una y otra vez', picks_pw(29, 15, 2, lleno(lago)), [(1, 30, 15, 1, 0x101)] * 2)
 ver('  sin camino: su casilla (camino) y luego el puente', picks_pw(29, 15, 3, lambda g: lago(g, False)),
     [(1, 29, 15, 4, 0), (1, 30, 15, 1, 0x101), (1, 29, 15, 255, 0x4004)])   # después, la torre
 ver('  puente vertical al sur', picks_pw(31, 2, 1, lago), [(1, 31, 3, 2, 0x102)])
