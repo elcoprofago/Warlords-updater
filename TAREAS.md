@@ -14,6 +14,11 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **140.** Puerta en el muro solo para aliados (vista-aliada 1.0.151.0, 9/11/2026)
+Construir un muro y, con la misma unidad parada encima, un camino (la «puerta»): debe costar el **25 % de fundar
+una ciudad** (el muro sigue costando el 50 %). Probar en Warlords3 que por la puerta pasan **tus** ejércitos y los
+de un **aliado**, y que un enemigo o la computadora no pasan (tienen que rodear o quedarse).
+
 - [ ] **139.** Muro de piedra (vista-aliada 1.0.150.0, 9/11/2026)
 Con una unidad con «Build» en tierra libre, al seguir apretando construir aparece **«Building a stone wall»**
 (después de la torre y el faro). Cuesta la mitad de fundar una ciudad (no lo habías dicho; decime si querés otro).

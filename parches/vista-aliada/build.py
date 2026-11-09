@@ -4237,7 +4237,7 @@ bd_piecetab = place_data('bd_piecetab', bytes(BD_PIECES))
 # héroes (bridgeab) y pasan al bando que entra, si no es aliado del dueño (ob_step). La pila sigue siendo de 8.
 OB_MAX, OB_REC, OB_TORRE, OB_FARO = 64, 8, 4, 5
 OB_EMPAL, OB_MURO = 6, 7                       # etapa B: empalizada y muro de piedra (mismo precio OB_FRAC)
-OB_MCAM = 10                                   # camino sobre un muro: 2 x montaña (BD_MNT = 5 veinteavos)
+OB_MCAM = 5                                    # puerta (camino sobre un muro): 25 % de fundar una ciudad (usuario, 9/11)
 OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedido sin precio; a confirmar, TAREAS 137)
 OB_VISTA = {OB_TORRE: 5, OB_FARO: 6}
 OB_BLOQUE = 10
@@ -11691,7 +11691,7 @@ pf2_out:
 # misma casilla (el destino del camino, [0x5878d4] / [0x5878d8]) sí llega, y cae. La computadora no tiene esa
 # excepción: nunca entra en uno que ve, tampoco por el ítem que dejó un caído. Lo usan también el mapa de distancias
 # de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Un muro de piedra (OB_MURO) sin camino es intransitable para
-# todos, también como destino. Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
+# todos, también como destino; con camino (puerta) pasan solo el dueño y sus aliados (fogally). Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
 # reemplazado (0x4a5d34..0x4a5d40).
 po_pf = place('po_pf', f'''
     movsx eax, di
@@ -11706,6 +11706,17 @@ po_pf = place('po_pf', f'''
     call {br_tile:#x}
     test byte ptr [eax + 3], 7
     jz 0x4a5e31
+    movsx eax, di
+    movsx edx, bx
+    call {ob_at:#x}
+    movzx ecx, byte ptr [eax + 6]
+    movsx edx, word ptr [0x58715c]
+    cmp ecx, edx
+    je ppf_nw
+    cmp edx, 8
+    jae 0x4a5e31
+    call {fogally:#x}
+    jne 0x4a5e31
 ppf_nw:
     movsx eax, di
     movsx edx, bx

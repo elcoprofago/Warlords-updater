@@ -64,8 +64,8 @@ def muro_y_camino(oro=1000, x=5):
     g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
     n = struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
     return c1, n, c[len(c1):], g.tile(x, 7)[3] & 7
-ver('muro en (5, 7): cobra 100; después un camino encima cobra 100 (2 x montaña) y pone la estructura 1',
-    muro_y_camino(), ([(2, -100)], 1, [(2, -100)], 1))
+ver('muro en (5, 7): cobra 100; después una puerta (camino encima) cobra 50 (25 % de ciudad) y pone la estructura 1',
+    muro_y_camino(), ([(2, -100)], 1, [(2, -50)], 1))
 def torre_sobre_muro():
     g, c = recibir(pw=MURO, oro=1000)
     mu = g.mu; n0 = len(c)
@@ -73,6 +73,44 @@ def torre_sobre_muro():
     g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
     return c[n0:], struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
 ver('control: torre sobre el muro no (ni cobra ni anota)', torre_sobre_muro(), ([], 1))
+
+print('-- puerta: solo pasan el dueño y sus aliados (po_pf)')
+from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_READ
+PO_PF = dest(0x4a5d34, 1)
+_calls = []
+_k = PO_PF - BASE
+while len(_calls) < 4:
+    if img[_k] == 0xe8: _calls.append(BASE + _k + 5 + struct.unpack('<i', img[_k + 1:_k + 5])[0]); _k += 5
+    else: _k += 1
+FOGALLY = _calls[3]
+def puerta(quien, aliado=False, camino=True):
+    g, c = recibir(pw=MURO, oro=1000)
+    mu = g.mu
+    if camino:
+        mu.mem_write(PKT + 0xc, struct.pack('<4h', 2, 5, 7, 0))
+        g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
+    r = []
+    def fa(mu, a, size, _):
+        fl = mu.reg_read(UC_X86_REG_EFLAGS)
+        mu.reg_write(UC_X86_REG_EFLAGS, (fl | 0x40) if aliado else (fl & ~0x40))
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        mu.reg_write(UC_X86_REG_EIP, struct.unpack('<I', mu.mem_read(sp, 4))[0]); mu.reg_write(UC_X86_REG_ESP, sp + 4)
+    def fin(nombre):
+        def h(mu, a, size, _): r.append(nombre); mu.emu_stop()
+        return h
+    mu.hook_add(UC_HOOK_CODE, fa, begin=FOGALLY, end=FOGALLY)
+    mu.hook_add(UC_HOOK_CODE, fin('cerrado'), begin=0x4a5e31, end=0x4a5e31)
+    mu.hook_add(UC_HOOK_MEM_READ, lambda mu, ac, a, sz, v, _: (r.append('pasa'), mu.emu_stop()), begin=0x503e00, end=0x503e01)
+    mu.mem_write(0x58715c, struct.pack('<h', quien))
+    mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
+    mu.reg_write(UC_X86_REG_EDI, 5); mu.reg_write(UC_X86_REG_EBX, 7)
+    mu.emu_start(0x4a5d34, 0, count=5000)
+    return r[:1]
+ver('el dueño (2) pasa por su puerta', puerta(2), ['pasa'])
+ver('un aliado (5) pasa', puerta(5, aliado=True), ['pasa'])
+ver('un enemigo (5) no', puerta(5), ['cerrado'])
+ver('neutral (8) no', puerta(8), ['cerrado'])
+ver('control: muro sin puerta, ni el dueño', puerta(2, camino=False), ['cerrado'])
 
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
 PP_RECV = dest(0x4b6a22, 2)
