@@ -1,18 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 134).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 135).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 133** (Visor de historia: fecha, Armas y alianzas en el resultado).
-0. **Tarea 132** (sello nuevo de Army List).
-0. **Tarea 131** (el sello de Army List ya no queda pintado en un bando con unidades prohibidas).
 0. **Tarea 130** (tanda de la IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea).
-0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
-0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -20,70 +15,12 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **134.** Pergamino de alianza como columna propia, del tamaño del escudo (8/11/2026)
-1. Actualizador: opción **9** (vista-aliada **1.0.144.0** o posterior) y Visor de historia **1.0.20.0** o posterior.
-2. Terminá una partida con dos bandos aliados (o abrí `NA_2_36.SAV` en el Visor y el botón del resultado).
-3. En la ventana del final, el pergamino tiene que aparecer a la derecha del nombre del bando, alineado como una
-   columna más y de la misma altura que el escudo, no como superíndice. VPs, Armas, CITIES y GOLD se corren a la
-   derecha sin pisarse.
-Resultado:
-
-- [x] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
-1. Actualizador: Visor de historia **1.0.21.0** o posterior (el título de la ventana lo dice).
-2. Abrí una partida terminada de `Warlords\HISTORY` (por ejemplo `NA_2_36.SAV`) y el botón del resultado.
-3. Tiene que decir arriba «Partida finalizada» con la fecha, en letra Microsoft Sans Serif negra normal, la columna **Armas** entre VPs y CITIES, el
-   pergamino de alianza al lado del escudo de los que terminaron aliados (en NA_2: Coprofagos y Dog Tribe) y abajo
-   «corresponde a la partida "NA_2"».
-4. Las armas y alianzas salen de la última guardada de esa partida en HISTORY; la fecha, de cuándo se escribió el
-   archivo `.FIN`. Fijate si los números te parecen razonables para cómo terminó.
-Resultado:
-
-- [x] **132.** Sello nuevo de Army List (8/11/2026)
-1. Actualizador: opción **9** (vista-aliada **1.0.143.0** o posterior).
-2. Army List en un bando sin unidades prohibidas: arriba a la derecha tiene que verse el sello dorado «CERTIFIED» con
-   la estrella azul en el centro, en lugar de la medalla. Fijate si se lee bien a ese tamaño.
-Resultado:
-
-- [x] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
-1. Actualizador: opción **9** (vista-aliada **1.0.142.0** o posterior).
-2. Abrí la partida guardada donde viste el sello en un bando con armas fuera de regla, y Army List.
-3. Pasá con las flechas de un bando con medalla a ese bando: la medalla tiene que desaparecer, y en su lugar quedar el
-   fondo del pergamino, sin manchas. Volvé al bando anterior: la medalla vuelve.
-4. Abrí Army List directamente en el bando con unidades prohibidas (cerrá y volvé a abrir estando en su turno, o
-   elegilo primero): no tiene que haber medalla.
-Resultado:
-
 - [ ] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
 La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
 ciudad sin tarea, si les tocó jugar y quién los movió. Con eso se sabe cuáles están ociosos de verdad.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.141.0** o posterior.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
 3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
-- [x] **129.** Ventana de fin de partida (8/11/2026)
-1. Actualizador: opción **9** (vista-aliada **1.0.140.0** o posterior).
-2. Terminá una partida en red (o cargá una a punto de terminar) hasta que aparezca la ventana con la tabla de bandos.
-3. Arriba tiene que decir «Partida finalizada» con la fecha de hoy (por ejemplo 8/11/2026), en letra chica dorada.
-4. La tabla tiene la columna **Armas** entre VPs y CITIES, con la cantidad de unidades vivas de cada bando. Fijate
-   que los nombres largos de los bandos no se pisen con la columna VPs.
-5. Los bandos que terminaron aliados entre sí llevan el pergamino de alianza (el de Diplomacia), chiquito, arriba a
-   la derecha del escudo. Los que no tienen aliados, no.
-6. Abajo, centrado y encima del botón Done: «corresponde a la partida "NOMBRE"», con el nombre de la partida.
-Resultado:
-
-- [x] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
-1. Actualizador: opción **9** (vista-aliada **1.0.139.0** o posterior) y opción **10** (DarkCompare **1.0.0.6** o
-   posterior).
-2. Libro: el menú tiene que mostrar **Comparador** debajo de Side Lists. Al elegirlo se abre el Comparador.
-   Terminá el turno con el Comparador abierto: se tiene que cerrar solo cuando empieza el turno siguiente.
-3. Disquete: ya no están **Chat Mode** ni **EMail Statistics**; en el lugar de Chat Mode está **Pausa**.
-4. En una partida en red con otra PC: **Pausa** en una de las dos. En las dos aparece arriba «Partida en pausa:
-   Espacio reanuda» y no se puede jugar. Revisá en `Warlords3\NETSAVES` que haya una partida guardada con
-   `_pausa` en el nombre. Apretá **Espacio** en cualquiera de las dos: se reanuda en ambas.
-5. Army List: en un bando sin unidades prohibidas por el Validador, arriba a la derecha se ve la medalla. En uno con
-   alguna unidad marcada con círculo rojo, la medalla no aparece. Cambiá de bando con las flechas y fijate que
-   aparezca y desaparezca según corresponda.
 Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
@@ -118,6 +55,64 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **134.** Pergamino de alianza como columna propia, del tamaño del escudo (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.144.0** o posterior) y Visor de historia **1.0.20.0** o posterior.
+2. Terminá una partida con dos bandos aliados (o abrí `NA_2_36.SAV` en el Visor y el botón del resultado).
+3. En la ventana del final, el pergamino tiene que aparecer a la derecha del nombre del bando, alineado como una
+   columna más y de la misma altura que el escudo, no como superíndice. VPs, Armas, CITIES y GOLD se corren a la
+   derecha sin pisarse.
+Resultado (8/11/2026): pergamino en columna propia, del alto del escudo; confirmado por el usuario.
+
+- [x] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
+1. Actualizador: Visor de historia **1.0.21.0** o posterior (el título de la ventana lo dice).
+2. Abrí una partida terminada de `Warlords\HISTORY` (por ejemplo `NA_2_36.SAV`) y el botón del resultado.
+3. Tiene que decir arriba «Partida finalizada» con la fecha, en letra Microsoft Sans Serif negra normal, la columna **Armas** entre VPs y CITIES, el
+   pergamino de alianza al lado del escudo de los que terminaron aliados (en NA_2: Coprofagos y Dog Tribe) y abajo
+   «corresponde a la partida "NA_2"».
+4. Las armas y alianzas salen de la última guardada de esa partida en HISTORY; la fecha, de cuándo se escribió el
+   archivo `.FIN`. Fijate si los números te parecen razonables para cómo terminó.
+Resultado (8/11/2026): fecha, Armas, alianzas y nombre de la partida en el Visor; título en Microsoft Sans Serif negra (1.0.21.0). Confirmado por el usuario.
+
+- [x] **132.** Sello nuevo de Army List (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.143.0** o posterior).
+2. Army List en un bando sin unidades prohibidas: arriba a la derecha tiene que verse el sello dorado «CERTIFIED» con
+   la estrella azul en el centro, en lugar de la medalla. Fijate si se lee bien a ese tamaño.
+Resultado (8/11/2026): el sello «CERTIFIED» se ve muy bien; es el resultado esperado.
+
+- [x] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.142.0** o posterior).
+2. Abrí la partida guardada donde viste el sello en un bando con armas fuera de regla, y Army List.
+3. Pasá con las flechas de un bando con medalla a ese bando: la medalla tiene que desaparecer, y en su lugar quedar el
+   fondo del pergamino, sin manchas. Volvé al bando anterior: la medalla vuelve.
+4. Abrí Army List directamente en el bando con unidades prohibidas (cerrá y volvé a abrir estando en su turno, o
+   elegilo primero): no tiene que haber medalla.
+Resultado (8/11/2026): el sello aparece y desaparece según el bando; corregido.
+
+- [x] **129.** Ventana de fin de partida (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.140.0** o posterior).
+2. Terminá una partida en red (o cargá una a punto de terminar) hasta que aparezca la ventana con la tabla de bandos.
+3. Arriba tiene que decir «Partida finalizada» con la fecha de hoy (por ejemplo 8/11/2026), en letra chica dorada.
+4. La tabla tiene la columna **Armas** entre VPs y CITIES, con la cantidad de unidades vivas de cada bando. Fijate
+   que los nombres largos de los bandos no se pisen con la columna VPs.
+5. Los bandos que terminaron aliados entre sí llevan el pergamino de alianza (el de Diplomacia), chiquito, arriba a
+   la derecha del escudo. Los que no tienen aliados, no.
+6. Abajo, centrado y encima del botón Done: «corresponde a la partida "NOMBRE"», con el nombre de la partida.
+Resultado (8/11/2026): ventana de fin con fecha, Armas, pergamino de alianza y nombre de la partida; confirmado por el usuario.
+
+- [x] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.139.0** o posterior) y opción **10** (DarkCompare **1.0.0.6** o
+   posterior).
+2. Libro: el menú tiene que mostrar **Comparador** debajo de Side Lists. Al elegirlo se abre el Comparador.
+   Terminá el turno con el Comparador abierto: se tiene que cerrar solo cuando empieza el turno siguiente.
+3. Disquete: ya no están **Chat Mode** ni **EMail Statistics**; en el lugar de Chat Mode está **Pausa**.
+4. En una partida en red con otra PC: **Pausa** en una de las dos. En las dos aparece arriba «Partida en pausa:
+   Espacio reanuda» y no se puede jugar. Revisá en `Warlords3\NETSAVES` que haya una partida guardada con
+   `_pausa` en el nombre. Apretá **Espacio** en cualquiera de las dos: se reanuda en ambas.
+5. Army List: en un bando sin unidades prohibidas por el Validador, arriba a la derecha se ve la medalla. En uno con
+   alguna unidad marcada con círculo rojo, la medalla no aparece. Cambiá de bando con las flechas y fijate que
+   aparezca y desaparezca según corresponda.
+Resultado (8/11/2026): Comparador en el libro, Pausa y sello de Army List; confirmado por el usuario.
 
 - [x] **127.** IA: qué hacen sus ejércitos fuera de las ciudades (8/11/2026)
 La 1.0.138.0 no cambia cómo juega la computadora: solo anota qué tarea tenía cada ejército que termina el turno
