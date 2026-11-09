@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.20.0'
+VERSION = '1.0.21.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -741,8 +741,8 @@ class Visor:
         cierre = fin['cierre']
         limite = ''.join(c for c in str(p.cabecera['limite'] or '') if c.isdigit())   # viene como «35 turnos»
         titulo = {'podio': f"Partida finalizada {fin['fecha']}", 'aliada': 'Victory!', 'acuerdo': 'Peace Agreement'}.get(cierre, cierre)
-        if cierre == 'podio':   # como el juego desde vista-aliada 1.0.140.0: con la fecha, en dorado
-            txt(258, 25, titulo, ('Times New Roman', 16, 'bold'), 'center', fill='#e0b030')
+        if cierre == 'podio':   # con la fecha; Microsoft Sans Serif negra normal
+            cv.create_text(258, 25, text=titulo, font=('Microsoft Sans Serif', 14), fill='#000000')   # pedido del usuario 8/11
         else:
             cv.create_text(258, 25, text=titulo, font=self.f_tit if cierre == 'acuerdo' else ('Times New Roman', 18, 'bold'),
                            fill='#20206a')

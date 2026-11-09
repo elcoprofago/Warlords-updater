@@ -28,23 +28,23 @@ Sorteo están acá (tarea 18).
    derecha sin pisarse.
 Resultado:
 
-- [ ] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
-1. Actualizador: Visor de historia **1.0.19.0** o posterior (el título de la ventana lo dice).
+- [x] **133.** Visor de historia: fecha, Armas y alianzas en el resultado (8/11/2026)
+1. Actualizador: Visor de historia **1.0.21.0** o posterior (el título de la ventana lo dice).
 2. Abrí una partida terminada de `Warlords\HISTORY` (por ejemplo `NA_2_36.SAV`) y el botón del resultado.
-3. Tiene que decir arriba «Partida finalizada» con la fecha en dorado, la columna **Armas** entre VPs y CITIES, el
+3. Tiene que decir arriba «Partida finalizada» con la fecha, en letra Microsoft Sans Serif negra normal, la columna **Armas** entre VPs y CITIES, el
    pergamino de alianza al lado del escudo de los que terminaron aliados (en NA_2: Coprofagos y Dog Tribe) y abajo
    «corresponde a la partida "NA_2"».
 4. Las armas y alianzas salen de la última guardada de esa partida en HISTORY; la fecha, de cuándo se escribió el
    archivo `.FIN`. Fijate si los números te parecen razonables para cómo terminó.
 Resultado:
 
-- [ ] **132.** Sello nuevo de Army List (8/11/2026)
+- [x] **132.** Sello nuevo de Army List (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.143.0** o posterior).
 2. Army List en un bando sin unidades prohibidas: arriba a la derecha tiene que verse el sello dorado «CERTIFIED» con
    la estrella azul en el centro, en lugar de la medalla. Fijate si se lee bien a ese tamaño.
 Resultado:
 
-- [ ] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
+- [x] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.142.0** o posterior).
 2. Abrí la partida guardada donde viste el sello en un bando con armas fuera de regla, y Army List.
 3. Pasá con las flechas de un bando con medalla a ese bando: la medalla tiene que desaparecer, y en su lugar quedar el
@@ -61,7 +61,7 @@ ciudad sin tarea, si les tocó jugar y quién los movió. Con eso se sabe cuále
 3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
-- [ ] **129.** Ventana de fin de partida (8/11/2026)
+- [x] **129.** Ventana de fin de partida (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.140.0** o posterior).
 2. Terminá una partida en red (o cargá una a punto de terminar) hasta que aparezca la ventana con la tabla de bandos.
 3. Arriba tiene que decir «Partida finalizada» con la fecha de hoy (por ejemplo 8/11/2026), en letra chica dorada.
@@ -72,7 +72,7 @@ Resultado:
 6. Abajo, centrado y encima del botón Done: «corresponde a la partida "NOMBRE"», con el nombre de la partida.
 Resultado:
 
-- [ ] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
+- [x] **128.** Comparador en el libro, Pausa y sello de Army List (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.139.0** o posterior) y opción **10** (DarkCompare **1.0.0.6** o
    posterior).
 2. Libro: el menú tiene que mostrar **Comparador** debajo de Side Lists. Al elegirlo se abre el Comparador.
