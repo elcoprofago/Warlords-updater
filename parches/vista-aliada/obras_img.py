@@ -124,12 +124,48 @@ def cuerpos_muro(empal):
     return out
 
 
+def _torre_muro(cx, cy):
+    """Torre redonda del muro de piedra centrada en (cx, cy): {(gx, gy): alto}, con almenas en el borde."""
+    t = {}
+    for gx in range(cx - RT, cx + RT):
+        for gy in range(cy - RT, cy + RT):
+            nx, ny = gx - cx + 0.5, gy - cy + 0.5
+            r = math.hypot(nx, ny)
+            if r > RT: continue
+            u = int((math.atan2(ny, nx) + math.pi) * RT)
+            t[(gx, gy)] = HM + 4 + ((6 if u % 8 < 5 else 2) if r > RT - 3 else 0)
+    return t
+
+
+def _ladrillo(u, v, luz):
+    """Frente como el de la ruina grande: v = 0 moldura, 1 sombra, 2 línea negra; desde 3 hiladas de 4 (3 de piedra y
+    1 de junta) con ladrillos de 6 + junta trabados media pieza; u corre a lo largo de la cara."""
+    if v == 0: return _mul((132, 132, 132), luz)
+    if v == 1: return _mul((96, 96, 98), luz)
+    if v == 2: return _mul((24, 22, 22), luz)
+    fila, r = divmod(v - 3, 4)
+    if r == 3: return _mul((45, 43, 43), luz)
+    pieza, q = divmod(u + (3 if fila % 2 else 0), 7)
+    if q == 6: return _mul((45, 43, 43), luz)
+    k = (63, 79, 87, 95, 71, 103)[(pieza * 5 + fila * 3) % 6]
+    if r == 0: k = min(183, int(k * 1.5))           # canto de arriba, claro
+    k = int(k * (1.0 - 0.05 * q))                   # se oscurece hacia la derecha
+    return _mul((k, k, k + (2 if k % 2 else 0)), luz)
+
+
+def _parapeto(t, oscura, luz):
+    c = (168, 150, 136, 122, 112, 104)[min(t, 5)]
+    if oscura: c = int(c * 0.8)
+    return _mul((c, c, c), luz)
+
+
 def _muro_en(lz, d, empal, sombra=True, prohibido=()):
+    if not empal: return _muro_piedra(lz, d, sombra, prohibido)
     if d is None:
-        ancho = T + 1 if empal else TM + 6     # piedra: el centro cubre al brazo más ancho
+        ancho = T + 1
         huella = _huella_centro(round(ancho))
-        base = H if empal else HM
-        if not empal:
+        base = H
+        if False:
             # Piedra: torre redonda en cada casilla (pedido del 9/11/2026: las puntas de los tramos parecían un
             # código de barras), más ancha y 4 más alta que el muro, con almenas alrededor.
             huella = {(gx, gy): (gx - C, gy - C) for gx in range(C - RT, C + RT) for gy in range(C - RT, C + RT)
@@ -214,6 +250,53 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         def arriba(gx, gy):
             if alto[(gx, gy)] > base: return (176, 176, 172) if alto[(gx, gy)] > base + 2 else (140, 140, 138)
             return _calzada(gx, gy)
+    lz.voxeles(alto, cara, arriba)
+
+
+
+
+def _muro_piedra(lz, d, sombra, prohibido):
+    # Muro de piedra (pedidos del 9/11/2026): torre redonda en cada casilla y tramos hasta la mitad del camino a la
+    # vecina. Cada tramo se dibuja junto con las dos torres que une (la propia y la de la vecina), para que el orden de
+    # pintado del juego (casillas de norte a sur) no deje un tramo encima de la torre de adelante: los píxeles de las
+    # torres que repinta son iguales a los de su propia capa.
+    torres = [(C, C)] if d is None else [(C, C), (C + 48 * RDX[d], C + 48 * RDY[d])]
+    alto, quien = {}, {}
+    for cx, cy in torres:
+        for q, h in _torre_muro(cx, cy).items():
+            alto[q] = h; quien[q] = (cx, cy)
+    tramo = {}
+    if d is not None:
+        ancho = TM + 6 * abs(RDY[d]) / math.hypot(RDX[d], RDY[d])
+        for (gx, gy), (a, w) in _huella_brazo(d, ancho).items():
+            if any(math.hypot(gx - cx + 0.5, gy - cy + 0.5) <= RT for cx, cy in torres): continue
+            borde = abs(w) > ancho / 2 - 3
+            tramo[(gx, gy)] = (a, w)
+            alto[(gx, gy)] = HM + ((6 if a % 8 < 5 else 2) if borde else 0)
+    if sombra: lz.sombra({q: h for q, h in alto.items() if q in tramo or quien.get(q) == (C, C)}, prohibido)
+
+    def cara(gx, gy, z, lado):
+        if (gx, gy) in tramo:
+            a, w = tramo[(gx, gy)]
+            u, luz, base = int(a), (1.0, 0.7, 0.85)[lado], HM
+            # la cara que mira a lo largo del tramo (su punta, si no hay torre que la tape) va a lo ancho
+            dx, dy = (RDX[d], RDY[d])
+            nx, ny = ((0, 1), (1, 0), (-1, 0))[lado]
+            if abs(nx * dx + ny * dy) / math.hypot(dx, dy) > 0.75: u = int(w + 50)
+            oscura = a % 8 >= 4
+        else:
+            cx, cy = quien[(gx, gy)]
+            nx, ny = gx - cx + 0.5, gy - cy + 0.5
+            u = int((math.atan2(ny, nx) + math.pi) * RT)
+            luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
+            base, oscura = HM + 4, u % 8 >= 4
+        if z >= base: return _parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz)
+        return _ladrillo(u, base - 1 - z, luz)
+
+    def arriba(gx, gy):
+        base = HM if (gx, gy) in tramo else HM + 4
+        if alto[(gx, gy)] > base: return (176, 176, 172) if alto[(gx, gy)] > base + 2 else (140, 140, 138)
+        return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
 

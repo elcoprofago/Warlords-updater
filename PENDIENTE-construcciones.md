@@ -464,3 +464,8 @@ de piedra pasa a ser una torre redonda (radio RT = 15, 4 más alta que el muro) 
 ### 1.0.159.0 (9/11/2026)
 Quedaban rayas donde el tramo topa con la torre: los tramos ya no se dibujan dentro de la torre, y la cara del tramo junto
 a la torre usa los ladrillos de la torre (u = ángulo × RT); la cara del extremo lejano los cuenta a lo ancho (u = w).
+
+### 1.0.160.0 (9/11/2026)
+El juego pinta las casillas de norte a sur: un tramo de la casilla de más al sur tapaba la torre de su vecina del norte
+(calzada y almenas cortadas en los cruces). Cada tramo se dibuja ahora junto con las dos torres que une (_muro_piedra),
+así lo de adelante tapa a lo de atrás en cualquier orden. prev2.py del scratchpad imita ese orden (od_ord).
