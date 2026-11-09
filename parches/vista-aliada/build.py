@@ -12000,7 +12000,7 @@ bk_dc:
 # con la medalla que mandó el usuario (medalla.png, en la hoja SEAL_FILE). Se ve cuando ninguna unidad del bando
 # mirado viola las reglas del validador (armcheck, las mismas que marcan cada unidad con el círculo rojo, que siguen
 # igual) y el bando tiene al menos una unidad; si no, el botón queda deshabilitado, y su cuadro deshabilitado es
-# transparente: no se ve nada. Al hacer clic no pasa nada (el despachador 0x4a21e0 devuelve 0 para los controles
+# el fondo del diálogo: no se ve nada. Al hacer clic no pasa nada (el despachador 0x4a21e0 devuelve 0 para los controles
 # mayores que 0x13). Se decide en al_seal, en lugar de altitle en 0x4a2cb6: corre al abrir Army List y al cambiar de
 # bando, con la lista de renglones ya armada (0x4a2cd0: [0x5730d8] renglones, 0x5730b0 casilla de cada uno, 0..15 las
 # unidades, negativos los títulos), y antes del redibujo del diálogo (0x4d82a0).
@@ -17280,6 +17280,13 @@ for fila in (0, 1, 3):
         for x in range(_med.width):
             r, g, b_, a_ = _med.getpixel((x, y))
             if a_ >= 128: seal_hoja.putpixel((x + 1, fila * SEAL_H + y + 1), _seal_col((r, g, b_)))
+# Cuadro deshabilitado (fila 2): el pedazo de DLG_BIG que queda debajo del botón, no transparente. El cambio de estado
+# (0x4d9b70) solo marca el control para redibujar, sin repintar el fondo del diálogo: con un cuadro transparente, al
+# pasar de un bando con sello a uno sin sello la medalla anterior quedaba pintada (aviso del usuario, 8/11/2026).
+_dlg_big = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX')
+_fondo_sello = _dlg_big.crop((SEAL_X, SEAL_Y, SEAL_X + SEAL_W, SEAL_Y + SEAL_H))
+assert 11 not in set(_fondo_sello.getdata())
+seal_hoja.paste(_fondo_sello, (0, 2 * SEAL_H))
 pcx = io.BytesIO(); seal_hoja.save(pcx, 'PCX'); SEAL_PCX = pcx.getvalue()
 struct.pack_into('<I', butt_std, 0, SEAL_FILE)
 setstr(butt_std, 4, 32, 'sello')

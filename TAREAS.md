@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 131).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 132).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 131** (el sello de Army List ya no queda pintado en un bando con unidades prohibidas).
 0. **Tarea 130** (tanda de la IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea).
 0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
 0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
@@ -16,6 +17,15 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **131.** Sello de Army List en un bando con unidades prohibidas (8/11/2026)
+1. Actualizador: opción **9** (vista-aliada **1.0.142.0** o posterior).
+2. Abrí la partida guardada donde viste el sello en un bando con armas fuera de regla, y Army List.
+3. Pasá con las flechas de un bando con medalla a ese bando: la medalla tiene que desaparecer, y en su lugar quedar el
+   fondo del pergamino, sin manchas. Volvé al bando anterior: la medalla vuelve.
+4. Abrí Army List directamente en el bando con unidades prohibidas (cerrá y volvé a abrir estando en su turno, o
+   elegilo primero): no tiene que haber medalla.
+Resultado:
 
 - [ ] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
 La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
