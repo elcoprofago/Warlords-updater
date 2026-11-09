@@ -414,3 +414,15 @@ Falta:
 - **Muro en 8 direcciones con flechitas**, como los puentes: elegir la dirección al construir, y que cada bloque se
   una con el vecino (N, NE, E, SE, S, SO, O, NO), igual que los caminos.
 - La empalizada (3 grupos de infantería pesada virtuales por casilla), sin cambios.
+
+## Botonera de construir (pedido del 9/11/2026, va DESPUÉS de los gráficos y el muro en 8 direcciones)
+
+Hoy todo se construye con un solo comando que hay que apretar varias veces hasta llegar a la obra deseada (camino,
+puente, torre, faro, muro): muy engorroso en plena batalla. El usuario pide:
+- mover **construir** al botón de la torrecita (el de la almena, en la botonera del grupo, a la izquierda del de
+  «pasar turno»; su función original casi nadie la usa);
+- mover también **reconstruir** (rebuild) a ese mismo botón;
+- que ese botón centralice todo lo de construir y reconstruir: elegir directamente la obra (camino, puente, torre,
+  faro, muro de piedra, empalizada) en vez de recorrerlas de a una.
+Antes de tocarlo: averiguar qué hace hoy ese botón (su manejador en el exe) y dónde dejarlo, si hace falta.
+Captura del usuario: el botón señalado es el de la almena roja, arriba a la derecha de los de mover y acampar.
