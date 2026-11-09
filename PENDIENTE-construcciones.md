@@ -395,3 +395,9 @@ Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), despu�
    entra; si pierde, queda entera con sus 3 grupos para la próxima. Falta averiguar: dónde 0x464ac0 lee la lista
    de defensores (pila de la casilla) y cómo identificar «infantería pesada» en los tipos del bando (nombre en +0x90
    del registro de 0xfc bytes de 0x53c410).
+   Averiguado (9/11/2026): 0x464ac0(atacante, x, y, ficha) arma la ficha: +0 bando, +1 terreno (palabra 0 de la
+   casilla, bits 10-13), +2 ciudad o -1, +4/+6 x, y; los defensores salen de 0x4411b0(x, y, lista) (índices de
+   ejércitos de la tabla 0x54fe50 en la casilla; con ciudad, sus 4 casillas). Camino elegido: antes de 0x4411b0,
+   crear 3 ejércitos reales temporales del dueño en la casilla (con la función del juego que crea un ejército) y,
+   al terminar 0x469ed0, borrar los que sobrevivan; así la batalla, la animación y las probabilidades los tratan
+   como tropa común. Falta: la función de alta/baja de ejércitos y el tipo «infantería pesada» de cada bando.
