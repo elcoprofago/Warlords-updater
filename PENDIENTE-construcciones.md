@@ -442,3 +442,8 @@ Trap, cada renglón encendido solo si esa obra se puede hacer desde la casilla d
 pasa a la siguiente casilla o dirección de ese tipo (`BD_CAT` filtra la rotación de `bd_pick`). «Build» y «Build
 Trap» salieron del menú del clic derecho. Falta: la empalizada (espera la batalla, etapa B). Prueba: tarea 142.
 Pendiente técnico: instalar en `C:\Warlords3`, correr todas las `prueba_*.py` y publicar (el juego estaba abierto).
+
+**vista-aliada 1.0.154.0 (9/11/2026), pedido del usuario:** el muro de piedra se puede construir sobre un camino
+(no puente), y queda hecho puerta (`ob_okt`). Gráfico: muro de 16 de ancho y 32 de alto (como el frente de la ruina
+grande), almenas más grandes, y sin los píxeles casi blancos ni la hiedra verde de la textura (`_limpia` en
+`obras_img.py`). Prueba: tarea 143.

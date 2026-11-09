@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 143).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 144).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,10 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.154.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
+  grupo con constructor sobre un camino y construir un muro de piedra: ahora se puede, y queda como puerta (pasan
+  tus ejércitos y los de tus aliados). (b) Mirar que el muro tenga más o menos el alto de una ruina y que ya no tenga
+  manchas blancas ni verdes. Anotar acá lo que se vea mal (mejor con captura).
 - [ ] **142.** Probar la botonera de construir (vista-aliada 1.0.153.0). En `C:\Warlords3`, actualizar el parche y
   elegir un grupo con constructor. Apretar el botón de la torrecita (almena roja, a la izquierda de «pasar turno»):
   debe abrir una lista con Rebuild City/Site, Road, Bridge, Port, Watchtower, Lighthouse, Stone Wall y Trap. Mirar:

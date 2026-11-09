@@ -107,6 +107,9 @@ def torre_sobre_muro():
     g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
     return c[n0:], struct.unpack('<I', mu.mem_read(OB_N, 4))[0]
 ver('control: torre sobre el muro no (ni cobra ni anota)', torre_sobre_muro(), ([], 1))
+ver('muro sobre un camino (x = 10): se puede, cobra 100, y el camino queda (puerta)',
+    (obra(x=10, pw=MURO, oro=1000)[:2], recibir(pw=MURO, oro=1000, x=10)[0].tile(10, 7)[3] & 7), (([(2, -100)], 1), 1))
+ver('control: torre sobre camino sigue sin poder', obra(x=10, oro=1000)[:2], ([], 0))
 def muro_dir(pw):
     g, c = recibir(pw=pw, oro=1000)
     return c, bytes(g.mu.mem_read(OB_TAB, 8))[4:6]

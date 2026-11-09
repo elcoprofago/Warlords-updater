@@ -12,8 +12,10 @@ import math, random
 from PIL import Image
 
 C = 72          # centro del lienzo = centro de la casilla de la obra
-T = 9           # ancho del muro en el suelo
-H = 15          # alto del muro
+T = 9           # ancho de la empalizada en el suelo
+H = 15          # alto de la empalizada
+TM = 16         # ancho del muro de piedra en el suelo
+HM = 32         # alto del muro de piedra: como el frente de la ruina grande (pedido del 9/11/2026)
 RDX = [0, 1, 1, 1, 0, -1, -1, -1]       # N, NE, E, SE, S, SO, O, NO
 RDY = [-1, -1, 0, 1, 1, 1, 0, -1]
 
@@ -25,11 +27,11 @@ class Lienzo:
         self.px = {}                      # (x, y) pantalla -> rgb
         self.cuerpo = set()               # píxeles de pantalla del cuerpo (no sombra)
 
-    def piedra(self, u, v):               # frente de la ruina sobre la puerta, sin la hiedra: x 31..54, y 29..40
-        return self.r.getpixel((31 + u % 24, 29 + v % 12))
+    def piedra(self, u, v):               # frente de la ruina sobre la puerta: x 31..54, y 29..40
+        return _limpia(self.r.getpixel((31 + u % 24, 29 + v % 12)), u, v)
 
-    def almena(self, u, v):               # banda de almenas de la ruina, sin la hiedra: x 28..63, y 19..28
-        return self.r.getpixel((28 + u % 36, 19 + min(9, max(0, v))))
+    def almena(self, u, v):               # banda de almenas de la ruina: x 28..63, y 19..28
+        return _limpia(self.r.getpixel((28 + u % 36, 19 + min(9, max(0, v)))), u, v)
 
     def voxeles(self, alto, cara, arriba):
         # alto: {(gx, gy): h}; cara(gx, gy, z, lado) -> rgb, lado 0 frente, 1 costado este, 2 costado oeste;
@@ -58,6 +60,16 @@ class Lienzo:
         for (x, y), c in self.px.items():
             if 0 <= x < 144 and 0 <= y < 144: im.putpixel((x, y), self.color(c))
         return im
+
+
+def _limpia(c, u, v):
+    # Sin las manchas blancas (brillos casi blancos) ni la hiedra verde de la ruina (pedido del 9/11/2026): esos
+    # píxeles pasan a piedra gris de brillo medio, con un poco de variación para que no quede liso.
+    r, g, b = c
+    if max(c) > 175 or (g > r + 12 and g > b + 12):
+        k = 96 + 10 * ((u * 5 + v * 3) % 3)
+        return (k, k, k - 6)
+    return c
 
 
 def _mul(c, k):
@@ -100,24 +112,24 @@ def cuerpos_muro(empal):
 
 def _muro_en(lz, d, empal, sombra=True, prohibido=()):
     if d is None:
-        ancho = T + 1 if empal else T + 5      # piedra: el centro cubre al brazo más ancho
-        huella = _huella_centro(ancho)
-        base = H
+        ancho = T + 1 if empal else TM + 6     # piedra: el centro cubre al brazo más ancho
+        huella = _huella_centro(round(ancho))
+        base = H if empal else HM
     else:
         # piedra: el brazo que corre de norte a sur se ve de costado y parecía muy fino (pedido del 9/11/2026):
         # se ensancha según cuánto avanza hacia el norte o el sur
-        ancho = T if empal else T + 5 * abs(RDY[d]) / math.hypot(RDX[d], RDY[d])
+        ancho = T if empal else TM + 6 * abs(RDY[d]) / math.hypot(RDX[d], RDY[d])
         huella = _huella_brazo(d, ancho)
-        base = H
+        base = H if empal else HM
     alto, coord = {}, {}
     for (gx, gy), (a, w) in huella.items():
         if empal:
             k = int(a) % 4 if d is not None else int(gx) % 4
             h = base + 2 - (0 if k in (1, 2) else 3)               # estacas aguzadas
         else:
-            borde = abs(w) > ancho / 2 - 2.5
-            k = int(a if d is not None else gx) // 3 % 2
-            h = base + (3 if borde and k == 0 else 0)            # almenas en los bordes
+            borde = abs(w) > ancho / 2 - 3.5
+            k = int(a if d is not None else gx) // 4 % 2
+            h = base + (5 if borde and k == 0 else 0)            # almenas en los bordes
         alto[(gx, gy)] = h
         coord[(gx, gy)] = (a, w)
     if sombra: lz.sombra(alto, prohibido)
@@ -136,8 +148,8 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         def cara(gx, gy, z, lado):
             a, w = coord[(gx, gy)]
             u = int(a) if d is not None else gx
-            if alto[(gx, gy)] - z <= 3 and alto[(gx, gy)] > base:
-                return _mul(lz.almena(u, 2 + alto[(gx, gy)] - z), (1.0, 0.7, 0.85)[lado])
+            if alto[(gx, gy)] - z <= 5 and alto[(gx, gy)] > base:
+                return _mul(lz.almena(u, alto[(gx, gy)] - z), (1.0, 0.7, 0.85)[lado])
             return _mul(lz.piedra(u, alto[(gx, gy)] - z), (1.0, 0.7, 0.85)[lado])
 
         def arriba(gx, gy):

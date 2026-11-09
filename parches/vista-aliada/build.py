@@ -4487,6 +4487,7 @@ bdy_m:
     jmp {bd_okm:#x}
 ''')
 # ob_okt: eax = x, edx = y, ecx = tipo -> eax = 1 si ahí se puede construir esa obra, 0 si no. Preserva el resto.
+# El muro también va sobre un camino de tierra o montaña (no puente): queda hecho puerta (pedido del 9/11/2026).
 ob_okt = place('ob_okt', f'''
     push ebx
     push esi
@@ -4500,6 +4501,29 @@ ob_okt = place('ob_okt', f'''
     test eax, eax
     pop eax
     jnz oko_no
+    cmp ecx, {OB_MURO}
+    jne oko_bd
+    push eax
+    call {br_tile:#x}
+    test eax, eax
+    jz oko_mp
+    mov bl, byte ptr [eax + 3]
+    and bl, 7
+    cmp bl, 1
+    jne oko_mp
+    movzx ebx, word ptr [eax]
+    test ebx, 0x4000
+    jnz oko_mp
+    and ebx, 0x1f
+    imul ebx, ebx, 0x58
+    cmp word ptr [ebx + 0x535f0c], 1
+    je oko_mp
+    pop eax
+    jmp oko_si
+oko_mp:
+    pop eax
+oko_bd:
+    mov edx, edi
     call {bd_ok:#x}
     test eax, eax
     jz oko_no
