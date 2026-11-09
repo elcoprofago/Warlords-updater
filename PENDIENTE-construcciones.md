@@ -412,7 +412,8 @@ Hecho en 1.0.152.0 (9/11/2026):
   juego, con sombra al sureste. Cada obra se dibuja en un lienzo de 3x3 casillas cortado en 9 piezas; `ob_draw`
   pinta en cada celda las piezas de la obra propia y de sus 8 vecinas (así la torre asoma sobre la casilla de arriba
   y los muros empalman sin cortes aunque el juego repinte solo algunas celdas). Las piezas van en las filas 1..4 de la
-  hoja de `RUINS\pozos.pcx`. Muro de piedra con la piedra y las almenas de `RUINSuin_lrg.PCX`; torre redonda con
+  hoja de `RUINS\pozos.pcx`. Muro de piedra con la piedra y las almenas de `RUINS
+uin_lrg.PCX`; torre redonda con
   almenas; faro a franjas con linterna encendida. El tramo de piedra que corre de norte a sur es más ancho (pedido
   del usuario: de costado se veía muy fino).
 - **Muro en 8 direcciones**: en `bd_pick` las posiciones 8..15 son el muro hacia N, NE, E, SE, S, SO, O, NO, con las
