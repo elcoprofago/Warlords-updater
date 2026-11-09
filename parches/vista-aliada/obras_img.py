@@ -16,6 +16,7 @@ T = 9           # ancho de la empalizada en el suelo
 H = 15          # alto de la empalizada
 TM = 16         # ancho del muro de piedra en el suelo
 HM = 32         # alto del muro de piedra: como el frente de la ruina grande (pedido del 9/11/2026)
+RT = 15         # radio de la torre redonda del muro de piedra
 RDX = [0, 1, 1, 1, 0, -1, -1, -1]       # N, NE, E, SE, S, SO, O, NO
 RDY = [-1, -1, 0, 1, 1, 1, 0, -1]
 
@@ -128,6 +129,12 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         ancho = T + 1 if empal else TM + 6     # piedra: el centro cubre al brazo más ancho
         huella = _huella_centro(round(ancho))
         base = H if empal else HM
+        if not empal:
+            # Piedra: torre redonda en cada casilla (pedido del 9/11/2026: las puntas de los tramos parecían un
+            # código de barras), más ancha y 4 más alta que el muro, con almenas alrededor.
+            huella = {(gx, gy): (gx - C, gy - C) for gx in range(C - RT, C + RT) for gy in range(C - RT, C + RT)
+                      if math.hypot(gx - C + 0.5, gy - C + 0.5) <= RT}
+            base = HM + 4
     else:
         # piedra: el brazo que corre de norte a sur se ve de costado y parecía muy fino (pedido del 9/11/2026):
         # se ensancha según cuánto avanza hacia el norte o el sur
@@ -143,8 +150,9 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
             # Parapeto de 3 de grueso en los dos bordes (2 más alto que la calzada) con almenas de 5 cada 8 (4 más);
             # en el centro, solo pilares en las 4 esquinas, para no cortar la calzada de ningún brazo.
             if d is None:
-                borde = abs(gx - C + 0.5) > ancho / 2 - 3.5 and abs(gy - C + 0.5) > ancho / 2 - 3.5
-                h = base + (6 if borde else 0)
+                r = math.hypot(gx - C + 0.5, gy - C + 0.5)
+                ang = math.atan2(gy - C + 0.5, gx - C + 0.5)
+                h = base + ((6 if int((ang + math.pi) * RT) % 8 < 5 else 2) if r > RT - 3 else 0)
             else:
                 borde = abs(w) > ancho / 2 - 3
                 h = base + ((6 if a % 8 < 5 else 2) if borde else 0)
@@ -170,12 +178,17 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
         # cualquier dirección, también en diagonal.
         def cara(gx, gy, z, lado):
             a, w = coord[(gx, gy)]
-            u = int(a) if d is not None else gx - C
-            luz = (1.0, 0.7, 0.85)[lado]
+            if d is not None:
+                u = int(a)
+                luz = (1.0, 0.7, 0.85)[lado]
+            else:                                           # torre: ladrillos alrededor, luz según hacia dónde mira
+                nx, ny = gx - C + 0.5, gy - C + 0.5
+                u = int((math.atan2(ny, nx) + math.pi) * RT)
+                luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             if z >= base:                                   # parapeto y almenas
                 t = alto[(gx, gy)] - z
                 c = (168, 150, 136, 122, 112, 104)[min(t, 5)]
-                if alto[(gx, gy)] > base + 2 and d is not None and a % 8 >= 4: c = int(c * 0.8)
+                if alto[(gx, gy)] > base + 2 and (int(a) if d is not None else u) % 8 >= 4: c = int(c * 0.8)
                 return _mul((c, c, c), luz)
             v = base - 1 - z
             if v == 0: return _mul((132, 132, 132), luz)

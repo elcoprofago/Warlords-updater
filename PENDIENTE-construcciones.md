@@ -455,3 +455,8 @@ vista-aliada 1.0.156.0: la calzada de arriba del muro con la textura del camino 
 Muro de piedra rehecho para parecerse a la ruina: hiladas de 4 px (junta oscura), ladrillos de 6 trabados, contados a lo
 largo del muro (u = a) y desde la calzada hacia abajo, así siguen las diagonales; moldura clara y línea negra bajo la
 calzada; parapeto de 3 en los bordes con almenas de 5 cada 8; en el centro solo pilares en las esquinas.
+
+### 1.0.158.0 (9/11/2026)
+Las puntas de los tramos mostraban rayas (el centro cuadrado usaba u = gx también en los costados). El centro del muro
+de piedra pasa a ser una torre redonda (radio RT = 15, 4 más alta que el muro) con ladrillos contados alrededor
+(u = ángulo × RT), luz según la normal y almenas en el borde.
