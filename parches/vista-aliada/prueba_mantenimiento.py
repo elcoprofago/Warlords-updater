@@ -84,11 +84,21 @@ def me_de(i):
     return None if k == 0 else (i % 13, {1: 7, 2: 6, 3: 5}[k])
 
 
+def grupos(m, p):
+    # ejércitos en los grupos activos de la IA del color p (0x561f00 + 1178·p, 10 de 64 bytes, bit 0 = activo)
+    g = set()
+    for k in range(10):
+        b = 0x561f00 + 1178 * p + 64 * k
+        if h(m, b) & 1: g |= {struct.unpack('<H', rd(m, b + 0xc + 2 * j, 2))[0] for j in range(8)}
+    return g
+
+
 def modelo34(m, p):
     r = {}
     for i, o, mt, ciudad, _ in ejercitos(m):
         if o != p or mt == 0 or ciudad: continue
         d = me_de(i); c = d[0] if d and d[1] in (6, 7) else 10
+        if not (d and d[1] in (6, 7)) and i not in grupos(m, p): c = 13
         a = r.setdefault(c, [0, 0]); a[0] += mt - max(1, mt // 3); a[1] += 1
     return [[34, c] + r[c] for c in sorted(r)]
 
@@ -174,6 +184,16 @@ for sav in SAVS:
               f'(en una ciudad pagarían {esp[1]})')
         l, pres, *_ = corrida(m, p, 0)
         check(l == [] and pres, f'color {p}, sin ia_on: nada anotado')
+    # paso 4.7: un huérfano (13) puesto a mano en un grupo activo (el 10.º del color) pasa a 10
+    for p in range(8):
+        hu = [i for i, o, mt, c, _ in ej if o == p and mt and not c and i not in grupos(m, p)
+              and not (me_de(i) and me_de(i)[1] in (6, 7))][:1]
+        if not hu: continue
+        m2 = {k: bytearray(v) for k, v in m.items()}; b = 0x561f00 + 1178 * p + 64 * 9
+        wr(m2, b, struct.pack('<H', h(m2, b) | 1)); wr(m2, b + 0xc, struct.pack('<8h', hu[0], 0, 0, 0, 0, 0, 0, 0))
+        _, _, l34 = corrida(m2, p, 1); e34 = modelo34(m2, p)
+        check(l34 == e34 and hu[0] in grupos(m2, p) and e34 != modelo34(m, p),
+              f'color {p}: ejército {hu[0]} metido en un grupo deja de ser 13: {l34} = modelo {e34}')
     # un ejército movido a mano: a la casilla de un ejército que está en ciudad, y a una casilla fuera de toda ciudad
     en_ciudad = [e for e in ej if e[3]]
     fuera = [e for e in ej if not e[3]]

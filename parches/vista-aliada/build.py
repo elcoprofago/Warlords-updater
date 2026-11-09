@@ -5968,6 +5968,9 @@ me_skip:
 # = jugó pero no eligió meta (0x40c990 no llegó a 0x40cc3f); si llega, me_set lo pisa con la meta. ai_ally, cuando
 # decide por su cuenta sin 0x40c990 (refugio, defensa, refugiada que espera: al_done), marca 12. Lo que queda en 10 es
 # un ejército que no jugó en esta ronda ni en la anterior (fuera de toda pila que se juegue). Solo con ia_on.
+# Paso 4.7: el 10 se parte por los grupos de la IA (0x561f00 + 1178·p, 10 de 64 bytes, activo = bit 0, ejércitos en
+# +0xc..+0x1a; solo esos juegan, en el bucle de 0x40eab0): 10 = está en un grupo activo de su color y no jugó;
+# 13 = no está en ningún grupo (huérfano: ningún camino del juego lo vuelve a mover).
 me_mk = place('me_mk', f'''
     pushad
     cmp byte ptr [{IA_ON:#x}], 0
@@ -6005,7 +6008,7 @@ mt_evt = place('mt_evt', f'''
     pushad
     mov dword ptr [ebp - 4], 0
     lea edi, [ebp - 0x80]
-    mov ecx, 26
+    mov ecx, 28
     xor eax, eax
     rep stosd
     xor esi, esi
@@ -6072,22 +6075,47 @@ mt_t:
     sub ebx, eax
     mov edx, 10
     cmp ecx, {ME_N}
-    jae mt_c
+    jae mt_g
     movzx eax, word ptr [ecx*2 + {ME_TAB:#x}]
     test al, al
-    jz mt_c
+    jz mt_g
     cmp al, 13
-    ja mt_c
+    ja mt_g
     mov dl, byte ptr [0x503328]
     sub dl, ah
     cmp dl, 1
     mov edx, 10
-    ja mt_c
+    ja mt_g
     movzx edx, al
     dec edx
+    jmp mt_c
+mt_g:
+    push esi
+    push edi
+    imul esi, dword ptr [ebp + 8], 1178
+    add esi, 0x561f00
+    mov edi, 10
+mt_gs:
+    test byte ptr [esi], 1
+    jz mt_gn
+    xor eax, eax
+mt_ga:
+    cmp word ptr [esi + eax*2 + 0xc], cx
+    je mt_gin
+    inc eax
+    cmp eax, 8
+    jb mt_ga
+mt_gn:
+    add esi, 64
+    dec edi
+    jnz mt_gs
+    mov edx, 13
+mt_gin:
+    pop edi
+    pop esi
 mt_c:
     add dword ptr [ebp + edx*4 - 0x80], ebx
-    inc dword ptr [ebp + edx*4 - 0x4c]
+    inc dword ptr [ebp + edx*4 - 0x48]
     jmp mt_loop
 mt_done:
     push dword ptr [ebp - 4]
@@ -6099,7 +6127,7 @@ mt_done:
     add esp, 0x14
     xor ebx, ebx
 mt_e:
-    mov eax, dword ptr [ebp + ebx*4 - 0x4c]
+    mov eax, dword ptr [ebp + ebx*4 - 0x48]
     test eax, eax
     jz mt_en
     push eax
@@ -6111,7 +6139,7 @@ mt_e:
     add esp, 0x14
 mt_en:
     inc ebx
-    cmp ebx, 13
+    cmp ebx, 14
     jb mt_e
     popad
     mov esp, ebp

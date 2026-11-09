@@ -360,4 +360,25 @@ Próximo paso (4.7): averiguar por qué el bucle de 0x40edf1 no visita esas pila
 sin movimiento, pilas que el recorrido salta por su tipo o posición?), leyendo el bucle que lo llama y, si hace
 falta, un evento con cuántas pilas recorre y cuántas salta, y por qué. Según la causa: que el recorrido las incluya
 o mandarlas a la ciudad propia más cercana al final del turno.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.7".
+**Paso 4.7, por qué esas pilas no juegan (9/11/2026, leído en el exe original; vista-aliada 1.0.145.0; falta la tanda,
+TAREAS 135).** El bucle de 0x40eab0 no recorre pilas del mapa: recorre los **10 grupos** de la IA del jugador
+(0x561f00 + 1178·p, 64 bytes cada uno; bit 0 = activo, bit 0x10 = ya jugó, +4 prioridad, +0xc..+0x1a hasta 8
+ejércitos, el primero es el líder). Elige el activo sin jugar de mayor prioridad, lo junta (0x410630: quita del grupo
+a los que no están en la casilla del líder y no la alcanzan) y lo hace jugar (0x40edf1). El log del propio juego lo
+nombra: «Starting new stack procedures», «Hero %d aiTask %d in city», «Non Hero Stack», «Army %d has been removed
+as SLOW», «Leader %d of Stack %d KIA'd so dismissAll», «Stack %d Nothing to do - we could disband».
+Quién entra a un grupo: 0x40efc0 (al empezar el turno, desde 0x40ea00) crea grupos solo con **héroes que están en una
+ciudad** (tipo & 0x1f = 0x10, sin tarea); 0x40f1a0 los crea (falla si los 10 están ocupados); el planificador arma
+grupos sin héroe (0x40d434) y suma escoltas desde la ciudad (0x4a66a0). Quién sale: los lentos, los separados del
+líder (0x410630), todo el grupo si muere el líder. **Ningún camino vuelve a meter en un grupo a un ejército que quedó
+fuera de una ciudad**: queda quieto para siempre, pagando el mantenimiento entero. Eso es el 10 de la tanda 147.
+En las guardadas (inicio del turno del humano) casi todos los colores tienen 0 grupos activos y ejércitos afuera sin
+grupo (ABN_000_29: color 6, 24 afuera, 0 en grupo); falta medirlo en partida.
+Evento 34, código nuevo: el 10 se parte en 10 = está en un grupo activo de su color y no jugó, 13 = en ningún grupo
+(huérfano). Prueba emulada: prueba_mantenimiento.py 280 controles TODO OK (34 con 13 = modelo; un huérfano puesto a
+mano en un grupo activo pasa a 10); prueba_saldo, prueba_produccion (1.812), prueba_reserva (1.168), prueba_oro y
+prueba_chatordenes OK; prueba_iaalianzas con las 2 fallas de antes.
+Al volver la tanda: ahorro / ingreso de 13 y de 10 por IA y tramo. Si el 13 es casi todo el 10 (lo esperado), el
+cambio es darles destino a los huérfanos: al empezar el turno de la IA, a cada huérfano de fuera de ciudad, mandarlo
+a la ciudad propia más cercana (o meterlo en un grupo libre con meta «Form», que ya lleva a una ciudad).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.8".
