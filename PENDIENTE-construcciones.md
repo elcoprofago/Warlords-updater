@@ -381,3 +381,15 @@ ciudad (a confirmar, TAREAS 137); se construye en la casilla del líder y no sob
 defensas, como si la defendieran 3 grupos de infantería pesada que el atacante tiene que vencer; solo la construyen
 unidades con «build»; cuesta el doble de un paso montañoso (2 × 5 veinteavos = 50 % de fundar una ciudad).
 Orden pedido: primero el tope de pausas (hecho en 1.0.149.0, TAREAS 138), después las murallas.
+
+**Diseño de la etapa B (9/11/2026, a implementar en este orden):**
+1. *Muro de piedra* (tipo 7): obra de la tabla `ob_*`. En el grafo de pasos (0x4a4f20) la casilla es intransitable
+   para todos salvo que tenga camino; poner camino sobre un muro cuesta 10 veinteavos (2 × montaña). Se construye
+   como la torre (posición nueva de `bd_pick`), precio 10 veinteavos. Prueba: `prueba_murallas.py`.
+2. *Empalizada* (tipo 6): precio 10 veinteavos. Un bando que no es el dueño ni su aliado no entra caminando: tiene
+   que atacarla. La batalla (0x469ed0 → 0x464ac0 arma la ficha) suma a los defensores 3 grupos del tipo de
+   infantería pesada del bando dueño (unidades virtuales: no existen fuera de la batalla, no cobran mantenimiento),
+   además de los ejércitos reales que haya. Si el atacante gana, la empalizada se destruye (sale de la tabla) y
+   entra; si pierde, queda entera con sus 3 grupos para la próxima. Falta averiguar: dónde 0x464ac0 lee la lista
+   de defensores (pila de la casilla) y cómo identificar «infantería pesada» en los tipos del bando (nombre en +0x90
+   del registro de 0xfc bytes de 0x53c410).
