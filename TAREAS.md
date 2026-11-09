@@ -7,7 +7,6 @@ orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 130** (tanda de la IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -15,13 +14,6 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
-La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
-ciudad sin tarea, si les tocó jugar y quién los movió. Con eso se sabe cuáles están ociosos de verdad.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.141.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
 
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
@@ -55,6 +47,16 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
+La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
+ciudad sin tarea, si les tocó jugar y quién los movió. Con eso se sabe cuáles están ociosos de verdad.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.141.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado (9/11/2026): tanda 147, 10 partidas. Casi todo lo que se paga de más por ejércitos afuera sin tarea
+(5 % del ingreso en la original, 8 % en la nueva) es de pilas que la computadora ni siquiera mueve en su turno.
+Próximo: ver por qué las saltea.
 
 - [x] **134.** Pergamino de alianza como columna propia, del tamaño del escudo (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.144.0** o posterior) y Visor de historia **1.0.20.0** o posterior.

@@ -345,4 +345,19 @@ Uso: `python prueba_mantenimiento.py <AV> <orig> 6c9e2b 6c9e23 6c9f10 6cbf10 6d9
 me_tab, me_set, me_pre, ai_ord).
 Al volver la tanda: por IA y tramo, ahorro de 10, 11 y 12. Lo ocioso es 10 + 11 (+ 0 y 1); si pasa el 3 % del ingreso,
 programar que esas pilas esperen en la ciudad propia más cercana que alcancen este turno; 12 no se toca.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.6: volvió la tanda".
+**Medido (9/11/2026, tanda 147, 1.0.141.0, 10 partidas ok, 701 eventos 34).** Ahorro / ingreso por meta, tramos
+1-10 / 11-20 / 21-30 (n = ejércitos-turno):
+| | 10 no jugó | 11 jugó sin meta | 12 ai_ally | 2 ruina | 7 ciudad enemiga | 6 misión | resto | ocioso (0+1+10+11) |
+|---|---|---|---|---|---|---|---|---|
+| original | 0,8 / 3,6 / 7,5 % (n 21 / 185 / 473) | 0,04 % (n 6) | no aparece | 1,2 % | 1,0 % | 0,9 % | ≤ 0,3 % c/u | **5,0 %** |
+| nueva | 1,2 / 4,7 / 13,2 % (n 37 / 298 / 1.095) | no aparece | no aparece | 1,1 % | 0,9 % | 0,7 % | ≤ 0,7 % c/u | **8,2 %** |
+Casi todo el «sin decisión» es 10: **ningún ejército de esas pilas pasó por 0x40edf1 en esta ronda ni la anterior**.
+Las que juegan casi siempre eligen meta (11 casi nulo) y ai_ally no movió ninguna fuera de ciudad (12 = 0; sin
+comprobar que su marca funcione en partida real: la prueba emulada sí la cubre). Pasa el 3 %, pero el cambio de 4.5
+no se puede aplicar dentro del turno de la pila, porque esas pilas no juegan turno. Resultados (no cambia el juego):
+nueva puesto 2,73, PV 8,2, 5,9 ciudades, 6 primeros; original 3,32 / 4,65 / 3,9 / 4. Deserciones: 8 nueva, 3 original.
+Próximo paso (4.7): averiguar por qué el bucle de 0x40edf1 no visita esas pilas (¿tope de pilas por turno, pilas
+sin movimiento, pilas que el recorrido salta por su tipo o posición?), leyendo el bucle que lo llama y, si hace
+falta, un evento con cuántas pilas recorre y cuántas salta, y por qué. Según la causa: que el recorrido las incluya
+o mandarlas a la ciudad propia más cercana al final del turno.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.7".
