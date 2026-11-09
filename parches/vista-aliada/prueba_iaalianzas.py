@@ -60,7 +60,7 @@ class Maquina:
             for imp in d.imports:
                 stub = 0xdead1000 + 16 * k; k += 1
                 mu.mem_write(imp.address, struct.pack('<I', stub)); names[stub] = (imp.name or b'?').decode()
-        ARGS = {'GlobalAlloc': 2, 'GlobalLock': 1, 'GlobalUnlock': 1, 'GlobalFree': 1, 'GlobalHandle': 1}
+        ARGS = {'GlobalAlloc': 2, 'GlobalLock': 1, 'GlobalUnlock': 1, 'GlobalFree': 1, 'GlobalHandle': 1, 'FindWindowA': 2}
         s.heap = 0x30000000
         def h(m, a, size, ud):
             n = names.get(a); sp = m.reg_read(UC_X86_REG_ESP)
@@ -70,6 +70,7 @@ class Maquina:
                 sz = (args[1] + 15) & ~15; r = s.heap; s.heap += sz; m.mem_write(r, bytes(sz))
             elif n in ('GlobalLock', 'GlobalHandle'): r = args[0]
             elif n in ('GlobalUnlock', 'GlobalFree'): r = 0
+            elif n == 'FindWindowA': r = 0   # dc_close (1.0.139.0): no hay Comparador abierto
             elif n == 'fopen': r = 0x7777
             elif n == 'fclose': r = 0
             elif n == 'fprintf':
