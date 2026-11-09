@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 130).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 131).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 130** (tanda de la IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea).
 0. **Tarea 129** (ventana de fin de partida: título con fecha, columna Armas, marca de alianza, nombre).
 0. **Tarea 128** (Comparador en el libro, Pausa en el disquete y sello de Army List).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
@@ -15,6 +16,14 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
+La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
+ciudad sin tarea, si les tocó jugar y quién los movió. Con eso se sabe cuáles están ociosos de verdad.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.141.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **129.** Ventana de fin de partida (8/11/2026)
 1. Actualizador: opción **9** (vista-aliada **1.0.140.0** o posterior).

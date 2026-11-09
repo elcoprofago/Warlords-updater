@@ -22,6 +22,9 @@ def rva(va): return va - 0x400000
 # direcciones del parche: ai_ord por el call de 0x40edf1 y ai_ally por su primer salto (jae ai_ally); OR_TAB por la
 # instrucción siguiente (cmp byte ptr [eax*8 + OR_TAB + 1], 1); IA_ON e IA_MODE por las primeras de ai_ally
 AI_ORD = 0x40edf6 + struct.unpack_from('<i', img, rva(0x40edf2))[0]
+# desde 1.0.141.0 el call va a me_pre (marca la pila, paso 4.6 de la economía), que salta a ai_ord por su jae
+if img[rva(AI_ORD) + 16:rva(AI_ORD) + 18] == bytes([0x0f, 0xbf]):
+    AI_ORD = AI_ORD + 16 + struct.unpack_from('<i', img, rva(AI_ORD) + 12)[0]
 assert img[rva(AI_ORD) + 10:rva(AI_ORD) + 12] == b'\x0f\x83', 'ai_ord no empieza con el salto a ai_ally'
 AI_ALLY = AI_ORD + 16 + struct.unpack_from('<i', img, rva(AI_ORD) + 12)[0]
 assert img[rva(AI_ORD) + 16:rva(AI_ORD) + 19] == b'\x80\x3c\xc5', 'ai_ord: falta el cmp de OR_TAB'

@@ -30,6 +30,9 @@ if img[rva(OR_RECV)] == 0x3d and struct.unpack_from('<I', img, rva(OR_RECV) + 1)
 assert img[rva(OR_RECV) + 5:rva(OR_RECV) + 7] == b'\x0f\x85', 'or_recv no empieza con cmp eax / jne tl_recv'
 TL_RECV = OR_RECV + 11 + struct.unpack_from('<i', img, rva(OR_RECV) + 7)[0]
 AI_ORD = 0x40edf6 + struct.unpack_from('<i', img, rva(0x40edf2))[0]
+# desde 1.0.141.0 el call va a me_pre (marca la pila, paso 4.6 de la economía), que salta a ai_ord por su jae
+if img[rva(AI_ORD) + 16:rva(AI_ORD) + 18] == bytes([0x0f, 0xbf]):
+    AI_ORD = AI_ORD + 16 + struct.unpack_from('<i', img, rva(AI_ORD) + 12)[0]
 OR_TAB = struct.unpack_from('<I', img, rva(AI_ORD) + 19)[0] - 1
 assert img[rva(0x4091ea):rva(0x4091ea) + 2] == b'\x0f\x85', 'la barra no tiene el salto parcheado en 0x4091ea'
 

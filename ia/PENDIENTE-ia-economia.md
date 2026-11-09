@@ -328,4 +328,21 @@ Próximo paso (4.6): partir el 10. En mt_evt, para los ejércitos sin meta recie
 vez (marca en los caminos de ai_ally/ai_ord que mueven pilas sin pasar por 0x40c990) y si se movieron este turno;
 el resto del 10 (sin marca y quietos) es lo ocioso de verdad. Con eso, si lo ocioso pasa el 3 % del ingreso, el
 cambio de 4.5 (esperar en la ciudad propia más cercana alcanzable este turno) solo para esas pilas.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.6".
+**Paso 4.6, partir el 10 (8/11/2026, vista-aliada 1.0.141.0; falta la tanda, TAREAS 130).** Solo anota.
+me_pre, en el call de 0x40edf1 (cada pila de la IA que juega su turno, antes de ai_ord): me_mk(pila, 12) anota 11 + 1
+con la ronda en ME_TAB para sus 8 ejércitos = «jugó y no eligió meta». Si 0x40c990 llega a 0x40cc3f, me_set lo pisa
+con la meta. ai_ally, al decidir sin 0x40c990 (al_done: refugio, defensa, refugiada que espera), marca 12. El evento
+34 ahora tiene x = 0 a 12: 10 = no jugó en esta ronda ni en la anterior (ninguna pila jugada lo tiene: lo ocioso de
+verdad o fuera de las pilas del planificador), 11 = jugó sin meta (0x40c990 salió antes, p. ej. sin movimiento),
+12 = lo movió ai_ally. Las órdenes del humano (ai_ord, or_go) pasan por 0x40c990 con meta 1 o 7 y quedan con esa.
+Prueba emulada: prueba_mantenimiento.py ampliada (270 controles TODO OK con IA_ROTADA, Tanda_Kor_CA, roads02,
+ABN_000_29, agua03: el 34 con metas 0-12 = modelo; me_pre marca 11 y la ronda, sigue a ai_ord con la pila y ebx
+intactos, sin ia_on o con jugador >= 8 no marca). prueba_saldo, prueba_produccion (2.425), prueba_reserva (2.080),
+prueba_oro y prueba_chatordenes OK. prueba_iaalianzas y prueba_chatordenes buscan ahora ai_ord pasando por me_pre.
+prueba_iaalianzas: 2 fallas (evento 12 de la pila amenazada, al_surv), **iguales con el 1.0.140.0 instalado**: vienen
+de antes, no de este cambio; sin investigar.
+Uso: `python prueba_mantenimiento.py <AV> <orig> 6c9e2b 6c9e23 6c9f10 6cbf10 6d9470 6d9280 <SAV>...` (ia_on, ia_mode,
+me_tab, me_set, me_pre, ai_ord).
+Al volver la tanda: por IA y tramo, ahorro de 10, 11 y 12. Lo ocioso es 10 + 11 (+ 0 y 1); si pasa el 3 % del ingreso,
+programar que esas pilas esperen en la ciudad propia más cercana que alcancen este turno; 12 no se toca.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.6: volvió la tanda".

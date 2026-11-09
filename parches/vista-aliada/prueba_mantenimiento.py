@@ -8,15 +8,19 @@
 #   4. evento 34 (paso 4.5): con ME_TAB cargada a mano (meta de la ronda, de la anterior, vieja o sin dato), el ahorro
 #      (entero − tercio) por meta de los de fuera coincide con el modelo; y me_set (en 0x40cc3f) anota meta + 1 y la
 #      ronda para los ejércitos de la pila y deja eax y [esp+0x10] como el original; sin ia_on no anota.
+#   5. paso 4.6: el 34 también separa 11 (jugó sin meta) y 12 (lo decidió ai_ally); me_pre (en 0x40edf1) marca 11 con
+#      la ronda en los ejércitos de la pila del jugador [0x4fb0ec] y sigue a ai_ord con la pila intacta; con jugador
+#      >= 8 o sin ia_on no marca.
 # Uso: python prueba_mantenimiento.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <me_tab hex> <me_set hex>
-#      <partida.SAV> [...]
+#      <me_pre hex> <ai_ord hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 AV, ORIG, IA_ON, IA_MODE = sys.argv[1], sys.argv[2], int(sys.argv[3], 16), int(sys.argv[4], 16)
 ME_TAB, ME_SET = int(sys.argv[5], 16), int(sys.argv[6], 16)
-SAVS = sys.argv[7:]
+ME_PRE, AI_ORD = int(sys.argv[7], 16), int(sys.argv[8], 16)
+SAVS = sys.argv[9:]
 imgs = {k: pefile.PE(f).get_memory_mapped_image() for k, f in (('av', AV), ('orig', ORIG))}
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4}
 STUB, RET = 0xdeac0000, 0x42249b
@@ -77,7 +81,7 @@ def modelo(m, p):
 def me_de(i):
     # (meta, ronda) cargada en ME_TAB para el ejército i, o None
     k = i % 4
-    return None if k == 0 else (i % 10, {1: 7, 2: 6, 3: 5}[k])
+    return None if k == 0 else (i % 13, {1: 7, 2: 6, 3: 5}[k])
 
 
 def modelo34(m, p):
@@ -204,4 +208,21 @@ for on in (1, 0):
         check(mu.reg_read(UC_X86_REG_EAX) == meta and struct.unpack('<H', mu.mem_read(sp + 0x14, 2))[0] == 0
               and mu.reg_read(UC_X86_REG_EBX) == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp + 4,
               f'me_set ia_on={on} meta {meta}: eax y [esp+0x10] como el original')
+# me_pre: jugador 3, pila 2 con ejércitos 4, 0, -2, 5000, 21; luego va a ai_ord con la pila igual
+for on, jug in ((1, 3), (0, 3), (1, 8)):
+    mu = maquina(imgs['av'], load(SAVS[0]))
+    mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(0x503328, struct.pack('<h', 9))
+    mu.mem_write(0x4fb0ec, struct.pack('<h', jug))
+    rec = 0x561f00 + 3 * 0x49a + 2 * 0x40; mu.mem_write(rec + 0xc, struct.pack('<8h', 4, 0, -2, 5000, 21, 0, 0, 0))
+    mu.mem_write(ME_TAB, bytes(8192))
+    sp = 0x10080000; mu.mem_write(sp, struct.pack('<III', 0xdead0000, 2, 0))
+    mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBX, 0x1234)
+    mu.emu_start(ME_PRE, AI_ORD, count=10000)
+    tab = struct.unpack('<4096H', mu.mem_read(ME_TAB, 8192))
+    want = 12 | (9 << 8) if on and jug < 8 else 0
+    check(mu.reg_read(UC_X86_REG_EIP) == AI_ORD and mu.reg_read(UC_X86_REG_ESP) == sp
+          and mu.mem_read(sp, 12) == struct.pack('<III', 0xdead0000, 2, 0) and mu.reg_read(UC_X86_REG_EBX) == 0x1234,
+          f'me_pre ia_on={on} jugador {jug}: sigue a ai_ord con la pila intacta')
+    check(tab[4] == want and tab[21] == want and sum(1 for t in tab if t) == (2 if want else 0),
+          f'me_pre ia_on={on} jugador {jug}: tabla {tab[4]:#x} {tab[21]:#x}')
 print(f'{nctl} controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)

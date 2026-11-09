@@ -5963,6 +5963,34 @@ me_skip:
     mov word ptr [esp + 0x14], 0
     ret
 ''')
+# Paso 4.6: partir el 10 («sin decisión»). me_mk(pila, código + 1) anota como me_set para los 8 ejércitos de la pila
+# (registro +0xc). me_pre, en el call de 0x40edf1 (cada pila de la IA que juega su turno, antes de ai_ord), marca 11
+# = jugó pero no eligió meta (0x40c990 no llegó a 0x40cc3f); si llega, me_set lo pisa con la meta. ai_ally, cuando
+# decide por su cuenta sin 0x40c990 (refugio, defensa, refugiada que espera: al_done), marca 12. Lo que queda en 10 es
+# un ejército que no jugó en esta ronda ni en la anterior (fuera de toda pila que se juegue). Solo con ia_on.
+me_mk = place('me_mk', f'''
+    pushad
+    cmp byte ptr [{IA_ON:#x}], 0
+    je mk_skip
+    mov ebx, dword ptr [esp + 0x28]
+    mov bh, byte ptr [0x503328]
+    mov esi, dword ptr [esp + 0x24]
+    xor ecx, ecx
+mk_lp:
+    movsx eax, word ptr [esi + ecx*2 + 0xc]
+    test eax, eax
+    jle mk_nx
+    cmp eax, {ME_N}
+    jae mk_nx
+    mov word ptr [eax*2 + {ME_TAB:#x}], bx
+mk_nx:
+    inc ecx
+    cmp ecx, 8
+    jb mk_lp
+mk_skip:
+    popad
+    ret
+''')
 
 MT_EVT = 33
 # Paso 4.4 (PENDIENTE-ia-economia), medición: 33 mantenimiento de los ejércitos de p fuera de una casilla de ciudad
@@ -5973,11 +6001,11 @@ MT_EVT = 33
 mt_evt = place('mt_evt', f'''
     push ebp
     mov ebp, esp
-    sub esp, 0x60
+    sub esp, 0x80
     pushad
     mov dword ptr [ebp - 4], 0
-    lea edi, [ebp - 0x60]
-    mov ecx, 22
+    lea edi, [ebp - 0x80]
+    mov ecx, 26
     xor eax, eax
     rep stosd
     xor esi, esi
@@ -6048,7 +6076,7 @@ mt_t:
     movzx eax, word ptr [ecx*2 + {ME_TAB:#x}]
     test al, al
     jz mt_c
-    cmp al, 10
+    cmp al, 13
     ja mt_c
     mov dl, byte ptr [0x503328]
     sub dl, ah
@@ -6058,8 +6086,8 @@ mt_t:
     movzx edx, al
     dec edx
 mt_c:
-    add dword ptr [ebp + edx*4 - 0x60], ebx
-    inc dword ptr [ebp + edx*4 - 0x34]
+    add dword ptr [ebp + edx*4 - 0x80], ebx
+    inc dword ptr [ebp + edx*4 - 0x4c]
     jmp mt_loop
 mt_done:
     push dword ptr [ebp - 4]
@@ -6071,11 +6099,11 @@ mt_done:
     add esp, 0x14
     xor ebx, ebx
 mt_e:
-    mov eax, dword ptr [ebp + ebx*4 - 0x34]
+    mov eax, dword ptr [ebp + ebx*4 - 0x4c]
     test eax, eax
     jz mt_en
     push eax
-    push dword ptr [ebp + ebx*4 - 0x60]
+    push dword ptr [ebp + ebx*4 - 0x80]
     push ebx
     push dword ptr [ebp + 8]
     push {ME_EVT}
@@ -6083,7 +6111,7 @@ mt_e:
     add esp, 0x14
 mt_en:
     inc ebx
-    cmp ebx, 11
+    cmp ebx, 13
     jb mt_e
     popad
     mov esp, ebp
@@ -13209,6 +13237,10 @@ al_map:
 al_map_r:
     ret
 al_done:
+    push 13
+    push dword ptr [ebp - {L_REC}]
+    call {me_mk:#x}
+    add esp, 8
     popad
     leave
     ret
@@ -13439,6 +13471,21 @@ or_no:
     popad
     leave
     jmp {ai_ally:#x}
+''')
+# me_pre (paso 4.6, PENDIENTE-ia-economia): ver me_mk.
+me_pre = place('me_pre', f'''
+    movsx eax, word ptr [0x4fb0ec]
+    cmp eax, 8
+    jae {ai_ord:#x}
+    movsx ecx, word ptr [esp + 4]
+    imul eax, eax, 0x49a
+    shl ecx, 6
+    lea eax, [eax + ecx + 0x561f00]
+    push 12
+    push eax
+    call {me_mk:#x}
+    add esp, 8
+    jmp {ai_ord:#x}
 ''')
 # ---- Paquete 0x2a2 y barra de chat «#n» (ia\PENDIENTE-entrenamiento-ia.md, mensajes entre aliados).
 # La barra (0x409170) descarta «#n texto» si el bando n no es humano (salto en 0x4091ea). Ahí entra ch_ai: la PC del
@@ -16591,7 +16638,7 @@ patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # c
 patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50))   # reserva: comprar tipo de unidad
 patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserva: agrandar ciudad
 patch(0x43bdf2, bytes.fromhex('80be057f530000'), asm(f'jmp {pr_unit:#x}; nop; nop', 0x43bdf2))   # freno de producción
-patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {ai_ord:#x}', 0x40edf1))
+patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {me_pre:#x}', 0x40edf1))
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
 patch(0x4ca0b7, bytes.fromhex('ff1544985a00'), asm(f'call {ri_go:#x}', 0x4ca0b7) + b'\x90')   # CopyFileA del ITEM.DAT
