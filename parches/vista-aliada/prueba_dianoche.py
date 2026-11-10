@@ -162,8 +162,15 @@ def level(b, x, y):
     if seen(b, *FARO_XY):
         dx, dy = abs(x - FARO_XY[0]), abs(y - FARO_XY[1])
         d = max(dx, dy) + min(dx, dy) // 2
-        if d <= FR_TIERRA or (d <= FR_AGUA and (x, y) in SEA): lev = min(lev, FR_TAB[d])
+        sx, sy = x - FARO_XY[0], y - FARO_XY[1]
+        dot = sx * FV[0] + sy * FV[1]
+        fan = dot > 0 and 2 * dot * dot >= (sx * sx + sy * sy) * (FV[0] ** 2 + FV[1] ** 2)
+        if d <= FR_TIERRA or (d <= FR_AGUA and fan and (x, y) in SEA): lev = min(lev, FR_TAB[d])
     return lev
+
+# abanico del faro: vector hacia el agua del cuadrado de radio FR_AGUA (fr_fan)
+FV = (sum(dx for dx in range(-FR_AGUA, FR_AGUA + 1) for dy in range(-FR_AGUA, FR_AGUA + 1) if (FARO_XY[0] + dx, FARO_XY[1] + dy) in SEA),
+      sum(dy for dx in range(-FR_AGUA, FR_AGUA + 1) for dy in range(-FR_AGUA, FR_AGUA + 1) if (FARO_XY[0] + dx, FARO_XY[1] + dy) in SEA))
 
 def seen(b, x, y):   # con Hidden Map, solo alumbra lo explorado (bit 0x10 del byte +3)
     return not b.hidden or b.mu.mem_read(tile_va(x, y) + 3, 1)[0] & 0x10
@@ -228,7 +235,8 @@ print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
 assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
-assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 and g[24 - VX, 18 - VY] == 6 and g[25 - VX, 19 - VY] == 7, 'el faro: degradé sobre el mar'
+assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 , 'el faro: degradé sobre el mar'
+assert g[24 - VX, 18 - VY] != 6 and g[25 - VX, 19 - VY] != 7, 'el faro: fuera del abanico de 90 grados no alumbra'
 assert g[21 - VX, 14 - VY] == 2 and g[20 - VX, 14 - VY] == N, 'el faro: 1 casilla hacia tierra'
 assert g[22 - VX, 17 - VY] == N, 'el faro no alumbra tierra a 3 casillas'
 assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 3 casillas'

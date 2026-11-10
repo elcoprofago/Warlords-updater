@@ -162,7 +162,7 @@ namespace Actualizador
             Opcion(1, "ARMY", "→ ejércitos");
             Opcion(2, "SPELL", "→ hechizos");
             Opcion(3, "HERO", "→ héroes");
-            Opcion(4, "ESCENARIOS", "");
+            Opcion(4, "ESCENARIOS", "→ nuevos escenarios personalizados");
             Opcion(5, "ITEMS", "");
             Opcion(6, "*** ACTUALIZAR TODO EL JUEGO ***", "sola, no se combina", Paleta.Rojo);
             Opcion(7, "VALIDATOR", dHerr);
@@ -654,16 +654,17 @@ namespace Actualizador
             }
             var parches = LeerParches(lista);
             var avisos = new List<string>();
+            string urgente = null;
             var completo = await LeerCompleto();
             if (completo == null)
                 avisos.Add("No se pudo comprobar si el juego completo está al día.");
             else
             {
                 if (!string.Equals(instalado, completo.Sha, StringComparison.OrdinalIgnoreCase))
-                    avisos.Add("Hay una versión más nueva del juego completo: conviene correr la opción 6 y después volver acá.");
+                    urgente = "Primero la opción 6, después la 9.";
                 foreach (var p in parches)
                     if (completo.Parches.TryGetValue(p.Id, out var v) && CompararVersion(v, p.Version) < 0)
-                        avisos.Add($"El juego completo publicado trae {p.Id} v{v} y el parche va por v{p.Version}: avísale a quien lo publica.");
+                        avisos.Add($"{p.Id}: el juego completo trae v{v}; el parche, v{p.Version}.");
             }
 
             while (true)
@@ -671,6 +672,7 @@ namespace Actualizador
                 t.Limpiar();
                 t.EscribirLinea();
                 Encabezado("PARCHES DISPONIBLES", "");
+                if (urgente != null) Error(urgente);
                 foreach (var a in avisos) Aviso(a);
                 if (parches.Count == 0)
                 {

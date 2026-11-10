@@ -10105,10 +10105,90 @@ PP_REQ = place_data('pp_req', bytes(4))              # pz_disp pide reanudar (Es
 pz_closepkt_data = struct.pack('<I', 0) + cstr_('VOT - cerrado 0 0 --------')
 pz_closepkt = place_data('pz_closepkt', pz_closepkt_data)
 
+# Teclas de la pausa leídas directo del teclado (10/11/2026: en red, Espacio ni Esc levantaban la pausa manual; la
+# lectura por DispatchMessageA de pz_disp no alcanzaba). GetAsyncKeyState no está importada: se busca una vez en las
+# exportaciones de USER32 (como go_resolve con GetLocalTime). pz_keys, desde pz_tick con PZ_MANUAL: si Espacio o Esc
+# están apretados, quita PZ_MANUAL en esta PC y pide a tl_idle que mande la reanudación (PP_REQ).
+pk_u32 = place_data('pk_u32', cstr_('USER32.DLL'))
+pk_gakn = place_data('pk_gakn', cstr_('GetAsyncKeyState'))
+pk_gak = place_data('pk_gak', bytes(4))
+pk_resolve = place('pk_resolve', f'''
+    pushad
+    push {pk_u32:#x}
+    call dword ptr [0x5a984c]
+    test eax, eax
+    jz kr_out
+    mov ebx, eax
+    mov eax, dword ptr [ebx + 0x3c]
+    mov ebp, dword ptr [ebx + eax + 0x78]
+    mov esi, ebp
+    add esi, ebx
+    xor edi, edi
+kr_loop:
+    cmp edi, dword ptr [esi + 0x18]
+    jae kr_out
+    mov eax, dword ptr [esi + 0x20]
+    add eax, ebx
+    mov eax, dword ptr [eax + edi*4]
+    add eax, ebx
+    push 17
+    push {pk_gakn:#x}
+    push eax
+    call dword ptr [0x5a9bf0]
+    add esp, 0xc
+    test eax, eax
+    jz kr_found
+    inc edi
+    jmp kr_loop
+kr_found:
+    mov eax, dword ptr [esi + 0x24]
+    add eax, ebx
+    movzx eax, word ptr [eax + edi*2]
+    mov edx, dword ptr [esi + 0x1c]
+    add edx, ebx
+    mov eax, dword ptr [edx + eax*4]
+    mov edx, eax
+    sub edx, ebp
+    mov ecx, dword ptr [ebx + 0x3c]
+    cmp edx, dword ptr [ebx + ecx + 0x7c]
+    jb kr_out
+    add eax, ebx
+    mov dword ptr [{pk_gak:#x}], eax
+kr_out:
+    popad
+    ret
+''')
+pz_keys = place('pz_keys', f'''
+    pushad
+    test byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
+    jz ky_out
+    cmp dword ptr [{pk_gak:#x}], 0
+    jne ky_have
+    call {pk_resolve:#x}
+    cmp dword ptr [{pk_gak:#x}], 0
+    je ky_out
+ky_have:
+    push 0x20
+    call dword ptr [{pk_gak:#x}]
+    test ax, 0x8000
+    jnz ky_go
+    push 0x1b
+    call dword ptr [{pk_gak:#x}]
+    test ax, 0x8000
+    jz ky_out
+ky_go:
+    mov byte ptr [{PP_REQ:#x}], 1
+    and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_MANUAL:#x}
+ky_out:
+    popad
+    ret
+''')
+
 # Correr los vencimientos lo que pasó desde la última vez (se llama a cada vuelta de la función ociosa y al entrar a los
 # controles del reloj 0x4c0fe0, 0x4c10c0 y 0x4c1250). Conserva todos los registros.
 pz_tick = place('pz_tick', f'''
     pushad
+    call {pz_keys:#x}
     call dword ptr [{GETTICK:#x}]
     mov edx, eax
     xchg edx, dword ptr [{PZ_LAST:#x}]
@@ -16319,7 +16399,7 @@ BM_PASO = 18                 # como el menú de la ciudad (captura del usuario, 
 BM_Y0 = 80                   # bloque de 8 centrado donde el menú de órdenes reparte los suyos (53..233): 143 - 3,5 * 18
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
-BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall', 'Repair Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
+BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Faro', 'Stone Wall', 'Repair Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
 BM_TXT = [0x15] + list(range(1, 11)) + [TR_TXT, BD_TXT]          # renglones de arriba abajo (ORD del diálogo 34)
 BM_HOT = [0x16] + list(range(0xb, 0x15)) + [TR_HOT, BD_HOT]
 bm_empty = place_data('bm_empty', b'\0')
@@ -18692,13 +18772,76 @@ DN_FAGUA, DN_FTIERRA = 6, 1          # 6 sobre agua: pedido del 10/11/2026 (ante
 FR_TAB = bytes([1, 2, 3, 4, 5, 6, 7])
 assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
 fr_tab = place_data('fr_tab', FR_TAB)
-fr_var = place_data('fr_var', bytes(8))        # x, y del faro
+fr_var = place_data('fr_var', bytes(16))       # x, y del faro; +8, +12: vector hacia el agua (fr_fan)
+# Abanico (pedido del 10/11/2026): más allá de DN_FTIERRA la luz del faro alumbra solo dentro de 90 grados (45 a cada
+# lado) de la dirección del agua: la suma de los desplazamientos (dx, dy) de las casillas de agua del cuadrado de
+# radio DN_FAGUA, que apunta a la masa de agua principal. Sin agua alrededor, solo queda el anillo de DN_FTIERRA.
+# fr_fan: esi = dx, edi = dy -> eax = 1 si (dx, dy) cae en el abanico: punto > 0 y 2 * punto^2 >= |d|^2 * |v|^2.
+# |v| <= 13 * 21 * 2, así que los productos entran en 32 bits. Preserva el resto.
+fr_fan = place('fr_fan', f'''
+    push ebx
+    push ecx
+    push edx
+    push edi
+    mov ebx, dword ptr [{fr_var + 8:#x}]
+    mov ecx, dword ptr [{fr_var + 12:#x}]
+    mov eax, esi
+    imul eax, ebx
+    mov edx, edi
+    imul edx, ecx
+    add eax, edx
+    jle ff_no
+    imul eax, eax
+    add eax, eax
+    mov edx, esi
+    imul edx, edx
+    imul edi, edi
+    add edx, edi
+    imul ebx, ebx
+    imul ecx, ecx
+    add ebx, ecx
+    imul edx, ebx
+    cmp eax, edx
+    jl ff_no
+    mov eax, 1
+    jmp ff_out
+ff_no:
+    xor eax, eax
+ff_out:
+    pop edi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
 DN_TORRE = 3                                   # torre de vigía: 3 casillas (usuario, 10/11/2026)
 # fr_stamp: eax = x, edx = y del faro -> baja el nivel de las casillas de la grilla a su alcance. Preserva todo.
 fr_stamp = place('fr_stamp', f'''
     pushad
     mov dword ptr [{fr_var:#x}], eax
     mov dword ptr [{fr_var + 4:#x}], edx
+    mov dword ptr [{fr_var + 8:#x}], 0
+    mov dword ptr [{fr_var + 12:#x}], 0
+    mov edi, {-DN_FAGUA}
+fv_y:
+    mov esi, {-DN_FAGUA}
+fv_x:
+    mov eax, dword ptr [{fr_var:#x}]
+    add eax, esi
+    mov edx, dword ptr [{fr_var + 4:#x}]
+    add edx, edi
+    call {aimed:#x}
+    test al, 0x80
+    jz fv_next
+    add dword ptr [{fr_var + 8:#x}], esi
+    add dword ptr [{fr_var + 12:#x}], edi
+fv_next:
+    inc esi
+    cmp esi, {DN_FAGUA}
+    jle fv_x
+    inc edi
+    cmp edi, {DN_FAGUA}
+    jle fv_y
     mov edi, {-DN_FAGUA}
 fs_y:
     cmp edi, {DN_FAGUA}
@@ -18741,6 +18884,11 @@ fs_mx:
     jge fs_xnext
     cmp ebp, {DN_FTIERRA}
     jle fs_lev
+    push eax
+    call {fr_fan:#x}
+    test eax, eax
+    pop eax
+    jz fs_xnext
     call {aimed:#x}
     test al, 0x80
     jz fs_xnext
