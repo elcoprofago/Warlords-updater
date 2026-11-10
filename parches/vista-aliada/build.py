@@ -18037,10 +18037,83 @@ ds_out:
 # dn_lights: estampa en la grilla todas las luces de [GX0 - DN_N - 1, GX0 + GW + DN_N + 1) x (lo mismo en y). Con
 # Hidden Map, una ciudad, ruina, sitio o puente solo alumbra desde una casilla explorada por quien mira (bit 0x10 del
 # byte +3): su halo no delata lo que está bajo el negro.
-# Faros (pedido del 10/11/2026): alumbran OB_VISTA[OB_FARO] = 6 casillas con el degradé cuadrado de las ciudades
-# (ch = 0), recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
-DN_FARO = OB_VISTA[OB_FARO]
+# Faros (pedido del 10/11/2026; ver fr_stamp) y torres de vigía, recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
+# Faro (cambio del 10/11/2026): la luz se proyecta hacia el mar. Degradé de DN_FAGUA casillas sobre agua (aimed &
+# 0x80) y DN_FTIERRA sobre tierra, con la distancia de las ciudades (max + min // 2); niveles en fr_tab.
+DN_FAGUA, DN_FTIERRA = 5, 1
+FR_TAB = bytes([1, 2, 3, 4, 5, 7])
+assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
+fr_tab = place_data('fr_tab', FR_TAB)
+fr_var = place_data('fr_var', bytes(8))        # x, y del faro
 DN_TORRE = 3                                   # torre de vigía: 3 casillas (usuario, 10/11/2026)
+# fr_stamp: eax = x, edx = y del faro -> baja el nivel de las casillas de la grilla a su alcance. Preserva todo.
+fr_stamp = place('fr_stamp', f'''
+    pushad
+    mov dword ptr [{fr_var:#x}], eax
+    mov dword ptr [{fr_var + 4:#x}], edx
+    mov edi, {-DN_FAGUA}
+fs_y:
+    cmp edi, {DN_FAGUA}
+    jg fs_out
+    mov esi, {-DN_FAGUA}
+fs_x:
+    cmp esi, {DN_FAGUA}
+    jg fs_ynext
+    mov eax, esi
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    mov eax, edi
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge fs_mx
+    xchg eax, ecx
+fs_mx:
+    shr ecx, 1
+    add eax, ecx
+    cmp eax, {DN_FAGUA}
+    jg fs_xnext
+    mov ebp, eax
+    mov eax, dword ptr [{fr_var:#x}]
+    add eax, esi
+    mov edx, dword ptr [{fr_var + 4:#x}]
+    add edx, edi
+    mov ebx, eax
+    sub ebx, dword ptr [{DN_GX0:#x}]
+    js fs_xnext
+    cmp ebx, dword ptr [{DN_GW:#x}]
+    jge fs_xnext
+    mov ecx, edx
+    sub ecx, dword ptr [{DN_GY0:#x}]
+    js fs_xnext
+    cmp ecx, dword ptr [{DN_GH:#x}]
+    jge fs_xnext
+    cmp ebp, {DN_FTIERRA}
+    jle fs_lev
+    call {aimed:#x}
+    test al, 0x80
+    jz fs_xnext
+fs_lev:
+    imul ecx, dword ptr [{DN_STR:#x}]
+    add ecx, ebx
+    add ecx, dword ptr [{DN_BASE:#x}]
+    mov al, byte ptr [ebp + {fr_tab:#x}]
+    cmp byte ptr [ecx], al
+    jbe fs_xnext
+    mov byte ptr [ecx], al
+fs_xnext:
+    inc esi
+    jmp fs_x
+fs_ynext:
+    inc edi
+    jmp fs_y
+fs_out:
+    popad
+    ret
+''')
 dn_lights = place('dn_lights', f'''
     pushad
     mov edi, dword ptr [{DN_GY0:#x}]
@@ -18120,11 +18193,12 @@ dl_fok:
 dl_fput:
     movsx eax, word ptr [edi]
     movsx edx, word ptr [edi + 2]
-    mov ecx, {DN_FARO}
     cmp byte ptr [edi + 4], {OB_FARO}
-    je dl_fst
+    jne dl_ftorre
+    call {fr_stamp:#x}
+    jmp dl_fnext
+dl_ftorre:
     mov ecx, {DN_TORRE}
-dl_fst:
     call {dn_stamp:#x}
 dl_fnext:
     inc esi

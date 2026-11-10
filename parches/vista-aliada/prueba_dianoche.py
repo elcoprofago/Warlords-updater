@@ -23,10 +23,12 @@ DN_PRE, DN_POST, DN_MINI = jmp_target(0x459790), jmp_target(0x45aa6e), jmp_targe
 _OB = b'OBRA' + bytes(4 + 64 * 8)
 assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4; OB_TAB = OB_N + 4
-FARO_XY, TORRE_XY, FARO_R = (28, 14), (14, 6), 6   # faro fuera de la vista (alumbra 6, degradé de ciudad); torre: control
+FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
+FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 7), 5, 1   # degradé de 5 casillas sobre agua, 1 sobre tierra
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
+SEA = {(x, y) for x in range(23, MW) for y in range(9, 20)}   # medio agua (0x582158, aimed)
 VX, VY, VW, VH = 5, 5, 20, 15
 ME, ENEMY = 1, 2
 SHOPT, OPT, TURN = 0x53c38c + 25, 0x53c38e, 0x5032f8 + 0x30
@@ -50,6 +52,7 @@ class Bench:
         self.tile(20, 5, LAND, 2); self.tile(8, 22, LAND, 4)
         self.tile(5, 20, WATER, 1); self.tile(6, 20, WATER, 1)
         self.tile(22, 17, LAND, 1)                                  # camino: no es luz
+        for x, y in SEA: self.tile(x, y, WATER, 0); mu.mem_write(0x582158 + x * 0xa0 + y, bytes([0x80]))
         self.tile(22, 12, WATER, 0, 0x80)                           # puente derribado: no es luz
         mu.mem_write(0x560b20, struct.pack('<h', ME))
         self.armies([(15, 17, ME), (24, 8, ENEMY)])
@@ -156,6 +159,10 @@ def level(b, x, y):
         else:
             d = max(dx, dy) + min(dx, dy) // 2
         lev = min(lev, max(d - r0, 0) + lmin)
+    if seen(b, *FARO_XY):
+        dx, dy = abs(x - FARO_XY[0]), abs(y - FARO_XY[1])
+        d = max(dx, dy) + min(dx, dy) // 2
+        if d <= FR_TIERRA or (d <= FR_AGUA and (x, y) in SEA): lev = min(lev, FR_TAB[d])
     return lev
 
 def seen(b, x, y):   # con Hidden Map, solo alumbra lo explorado (bit 0x10 del byte +3)
@@ -165,7 +172,7 @@ def lights(b):
     out = []
     for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False, MIN))
     out += [(20, 5, 0, True, MIN), (8, 22, 0, True, MIN), (5, 20, 0, True, MIN), (6, 20, 0, True, MIN)]
-    out.append((*FARO_XY, FARO_R, False, MIN)); out.append((*TORRE_XY, 3, False, MIN))
+    out.append((*TORRE_XY, 3, False, MIN))
     out = [l for l in out if seen(b, l[0], l[1])]
     out += [(x, y, 1, True, AMIN) for x, y, p in b.army_list if p == ME]
     return out
@@ -221,7 +228,9 @@ print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
 assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
-assert g[24 - VX, 14 - VY] == MIN and g[20 - VX, 14 - VY] == MIN + 2, 'el faro alumbra 6 casillas y después el degradé'
+assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 and g[24 - VX, 18 - VY] == 7, 'el faro: degradé sobre el mar'
+assert g[21 - VX, 14 - VY] == 2 and g[20 - VX, 14 - VY] == N, 'el faro: 1 casilla hacia tierra'
+assert g[22 - VX, 17 - VY] == N, 'el faro no alumbra tierra a 3 casillas'
 assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 3 casillas'
 # 2) sin cambios: nada sucio y nada que pintar
 b.clear_dirty(); b.pre(); assert b.dirty() == set(), 'sucias 2'

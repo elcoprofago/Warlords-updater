@@ -15,6 +15,9 @@ Pedido completo:
   `wl_apply` (código WL_CODE=0x7000+índice por la orden de arrasar de siempre). Prueba: prueba_obras.py (sección
   «derribar muros»).
 
+- Luz del faro (cambio del 10/11/2026, 1.0.172.0): se proyecta hacia el mar. `fr_stamp` alumbra con degradé 5
+  casillas sobre agua (`aimed` & 0x80) y 1 sobre tierra (distancia max + min // 2, niveles FR_TAB 1,2,3,4,5,7).
+  Prueba: prueba_dianoche.py (faro en la costa; tierra a 3 casillas queda oscura).
 - Torre de vigía (indicación del 10/11/2026): alumbra 3 casillas (DN_TORRE). El +1 de fuerza al grupo que está en
   ella ya existía desde la etapa A (bridgeab: defensores que no son héroes).
 
