@@ -478,3 +478,23 @@ así lo de adelante tapa a lo de atrás en cualquier orden. prev2.py del scratch
 - «Build Trap» volvió al menú de órdenes (TR_HOT); la botonera de construir tiene 7 renglones.
 - La botonera de construir abre su propio diálogo, BM_DLG = 133 (bm_open, copia de 0x4afc20): los controles del 34
   sobre SETS\Fantasy\dlg_bm.pcx (archivo 172), que es DLG_PU11 de 204 de alto en lugar de 284.
+
+### 1.0.163.0 (9/11/2026)
+- El «espacio libre» del menú de construir eran los renglones apretados, no el alto: vuelve el marco de siempre
+  (DLG_PU11, 284) y BM_DLG usa los controles BM_RES = 138, una copia del recurso 34 agregada al final del .RES (el juego
+  busca los recursos recorriendo el archivo, 0x4ed7e0) con los 7 renglones cada 30 desde 53 y los otros 6 en y = 400.
+  dlg_bm.pcx de la 1.0.161.0 va a OBSOLETOS.
+- Muro: tostado (ladrillos ×0,68 al pie a ×1,12 arriba; almenas ×1,12) y sombra en damero. cuerpos_muro(empal, d) ya
+  no prohíbe todo: solo lo que se pinta antes en la casilla de pantalla (capas anteriores de la propia casilla según
+  od_ord, y las vecinas de arriba y de la izquierda, menos los brazos diagonales que ob_wmask descarta si aquí hay muro).
+
+## PRÓXIMO: colocar obras con vista previa, como el editor de mapas (pedido del 9/11/2026)
+Pedido textual: «Quisiera un metodo mas practico para los muros, asi como es ahora es muy engorroso. Se me ocurre
+copiar el sistema que ya tiene el editor de mapas: cada bloque a colocar (camino, bloque de puente o de muralla) en cada
+casillero se "previsualiza" segun donde se pose el cursor en el terreno, se evitan asi las flechitas. A medida que uno
+va viendo las distintas opciones va apretando haciendo click en el terreno.»
+Estado: nada hecho. Hoy se elige la obra en la botonera de la torrecita (bm_*), y el diálogo de reconstruir rota
+casilla/dirección con flechas (bd_pick, BD_CAT). Idea a estudiar: tras elegir la obra, un modo de cursor sobre el mapa
+que dibuje la pieza (ob_draw / ob_wmask con la casilla bajo el cursor como si ya tuviera la obra) y la construya al
+hacer clic, mientras se pueda (bd_ok/ob_okt, precio, alcance del líder). Mirar cómo war3ed_av.exe hace la vista previa
+y cómo el juego maneja los modos de cursor (p. ej. el de mover grupo).

@@ -50,10 +50,12 @@ class Lienzo:
                     self.px[q] = c
                     self.cuerpo.add(q)
 
-    def sombra(self, alto, prohibido=()):
+    def sombra(self, alto, prohibido=(), trama=False):
+        # trama: sombra en damero (un píxel sí y otro no), que deja ver el suelo como si fuera transparente
         for (gx, gy), h in alto.items():
             for s in range(0, h + 1, 1):
                 q = (round(gx + s * 0.55), round(gy + s * 0.22))
+                if trama and (q[0] + q[1]) % 2: continue
                 if q not in self.cuerpo and q not in prohibido: self.px[q] = (16, 14, 10)
 
     def imagen(self, pal):
@@ -110,17 +112,28 @@ def _huella_centro(lado):
             for gy in range(C - lado // 2, C - lado // 2 + lado)}
 
 
-def cuerpos_muro(empal):
-    """Píxeles de pantalla de todos los cuerpos posibles (brazos, centro, y los de las 8 vecinas): la sombra no los pisa."""
-    tot = set()
-    for d in list(range(8)) + [None]:
+ORDEN_MURO = [0, 7, 1, 6, 2, None, 5, 3, 4]      # orden de las capas dentro de una casilla (od_ord de build.py; None = centro)
+
+
+def cuerpos_muro(empal, d):
+    """Píxeles de pantalla de los cuerpos que el juego pinta antes que la capa d (None = centro) en la misma casilla de
+    pantalla, donde su sombra no puede caer: los de las capas anteriores de la propia casilla (ORDEN_MURO) y todos los
+    de las vecinas de la fila de arriba y de la izquierda (ob_draw recorre las 9 vecinas de noroeste a sudeste). Lo
+    que se pinta después tapa la sombra solo (pedido del 9/11/2026: con todo prohibido el muro casi no tenía sombra)."""
+    def cuerpo(dd):
         lz = Lienzo(Image.new('RGB', (87, 88)), lambda c: 0)
-        _muro_en(lz, d, empal, sombra=False)
-        tot |= lz.cuerpo
-    out = set()
-    for ox in (-48, 0, 48):
-        for oy in (-48, 0, 48):
-            out |= {(x + ox, y + oy) for x, y in tot}
+        _muro_en(lz, dd, empal, sombra=False)
+        return lz.cuerpo
+    cu = {dd: cuerpo(dd) for dd in ORDEN_MURO}
+    out = set().union(*(cu[dd] for dd in ORDEN_MURO[:ORDEN_MURO.index(d)]))
+    for ox in (-1, 0, 1):
+        for oy in (-1, 0, 1):
+            if not (oy < 0 or (oy == 0 and ox < 0)): continue
+            for dd, c in cu.items():
+                # un brazo diagonal de la vecina que pasa al lado de esta casilla no existe si aquí hay muro (ob_wmask
+                # descarta la diagonal cuando una de las dos casillas de en medio tiene muro)
+                if dd is not None and dd % 2 and (0, 0) in ((ox, oy + RDY[dd]), (ox + RDX[dd], oy)): continue
+                out |= {(x + 48 * ox, y + 48 * oy) for x, y in c}
     return out
 
 
@@ -273,7 +286,7 @@ def _muro_piedra(lz, d, sombra, prohibido):
             borde = abs(w) > ancho / 2 - 3
             tramo[(gx, gy)] = (a, w)
             alto[(gx, gy)] = HM + ((6 if a % 8 < 5 else 2) if borde else 0)
-    if sombra: lz.sombra({q: h for q, h in alto.items() if q in tramo or quien.get(q) == (C, C)}, prohibido)
+    if sombra: lz.sombra({q: h for q, h in alto.items() if q in tramo or quien.get(q) == (C, C)}, prohibido, trama=True)
 
     def cara(gx, gy, z, lado):
         if (gx, gy) in tramo:
@@ -290,8 +303,9 @@ def _muro_piedra(lz, d, sombra, prohibido):
             u = int((math.atan2(ny, nx) + math.pi) * RT)
             luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             base, oscura = HM + 4, u % 8 >= 4
-        if z >= base: return _parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz)
-        return _ladrillo(u, base - 1 - z, luz)
+        if z >= base: return _parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12)
+        # tostado (pedido del 9/11/2026): más claro arriba, más oscuro al pie
+        return _ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base))
 
     def arriba(gx, gy):
         base = HM if (gx, gy) in tramo else HM + 4

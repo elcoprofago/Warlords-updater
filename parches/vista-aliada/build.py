@@ -11665,8 +11665,7 @@ def _od_color(rgb):
     return _od_memo[rgb]
 od_capas = [obras_img.torre(_rl, _od_color, po_pal), obras_img.torre(_rl, _od_color, po_pal, True)]
 for _e in (True, False):   # empalizada (capas 2..10), muro (11..19)
-    _pr = obras_img.cuerpos_muro(_e)
-    od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, _pr) for d in [None] + list(range(8))]
+    od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, obras_img.cuerpos_muro(_e, d)) for d in [None] + list(range(8))]
 assert len(od_capas) == OD_CAPAS and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
@@ -15067,10 +15066,12 @@ caves['tr_chkp'] = struct.pack('<I', tr_check)
 # a la siguiente casilla o dirección de ese tipo) y abren el diálogo de reconstruir como antes. «Build»
 # sale del menú de órdenes (BM_ON = 0: sin texto y apagado); «Build Trap» quedó en el menú de órdenes (pedido del 9/11/2026). La empalizada todavía no se construye (etapa B, falta
 # la batalla).
-# El menú de construir abre su propio diálogo BM_DLG (pedido del 9/11/2026: quedaba mucho espacio libre debajo): los
-# mismos controles (recurso 34) sobre un marco más bajo, BM_FILE = SETS\Fantasy\dlg_bm.pcx (DLG_PU11 sin el medio).
+# El menú de construir abre su propio diálogo BM_DLG (pedido del 9/11/2026: los renglones quedaban apretados arriba y
+# sobraba espacio abajo): el mismo marco que el menú de órdenes (DLG_PU11) con los controles BM_RES, copia del recurso 34
+# con los 7 renglones de las obras repartidos en todo el alto (BM_PASO) y los 6 sobrantes fuera del diálogo.
 BM_DLG = 133                 # siguiente id de la tabla de diálogos (tipo 6; ver table_add, más abajo)
-BM_H = 53 + 15 * 6 + 10 + 51    # último renglón (el 7.º) en 53 + 15 * 6, y el mismo margen de abajo que el original
+BM_RES = 138                 # siguiente id de los recursos de diálogo (tipo 7); el juego los busca recorriendo el archivo
+BM_PASO = 30                 # 53 (primer renglón) + 6 * 30 = 233, el último renglón del menú de órdenes
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
 BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
@@ -16059,7 +16060,8 @@ IA_TNAME = place_data('ia_tname', bytes(64))
 # Archivos que instaló una versión anterior del parche y ya no van (un bono renombrado o quitado): en el arranque,
 # antes del menú, DeleteFileA ([0x5a97c0]) los borra de C:\Warlords3, así todas las PC quedan con los mismos bonos
 # en el editor aunque el Actualizador no borre nada. Si no están, DeleteFileA falla sin más.
-OBSOLETOS = (r'TERRAIN\SUBTYPE\camo.STT', r'TERRAIN\SUBTYPE\nighmare.STT', r'TERRAIN\SUBTYPE\bridge.STT')
+OBSOLETOS = (r'TERRAIN\SUBTYPE\camo.STT', r'TERRAIN\SUBTYPE\nighmare.STT', r'TERRAIN\SUBTYPE\bridge.STT', r'SETS\Fantasy\dlg_bm.pcx')
+# dlg_bm.pcx: el marco bajo del menú de construir, que solo instaló la 1.0.161.0
 obs_strs = [place_data(f'obs{i}', cstr_(n)) for i, n in enumerate(OBSOLETOS)]
 ia_menu = place('ia_menu', f'''
     pushad
@@ -18575,23 +18577,9 @@ struct.pack_into('<I', _pr, 0, GO_FILE)
 setstr(_pr, 4, 32, 'picts\\alianza')
 table_add(res, 4, GO_IMG, struct.pack('<8i', GO_IMG, GO_FILE, 1, 0, 0, 0, GO_W, GO_H))   # la 4 va después de la 2
 table_add(res, 2, GO_FILE, bytes(_pr))
-# Marco del menú de construir (BM_DLG, BM_FILE; ver bm_open): DLG_PU11 con los primeros BM_H - 44 renglones y los 44
-# últimos (el borde de abajo); el corte cae en el mármol liso, entre los costados rectos.
-BM_FILE = GO_FILE + 1
-_pu = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_PU11.PCX')
-assert _pu.size == (182, 284)
-bm_hoja = Image.new('P', (182, BM_H), 11); bm_hoja.putpalette(_pu.getpalette())
-bm_hoja.paste(_pu.crop((0, 0, 182, BM_H - 44)), (0, 0)); bm_hoja.paste(_pu.crop((0, 240, 182, 284)), (0, BM_H - 44))
-pcx = io.BytesIO(); bm_hoja.save(pcx, 'PCX'); BM_PCX = pcx.getvalue()
-o2, _ = table(res, 2)
-_pr = bytearray(res[o2 + 20 + 104 * 60:o2 + 20 + 105 * 60])
-assert _pr[4:13].lower() == b'dlg_pu11\0', bytes(_pr[:40])
-struct.pack_into('<I', _pr, 0, BM_FILE)
-setstr(_pr, 4, 32, 'dlg_bm')
-table_add(res, 2, BM_FILE, bytes(_pr))
 o6, _ = table(res, 6)
 assert struct.unpack_from('<8i', res, o6 + 20 + 31 * 32) == (31, 104, 34, 182, 284, 0, 0, 1)
-table_add(res, 6, BM_DLG, struct.pack('<8i', BM_DLG, BM_FILE, 34, 182, BM_H, 0, 0, 1))
+table_add(res, 6, BM_DLG, struct.pack('<8i', BM_DLG, 104, BM_RES, 182, 284, 0, 0, 1))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -19057,7 +19045,6 @@ NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
-NUEVOS[os.path.join('SETS', 'Fantasy', 'dlg_bm.pcx')] = BM_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)
@@ -19079,6 +19066,25 @@ for rel_, data in STTS.items():
         sys.exit(f'{path} ya existe con otro contenido; no lo piso. Renombralo o borralo y volve a armar.')
 os.makedirs(os.path.dirname(OUT_RES), exist_ok=True)
 open(OUT_EXE, 'wb').write(exe)
+# Controles del menú de construir (BM_RES; ver BM_DLG): copia del 34 ya terminado. Renglón i (texto BM_TXT[i] y zona
+# BM_HOT[i]) en 53 + i * BM_PASO, la zona con el mismo desfase que tenía respecto del texto; los renglones 7 a 12, que
+# en este menú van vacíos y apagados, quedan en y = 400 (fuera del diálogo de 284) para que no tapen a los de arriba.
+_o, _h = find_dialog(res, 34)
+assert _h[3] == _h[4]
+try:
+    find_dialog(res, BM_RES); raise AssertionError('BM_RES ya existe')
+except KeyError: pass
+_blk = bytearray(res[_o:_o + 20 + _h[4]])
+struct.pack_into('<I', _blk, 4, BM_RES)
+_r = {i: p - _o for i, (p, t) in records(res, 34).items()}
+for _i, (_tx, _ht) in enumerate(zip(BM_TXT, BM_HOT)):
+    _ty = struct.unpack_from('<i', _blk, _r[_tx] + 0xc)[0]
+    _hy = struct.unpack_from('<i', _blk, _r[_ht] + 0xc)[0]
+    _ny = 53 + _i * BM_PASO if _i < len(BM_ROWS) else 400
+    struct.pack_into('<i', _blk, _r[_tx] + 0xc, _ny)
+    struct.pack_into('<i', _blk, _r[_ht] + 0xc, _ny + _hy - _ty)
+res += _blk
+assert find_dialog(res, BM_RES)[0] == len(res) - len(_blk)
 open(OUT_RES, 'wb').write(res)
 for rel_, data in NUEVOS.items():
     path = os.path.join(OUT_DIR, rel_)

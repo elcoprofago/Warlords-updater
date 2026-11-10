@@ -422,9 +422,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: ocho más (165 a 172; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 dlg_bm)', (len(fn), len(fo)), (173, 165))
-ver('archivo 172: marco del menú de construir, copia del 104 (dlg_pu11) con otro nombre',
-    (struct.unpack_from('<I', fn[172])[0], fn[172][4:11], fn[172][36:] == fn[104][36:]), (172, b'dlg_bm\0', True))
+ver('archivos: siete más (165 a 171; 168 pozos, 169 aviso, 170 sello, 171 alianza)', (len(fn), len(fo)), (172, 165))
 def dialogos(path):
     d = open(path, 'rb').read(); o = 8
     while True:
@@ -432,7 +430,26 @@ def dialogos(path):
         if h[0] == 6 and h[1] == 0: return [struct.unpack_from('<8i', d, o + 20 + 32 * i) for i in range(h[2])]
         o += 20 + h[4]
 dn = dialogos(NUEVO)
-ver('diálogo 133: el menú de construir, controles 34 sobre dlg_bm, 204 de alto', dn[133], (133, 172, 34, 182, 204, 0, 0, 1))
+ver('diálogo 133: el menú de construir, mismo marco (104) con los controles 138', dn[133], (133, 104, 138, 182, 284, 0, 0, 1))
+def ctl_y(path, did):
+    d = open(path, 'rb').read(); o = 8
+    SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
+          0xb: 0x64, 0xc: 0x64, 0xd: 0x3c, 0xe: 0x30, 0x11: 0x14, 0x12: 0x68, 0x13: 0x28, 0x14: 0x2c, 0x15: 0xac}
+    while True:
+        h = struct.unpack_from('<5I', d, o)
+        if h[0] == 7 and h[1] == did: break
+        o += 20 + h[4]
+    p, out = o + 20, {}
+    for _ in range(h[2]):
+        t, i = struct.unpack_from('<II', d, p); out[i] = struct.unpack_from('<i', d, p + 0xc)[0]; p += 4 + SZ[t]
+    return out
+y34, y138 = ctl_y(NUEVO, 34), ctl_y(NUEVO, 138)
+ver('controles 138: los 7 textos de las obras cada 30 desde 53, el resto fuera (400)',
+    [y138[i] for i in [0x15] + list(range(1, 11)) + [0x17, 0x19]], [53 + 30 * i for i in range(7)] + [400] * 6)
+ver('controles 138: cada zona con el mismo desfase respecto de su texto que en el 34',
+    all(y138[h] - y138[t] == y34[h] - y34[t] for t, h in zip([0x15] + list(range(1, 11)) + [0x17, 0x19],
+                                                            [0x16] + list(range(0xb, 0x15)) + [0x18, 0x1a])), True)
+ver('control: el 34 (menú de órdenes) conserva sus renglones', y34[0x15], 53)
 ver('control: el 31 (menú de órdenes) sigue igual', dn[31], (31, 104, 34, 182, 284, 0, 0, 1))
 ver('archivo 170: sello en SETS\\Fantasy', (struct.unpack_from('<I', fn[170])[0], fn[170][4:10]), (170, b'sello\0'))
 n111, o111 = recs(NUEVO, 111), recs(ORIG, 111)
