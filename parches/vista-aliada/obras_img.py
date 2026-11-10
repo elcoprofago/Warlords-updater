@@ -15,7 +15,7 @@ C = 72          # centro del lienzo = centro de la casilla de la obra
 T = 9           # ancho de la empalizada en el suelo
 H = 15          # alto de la empalizada
 TM = 16         # ancho del muro de piedra en el suelo
-HM = 32         # alto del muro de piedra: como el frente de la ruina grande (pedido del 9/11/2026)
+HM = 24         # alto del muro de piedra: el frente de la ruina grande menos 2 hiladas del pie (pedido del 9/11/2026)
 RT = 15         # radio de la torre redonda del muro de piedra
 RDX = [0, 1, 1, 1, 0, -1, -1, -1]       # N, NE, E, SE, S, SO, O, NO
 RDY = [-1, -1, 0, 1, 1, 1, 0, -1]
@@ -51,17 +51,25 @@ class Lienzo:
                     self.cuerpo.add(q)
 
     def sombra(self, alto, prohibido=(), trama=False):
-        # trama: sombra en damero (un píxel sí y otro no), que deja ver el suelo como si fuera transparente
+        # trama: sombra tramada que deja ver algo del suelo; tres de cada cuatro píxeles (pedido del 9/11/2026: un poco
+        # más oscura que el damero de antes)
         for (gx, gy), h in alto.items():
             for s in range(0, h + 1, 1):
                 q = (round(gx + s * 0.55), round(gy + s * 0.22))
-                if trama and (q[0] + q[1]) % 2: continue
+                if trama and q[0] % 2 and q[1] % 2: continue
                 if q not in self.cuerpo and q not in prohibido: self.px[q] = (16, 14, 10)
 
     def imagen(self, pal):
         im = Image.new('P', (144, 144), 11); im.putpalette(pal)
         for (x, y), c in self.px.items():
-            if 0 <= x < 144 and 0 <= y < 144: im.putpixel((x, y), self.color(c))
+            if not (0 <= x < 144 and 0 <= y < 144): continue
+            if len(c) == 4:
+                c = c[:3]
+                if _BAYER[y % 4][x % 4] < 3:
+                    lum = sum(c) / 3
+                    im.putpixel((x, y), min(PARDOS, key=lambda i: abs(sum(pal[3 * i:3 * i + 3]) / 3 - lum * 0.8)))
+                    continue
+            im.putpixel((x, y), self.color(c))
         return im
 
 
@@ -90,6 +98,16 @@ def _calzada(gx, gy):
 
 def _mul(c, k):
     return tuple(max(0, min(255, int(v * k))) for v in c)
+
+
+def _pardo(c):
+    # gris amarronado (pedido del 9/11/2026). La paleta del mapa no tiene grises pardos: el píxel queda marcado y
+    # Lienzo.imagen lo trama, gris en la mayoría de los píxeles y un marrón de igual brillo en tres de cada dieciséis, un poco más oscuro.
+    return tuple(c[:3]) + ('p',)
+
+
+PARDOS = range(128, 136)        # rampa marrón de la paleta del mapa (la usan los gráficos de cavernas)
+_BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
 
 
 # ---- muros: brazo d (0..7) o centro (d = None)
@@ -161,6 +179,7 @@ def _ladrillo(u, v, luz):
     pieza, q = divmod(u + (3 if fila % 2 else 0), 7)
     if q == 6: return _mul((63, 61, 61), luz)
     k = (87, 103, 111, 119, 95, 127)[(pieza * 5 + fila * 3) % 6]
+    if (pieza * 7 + fila * 13) % 11 == 0: k = int(k * 0.62)   # algún que otro ladrillo más oscuro
     if r == 0: k = min(191, int(k * 1.4))           # canto de arriba, claro
     k = int(k * (1.0 - 0.05 * q))                   # se oscurece hacia la derecha
     return _mul((k, k, k + (2 if k % 2 else 0)), luz)
@@ -268,7 +287,7 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
 
 
 
-def _muro_piedra(lz, d, sombra, prohibido):
+def _muro_piedra(lz, d, sombra, prohibido, puerta=None):
     # Muro de piedra (pedidos del 9/11/2026): torre redonda en cada casilla y tramos hasta la mitad del camino a la
     # vecina. Cada tramo se dibuja junto con las dos torres que une (la propia y la de la vecina), para que el orden de
     # pintado del juego (casillas de norte a sur) no deje un tramo encima de la torre de adelante: los píxeles de las
@@ -303,20 +322,47 @@ def _muro_piedra(lz, d, sombra, prohibido):
             u = int((math.atan2(ny, nx) + math.pi) * RT)
             luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             base, oscura = HM + 4, u % 8 >= 4
-        if z >= base: return _parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12)
+        if z >= base: return _pardo(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
+        if puerta and (gx, gy) not in tramo and quien[(gx, gy)] == (C, C) and ny > 0:
+            c = _arco(gx - C + 0.5, z, puerta)
+            if c: return c
         # tostado (pedido del 9/11/2026): más claro arriba, más oscuro al pie
-        return _ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base))
+        return _pardo(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
 
     def arriba(gx, gy):
         base = HM if (gx, gy) in tramo else HM + 4
-        if alto[(gx, gy)] > base: return (190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154)
+        if alto[(gx, gy)] > base: return _pardo((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
         return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
 
-def muro(ruina, color, pal, d, empal, prohibido):
+AW, AH = 8, 13          # medio ancho del vano de la puerta y alto de sus jambas
+
+
+def _arco(dx, z, puerta):
+    """Puerta en el frente de la torre del muro sobre un camino (pedido del 9/11/2026): vano de medio punto con un
+    anillo de dovelas claras; adentro un portón de tablas con dos herrajes (cerrada) o el hueco oscuro con las dos
+    hojas abiertas contra las jambas (abierta). dx: distancia al eje de la torre; z: altura. None: ladrillo común."""
+    ax = abs(dx)
+    r = math.hypot(ax, max(0.0, z - AH))            # el arco: medio círculo de radio AW sobre las jambas
+    if r > AW + 2.2: return None
+    if r > AW:                                      # dovelas: claras, con juntas radiales
+        ang = math.atan2(max(0.0, z - AH), dx)
+        if z > AH and int(ang * 9) % 2 == 0 and r > AW + 1.2: return _pardo((92, 88, 84))
+        return _pardo((170, 164, 156))
+    if puerta == 'abierta':
+        if ax > AW - 2: return (108, 70, 34) if int(z) % 5 else (60, 40, 22)    # hojas abiertas, de canto
+        return (22, 17, 12)
+    if abs(dx) < 0.6: return (40, 26, 14)           # junta de las dos hojas
+    if int(z) in (3, 9): return (58, 54, 52)        # herrajes
+    k = 1.0 if int(dx + 20) % 3 else 0.7            # tablas
+    return _mul((126, 82, 40), k)
+
+
+def muro(ruina, color, pal, d, empal, prohibido, puerta=None):
     lz = Lienzo(ruina, color)
-    _muro_en(lz, d, empal, prohibido=prohibido)
+    if puerta: _muro_piedra(lz, None, True, prohibido, puerta)
+    else: _muro_en(lz, d, empal, prohibido=prohibido)
     return lz.imagen(pal)
 
 

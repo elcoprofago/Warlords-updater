@@ -11661,7 +11661,8 @@ pp_end:
 # pinta su pieza p = (P - W) + (1, 1). Muro y empalizada: el centro y un brazo por cada bit de ob_wmask, en el orden
 # N, NO, NE, O, E, centro, SO, SE, S (lo de atrás primero). Como las celdas se redibujan de a una (bit 0x20 de la
 # celda), cada una repinta lo suyo de las obras vecinas y nada queda cortado.
-OD_PORFILA, OD_CAPAS = 5, 20
+OD_PORFILA, OD_CAPAS = 5, 22
+OD_PUERTA = 20               # capas 20 y 21: torre del muro sobre un camino, con el portón cerrado o abierto
 OD_BASE = {OB_TORRE: 0, OB_FARO: 1, OB_EMPAL: 2, OB_MURO: 11}
 od_full = place_data('od_full', bytes((OD_CAPAS * 9 + 7) // 8))
 od_off = place_data('od_off', bytes(((k % 3 - 1) & 0xff) for k in range(9)))
@@ -11670,7 +11671,7 @@ od_rdx = place_data('od_rdx', bytes(v & 0xff for v in (0, 1, 1, 1, 0, -1, -1, -1
 od_rdy = place_data('od_rdy', bytes(v & 0xff for v in (-1, -1, 0, 1, 1, 1, 0, -1)))
 od_ord = place_data('od_ord', bytes((0, 7, 1, 6, 2, 8, 5, 3, 4)))
 od_base = place_data('od_base', bytes(OD_BASE[t] for t in (OB_TORRE, OB_FARO, OB_EMPAL, OB_MURO)))
-od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara
+od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara, +4 capa del centro (0: la base)
 # Obras grandes (ob_draw): las capas de obras_img.py (3x3 casillas cada una), en la paleta del mapa con los colores de
 # po_usar más los de la ruina grande (de ahí salen la piedra y las almenas del muro). Los cuadros PO_TORRE..PO_MURO de
 # la fila 0 quedan de antes, sin uso.
@@ -11691,7 +11692,14 @@ def _od_color(rgb):
 od_capas = [obras_img.torre(_rl, _od_color, po_pal), obras_img.torre(_rl, _od_color, po_pal, True)]
 for _e in (True, False):   # empalizada (capas 2..10), muro (11..19)
     od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, obras_img.cuerpos_muro(_e, d)) for d in [None] + list(range(8))]
-assert len(od_capas) == OD_CAPAS and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
+def _od_arco(p):
+    a = obras_img.muro(_rl, _od_color, po_pal, None, False, obras_img.cuerpos_muro(False, None), p)
+    b = od_capas[OD_BASE[OB_MURO]]
+    m = _I.new('P', a.size, 11); m.putpalette(po_pal)
+    m.putdata([x if x != y else 11 for x, y in zip(a.getdata(), b.getdata())])
+    return m
+od_capas += [_od_arco(p) for p in ('cerrada', 'abierta')]
+assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
     for pz in range(9):
@@ -11850,6 +11858,47 @@ prd_out:
     popad
     ret
 ''')
+# Puerta del muro (pedido del 9/11/2026): las capas OD_PUERTA y OD_PUERTA + 1 son solo el arco con el portón (los
+# píxeles en que la torre con puerta difiere de la torre común); ob_draw las pinta al final, después de todas las
+# obras de las 9 vecinas, porque cada tramo de muro repinta las dos torres que une y taparía el arco.
+# od_gate (pedido del 9/11/2026): ebx = registro de una obra, eax = x, edx = y -> [od_vars + 4] = capa del centro: si
+# es un muro de piedra sobre un camino (puerta), OD_PUERTA con el portón cerrado, u OD_PUERTA + 1 abierto mientras haya
+# un ejército vivo en la casilla (0x54fe50 + i * 0x1c, x en +2, y en +4, vivo si +0x13 & 0x40); si no, 0 (la base).
+# El juego redibuja la casilla al entrar o salir un ejército, así el portón se abre y se cierra a su paso. Preserva todo.
+od_gate = place('od_gate', f'''
+    pushad
+    mov byte ptr [{od_vars + 4:#x}], 0
+    cmp byte ptr [ebx + 4], {OB_MURO}
+    jne odg_out
+    mov esi, eax
+    mov edi, edx
+    call {br_tile:#x}
+    test eax, eax
+    jz odg_out
+    test byte ptr [eax + 3], 7
+    jz odg_out
+    mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA}
+    movsx ecx, word ptr [0x54fe50]
+    mov eax, 1
+odg_l:
+    cmp eax, ecx
+    jge odg_out
+    imul edx, eax, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz odg_nx
+    cmp si, word ptr [edx + 0x54fe52]
+    jne odg_nx
+    cmp di, word ptr [edx + 0x54fe54]
+    jne odg_nx
+    mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA + 1}
+    jmp odg_out
+odg_nx:
+    inc eax
+    jmp odg_l
+odg_out:
+    popad
+    ret
+''')
 ob_draw = place('ob_draw', f'''
     pushad
     call {pv_rdraw:#x}
@@ -11903,6 +11952,32 @@ odw_nx:
     inc esi
     cmp esi, 9
     jb odw_l
+    xor esi, esi
+odw_g:
+    movsx eax, byte ptr [esi + {od_off:#x}]
+    movsx edx, byte ptr [esi + {od_offy:#x}]
+    movsx ecx, word ptr [{po_cx:#x}]
+    add eax, ecx
+    movsx ecx, word ptr [{po_cx + 2:#x}]
+    add edx, ecx
+    push eax
+    call {ob_at:#x}
+    mov ebx, eax
+    pop eax
+    test ebx, ebx
+    jz odw_gn
+    call {od_gate:#x}
+    movzx ecx, byte ptr [{od_vars + 4:#x}]
+    test ecx, ecx
+    jz odw_gn
+    mov eax, 8
+    sub eax, esi
+    mov byte ptr [{od_vars:#x}], al
+    call {od_put:#x}
+odw_gn:
+    inc esi
+    cmp esi, 9
+    jb odw_g
     mov byte ptr [{PV_IN:#x}], 0
     popad
     ret
@@ -15145,7 +15220,8 @@ caves['tr_chkp'] = struct.pack('<I', tr_check)
 # con los 7 renglones de las obras repartidos en todo el alto (BM_PASO) y los 6 sobrantes fuera del diálogo.
 BM_DLG = 133                 # siguiente id de la tabla de diálogos (tipo 6; ver table_add, más abajo)
 BM_RES = 138                 # siguiente id de los recursos de diálogo (tipo 7); el juego los busca recorriendo el archivo
-BM_PASO = 30                 # 53 (primer renglón) + 6 * 30 = 233, el último renglón del menú de órdenes
+BM_PASO = 18                 # como el menú de la ciudad (captura del usuario, 9/11/2026: a 30 quedaban muy separados)
+BM_Y0 = 89                   # bloque de 7 centrado donde el menú de órdenes reparte los suyos (53..233): 143 - 3 * 18
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
 BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
@@ -19495,7 +19571,7 @@ _r = {i: p - _o for i, (p, t) in records(res, 34).items()}
 for _i, (_tx, _ht) in enumerate(zip(BM_TXT, BM_HOT)):
     _ty = struct.unpack_from('<i', _blk, _r[_tx] + 0xc)[0]
     _hy = struct.unpack_from('<i', _blk, _r[_ht] + 0xc)[0]
-    _ny = 53 + _i * BM_PASO if _i < len(BM_ROWS) else 400
+    _ny = BM_Y0 + _i * BM_PASO if _i < len(BM_ROWS) else 400
     struct.pack_into('<i', _blk, _r[_tx] + 0xc, _ny)
     struct.pack_into('<i', _blk, _r[_ht] + 0xc, _ny + _hy - _ty)
 res += _blk
