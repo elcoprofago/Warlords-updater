@@ -57,3 +57,26 @@ Pedido completo:
 - Habilidades de grupo (0x468440, tabla 0x469684 / saltos 0x469634, registro en ecx desde 0x46907c): se guarda el
   máximo del bando en la estructura esi: Fortify 6 -> [esi+4], Life Drain 54 -> [esi+0x16]. Para el bando del muro:
   poner max(actual, 7) y max(actual, 5) al final de ese armado (falta ubicar el final de 0x468440 y quién es esi).
+- Cadena del ataque (10/11/2026, desensamblado del original):
+  - Paso 0x49e280(p, &x, &y, &mov, &n) recorre el camino del grupo; por casilla lee la palabra del mapa
+    (0x503e58: bit 0x8000 ocupada, dueño = (w & 0x3c00) >> 10). Ocupada por otro y diplomacia
+    [0x55ee4c + p*56 + dueño] == 2 (guerra) -> devuelve **2** con x, y de la casilla (0x49e57d). Con otro estado,
+    código 7 (entrar). Se engancha ahí: casilla con muro enemigo en pie y en guerra -> código 2 aunque esté vacía.
+  - Código 2 en 0x49c9f0 (tabla 0x49d174, entrada 2 = 0x49d029): guarda el blanco en 0x572998[p] / 0x5729a8[p]
+    (lector 0x49c300) y para con 0x49c960(p, 2). El humano confirma en 0x4c4da0 (0x4648d0(p, x, y): rechaza si
+    0x49e770(x, y) está en la lista 0x5729b8 de 40 casillas o si no le queda movimiento; si no, 0x4b9330 manda la
+    batalla por red y espera). Código 6 (0x49d0a1) / 0x49d151 -> 0x469ed0(p, x, y) en todas las PC.
+  - 0x469ed0: 0x4debd0(semilla) -> 0x464ac0(p, x, y, ficha) -> 0x466c90 -> 0x464ea0 (pelea) -> 0x465c80 (resultado).
+  - 0x464ac0: ficha [+0] atacante, [+1] defensor = dueño de la palabra del mapa (casilla vacía: el que diga la
+    palabra; hay que forzar el dueño del muro), +4/+6 x, y; defensores en [esp+0x30] por 0x4411b0(x, y, lista)
+    (sin ciudad: 0x464c3d..0x464c51, ya enganchado por crdef del convoy, que suma casillas con 0x4411b0 hasta 24);
+    cuenta [esp+0x12] -> [+0xd]; cada defensor 0x467240(ejército, x, y, ficha+0x12e+i*0x24, 0); habilidades de
+    grupo 0x468440(n, lista, x, y, 0x5699c8 + p*0x17).
+  - Ejércitos: registro 0x1c bytes desde 0x54fe50 (+2 x, +4 y, +6/+8 destino, +0xe palabra con dueño
+    (& 0x1e0) >> 5, +0x12 bit 0x4000 = vivo); cantidad en [0x54fe50]. 0x43b510 busca lugar para uno nuevo
+    alrededor de una casilla (25 vecinos, tabla 0x4fabc0/0x4fabf8); 0x43b6d0 calcula las cifras de uno nuevo
+    (ciudad, jugador, tipo). **Falta** ubicar la función que da de alta el registro (la que llama a 0x43b6d0 en
+    la producción: 0x43aab4 / 0x43b24b / 0x43b437) para crear los arqueros virtuales.
+- Orden de trabajo que sigue: no publicar el paso 1 solo (un muro vacío atacado sin defensores se perdería en una
+  batalla sin defensa). Pasos 1 y 2 van juntos: código 2 ante muro enemigo + crdef con los arqueros virtuales +
+  anotar muertos en +7 después de 0x465c80 y derribar el bloque con 24.
