@@ -14,3 +14,15 @@ source/Actualizador/obj/
 /ia/tanda.ini
 ia/Visor-Historia.ini
 simcombate/Simulador-Combate.ini
+
+# imágenes de ejemplo del usuario (texturas y diseños), no van al repo
+/picts/CR-002.png
+/picts/CR-008.png
+/picts/CR-027.png
+/picts/CR-028.png
+/picts/difficulty.png
+/picts/download_dlc_package.png
+/picts/eye_test.png
+/picts/lock_small_gold.png
+/picts/star.png
+/picts/victory.png
