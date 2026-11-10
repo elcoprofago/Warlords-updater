@@ -45,6 +45,25 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: ataque al muro, pasos 1 y 2 (1.0.174.0, 10/11/2026)
+- `po_pf`: un bloque en pie de un bando en guerra con el que mueve (`wl_war`: OB_MURO, +7 < WV_MAX = 24, DIPLO = 2)
+  puede ser destino del camino; no se atraviesa.
+- `wv_step` (0x49e434): casilla vacía con ese bloque -> código 2 (ataque).
+- `wv_pre` (en lugar de 0x464ac0, en 0x469f35): pone el dueño del muro en la palabra +0 de la casilla y crea
+  min(24 - muertos, 32 - defensores reales) arqueros (`wv_type`: «archers» del dueño, si no el primero con Missiles)
+  con `wv_new` (0x46c330 + 0x43b6d0, ciudad -1). No crea si la casilla está ocupada por otro bando.
+- `wv_stat` (0x4660d1): un arquero virtual muerto se da de baja sin estadísticas ni aviso.
+- `wv_post` (en lugar de ia_bat, en 0x469f54): llama ia_bat, cuenta muertos, da de baja a los vivos, suma al +7 y
+  con 24 derriba el bloque (ob_del, 0x4a4f20, ob_fogme); rehace la ocupación (0x441290) y redibuja.
+- Pruebas: prueba_muroataque.py (wl_war, wv_step, wv_pre, wv_stat, wv_post, con controles) y prueba_obras.py
+  (po_pf: el muro enemigo como destino).
+- Sin verificar en el juego: si el atacante entra a la casilla cuando cae el muro; si el informe de la batalla
+  (0x405a10) lee bien los registros dados de baja; que ia_bat (registro de batallas de la IA) cuenta a los arqueros
+  virtuales como defensores (queda así por ahora). Prueba en el juego: TAREAS 154.
+- Fallas previas, no de este cambio (iguales con la 1.0.173.0): prueba_botones (controles 138),
+  prueba_iaalianzas (evento 12), prueba_obsoletos.
+- Sigue: paso 3 (bonos), orden Repair, IA que repara, imagen del bloque roto (punto 4).
+
 ## Plan técnico (sin empezar)
 1. Movimiento: hoy po_pf cierra el muro al enemigo; hay que convertir «entrar a un muro enemigo» en ataque
    (como a una casilla con ejércitos enemigos) en lugar de camino cerrado.

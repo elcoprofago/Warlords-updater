@@ -6089,6 +6089,280 @@ wa_out:
     popad
     ret
 ''')
+# ---- Ataque al muro (PENDIENTE-faros-muros, punto 2b; pedido del 10/11/2026). Un bloque de muro de piedra (OB_MURO)
+# en pie (byte +7 = arqueros muertos, < WV_MAX) de un bando en guerra con el que mueve se ataca como una casilla con
+# ejércitos enemigos: el buscador de caminos (po_pf) lo deja ser destino del camino, el paso (wv_step) devuelve el
+# código 2 (ataque) aunque la casilla esté vacía, y la batalla (0x469ed0) lo defiende con WV_MAX - muertos arqueros
+# virtuales del dueño: ejércitos reales temporales (0x46c330), creados en la casilla antes de armar la ficha (wv_pre;
+# 0x464ac0 los junta con 0x4411b0 y la palabra del mapa lleva el dueño del muro), que no cuentan en las estadísticas
+# ni dan aviso al morir (wv_stat) y que después del resultado se dan de baja (wv_post). Los que murieron se suman al
+# byte +7; con WV_MAX el bloque cae (ob_del). Todo corre igual en todas las PC (0x469ed0 se aplica en cada una).
+WV_MAX = 24
+wv_vars = place_data('wv_vars', bytes(8 + 2 * WV_MAX))
+WV_REC, WV_N, WV_IDS = wv_vars, wv_vars + 4, wv_vars + 8      # registro del bloque atacado; cantidad e índices
+wv_name = place_data('wv_name', b'archers')
+# wl_war: eax = x, edx = y, ecx = jugador -> eax = registro del bloque de muro en pie de un bando en guerra con él, o 0
+# (con ZF). Preserva el resto.
+wl_war = place('wl_war', f'''
+    push ecx
+    push edx
+    call {ob_at:#x}
+    test eax, eax
+    jz ww_no
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne ww_no
+    cmp byte ptr [eax + 7], {WV_MAX}
+    jae ww_no
+    cmp ecx, 8
+    jae ww_no
+    movzx edx, byte ptr [eax + 6]
+    cmp edx, ecx
+    je ww_no
+    cmp edx, 8
+    jae ww_no
+    imul ecx, ecx, 56
+    cmp byte ptr [ecx + edx + {DIPLO:#x}], 2
+    jne ww_no
+    test eax, eax
+    jmp ww_out
+ww_no:
+    xor eax, eax
+ww_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# wv_type: eax = bando -> eax = su tipo de arma (0..14) cuyo archivo (+0x90) empieza con «archers»; si no hay, el primero
+# con la habilidad Missiles (30, +0xe6); si tampoco, 0. Preserva el resto.
+wv_type = place('wv_type', f'''
+    push ecx
+    push edx
+    push esi
+    shl eax, 4
+    imul esi, eax, 0xfc
+    add esi, 0x53c410
+    xor ecx, ecx
+wt_rec:
+    xor edx, edx
+wt_ch:
+    mov al, byte ptr [esi + edx + 0x90]
+    or al, 0x20
+    cmp al, byte ptr [edx + {wv_name:#x}]
+    jne wt_next
+    inc edx
+    cmp edx, 7
+    jb wt_ch
+    mov eax, ecx
+    jmp wt_out
+wt_next:
+    add esi, 0xfc
+    inc ecx
+    cmp ecx, 15
+    jb wt_rec
+    sub esi, {15 * 0xfc:#x}
+    xor ecx, ecx
+wt_mis:
+    cmp word ptr [esi + 0xe6], 30
+    je wt_got
+    add esi, 0xfc
+    inc ecx
+    cmp ecx, 15
+    jb wt_mis
+    xor ecx, ecx
+wt_got:
+    mov eax, ecx
+wt_out:
+    pop esi
+    pop edx
+    pop ecx
+    ret
+''')
+# wv_new: ebx = dueño, esi = tipo, ecx = x, edx = y -> eax = índice del ejército nuevo en esa casilla (cifras como las
+# de la producción de una ciudad, 0x43b390, pero sin ciudad: 0x43b6d0(-1, dueño, tipo)), o 0. Preserva el resto.
+wv_new = place('wv_new', f'''
+    push ecx
+    push edx
+    push edi
+    sub esp, 8
+    push ebx
+    call 0x46c330
+    add esp, 4
+    test eax, eax
+    jz wn_out
+    mov edi, eax
+    mov ecx, dword ptr [esp + 0x10]
+    mov edx, dword ptr [esp + 0xc]
+    mov word ptr [edi], cx
+    mov word ptr [edi + 2], dx
+    mov dword ptr [edi + 4], -1
+    mov byte ptr [edi + 9], -1
+    mov ax, word ptr [edi + 0xc]
+    and ax, 0xffe0
+    or ax, si
+    mov word ptr [edi + 0xc], ax
+    mov eax, esp
+    push eax
+    push esi
+    push ebx
+    push -1
+    call 0x43b6d0
+    add esp, 16
+    mov ax, word ptr [edi + 0xc]
+    and ax, 0x1ff
+    movsx cx, byte ptr [esp]
+    shl cx, 9
+    and cx, 0x1e00
+    or ax, cx
+    movsx cx, byte ptr [esp + 2]
+    shl cx, 13
+    or ax, cx
+    mov word ptr [edi + 0xc], ax
+    mov ax, word ptr [edi + 0xe]
+    and ax, 0x8001
+    movsx cx, byte ptr [esp + 1]
+    shl cx, 8
+    and cx, 0x7f00
+    or ax, cx
+    movsx cx, byte ptr [esp + 4]
+    shl cx, 4
+    and cx, 0xf0
+    or ax, cx
+    movsx cx, byte ptr [esp + 5]
+    add cx, cx
+    and cx, 0xe
+    or ax, cx
+    mov word ptr [edi + 0xe], ax
+    mov ax, word ptr [edi + 0x10]
+    and ax, 0xff80
+    movzx cx, byte ptr [esp + 1]
+    and cx, 0x7f
+    or ax, cx
+    mov word ptr [edi + 0x10], ax
+    and word ptr [edi + 0x10], 0xdfff
+    lea eax, [edi - 0x54fe52]
+    xor edx, edx
+    mov ecx, 0x1c
+    div ecx
+wn_out:
+    add esp, 8
+    pop edi
+    pop edx
+    pop ecx
+    ret
+''')
+# wv_pre(p, x, y, ficha), en lugar de 0x464ac0 en 0x469f35: si (x, y) es un bloque de muro en guerra con p y la casilla
+# está vacía o es del dueño del muro, crea ahí los arqueros virtuales (hasta 32 defensores en total) y pone el dueño
+# del muro en la palabra del mapa (sin el bit de ocupada).
+wv_pre = place('wv_pre', f'''
+    pushad
+    mov dword ptr [{WV_REC:#x}], 0
+    mov dword ptr [{WV_N:#x}], 0
+    movsx eax, word ptr [esp + 0x28]
+    movsx edx, word ptr [esp + 0x2c]
+    movsx ecx, word ptr [esp + 0x24]
+    call {wl_war:#x}
+    jz wp_out
+    mov ebp, eax
+    movzx ebx, byte ptr [ebp + 6]
+    movsx eax, word ptr [esp + 0x28]
+    movsx edx, word ptr [esp + 0x2c]
+    call {br_tile:#x}
+    test eax, eax
+    jz wp_out
+    mov edi, eax
+    movzx eax, word ptr [edi]
+    test eax, 0x8000
+    jz wp_own
+    and eax, 0x3c00
+    shr eax, 10
+    cmp eax, ebx
+    jne wp_out
+wp_own:
+    mov eax, ebx
+    shl eax, 10
+    and word ptr [edi], 0xc3ff
+    or word ptr [edi], ax
+    push 0
+    push dword ptr [esp + 0x30]
+    push dword ptr [esp + 0x30]
+    call 0x4411b0
+    add esp, 12
+    movsx eax, ax
+    mov ecx, 32
+    sub ecx, eax
+    movzx eax, byte ptr [ebp + 7]
+    mov edx, {WV_MAX}
+    sub edx, eax
+    cmp ecx, edx
+    jle wp_k
+    mov ecx, edx
+wp_k:
+    test ecx, ecx
+    jle wp_out
+    mov edi, ecx
+    mov eax, ebx
+    call {wv_type:#x}
+    mov esi, eax
+    mov dword ptr [{WV_REC:#x}], ebp
+wp_loop:
+    movsx ecx, word ptr [esp + 0x28]
+    movsx edx, word ptr [esp + 0x2c]
+    call {wv_new:#x}
+    test eax, eax
+    jz wp_out
+    mov ecx, dword ptr [{WV_N:#x}]
+    mov word ptr [ecx*2 + {WV_IDS:#x}], ax
+    inc dword ptr [{WV_N:#x}]
+    dec edi
+    jnz wp_loop
+wp_out:
+    popad
+    jmp 0x464ac0
+''')
+# wv_isv: eax = ejército -> ZF si es un arquero virtual de la batalla en curso. Preserva todo salvo las banderas.
+wv_isv = place('wv_isv', f'''
+    push ecx
+    mov ecx, dword ptr [{WV_N:#x}]
+wi_loop:
+    dec ecx
+    js wi_no
+    cmp ax, word ptr [ecx*2 + {WV_IDS:#x}]
+    jne wi_loop
+    pop ecx
+    ret
+wi_no:
+    test esp, esp
+    pop ecx
+    ret
+''')
+# wv_stat, en 0x4660d1 (resultado 0x465c80, defensor muerto de la ranura edi): a un arquero virtual lo da de baja sin
+# estadísticas (0x4039a0) ni aviso (0x461a60).
+wv_stat = place('wv_stat', f'''
+    movsx eax, word ptr [edi + 0x12e]
+    call {wv_isv:#x}
+    je 0x4661ba
+    mov al, byte ptr [edi + 0x130]
+    cmp al, 0x10
+    jmp 0x4660d9
+''')
+# wv_step, en 0x49e434 (paso 0x49e280; edx = palabra del mapa de (si, di), cx = su dueño, ebp = el que mueve): una
+# casilla vacía con un bloque de muro en guerra con él se ataca (código 2, 0x49e57d), como una con ejércitos.
+wv_step = place('wv_step', f'''
+    mov ax, word ptr [edx]
+    and ax, 0x8000
+    jnz 0x49e43d
+    push ecx
+    push edx
+    movsx eax, si
+    movsx edx, di
+    mov ecx, ebp
+    call {wl_war:#x}
+    pop edx
+    pop ecx
+    jnz 0x49e57d
+    xor eax, eax
+    jmp 0x49e467
+''')
 # Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
 # comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
 # refresca la vista y da el aviso "Razed!" / "<nombre> is in ruins!" del original al jugador humano que arrasó.
@@ -12963,7 +13237,8 @@ pf2_out:
 # misma casilla (el destino del camino, [0x5878d4] / [0x5878d8]) sí llega, y cae. La computadora no tiene esa
 # excepción: nunca entra en uno que ve, tampoco por el ítem que dejó un caído. Lo usan también el mapa de distancias
 # de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Un muro de piedra (OB_MURO) sin camino es intransitable para
-# todos, también como destino; con camino (puerta) pasan solo el dueño y sus aliados (fogally). Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
+# todos; con camino (puerta) pasan solo el dueño y sus aliados (fogally). Excepción: como destino del camino, un bloque
+# en pie de un bando en guerra con el que mueve (wl_war): se llega para atacarlo (wv_step). Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
 # reemplazado (0x4a5d34..0x4a5d40).
 po_pf = place('po_pf', f'''
     movsx eax, di
@@ -12977,7 +13252,7 @@ po_pf = place('po_pf', f'''
     movsx edx, bx
     call {br_tile:#x}
     test byte ptr [eax + 3], 7
-    jz 0x4a5e31
+    jz ppf_wd
     movsx eax, di
     movsx edx, bx
     call {ob_at:#x}
@@ -12988,7 +13263,17 @@ po_pf = place('po_pf', f'''
     cmp edx, 8
     jae 0x4a5e31
     call {fogally:#x}
+    je ppf_nw
+ppf_wd:
+    cmp di, word ptr [0x5878d4]
     jne 0x4a5e31
+    cmp bx, word ptr [0x5878d8]
+    jne 0x4a5e31
+    movsx eax, di
+    movsx edx, bx
+    movsx ecx, word ptr [0x58715c]
+    call {wl_war:#x}
+    jz 0x4a5e31
 ppf_nw:
     movsx eax, di
     movsx edx, bx
@@ -17209,6 +17494,58 @@ ib_out:
 ''')
 
 
+# wv_post(ficha, resultado), en lugar de ia_bat en 0x469f54: después del resultado cuenta los arqueros virtuales
+# muertos (sin el bit vivo), da de baja a los vivos (0x46c470), suma los muertos al bloque y, con WV_MAX, lo derriba;
+# rehace la ocupación del mapa (0x441290).
+wv_post = place('wv_post', f'''
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    call {ia_bat:#x}
+    add esp, 8
+    pushad
+    mov ebp, dword ptr [{WV_REC:#x}]
+    test ebp, ebp
+    jz wq_out
+    xor ebx, ebx
+    mov esi, dword ptr [{WV_N:#x}]
+wq_loop:
+    dec esi
+    js wq_done
+    movsx eax, word ptr [esi*2 + {WV_IDS:#x}]
+    imul ecx, eax, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jnz wq_live
+    inc ebx
+    jmp wq_loop
+wq_live:
+    push 0
+    push eax
+    call 0x46c470
+    add esp, 8
+    jmp wq_loop
+wq_done:
+    mov dword ptr [{WV_N:#x}], 0
+    mov dword ptr [{WV_REC:#x}], 0
+    movzx eax, byte ptr [ebp + 7]
+    add eax, ebx
+    cmp eax, {WV_MAX}
+    jb wq_set
+    lea eax, [ebp - {OB_TAB:#x}]
+    shr eax, 3
+    call {ob_del:#x}
+    call 0x4a4f20
+    call {ob_fogme:#x}
+    jmp wq_occ
+wq_set:
+    mov byte ptr [ebp + 7], al
+wq_occ:
+    call 0x441290
+    call {REDRAW:#x}
+wq_out:
+    popad
+    ret
+''')
+
 # Tandas (ia\tanda.py): con [Tanda] Partida=<nombre> en DATA\IA.INI, al mostrarse el menú principal por primera vez
 # (llamada 0x452c3b a 0x4aab10, la del arranque; la de después del Game Over, 0x482322, no) se pide cargar
 # SAVES\<nombre>.SAV con 0x4b9c10(nombre, 0), lo mismo que hace el diálogo Load Game (0x42c696).
@@ -19194,7 +19531,11 @@ assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
 patch(0x4ca0b7, bytes.fromhex('ff1544985a00'), asm(f'call {ri_go:#x}', 0x4ca0b7) + b'\x90')   # CopyFileA del ITEM.DAT
 patch(0x409181, rel(0x409181, 0x40918b - 0x409181), asm(f'jmp {ch_pfx:#x}', 0x409181))
-patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {ia_bat:#x}', 0x469f54))
+patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {wv_post:#x}', 0x469f54))
+# Ataque al muro (wv_pre, wv_stat, wv_step; wv_post arriba).
+patch(0x469f35, asm('call 0x464ac0', 0x469f35), asm(f'call {wv_pre:#x}', 0x469f35))
+patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
+patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))

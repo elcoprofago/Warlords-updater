@@ -127,7 +127,7 @@ while len(_calls) < 4:
     if img[_k] == 0xe8: _calls.append(BASE + _k + 5 + struct.unpack('<i', img[_k + 1:_k + 5])[0]); _k += 5
     else: _k += 1
 FOGALLY = _calls[3]
-def puerta(quien, aliado=False, camino=True):
+def puerta(quien, aliado=False, camino=True, destino=None, guerra=False):
     g, c = recibir(pw=MURO, oro=1000)
     mu = g.mu
     if camino:
@@ -146,6 +146,8 @@ def puerta(quien, aliado=False, camino=True):
     mu.hook_add(UC_HOOK_CODE, fin('cerrado'), begin=0x4a5e31, end=0x4a5e31)
     mu.hook_add(UC_HOOK_MEM_READ, lambda mu, ac, a, sz, v, _: (r.append('pasa'), mu.emu_stop()), begin=0x503e00, end=0x503e01)
     mu.mem_write(0x58715c, struct.pack('<h', quien))
+    if destino: mu.mem_write(0x5878d4, struct.pack('<h', destino[0])); mu.mem_write(0x5878d8, struct.pack('<h', destino[1]))
+    if guerra: mu.mem_write(0x55ee4c + quien * 56 + 2, bytes([2]))
     mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.reg_write(UC_X86_REG_EDI, 5); mu.reg_write(UC_X86_REG_EBX, 7)
     mu.emu_start(0x4a5d34, 0, count=5000)
@@ -155,6 +157,11 @@ ver('un aliado (5) pasa', puerta(5, aliado=True), ['pasa'])
 ver('un enemigo (5) no', puerta(5), ['cerrado'])
 ver('neutral (8) no', puerta(8), ['cerrado'])
 ver('control: muro sin puerta, ni el dueño', puerta(2, camino=False), ['cerrado'])
+ver('ataque al muro: enemigo en guerra (5), el muro es el destino: llega', puerta(5, camino=False, destino=(5, 7), guerra=True), ['pasa'])
+ver('ídem con puerta', puerta(5, destino=(5, 7), guerra=True), ['pasa'])
+ver('control: en guerra pero el muro no es el destino', puerta(5, camino=False, destino=(6, 7), guerra=True), ['cerrado'])
+ver('control: destino pero sin guerra', puerta(5, camino=False, destino=(5, 7)), ['cerrado'])
+ver('control: el dueño, destino su muro sin puerta', puerta(2, camino=False, destino=(5, 7), guerra=True), ['cerrado'])
 
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
 PP_RECV = dest(0x4b6a22, 2)
