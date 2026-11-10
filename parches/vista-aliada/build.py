@@ -6471,6 +6471,194 @@ mt_en:
     ret
 ''')
 
+OR_EVT = 35
+OR_MAX = 7   # grupos activos hasta los que se arman grupos de huérfanos (los otros 3 quedan para el planificador)
+# Paso 4.8 (PENDIENTE-ia-economia): los huérfanos vuelven a jugar. Un ejército de la IA que quedó fuera de una ciudad y
+# fuera de todo grupo (0x561f00 + 1178·p) nunca más se mueve (paso 4.7; 13 del evento 34). or_grp reemplaza el call
+# 0x40efc0 de 0x40ea00 (al empezar el turno de un bando de la computadora): lo llama y después, con ia_on e
+# IA_MODE[p] = 1, or_run junta a los huérfanos por casilla (hasta 8, el primero de líder) y les crea un grupo con
+# 0x40f1a0, como hace el juego con los que suelta 0x40d380; el bucle de 0x40eab0 los hace jugar y el planificador
+# (0x40c990) les elige meta (atacar, explorar o «Form», volver a una ciudad). Héroes no (su grupo pide 0x40f480).
+# Para mientras haya menos de OR_MAX grupos activos. Evento 35: x = grupos creados, y = ejércitos, n = huérfanos que
+# quedaron sin grupo.
+# or_ok: eax = ejército, ebx = jugador -> eax = casilla (x | y << 16) si es un huérfano de p fuera de ciudad, -1 si no.
+or_ok = place('or_ok', f'''
+    push ecx
+    push edx
+    push esi
+    mov esi, eax
+    imul edx, eax, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz ok_no
+    movzx eax, word ptr [edx + 0x54fe5e]
+    mov ecx, eax
+    and ecx, 0x1f
+    cmp ecx, 0x10
+    je ok_no
+    and eax, 0x1e0
+    shr eax, 5
+    cmp eax, ebx
+    jne ok_no
+    movsx ecx, word ptr [edx + 0x54fe52]
+    test ecx, ecx
+    js ok_no
+    movsx eax, word ptr [edx + 0x54fe54]
+    test eax, eax
+    js ok_no
+    push eax
+    push ecx
+    lea eax, [eax + eax * 4]
+    add eax, eax
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    mov ecx, dword ptr [esp]
+    lea ecx, [ecx + ecx * 4]
+    lea ecx, [eax + ecx * 2 + 0x503e58]
+    movzx eax, word ptr [ecx + 2]
+    and eax, 0x700
+    cmp eax, 0x300
+    jne ok_out
+    test byte ptr [ecx + 9], 3
+    jz ok_out
+    add esp, 8
+    jmp ok_no
+ok_out:
+    imul edx, ebx, 1178
+    add edx, 0x561f00
+    mov ecx, 10
+ok_gs:
+    test byte ptr [edx], 1
+    jz ok_gn
+    xor eax, eax
+ok_ga:
+    cmp word ptr [edx + eax*2 + 0xc], si
+    je ok_in
+    inc eax
+    cmp eax, 8
+    jb ok_ga
+ok_gn:
+    add edx, 64
+    dec ecx
+    jnz ok_gs
+    pop eax
+    pop ecx
+    shl ecx, 16
+    or eax, ecx
+    jmp ok_ret
+ok_in:
+    add esp, 8
+ok_no:
+    mov eax, -1
+ok_ret:
+    pop esi
+    pop edx
+    pop ecx
+    ret
+''')
+# or_run: sin argumentos, preserva todo. Pila local: +0 lista de 8 (palabras), +0x10 grupos, +0x14 ejércitos,
+# +0x18 jugador, +0x1c huérfanos sin grupo.
+or_run = place('or_run', f'''
+    pushad
+    sub esp, 0x20
+    cmp byte ptr [{IA_ON:#x}], 0
+    je or_out
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae or_out
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne or_out
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je or_out
+    mov dword ptr [esp + 0x18], ebx
+    xor eax, eax
+    mov dword ptr [esp + 0x10], eax
+    mov dword ptr [esp + 0x14], eax
+    mov dword ptr [esp + 0x1c], eax
+    xor ecx, ecx
+or_lp:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge or_end
+    mov eax, ecx
+    call {or_ok:#x}
+    cmp eax, -1
+    je or_nx
+    mov edx, eax
+    imul eax, ebx, 1178
+    add eax, 0x561f00
+    xor edi, edi
+    mov esi, 10
+or_ca:
+    test byte ptr [eax], 1
+    jz or_cn
+    inc edi
+or_cn:
+    add eax, 64
+    dec esi
+    jnz or_ca
+    cmp edi, {OR_MAX}
+    jae or_left
+    xor eax, eax
+    mov dword ptr [esp], eax
+    mov dword ptr [esp + 4], eax
+    mov dword ptr [esp + 8], eax
+    mov dword ptr [esp + 0xc], eax
+    mov word ptr [esp], cx
+    mov esi, 1
+    lea ebp, [ecx + 1]
+or_j:
+    cmp esi, 8
+    jae or_mk
+    movsx eax, word ptr [0x54fe50]
+    cmp ebp, eax
+    jge or_mk
+    mov eax, ebp
+    call {or_ok:#x}
+    cmp eax, edx
+    jne or_jn
+    mov word ptr [esp + esi*2], bp
+    inc esi
+or_jn:
+    inc ebp
+    jmp or_j
+or_mk:
+    push ecx
+    lea eax, [esp + 4]
+    push eax
+    push ecx
+    call 0x40f1a0
+    add esp, 8
+    pop ecx
+    cmp ax, -1
+    je or_left
+    inc dword ptr [esp + 0x10]
+    add dword ptr [esp + 0x14], esi
+    jmp or_nx
+or_left:
+    inc dword ptr [esp + 0x1c]
+or_nx:
+    inc ecx
+    jmp or_lp
+or_end:
+    push dword ptr [esp + 0x1c]
+    push dword ptr [esp + 0x18]
+    push dword ptr [esp + 0x18]
+    push dword ptr [esp + 0x24]
+    push {OR_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+or_out:
+    add esp, 0x20
+    popad
+    ret
+''')
+or_grp = place('or_grp', f'''
+    call 0x40efc0
+    call {or_run:#x}
+    ret
+''')
+
 EC_EVT = 29
 # ec_evt: reemplaza en 0x422482 "mov edx, [esp+0x20]; mov ax, [edx+0x5643f0]; sub ax, [edx+0x5643d8]" (edi = jugador,
 # [esp+0x1c] = p * 0x1f8, [esp+0x20] = 2p) y anota antes el evento 29. Deja edx y ax como el original.
@@ -17727,6 +17915,7 @@ patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50)) 
 patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserva: agrandar ciudad
 patch(0x43bdf2, bytes.fromhex('80be057f530000'), asm(f'jmp {pr_unit:#x}; nop; nop', 0x43bdf2))   # freno de producción
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {me_pre:#x}', 0x40edf1))
+patch(0x40ea65, asm('call 0x40efc0', 0x40ea65), asm(f'call {or_grp:#x}', 0x40ea65))   # paso 4.8, huérfanos
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
 patch(0x4ca0b7, bytes.fromhex('ff1544985a00'), asm(f'call {ri_go:#x}', 0x4ca0b7) + b'\x90')   # CopyFileA del ITEM.DAT

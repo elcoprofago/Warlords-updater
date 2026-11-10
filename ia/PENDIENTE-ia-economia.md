@@ -381,4 +381,35 @@ prueba_chatordenes OK; prueba_iaalianzas con las 2 fallas de antes.
 Al volver la tanda: ahorro / ingreso de 13 y de 10 por IA y tramo. Si el 13 es casi todo el 10 (lo esperado), el
 cambio es darles destino a los huérfanos: al empezar el turno de la IA, a cada huérfano de fuera de ciudad, mandarlo
 a la ciudad propia más cercana (o meterlo en un grupo libre con meta «Form», que ya lleva a una ciudad).
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.8".
+**Medido (9/11/2026, tandas 148 y 149, 1.0.161.0, 10 partidas ok; 2 colgadas en el turno 0, sin eventos; 731
+eventos 34).** Ahorro / ingreso, tramos 1-10 / 11-20 / 21-30 (n = ejércitos-turno):
+| | 13 huérfano | 10 en grupo, no jugó | toda la partida: 13 / 10 / ocioso (0+1+10+11+13) / techo |
+|---|---|---|---|
+| original | 0,2 / 2,6 / 8,2 % (n 7 / 152 / 480) | 0,4 / 0,3 / 0,3 % | 4,3 / 0,3 / 4,7 / 7,1 % |
+| nueva | 0,9 / 5,7 / 13,9 % (n 28 / 343 / 997) | 0,1 / 0,3 / 0,5 % | 8,3 / 0,3 / 8,7 / 11,2 % |
+Lo esperado: **el 10 de la tanda 147 era casi todo huérfanos**; con grupo y sin jugar queda en 0,3 %.
+**Paso 4.8, los huérfanos vuelven a jugar (9/11/2026, vista-aliada 1.0.162.0; falta la tanda, TAREAS 145).** Primer
+cambio de juego de esta serie (solo la IA en prueba, IA_MODE = 1). or_grp reemplaza el call 0x40efc0 de 0x40ea00
+(principio del turno de un bando de la computadora): después de que el juego arme los grupos de héroes, or_run junta
+a los huérfanos (vivos, no héroes, fuera de casilla de ciudad, en ningún grupo activo) por casilla, hasta 8 con el
+primero de líder, y les crea un grupo con 0x40f1a0 (lo mismo que hace el juego con los que suelta 0x40d380). El
+bucle de 0x40eab0 los hace jugar y el planificador les elige meta: atacar, explorar o «Form» (volver a una ciudad).
+Se elige eso y no «ir a la ciudad más cercana» para no quitarles tareas útiles. Tope: arma grupos mientras haya
+menos de 7 activos (OR_MAX), los otros 3 quedan para el planificador. Héroes no (su grupo pide 0x40f480).
+Evento 35: x = grupos creados, y = ejércitos, n = huérfanos que quedaron sin grupo por el tope.
+Leído en el exe: 0x40f1a0(líder, lista de 8 o 0) toma el primer lugar libre (0x410000, -1 si no hay), copia la
+lista con el líder en +0xc, marca 0x400 en +0x1a de cada miembro, limpia el resto del grupo; usa [0x4fb0ec].
+Tareas de los huérfanos en las guardadas (byte +0x15): 0 a 5, sin bits de pila; no se filtra por tarea.
+Prueba emulada: `prueba_huerfanos.py` (3.516 controles TODO OK con ABN_000_29, IA_ROTADA, Tanda_Kor_CA, roads02,
+agua03): grupos creados = modelo (lugar, líder, lista, bit 0x400), los demás grupos y colores iguales, evento 35 =
+modelo, registros intactos; sin ia_on, IA_MODE 0, jugador 8 o bando humano no cambia nada; con 6 grupos ocupados
+arma uno solo. ABN_000_29 color 6: 7 grupos con 22 ejércitos, queda 1. prueba_saldo, prueba_produccion (2.425),
+prueba_reserva (2.080), prueba_oro, prueba_mantenimiento (280) y prueba_chatordenes OK; prueba_iaalianzas con las 2
+fallas de antes (evento 12).
+Uso: `python prueba_huerfanos.py <AV> <ia_on> <ia_mode> <or_run> <SAV>...` (1.0.162.0: 6cf41b 6cf413 6d1800).
+Al volver la tanda: (a) evento 35 por IA y tramo: cuántos grupos y ejércitos, cuántos quedan por el tope;
+(b) 13 del evento 34 en la nueva (tiene que bajar mucho: los huérfanos de un turno juegan al siguiente);
+(c) a qué metas pasan (34 de la nueva: más Form, ruina, ciudad enemiga); (d) resultados contra la original
+(puesto, PV, ciudades) y deserciones. Si los grupos de huérfanos le quitan lugar al planificador (menos grupos
+de ataque), bajar OR_MAX.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.9".

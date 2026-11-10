@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 144).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 146).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,15 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **145.** IA: los ejércitos abandonados vuelven a jugar (9/11/2026)
+Desde la 1.0.162.0 la computadora en prueba (la nueva) vuelve a mover a los ejércitos que había dejado quietos
+fuera de las ciudades: al empezar su turno los junta y les da una tarea (atacar, explorar o volver a una ciudad).
+La original sigue igual. Es el primer cambio de juego de esta serie: hay que ver si gana más o menos.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.162.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado:
 
 - [ ] **144.** Probar los arreglos del 9/11 (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche.
   (a) Clic derecho sobre un grupo: «Build Trap» vuelve a estar en el menú de órdenes, en el botón de antes.
@@ -91,14 +100,6 @@ Ojo: en ARMY\goblins.ARM, «build» quedó como bono de **combate** y no como de
    líder del grupo sobre pasto, en el menú de órdenes tiene que aparecer «Build».
 Resultado:
 
-- [ ] **135.** IA: cuántos ejércitos quedan «huérfanos» fuera de las ciudades (9/11/2026)
-La 1.0.145.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que la computadora dejó de mover,
-cuántos quedaron sin grupo (nunca más los mueve) y cuántos tienen grupo pero no les tocó jugar.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.145.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
 - [ ] **42.** Leer el anexo «Cómo juega la computadora» (25/10/2026)
 Abrí `manual\Anexo-IA.pdf` (22 páginas). Explica cómo ataca, defiende, explora, produce, hace diplomacia y cumple misiones la
 computadora, y qué le agrega el parche. Cada afirmación dice si está VERIFICADO (en el código o en las tandas) o INFERIDO.
@@ -131,6 +132,16 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **135.** IA: cuántos ejércitos quedan «huérfanos» fuera de las ciudades (9/11/2026)
+La 1.0.145.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que la computadora dejó de mover,
+cuántos quedaron sin grupo (nunca más los mueve) y cuántos tienen grupo pero no les tocó jugar.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.145.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado (9/11/2026): tandas 148 y 149 (las de la 1.0.161.0), 10 partidas. Casi todos los ejércitos que la
+computadora deja de mover quedaron sin grupo: nunca más los mueve. Cuestan el 4 % del ingreso en la original y el 8 %
+en la nueva. Próximo: que vuelvan a jugar (tarea 145).
 
 - [x] **130.** IA: quién mueve a los ejércitos que quedan fuera de las ciudades sin tarea (8/11/2026)
 La 1.0.141.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que terminan el turno fuera de una
