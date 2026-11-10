@@ -82,8 +82,23 @@ Pedido completo:
     [0x54fe50] si hace falta, la limpia (0x46c3c0), pone el dueño y los bits vivo; devuelve eax = puntero al
     registro (base 0x54fe52 + e*0x1c: +0 x, +2 y, +4/+6 destino, +0xc dueño & 0x1e0, +0x10 bit 0x4000 vivo) o 0.
     Ejemplo de relleno completo después del alta: 0x43ace9..0x43ae40 (x, y, destino -1, palabra del mapa con
-    0x8000 y el dueño, cifras desde el registro del tipo). **Falta**: el campo del tipo de unidad en el registro
-    y la baja (para borrar los arqueros que sobrevivan); mirar el resto de 0x43ace9 y 0x441290.
+    0x8000 y el dueño, cifras desde el registro del tipo).
+  - **Tipo** (10/11/2026): palabra +0xe del registro (base 0x54fe50; +0xc desde el puntero de 0x46c330), bits 0..4 =
+    tipo dentro de la tabla del dueño; 0x10 = héroe (0x4057f7, 0x4408e2). Registro del tipo = 0x53c410 +
+    (dueño * 16 + tipo) * 0xfc (0x40e138, 0x410454, 0x41ceb9). Resto de la misma palabra: bits 5..8 dueño, 9..12 y
+    13..15 cifras (0x43ad68..0x43adba). Palabra +0x10 (puntero +0xe): bits 8..14 movimiento máximo; +0x12 (puntero
+    +0x10): bits 0..6 movimiento actual. Para los arqueros virtuales falta ubicar «Archers» en la tabla del dueño
+    (los 16 tipos de 0x53c410 + dueño * 16 * 0xfc; buscar el offset del nombre en el registro del tipo).
+  - **Baja**: 0x46c470(ejército, 0) (cdecl, add esp 8). Lo saca de los grupos seleccionados (0x561e2c, 8x10) y de
+    las listas del bando (0x56ea94, 0x485c00); si no es héroe salta a 0x46c967: limpia el registro (0x46c3c0), apaga
+    vivo (+0x12 & 0xbfff), x = y = -1 y dueño 8 (+0xe & 0xff1f | 0x100). **No toca la palabra del mapa** (bit 0x8000
+    / dueño): los arqueros virtuales no deben marcarla, o hay que restaurarla. [0x54fe50] no baja.
+  - Resultado de la batalla 0x465c80, defensores (0x4660b8..0x4661ee): ranura i de la ficha +0x12e + i*0x24 =
+    ejército, +0x130 tipo (0x10 héroe; 8..0xb otra clase), +0x133 marca, **+0x134 = vivo**. Muerto: 0x4039a0
+    (estadísticas del bando, por clase) y 0x461a60 (aviso), después 0x46c470(e, 0). Vivo: palabra +0x14 & 0xbfff.
+    Para el muro: después de 0x465c80, contar las ranuras virtuales con +0x134 = 0 (sumarlas al byte +7 del bloque)
+    y dar de baja con 0x46c470 a las que sobrevivieron. Ojo: los muertos virtuales entran en las estadísticas del
+    dueño del muro (0x4039a0); decidir si se descuentan.
 - Orden de trabajo que sigue: no publicar el paso 1 solo (un muro vacío atacado sin defensores se perdería en una
   batalla sin defensa). Pasos 1 y 2 van juntos: código 2 ante muro enemigo + crdef con los arqueros virtuales +
   anotar muertos en +7 después de 0x465c80 y derribar el bloque con 24.
