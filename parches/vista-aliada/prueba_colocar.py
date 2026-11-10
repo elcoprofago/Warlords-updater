@@ -136,5 +136,31 @@ g.interceptar(0x4afc20, lambda a: g.llamadas.append('menú'))
 g.correr(BM_NORM, RET, struct.pack('<I', RET))
 ver('control: fuera del modo abre el menú de órdenes', g.llamadas, ['menú'])
 
+print('-- portón a 1 casilla (pedido del 10/11/2026)')
+import re
+OB_NEAR = BASE + img.index(bytes.fromhex('6089c689d7bbfeffffffbdfeffffff'))
+_m = re.search(rb'\x60\xc6\x05(....)\x00\x80\x7b\x04\x07', img, re.S)
+OD_GATE, OD_V4 = BASE + _m.start(), struct.unpack('<I', _m.group(1))[0]
+def muro_fantasma(g, x, y):
+    g.mu.mem_write(PV_IN, b'\x01')
+    g.mu.mem_write(PV_REC, struct.pack('<hhBBBB', x, y, 7, 0, P, 0))
+def cerca(x, y):
+    g = juego(5, 7, 4); muro_fantasma(g, 10, 7); g.redib = 0
+    g.correr(OB_NEAR, RET, struct.pack('<I', RET), [(UC_X86_REG_EAX, x), (UC_X86_REG_EDX, y)])
+    return g.redib
+ver('paso a 2 casillas de la puerta (12, 9): redibuja', cerca(12, 9), 1)
+ver('paso a 1 (9, 6): redibuja', cerca(9, 6), 1)
+ver('control: paso a 3 (13, 7): no', cerca(13, 7), 0)
+def porton(ax, ay):
+    g = juego(5, 7, 4); muro_fantasma(g, 10, 7)
+    g.mu.mem_write(0x54fe50, struct.pack('<h', 3))
+    g.mu.mem_write(0x54fe50 + 2 * 0x1c + 2, struct.pack('<hh', ax, ay))
+    g.mu.mem_write(0x54fe50 + 2 * 0x1c + 0x13, b'\x40')
+    g.correr(OD_GATE, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, PV_REC), (UC_X86_REG_EAX, 10), (UC_X86_REG_EDX, 7)])
+    return g.mu.mem_read(OD_V4, 1)[0]
+ver('ejército en la vecina (11, 8): portón abierto (21)', porton(11, 8), 21)
+ver('ejército en la puerta: abierto', porton(10, 7), 21)
+ver('control: ejército a 2 (12, 7): cerrado (20)', porton(12, 7), 20)
+
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

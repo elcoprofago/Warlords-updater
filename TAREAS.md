@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 150).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 151).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **150.** Sombras, torre de vigía y portón (vista-aliada 1.0.168.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) construir muros de piedra en varias direcciones, también en diagonal y en L: la sombra no debe tener cortes en ningún tramo; (b) construir una torre de vigía: debe verse de piedra como el muro, en gris azulado, con almenas, puerta, ventana y un banderín del color del bando dueño (si otro bando la toma, el banderín cambia de color); (c) acercar un grupo a una puerta del muro: el portón se abre ya a una casilla de distancia y se cierra cuando el grupo se aleja. Anotar lo que se vea mal.
 - [ ] **149.** Calzada del muro de piedra (vista-aliada 1.0.167.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche y construir un muro de piedra: el piso de arriba del muro y de las torres debe verse con las losas de piedra de las ciudades, más chicas y en perspectiva. Anotar lo que se vea mal.
 - [ ] **148.** Sombra y puerta del muro de piedra (vista-aliada 1.0.166.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) la sombra del muro debe verse pareja y oscura, sin rejilla; (b) en la puerta sobre un camino, los ladrillos a los dos lados del arco deben seguir sin corte, también cuando el muro sigue en diagonal. Anotar lo que se vea mal.
 - [ ] **147.** Muro de piedra, puerta y menú de construir (vista-aliada 1.0.165.0, 9/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) construir un muro de piedra y mirar que sea gris amarronado, dos hileras más bajo, con algún ladrillo más oscuro y la sombra más oscura; (b) construir un muro que cruce un camino: esa casilla debe mostrar un arco con portón de madera cerrado; mover un grupo a esa casilla: el portón se ve abierto mientras el grupo está ahí y se cierra al irse; (c) abrir el menú Build: los renglones deben verse juntos y centrados, como en el menú de la ciudad. Anotar lo que se vea mal.

@@ -4392,7 +4392,46 @@ ofg_nx:
 ''')
 # ob_step: eax = x, edx = y, ecx = bando que llega -> si ahí hay una obra de otro bando que no es su aliado, pasa a él.
 # Preserva todo.
+# ob_near (pedido del 10/11/2026: el portón se abre a una casilla de distancia): eax = x, edx = y del paso -> si a
+# 2 casillas o menos hay un muro de piedra sobre un camino (puerta), redibuja: así el portón se abre al acercarse
+# un ejército a 1 casilla y se cierra cuando se aleja. Preserva todo.
+ob_near = place('ob_near', f'''
+    pushad
+    mov esi, eax
+    mov edi, edx
+    mov ebx, -2
+obn_y:
+    mov ebp, -2
+obn_x:
+    lea eax, [esi + ebp]
+    lea edx, [edi + ebx]
+    call {ob_at:#x}
+    test eax, eax
+    jz obn_nx
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne obn_nx
+    lea eax, [esi + ebp]
+    lea edx, [edi + ebx]
+    call {br_tile:#x}
+    test eax, eax
+    jz obn_nx
+    test byte ptr [eax + 3], 7
+    jz obn_nx
+    call {REDRAW:#x}
+    jmp obn_out
+obn_nx:
+    inc ebp
+    cmp ebp, 2
+    jle obn_x
+    inc ebx
+    cmp ebx, 2
+    jle obn_y
+obn_out:
+    popad
+    ret
+''')
 ob_step = place('ob_step', f'''
+    call {ob_near:#x}
     pushad
     cmp ecx, 8
     jae obs_out
@@ -11661,7 +11700,9 @@ pp_end:
 # pinta su pieza p = (P - W) + (1, 1). Muro y empalizada: el centro y un brazo por cada bit de ob_wmask, en el orden
 # N, NO, NE, O, E, centro, SO, SE, S (lo de atrás primero). Como las celdas se redibujan de a una (bit 0x20 de la
 # celda), cada una repinta lo suyo de las obras vecinas y nada queda cortado.
-OD_PORFILA, OD_CAPAS = 5, 22
+OD_PORFILA, OD_CAPAS = 5, 50
+OD_SOMBRA = 22              # capas 22..41: solo la sombra de las capas 0..19 (ob_draw las pinta antes que los cuerpos)
+OD_BANDERA = 42             # capas 42..49: banderín de la torre de vigía, una por bando
 OD_PUERTA = 20               # capas 20 y 21: torre del muro sobre un camino, con el portón cerrado o abierto
 OD_BASE = {OB_TORRE: 0, OB_FARO: 1, OB_EMPAL: 2, OB_MURO: 11}
 od_full = place_data('od_full', bytes((OD_CAPAS * 9 + 7) // 8))
@@ -11671,7 +11712,8 @@ od_rdx = place_data('od_rdx', bytes(v & 0xff for v in (0, 1, 1, 1, 0, -1, -1, -1
 od_rdy = place_data('od_rdy', bytes(v & 0xff for v in (-1, -1, 0, 1, 1, 1, 0, -1)))
 od_ord = place_data('od_ord', bytes((0, 7, 1, 6, 2, 8, 5, 3, 4)))
 od_base = place_data('od_base', bytes(OD_BASE[t] for t in (OB_TORRE, OB_FARO, OB_EMPAL, OB_MURO)))
-od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara, +4 capa del centro (0: la base)
+od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara, +4 capa del centro (0: la base),
+                                            # +5 desplazamiento de capa de la pasada (OD_SOMBRA: sombras; 0: cuerpos)
 # Obras grandes (ob_draw): las capas de obras_img.py (3x3 casillas cada una), en la paleta del mapa con los colores de
 # po_usar más los de la ruina grande (de ahí salen la piedra y las almenas del muro). Los cuadros PO_TORRE..PO_MURO de
 # la fila 0 quedan de antes, sin uso.
@@ -11689,13 +11731,20 @@ def _od_color(rgb):
     if rgb not in _od_memo:
         _od_memo[rgb] = min(_od_usar, key=lambda i: sum((po_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _od_memo[rgb]
-od_capas = [obras_img.torre(_rl, _od_color, po_pal), obras_img.torre(_rl, _od_color, po_pal, True)]
-for _e in (True, False):   # empalizada (capas 2..10), muro (11..19)
-    od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, obras_img.cuerpos_muro(_e, d)) for d in [None] + list(range(8))]
+def _od_obras(parte):      # torre, faro, empalizada (2..10), muro (11..19); cuerpos sin sombra, o solo la sombra entera
+    r = [obras_img.torre(_rl, _od_color, po_pal, f, parte) for f in (False, True)]
+    for _e in (True, False):
+        r += [obras_img.muro(_rl, _od_color, po_pal, d, _e, parte=parte) for d in [None] + list(range(8))]
+    return r
+od_capas = _od_obras('cuerpo')
 def _od_arco(p):
     a = obras_img.muro(_rl, _od_color, po_pal, None, False, obras_img.cuerpos_muro(False, None), p)
     return a   # la torre entera, encima de los tramos S, SE y SO: así el arco no corta sus ladrillos (10/11/2026)
 od_capas += [_od_arco(p) for p in ('cerrada', 'abierta')]
+assert len(od_capas) == OD_SOMBRA
+od_capas += _od_obras('sombra')
+assert len(od_capas) == OD_BANDERA
+od_capas += [obras_img.bandera(_rl, _od_color, po_pal, b) for b in range(8)]
 assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
@@ -11788,6 +11837,8 @@ owm_out:
 # od_put: ecx = capa; pieza en [od_vars]; ebx = registro (para pw_put). Pinta la pieza si no está vacía. Preserva todo.
 od_put = place('od_put', f'''
     pushad
+    movzx eax, byte ptr [{od_vars + 5:#x}]
+    add ecx, eax
     movzx eax, byte ptr [{od_vars:#x}]
     lea edx, [ecx + ecx*8]
     add edx, eax
@@ -11883,10 +11934,16 @@ odg_l:
     imul edx, eax, 0x1c
     test byte ptr [edx + 0x54fe63], 0x40
     jz odg_nx
-    cmp si, word ptr [edx + 0x54fe52]
-    jne odg_nx
-    cmp di, word ptr [edx + 0x54fe54]
-    jne odg_nx
+    movsx ebp, word ptr [edx + 0x54fe52]
+    sub ebp, esi
+    inc ebp
+    cmp ebp, 2
+    ja odg_nx
+    movsx ebp, word ptr [edx + 0x54fe54]
+    sub ebp, edi
+    inc ebp
+    cmp ebp, 2
+    ja odg_nx
     mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA + 1}
     jmp odg_out
 odg_nx:
@@ -11900,6 +11957,8 @@ ob_draw = place('ob_draw', f'''
     pushad
     call {pv_rdraw:#x}
     mov byte ptr [{PV_IN:#x}], 1
+    mov byte ptr [{od_vars + 5:#x}], {OD_SOMBRA}
+odw_p:
     xor esi, esi
 odw_l:
     movsx eax, byte ptr [esi + {od_off:#x}]
@@ -11925,6 +11984,15 @@ odw_l:
     cmp byte ptr [ebx + 4], {OB_EMPAL}
     jae odw_wall
     call {od_put:#x}
+    cmp byte ptr [ebx + 4], {OB_TORRE}
+    jne odw_nx
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    jne odw_nx
+    movzx ecx, byte ptr [ebx + 6]
+    cmp ecx, 8
+    jae odw_nx
+    add ecx, {OD_BANDERA}
+    call {od_put:#x}
     jmp odw_nx
 odw_wall:
     mov byte ptr [{od_vars + 1:#x}], cl
@@ -11949,6 +12017,9 @@ odw_nx:
     inc esi
     cmp esi, 9
     jb odw_l
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    mov byte ptr [{od_vars + 5:#x}], 0
+    jne odw_p
     xor esi, esi
 odw_g:
     movsx eax, byte ptr [esi + {od_off:#x}]

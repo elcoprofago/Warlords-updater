@@ -60,15 +60,20 @@ class Lienzo:
                 if trama and (q[0] + q[1]) % 2: c = (40, 46, 20)   # damero negro y verde oscuro: sin huecos (10/11/2026: la trama de 3 de 4 se veía como rejilla)
                 if q not in self.cuerpo and q not in prohibido: self.px[q] = c
 
-    def imagen(self, pal):
+    def imagen(self, pal, parte=None):
+        # parte: None todo; 'cuerpo' sin la sombra; 'sombra' solo la sombra (pedido del 10/11/2026: ob_draw pinta las
+        # sombras de las 9 vecinas antes que todos los cuerpos, así ningún cuerpo de otra casilla la recorta)
         im = Image.new('P', (144, 144), 11); im.putpalette(pal)
         for (x, y), c in self.px.items():
             if not (0 <= x < 144 and 0 <= y < 144): continue
+            if parte == 'cuerpo' and (x, y) not in self.cuerpo: continue
+            if parte == 'sombra' and (x, y) in self.cuerpo: continue
             if len(c) == 4:
-                c = c[:3]
-                if _BAYER[y % 4][x % 4] < 3:
+                c, tono = c[:3], c[3]
+                rampa, n, k = (PARDOS, 3, 0.8) if tono == 'p' else (AZULES, 6, 0.95)
+                if _BAYER[y % 4][x % 4] < n:
                     lum = sum(c) / 3
-                    im.putpixel((x, y), min(PARDOS, key=lambda i: abs(sum(pal[3 * i:3 * i + 3]) / 3 - lum * 0.8)))
+                    im.putpixel((x, y), min(rampa, key=lambda i: abs(sum(pal[3 * i:3 * i + 3]) / 3 - lum * k)))
                     continue
             im.putpixel((x, y), self.color(c))
         return im
@@ -102,12 +107,18 @@ def _mul(c, k):
     return tuple(max(0, min(255, int(v * k))) for v in c)
 
 
+def _azul(c):
+    # gris azulado (torre de vigía, pedido del 10/11/2026): como _pardo, con la rampa azul en 6 de cada 16 píxeles
+    return tuple(c[:3]) + ('a',)
+
+
 def _pardo(c):
     # gris amarronado (pedido del 9/11/2026). La paleta del mapa no tiene grises pardos: el píxel queda marcado y
     # Lienzo.imagen lo trama, gris en la mayoría de los píxeles y un marrón de igual brillo en tres de cada dieciséis, un poco más oscuro.
     return tuple(c[:3]) + ('p',)
 
 
+AZULES = range(192, 207)       # rampa azul lavanda de la paleta del mapa: gris azulado de la torre de vigía
 PARDOS = range(128, 136)        # rampa marrón de la paleta del mapa (la usan los gráficos de cavernas)
 _BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
 
@@ -361,16 +372,78 @@ def _arco(dx, z, puerta):
     return _mul((126, 82, 40), k)
 
 
-def muro(ruina, color, pal, d, empal, prohibido, puerta=None):
+def muro(ruina, color, pal, d, empal, prohibido=(), puerta=None, parte=None):
     lz = Lienzo(ruina, color)
     if puerta: _muro_piedra(lz, None, False, prohibido, puerta)   # la torre entera, sin sombra (la pone la capa base)
     else: _muro_en(lz, d, empal, prohibido=prohibido)
-    return lz.imagen(pal)
+    return lz.imagen(pal, parte)
 
 
 # ---- torre de vigía y faro: cilindros que asoman sobre la casilla de arriba
-def torre(ruina, color, pal, faro=False):
+TV_R, TV_H = 12, 40       # torre de vigía: radio y alto (sin almenas)
+TV_CY = C + 8             # su centro, hacia el frente de la casilla
+TV_MASTIL = 16            # alto del mástil de la bandera sobre la calzada
+
+
+def _vigia(lz):
+    # Torre de vigía (pedido del 10/11/2026): como las torres del muro de piedra (ladrillo, parapeto con almenas y
+    # calzada de losas) pero más alta y en gris azulado; puerta al pie, ventana y mástil para la bandera del dueño.
+    R, H, cy = TV_R, TV_H, TV_CY
+    alto, ang = {}, {}
+    for gy in range(cy - R - 1, cy + R + 2):
+        for gx in range(C - R - 1, C + R + 2):
+            nx, ny = gx - C + 0.5, gy - cy + 0.5
+            r = math.hypot(nx, ny)
+            if r > R: continue
+            u = int((math.atan2(ny, nx) + math.pi) * R)
+            alto[(gx, gy)] = H + ((6 if u % 8 < 5 else 2) if r > R - 3 else 0)
+            ang[(gx, gy)] = (nx, ny, u)
+    lz.sombra(alto, trama=True)
+
+    def cara(gx, gy, z, lado):
+        nx, ny, u = ang[(gx, gy)]
+        luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
+        if z >= H: return _azul(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > H + 2 and u % 8 >= 4, luz * 1.12))
+        if ny > 0 and abs(nx) < 3.2 and z < 10:                       # puerta
+            return (40, 26, 14) if abs(nx) < 0.6 or z == 9 else _mul((126, 82, 40), 0.85 if int(nx + 9) % 3 else 0.6)
+        if ny > 0 and abs(nx) < 1.8 and 24 <= z < 30: return (16, 14, 18)    # ventana
+        return _azul(_ladrillo(u, H - 1 - z, luz * (0.68 + 0.44 * z / H)))
+
+    def arriba(gx, gy):
+        if alto[(gx, gy)] > H: return _azul((190, 190, 186) if alto[(gx, gy)] > H + 2 else (156, 156, 154))
+        return _calzada(gx, gy)
+    lz.voxeles(alto, cara, arriba)
+    for z in range(TV_MASTIL):                                       # mástil, de pantalla en el centro de la calzada
+        q = (C, cy - H - z)
+        lz.px[q] = (58, 44, 30) if z % 3 else (80, 62, 40)
+        lz.cuerpo.add(q)
+
+
+# Colores de los bandos (fijos por número: ia/PENDIENTE-entrenamiento-ia.md, estandartes de War3Ed.RES)
+BANDOS = [(236, 236, 228), (236, 208, 40), (232, 128, 24), (200, 28, 24),
+          (32, 150, 40), (36, 56, 196), (90, 186, 232), (28, 26, 30)]
+
+
+def bandera(ruina, color, pal, lado):
+    """Banderín del bando `lado` en lo alto del mástil de la torre de vigía, flameando hacia el este; capa aparte
+    (una por bando) que ob_draw pinta sobre la torre según su dueño."""
     lz = Lienzo(ruina, color)
+    x0, y0 = C + 1, TV_CY - TV_H - TV_MASTIL + 1
+    for x in range(12):
+        ola = int(round(1.2 * math.sin(x / 2.2)))
+        alto = 8 - x // 3                                            # se angosta hacia la punta
+        for y in range(alto):
+            k = 1.0 if y and y < alto - 1 else 0.72                  # bordes un poco más oscuros
+            if (x + ola) % 4 == 3: k *= 0.85                         # pliegues
+            lz.px[(x0 + x, y0 + y + ola + x // 6)] = _mul(BANDOS[lado], k)
+    return lz.imagen(pal)
+
+
+def torre(ruina, color, pal, faro=False, parte=None):
+    lz = Lienzo(ruina, color)
+    if not faro:
+        _vigia(lz)
+        return lz.imagen(pal, parte)
     cy = C + 8                                   # base hacia el frente de la casilla
     R = 10 if faro else 12
     Ht = 44 if faro else 40
@@ -422,4 +495,4 @@ def torre(ruina, color, pal, faro=False):
                 if abs(x + 0.5 - C) <= w: lz.px[(x, y)] = (110, 30, 25) if x >= C else (175, 52, 40)
         for x in range(C - 22, C + 22):          # destello
             if abs(x + 0.5 - C) > 8 and x % 2 == 0: lz.px[(x, top - 7)] = (255, 240, 140)
-    return lz.imagen(pal)
+    return lz.imagen(pal, parte)
