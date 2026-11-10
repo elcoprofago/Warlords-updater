@@ -45,3 +45,12 @@ Pedido completo:
   defensores 0x4411b0, habilidad única por unidad (+0xe6 código, +0xe8 valor; 6 Fortify, 28 Assassin, 30 Missiles,
   38 Acid, 54 Life Drain) — una unidad tiene una sola habilidad, así que 5 bonos exigen otro mecanismo.
 - Punto 4: imagen del bloque roto en obras_img.py / RUINS\pozos.pcx.
+
+## Averiguado (ingeniería inversa, 10/11/2026)
+- Habilidades por unidad (0x467885..0x4679e3, unidad de la ficha en [esp+0xb4]): Missiles 30 (0x1e) -> unidad +0x18,
+  Acid 38 (0x26) -> +0x1a, Assassin 28 (0x1c) -> +0x17 (también 26 -> +0x14, 27 -> +0x13, 40 -> +0x1c, 33 -> +0x1b,
+  32 -> +0x16? ver el orden de los mov en 0x46799e..0x4679e3, 39 -> +0x19, 41 -> +0x1d). Sumar varias a la vez es
+  escribir esos bytes después de 0x4679e3 para los arqueros virtuales y los alojados.
+- Habilidades de grupo (0x468440, tabla 0x469684 / saltos 0x469634, registro en ecx desde 0x46907c): se guarda el
+  máximo del bando en la estructura esi: Fortify 6 -> [esi+4], Life Drain 54 -> [esi+0x16]. Para el bando del muro:
+  poner max(actual, 7) y max(actual, 5) al final de ese armado (falta ubicar el final de 0x468440 y quién es esi).

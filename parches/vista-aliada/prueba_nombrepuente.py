@@ -21,7 +21,7 @@ FNAME = 'DATA\\BRIDNAME.TXT'
 _cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 def ins(va, n=0x40): return list(_cs.disasm(img[va - BASE:va - BASE + n], va))
 i0 = ins(0x495530)[0]; assert i0.mnemonic == 'jmp'
-BR_NAME = next(int(i.op_str, 16) for i in ins(int(i0.op_str, 16)) if i.mnemonic == 'call')
+BR_NAME = [int(i.op_str, 16) for i in ins(int(i0.op_str, 16), 0x60) if i.mnemonic == 'call'][1]   # el 1.º es wl_text (muros)
 BR_XY = next(int(i.op_str.split(', ')[1], 16) for i in ins(BR_NAME) if i.mnemonic == 'mov' and i.op_str.startswith('esi, 0x'))
 def cstr_va(s): return BASE + img.index(s.encode('latin1') + b'\0')
 THE_BRIDGE, THE_BRIDGE_U = cstr_va('the bridge'), cstr_va('The bridge')

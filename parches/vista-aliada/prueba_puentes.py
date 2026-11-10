@@ -3,7 +3,7 @@
 # Mapa de 20x20 de tierra con un puente horizontal (5,5)-(6,5), otro vertical (12,8)-(12,9) y, como controles, una
 # casilla de agua con edificio y estructura 1 (no es puente) en (15,15) y agua sin puente en (16,15).
 # Las funciones del juego que se llaman (avisos, oro, ahogar, redibujar) son stubs que anotan sus argumentos.
-import sys, struct, pefile
+import sys, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
@@ -24,7 +24,8 @@ def call_target(va):
     assert img[va - BASE] == 0xe8
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
 RAZELK, REBUILDLK = call_target(0x4205c1), call_target(0x42053f)
-assert all(call_target(v) == RAZELK for v in (0x41c98c, 0x44c2d7, 0x4b05d1)) and call_target(0x41caab) == REBUILDLK
+WL_RAZELK = call_target(0x44c2d7)   # jugador: muros propios primero (wl_razelk), después el puente con br_razelk
+assert call_target(0x41c98c) == RAZELK and call_target(0x4b05d1) == WL_RAZELK and any(i.mnemonic == 'call' and i.op_str == hex(RAZELK) for i in capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32).disasm(img[WL_RAZELK - BASE:WL_RAZELK - BASE + 0x80], WL_RAZELK)) and call_target(0x41caab) == REBUILDLK
 
 W = H = 20; SHIFT = 8; WATER, LAND = 3, 2
 UI = 1                       # jugador de la interfaz, humano
