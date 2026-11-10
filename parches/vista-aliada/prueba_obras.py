@@ -173,5 +173,55 @@ ver('jugador 2 pausa 4 veces: las 3 primeras pausan, la cuarta no', pausas([0x20
 ver('  cada jugador tiene las suyas', pausas([0x201] * 3 + [0x501, 0x201]), ([2, 2, 2, 2, 0], bytes([0, 0, 3, 0, 0, 1, 0, 0])))
 ver('control: reanudar (0) siempre vale y no cuenta', pausas([0, 0, 0, 0], lambda g: g.mu.mem_write(PP_CNT + 2, b'\3'))[1][2], 3)
 
+print('-- derribar muros propios con «Raze» (wl_razelk, wl_apply)')
+import capstone
+_cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+def llamadas(va, n=400):
+    return [int(i.op_str, 16) for i in _cs.disasm(img[va - BASE:va - BASE + n], va) if i.mnemonic == 'call' and i.op_str.startswith('0x')]
+WL_RAZELK = dest(0x44c2d7)
+BR_RAZELK = dest(0x4205c1)
+BR_RAZEAPPLY = dest(0x4d5e30)
+_j = list(_cs.disasm(img[BR_RAZEAPPLY - BASE:BR_RAZEAPPLY - BASE + 16], BR_RAZEAPPLY))[1]
+assert _j.mnemonic == 'jge'
+WL_APPLY = int(_j.op_str, 16)
+_wa = llamadas(WL_APPLY, 120)[:5]   # ob_del, REDRAW, 0x4a4f20, br_mapview, ob_fogme
+assert _wa[2] == 0x4a4f20, [hex(v) for v in _wa]
+def stub(mu, va, eax=None):
+    def h(mu, a, size, _):
+        if eax is not None: mu.reg_write(UC_X86_REG_EAX, eax)
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        mu.reg_write(UC_X86_REG_EIP, struct.unpack('<I', mu.mem_read(sp, 4))[0]); mu.reg_write(UC_X86_REG_ESP, sp + 4)
+    mu.hook_add(UC_HOOK_CODE, h, begin=va, end=va)
+def muros(recs, yo=2):
+    g = Juego(); mu = g.mu
+    mu.mem_write(OB_N, struct.pack('<I', len(recs)))
+    mu.mem_write(OB_TAB, b''.join(struct.pack('<hhBBBB', x, y, t, 0, d, 0) for x, y, t, d in recs))
+    mu.mem_write(0x537ce8, struct.pack('<h', yo))
+    stub(mu, 0x440b30, 0xffffffff); stub(mu, BR_RAZELK, 0xffffffff)
+    for va in _wa[1:]: stub(mu, va)
+    return g
+def razes(g, x, y, n):
+    r = []
+    for _ in range(n):
+        g.correr(WL_RAZELK, RET, struct.pack('<Iii', RET, x, y))
+        v = struct.unpack('<h', struct.pack('<H', g.mu.reg_read(UC_X86_REG_EAX) & 0xffff))[0]
+        r.append(v - 0x7000 if v >= 0x7000 else -1)
+    return r
+def tabla(g):
+    n = struct.unpack('<I', g.mu.mem_read(OB_N, 4))[0]
+    return [struct.unpack('<hhBBBB', bytes(g.mu.mem_read(OB_TAB + 8 * i, 8)))[:3] for i in range(n)]
+REC = [(5, 7, 7, 2), (6, 8, 7, 2), (20, 20, 7, 2), (4, 6, 6, 3), (5, 6, 4, 2)]   # torre (4) en (5, 6): no es muro
+ver('líder en (5, 7): rota entre los bloques propios al alcance (0, 1) y vuelve a empezar', razes(muros(REC), 5, 7, 4), [0, 1, 0, 1])
+ver('control: lejos (12, 12): nada', razes(muros(REC), 12, 12, 2), [-1, -1])
+ver('control: empalizada ajena (dueño 3) solo para el jugador 3', razes(muros(REC, yo=3), 5, 7, 2), [3, 3])
+def aplicar(g, idx, quien):
+    g.correr(0x4d5e30, RET, struct.pack('<III', RET, 0x7000 + idx, quien))
+    return tabla(g)
+ver('derribar el bloque 1 del jugador 2: se va y los de atrás corren', aplicar(muros(REC), 1, 2),
+    [(5, 7, 7), (20, 20, 7), (4, 6, 6), (5, 6, 4)])
+ver('control: el jugador 3 no derriba un muro del 2', aplicar(muros(REC), 1, 3), [r[:3] for r in REC])
+ver('control: la torre no se derriba como muro', aplicar(muros(REC), 4, 2), [r[:3] for r in REC])
+ver('control: índice fuera de la tabla', aplicar(muros(REC), 9, 2), [r[:3] for r in REC])
+
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

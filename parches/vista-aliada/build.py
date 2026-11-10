@@ -4337,6 +4337,157 @@ oba_out:
     pop ecx
     ret
 ''')
+# ---- Derribar muros (pedido del 10/11/2026, PENDIENTE-faros-muros punto 2a): el dueño derriba un bloque de su muro de
+# piedra (o empalizada) con «Raze», desde la casilla del bloque (puerta) o una de sus 8 vecinas. Con varios bloques al
+# alcance, cada «Raze» ofrece el siguiente (WL_NEXT); el diálogo nombra la dirección del bloque desde el líder. Después
+# del último bloque, si hay un puente para derribar, lo ofrece a él. Código del diálogo: WL_CODE + índice de la obra
+# (mayor que todo código de puente); viaja con la orden de arrasar de siempre (0x4b9550 -> 0x4d5e30, wl_apply).
+WL_CODE = 0x7000
+wl_vars = place_data('wl_vars', bytes(8))
+WL_NEXT, WL_LX, WL_LY = wl_vars, wl_vars + 2, wl_vars + 4
+_wl_dirs = ['to the north-west', 'to the north', 'to the north-east', 'to the west', 'here', 'to the east',
+            'to the south-west', 'to the south', 'to the south-east']
+wl_txts = [place_data(f'wl_txt{i}', cstr_(f'the stone wall {d}')) for i, d in enumerate(_wl_dirs)]
+wl_txttab = place_data('wl_txttab', struct.pack('<9I', *wl_txts))
+# wl_find: eax = x, edx = y del líder, ecx = índice desde donde buscar -> eax = índice de la primera obra (desde ecx,
+# dando la vuelta) que es muro o empalizada de [0x537ce8] en esa casilla o una vecina, o -1. Preserva el resto.
+wl_find = place('wl_find', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    mov esi, eax
+    mov edi, edx
+    mov ebp, dword ptr [{OB_N:#x}]
+    test ebp, ebp
+    jz wf_none
+    cmp ecx, ebp
+    jb wf_s
+    xor ecx, ecx
+wf_s:
+    xor ebx, ebx
+wf_l:
+    cmp ebx, ebp
+    jae wf_none
+    lea eax, [ecx*8 + {OB_TAB:#x}]
+    mov dl, byte ptr [eax + 4]
+    cmp dl, {OB_EMPAL}
+    jb wf_n
+    cmp dl, {OB_MURO}
+    ja wf_n
+    movzx edx, byte ptr [eax + 6]
+    cmp dx, word ptr [0x537ce8]
+    jne wf_n
+    movsx edx, word ptr [eax]
+    sub edx, esi
+    inc edx
+    cmp edx, 2
+    ja wf_n
+    movsx edx, word ptr [eax + 2]
+    sub edx, edi
+    inc edx
+    cmp edx, 2
+    ja wf_n
+    mov eax, ecx
+    jmp wf_out
+wf_n:
+    inc ecx
+    cmp ecx, ebp
+    jb wf_c
+    xor ecx, ecx
+wf_c:
+    inc ebx
+    jmp wf_l
+wf_none:
+    or eax, -1
+wf_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# wl_razelk(x, y) cdecl, en lugar de br_razelk en el menú (0x4b05d1) y la tecla (0x44c2d7) del jugador; la IA sigue con
+# br_razelk. Sitio en la casilla; si no, el siguiente bloque de muro propio; al dar la vuelta, el puente (si hay).
+wl_razelk = place('wl_razelk', f'''
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    call 0x440b30
+    add esp, 8
+    test ax, ax
+    jge wr_out
+    push ebx
+    push esi
+    movsx eax, word ptr [esp + 0xc]
+    movsx edx, word ptr [esp + 0x10]
+    mov word ptr [{WL_LX:#x}], ax
+    mov word ptr [{WL_LY:#x}], dx
+    movzx ebx, byte ptr [{WL_NEXT:#x}]
+    mov ecx, ebx
+    call {wl_find:#x}
+    test eax, eax
+    js wr_br
+    mov esi, eax
+    cmp esi, ebx
+    jae wr_wall
+    test ebx, ebx
+    jz wr_wall
+    mov byte ptr [{WL_NEXT:#x}], 0
+    push dword ptr [esp + 0x10]
+    push dword ptr [esp + 0x10]
+    call {br_razelk:#x}
+    add esp, 8
+    test ax, ax
+    jge wr_pop
+wr_wall:
+    lea eax, [esi + 1]
+    mov byte ptr [{WL_NEXT:#x}], al
+    lea eax, [esi + {WL_CODE:#x}]
+    jmp wr_pop
+wr_br:
+    push dword ptr [esp + 0x10]
+    push dword ptr [esp + 0x10]
+    call {br_razelk:#x}
+    add esp, 8
+wr_pop:
+    pop esi
+    pop ebx
+wr_out:
+    ret
+''')
+# wl_text: eax = código (>= WL_CODE) -> eax = texto «the stone wall <dirección>» desde el líder (WL_LX, WL_LY).
+wl_text = place('wl_text', f'''
+    push ecx
+    push edx
+    sub eax, {WL_CODE:#x}
+    lea ecx, [eax*8 + {OB_TAB:#x}]
+    movsx eax, word ptr [ecx]
+    movsx edx, word ptr [{WL_LX:#x}]
+    sub eax, edx
+    inc eax
+    cmp eax, 2
+    jbe wt_x
+    mov eax, 1
+wt_x:
+    movsx edx, word ptr [ecx + 2]
+    movsx ecx, word ptr [{WL_LY:#x}]
+    sub edx, ecx
+    inc edx
+    cmp edx, 2
+    jbe wt_y
+    mov edx, 1
+wt_y:
+    lea edx, [edx + edx*2]
+    add eax, edx
+    mov eax, dword ptr [eax*4 + {wl_txttab:#x}]
+    pop edx
+    pop ecx
+    ret
+''')
 # ob_fogme: si hay niebla, la vuelve a calcular para quien mira ([0x560b20]; 0x441540). Preserva todo.
 ob_fogme = place('ob_fogme', f'''
     pushad
@@ -5550,6 +5701,16 @@ br_menu = place('br_menu', f'''
     jl brm_reb
     mov byte ptr [esi + 8], 1
 brm_reb:
+    cmp byte ptr [esi + 8], 0
+    jne brm_reb2
+    mov eax, edi
+    mov edx, ebp
+    xor ecx, ecx
+    call {wl_find:#x}
+    test eax, eax
+    js brm_reb2
+    mov byte ptr [esi + 8], 1
+brm_reb2:
     cmp byte ptr [esi + 0xc], 0
     jne brm_out
     push {BR_KIND_RAZED}
@@ -5781,6 +5942,12 @@ brnm_out:
 br_razetxt = place('br_razetxt', f'''
     cmp eax, {BR_CODE:#x}
     jl brt2_site
+    cmp eax, {WL_CODE:#x}
+    jl brt2_br
+    call {wl_text:#x}
+    push eax
+    jmp 0x495541
+brt2_br:
     push 0
     push eax
     call {br_name:#x}
@@ -5817,6 +5984,15 @@ br_razebtn = place('br_razebtn', f'''
     call 0x4955d0
     jmp 0x495294
 brb2_bridge:
+    cmp eax, {WL_CODE:#x}
+    jl brb2_br
+    movsx ecx, word ptr [0x537ce8]
+    push ecx
+    push eax
+    call 0x4b9550
+    add esp, 8
+    jmp brb2_done
+brb2_br:
     push {BR_KIND_INTACT}
     push eax
     call {br_comp:#x}
@@ -5865,11 +6041,61 @@ br_mapview = place('br_mapview', f'''
 bmv_out:
     ret
 ''')
+# ob_del: eax = índice -> saca la obra de la tabla (corre las de atrás un lugar; igual en todas las PC) y rearma ob_map.
+ob_del = place('ob_del', f'''
+    pushad
+    mov ecx, dword ptr [{OB_N:#x}]
+    cmp eax, ecx
+    jae od2_out
+    dec ecx
+    mov dword ptr [{OB_N:#x}], ecx
+    lea edi, [eax*8 + {OB_TAB:#x}]
+    lea esi, [edi + 8]
+    sub ecx, eax
+    shl ecx, 3
+    rep movsb
+    mov eax, dword ptr [{OB_N:#x}]
+    lea edi, [eax*8 + {OB_TAB:#x}]
+    mov dword ptr [edi], 0
+    mov dword ptr [edi + 4], 0
+    call {ob_rebuild:#x}
+od2_out:
+    popad
+    ret
+''')
+# wl_apply (desde br_razeapply, pila de 0x4d5e30: [esp + 4] código, [esp + 8] jugador): si la obra sigue siendo muro o
+# empalizada de ese jugador, la saca, invalida el grafo de pasos y redibuja. Si no, nada.
+wl_apply = place('wl_apply', f'''
+    pushad
+    movsx eax, word ptr [esp + 0x24]
+    sub eax, {WL_CODE:#x}
+    cmp eax, dword ptr [{OB_N:#x}]
+    jae wa_out
+    lea edi, [eax*8 + {OB_TAB:#x}]
+    mov dl, byte ptr [edi + 4]
+    cmp dl, {OB_EMPAL}
+    jb wa_out
+    cmp dl, {OB_MURO}
+    ja wa_out
+    movzx edx, byte ptr [edi + 6]
+    cmp dx, word ptr [esp + 0x28]
+    jne wa_out
+    call {ob_del:#x}
+    call {REDRAW:#x}
+    call 0x4a4f20
+    call {br_mapview:#x}
+    call {ob_fogme:#x}
+wa_out:
+    popad
+    ret
+''')
 # Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
 # comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
 # refresca la vista y da el aviso "Razed!" / "<nombre> is in ruins!" del original al jugador humano que arrasó.
 # Sin historia (0x4a0400 / 0x49f900 son de sitios). 0x4d5f3a invalida el grafo de pasos (0x4a4f20) y sale.
 br_razeapply = place('br_razeapply', f'''
+    cmp word ptr [esp + 4], {WL_CODE:#x}
+    jge {wl_apply:#x}
     cmp word ptr [esp + 4], {BR_CODE:#x}
     jge bra2_bridge
     sub esp, 0x50
@@ -17811,6 +18037,9 @@ ds_out:
 # dn_lights: estampa en la grilla todas las luces de [GX0 - DN_N - 1, GX0 + GW + DN_N + 1) x (lo mismo en y). Con
 # Hidden Map, una ciudad, ruina, sitio o puente solo alumbra desde una casilla explorada por quien mira (bit 0x10 del
 # byte +3): su halo no delata lo que está bajo el negro.
+# Faros (pedido del 10/11/2026): alumbran OB_VISTA[OB_FARO] = 6 casillas con el degradé cuadrado de las ciudades
+# (ch = 0), recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
+DN_FARO = OB_VISTA[OB_FARO]
 dn_lights = place('dn_lights', f'''
     pushad
     mov edi, dword ptr [{DN_GY0:#x}]
@@ -17820,7 +18049,7 @@ dl_sy:
     add eax, dword ptr [{DN_GH:#x}]
     add eax, {DN_N + 1}
     cmp edi, eax
-    jge dl_arm
+    jge dl_faro
     mov esi, dword ptr [{DN_GX0:#x}]
     sub esi, {DN_N + 1}
 dl_sx:
@@ -17867,6 +18096,31 @@ dl_sxnext:
 dl_synext:
     inc edi
     jmp dl_sy
+dl_faro:
+    xor esi, esi
+dl_floop:
+    cmp esi, dword ptr [{OB_N:#x}]
+    jae dl_arm
+    lea edi, [esi*8 + {OB_TAB:#x}]
+    cmp byte ptr [edi + 4], {OB_FARO}
+    jne dl_fnext
+    movsx eax, word ptr [edi]
+    movsx edx, word ptr [edi + 2]
+    call {br_tile:#x}
+    test eax, eax
+    jz dl_fnext
+    test byte ptr [{OPT:#x}], 0x10
+    jz dl_fput
+    test byte ptr [eax + 3], 0x10
+    jz dl_fnext
+dl_fput:
+    movsx eax, word ptr [edi]
+    movsx edx, word ptr [edi + 2]
+    mov ecx, {DN_FARO}
+    call {dn_stamp:#x}
+dl_fnext:
+    inc esi
+    jmp dl_floop
 dl_arm:
     movsx ebx, word ptr [0x560b20]
     cmp ebx, 8
@@ -18883,8 +19137,10 @@ for va in CAM_SITES:
     patch(va, asm('call 0x4dd530', va), asm(f'call {cam_blit3:#x}', va))
 patch(0x414e1a, asm('shr bx, 5; mov ecx, dword ptr [esp + 0x10]', 0x414e1a), asm(f'jmp {cam_rep:#x}', 0x414e1a) + bytes([0x90]) * 3)
 # Puentes: derribar y reconstruir (ver br_* arriba).
-for va in (0x4205c1, 0x41c98c, 0x44c2d7, 0x4b05d1):
+for va in (0x4205c1, 0x41c98c):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))
+for va in (0x44c2d7, 0x4b05d1):   # jugador: también muros propios (wl_razelk)
+    patch(va, asm('call 0x440b30', va), asm(f'call {wl_razelk:#x}', va))
 for va in (0x42053f, 0x41caab):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_rebuildlk:#x}', va))
 for va in (0x4b0a1c, 0x4b0a28):
