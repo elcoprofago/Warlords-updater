@@ -86,15 +86,16 @@ def _limpia(c, u, v):
 
 _CALZ = []
 def _calzada(gx, gy):
-    # Calzada de arriba del muro (pedido del 9/11/2026): la textura del camino de tierra del juego (road0.PCX de
-    # TERRAIN/DATA, el tramo horizontal de la primera pieza, x 0..95, y 18..31) pasada a gris oscuro.
+    # Calzada de arriba del muro: el piso de losas de las ciudades del juego (cit_flr.PCX de TERRAIN/DATA), con sus
+    # colores (pedido del 10/11/2026; antes, el camino de tierra pasado a gris).
     if not _CALZ:
-        im = Image.open(r'C:/Warlords3/TERRAIN/DATA/road0.PCX').convert('RGB')
-        for y in range(18, 32):
-            _CALZ.append([im.getpixel((x, y)) for x in range(96)])
-    r, g, b = _CALZ[gy % 14][gx % 96]
-    k = int((0.3 * r + 0.59 * g + 0.11 * b) * 0.62)
-    return (k, k, k + 3)
+        _CALZ.append(Image.open(r'C:/Warlords3/TERRAIN/DATA/cit_flr.PCX').convert('RGB'))
+    im = _CALZ[0]
+    # Baldosas de 24 con borde de 1: se toma el interior de 22 de cada una, sin la cuadrícula de sus bordes. En
+    # perspectiva (pedido del 10/11/2026: «tal cual no, dale perspectiva»): piso visto en ángulo, con las losas más
+    # chicas que en la ciudad y aplastadas a lo alto (escala 1,5 a lo ancho y 2,4 a lo alto).
+    u, v = int(gx * 1.5), int(gy * 2.4)
+    return im.getpixel(((u // 22) % 16 * 24 + 1 + u % 22, (v // 22) % 8 * 24 + 1 + v % 22))
 
 
 def _mul(c, k):
