@@ -34,6 +34,17 @@ Pedido completo:
   alojada llenan el tope; con más pilas alojadas hay que decidir el reparto (técnico: mío). Byte +7 del registro =
   arqueros **muertos** (0..24): los muros ya construidos tienen 0 y quedan con los 24; con 24 el bloque cae.
 
+## Indicaciones del usuario (10/11/2026, después del tipo y la baja)
+- **Estadísticas:** los arqueros virtuales son puntos de defensa de la muralla, no ejército: no cuentan en las
+  estadísticas de armas. Técnico: en 0x465c80, para las ranuras virtuales saltear 0x4039a0 (y el aviso 0x461a60);
+  revisar también que no entren en conteos del atacante (bajas enemigas causadas) ni en el historial/IA (ia_bat).
+- **Reparar:** el dueño de un bloque con arqueros muertos (byte +7 > 0) puede repararlo pagando el costo
+  proporcional: precio del bloque (OB_FRAC, el mismo que construirlo) * muertos / 24. Va en la botonera de «Build»
+  como orden nueva «Repair» (reparar, no reconstruir: el bloque sigue en pie y vuelve a 0 muertos). Sobre un bloque
+  caído (24) no aplica: ese se construye de nuevo. Mismo camino que las demás órdenes de obra (bd_pick / bd_ok /
+  bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
+  probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
+
 ## Plan técnico (sin empezar)
 1. Movimiento: hoy po_pf cierra el muro al enemigo; hay que convertir «entrar a un muro enemigo» en ataque
    (como a una casilla con ejércitos enemigos) en lugar de camino cerrado.
