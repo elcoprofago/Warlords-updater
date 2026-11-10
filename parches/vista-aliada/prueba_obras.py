@@ -203,8 +203,12 @@ BR_RAZEAPPLY = dest(0x4d5e30)
 _j = list(_cs.disasm(img[BR_RAZEAPPLY - BASE:BR_RAZEAPPLY - BASE + 16], BR_RAZEAPPLY))[1]
 assert _j.mnemonic == 'jge'
 WL_APPLY = int(_j.op_str, 16)
-_wa = llamadas(WL_APPLY, 120)[:5]   # ob_del, REDRAW, 0x4a4f20, br_mapview, ob_fogme
+_wa0 = llamadas(WL_APPLY, 160)
+BD_PRICE = _wa0[0]
+assert _wa0[1] == 0x43fd60, [hex(v) for v in _wa0]
+_wa = _wa0[2:7]   # ob_del, REDRAW, 0x4a4f20, br_mapview, ob_fogme
 assert _wa[2] == 0x4a4f20, [hex(v) for v in _wa]
+PAGOS = []
 def stub(mu, va, eax=None):
     def h(mu, a, size, _):
         if eax is not None: mu.reg_write(UC_X86_REG_EAX, eax)
@@ -218,6 +222,12 @@ def muros(recs, yo=2):
     mu.mem_write(0x537ce8, struct.pack('<h', yo))
     stub(mu, 0x440b30, 0xffffffff); stub(mu, BR_RAZELK, 0xffffffff)
     for va in _wa[1:]: stub(mu, va)
+    stub(mu, BD_PRICE, 101)   # precio de la obra para cualquier bando
+    def pago(mu, a, size, _):
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        PAGOS.append(struct.unpack('<ii', bytes(mu.mem_read(sp + 4, 8))))
+    mu.hook_add(UC_HOOK_CODE, pago, begin=0x43fd60, end=0x43fd60)
+    stub(mu, 0x43fd60)
     return g
 def razes(g, x, y, n):
     r = []
@@ -245,6 +255,14 @@ ver('la torre propia se derriba', aplicar(muros(REC), 4, 2), [r[:3] for r in REC
 ver('el faro propio se derriba', aplicar(muros(REC), 5, 2), [r[:3] for r in REC[:5]])
 ver('control: el jugador 3 no derriba la torre del 2', aplicar(muros(REC), 4, 3), [r[:3] for r in REC])
 ver('control: índice fuera de la tabla', aplicar(muros(REC), 9, 2), [r[:3] for r in REC])
+def pagos(idx, quien):
+    PAGOS.clear(); aplicar(muros(REC), idx, quien); return list(PAGOS)
+print('-- reintegro del 75 % al derribar (precio 101 -> 75)')
+ver('muro de piedra propio: 75 al dueño', pagos(1, 2), [(2, 75)])
+ver('empalizada propia: 75 al dueño', pagos(3, 3), [(3, 75)])
+ver('control: torre propia, sin reintegro', pagos(4, 2), [])
+ver('control: faro propio, sin reintegro', pagos(5, 2), [])
+ver('control: muro ajeno, ni derribo ni pago', pagos(1, 3), [])
 
 def texto(idx, lx, ly):
     g = muros(REC); mu = g.mu

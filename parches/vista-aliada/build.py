@@ -6065,7 +6065,8 @@ od2_out:
     ret
 ''')
 # wl_apply (desde br_razeapply, pila de 0x4d5e30: [esp + 4] código, [esp + 8] jugador): si la obra sigue siendo muro o
-# empalizada de ese jugador, la saca, invalida el grafo de pasos y redibuja. Si no, nada.
+# empalizada de ese jugador, la saca, invalida el grafo de pasos y redibuja. Si no, nada. Muro y empalizada devuelven al
+# dueño el 75 % de su precio (0x43fd60; pedido del 10/11/2026); torre y faro no devuelven nada.
 wl_apply = place('wl_apply', f'''
     pushad
     movsx eax, word ptr [esp + 0x24]
@@ -6081,6 +6082,22 @@ wl_apply = place('wl_apply', f'''
     movzx edx, byte ptr [edi + 6]
     cmp dx, word ptr [esp + 0x28]
     jne wa_out
+    cmp byte ptr [edi + 4], {OB_EMPAL}
+    jb wa_del
+    push eax
+    mov ecx, edx
+    mov eax, {OB_FRAC}
+    call {bd_price:#x}
+    imul eax, eax, 3
+    shr eax, 2
+    jz wa_nopay
+    push eax
+    push edx
+    call 0x43fd60
+    add esp, 8
+wa_nopay:
+    pop eax
+wa_del:
     call {ob_del:#x}
     call {REDRAW:#x}
     call 0x4a4f20
@@ -6133,8 +6150,11 @@ ww_out:
     pop ecx
     ret
 ''')
-# wv_type: eax = bando -> eax = su tipo de arma (0..14) cuyo archivo (+0x90) empieza con «archers»; si no hay, el primero
-# con la habilidad Missiles (30, +0xe6); si tampoco, 0. Preserva el resto.
+# wv_type: eax = bando -> eax = su tipo de arma (0..14) cuyo nombre (+0) empieza con «longbow» (pedido del 10/11/2026:
+# los arqueros virtuales son Longbows); si no hay, el de archivo (+0x90) «archers»; si no, el primero con la habilidad
+# Missiles (30, +0xe6); si tampoco, 0. Solo hay Longbows si el bando los tiene entre sus 15 tipos (el juego crea
+# ejércitos de esos tipos). Preserva el resto.
+wv_long = place_data('wv_long', b'longbow')
 wv_type = place('wv_type', f'''
     push ecx
     push edx
@@ -6142,6 +6162,25 @@ wv_type = place('wv_type', f'''
     shl eax, 4
     imul esi, eax, 0xfc
     add esi, 0x53c410
+    xor ecx, ecx
+wt_lrec:
+    xor edx, edx
+wt_lch:
+    mov al, byte ptr [esi + edx]
+    or al, 0x20
+    cmp al, byte ptr [edx + {wv_long:#x}]
+    jne wt_lnext
+    inc edx
+    cmp edx, 7
+    jb wt_lch
+    mov eax, ecx
+    jmp wt_out
+wt_lnext:
+    add esi, 0xfc
+    inc ecx
+    cmp ecx, 15
+    jb wt_lrec
+    sub esi, {15 * 0xfc:#x}
     xor ecx, ecx
 wt_rec:
     xor edx, edx
@@ -12746,6 +12785,18 @@ flo_out:
 ''')
 # fl_has: eax = x, edx = y -> ZF = 0 si en la casilla hay una obra con bandera (torre, faro o puerta del muro).
 # Preserva todo.
+# ob_road (pedido del 10/11/2026: banderas del muro solo sobre un camino): eax = x, edx = y -> ZF = 1 si la casilla no
+# tiene camino. Preserva todo salvo las banderas.
+ob_road = place('ob_road', f'''
+    pushad
+    call {br_tile:#x}
+    test eax, eax
+    jz obr_out
+    test byte ptr [eax + 3], 7
+obr_out:
+    popad
+    ret
+''')
 fl_has = place('fl_has', f'''
     pushad
     call {ob_at:#x}
@@ -12764,6 +12815,8 @@ fl_has = place('fl_has', f'''
     call {od_gate:#x}
     cmp byte ptr [{od_vars + 4:#x}], 0
     je flh_no
+    call {ob_road:#x}
+    jz flh_no
 flh_yes:
     or esp, esp
     popad
@@ -12922,6 +12975,16 @@ odw_g:
     sub eax, esi
     mov byte ptr [{od_vars:#x}], al
     call {od_put:#x}
+    movsx eax, byte ptr [esi + {od_off:#x}]
+    movsx edx, byte ptr [esi + {od_offy:#x}]
+    push ecx
+    movsx ecx, word ptr [{po_cx:#x}]
+    add eax, ecx
+    movsx ecx, word ptr [{po_cx + 2:#x}]
+    add edx, ecx
+    pop ecx
+    call {ob_road:#x}
+    jz odw_gn
     sub ecx, {OD_PUERTA}
     cmp ecx, 2
     jb odw_gk

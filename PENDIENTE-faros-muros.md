@@ -45,6 +45,13 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: Longbows, portón oscuro, banderas en caminos y reintegro del 75 % (1.0.178.0, 10/11/2026)
+
+- wv_type: Longbows del bando si los tiene (nombre «longbow»), si no Archers, si no el primer tipo con Missiles. Un bando sin Longbows en su set no puede tenerlos: el juego solo crea ejércitos de los 15 tipos del bando.
+- Hueco del portón abierto en negro (obras_img.py, `_arco`).
+- Banderas solo en bloques con camino (ob_road en fl_has y en la pasada de puertas de ob_draw); el arco y el portón siguen en todo bloque.
+- wl_apply: muro y empalizada devuelven al dueño el 75 % de bd_price(OB_FRAC) con 0x43fd60; torre y faro, nada. Tarea 158.
+
 ## Hecho: puerta en todo bloque y Raze de torres y faros (1.0.177.0, 10/11/2026)
 - Informe del usuario: «desaparecieron las puertas y las banderitas». No faltaba nada: od_gate, od_dg y ob_near
   dibujaban la puerta solo sobre un camino, y en build_02.SAV ningún bloque de muro estaba sobre camino. Como desde

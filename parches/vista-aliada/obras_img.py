@@ -366,7 +366,7 @@ def _arco(dx, z, puerta):
         return _pardo((170, 164, 156))
     if puerta == 'abierta':
         if ax > AW - 2: return (108, 70, 34) if int(z) % 5 else (60, 40, 22)    # hojas abiertas, de canto
-        return (22, 17, 12)
+        return (0, 0, 0)        # negro (pedido del 10/11/2026): (22, 17, 12) caía en el pardo rojizo 80 de la paleta
     if abs(dx) < 0.6: return (40, 26, 14)           # junta de las dos hojas
     if int(z) in (3, 9): return (58, 54, 52)        # herrajes
     k = 1.0 if int(dx + 20) % 3 else 0.7            # tablas
