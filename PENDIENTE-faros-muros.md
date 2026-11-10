@@ -25,8 +25,11 @@ Pedido completo:
 - Bonos de esos arqueros: +5 Missiles, +5 Acid, +7 Fortify, +5 Life Drain. (El pedido anterior decía también
   +3 Assassin; la indicación nueva no lo nombra: se toma la nueva.)
 - Grupos alojados: los que están sobre casillas del muro o a 1 casilla de él; reciben esos bonos sumados a lo suyo.
-- Interpretación tomada: «3 grupos de arqueros» = 3 unidades de arquero por bloque (las que se ven caer una a una);
-  los arqueros que quedan vivos se guardan en el byte +7 del registro de la obra (persisten entre ataques).
+- Confirmado por el usuario (10/11/2026): cada bloque tiene **3 pilas de 8 arqueros (24 arqueros)**, no 3 arqueros.
+  Los que van muriendo se anotan en el bloque: un ataque posterior encuentra menos defensa. Assassin queda afuera.
+  Ojo: la ficha admite hasta 32 defensores (0x464ac0, como una ciudad de 4 casillas): 24 virtuales + 8 de una pila
+  alojada llenan el tope; con más pilas alojadas hay que decidir el reparto (técnico: mío). Los 24 vivos no caben en
+  el byte +7 si se cuentan aparte de otra cosa: +7 = arqueros vivos (0..24; 0 = muro caído).
 
 ## Plan técnico (sin empezar)
 1. Movimiento: hoy po_pf cierra el muro al enemigo; hay que convertir «entrar a un muro enemigo» en ataque
