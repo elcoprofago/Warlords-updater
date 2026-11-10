@@ -16,7 +16,7 @@ Pedido completo:
   «derribar muros»).
 
 ## Próximo paso
-- Cerrar el juego, `python parchesista-aliadauild.py` (instala en C:\Warlords3), correr las prueba_*.py sin
+- Cerrar el juego, `python parches\vista-aliada\build.py` (instala en C:\Warlords3), correr las prueba_*.py sin
   argumentos y `tools\publicar-parche.ps1 vista-aliada`.
 - Puntos 2b y 3 (ataque enemigo al muro con los bonos): falta decidir qué defiende un bloque sin pila encima y qué
   pilas cuentan como «alojadas» (¿las del dueño sobre las puertas?). Ingeniería inversa: batalla 0x469ed0,
