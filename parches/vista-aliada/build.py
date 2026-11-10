@@ -11700,9 +11700,11 @@ pp_end:
 # pinta su pieza p = (P - W) + (1, 1). Muro y empalizada: el centro y un brazo por cada bit de ob_wmask, en el orden
 # N, NO, NE, O, E, centro, SO, SE, S (lo de atrás primero). Como las celdas se redibujan de a una (bit 0x20 de la
 # celda), cada una repinta lo suyo de las obras vecinas y nada queda cortado.
-OD_PORFILA, OD_CAPAS = 5, 50
+OD_PORFILA, OD_CAPAS = 5, 52
 OD_SOMBRA = 22              # capas 22..41: solo la sombra de las capas 0..19 (ob_draw las pinta antes que los cuerpos)
-OD_BANDERA = 42             # capas 42..49: banderín de la torre de vigía, una por bando
+OD_PDIAG = 42               # capas 42..45: puerta en un muro diagonal (d = 1 cerrada, abierta; d = 3 cerrada, abierta)
+OD_SDIAG = 46               # capas 46, 47: su sombra (d = 1, 3)
+OD_SINT = 48                # capas 48..51: brazo d = 1, 3, 5, 7 del muro sin la torre de la vecina (puerta diagonal)
 OD_PUERTA = 20               # capas 20 y 21: torre del muro sobre un camino, con el portón cerrado o abierto
 OD_BASE = {OB_TORRE: 0, OB_FARO: 1, OB_EMPAL: 2, OB_MURO: 11}
 od_full = place_data('od_full', bytes((OD_CAPAS * 9 + 7) // 8))
@@ -11712,6 +11714,8 @@ od_rdx = place_data('od_rdx', bytes(v & 0xff for v in (0, 1, 1, 1, 0, -1, -1, -1
 od_rdy = place_data('od_rdy', bytes(v & 0xff for v in (-1, -1, 0, 1, 1, 1, 0, -1)))
 od_ord = place_data('od_ord', bytes((0, 7, 1, 6, 2, 8, 5, 3, 4)))
 od_base = place_data('od_base', bytes(OD_BASE[t] for t in (OB_TORRE, OB_FARO, OB_EMPAL, OB_MURO)))
+od_xy = place_data('od_xy', bytes(8))      # x, y de la obra cuyo muro se pinta (ob_draw)
+FL_T = place_data('FL_T', bytes(4))         # fase de la animación de la vista ([vista + 0x3c], po_draw)
 od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 máscara, +4 capa del centro (0: la base),
                                             # +5 desplazamiento de capa de la pasada (OD_SOMBRA: sombras; 0: cuerpos)
 # Obras grandes (ob_draw): las capas de obras_img.py (3x3 casillas cada una), en la paleta del mapa con los colores de
@@ -11743,8 +11747,11 @@ def _od_arco(p):
 od_capas += [_od_arco(p) for p in ('cerrada', 'abierta')]
 assert len(od_capas) == OD_SOMBRA
 od_capas += _od_obras('sombra')
-assert len(od_capas) == OD_BANDERA
-od_capas += [obras_img.bandera(_rl, _od_color, po_pal, b) for b in range(8)]
+assert len(od_capas) == OD_PDIAG
+od_capas += [obras_img.muro_diag(_rl, _od_color, po_pal, d, p, 'cuerpo') for d in (1, 3) for p in ('cerrada', 'abierta')]
+od_capas += [obras_img.muro_diag(_rl, _od_color, po_pal, d, 'cerrada', 'sombra') for d in (1, 3)]
+assert len(od_capas) == OD_SINT
+od_capas += [obras_img.brazo_sin_torre(_rl, _od_color, po_pal, d) for d in (1, 3, 5, 7)]
 assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
@@ -11829,6 +11836,67 @@ owm_out:
     pop ebp
     pop edi
     pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# od_dg (pedido del 10/11/2026): ebx = registro, eax = x, edx = y -> eax = d (1 o 3) si es un muro de piedra sobre un
+# camino con brazos solo en una diagonal (NE-SO: 0x22; SE-NO: 0x88): la puerta va en el medio del tramo, sin torre
+# (OD_PDIAG); si no, 0. Preserva el resto.
+od_dg = place('od_dg', f'''
+    push ecx
+    push edx
+    push eax
+    cmp byte ptr [ebx + 4], {OB_MURO}
+    jne odd_no
+    call {br_tile:#x}
+    test eax, eax
+    jz odd_no
+    test byte ptr [eax + 3], 7
+    jz odd_no
+    mov eax, dword ptr [esp]
+    call {ob_wmask:#x}
+    mov ecx, eax
+    mov eax, 1
+    cmp ecx, 0x22
+    je odd_out
+    mov eax, 3
+    cmp ecx, 0x88
+    je odd_out
+odd_no:
+    xor eax, eax
+odd_out:
+    add esp, 4
+    pop edx
+    pop ecx
+    ret
+''')
+# od_far: eax = dirección d -> eax = 1 si la vecina en d de la obra en od_xy es una puerta diagonal (od_dg). Preserva
+# el resto.
+od_far = place('od_far', f'''
+    push ebx
+    push ecx
+    push edx
+    mov ecx, eax
+    movsx eax, byte ptr [ecx + {od_rdx:#x}]
+    add eax, dword ptr [{od_xy:#x}]
+    movsx edx, byte ptr [ecx + {od_rdy:#x}]
+    add edx, dword ptr [{od_xy + 4:#x}]
+    push eax
+    call {ob_at:#x}
+    mov ebx, eax
+    pop eax
+    test ebx, ebx
+    jz odf_no
+    call {od_dg:#x}
+    test eax, eax
+    setnz al
+    movzx eax, al
+    jmp odf_out
+odf_no:
+    xor eax, eax
+odf_out:
     pop edx
     pop ecx
     pop ebx
@@ -11926,6 +11994,14 @@ od_gate = place('od_gate', f'''
     test byte ptr [eax + 3], 7
     jz odg_out
     mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA}
+    mov eax, esi
+    mov edx, edi
+    call {od_dg:#x}
+    test eax, eax
+    jz odg_arm
+    lea eax, [eax + {OD_PDIAG - 1}]
+    mov byte ptr [{od_vars + 4:#x}], al
+odg_arm:
     movsx ecx, word ptr [0x54fe50]
     mov eax, 1
 odg_l:
@@ -11944,7 +12020,7 @@ odg_l:
     inc ebp
     cmp ebp, 2
     ja odg_nx
-    mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA + 1}
+    inc byte ptr [{od_vars + 4:#x}]
     jmp odg_out
 odg_nx:
     inc eax
@@ -11952,6 +12028,194 @@ odg_nx:
 odg_out:
     popad
     ret
+''')
+# Banderas animadas de las ciudades sobre las obras (pedido del 10/11/2026): torre de vigía, faro y dos sobre cada
+# puerta del muro. Los 32 cuadros (8 bandos x 4) de obras_img.bandera_ciudad van en una fila de la hoja PO_FILE debajo
+# de las capas: cuadro f del bando b en x = (b * 4 + f) * 32, y = FL_SY. El cuadro sale de la fase de la vista
+# (FL_T, como las banderas de las ciudades: (fase + semilla) / 2 & 3), con la casilla de la obra de semilla.
+FL_SY = 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA)
+FL_K = {'torre': 0, 'faro': 1, 'puerta': 2}          # puerta + 1: diagonal d = 1; puerta + 2: d = 3
+_flp = b''
+for _k in ('torre', 'faro', 'puerta', 1, 3):
+    _pp = [(x - obras_img.FL_PIE[0], y - obras_img.FL_PIE[1]) for x, y in obras_img.FL_PIES[_k]] + [(-32768, 0)]
+    _flp += struct.pack('<hhhh', *_pp[0], *_pp[1])
+fl_pos = place_data('fl_pos', _flp)
+# fl_put: eax = x, edx = y del rincón de la bandera en el lienzo de la obra (3x3 casillas); ebx = registro (bando en
+# +6, casilla en +0, +2); pieza en [od_vars]. Pinta la parte de la bandera que cae en la pieza. Preserva todo.
+fl_put = place('fl_put', f'''
+    pushad
+    sub esp, 16
+    cmp dword ptr [{po_nosheet:#x}], 0
+    jne flp_out
+    movzx ecx, byte ptr [ebx + 6]
+    cmp ecx, 8
+    jae flp_out
+    mov ebp, eax
+    mov edi, edx
+    push {PO_FILE}
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz flp_out
+    cmp dword ptr [eax + 8], 0
+    jne flp_ok
+    push {PO_FILE}
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jz flp_out
+flp_ok:
+    movzx ecx, byte ptr [ebx + 6]
+    mov esi, dword ptr [{FL_T:#x}]
+    movsx eax, word ptr [ebx]
+    add esi, eax
+    movsx eax, word ptr [ebx + 2]
+    add esi, eax
+    shr esi, 1
+    and esi, 3
+    lea ecx, [esi + ecx*4]
+    shl ecx, 5
+    mov dword ptr [esp + 12], ecx
+    movzx eax, byte ptr [{od_vars:#x}]
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    imul edx, edx, 48
+    imul eax, eax, 48
+    mov esi, ebp
+    cmp esi, edx
+    jge flp_x0
+    mov esi, edx
+flp_x0:
+    lea ecx, [ebp + {obras_img.FL_W}]
+    add edx, 48
+    cmp ecx, edx
+    jle flp_x1
+    mov ecx, edx
+flp_x1:
+    sub ecx, esi
+    jle flp_out
+    mov dword ptr [esp], esi
+    mov dword ptr [esp + 8], ecx
+    mov esi, edi
+    cmp esi, eax
+    jge flp_y0
+    mov esi, eax
+flp_y0:
+    lea ecx, [edi + {obras_img.FL_H}]
+    add eax, 48
+    cmp ecx, eax
+    jle flp_y1
+    mov ecx, eax
+flp_y1:
+    sub ecx, esi
+    jle flp_out
+    mov dword ptr [esp + 4], esi
+    mov ebx, dword ptr [esp]
+    sub ebx, ebp
+    add ebx, dword ptr [esp + 12]
+    mov ebp, dword ptr [esp + 4]
+    sub ebp, edi
+    add ebp, {FL_SY}
+    movsx esi, word ptr [{po_cx + 6:#x}]
+    add esi, dword ptr [esp + 4]
+    sub esi, eax
+    add esi, 48
+    movsx eax, word ptr [{po_cx + 4:#x}]
+    add eax, dword ptr [esp]
+    sub eax, edx
+    add eax, 48
+    push esi
+    push eax
+    push 0x27
+    push ecx
+    push dword ptr [esp + 24]
+    push ebp
+    push ebx
+    push {PO_FILE}
+    call 0x4dd530
+    add esp, 0x20
+flp_out:
+    add esp, 16
+    popad
+    ret
+''')
+# fl_obra: ecx = entrada de fl_pos (FL_K), ebx = registro: pinta su bandera o sus dos banderas. Preserva todo.
+fl_obra = place('fl_obra', f'''
+    pushad
+    lea esi, [ecx*8 + {fl_pos:#x}]
+    movsx eax, word ptr [esi]
+    movsx edx, word ptr [esi + 2]
+    call {fl_put:#x}
+    movsx eax, word ptr [esi + 4]
+    cmp eax, -32768
+    je flo_out
+    movsx edx, word ptr [esi + 6]
+    call {fl_put:#x}
+flo_out:
+    popad
+    ret
+''')
+# fl_has: eax = x, edx = y -> ZF = 0 si en la casilla hay una obra con bandera (torre, faro o puerta del muro).
+# Preserva todo.
+fl_has = place('fl_has', f'''
+    pushad
+    call {ob_at:#x}
+    test eax, eax
+    jz flh_no
+    mov ebx, eax
+    mov cl, byte ptr [ebx + 4]
+    cmp cl, {OB_TORRE}
+    je flh_yes
+    cmp cl, {OB_FARO}
+    je flh_yes
+    cmp cl, {OB_MURO}
+    jne flh_no
+    mov eax, dword ptr [esp + 28]
+    mov edx, dword ptr [esp + 20]
+    call {od_gate:#x}
+    cmp byte ptr [{od_vars + 4:#x}], 0
+    je flh_no
+flh_yes:
+    or esp, esp
+    popad
+    ret
+flh_no:
+    cmp eax, eax
+    popad
+    ret
+''')
+# fl_anim (0x457231 de las casillas sucias 0x457090; reemplaza "mov ax, [ebp]; and ah, 0x1c"): marca sucia la celda
+# si en su casilla o en la de abajo hay una obra con bandera (la bandera asoma sobre la casilla de arriba), así se
+# redibuja en cada cuadro y la bandera flamea. Celda = [esp+0x16]; vista [esp+0x18]: ancho +0x20, origen +0x28, +0x2a.
+fl_anim = place('fl_anim', f'''
+    pushad
+    movzx eax, word ptr [esp + 0x36]
+    mov ecx, dword ptr [esp + 0x38]
+    movsx esi, word ptr [ecx + 0x20]
+    test esi, esi
+    jle fla_no
+    xor edx, edx
+    div esi
+    movsx edi, word ptr [ecx + 0x28]
+    add edi, edx
+    movsx esi, word ptr [ecx + 0x2a]
+    add esi, eax
+    mov eax, edi
+    mov edx, esi
+    call {fl_has:#x}
+    jnz fla_yes
+    lea edx, [esi + 1]
+    call {fl_has:#x}
+    jnz fla_yes
+fla_no:
+    popad
+    mov ax, word ptr [ebp]
+    and ah, 0x1c
+    jmp 0x457238
+fla_yes:
+    popad
+    jmp 0x457214
 ''')
 ob_draw = place('ob_draw', f'''
     pushad
@@ -11984,18 +12248,32 @@ odw_l:
     cmp byte ptr [ebx + 4], {OB_EMPAL}
     jae odw_wall
     call {od_put:#x}
-    cmp byte ptr [ebx + 4], {OB_TORRE}
-    jne odw_nx
     cmp byte ptr [{od_vars + 5:#x}], 0
     jne odw_nx
-    movzx ecx, byte ptr [ebx + 6]
-    cmp ecx, 8
-    jae odw_nx
-    add ecx, {OD_BANDERA}
-    call {od_put:#x}
+    mov ecx, {FL_K['torre']}
+    cmp byte ptr [ebx + 4], {OB_TORRE}
+    je odw_fl
+    mov ecx, {FL_K['faro']}
+odw_fl:
+    call {fl_obra:#x}
     jmp odw_nx
 odw_wall:
     mov byte ptr [{od_vars + 1:#x}], cl
+    mov dword ptr [{od_xy:#x}], eax
+    mov dword ptr [{od_xy + 4:#x}], edx
+    push eax
+    call {od_dg:#x}
+    mov ecx, eax
+    pop eax
+    test ecx, ecx
+    jz odw_norm
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    je odw_nx
+    shr ecx, 1
+    add ecx, {OD_SDIAG - OD_SOMBRA}
+    call {od_put:#x}
+    jmp odw_nx
+odw_norm:
     call {ob_wmask:#x}
     mov edi, eax
     xor ebp, ebp
@@ -12007,6 +12285,20 @@ odw_a:
     bt edi, eax
     jnc odw_an
     lea ecx, [ecx + eax + 1]
+    test eax, 1
+    jz odw_put
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    jne odw_put
+    cmp byte ptr [{od_vars + 1:#x}], {OD_BASE[OB_MURO]}
+    jne odw_put
+    push eax
+    call {od_far:#x}
+    test eax, eax
+    pop eax
+    jz odw_put
+    mov ecx, eax
+    shr ecx, 1
+    add ecx, {OD_SINT}
 odw_put:
     call {od_put:#x}
 odw_an:
@@ -12042,6 +12334,14 @@ odw_g:
     sub eax, esi
     mov byte ptr [{od_vars:#x}], al
     call {od_put:#x}
+    sub ecx, {OD_PUERTA}
+    cmp ecx, 2
+    jb odw_gk
+    sub ecx, {OD_PDIAG - OD_PUERTA - 2}
+odw_gk:
+    shr ecx, 1
+    add ecx, {FL_K['puerta']}
+    call {fl_obra:#x}
 odw_gn:
     inc esi
     cmp esi, 9
@@ -12056,6 +12356,8 @@ odw_gn:
 po_mode = place_data('po_mode', bytes(4))
 po_draw = place('po_draw', f'''
     pushad
+    movzx eax, word ptr [ebp + 0x3c]
+    mov dword ptr [{FL_T:#x}], eax
     movsx eax, word ptr [esp + 0x34]
     movsx ecx, word ptr [ebp + 0x28]
     add eax, ecx
@@ -18542,6 +18844,7 @@ patch(0x45a049, asm('call 0x45aa80', 0x45a049), asm(f'call {fldraw:#x}', 0x45a04
 patch(0x4a2cb6, asm('call 0x4dd260', 0x4a2cb6), asm(f'call {al_seal:#x}', 0x4a2cb6))
 assert rel(0x457200, 2) == asm('je 0x457214', 0x457200)
 patch(0x4571f8, bytes.fromhex('6683e20f6683fa08'), asm(f'jmp {fldirty:#x}', 0x4571f8))
+patch(0x457231, bytes.fromhex('668b450080e41c'), asm(f'jmp {fl_anim:#x}', 0x457231))
 for va in (0x4a979e, 0x4ab7c5):
     patch(va, asm('push 0x4f90b4', va), asm(f'push {ver_str:#x}', va))
 patch(0x49e48b, rel(0x49e48b, 0x49e49a - 0x49e48b), asm(f'jmp {stepcap:#x}', 0x49e48b))
@@ -19398,7 +19701,13 @@ def muro(empal=False):
         for x in range(48):
             if px[x, y] == (255, 0, 255): px[x, y] = (20, 18, 12)
     return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
-po_hoja = Image.new('P', (48 * PO_FRAMES, 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA)), 11); po_hoja.putpalette(po_pal)
+po_hoja = Image.new('P', (48 * PO_FRAMES, FL_SY + 48), 11); po_hoja.putpalette(po_pal)
+assert FL_SY == 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA) and 32 * 32 <= 48 * PO_FRAMES
+_flsrc = Image.open(r'C:\Warlords3\CITY\STDCAST0.PCX')
+assert _flsrc.getpalette()[:768] == po_pal
+for _b in range(8):
+    for _f in range(4):
+        po_hoja.paste(obras_img.bandera_ciudad(_flsrc, _b, _f), ((_b * 4 + _f) * 32, FL_SY))
 assert OD_PORFILA * 9 <= PO_FRAMES
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
            + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True), muro(True), muro()])

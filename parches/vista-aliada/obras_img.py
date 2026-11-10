@@ -124,13 +124,13 @@ _BAYER = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
 
 
 # ---- muros: brazo d (0..7) o centro (d = None)
-def _huella_brazo(d, ancho):
+def _huella_brazo(d, ancho, hasta=24):
     n = math.hypot(RDX[d], RDY[d])
-    largo = 24 * n
+    largo = hasta * n
     ux, uy = RDX[d] / n, RDY[d] / n
     pts = {}
-    for gy in range(C - 30, C + 31):
-        for gx in range(C - 30, C + 31):
+    for gy in range(C - hasta - 6, C + hasta + 7):
+        for gx in range(C - hasta - 6, C + hasta + 7):
             a = (gx + 0.5 - C) * ux + (gy + 0.5 - C) * uy        # a lo largo
             w = -(gx + 0.5 - C) * uy + (gy + 0.5 - C) * ux       # de costado
             if 0 <= a < largo and abs(w) < ancho / 2:
@@ -300,12 +300,13 @@ def _muro_en(lz, d, empal, sombra=True, prohibido=()):
 
 
 
-def _muro_piedra(lz, d, sombra, prohibido, puerta=None):
+def _muro_piedra(lz, d, sombra, prohibido, puerta=None, lejana=True):
     # Muro de piedra (pedidos del 9/11/2026): torre redonda en cada casilla y tramos hasta la mitad del camino a la
     # vecina. Cada tramo se dibuja junto con las dos torres que une (la propia y la de la vecina), para que el orden de
     # pintado del juego (casillas de norte a sur) no deje un tramo encima de la torre de adelante: los píxeles de las
     # torres que repinta son iguales a los de su propia capa.
-    torres = [(C, C)] if d is None else [(C, C), (C + 48 * RDX[d], C + 48 * RDY[d])]
+    # lejana=False: sin la torre de la vecina (pedido del 10/11/2026: la vecina es una puerta en diagonal, sin torre)
+    torres = [(C, C)] if d is None or not lejana else [(C, C), (C + 48 * RDX[d], C + 48 * RDY[d])]
     alto, quien = {}, {}
     for cx, cy in torres:
         for q, h in _torre_muro(cx, cy).items():
@@ -372,6 +373,92 @@ def _arco(dx, z, puerta):
     return _mul((126, 82, 40), k)
 
 
+def _muro_diag(lz, d, puerta, sombra):
+    """Puerta en un muro diagonal (pedido del 10/11/2026, como picts/CR-028.png): la casilla del camino no lleva torre;
+    el tramo corre derecho de la torre vecina en d a la vecina en d + 4 y el arco se abre en el medio del tramo. Las
+    dos torres vecinas van en la capa para que el orden de pintado quede bien (ob_draw la pinta al final)."""
+    torres = [(C + 48 * RDX[k], C + 48 * RDY[k]) for k in (d, (d + 4) % 8)]
+    alto, quien = {}, {}
+    for cx, cy in torres:
+        for q, h in _torre_muro(cx, cy).items():
+            alto[q] = h; quien[q] = (cx, cy)
+    tramo = {}
+    for k in (d, (d + 4) % 8):
+        ancho = TM + 6 * abs(RDY[k]) / math.hypot(RDX[k], RDY[k])
+        # hasta la torre vecina (también la mitad que pinta el brazo de la vecina): sin cara de extremo en el medio
+        for (gx, gy), (a, w) in _huella_brazo(k, ancho, 48).items():
+            if any(math.hypot(gx - cx + 0.5, gy - cy + 0.5) <= RT for cx, cy in torres): continue
+            borde = abs(w) > ancho / 2 - 3
+            # a lo largo de todo el tramo (de la torre de d + 4 a la de d), para que almenas y ladrillos sigan de corrido
+            aa = a + 48 * math.sqrt(2) if k == d else 48 * math.sqrt(2) - a
+            tramo[(gx, gy)] = (aa, w)
+            alto[(gx, gy)] = HM + ((6 if int(aa) % 8 < 5 else 2) if borde else 0)
+    if sombra: lz.sombra({q: alto[q] for q in tramo}, trama=True)
+
+    def cara(gx, gy, z, lado):
+        if (gx, gy) in tramo:
+            a, w = tramo[(gx, gy)]
+            u, luz, base = int(a), (1.0, 0.7, 0.85)[lado], HM
+            oscura = a % 8 >= 4
+        else:
+            cx, cy = quien[(gx, gy)]
+            nx, ny = gx - cx + 0.5, gy - cy + 0.5
+            u = int((math.atan2(ny, nx) + math.pi) * RT)
+            luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
+            base, oscura = HM + 4, u % 8 >= 4
+        if z >= base: return _pardo(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
+        if (gx, gy) in tramo:
+            c = _arco(gx - C + 0.5, z, puerta)
+            if c: return c
+        return _pardo(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
+
+    def arriba(gx, gy):
+        base = HM if (gx, gy) in tramo else HM + 4
+        if alto[(gx, gy)] > base: return _pardo((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
+        return _calzada(gx, gy)
+    lz.voxeles(alto, cara, arriba)
+
+
+def muro_diag(ruina, color, pal, d, puerta, parte=None):
+    lz = Lienzo(ruina, color)
+    _muro_diag(lz, d, puerta, parte == 'sombra')
+    return lz.imagen(pal, parte)
+
+
+def brazo_sin_torre(ruina, color, pal, d):
+    """Brazo d del muro de piedra sin la torre de la vecina (la vecina es una puerta en diagonal); solo el cuerpo."""
+    lz = Lienzo(ruina, color)
+    _muro_piedra(lz, d, False, (), lejana=False)
+    return lz.imagen(pal, 'cuerpo')
+
+
+# Banderas de las ciudades (pedido del 10/11/2026): los 4 cuadros de cada bando de CITY/STDCAST0.PCX (40x30, mástil
+# incluido, x = bando * 41 + 1, y = 326 + cuadro * 31), recortados a lo que ocupan y achicados a 3/4.
+FL_ESC = 0.75
+FL_RECORTE = (2, 0, 35, 29)
+FL_W, FL_H = round(33 * FL_ESC), round(29 * FL_ESC)
+FL_PIE = (round((7 - 2) * FL_ESC), round(23 * FL_ESC))     # pie del mástil dentro del cuadro achicado
+
+
+def bandera_ciudad(src, bando, cuadro):
+    """Cuadro achicado (modo P, misma paleta del mapa; 11 = transparente)."""
+    pal = src.getpalette()[:768]
+    x, y = bando * 41 + 1, 326 + cuadro * 31
+    fr = src.crop((x + FL_RECORTE[0], y + FL_RECORTE[1], x + FL_RECORTE[2], y + FL_RECORTE[3]))
+    usados = sorted(set(fr.tobytes()) - {11})
+    rgba = Image.new('RGBA', fr.size)
+    rgba.putdata([(0, 0, 0, 0) if v == 11 else tuple(pal[3 * v:3 * v + 3]) + (255,) for v in fr.tobytes()])
+    ch = rgba.resize((FL_W, FL_H), Image.BOX)
+    out = Image.new('P', (FL_W, FL_H), 11); out.putpalette(pal)
+    for yy in range(FL_H):
+        for xx in range(FL_W):
+            r, g, b, a = ch.getpixel((xx, yy))
+            if a < 128: continue
+            r, g, b = (v * 255 // a for v in (r, g, b))
+            out.putpixel((xx, yy), min(usados, key=lambda i: (pal[3*i]-r)**2 + (pal[3*i+1]-g)**2 + (pal[3*i+2]-b)**2))
+    return out
+
+
 def muro(ruina, color, pal, d, empal, prohibido=(), puerta=None, parte=None):
     lz = Lienzo(ruina, color)
     if puerta: _muro_piedra(lz, None, False, prohibido, puerta)   # la torre entera, sin sombra (la pone la capa base)
@@ -382,12 +469,12 @@ def muro(ruina, color, pal, d, empal, prohibido=(), puerta=None, parte=None):
 # ---- torre de vigía y faro: cilindros que asoman sobre la casilla de arriba
 TV_R, TV_H = 12, 40       # torre de vigía: radio y alto (sin almenas)
 TV_CY = C + 8             # su centro, hacia el frente de la casilla
-TV_MASTIL = 16            # alto del mástil de la bandera sobre la calzada
 
 
 def _vigia(lz):
     # Torre de vigía (pedido del 10/11/2026): como las torres del muro de piedra (ladrillo, parapeto con almenas y
-    # calzada de losas) pero más alta y en gris azulado; puerta al pie, ventana y mástil para la bandera del dueño.
+    # calzada de losas) pero más alta y en gris azulado; puerta al pie y ventana; la bandera del
+    # dueño es la animada de las ciudades (fl_put de build.py).
     R, H, cy = TV_R, TV_H, TV_CY
     alto, ang = {}, {}
     for gy in range(cy - R - 1, cy + R + 2):
@@ -413,30 +500,6 @@ def _vigia(lz):
         if alto[(gx, gy)] > H: return _azul((190, 190, 186) if alto[(gx, gy)] > H + 2 else (156, 156, 154))
         return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
-    for z in range(TV_MASTIL):                                       # mástil, de pantalla en el centro de la calzada
-        q = (C, cy - H - z)
-        lz.px[q] = (58, 44, 30) if z % 3 else (80, 62, 40)
-        lz.cuerpo.add(q)
-
-
-# Colores de los bandos (fijos por número: ia/PENDIENTE-entrenamiento-ia.md, estandartes de War3Ed.RES)
-BANDOS = [(236, 236, 228), (236, 208, 40), (232, 128, 24), (200, 28, 24),
-          (32, 150, 40), (36, 56, 196), (90, 186, 232), (28, 26, 30)]
-
-
-def bandera(ruina, color, pal, lado):
-    """Banderín del bando `lado` en lo alto del mástil de la torre de vigía, flameando hacia el este; capa aparte
-    (una por bando) que ob_draw pinta sobre la torre según su dueño."""
-    lz = Lienzo(ruina, color)
-    x0, y0 = C + 1, TV_CY - TV_H - TV_MASTIL + 1
-    for x in range(12):
-        ola = int(round(1.2 * math.sin(x / 2.2)))
-        alto = 8 - x // 3                                            # se angosta hacia la punta
-        for y in range(alto):
-            k = 1.0 if y and y < alto - 1 else 0.72                  # bordes un poco más oscuros
-            if (x + ola) % 4 == 3: k *= 0.85                         # pliegues
-            lz.px[(x0 + x, y0 + y + ola + x // 6)] = _mul(BANDOS[lado], k)
-    return lz.imagen(pal)
 
 
 def torre(ruina, color, pal, faro=False, parte=None):
@@ -496,3 +559,15 @@ def torre(ruina, color, pal, faro=False, parte=None):
         for x in range(C - 22, C + 22):          # destello
             if abs(x + 0.5 - C) > 8 and x % 2 == 0: lz.px[(x, top - 7)] = (255, 240, 140)
     return lz.imagen(pal, parte)
+
+
+# Pie del mástil de las banderas animadas (fl_put de build.py), en coordenadas del lienzo de la obra (pedido del
+# 10/11/2026): una sobre la torre de vigía y otra sobre la cúpula del faro; dos sobre cada puerta del muro (la torre
+# con arco o el arco del tramo diagonal en d = 1 o 3), a los lados del vano.
+FL_PIES = {
+    'torre': [(C, TV_CY - TV_H + 3)],
+    'faro': [(C, C + 8 - 44 - 18)],
+    'puerta': [(C - 8, C - HM + 10), (C + 8, C - HM + 10)],
+    1: [(C - 8, C - HM + 8), (C + 7, C - HM - 6)],
+    3: [(C - 8, C - HM - 6), (C + 7, C - HM + 8)],
+}

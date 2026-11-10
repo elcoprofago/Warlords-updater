@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 151).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 152).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **151.** Puertas en diagonal y banderas animadas (vista-aliada 1.0.169.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) construir un muro de piedra en diagonal que cruce un camino: la puerta debe verse como un arco en el medio del tramo (no en las torres), con portón que se abre al acercar un grupo; (b) la torre de vigía y el faro deben llevar la bandera animada de las ciudades, del color del dueño; (c) encima de cada puerta del muro deben flamear dos banderas; (d) las banderas de los fuertes deben verse un poco más chicas. Anotar lo que se vea mal (sobre todo si las banderas no se mueven o dejan rastros).
 - [ ] **150.** Sombras, torre de vigía y portón (vista-aliada 1.0.168.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) construir muros de piedra en varias direcciones, también en diagonal y en L: la sombra no debe tener cortes en ningún tramo; (b) construir una torre de vigía: debe verse de piedra como el muro, en gris azulado, con almenas, puerta, ventana y un banderín del color del bando dueño (si otro bando la toma, el banderín cambia de color); (c) acercar un grupo a una puerta del muro: el portón se abre ya a una casilla de distancia y se cierra cuando el grupo se aleja. Anotar lo que se vea mal.
 - [ ] **149.** Calzada del muro de piedra (vista-aliada 1.0.167.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche y construir un muro de piedra: el piso de arriba del muro y de las torres debe verse con las losas de piedra de las ciudades, más chicas y en perspectiva. Anotar lo que se vea mal.
 - [ ] **148.** Sombra y puerta del muro de piedra (vista-aliada 1.0.166.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) la sombra del muro debe verse pareja y oscura, sin rejilla; (b) en la puerta sobre un camino, los ladrillos a los dos lados del arco deben seguir sin corte, también cuando el muro sigue en diagonal. Anotar lo que se vea mal.
