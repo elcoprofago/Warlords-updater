@@ -165,7 +165,7 @@ def lights(b):
     out = []
     for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False, MIN))
     out += [(20, 5, 0, True, MIN), (8, 22, 0, True, MIN), (5, 20, 0, True, MIN), (6, 20, 0, True, MIN)]
-    out.append((*FARO_XY, FARO_R, False, MIN))
+    out.append((*FARO_XY, FARO_R, False, MIN)); out.append((*TORRE_XY, 3, False, MIN))
     out = [l for l in out if seen(b, l[0], l[1])]
     out += [(x, y, 1, True, AMIN) for x, y, p in b.army_list if p == ME]
     return out
@@ -222,7 +222,7 @@ assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
 assert g[24 - VX, 14 - VY] == MIN and g[20 - VX, 14 - VY] == MIN + 2, 'el faro alumbra 6 casillas y después el degradé'
-assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] > MIN, 'la torre de vigía no debe dar luz'
+assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 3 casillas'
 # 2) sin cambios: nada sucio y nada que pintar
 b.clear_dirty(); b.pre(); assert b.dirty() == set(), 'sucias 2'
 b.post(); assert b.calls == [], 'pintó sin celdas sucias'

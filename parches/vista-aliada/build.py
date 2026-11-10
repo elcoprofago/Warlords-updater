@@ -18040,6 +18040,7 @@ ds_out:
 # Faros (pedido del 10/11/2026): alumbran OB_VISTA[OB_FARO] = 6 casillas con el degradé cuadrado de las ciudades
 # (ch = 0), recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
 DN_FARO = OB_VISTA[OB_FARO]
+DN_TORRE = 3                                   # torre de vigía: 3 casillas (usuario, 10/11/2026)
 dn_lights = place('dn_lights', f'''
     pushad
     mov edi, dword ptr [{DN_GY0:#x}]
@@ -18103,7 +18104,10 @@ dl_floop:
     jae dl_arm
     lea edi, [esi*8 + {OB_TAB:#x}]
     cmp byte ptr [edi + 4], {OB_FARO}
+    je dl_fok
+    cmp byte ptr [edi + 4], {OB_TORRE}
     jne dl_fnext
+dl_fok:
     movsx eax, word ptr [edi]
     movsx edx, word ptr [edi + 2]
     call {br_tile:#x}
@@ -18117,6 +18121,10 @@ dl_fput:
     movsx eax, word ptr [edi]
     movsx edx, word ptr [edi + 2]
     mov ecx, {DN_FARO}
+    cmp byte ptr [edi + 4], {OB_FARO}
+    je dl_fst
+    mov ecx, {DN_TORRE}
+dl_fst:
     call {dn_stamp:#x}
 dl_fnext:
     inc esi
