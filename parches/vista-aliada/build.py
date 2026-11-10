@@ -4590,6 +4590,8 @@ ob_step = place('ob_step', f'''
     call {ob_at:#x}
     test eax, eax
     jz obs_out
+    cmp byte ptr [eax + 4], {OB_MURO}
+    je obs_out
     movzx ebx, byte ptr [eax + 6]
     cmp ebx, ecx
     je obs_out
@@ -6170,7 +6172,8 @@ wrp_out:
     ret
 ''')
 # wl_war: eax = x, edx = y, ecx = jugador -> eax = registro del bloque de muro en pie de un bando en guerra con él, o 0
-# (con ZF). Preserva el resto.
+# (con ZF). Sin Diplomacy todos los demás bandos están en guerra (10/11/2026: sin esto el muro vacío no se atacaba y
+# los enemigos lo cruzaban). Preserva el resto.
 wl_war = place('wl_war', f'''
     push ecx
     push edx
@@ -6188,9 +6191,12 @@ wl_war = place('wl_war', f'''
     je ww_no
     cmp edx, 8
     jae ww_no
+    test byte ptr [{DIPLO_OPT:#x}], 8
+    jz ww_yes
     imul ecx, ecx, 56
     cmp byte ptr [ecx + edx + {DIPLO:#x}], 2
     jne ww_no
+ww_yes:
     test eax, eax
     jmp ww_out
 ww_no:
@@ -6436,7 +6442,9 @@ wv_stat = place('wv_stat', f'''
     jmp 0x4660d9
 ''')
 # wv_step, en 0x49e434 (paso 0x49e280; edx = palabra del mapa de (si, di), cx = su dueño, ebp = el que mueve): una
-# casilla vacía con un bloque de muro en guerra con él se ataca (código 2, 0x49e57d), como una con ejércitos.
+# casilla vacía con un bloque de muro en guerra con él se ataca (código 2, 0x49e57d), como una con ejércitos. Un bloque
+# en pie de otro bando que no es aliado suyo con vista aliada (en paz) lo detiene (0x49e558, como la ciudad ajena de
+# stepc): un camino viejo o la IA no lo cruzan.
 wv_step = place('wv_step', f'''
     mov ax, word ptr [edx]
     and ax, 0x8000
@@ -6447,9 +6455,36 @@ wv_step = place('wv_step', f'''
     movsx edx, di
     mov ecx, ebp
     call {wl_war:#x}
+    jnz ws_war
+    movsx eax, si
+    call {ob_at:#x}
+    test eax, eax
+    jz ws_pass
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne ws_pass
+    cmp byte ptr [eax + 7], {WV_MAX}
+    jae ws_pass
+    movzx eax, byte ptr [eax + 6]
+    cmp eax, ebp
+    je ws_pass
+    push ecx
+    push edx
+    mov ecx, eax
+    mov edx, ebp
+    call {fogally:#x}
     pop edx
     pop ecx
-    jnz 0x49e57d
+    je ws_pass
+    pop edx
+    pop ecx
+    jmp 0x49e558
+ws_war:
+    pop edx
+    pop ecx
+    jmp 0x49e57d
+ws_pass:
+    pop edx
+    pop ecx
     xor eax, eax
     jmp 0x49e467
 ''')

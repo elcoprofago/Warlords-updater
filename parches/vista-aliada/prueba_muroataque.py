@@ -27,14 +27,15 @@ OB_MAP = d32(BASE + _k + 3)
 IA_BAT, H470, OB_DEL, H4F20, OB_FOGME, H1290, REDRAW = llamadas(WV_POST, 7)
 assert (H470, H4F20, H1290) == (0x46c470, 0x4a4f20, 0x441290)
 
-def juego(dueño=2, muertos=0, tipo=7, guerra=True, x=5, y=7):
+def juego(dueño=2, muertos=0, tipo=7, guerra=True, x=5, y=7, diplo=True):
     g = Juego(); mu = g.mu
     mu.mem_write(OB_N, struct.pack('<I', 1))
     mu.mem_write(OB_TAB, struct.pack('<hhBBBB', x, y, tipo, 3, dueño, muertos))
     mu.mem_write(OB_MAP + (y << 6) + x, bytes([1]))
     for a in range(8):
         for b in range(8):
-            mu.mem_write(DIPLO + a * 56 + b, bytes([2 if guerra and a != b else 0]))
+            mu.mem_write(DIPLO + a * 56 + b, bytes([0 if a == b else 2 if guerra else 1]))
+    mu.mem_write(0x53c393, bytes([8 if diplo else 0]))
     return g
 
 print('-- wl_war')
@@ -44,6 +45,7 @@ def war(p, **kw):
     return g.mu.reg_read(UC_X86_REG_EAX)
 ver('bando 5 en guerra con el dueño 2: el registro', war(5), OB_TAB)
 ver('control: en paz', war(5, guerra=False), 0)
+ver('sin Diplomacy: todos en guerra, el registro (10/11/2026)', war(5, guerra=False, diplo=False), OB_TAB)
 ver('control: el propio dueño', war(2), 0)
 ver('control: 24 muertos (caído)', war(5, muertos=24), 0)
 ver('23 muertos: todavía en pie', war(5, muertos=23), OB_TAB)
@@ -56,14 +58,17 @@ def paso(p, palabra=0, **kw):
     g = juego(**kw); mu = g.mu
     mu.mem_write(W, struct.pack('<H', palabra))
     r = []
-    for a, n in ((0x49e57d, 'ataque'), (0x49e467, 'libre'), (0x49e43d, 'ocupada')):
+    for a, n in ((0x49e57d, 'ataque'), (0x49e558, 'detenido'), (0x49e467, 'libre'), (0x49e43d, 'ocupada')):
         mu.hook_add(UC_HOOK_CODE, lambda mu, *_, n=n: (r.append(n), mu.emu_stop()), begin=a, end=a)
     mu.reg_write(UC_X86_REG_EDX, W); mu.reg_write(UC_X86_REG_ESI, 5); mu.reg_write(UC_X86_REG_EDI, 7)
     mu.reg_write(UC_X86_REG_EBP, p); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.emu_start(0x49e434, 0, count=5000)
     return r[:1]
 ver('casilla vacía con muro enemigo: ataque (código 2)', paso(5), ['ataque'])
-ver('control: en paz: libre', paso(5, guerra=False), ['libre'])
+ver('en paz: el muro lo detiene, sin ataque (10/11/2026)', paso(5, guerra=False), ['detenido'])
+ver('sin Diplomacy: ataque', paso(5, guerra=False, diplo=False), ['ataque'])
+ver('control: muro caído: libre', paso(5, muertos=24), ['libre'])
+ver('control: torre (tipo 4): libre', paso(5, tipo=4), ['libre'])
 ver('control: el dueño: libre', paso(2), ['libre'])
 ver('control: ocupada: sigue el camino original', paso(5, palabra=0x8000), ['ocupada'])
 

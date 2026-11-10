@@ -148,7 +148,8 @@ def puerta(quien, aliado=False, camino=True, destino=None, guerra=False):
     mu.hook_add(UC_HOOK_MEM_READ, lambda mu, ac, a, sz, v, _: (r.append('pasa'), mu.emu_stop()), begin=0x503e00, end=0x503e01)
     mu.mem_write(0x58715c, struct.pack('<h', quien))
     if destino: mu.mem_write(0x5878d4, struct.pack('<h', destino[0])); mu.mem_write(0x5878d8, struct.pack('<h', destino[1]))
-    if guerra: mu.mem_write(0x55ee4c + quien * 56 + 2, bytes([2]))
+    mu.mem_write(0x53c393, bytes([8]))      # Diplomacy activada: sin ella todos están en guerra
+    mu.mem_write(0x55ee4c + quien * 56 + 2, bytes([2 if guerra else 1]))
     mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.reg_write(UC_X86_REG_EDI, 5); mu.reg_write(UC_X86_REG_EBX, 7)
     mu.emu_start(0x4a5d34, 0, count=5000)
@@ -163,7 +164,7 @@ ver('control: muro sin puerta, un enemigo no', puerta(5, camino=False), ['cerrad
 ver('ataque al muro: enemigo en guerra (5), el muro es el destino: llega', puerta(5, camino=False, destino=(5, 7), guerra=True), ['pasa'])
 ver('ídem con puerta', puerta(5, destino=(5, 7), guerra=True), ['pasa'])
 ver('control: en guerra pero el muro no es el destino', puerta(5, camino=False, destino=(6, 7), guerra=True), ['cerrado'])
-ver('control: destino pero sin guerra', puerta(5, camino=False, destino=(5, 7)), ['cerrado'])
+ver('control: destino pero en paz', puerta(5, camino=False, destino=(5, 7)), ['cerrado'])
 ver('el dueño, destino su muro sin puerta: entra', puerta(2, camino=False, destino=(5, 7), guerra=True), ['pasa'])
 
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
