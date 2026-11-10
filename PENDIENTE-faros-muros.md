@@ -75,8 +75,12 @@ Pedido completo:
   - Ejércitos: registro 0x1c bytes desde 0x54fe50 (+2 x, +4 y, +6/+8 destino, +0xe palabra con dueño
     (& 0x1e0) >> 5, +0x12 bit 0x4000 = vivo); cantidad en [0x54fe50]. 0x43b510 busca lugar para uno nuevo
     alrededor de una casilla (25 vecinos, tabla 0x4fabc0/0x4fabf8); 0x43b6d0 calcula las cifras de uno nuevo
-    (ciudad, jugador, tipo). **Falta** ubicar la función que da de alta el registro (la que llama a 0x43b6d0 en
-    la producción: 0x43aab4 / 0x43b24b / 0x43b437) para crear los arqueros virtuales.
+    (ciudad, jugador, tipo). Alta: **0x46c330(dueño)** busca la primera ranura sin el bit vivo (1..999), sube
+    [0x54fe50] si hace falta, la limpia (0x46c3c0), pone el dueño y los bits vivo; devuelve eax = puntero al
+    registro (base 0x54fe52 + e*0x1c: +0 x, +2 y, +4/+6 destino, +0xc dueño & 0x1e0, +0x10 bit 0x4000 vivo) o 0.
+    Ejemplo de relleno completo después del alta: 0x43ace9..0x43ae40 (x, y, destino -1, palabra del mapa con
+    0x8000 y el dueño, cifras desde el registro del tipo). **Falta**: el campo del tipo de unidad en el registro
+    y la baja (para borrar los arqueros que sobrevivan); mirar el resto de 0x43ace9 y 0x441290.
 - Orden de trabajo que sigue: no publicar el paso 1 solo (un muro vacío atacado sin defensores se perdería en una
   batalla sin defensa). Pasos 1 y 2 van juntos: código 2 ante muro enemigo + crdef con los arqueros virtuales +
   anotar muertos en +7 después de 0x465c80 y derribar el bloque con 24.
