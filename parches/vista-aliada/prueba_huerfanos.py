@@ -8,7 +8,7 @@
 #      los grupos nuevos (lugar, activo, líder, lista), el bit 0x400 en +0x1a de cada miembro y el evento 35 con el
 #      modelo; los grupos que ya existían y los de los otros colores quedan iguales.
 #   3. controles sin cambio: sin ia_on, IA_MODE[p] = 0, jugador >= 8 y bando humano (0x536c12 = -1).
-#   4. con 6 grupos ocupados a mano: arma uno solo (llega a OR_MAX).
+#   4. con OR_MAX - 1 grupos ocupados a mano: arma uno solo (llega a OR_MAX).
 # Uso: python prueba_huerfanos.py <DarklordAV.exe> <ia_on hex> <ia_mode hex> <or_run hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
@@ -16,7 +16,7 @@ from unicorn.x86_const import *
 
 AV, IA_ON, IA_MODE, OR_RUN = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
 SAVS = sys.argv[5:]
-OR_MAX = 7
+OR_MAX = 4
 img = pefile.PE(AV).get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, 'sprintf': 0x5a9bec, 'time': 0x5a9b88}
 STUB, END = 0xdeac0000, 0xdead0000
@@ -157,12 +157,12 @@ for sav in SAVS:
             gm, _, lines, intactos = corrida(m, p, **kw)
             ok(gm == base and intactos and (lines == [] or nombre != 'sin ia_on') and
                all(l[3] != 35 for l in lines), f'p{p}: control {nombre} cambió algo {gm == base} {intactos} {lines}')
-    # 6 grupos ocupados a mano en el color con más huérfanos: solo uno nuevo
+    # OR_MAX - 1 grupos ocupados a mano en el color con más huérfanos: solo uno nuevo
     p = max(range(8), key=lambda q: len(modelo(m, q)[0]))
     if modelo(m, p)[0]:
         m2 = {k: bytearray(v) for k, v in m.items()}
         libres = [k for k in range(10) if k not in activos(m2, p)]
-        for k in libres[:max(0, 6 - len(activos(m2, p)))]:
+        for k in libres[:max(0, OR_MAX - 1 - len(activos(m2, p)))]:
             a = grp(m2, p, k); wr(m2, a, struct.pack('<H', h(m2, a) | 1)); wr(m2, a + 0xc, bytes(16))
         hechos, quedan = modelo(m2, p)
         _, _, lines, _ = corrida(m2, p)

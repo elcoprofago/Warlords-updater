@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 152).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 153).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,14 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **153.** IA: menos grupos de abandonados y conteo de los grupos de ataque (vista-aliada 1.0.173.0, 10/11/2026)
+La computadora nueva vuelve a mover a sus ejércitos abandonados, pero desde ese cambio pierde contra la original.
+En la 1.0.173.0 les deja más lugar a sus grupos de ataque (arma como mucho 4 grupos de abandonados en vez de 7) y
+anota cuántos grupos de ataque arma por turno, para saber cuál de las dos cosas la hace perder.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.173.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 
 - [ ] **152.** Luz de los faros y derribar muros propios (vista-aliada 1.0.172.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) de noche, un faro debe alumbrar hacia el mar 5 casillas, cada vez más tenue, y hacia tierra solo la casilla vecina, con niebla o sin ella; una torre de vigía alumbra 3 casillas; (b) parar un grupo propio sobre una casilla de muro propio (o al lado) y elegir «Raze» (menú o tecla): el cartel debe nombrar el muro y su dirección («the stone wall to the north», «here», etc.); al aceptar, el bloque desaparece y se puede pasar por ahí; (c) con varios bloques alrededor, cada «Raze» ofrece el siguiente; (d) un muro ajeno no se puede derribar así. Anotar lo que se vea mal.
 - [ ] **151.** Puertas en diagonal y banderas animadas (vista-aliada 1.0.169.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) construir un muro de piedra en diagonal que cruce un camino: la puerta debe verse como un arco en el medio del tramo (no en las torres), con portón que se abre al acercar un grupo; (b) la torre de vigía y el faro deben llevar la bandera animada de las ciudades, del color del dueño; (c) encima de cada puerta del muro deben flamear dos banderas; (d) las banderas de los fuertes deben verse un poco más chicas. Anotar lo que se vea mal (sobre todo si las banderas no se mueven o dejan rastros).

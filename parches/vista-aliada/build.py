@@ -6762,7 +6762,7 @@ mt_en:
 ''')
 
 OR_EVT = 35
-OR_MAX = 7   # grupos activos hasta los que se arman grupos de huérfanos (los otros 3 quedan para el planificador)
+OR_MAX = 4   # grupos activos hasta los que se arman grupos de huérfanos (los otros 6 quedan para el planificador; 7 hasta 1.0.172)
 # Paso 4.8 (PENDIENTE-ia-economia): los huérfanos vuelven a jugar. Un ejército de la IA que quedó fuera de una ciudad y
 # fuera de todo grupo (0x561f00 + 1178·p) nunca más se mueve (paso 4.7; 13 del evento 34). or_grp reemplaza el call
 # 0x40efc0 de 0x40ea00 (al empezar el turno de un bando de la computadora): lo llama y después, con ia_on e
@@ -6943,7 +6943,81 @@ or_out:
     popad
     ret
 ''')
+PL_EVT = 36
+# Paso 4.10: grupos del planificador. pl_mk reemplaza el call 0x40f1a0 de 0x40d434 (el planificador arma un grupo sin
+# héroe con los que suelta 0x40d380) y cuenta los creados; pl_es reemplaza el call 0x4a66a0 de 0x40cfd5 (suma
+# escoltas desde una ciudad) y cuenta las llamadas. Al empezar el turno de un bando de la computadora, or_grp anota
+# el evento 36 (x = grupos armados por el planificador en su turno anterior, y = llamadas de escolta, n = grupos
+# activos al empezar este turno, antes de los de héroes y huérfanos) y pone los contadores en 0. Vale para todos
+# los modos de IA. Los que mueren o se disuelven salen de n: n(t) = n(t-1) + creados - perdidos.
+PL_N = place_data('pl_n', bytes(32))
+PL_E = place_data('pl_e', bytes(32))
+pl_mk = place('pl_mk', f'''
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 8]
+    call 0x40f1a0
+    add esp, 8
+    cmp ax, -1
+    je pm_ret
+    push ecx
+    movsx ecx, word ptr [0x4fb0ec]
+    cmp ecx, 8
+    jae pm_out
+    inc dword ptr [ecx*4 + {PL_N:#x}]
+pm_out:
+    pop ecx
+pm_ret:
+    ret
+''')
+pl_es = place('pl_es', f'''
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    push dword ptr [esp + 0xc]
+    call 0x4a66a0
+    add esp, 0xc
+    push ecx
+    movsx ecx, word ptr [0x4fb0ec]
+    cmp ecx, 8
+    jae pe_out
+    inc dword ptr [ecx*4 + {PL_E:#x}]
+pe_out:
+    pop ecx
+    ret
+''')
+# pl_run: sin argumentos, preserva todo.
+pl_run = place('pl_run', f'''
+    pushad
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae pl_out
+    imul eax, ebx, 1178
+    add eax, 0x561f00
+    xor edi, edi
+    mov esi, 10
+pl_ca:
+    test byte ptr [eax], 1
+    jz pl_cn
+    inc edi
+pl_cn:
+    add eax, 64
+    dec esi
+    jnz pl_ca
+    push edi
+    push dword ptr [ebx*4 + {PL_E:#x}]
+    push dword ptr [ebx*4 + {PL_N:#x}]
+    push ebx
+    push {PL_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    xor eax, eax
+    mov dword ptr [ebx*4 + {PL_N:#x}], eax
+    mov dword ptr [ebx*4 + {PL_E:#x}], eax
+pl_out:
+    popad
+    ret
+''')
 or_grp = place('or_grp', f'''
+    call {pl_run:#x}
     call 0x40efc0
     call {or_run:#x}
     ret
@@ -19114,6 +19188,8 @@ patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserv
 patch(0x43bdf2, bytes.fromhex('80be057f530000'), asm(f'jmp {pr_unit:#x}; nop; nop', 0x43bdf2))   # freno de producción
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {me_pre:#x}', 0x40edf1))
 patch(0x40ea65, asm('call 0x40efc0', 0x40ea65), asm(f'call {or_grp:#x}', 0x40ea65))   # paso 4.8, huérfanos
+patch(0x40d434, asm('call 0x40f1a0', 0x40d434), asm(f'call {pl_mk:#x}', 0x40d434))   # paso 4.10, grupos del planificador
+patch(0x40cfd5, asm('call 0x4a66a0', 0x40cfd5), asm(f'call {pl_es:#x}', 0x40cfd5))   # paso 4.10, escoltas
 assert rel(0x4091e2, 8) == bytes.fromhex('6683b8126c5300ff')
 patch(0x4091ea, asm('jne 0x409317', 0x4091ea), asm(f'jne {ch_ai:#x}', 0x4091ea))
 patch(0x4ca0b7, bytes.fromhex('ff1544985a00'), asm(f'call {ri_go:#x}', 0x4ca0b7) + b'\x90')   # CopyFileA del ITEM.DAT

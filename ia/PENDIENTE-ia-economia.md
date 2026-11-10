@@ -433,4 +433,27 @@ Próximo paso (4.10): separar las dos lecturas. (1) Evento nuevo con los grupos 
 (0x40d434 y escoltas de 0x4a66a0) y los que muere/disuelve, para ver si bajaron contra la tanda 148-149. (2) Bajar
 OR_MAX de 7 a 4 y, si el puesto no vuelve a ganar, limitar los huérfanos a la meta Form (volver a una ciudad, que es
 el ahorro buscado) en vez de dejar que el planificador los mande a atacar. Tanda 10 partidas, Scarpart y Kor.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.10".
+**Paso 4.10 (10/11/2026, vista-aliada 1.0.173.0; falta la tanda, TAREAS 153).** Las dos lecturas en una tanda.
+(1) Evento 36, grupos del planificador. Leído en el exe: 0x40f1a0 tiene dos llamadores, 0x40f12b (grupos de héroes,
+dentro de 0x40efc0) y 0x40d434 (dentro de 0x40d380, el planificador arma un grupo sin héroe si junta 2 o más);
+0x4a66a0 (escoltas desde una ciudad) se llama desde 0x40cfd5 y 0x40f144 (este, en los de héroes). pl_mk reemplaza
+el call de 0x40d434 y cuenta los grupos creados (ax != -1); pl_es reemplaza el de 0x40cfd5 y cuenta las llamadas.
+pl_run, primero en or_grp (antes de 0x40efc0), anota el 36: x = grupos del planificador en el turno anterior de
+ese color, y = llamadas de escolta, n = grupos activos al empezar el turno; y pone los contadores en 0. Vale para
+las dos IA. Perdidos (muertos o disueltos) por turno = n(t-1) + creados(t-1) + héroes y huérfanos de t-1 - n(t);
+los de héroes no se cuentan aparte (el 35 da los de huérfanos). Las tandas 148-149 no tienen este evento: la
+comparación es nueva contra original dentro de la tanda.
+(2) OR_MAX de 7 a 4 (quedan 6 lugares para el planificador).
+Prueba emulada: `prueba_planificador.py` (413 controles TODO OK con ABN_000_29, IA_ROTADA, Tanda_Kor_CA, roads02,
+agua03: evento 36 = contadores y grupos activos, contadores del color en 0 y los demás iguales, grupos y registros
+intactos; sin ia_on no anota; jugador 8 nada; pl_mk deja grupos y ejércitos igual que 0x40f1a0 y cuenta solo si
+creó (con los 10 lugares llenos no); pl_es pasa los 3 argumentos y el eax). prueba_huerfanos (con OR_MAX 4 y el
+control de tope con 3 grupos ocupados) 3.505 TODO OK; prueba_mantenimiento 280 TODO OK.
+Uso: `python prueba_planificador.py <AV> <ia_on> <ia_mode> <pl_n> <pl_e> <pl_mk> <pl_es> <pl_run> <SAV>...`
+(1.0.173.0: 6cf84b 6cf843 6d1d53 6d1d73 6d1da0 6d1dd0 6d1e00); prueba_huerfanos: or_run 6d1c30.
+Al volver la tanda: (a) 36 por IA y tramo: grupos del planificador por turno y grupos activos, nueva contra
+original; (b) 35: tope tocado y huérfanos que quedan; 13 del 34; (c) resultados (puesto, PV, ciudades, primeros)
+y deserciones. Si la nueva vuelve a ganar y su planificador arma tantos grupos como la original, queda OR_MAX 4.
+Si no gana: limitar los huérfanos a la meta Form (volver a una ciudad) en vez de dejar que el planificador los
+mande a atacar.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.10, al volver la tanda".
