@@ -14,7 +14,8 @@ WV_PRE, WV_POST, WV_STAT, WV_STEP = dest(0x469f35), dest(0x469f54), dest(0x4660d
 def llamadas(va, n):
     r, k = [], va - BASE
     while len(r) < n:
-        if img[k] == 0xe8: r.append(BASE + k + 5 + struct.unpack_from('<i', img, k + 1)[0]); k += 5
+        if img[k] == 0xe8 and 0 <= k + 5 + struct.unpack_from('<i', img, k + 1)[0] < len(img):
+            r.append(BASE + k + 5 + struct.unpack_from('<i', img, k + 1)[0]); k += 5
         else: k += 1
     return r
 WL_WAR = llamadas(WV_STEP, 1)[0]

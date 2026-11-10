@@ -444,8 +444,8 @@ def ctl_y(path, did):
         t, i = struct.unpack_from('<II', d, p); out[i] = struct.unpack_from('<i', d, p + 0xc)[0]; p += 4 + SZ[t]
     return out
 y34, y138 = ctl_y(NUEVO, 34), ctl_y(NUEVO, 138)
-ver('controles 138: los 7 textos de las obras cada 30 desde 53, el resto fuera (400)',
-    [y138[i] for i in [0x15] + list(range(1, 11)) + [0x17, 0x19]], [53 + 30 * i for i in range(7)] + [400] * 6)
+ver('controles 138: los 8 textos de las obras (con Repair Wall) cada 18 desde 80, el resto fuera (400)',
+    [y138[i] for i in [0x15] + list(range(1, 11)) + [0x17, 0x19]], [80 + 18 * i for i in range(8)] + [400] * 5)
 ver('controles 138: cada zona con el mismo desfase respecto de su texto que en el 34',
     all(y138[h] - y138[t] == y34[h] - y34[t] for t, h in zip([0x15] + list(range(1, 11)) + [0x17, 0x19],
                                                             [0x16] + list(range(0xb, 0x15)) + [0x18, 0x1a])), True)

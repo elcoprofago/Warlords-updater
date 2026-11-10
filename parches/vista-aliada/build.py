@@ -6119,6 +6119,56 @@ WV_MAX = 24
 wv_vars = place_data('wv_vars', bytes(8 + 2 * WV_MAX))
 WV_REC, WV_N, WV_IDS = wv_vars, wv_vars + 4, wv_vars + 8      # registro del bloque atacado; cantidad e índices
 wv_name = place_data('wv_name', b'archers')
+# ---- Reparar el muro (PENDIENTE-faros-muros, «Reparar»; pedido del 10/11/2026). Renglón 7 de la botonera «Build»:
+# un bloque de muro de piedra propio, en pie y con arqueros muertos (byte +7 entre 1 y WV_MAX - 1), en la casilla del
+# líder o en una de las 8 vecinas, vuelve a 0 muertos pagando bd_price(OB_FRAC) * muertos / WV_MAX. Viaja como las
+# demás obras (BD_PKT con BD_PW = 0x4000 | OB_REP) y bd_recv lo vuelve a comprobar y cobra en todas las PC.
+OB_REP = 0x10
+wr_txt = place_data('wr_txt', cstr_('Repairing a stone wall'))
+wr_vars = place_data('wr_vars', bytes(4))          # +0: último índice de vecina ofrecido (rota con otro clic)
+# wr_rec: eax = x, edx = y, ecx = jugador -> eax = registro del bloque de muro de piedra propio dañado, o 0 (con ZF).
+# Preserva el resto.
+wr_rec = place('wr_rec', f'''
+    push edx
+    call {ob_at:#x}
+    test eax, eax
+    jz wrr_no
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne wrr_no
+    cmp byte ptr [eax + 7], 0
+    je wrr_no
+    cmp byte ptr [eax + 7], {WV_MAX}
+    jae wrr_no
+    movzx edx, byte ptr [eax + 6]
+    cmp edx, ecx
+    jne wrr_no
+    test eax, eax
+    jmp wrr_out
+wrr_no:
+    xor eax, eax
+wrr_out:
+    pop edx
+    ret
+''')
+# wr_price: eax = registro, ecx = jugador -> eax = precio de la reparación (al menos 1). Preserva el resto.
+wr_price = place('wr_price', f'''
+    push edx
+    push ebx
+    movzx ebx, byte ptr [eax + 7]
+    mov eax, {OB_FRAC}
+    call {bd_price:#x}
+    imul eax, ebx
+    cdq
+    mov ebx, {WV_MAX}
+    idiv ebx
+    test eax, eax
+    jg wrp_out
+    mov eax, 1
+wrp_out:
+    pop ebx
+    pop edx
+    ret
+''')
 # wl_war: eax = x, edx = y, ecx = jugador -> eax = registro del bloque de muro en pie de un bando en guerra con él, o 0
 # (con ZF). Preserva el resto.
 wl_war = place('wl_war', f'''
@@ -9631,6 +9681,9 @@ brx_trap:
     jmp 0x4b6516
 brx_road:
     push 0
+    mov eax, {wr_txt:#x}
+    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_REP:#x}
+    je 0x4b6516
     mov eax, {bd_dlgtxt:#x}
     cmp word ptr [{BD_PW:#x}], 0
     je 0x4b6516
@@ -9678,6 +9731,8 @@ brc_road:
     call {bd_any:#x}
     jmp brc_pr
 brc_bridge:
+    cmp word ptr [{BD_PW:#x}], {0x4000 | OB_REP:#x}
+    je brc_rep
     mov eax, {OB_FRAC}
     test word ptr [{BD_PW:#x}], 0x4000
     jnz brc_pr
@@ -9691,6 +9746,17 @@ brc_pr:
     movsx ecx, word ptr [esp + 0x14]
     call {bd_price:#x}
     mov esi, eax
+    pop edx
+    pop eax
+    jmp 0x4b6609
+brc_rep:
+    movsx ecx, word ptr [esp + 0x14]
+    call {wr_rec:#x}
+    mov esi, 1
+    jz brc_rout
+    call {wr_price:#x}
+    mov esi, eax
+brc_rout:
     pop edx
     pop eax
     jmp 0x4b6609
@@ -16245,10 +16311,10 @@ caves['tr_chkp'] = struct.pack('<I', tr_check)
 BM_DLG = 133                 # siguiente id de la tabla de diálogos (tipo 6; ver table_add, más abajo)
 BM_RES = 138                 # siguiente id de los recursos de diálogo (tipo 7); el juego los busca recorriendo el archivo
 BM_PASO = 18                 # como el menú de la ciudad (captura del usuario, 9/11/2026: a 30 quedaban muy separados)
-BM_Y0 = 89                   # bloque de 7 centrado donde el menú de órdenes reparte los suyos (53..233): 143 - 3 * 18
+BM_Y0 = 80                   # bloque de 8 centrado donde el menú de órdenes reparte los suyos (53..233): 143 - 3,5 * 18
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
-BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
+BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall', 'Repair Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
 BM_TXT = [0x15] + list(range(1, 11)) + [TR_TXT, BD_TXT]          # renglones de arriba abajo (ORD del diálogo 34)
 BM_HOT = [0x16] + list(range(0xb, 0x15)) + [TR_HOT, BD_HOT]
 bm_empty = place_data('bm_empty', b'\0')
@@ -16554,6 +16620,50 @@ pvd_ret:
 # bm_calc: llena BM_EN con TR_X / TR_Y (el líder, de tr_check) y las banderas de bd_check / tr_check. Preserva todo.
 # Renglón 0 reconstruir (ciudad en la casilla, o sitio / puente derribado con br_rebuildlk), 1-6 los tipos de BD_CAT
 # (bd_pick desde el principio, sin perder la rotación guardada), 7 trampa (TR_FLAG).
+# wr_scan: ecx = índice de partida (0-8, od_off / od_offy) -> eax = registro del primer bloque reparable del bando en
+# turno alrededor del líder (TR_X, TR_Y), recorriendo las 9 casillas desde ese índice; deja BD_X, BD_Y y edx = índice.
+# eax = 0 si no hay (edx queda cambiado). Preserva el resto.
+wr_scan = place('wr_scan', f'''
+    push ebx
+    push ecx
+    push esi
+    push edi
+    push ebp
+    mov ebx, ecx
+    mov ebp, 9
+wrs_l:
+    movsx esi, byte ptr [ebx + {od_off:#x}]
+    movsx eax, word ptr [{TR_X:#x}]
+    add esi, eax
+    movsx edi, byte ptr [ebx + {od_offy:#x}]
+    movsx eax, word ptr [{TR_Y:#x}]
+    add edi, eax
+    mov eax, esi
+    mov edx, edi
+    movsx ecx, word ptr [0x537ce8]
+    call {wr_rec:#x}
+    jnz wrs_hit
+    inc ebx
+    cmp ebx, 9
+    jb wrs_nw
+    xor ebx, ebx
+wrs_nw:
+    dec ebp
+    jnz wrs_l
+    xor eax, eax
+    jmp wrs_out
+wrs_hit:
+    mov word ptr [{BD_X:#x}], si
+    mov word ptr [{BD_Y:#x}], di
+    mov edx, ebx
+wrs_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ecx
+    pop ebx
+    ret
+''')
 bm_calc = place('bm_calc', f"""
     pushad
     mov edi, {BM_EN:#x}
@@ -16629,6 +16739,22 @@ bmc_port:
     mov eax, dword ptr [{BM_SAVE + 8:#x}]
     mov dword ptr [{bd_vars + 8:#x}], eax
 bmc_out:
+    movsx eax, word ptr [{TR_X:#x}]
+    test eax, eax
+    js bmc_end
+    xor ecx, ecx
+    call {wr_scan:#x}
+    test eax, eax
+    jz bmc_end
+    movsx ecx, word ptr [0x537ce8]
+    cmp ecx, 8
+    jae bmc_end
+    call {wr_price:#x}
+    imul ecx, ecx, {SIDE:#x}
+    cmp eax, dword ptr [ecx + 0x536c14]
+    jg bmc_end
+    mov byte ptr [{BM_EN + 7:#x}], 1
+bmc_end:
     popad
     ret
 """)
@@ -16884,7 +17010,7 @@ tc_bmf:
     test ecx, ecx
     jz 0x41ca5a
     cmp ecx, 7
-    je tc_trap
+    je tc_rep
     cmp ecx, 3
     je tc_bmdlg
     cmp ecx, 6
@@ -16898,11 +17024,26 @@ tc_bmf:
     pop edi
     pop esi
     ret
+tc_rep:
+    movzx ecx, byte ptr [{wr_vars:#x}]
+    inc ecx
+    cmp ecx, 9
+    jb tc_rp
+    xor ecx, ecx
+tc_rp:
+    call {wr_scan:#x}
+    test eax, eax
+    jz 0x4b0496
+    mov byte ptr [{wr_vars:#x}], dl
+    mov word ptr [{BD_PW:#x}], {0x4000 | OB_REP:#x}
+    mov byte ptr [{BD_DIR:#x}], 0xff
+    jmp tc_bmgo
 tc_bmdlg:
     mov byte ptr [{BD_CAT:#x}], cl
     call {bd_pick:#x}
     test eax, eax
     jz 0x4b0496
+tc_bmgo:
     mov ecx, 0x588bd0
     call 0x4d7d70
     mov word ptr [0x587e5c], {BD_MARK:#x}
@@ -17085,6 +17226,26 @@ bv_redo:
     call {REDRAW:#x}
     call {br_mapview:#x}
     jmp bv_x
+bv_rep:
+    mov eax, esi
+    mov edx, edi
+    mov ecx, ebx
+    call {wr_rec:#x}
+    jz bv_x
+    mov edx, eax
+    call {wr_price:#x}
+    imul ecx, ebx, {SIDE:#x}
+    cmp eax, dword ptr [ecx + 0x536c14]
+    jg bv_x
+    neg eax
+    push edx
+    push eax
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    pop edx
+    mov byte ptr [edx + 7], 0
+    jmp bv_redo
 bv_br:
     mov ecx, ebp
     mov eax, esi
@@ -17142,6 +17303,8 @@ bv_pt:
     call {pt_apply:#x}
     jmp bv_redo
 bv_ob:
+    cmp ebp, {0x4000 | OB_REP:#x}
+    je bv_rep
     mov eax, ebp
     shr eax, 8
     and eax, 0xf

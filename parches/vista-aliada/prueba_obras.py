@@ -288,5 +288,26 @@ def capa(tipo, mask_vecinos=()):
     return mu.mem_read(OD_CAPA, 1)[0]
 ver('muro sin camino ni ejércitos: portón cerrado (20)', capa(7), 20)
 ver('control: torre de vigía: sin puerta (0)', capa(4), 0)
+print('-- reparar el muro (bd_recv con 0x4000 | OB_REP)')
+REP = 0x4010
+def reparar(muertos, quien=2, oro=1000, x=5, dueno_otro=False):
+    g, c = recibir(pw=MURO, oro=1000, x=x)
+    mu = g.mu
+    mu.mem_write(OB_TAB + 7, bytes([muertos]))
+    if dueno_otro: mu.mem_write(OB_TAB + 6, bytes([3]))
+    mu.mem_write(0x536c14 + quien * 0x1f8, struct.pack('<i', oro))
+    s = 0x536b30 + quien * 0x1f8
+    mu.mem_write(s, b'\1'); mu.mem_write(s + 3, bytes([1])); mu.mem_write(0x536c12 + quien * 0x1f8, struct.pack('<h', -1))
+    n0 = len(c)
+    mu.mem_write(PKT + 0xc, struct.pack('<4h', quien, x, 7, REP))
+    g.correr(BD_RECV, 0x4b85bb, struct.pack('<I', RET), [(UC_X86_REG_EAX, BD_PKT + 8), (UC_X86_REG_ESI, PKT)])
+    return c[n0:], mu.mem_read(OB_TAB + 7, 1)[0]
+ver('12 de 24 muertos: cobra 50 (la mitad de 100) y vuelve a 0', reparar(12), ([(2, -50)], 0))
+ver('1 muerto: cobra 4 (100 / 24)', reparar(1), ([(2, -4)], 0))
+ver('23 muertos: cobra 95', reparar(23), ([(2, -95)], 0))
+ver('control: sin daño, nada', reparar(0), ([], 0))
+ver('control: caído (24), nada', reparar(24), ([], 24))
+ver('control: oro que no alcanza (49 para 50), nada', reparar(12, oro=49), ([], 12))
+ver('control: muro de otro bando, nada', reparar(12, dueno_otro=True), ([], 12))
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

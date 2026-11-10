@@ -45,6 +45,12 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: orden «Repair Wall» (1.0.179.0, 10/11/2026)
+
+- Renglón 8 de la botonera «Build»: encendido si hay un bloque de muro de piedra propio dañado (+7 entre 1 y 23) en la casilla del líder o en una vecina y el oro alcanza; no pide constructor. Cada clic ofrece el siguiente bloque (wr_scan, wr_vars).
+- Precio bd_price(OB_FRAC) * muertos / 24 (wr_price); viaja como BD_PKT con BD_PW = 0x4000 | OB_REP (0x10); bd_recv vuelve a comprobar, cobra y pone +7 = 0. Texto «Repairing a stone wall».
+- Falta: la IA no repara (decidir junto con los bonos). Tarea 159.
+
 ## Hecho: Longbows, portón oscuro, banderas en caminos y reintegro del 75 % (1.0.178.0, 10/11/2026)
 
 - wv_type: Longbows del bando si los tiene (nombre «longbow»), si no Archers, si no el primer tipo con Missiles. Un bando sin Longbows en su set no puede tenerlos: el juego solo crea ejércitos de los 15 tipos del bando.
