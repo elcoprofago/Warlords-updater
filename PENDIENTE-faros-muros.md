@@ -28,8 +28,8 @@ Pedido completo:
 - Confirmado por el usuario (10/11/2026): cada bloque tiene **3 pilas de 8 arqueros (24 arqueros)**, no 3 arqueros.
   Los que van muriendo se anotan en el bloque: un ataque posterior encuentra menos defensa. Assassin queda afuera.
   Ojo: la ficha admite hasta 32 defensores (0x464ac0, como una ciudad de 4 casillas): 24 virtuales + 8 de una pila
-  alojada llenan el tope; con más pilas alojadas hay que decidir el reparto (técnico: mío). Los 24 vivos no caben en
-  el byte +7 si se cuentan aparte de otra cosa: +7 = arqueros vivos (0..24; 0 = muro caído).
+  alojada llenan el tope; con más pilas alojadas hay que decidir el reparto (técnico: mío). Byte +7 del registro =
+  arqueros **muertos** (0..24): los muros ya construidos tienen 0 y quedan con los 24; con 24 el bloque cae.
 
 ## Plan técnico (sin empezar)
 1. Movimiento: hoy po_pf cierra el muro al enemigo; hay que convertir «entrar a un muro enemigo» en ataque
