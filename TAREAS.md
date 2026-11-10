@@ -14,7 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **147.** Muro de piedra, puerta y menú de construir (vista-aliada 1.0.165.0, 9/11/2026). En `C:Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) construir un muro de piedra y mirar que sea gris amarronado, dos hileras más bajo, con algún ladrillo más oscuro y la sombra más oscura; (b) construir un muro que cruce un camino: esa casilla debe mostrar un arco con portón de madera cerrado; mover un grupo a esa casilla: el portón se ve abierto mientras el grupo está ahí y se cierra al irse; (c) abrir el menú Build: los renglones deben verse juntos y centrados, como en el menú de la ciudad. Anotar lo que se vea mal.
+- [ ] **147.** Muro de piedra, puerta y menú de construir (vista-aliada 1.0.165.0, 9/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) construir un muro de piedra y mirar que sea gris amarronado, dos hileras más bajo, con algún ladrillo más oscuro y la sombra más oscura; (b) construir un muro que cruce un camino: esa casilla debe mostrar un arco con portón de madera cerrado; mover un grupo a esa casilla: el portón se ve abierto mientras el grupo está ahí y se cierra al irse; (c) abrir el menú Build: los renglones deben verse juntos y centrados, como en el menú de la ciudad. Anotar lo que se vea mal.
 - [ ] **146.** Colocar obras con vista previa (vista-aliada 1.0.164.0, 9/11/2026). En `C:\Warlords3`, actualizar el
   parche y elegir un grupo con constructor. Botón de la torrecita → **Road**, **Bridge**, **Watchtower**,
   **Lighthouse** o **Stone Wall**: la ventana se cierra y no aparece el diálogo de flechas. (a) Al pasar el mouse por
