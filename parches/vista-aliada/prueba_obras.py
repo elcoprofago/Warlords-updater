@@ -51,7 +51,8 @@ BM_INIT = dest(TR_INIT + 7, 2)
 BM_CALC = dest(BM_INIT)
 def renglones(x, y, flag=1, trap=0):
     g = Juego(); mu = g.mu
-    mu.mem_write(BD_HASB, b'\1'); mu.mem_write(TR_X, struct.pack('<hh', x, y))
+    mu.mem_write(0x537ce8, struct.pack('<h', 2)); mu.mem_write(0x536c14 + 2 * 0x1f8, struct.pack('<i', 1000))
+    mu.mem_write(BD_HASB, bytes([flag])); mu.mem_write(TR_X, struct.pack('<hh', x, y))
     mu.mem_write(BD_FLAG, bytes([flag])); mu.mem_write(TR_FLAG, bytes([trap]))
     mu.mem_write(BD_X, bytes(range(1, 13)))          # rotación guardada: tiene que quedar igual
     g.correr(BM_CALC, RET, struct.pack('<I', RET))
@@ -61,7 +62,7 @@ ver('orilla (29, 7): camino, torre, faro, muro; la rotación queda como estaba',
     ([0, 1, 0, 0, 1, 1, 1, 0] + [0] * 5, True))
 ver('con trampa posible: la trampa ya no está en este menú (volvió al de órdenes)', renglones(5, 7, trap=1),
     ([0, 1, 0, 0, 1, 0, 1, 0] + [0] * 5, True))
-ver('control: BD_FLAG = 0 (no es su turno): solo lo que no depende de él', renglones(29, 7, flag=0),
+ver('control: BD_FLAG = BD_HASB = 0 (no es su turno): nada', renglones(29, 7, flag=0),
     ([0] * 13, True))
 
 print('-- precio')

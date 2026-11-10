@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 146).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 147).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,16 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **146.** Colocar obras con vista previa (vista-aliada 1.0.164.0, 9/11/2026). En `C:\Warlords3`, actualizar el
+  parche y elegir un grupo con constructor. Botón de la torrecita → **Road**, **Bridge**, **Watchtower**,
+  **Lighthouse** o **Stone Wall**: la ventana se cierra y no aparece el diálogo de flechas. (a) Al pasar el mouse por
+  la casilla del grupo o por una de las 8 de alrededor, se ve la pieza en transparencia (el puente, de orilla a
+  orilla) y el cursor de «mover»; más lejos o donde no se puede, flecha y nada dibujado. (b) Un clic construye ahí y
+  cobra, sin preguntar; se puede seguir poniendo piezas (por ejemplo, muros seguidos) mientras alcance el oro.
+  (c) Clic derecho termina el modo. (d) **Port** sigue como antes, con el diálogo. Anotar acá lo que se vea mal
+  (mejor con captura).
+  Resultado:
+
 - [ ] **145.** IA: los ejércitos abandonados vuelven a jugar (9/11/2026)
 Desde la 1.0.162.0 la computadora en prueba (la nueva) vuelve a mover a los ejércitos que había dejado quietos
 fuera de las ciudades: al empezar su turno los junta y les da una tarea (atacar, explorar o volver a una ciudad).
@@ -23,18 +33,16 @@ La original sigue igual. Es el primer cambio de juego de esta serie: hay que ver
 3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 Resultado:
 
-- [ ] **144.** Probar los arreglos del 9/11 (vista-aliada 1.0.163.0). En `C:\Warlords3`, actualizar el parche.
+- [x] **144.** Probar los arreglos del 9/11 (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche.
   (a) Clic derecho sobre un grupo: «Build Trap» vuelve a estar en el menú de órdenes, en el botón de antes.
-  (b) Botón de la torrecita: la ventana tiene el tamaño de siempre y los 7 renglones de construcciones quedan
-  repartidos en todo el alto, bien separados; Trap ya no aparece ahí. Apuntar con el mouse a cada renglón: se tiene
-  que iluminar el que está debajo. (c) Muros: unidos sin saltos; ladrillos más claros arriba y más oscuros al pie, y
-  una sombra tramada hacia abajo a la derecha, que no debe caer encima de otro muro. Anotar acá lo que se vea mal
-  (mejor con captura).
-- [ ] **143.** Probar el muro nuevo (vista-aliada 1.0.163.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
+  (b) Botón de la torrecita: la lista de construcciones ya no debe tener espacio libre grande debajo, y Trap ya no
+  aparece ahí. (c) Muros: ya no deben verse entrecortados ni con torres sueltas de más; un muro aislado es una
+  sola torre. El gris es más claro, parecido al de las ciudades. Anotar acá lo que se vea mal (mejor con captura).
+- [x] **143.** Probar el muro nuevo (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche. (a) Parar un
   grupo con constructor sobre un camino y construir un muro de piedra: ahora se puede, y queda como puerta (pasan
   tus ejércitos y los de tus aliados). (b) Mirar que el muro tenga más o menos el alto de una ruina y que ya no tenga
   manchas blancas ni verdes, ni rayas tipo código de barras, y que la calzada de arriba sea gris oscuro con la textura del camino. (c) Mirar que el frente se parezca al de la ruina: hiladas de ladrillos que siguen al muro también en diagonal, una línea oscura bajo la calzada y almenas cuadradas claras arriba; en cada casilla una torre redonda de ladrillos con almenas (también en las puntas de los tramos, que ya no deben verse con rayas). Anotar acá lo que se vea mal (mejor con captura).
-- [ ] **142.** Probar la botonera de construir (vista-aliada 1.0.153.0). En `C:\Warlords3`, actualizar el parche y
+- [x] **142.** Probar la botonera de construir (vista-aliada 1.0.153.0). En `C:\Warlords3`, actualizar el parche y
   elegir un grupo con constructor. Apretar el botón de la torrecita (almena roja, a la izquierda de «pasar turno»):
   debe abrir una lista con Rebuild City/Site, Road, Bridge, Port, Watchtower, Lighthouse, Stone Wall y Trap. Mirar:
   (a) que solo se puedan elegir las obras posibles en esa casilla (las otras, en gris); (b) que al elegir una se
@@ -49,12 +57,12 @@ Resultado:
   norte a sur se vea con buen ancho; (c) que la torre y el faro se vean enteros, asomando sobre la casilla de arriba,
   también después de mover un ejército por encima o al costado; (d) la empalizada. Anotar acá lo que se vea mal
   (mejor con una captura).
-- [ ] **140.** Puerta en el muro solo para aliados (vista-aliada 1.0.151.0, 9/11/2026)
+- [x] **140.** Puerta en el muro solo para aliados (vista-aliada 1.0.151.0, 9/11/2026)
 Construir un muro y, con la misma unidad parada encima, un camino (la «puerta»): debe costar el **25 % de fundar
 una ciudad** (el muro sigue costando el 50 %). Probar en Warlords3 que por la puerta pasan **tus** ejércitos y los
 de un **aliado**, y que un enemigo o la computadora no pasan (tienen que rodear o quedarse).
 
-- [ ] **139.** Muro de piedra (vista-aliada 1.0.150.0, 9/11/2026)
+- [x] **139.** Muro de piedra (vista-aliada 1.0.150.0, 9/11/2026)
 Con una unidad con «Build» en tierra libre, al seguir apretando construir aparece **«Building a stone wall»**
 (después de la torre y el faro). Cuesta la mitad de fundar una ciudad (no lo habías dicho; decime si querés otro).
 Probar en Warlords3:
@@ -70,7 +78,7 @@ En una partida en red con otra PC (las dos con la 1.0.149.0): desde una PC, **Pa
 tres veces. La cuarta vez, **Pausa** no hace nada en esa PC. Desde la otra PC todavía tiene que poder pausar 3 veces.
 Guardá, cargá la partida y comprobá que la cuenta sigue (la PC que ya usó sus 3 no puede pausar).
 
-- [ ] **137.** Torres y faros (vista-aliada 1.0.148.0, 9/11/2026)
+- [x] **137.** Torres y faros (vista-aliada 1.0.148.0, 9/11/2026)
 Una unidad con «Build» parada en tierra libre (sin camino, ciudad ni sitio) ofrece, al seguir apretando el botón
 de construir: camino, **torre de vigía** y, si hay agua al lado, **faro costero**. Cada uno cuesta la mitad de
 fundar una ciudad. Probar en Warlords3, con niebla activada:

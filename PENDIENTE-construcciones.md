@@ -488,13 +488,21 @@ así lo de adelante tapa a lo de atrás en cualquier orden. prev2.py del scratch
   no prohíbe todo: solo lo que se pinta antes en la casilla de pantalla (capas anteriores de la propia casilla según
   od_ord, y las vecinas de arriba y de la izquierda, menos los brazos diagonales que ob_wmask descarta si aquí hay muro).
 
-## PRÓXIMO: colocar obras con vista previa, como el editor de mapas (pedido del 9/11/2026)
+## HECHO (1.0.164.0): colocar obras con vista previa, como el editor de mapas (pedido del 9/11/2026)
 Pedido textual: «Quisiera un metodo mas practico para los muros, asi como es ahora es muy engorroso. Se me ocurre
 copiar el sistema que ya tiene el editor de mapas: cada bloque a colocar (camino, bloque de puente o de muralla) en cada
 casillero se "previsualiza" segun donde se pose el cursor en el terreno, se evitan asi las flechitas. A medida que uno
 va viendo las distintas opciones va apretando haciendo click en el terreno.»
-Estado: nada hecho. Hoy se elige la obra en la botonera de la torrecita (bm_*), y el diálogo de reconstruir rota
-casilla/dirección con flechas (bd_pick, BD_CAT). Idea a estudiar: tras elegir la obra, un modo de cursor sobre el mapa
-que dibuje la pieza (ob_draw / ob_wmask con la casilla bajo el cursor como si ya tuviera la obra) y la construya al
-hacer clic, mientras se pueda (bd_ok/ob_okt, precio, alcance del líder). Mirar cómo war3ed_av.exe hace la vista previa
-y cómo el juego maneja los modos de cursor (p. ej. el de mover grupo).
+Estado: hecho en vista-aliada 1.0.164.0 (falta probarlo en el juego, TAREAS 146). En la botonera de la torrecita,
+Road, Bridge, Watchtower, Lighthouse y Stone Wall ya no abren el diálogo de flechas: encienden un modo de cursor
+(PV_ON, PV_CAT, PV_SIDE en pv_vars). Port sigue con el diálogo de antes (tc_bmdlg).
+- pv_dec: gancho en 0x4737a8 del decodificador del mapa 0x4735c0 (casilla en [esp+0x2c/0x2e], salida en [esp+0x44],
+  [esp+0x48] = 1 al pasar el mouse). Al pasar: pv_eval y cursor 7 (mover) si sirve, 3 (flecha) si no. Al hacer clic:
+  pv_send manda BD_PKT {bando, x, y, palabra} sin diálogo; bd_recv vuelve a verificar y cobra. El modo sigue activo
+  para poner otra pieza; clic derecho (bm_norm -> pv_off) o la torrecita lo terminan; cambiar de bando o quedarse sin
+  grupo elegido también.
+- pv_chk: alcance = casilla del líder o una de sus 8 vecinas; BD_HASB; camino con bd_any, puente solo ortogonal con
+  bd_brscan, obras con ob_okt; precio contra el oro. bm_calc usa pv_chk sobre las 9 casillas para encender renglones.
+- Fantasma: obras con PV_REC (ob_at lo devuelve solo mientras ob_draw dibuja, PV_IN); camino y puente con pv_rdraw.
+- Pruebas: prueba_colocar.py (36 casos) y prueba_obras.py (renglones con bando y oro).
+

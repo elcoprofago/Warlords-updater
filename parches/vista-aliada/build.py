@@ -4287,15 +4287,29 @@ obr_end:
     popad
     ret
 ''')
-# ob_at: eax = x, edx = y -> eax = registro de la obra de esa casilla, o 0. Preserva el resto.
+# Colocar con vista previa (pedido del 9/11/2026; PENDIENTE-construcciones): los renglones Road, Bridge, Watchtower,
+# Lighthouse y Stone Wall de la torrecita no abren el diálogo: dejan el modo PV_ON con la categoría PV_CAT. Al pasar el
+# mouse por el mapa (pv_dec en 0x4737a8), pv_eval prueba la casilla (la del líder o una de sus 8 vecinas, con un
+# ejército con «build» y oro para pagarla) y pinta el fantasma: la obra (PV_REC, que ob_at da solo mientras se dibuja,
+# PV_IN) o el camino / puente (PV_RX, PV_RY, PV_RN casillas en la dirección PV_RD, pieza PV_RP; pv_rdraw). El clic
+# manda el mismo paquete BD_PKT del diálogo (sin preguntar) y el modo sigue; el clic derecho, la torrecita o el cambio de
+# bando lo terminan. Cada PC vuelve a comprobar todo al recibirlo (bd_recv).
+pv_vars = place_data('pv_vars', bytes(8) + struct.pack('<HH', 0x7fff, 0x7fff) + bytes(36))
+PV_ON, PV_CAT, PV_SIDE, PV_IN, PV_OK, PV_PW = pv_vars, pv_vars + 1, pv_vars + 2, pv_vars + 4, pv_vars + 5, pv_vars + 6
+PV_REC = pv_vars + 8                         # registro de obra fantasma (x, y, tipo, dir, dueño); x = 0x7fff sin fantasma
+PV_RX, PV_RY, PV_RN, PV_RD, PV_RP = pv_vars + 16, pv_vars + 18, pv_vars + 20, pv_vars + 21, pv_vars + 22
+PV_HX, PV_HY = pv_vars + 24, pv_vars + 26    # casilla bajo el mouse
+PV_NT, PV_NN, PV_ND, PV_NP, PV_NPW = pv_vars + 28, pv_vars + 29, pv_vars + 30, pv_vars + 31, pv_vars + 32   # de pv_chk
+# ob_at: eax = x, edx = y -> eax = registro de la obra de esa casilla, o 0 (o PV_REC si es la del fantasma y se está
+# dibujando, PV_IN). Preserva el resto.
 ob_at = place('ob_at', f'''
     push ecx
     push edx
     push eax
     call {br_tile:#x}
     test eax, eax
-    pop eax
     jz oba_no
+    mov eax, dword ptr [esp]
     mov cl, byte ptr [0x503e06]
     shl edx, cl
     add edx, eax
@@ -4303,12 +4317,22 @@ ob_at = place('ob_at', f'''
     jae oba_no
     movzx eax, byte ptr [edx + {ob_map:#x}]
     test eax, eax
-    jz oba_out
+    jz oba_no
     lea eax, [eax*8 + {OB_TAB - 8:#x}]
     jmp oba_out
 oba_no:
     xor eax, eax
+    cmp byte ptr [{PV_IN:#x}], 0
+    je oba_out
+    mov ecx, dword ptr [esp]
+    mov edx, dword ptr [esp + 4]
+    cmp cx, word ptr [{PV_REC:#x}]
+    jne oba_out
+    cmp dx, word ptr [{PV_REC + 2:#x}]
+    jne oba_out
+    mov eax, {PV_REC:#x}
 oba_out:
+    add esp, 4
     pop edx
     pop ecx
     ret
@@ -5462,6 +5486,7 @@ bk_out:
 br_menu = place('br_menu', f'''
     mov byte ptr [{TR_FLAG:#x}], 0
     mov byte ptr [{BD_FLAG:#x}], 0
+    mov byte ptr [{BD_HASB:#x}], 0
     test bl, bl
     jnz brm_out
     test bp, bp
@@ -11779,8 +11804,56 @@ odp_out:
     popad
     ret
 ''')
+# pv_rdraw (desde ob_draw): el camino o puente fantasma en la celda po_cx, con la pieza PV_RP de la hoja 0x21.
+pv_rdraw = place('pv_rdraw', f'''
+    pushad
+    movzx ecx, byte ptr [{PV_RN:#x}]
+    test ecx, ecx
+    jz prd_out
+    movzx ebx, byte ptr [{PV_RD:#x}]
+    and ebx, 3
+    movsx esi, byte ptr [ebx*2 + {bd_dxy:#x}]
+    movsx edi, byte ptr [ebx*2 + {bd_dxy + 1:#x}]
+    movsx eax, word ptr [{PV_RX:#x}]
+    movsx edx, word ptr [{PV_RY:#x}]
+prd_l:
+    cmp ax, word ptr [{po_cx:#x}]
+    jne prd_nx
+    cmp dx, word ptr [{po_cx + 2:#x}]
+    je prd_hit
+prd_nx:
+    add eax, esi
+    add edx, edi
+    dec ecx
+    jnz prd_l
+    jmp prd_out
+prd_hit:
+    movzx eax, byte ptr [{PV_RP:#x}]
+    movsx edx, word ptr [{po_cx + 6:#x}]
+    push edx
+    movsx edx, word ptr [{po_cx + 4:#x}]
+    push edx
+    push 0x27
+    push 48
+    push 48
+    mov edx, eax
+    shr edx, 3
+    imul edx, edx, 48
+    push edx
+    and eax, 7
+    imul eax, eax, 48
+    push eax
+    push 0x21
+    call 0x4dd530
+    add esp, 0x20
+prd_out:
+    popad
+    ret
+''')
 ob_draw = place('ob_draw', f'''
     pushad
+    call {pv_rdraw:#x}
+    mov byte ptr [{PV_IN:#x}], 1
     xor esi, esi
 odw_l:
     movsx eax, byte ptr [esi + {od_off:#x}]
@@ -11830,6 +11903,7 @@ odw_nx:
     inc esi
     cmp esi, 9
     jb odw_l
+    mov byte ptr [{PV_IN:#x}], 0
     popad
     ret
 ''')
@@ -15082,6 +15156,301 @@ bm_strs = place_data('bm_strs', struct.pack('<13I', *([place_data(f'bm_s{i}', cs
                                                      + [bm_empty] * (13 - len(BM_ROWS)))))
 bm_txt = place_data('bm_txt', struct.pack('<13I', *BM_TXT))
 bm_hot = place_data('bm_hot', struct.pack('<13I', *BM_HOT))
+# pv_chk: esi = x, ebx = y de la casilla, edi = x, ebp = y del líder, ecx = categoría (1 camino, 2 puente, 4 torre,
+# 5 faro, 6 muro) -> eax = 1 si se puede construir ahí (casilla del líder o vecina, BD_HASB, oro del bando en turno
+# alcanza); deja PV_NPW (palabra del paquete), PV_NT (tipo de obra, 0 si camino o puente), PV_NN (casillas de camino),
+# PV_ND (dirección del puente) y PV_NP (pieza). Preserva el resto.
+pv_chk = place('pv_chk', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    mov dword ptr [{PV_NT:#x}], 0
+    mov word ptr [{PV_NPW:#x}], 0
+    cmp byte ptr [{BD_HASB:#x}], 0
+    je pk_no
+    mov eax, esi
+    sub eax, edi
+    lea edx, [eax + 1]
+    cmp edx, 2
+    ja pk_no
+    mov edx, ebx
+    sub edx, ebp
+    push edx
+    inc edx
+    cmp edx, 2
+    pop edx
+    ja pk_no
+    cmp ecx, 1
+    je pk_road
+    cmp ecx, 2
+    je pk_br
+    cmp ecx, 4
+    jne pk_ty
+    mov ecx, {OB_TORRE}
+    jmp pk_ok
+pk_ty:
+    cmp ecx, 5
+    jne pk_mu
+    mov ecx, {OB_FARO}
+    jmp pk_ok
+pk_mu:
+    cmp ecx, 6
+    jne pk_no
+    mov ecx, {OB_MURO}
+pk_ok:
+    mov eax, esi
+    mov edx, ebx
+    call {ob_okt:#x}
+    test eax, eax
+    jz pk_no
+    mov byte ptr [{PV_NT:#x}], cl
+    or ecx, 0x4000
+    mov word ptr [{PV_NPW:#x}], cx
+    mov eax, {OB_FRAC}
+    jmp pk_pay
+pk_road:
+    mov eax, esi
+    mov edx, ebx
+    call {bd_any:#x}
+    test eax, eax
+    jz pk_no
+    push eax
+    mov eax, esi
+    mov edx, ebx
+    call {bd_mask:#x}
+    movzx eax, byte ptr [eax + {bd_piecetab:#x}]
+    mov byte ptr [{PV_NP:#x}], al
+    mov byte ptr [{PV_NN:#x}], 1
+    pop eax
+    jmp pk_pay
+pk_br:
+    xor ecx, ecx
+    test eax, eax
+    jnz pk_bx
+    cmp edx, -1
+    je pk_bd
+    mov ecx, 2
+    cmp edx, 1
+    je pk_bd
+    jmp pk_no
+pk_bx:
+    test edx, edx
+    jnz pk_no
+    mov ecx, 1
+    cmp eax, 1
+    je pk_bd
+    mov ecx, 3
+pk_bd:
+    mov byte ptr [{PV_ND:#x}], cl
+    push ecx
+    mov eax, esi
+    mov edx, ebx
+    call {bd_brscan:#x}
+    pop edx
+    test eax, eax
+    jz pk_no
+    mov byte ptr [{PV_NN:#x}], cl
+    mov ecx, edx
+    and edx, 1
+    neg edx
+    add edx, 2
+    mov byte ptr [{PV_NP:#x}], dl
+    or ecx, 0x100
+    mov word ptr [{PV_NPW:#x}], cx
+pk_pay:
+    movsx ecx, word ptr [0x537ce8]
+    cmp ecx, 8
+    jae pk_no
+    call {bd_price:#x}
+    imul ecx, ecx, {SIDE:#x}
+    cmp eax, dword ptr [ecx + 0x536c14]
+    jg pk_no
+    mov eax, 1
+    jmp pk_out
+pk_no:
+    xor eax, eax
+pk_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# pv_eval: eax = x, edx = y bajo el mouse. Con el líder del bando en turno (tr_check para BD_HASB) y pv_chk deja
+# PV_OK, BD_X, BD_Y, PV_PW y el fantasma; si el fantasma cambió, redibuja. Termina el modo si cambió el bando o no hay
+# grupo elegido. Preserva todo.
+pv_eval = place('pv_eval', f'''
+    pushad
+    mov esi, eax
+    mov ebx, edx
+    mov word ptr [{PV_HX:#x}], si
+    mov word ptr [{PV_HY:#x}], bx
+    push dword ptr [{PV_REC:#x}]
+    push dword ptr [{PV_REC + 4:#x}]
+    push dword ptr [{PV_RX:#x}]
+    push dword ptr [{PV_RN:#x}]
+    mov byte ptr [{PV_OK:#x}], 0
+    movsx eax, word ptr [0x537ce8]
+    cmp ax, word ptr [{PV_SIDE:#x}]
+    jne pve_quit
+    cmp eax, 8
+    jae pve_quit
+    imul eax, eax, 0x4f0
+    movsx eax, word ptr [eax + 0x56ea90]
+    test eax, eax
+    jle pve_quit
+    imul eax, eax, 0x1c
+    movsx edi, word ptr [eax + 0x54fe52]
+    movsx ebp, word ptr [eax + 0x54fe54]
+    call dword ptr [{TR_CHKP:#x}]
+    movzx ecx, byte ptr [{PV_CAT:#x}]
+    call {pv_chk:#x}
+    test eax, eax
+    jz pve_none
+    mov byte ptr [{PV_OK:#x}], 1
+    mov word ptr [{BD_X:#x}], si
+    mov word ptr [{BD_Y:#x}], bx
+    mov ax, word ptr [{PV_NPW:#x}]
+    mov word ptr [{PV_PW:#x}], ax
+    mov al, byte ptr [{PV_NT:#x}]
+    test al, al
+    jz pve_road
+    mov word ptr [{PV_REC:#x}], si
+    mov word ptr [{PV_REC + 2:#x}], bx
+    mov dword ptr [{PV_REC + 4:#x}], 0
+    mov byte ptr [{PV_REC + 4:#x}], al
+    mov al, byte ptr [0x537ce8]
+    mov byte ptr [{PV_REC + 6:#x}], al
+    mov dword ptr [{PV_RN:#x}], 0
+    jmp pve_cmp
+pve_road:
+    mov dword ptr [{PV_REC:#x}], 0x7fff7fff
+    mov dword ptr [{PV_REC + 4:#x}], 0
+    mov word ptr [{PV_RX:#x}], si
+    mov word ptr [{PV_RY:#x}], bx
+    mov dword ptr [{PV_RN:#x}], 0
+    mov al, byte ptr [{PV_NN:#x}]
+    mov byte ptr [{PV_RN:#x}], al
+    mov al, byte ptr [{PV_ND:#x}]
+    mov byte ptr [{PV_RD:#x}], al
+    mov al, byte ptr [{PV_NP:#x}]
+    mov byte ptr [{PV_RP:#x}], al
+    jmp pve_cmp
+pve_quit:
+    mov byte ptr [{PV_ON:#x}], 0
+pve_none:
+    mov dword ptr [{PV_REC:#x}], 0x7fff7fff
+    mov dword ptr [{PV_REC + 4:#x}], 0
+    mov dword ptr [{PV_RN:#x}], 0
+pve_cmp:
+    pop eax
+    xor eax, dword ptr [{PV_RN:#x}]
+    pop ecx
+    xor ecx, dword ptr [{PV_RX:#x}]
+    or eax, ecx
+    pop ecx
+    xor ecx, dword ptr [{PV_REC + 4:#x}]
+    or eax, ecx
+    pop ecx
+    xor ecx, dword ptr [{PV_REC:#x}]
+    or eax, ecx
+    jz pve_out
+    call {REDRAW:#x}
+pve_out:
+    popad
+    ret
+''')
+# pv_off: termina el modo y borra el fantasma (redibuja si había). Preserva todo.
+pv_off = place('pv_off', f'''
+    pushad
+    mov byte ptr [{PV_ON:#x}], 0
+    mov byte ptr [{PV_OK:#x}], 0
+    xor eax, eax
+    cmp dword ptr [{PV_REC:#x}], 0x7fff7fff
+    setne al
+    cmp byte ptr [{PV_RN:#x}], 0
+    setne ah
+    mov dword ptr [{PV_REC:#x}], 0x7fff7fff
+    mov dword ptr [{PV_REC + 4:#x}], 0
+    mov dword ptr [{PV_RN:#x}], 0
+    test eax, eax
+    jz pvo_out
+    call {REDRAW:#x}
+pvo_out:
+    popad
+    ret
+''')
+# pv_send: manda BD_PKT (bando en turno, BD_X, BD_Y, PV_PW), como tr_send. Preserva todo.
+pv_send = place('pv_send', f'''
+    pushad
+    sub esp, 8
+    mov ax, word ptr [0x537ce8]
+    mov word ptr [esp], ax
+    mov ax, word ptr [{BD_X:#x}]
+    mov word ptr [esp + 2], ax
+    mov ax, word ptr [{BD_Y:#x}]
+    mov word ptr [esp + 4], ax
+    mov ax, word ptr [{PV_PW:#x}]
+    mov word ptr [esp + 6], ax
+    mov eax, esp
+    push 8
+    push eax
+    push {BD_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0x14
+    popad
+    ret
+''')
+# pv_dec (0x4737a8 de 0x4735c0, decodificador del cursor y del clic en el mapa; casilla en [esp + 0x2c], [esp + 0x2e],
+# salida en [esp + 0x44], [esp + 0x48] = 1 si solo pasa el mouse). En modo PV: al pasar, cursor 7 (mover) si la casilla
+# sirve, 3 (flecha) si no; al hacer clic, si sirve, construye; devuelve 0 (el juego no hace nada más).
+pv_dec = place('pv_dec', f'''
+    cmp byte ptr [{PV_ON:#x}], 0
+    jne pvd_go
+pvd_orig:
+    test byte ptr [0x53c38e], 0x10
+    jmp 0x4737af
+pvd_go:
+    push eax
+    push edx
+    movsx eax, word ptr [esp + 0x34]
+    movsx edx, word ptr [esp + 0x36]
+    call {pv_eval:#x}
+    pop edx
+    pop eax
+    cmp byte ptr [{PV_ON:#x}], 0
+    je pvd_orig
+    mov esi, dword ptr [esp + 0x44]
+    cmp dword ptr [esp + 0x48], 0
+    je pvd_click
+    mov ax, word ptr [{PV_HX:#x}]
+    mov word ptr [esi], ax
+    mov ax, word ptr [{PV_HY:#x}]
+    mov word ptr [esi + 2], ax
+    mov eax, 3
+    cmp byte ptr [{PV_OK:#x}], 0
+    je pvd_ret
+    mov eax, 7
+    jmp pvd_ret
+pvd_click:
+    cmp byte ptr [{PV_OK:#x}], 0
+    je pvd_0
+    call {pv_send:#x}
+pvd_0:
+    xor eax, eax
+pvd_ret:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    add esp, 0x24
+    ret
+''')
 # bm_calc: llena BM_EN con TR_X / TR_Y (el líder, de tr_check) y las banderas de bd_check / tr_check. Preserva todo.
 # Renglón 0 reconstruir (ciudad en la casilla, o sitio / puente derribado con br_rebuildlk), 1-6 los tipos de BD_CAT
 # (bd_pick desde el principio, sin perder la rotación guardada), 7 trampa (TR_FLAG).
@@ -15110,6 +15479,37 @@ bm_calc = place('bm_calc', f"""
 bmc_reb:
     mov byte ptr [{BM_EN:#x}], 1
 bmc_trap:
+    cmp byte ptr [{BD_HASB:#x}], 0
+    je bmc_port
+    mov ebp, edi
+    mov edi, esi
+    mov edx, 1
+bmc_pc:
+    cmp edx, 3
+    je bmc_pn
+    xor eax, eax
+bmc_po:
+    movsx esi, byte ptr [eax + {od_off:#x}]
+    add esi, edi
+    movsx ebx, byte ptr [eax + {od_offy:#x}]
+    add ebx, ebp
+    mov ecx, edx
+    push eax
+    call {pv_chk:#x}
+    test eax, eax
+    pop eax
+    jnz bmc_pyes
+    inc eax
+    cmp eax, 9
+    jb bmc_po
+    jmp bmc_pn
+bmc_pyes:
+    mov byte ptr [edx + {BM_EN:#x}], 1
+bmc_pn:
+    inc edx
+    cmp edx, 7
+    jb bmc_pc
+bmc_port:
     cmp byte ptr [{BD_FLAG:#x}], 0
     je bmc_out
     mov eax, dword ptr [{bd_vars:#x}]
@@ -15118,15 +15518,10 @@ bmc_trap:
     mov dword ptr [{BM_SAVE + 4:#x}], eax
     mov eax, dword ptr [{bd_vars + 8:#x}]
     mov dword ptr [{BM_SAVE + 8:#x}], eax
-    mov ebx, 1
-bmc_cat:
     mov word ptr [{BD_LX:#x}], 0x8000
-    mov byte ptr [{BD_CAT:#x}], bl
+    mov byte ptr [{BD_CAT:#x}], 3
     call {bd_pick:#x}
-    mov byte ptr [ebx + {BM_EN:#x}], al
-    inc ebx
-    cmp ebx, 7
-    jb bmc_cat
+    mov byte ptr [{BM_EN + 3:#x}], al
     mov eax, dword ptr [{BM_SAVE:#x}]
     mov dword ptr [{bd_vars:#x}], eax
     mov eax, dword ptr [{BM_SAVE + 4:#x}]
@@ -15255,14 +15650,19 @@ bm_open = place('bm_open', f"""
     ret
 """)
 bm_tower = place('bm_tower', f"""
+    call {pv_off:#x}
     mov byte ptr [{BM_ON:#x}], 1
     call {bm_open:#x}
     pop edi
     pop esi
     ret
 """)
-# Clic derecho en el mapa (0x4bf02d): el menú de órdenes de siempre.
+# Clic derecho en el mapa (0x4bf02d): el menú de órdenes de siempre; en modo de colocar (PV_ON), solo lo termina.
 bm_norm = place('bm_norm', f"""
+    cmp byte ptr [{PV_ON:#x}], 0
+    je bmn_menu
+    jmp {pv_off:#x}
+bmn_menu:
     mov byte ptr [{BM_ON:#x}], 0
     jmp 0x4afc20
 """)
@@ -15385,6 +15785,20 @@ tc_bmf:
     jz 0x41ca5a
     cmp ecx, 7
     je tc_trap
+    cmp ecx, 3
+    je tc_bmdlg
+    cmp ecx, 6
+    ja tc_bmdlg
+    mov byte ptr [{PV_ON:#x}], 1
+    mov byte ptr [{PV_CAT:#x}], cl
+    mov ax, word ptr [0x537ce8]
+    mov word ptr [{PV_SIDE:#x}], ax
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    pop edi
+    pop esi
+    ret
+tc_bmdlg:
     mov byte ptr [{BD_CAT:#x}], cl
     call {bd_pick:#x}
     test eax, eax
@@ -18114,6 +18528,7 @@ patch(0x4b6236, asm('call 0x4b9ce0', 0x4b6236), asm(f'call {tr_send:#x}', 0x4b62
 # Botonera de construir (bm_*): la torrecita abre el menú de órdenes en modo construir.
 patch(0x4b0130, rel(0x4b0130, 7), asm(f'jmp {bm_entry:#x}', 0x4b0130))
 patch(0x4bf02d, asm('call 0x4afc20', 0x4bf02d), asm(f'call {bm_norm:#x}', 0x4bf02d))
+patch(0x4737a8, bytes.fromhex('f6058ec3530010'), asm(f'jmp {pv_dec:#x}', 0x4737a8) + bytes([0x90]) * 2)
 patch(0x41cad8 + 10 * 4, struct.pack('<I', 0x41ca5a), struct.pack('<I', bm_tower))
 patch(0x4206a0 + 2 * 4, struct.pack('<I', 0x42050e), struct.pack('<I', bm_tower))
 assert rel(0x4b85bb, 9) == bytes.fromhex('5f5e81c408010000c3')
