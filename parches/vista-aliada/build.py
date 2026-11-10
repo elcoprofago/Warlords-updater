@@ -10095,7 +10095,7 @@ PZ_ON, PZ_ARM, PZ_LAST, PZ_SEEN = pz_vars, pz_vars + 1, pz_vars + 4, pz_vars + 8
 # Pausa manual más abajo). Cada una se arma y se suelta por su lado; la partida sigue cuando no queda ninguna.
 PZ_VOTO, PZ_MANUAL = 1, 2
 # Aviso en pantalla de la pausa manual; pz_find busca el que corresponde (pz_cur), no siempre el de la Votación.
-PP_TEXT = 'Partida en pausa: Espacio reanuda'
+PP_TEXT = 'Partida en pausa: Espacio o Esc reanuda'
 pp_text = place_data('pp_text', cstr_(PP_TEXT))
 pz_cur = place_data('pz_cur', struct.pack('<I', pz_text))
 PP_PKT = 0x2a5                                       # carga: 1 pausar, 0 reanudar (dword)
@@ -10341,8 +10341,12 @@ pz_disp = place('pz_disp', f'''
     jz pd_drop
     mov eax, dword ptr [esp + 4]
     cmp dword ptr [eax + 8], 0x20
+    je pd_res
+    cmp dword ptr [eax + 8], 0x1b
     jne pd_drop
+pd_res:
     mov byte ptr [{PP_REQ:#x}], 1
+    and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_MANUAL:#x}
     jmp pd_drop
 pd_key:
     cmp eax, 0x109
@@ -10365,7 +10369,8 @@ pz_dptr = place_data('pz_dptr', struct.pack('<I', pz_disp))
 # guarda en NETSAVES; el autoguardado del comienzo del turno no se toca) y manda PP_PKT 1; al recibirlo (el eco de
 # 0x4dd3b0 incluido) cada PC pausa con PZ_MANUAL, con el mismo mecanismo que la Votación (pz_tick, pz_disp, el aviso en
 # pantalla pp_text). Cualquier jugador reanuda con la barra espaciadora: pz_disp lo anota en PP_REQ y tl_idle manda
-# PP_PKT 0. La pausa manual no tiene la vigilancia de 60 s: dura hasta que alguien la levanta.
+# PP_PKT 0. Desde 1.0.180.0 (10/11/2026, en red la pausa no se levantaba) Espacio o Escape también la quitan en
+# la propia PC en el acto, sin esperar el paquete: ninguna PC queda trabada aunque el PP_PKT 0 no le llegue. La pausa manual no tiene la vigilancia de 60 s: dura hasta que alguien la levanta.
 # Tope (9/11/2026): PP_MAX pausas por jugador. La carga lleva quien pausa ([0x560b20]) en el byte 1; cada PC cuenta en
 # PP_CNT al recibir (todas reciben lo mismo) y descarta la que pasa el tope; pp_click ni la pide. PP_CNT va al .SAV
 # detrás de la tabla de obras y vuelve a cero en partida nueva.
