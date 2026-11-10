@@ -118,7 +118,7 @@ def muro_dir(pw):
 ver('muro hacia el este (dirección 2): cobra 100 y guarda tipo 7, dirección + 1 = 3', muro_dir(MUROS[2]), ([(2, -100)], bytes([7, 3])))
 ver('control: muro sin dirección (viejo) guarda 0', muro_dir(MURO), ([(2, -100)], bytes([7, 0])))
 
-print('-- puerta: solo pasan el dueño y sus aliados (po_pf)')
+print('-- muro: solo pasan el dueño y sus aliados, con puerta o sin ella (po_pf)')
 from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_READ
 PO_PF = dest(0x4a5d34, 1)
 _calls = []
@@ -156,12 +156,14 @@ ver('el dueño (2) pasa por su puerta', puerta(2), ['pasa'])
 ver('un aliado (5) pasa', puerta(5, aliado=True), ['pasa'])
 ver('un enemigo (5) no', puerta(5), ['cerrado'])
 ver('neutral (8) no', puerta(8), ['cerrado'])
-ver('control: muro sin puerta, ni el dueño', puerta(2, camino=False), ['cerrado'])
+ver('muro sin puerta: el dueño entra (se aloja)', puerta(2, camino=False), ['pasa'])
+ver('muro sin puerta: un aliado entra', puerta(5, aliado=True, camino=False), ['pasa'])
+ver('control: muro sin puerta, un enemigo no', puerta(5, camino=False), ['cerrado'])
 ver('ataque al muro: enemigo en guerra (5), el muro es el destino: llega', puerta(5, camino=False, destino=(5, 7), guerra=True), ['pasa'])
 ver('ídem con puerta', puerta(5, destino=(5, 7), guerra=True), ['pasa'])
 ver('control: en guerra pero el muro no es el destino', puerta(5, camino=False, destino=(6, 7), guerra=True), ['cerrado'])
 ver('control: destino pero sin guerra', puerta(5, camino=False, destino=(5, 7)), ['cerrado'])
-ver('control: el dueño, destino su muro sin puerta', puerta(2, camino=False, destino=(5, 7), guerra=True), ['cerrado'])
+ver('el dueño, destino su muro sin puerta: entra', puerta(2, camino=False, destino=(5, 7), guerra=True), ['pasa'])
 
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
 PP_RECV = dest(0x4b6a22, 2)

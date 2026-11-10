@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 154).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 156).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **155.** Muros propios, Raze y luz del faro (vista-aliada 1.0.175.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) mover un ejército propio sobre un bloque de muro propio, con puerta y sin puerta: debe entrar y quedarse; (b) lo mismo con un ejército de un aliado; (c) un enemigo no debe poder atravesarlo; (d) con un ejército parado sobre su muro o al lado, usar Raze: anotar si aparece la ventana de confirmación («Are you sure… raze… stone wall?»), qué botón se apretó y si el bloque desaparece; (e) la luz del faro llega a 6 casillas sobre el mar. Si Raze sigue sin hacer nada, anotar exactamente los pasos (menú o tecla, dónde estaba el ejército).
 - [ ] **154.** Atacar un muro de piedra enemigo (vista-aliada 1.0.174.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe, con dos bandos en guerra: (a) el bando A construye un muro de piedra; (b) con un grupo del bando B, elegir como destino una casilla del muro: el grupo debe llegar al lado y atacarla; la batalla muestra arqueros del bando A defendiendo (24 si el muro está entero); (c) después de la batalla no deben quedar arqueros sueltos en el mapa, ni sumarse a las estadísticas ni avisar sus muertes; (d) atacar varias veces el mismo bloque: los arqueros que murieron no vuelven, y cuando mueren los 24 el bloque desaparece y se puede pasar; (e) con el bando en paz, el muro no se puede atacar. Anotar si el grupo entra o no a la casilla cuando cae el muro, y lo que se vea mal en el informe de la batalla.
 - [ ] **153.** IA: menos grupos de abandonados y conteo de los grupos de ataque (vista-aliada 1.0.173.0, 10/11/2026)
 La computadora nueva vuelve a mover a sus ejércitos abandonados, pero desde ese cambio pierde contra la original.

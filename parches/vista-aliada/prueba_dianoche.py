@@ -24,7 +24,7 @@ _OB = b'OBRA' + bytes(4 + 64 * 8)
 assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4; OB_TAB = OB_N + 4
 FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
-FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 7), 5, 1   # degradé de 5 casillas sobre agua, 1 sobre tierra
+FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 6, 7), 6, 1   # degradé de 6 casillas sobre agua, 1 sobre tierra
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
@@ -228,7 +228,7 @@ print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
 assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
-assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 and g[24 - VX, 18 - VY] == 7, 'el faro: degradé sobre el mar'
+assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 and g[24 - VX, 18 - VY] == 6 and g[25 - VX, 19 - VY] == 7, 'el faro: degradé sobre el mar'
 assert g[21 - VX, 14 - VY] == 2 and g[20 - VX, 14 - VY] == N, 'el faro: 1 casilla hacia tierra'
 assert g[22 - VX, 17 - VY] == N, 'el faro no alumbra tierra a 3 casillas'
 assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 3 casillas'

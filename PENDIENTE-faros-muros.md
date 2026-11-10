@@ -45,6 +45,14 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: muros transitables y faro a 6 (1.0.175.0, 10/11/2026)
+- Informe del usuario sobre la 1.0.174.0: los ejércitos no entraban a ningún muro y Raze «no hace nada».
+- `po_pf`: el dueño y sus aliados pasan y se alojan en un bloque de muro con o sin puerta; el enemigo no (salvo
+  como destino de ataque, wl_war). prueba_obras actualizada (dueño y aliado sin puerta: pasa; enemigo: cerrado).
+- Faro: DN_FAGUA = 6 (luz sobre el mar), FR_TAB hasta 7; prueba_dianoche OK.
+- Raze: no reproducido. La cadena completa (wl_find, wl_razelk, diálogo 0x4951b0, botón código 0x7000, paquete
+  0x18d, wl_apply, ob_del) funciona en emulación. Prueba en el juego con los pasos exactos: TAREAS 155.
+
 ## Hecho: ataque al muro, pasos 1 y 2 (1.0.174.0, 10/11/2026)
 - `po_pf`: un bloque en pie de un bando en guerra con el que mueve (`wl_war`: OB_MURO, +7 < WV_MAX = 24, DIPLO = 2)
   puede ser destino del camino; no se atraviesa.

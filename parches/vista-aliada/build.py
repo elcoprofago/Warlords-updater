@@ -13236,8 +13236,8 @@ pf2_out:
 # armada). Las tumbas y las trampas gastadas no cuentan. Excepción: la ruta expresa de un humano (0x536c12 = -1) a esa
 # misma casilla (el destino del camino, [0x5878d4] / [0x5878d8]) sí llega, y cae. La computadora no tiene esa
 # excepción: nunca entra en uno que ve, tampoco por el ítem que dejó un caído. Lo usan también el mapa de distancias
-# de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Un muro de piedra (OB_MURO) sin camino es intransitable para
-# todos; con camino (puerta) pasan solo el dueño y sus aliados (fogally). Excepción: como destino del camino, un bloque
+# de la IA (0x497750 -> 0x4a53b0) y el camino del humano. Por un bloque de muro de piedra (OB_MURO), con puerta o
+# sin ella, pasan y se alojan solo el dueño y sus aliados (fogally; pedido del 10/11/2026). Excepción: como destino del camino, un bloque
 # en pie de un bando en guerra con el que mueve (wl_war): se llega para atacarlo (wv_step). Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
 # reemplazado (0x4a5d34..0x4a5d40).
 po_pf = place('po_pf', f'''
@@ -13248,14 +13248,6 @@ po_pf = place('po_pf', f'''
     jz ppf_nw
     cmp byte ptr [eax + 4], {OB_MURO}
     jne ppf_nw
-    movsx eax, di
-    movsx edx, bx
-    call {br_tile:#x}
-    test byte ptr [eax + 3], 7
-    jz ppf_wd
-    movsx eax, di
-    movsx edx, bx
-    call {ob_at:#x}
     movzx ecx, byte ptr [eax + 6]
     movsx edx, word ptr [0x58715c]
     cmp ecx, edx
@@ -18451,8 +18443,8 @@ ds_out:
 # Faros (pedido del 10/11/2026; ver fr_stamp) y torres de vigía, recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
 # Faro (cambio del 10/11/2026): la luz se proyecta hacia el mar. Degradé de DN_FAGUA casillas sobre agua (aimed &
 # 0x80) y DN_FTIERRA sobre tierra, con la distancia de las ciudades (max + min // 2); niveles en fr_tab.
-DN_FAGUA, DN_FTIERRA = 5, 1
-FR_TAB = bytes([1, 2, 3, 4, 5, 7])
+DN_FAGUA, DN_FTIERRA = 6, 1          # 6 sobre agua: pedido del 10/11/2026 (antes 5)
+FR_TAB = bytes([1, 2, 3, 4, 5, 6, 7])
 assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
 fr_tab = place_data('fr_tab', FR_TAB)
 fr_var = place_data('fr_var', bytes(8))        # x, y del faro
