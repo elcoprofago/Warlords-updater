@@ -11694,10 +11694,7 @@ for _e in (True, False):   # empalizada (capas 2..10), muro (11..19)
     od_capas += [obras_img.muro(_rl, _od_color, po_pal, d, _e, obras_img.cuerpos_muro(_e, d)) for d in [None] + list(range(8))]
 def _od_arco(p):
     a = obras_img.muro(_rl, _od_color, po_pal, None, False, obras_img.cuerpos_muro(False, None), p)
-    b = od_capas[OD_BASE[OB_MURO]]
-    m = _I.new('P', a.size, 11); m.putpalette(po_pal)
-    m.putdata([x if x != y else 11 for x, y in zip(a.getdata(), b.getdata())])
-    return m
+    return a   # la torre entera, encima de los tramos S, SE y SO: así el arco no corta sus ladrillos (10/11/2026)
 od_capas += [_od_arco(p) for p in ('cerrada', 'abierta')]
 assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))

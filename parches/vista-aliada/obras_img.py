@@ -56,8 +56,9 @@ class Lienzo:
         for (gx, gy), h in alto.items():
             for s in range(0, h + 1, 1):
                 q = (round(gx + s * 0.55), round(gy + s * 0.22))
-                if trama and q[0] % 2 and q[1] % 2: continue
-                if q not in self.cuerpo and q not in prohibido: self.px[q] = (16, 14, 10)
+                c = (16, 14, 10)
+                if trama and (q[0] + q[1]) % 2: c = (40, 46, 20)   # damero negro y verde oscuro: sin huecos (10/11/2026: la trama de 3 de 4 se veía como rejilla)
+                if q not in self.cuerpo and q not in prohibido: self.px[q] = c
 
     def imagen(self, pal):
         im = Image.new('P', (144, 144), 11); im.putpalette(pal)
@@ -361,7 +362,7 @@ def _arco(dx, z, puerta):
 
 def muro(ruina, color, pal, d, empal, prohibido, puerta=None):
     lz = Lienzo(ruina, color)
-    if puerta: _muro_piedra(lz, None, True, prohibido, puerta)
+    if puerta: _muro_piedra(lz, None, False, prohibido, puerta)   # la torre entera, sin sombra (la pone la capa base)
     else: _muro_en(lz, d, empal, prohibido=prohibido)
     return lz.imagen(pal)
 

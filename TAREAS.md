@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 148).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 149).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **148.** Sombra y puerta del muro de piedra (vista-aliada 1.0.166.0, 10/11/2026). En `C:\Warlords3`, actualizar el parche: (a) la sombra del muro debe verse pareja y oscura, sin rejilla; (b) en la puerta sobre un camino, los ladrillos a los dos lados del arco deben seguir sin corte, también cuando el muro sigue en diagonal. Anotar lo que se vea mal.
 - [ ] **147.** Muro de piedra, puerta y menú de construir (vista-aliada 1.0.165.0, 9/11/2026). En `C:\Warlords3`, actualizar el parche y jugar con DarklordAV.exe: (a) construir un muro de piedra y mirar que sea gris amarronado, dos hileras más bajo, con algún ladrillo más oscuro y la sombra más oscura; (b) construir un muro que cruce un camino: esa casilla debe mostrar un arco con portón de madera cerrado; mover un grupo a esa casilla: el portón se ve abierto mientras el grupo está ahí y se cierra al irse; (c) abrir el menú Build: los renglones deben verse juntos y centrados, como en el menú de la ciudad. Anotar lo que se vea mal.
 - [ ] **146.** Colocar obras con vista previa (vista-aliada 1.0.164.0, 9/11/2026). En `C:\Warlords3`, actualizar el
   parche y elegir un grupo con constructor. Botón de la torrecita → **Road**, **Bridge**, **Watchtower**,
