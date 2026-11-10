@@ -45,6 +45,15 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: Raze desde la barra e informe de la torre (1.0.176.0, 10/11/2026)
+- Causa de «Raze encendido que no hace nada» (usuario: no aparecía ninguna ventana): el botón Raze de las dos barras
+  del grupo (0x4205c1, 0x41c98c) llamaba a br_razelk (sitios y puentes), no a wl_razelk. Ahora las cuatro entradas
+  (barras, menú, tecla) usan wl_razelk. Prueba: prueba_obras.py.
+- Faro a 6: confirmado por el usuario en el juego.
+- `ui_tower` (0x45e77b, caso de la fuerza violeta del informe 0x45e580): +1 en torre o faro para quien no es héroe,
+  como bridgeab, siempre (no solo en batalla). Prueba: prueba_informe.py. En batalla el +1 sigue siendo solo del
+  defensor (bridgeab).
+
 ## Hecho: muros transitables y faro a 6 (1.0.175.0, 10/11/2026)
 - Informe del usuario sobre la 1.0.174.0: los ejércitos no entraban a ningún muro y Raze «no hace nada».
 - `po_pf`: el dueño y sus aliados pasan y se alojan en un bloque de muro con o sin puerta; el enemigo no (salvo

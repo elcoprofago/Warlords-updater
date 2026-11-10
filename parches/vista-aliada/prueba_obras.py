@@ -188,7 +188,16 @@ _cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 def llamadas(va, n=400):
     return [int(i.op_str, 16) for i in _cs.disasm(img[va - BASE:va - BASE + n], va) if i.mnemonic == 'call' and i.op_str.startswith('0x')]
 WL_RAZELK = dest(0x44c2d7)
-BR_RAZELK = dest(0x4205c1)
+def _calls(va, n):
+    r, k = [], va - BASE
+    while len(r) < n:
+        if img[k] == 0xe8: r.append(BASE + k + 5 + struct.unpack_from('<i', img, k + 1)[0]); k += 5
+        else: k += 1
+    return r
+BR_RAZELK = _calls(WL_RAZELK, 3)[2]     # 0x440b30, wl_find, br_razelk
+assert BR_RAZELK != WL_RAZELK
+print('-- botones de las barras (0x4205c1, 0x41c98c): también wl_razelk')
+ver('las dos barras, el menú y la tecla llaman a wl_razelk', {dest(v) for v in (0x4205c1, 0x41c98c, 0x4b05d1)}, {WL_RAZELK})
 BR_RAZEAPPLY = dest(0x4d5e30)
 _j = list(_cs.disasm(img[BR_RAZEAPPLY - BASE:BR_RAZEAPPLY - BASE + 16], BR_RAZEAPPLY))[1]
 assert _j.mnemonic == 'jge'

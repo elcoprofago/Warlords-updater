@@ -4411,8 +4411,8 @@ wf_out:
     pop ebx
     ret
 ''')
-# wl_razelk(x, y) cdecl, en lugar de br_razelk en el menú (0x4b05d1) y la tecla (0x44c2d7) del jugador; la IA sigue con
-# br_razelk. Sitio en la casilla; si no, el siguiente bloque de muro propio; al dar la vuelta, el puente (si hay).
+# wl_razelk(x, y) cdecl, en lugar de 0x440b30 en el menú (0x4b05d1), la tecla (0x44c2d7) y los botones de las barras
+# (0x4205c1, 0x41c98c) del jugador; la IA sigue con br_razelk. Sitio en la casilla; si no, el siguiente bloque de muro propio; al dar la vuelta, el puente (si hay).
 wl_razelk = place('wl_razelk', f'''
     push dword ptr [esp + 8]
     push dword ptr [esp + 8]
@@ -9906,6 +9906,30 @@ bab_out:
     pop edx
     pop ecx
     jmp 0x467d1f
+''')
+
+# Informe de la unidad (diálogo de 0x45e580, caso de la fuerza violeta en 0x45e771: muestra la fuerza con bonos de
+# 0x46a1e0 si difiere de la propia): suma el +1 de la torre o el faro (misma condición que bridgeab: la casilla tiene
+# una obra que no es muro y la unidad no es héroe), esté o no en batalla (pedido del 10/11/2026). ecx = ejército * 7.
+ui_tower = place('ui_tower', f'''
+    movsx dx, byte ptr [esp + 7]
+    pushad
+    lea edi, [ecx*4 + 0x54fe52]
+    mov al, byte ptr [edi + 0xc]
+    and al, 0x1f
+    cmp al, 0x10
+    je uit_out
+    movsx eax, word ptr [edi]
+    movsx edx, word ptr [edi + 2]
+    call {ob_at:#x}
+    test eax, eax
+    jz uit_out
+    cmp byte ptr [eax + 4], {OB_MURO}
+    je uit_out
+    inc word ptr [esp + 0x14]
+uit_out:
+    popad
+    jmp 0x45e781
 ''')
 
 # ---------------------------------------------------------------- Botones de Votación y Sorteo
@@ -19628,9 +19652,9 @@ for va in CAM_SITES:
     patch(va, asm('call 0x4dd530', va), asm(f'call {cam_blit3:#x}', va))
 patch(0x414e1a, asm('shr bx, 5; mov ecx, dword ptr [esp + 0x10]', 0x414e1a), asm(f'jmp {cam_rep:#x}', 0x414e1a) + bytes([0x90]) * 3)
 # Puentes: derribar y reconstruir (ver br_* arriba).
-for va in (0x4205c1, 0x41c98c):
-    patch(va, asm('call 0x440b30', va), asm(f'call {br_razelk:#x}', va))
-for va in (0x44c2d7, 0x4b05d1):   # jugador: también muros propios (wl_razelk)
+# Jugador: también muros propios (wl_razelk), en el menú, la tecla y el botón de las dos barras del grupo (0x4205c1,
+# 0x41c98c; con br_razelk el botón se encendía sobre un muro pero no hacía nada: informe del 10/11/2026).
+for va in (0x44c2d7, 0x4b05d1, 0x4205c1, 0x41c98c):
     patch(va, asm('call 0x440b30', va), asm(f'call {wl_razelk:#x}', va))
 for va in (0x42053f, 0x41caab):
     patch(va, asm('call 0x440b30', va), asm(f'call {br_rebuildlk:#x}', va))
@@ -19716,6 +19740,7 @@ patch(0x4b6a22, asm('ja 0x4b85bb', 0x4b6a22), asm(f'ja {pp_recv:#x}', 0x4b6a22))
 # Construir trampas (tr_*)
 patch(0x4affc2, asm('mov ecx, 0x588bd0', 0x4affc2), asm(f'jmp {tr_init:#x}', 0x4affc2))
 patch(0x4b0450, asm('mov ecx, 0x588bd0', 0x4b0450), asm(f'jmp {tr_hover:#x}', 0x4b0450))
+patch(0x45e77b, asm('movsx dx, byte ptr [esp + 7]', 0x45e77b), asm(f'jmp {ui_tower:#x}', 0x45e77b) + bytes([0x90]))
 patch(0x4b0487, asm('sub eax, 0xb; cmp eax, 0xb; ja 0x4b0496', 0x4b0487),
       asm(f'jmp {tr_click:#x}', 0x4b0487))
 patch(0x4b6236, asm('call 0x4b9ce0', 0x4b6236), asm(f'call {tr_send:#x}', 0x4b6236))
