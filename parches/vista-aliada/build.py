@@ -4347,10 +4347,13 @@ wl_vars = place_data('wl_vars', bytes(8))
 WL_NEXT, WL_LX, WL_LY = wl_vars, wl_vars + 2, wl_vars + 4
 _wl_dirs = ['to the north-west', 'to the north', 'to the north-east', 'to the west', 'here', 'to the east',
             'to the south-west', 'to the south', 'to the south-east']
-wl_txts = [place_data(f'wl_txt{i}', cstr_(f'the stone wall {d}')) for i, d in enumerate(_wl_dirs)]
-wl_txttab = place_data('wl_txttab', struct.pack('<9I', *wl_txts))
+# Torres de vigía y faros también (pedido del 10/11/2026): una tabla de 9 textos por tipo, OB_TORRE..OB_MURO.
+_wl_noms = {OB_TORRE: 'the watchtower', OB_FARO: 'the lighthouse', OB_EMPAL: 'the stone wall', OB_MURO: 'the stone wall'}
+assert (OB_TORRE, OB_FARO, OB_EMPAL, OB_MURO) == (4, 5, 6, 7)
+wl_txts = [place_data(f'wl_txt{t}_{i}', cstr_(f'{_wl_noms[t]} {d}')) for t in range(4, 8) for i, d in enumerate(_wl_dirs)]
+wl_txttab = place_data('wl_txttab', struct.pack('<36I', *wl_txts))
 # wl_find: eax = x, edx = y del líder, ecx = índice desde donde buscar -> eax = índice de la primera obra (desde ecx,
-# dando la vuelta) que es muro o empalizada de [0x537ce8] en esa casilla o una vecina, o -1. Preserva el resto.
+# dando la vuelta) que es torre de vigía, faro, muro o empalizada de [0x537ce8] en esa casilla o una vecina, o -1. Preserva el resto.
 wl_find = place('wl_find', f'''
     push ebx
     push ecx
@@ -4373,7 +4376,7 @@ wf_l:
     jae wf_none
     lea eax, [ecx*8 + {OB_TAB:#x}]
     mov dl, byte ptr [eax + 4]
-    cmp dl, {OB_EMPAL}
+    cmp dl, {OB_TORRE}
     jb wf_n
     cmp dl, {OB_MURO}
     ja wf_n
@@ -4465,6 +4468,9 @@ wl_text = place('wl_text', f'''
     push edx
     sub eax, {WL_CODE:#x}
     lea ecx, [eax*8 + {OB_TAB:#x}]
+    movzx eax, byte ptr [ecx + 4]
+    lea eax, [eax*8 + eax - {9 * OB_TORRE}]
+    push eax
     movsx eax, word ptr [ecx]
     movsx edx, word ptr [{WL_LX:#x}]
     sub eax, edx
@@ -4482,6 +4488,8 @@ wt_x:
     mov edx, 1
 wt_y:
     lea edx, [edx + edx*2]
+    add eax, edx
+    pop edx
     add eax, edx
     mov eax, dword ptr [eax*4 + {wl_txttab:#x}]
     pop edx
@@ -4561,13 +4569,6 @@ obn_x:
     jz obn_nx
     cmp byte ptr [eax + 4], {OB_MURO}
     jne obn_nx
-    lea eax, [esi + ebp]
-    lea edx, [edi + ebx]
-    call {br_tile:#x}
-    test eax, eax
-    jz obn_nx
-    test byte ptr [eax + 3], 7
-    jz obn_nx
     call {REDRAW:#x}
     jmp obn_out
 obn_nx:
@@ -6073,7 +6074,7 @@ wl_apply = place('wl_apply', f'''
     jae wa_out
     lea edi, [eax*8 + {OB_TAB:#x}]
     mov dl, byte ptr [edi + 4]
-    cmp dl, {OB_EMPAL}
+    cmp dl, {OB_TORRE}
     jb wa_out
     cmp dl, {OB_MURO}
     ja wa_out
@@ -12448,12 +12449,6 @@ od_dg = place('od_dg', f'''
     push eax
     cmp byte ptr [ebx + 4], {OB_MURO}
     jne odd_no
-    call {br_tile:#x}
-    test eax, eax
-    jz odd_no
-    test byte ptr [eax + 3], 7
-    jz odd_no
-    mov eax, dword ptr [esp]
     call {ob_wmask:#x}
     mov ecx, eax
     mov eax, 1
@@ -12576,7 +12571,7 @@ prd_out:
 # píxeles en que la torre con puerta difiere de la torre común); ob_draw las pinta al final, después de todas las
 # obras de las 9 vecinas, porque cada tramo de muro repinta las dos torres que une y taparía el arco.
 # od_gate (pedido del 9/11/2026): ebx = registro de una obra, eax = x, edx = y -> [od_vars + 4] = capa del centro: si
-# es un muro de piedra sobre un camino (puerta), OD_PUERTA con el portón cerrado, u OD_PUERTA + 1 abierto mientras haya
+# es un muro de piedra (todo bloque es puerta desde el 10/11/2026: se atraviesa con o sin camino), OD_PUERTA con el portón cerrado, u OD_PUERTA + 1 abierto mientras haya
 # un ejército vivo en la casilla (0x54fe50 + i * 0x1c, x en +2, y en +4, vivo si +0x13 & 0x40); si no, 0 (la base).
 # El juego redibuja la casilla al entrar o salir un ejército, así el portón se abre y se cierra a su paso. Preserva todo.
 od_gate = place('od_gate', f'''
@@ -12586,11 +12581,6 @@ od_gate = place('od_gate', f'''
     jne odg_out
     mov esi, eax
     mov edi, edx
-    call {br_tile:#x}
-    test eax, eax
-    jz odg_out
-    test byte ptr [eax + 3], 7
-    jz odg_out
     mov byte ptr [{od_vars + 4:#x}], {OD_PUERTA}
     mov eax, esi
     mov edx, edi

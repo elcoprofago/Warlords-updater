@@ -45,6 +45,15 @@ Pedido completo:
   bd_apply, código por red como wl_apply). Se programa después del ataque (sin daño no hay qué reparar ni cómo
   probarlo en el juego); la IA: que repare sus muros si le alcanza el oro (decidir junto con el ataque).
 
+## Hecho: puerta en todo bloque y Raze de torres y faros (1.0.177.0, 10/11/2026)
+- Informe del usuario: «desaparecieron las puertas y las banderitas». No faltaba nada: od_gate, od_dg y ob_near
+  dibujaban la puerta solo sobre un camino, y en build_02.SAV ningún bloque de muro estaba sobre camino. Como desde
+  la 1.0.175 todo bloque se atraviesa, ahora todo bloque de muro de piedra es puerta (arco, portón y banderas), con
+  o sin camino. Los tramos diagonales llevan arco en cada bloque (od_dg), sin torre. Prueba: prueba_obras.py.
+- Raze de torre de vigía y faro propios: wl_find y wl_apply aceptan OB_TORRE..OB_MURO; wl_text tiene 9 textos por
+  tipo («the watchtower …», «the lighthouse …»). Pruebas: prueba_obras.py; prueba_puentes.py, que había quedado
+  vieja desde la 1.0.176.
+
 ## Hecho: Raze desde la barra e informe de la torre (1.0.176.0, 10/11/2026)
 - Causa de «Raze encendido que no hace nada» (usuario: no aparecía ninguna ventana): el botón Raze de las dos barras
   del grupo (0x4205c1, 0x41c98c) llamaba a br_razelk (sitios y puentes), no a wl_razelk. Ahora las cuatro entradas

@@ -23,9 +23,11 @@ ENEMY1, ENEMY2 = cstr_va('Enemies hold the bridge!'), cstr_va('Attack them first
 def call_target(va):
     assert img[va - BASE] == 0xe8
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
-RAZELK, REBUILDLK = call_target(0x4205c1), call_target(0x42053f)
-WL_RAZELK = call_target(0x44c2d7)   # jugador: muros propios primero (wl_razelk), después el puente con br_razelk
-assert call_target(0x41c98c) == RAZELK and call_target(0x4b05d1) == WL_RAZELK and any(i.mnemonic == 'call' and i.op_str == hex(RAZELK) for i in capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32).disasm(img[WL_RAZELK - BASE:WL_RAZELK - BASE + 0x80], WL_RAZELK)) and call_target(0x41caab) == REBUILDLK
+REBUILDLK = call_target(0x42053f)
+WL_RAZELK = call_target(0x44c2d7)   # jugador: muros y torres propios primero (wl_razelk), después el puente con br_razelk
+_c = [i for i in capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32).disasm(img[WL_RAZELK - BASE:WL_RAZELK - BASE + 0x80], WL_RAZELK) if i.mnemonic == 'call']
+RAZELK = int(_c[2].op_str, 16)     # 0x440b30, wl_find, br_razelk
+assert all(call_target(v) == WL_RAZELK for v in (0x4205c1, 0x41c98c, 0x4b05d1)) and call_target(0x41caab) == REBUILDLK
 
 W = H = 20; SHIFT = 8; WATER, LAND = 3, 2
 UI = 1                       # jugador de la interfaz, humano

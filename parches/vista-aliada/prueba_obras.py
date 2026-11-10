@@ -1,3 +1,4 @@
+import re
 # Prueba de juguete de torres y faros (ob_* de build.py, etapa A de PENDIENTE-construcciones.md), en unicorn.
 # Uso: python prueba_obras.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
 # Reusa el banco de prueba_caminos.py (mapa: x >= 30 agua; columna x = 10 camino). Prueba bd_pick (posiciones 6 y 7),
@@ -228,18 +229,46 @@ def razes(g, x, y, n):
 def tabla(g):
     n = struct.unpack('<I', g.mu.mem_read(OB_N, 4))[0]
     return [struct.unpack('<hhBBBB', bytes(g.mu.mem_read(OB_TAB + 8 * i, 8)))[:3] for i in range(n)]
-REC = [(5, 7, 7, 2), (6, 8, 7, 2), (20, 20, 7, 2), (4, 6, 6, 3), (5, 6, 4, 2)]   # torre (4) en (5, 6): no es muro
-ver('líder en (5, 7): rota entre los bloques propios al alcance (0, 1) y vuelve a empezar', razes(muros(REC), 5, 7, 4), [0, 1, 0, 1])
+REC = [(5, 7, 7, 2), (6, 8, 7, 2), (20, 20, 7, 2), (4, 6, 6, 3), (5, 6, 4, 2), (30, 30, 5, 2)]   # torre (4) en (5, 6); faro lejos
+ver('líder en (5, 7): rota entre las obras propias al alcance (muros 0, 1, torre 4) y vuelve a empezar', razes(muros(REC), 5, 7, 4), [0, 1, 4, 0])
+ver('faro propio: dentro', razes(muros(REC), 30, 30, 2), [5, 5])
+ver('faro propio: al lado', razes(muros(REC), 31, 29, 1), [5])
 ver('control: lejos (12, 12): nada', razes(muros(REC), 12, 12, 2), [-1, -1])
 ver('control: empalizada ajena (dueño 3) solo para el jugador 3', razes(muros(REC, yo=3), 5, 7, 2), [3, 3])
 def aplicar(g, idx, quien):
     g.correr(0x4d5e30, RET, struct.pack('<III', RET, 0x7000 + idx, quien))
     return tabla(g)
 ver('derribar el bloque 1 del jugador 2: se va y los de atrás corren', aplicar(muros(REC), 1, 2),
-    [(5, 7, 7), (20, 20, 7), (4, 6, 6), (5, 6, 4)])
+    [(5, 7, 7), (20, 20, 7), (4, 6, 6), (5, 6, 4), (30, 30, 5)])
 ver('control: el jugador 3 no derriba un muro del 2', aplicar(muros(REC), 1, 3), [r[:3] for r in REC])
-ver('control: la torre no se derriba como muro', aplicar(muros(REC), 4, 2), [r[:3] for r in REC])
+ver('la torre propia se derriba', aplicar(muros(REC), 4, 2), [r[:3] for r in REC[:4] + REC[5:]])
+ver('el faro propio se derriba', aplicar(muros(REC), 5, 2), [r[:3] for r in REC[:5]])
+ver('control: el jugador 3 no derriba la torre del 2', aplicar(muros(REC), 4, 3), [r[:3] for r in REC])
 ver('control: índice fuera de la tabla', aplicar(muros(REC), 9, 2), [r[:3] for r in REC])
 
+def texto(idx, lx, ly):
+    g = muros(REC); mu = g.mu
+    g.correr(WL_RAZELK, RET, struct.pack('<Iii', RET, lx, ly))
+    g.correr(WL_TEXT_VA, RET, struct.pack('<I', RET), [(UC_X86_REG_EAX, 0x7000 + idx)])
+    return bytes(mu.mem_read(g.mu.reg_read(UC_X86_REG_EAX), 40)).split(bytes(1))[0].decode()
+_k = img.index(bytes.fromhex('51522d00700000'), WL_RAZELK - BASE)   # push ecx; push edx; sub eax, WL_CODE
+assert _k < WL_RAZELK - BASE + 0x200
+WL_TEXT_VA = BASE + _k
+print('-- textos (wl_text)')
+ver('torre en (5, 6) desde (5, 7)', texto(4, 5, 7), 'the watchtower to the north')
+ver('faro en su casilla', texto(5, 30, 30), 'the lighthouse here')
+ver('muro en (6, 8) desde (5, 7)', texto(1, 5, 7), 'the stone wall to the south-east')
+print('-- puerta en todo bloque de muro (od_gate), con o sin camino')
+_pat = re.compile(re.escape(bytes.fromhex('60c605')) + b'(....)' + re.escape(bytes.fromhex('00807b0407')), re.S)
+_k = [m.start() for m in _pat.finditer(img)]
+assert len(_k) == 1, _k
+OD_GATE = BASE + _k[0]; OD_CAPA = struct.unpack_from('<I', img, _k[0] + 3)[0]
+def capa(tipo, mask_vecinos=()):
+    g = muros([(5, 7, tipo, 2)] + [(5 + dx, 7 + dy, 7, 2) for dx, dy in mask_vecinos]); mu = g.mu
+    mu.mem_write(0x54fe50, struct.pack('<h', 0))
+    g.correr(OD_GATE, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, OB_TAB), (UC_X86_REG_EAX, 5), (UC_X86_REG_EDX, 7)])
+    return mu.mem_read(OD_CAPA, 1)[0]
+ver('muro sin camino ni ejércitos: portón cerrado (20)', capa(7), 20)
+ver('control: torre de vigía: sin puerta (0)', capa(4), 0)
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
