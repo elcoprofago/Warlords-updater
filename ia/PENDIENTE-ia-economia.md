@@ -412,4 +412,25 @@ Al volver la tanda: (a) evento 35 por IA y tramo: cuántos grupos y ejércitos, 
 (c) a qué metas pasan (34 de la nueva: más Form, ruina, ciudad enemiga); (d) resultados contra la original
 (puesto, PV, ciudades) y deserciones. Si los grupos de huérfanos le quitan lugar al planificador (menos grupos
 de ataque), bajar OR_MAX.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.9".
+**Paso 4.9, medido (10/11/2026, tandas 150 y 151, 1.0.169.0 y 1.0.170.0, 19 partidas ok; 1 colgada en el turno 0).**
+Ahorro / ingreso (evento 29 x), tramos 1-10 / 11-20 / 21-30 y toda la partida:
+| | 13 huérfano | 1 Form | 3 neutral | 7 ciudad enemiga | ocioso (0+1+10+11+13) / techo |
+|---|---|---|---|---|---|
+| original | 0,4 / 3,7 / 11,6 % (n 1.985) | 0,03 % | 0,5 % | 0,6 % | 7,2 / 10,4 % |
+| nueva | 0,3 / 2,0 / 5,0 % (n 797) | 1,1 % (2,5 % en 21-30) | 2,1 % | 1,9 % | 4,8 / 11,2 % |
+(a) Evento 35: 263 grupos con 931 ejércitos en 1.795 turnos de la nueva (38 / 86 / 139 grupos por tramo); el tope
+OR_MAX se tocó en 9 turnos, todos en 21-30, y dejó 72 huérfanos sin grupo. (b) El 13 bajó de 8,3 % (tandas 148-149)
+a 2,8 %, menos de la mitad que la original. (c) Los huérfanos pasan a neutral, ciudad enemiga y Form: hacen lo
+esperado. (d) **Pero la nueva ahora pierde**: puesto 3,07 contra 2,64, PV 5,58 / 6,32, ciudades 4,09 / 5,01,
+primeros 8 / 12 (76 resultados por IA). Antes ganaba: tanda 147 2,73 / 3,32; tandas 148-149 2,50 / 3,21. Las dos
+tandas van en el mismo sentido (150: 3,21 / 2,48; 151: 2,96 / 2,81). Deserciones (evento 28, todas con oro 0):
+nueva 38 en 4 color-partida, original 16 en 2 (antes 17 / 3). Ejércitos vivos por tramo casi iguales (2,4 / 14 / 28
+contra 2,0 / 13 / 28,9); la nueva tiene más oro (262 / 281 / 226 contra 197 / 217 / 169) y menos ciudades al final
+(6,56 contra 7,53). Lectura: mover a los huérfanos no le da ciudades; o le quita lugares de grupo al planificador
+(que arma los de ataque) o los manda a pelear sueltos y los pierde. Los cambios de 1.0.163 a 1.0.170 son de obras y
+dibujo y valen para los dos bandos.
+Próximo paso (4.10): separar las dos lecturas. (1) Evento nuevo con los grupos que arma el planificador por turno
+(0x40d434 y escoltas de 0x4a66a0) y los que muere/disuelve, para ver si bajaron contra la tanda 148-149. (2) Bajar
+OR_MAX de 7 a 4 y, si el puesto no vuelve a ganar, limitar los huérfanos a la meta Form (volver a una ciudad, que es
+el ahorro buscado) en vez de dejar que el planificador los mande a atacar. Tanda 10 partidas, Scarpart y Kor.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.10".

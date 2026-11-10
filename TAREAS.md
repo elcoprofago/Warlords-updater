@@ -30,15 +30,6 @@ Sorteo están acá (tarea 18).
   (mejor con captura).
   Resultado:
 
-- [ ] **145.** IA: los ejércitos abandonados vuelven a jugar (9/11/2026)
-Desde la 1.0.162.0 la computadora en prueba (la nueva) vuelve a mover a los ejércitos que había dejado quietos
-fuera de las ciudades: al empezar su turno los junta y les da una tarea (atacar, explorar o volver a una ciudad).
-La original sigue igual. Es el primer cambio de juego de esta serie: hay que ver si gana más o menos.
-1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.162.0** o posterior.
-2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
-3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
-Resultado:
-
 - [x] **144.** Probar los arreglos del 9/11 (vista-aliada 1.0.161.0). En `C:\Warlords3`, actualizar el parche.
   (a) Clic derecho sobre un grupo: «Build Trap» vuelve a estar en el menú de órdenes, en el botón de antes.
   (b) Botón de la torrecita: la lista de construcciones ya no debe tener espacio libre grande debajo, y Trap ya no
@@ -148,6 +139,15 @@ humanos en esta PC** (turnos alternados). Va con el mismo parche que la tarea 26
 Resultado:
 
 # Hecho
+
+- [x] **145.** IA: los ejércitos abandonados vuelven a jugar (9/11/2026)
+Desde la 1.0.162.0 la computadora en prueba (la nueva) vuelve a mover a los ejércitos que había dejado quietos
+fuera de las ciudades: al empezar su turno los junta y les da una tarea (atacar, explorar o volver a una ciudad).
+La original sigue igual. Es el primer cambio de juego de esta serie: hay que ver si gana más o menos.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.162.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**. Una tanda alcanza.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+Resultado: tandas 150 y 151 (19 partidas completas). Hecho 10/11/2026: los ejércitos abandonados vuelven a moverse (los quietos bajaron a menos de la mitad), pero la computadora nueva pasó de ganarle a la original a perder (puesto 3,07 contra 2,64; 4,1 ciudades contra 5,0). Lo corrijo yo; ver ia\PENDIENTE-ia-economia.md, paso 4.9.
 
 - [x] **135.** IA: cuántos ejércitos quedan «huérfanos» fuera de las ciudades (9/11/2026)
 La 1.0.145.0 no cambia cómo juega la computadora: solo anota, de los ejércitos que la computadora dejó de mover,
