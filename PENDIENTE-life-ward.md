@@ -1,34 +1,39 @@
 # PENDIENTE: habilidad Life Ward (contra del Life Drain)
 
-Pedido del usuario (11/11/2026): una habilidad nueva, **Life Ward**, en dos versiones:
-**Life Ward** (de la unidad) y **Life Ward (grp)** (de todo el grupo). Tope +3.
-Cada punto anula un punto del Life Drain enemigo: devuelve solo lo que el drenaje quita,
-nunca suma golpes por encima de los propios.
+Pedido del usuario (11/11/2026): una habilidad nueva, **Life Ward**. Tope +3. Cada punto anula un punto del
+Life Drain enemigo: devuelve solo lo que el drenaje quita, nunca suma golpes por encima de los propios.
+
+## Diseño decidido por el usuario (11/11/2026, segunda indicación)
+
+- **Las unidades comunes no la llevan.** No hace falta agregarla al editor de unidades ni a las armas regulares.
+- La llevan **por defecto los edificios**, para el grupo que defiende: **muro +3** (en cada casilla del muro; se usa
+  la misma zona que los otros bonos del muro: sobre el bloque o a 1 casilla), **torre +2**, **faro +1**, **ciudad
+  +1, +2 o +3** según cómo están armadas sus defensas (el tamaño, +0xa4 del registro de ciudad: 1, 2 o 3).
+- Más adelante, quizás: alguna magia, poder de héroe o item que la dé. No pedido todavía.
+
+## Hecho (vista-aliada 1.0.198.0, 11/11/2026)
+
+- `wb_grp` (0x464df2, habilidades de grupo del defensor) carga el Life Ward en grp[+6] con `lw_max` (vale el mayor):
+  ciudad de la casilla (0x440be0, tamaño con tope 3; también para defensores neutrales), obra de la casilla
+  (torre LW_TORRE = 2, faro LW_FARO = 1) y muro propio cerca (LW_MURO = 3, junto con los bonos del muro).
+- `lw_hit_a` (0x469913) y `lw_hit_d` (0x4699fe): `hits += out[2|3] - drenaje` pasa a
+  `hits -= max(0, drenaje - ward)`. grp[+6] no lo cargaba nada antes, así que sin edificios todo queda igual.
+- Prueba: prueba_muroataque.py, secciones «Life Ward de los edificios» y «Life Ward en los golpes» (con controles).
+  Se corrigieron de paso 2 expectativas viejas de la sección del muro (Life Drain +1 desde la 1.0.197.0).
+- Prueba en el juego: TAREAS 169.
 
 ## Lo averiguado (en Darklord.exe)
 
-- Una unidad tiene **una sola habilidad**: código en +0xe6 y valor en +0xe8 del tipo de unidad
-  (registros de 0xfc bytes en 0x53c410, o en 0x568448 para héroes). Los códigos válidos van de 1 a 54:
-  `0x469083 dec edx; cmp edx,0x35; ja` → 55 y 56 están libres para Life Ward y Life Ward (grp).
-- Las habilidades de grupo se suman en 0x468440 (tabla de saltos 0x469634, índices 0x469684).
-  Life Drain = código 54 → grp[0x16], **tope del juego 3** (0x4694b0). Por eso un arma con
-  Life Drain +4 o +5 pelea con +3. Solo el bono del muro (que se suma después del tope) lo pasa.
-- grp[+6] es un bonus de golpes de grupo que nada usa hoy (solo se pone en cero, 0x46858f).
-  0x4696c0 lo copia a out[2] (atacante) / out[3] (defensor), y 0x4698b0 hace
-  `hits += out[2] - out[0xe]` (atacante, 0x469913) y `hits += out[3] - out[0xd]` (defensor, 0x4699fe),
-  con tope 1..4. **Es el lugar natural del Life Ward (grp)**: el código 56 carga grp[+6] (tope 3) y en
-  0x469913/0x4699fe se cambia por `hits -= max(0, drenaje - ward)`.
-- Life Ward de la unidad: la ficha de la unidad (0x467240, esi=[esp+0xb4], 0x24 bytes) usa sus 36 bytes;
-  no queda uno libre. Hay que guardar el valor en una tabla aparte por casilla de combate, o leer la
-  habilidad del tipo de unidad en el momento del cálculo (en 0x4698b0, buscando el tipo desde la entrada
-  de combate: falta averiguar dónde guarda la entrada el tipo/ejército).
+- Una unidad tiene **una sola habilidad**: código en +0xe6 y valor en +0xe8 del tipo de unidad. Los códigos
+  válidos en 0x469083 van de 1 a 54. **Ojo:** el Simulador de combate (simcombate\datos.py) nombra 55 Questing,
+  56 Mana Drain y 57 None, así que 55 y 56 **no** están libres como decía la versión anterior de esta nota.
+  Hoy no importa (no se usa un código nuevo); si algún día un héroe o item la da, habrá que elegir otro código.
+- Habilidades de grupo: 0x468440 (tabla de saltos 0x469634). Life Drain = código 54 → grp[0x16], tope 3.
+- 0x4696c0: out[2] = grp_atacante[6], out[3] = grp_defensor[6], out[0xe] = drenaje del defensor,
+  out[0xd] = drenaje del atacante.
 
 ## Falta
 
-1. Combate: grupo (grp[+6]) y unidad, con pruebas de juguete con control (prueba_muroataque.py como modelo).
-2. Nombres y descripción visibles: las habilidades se muestran con cadenas en Sagetext.tex / edtext.tex
-   ("Life Drain +%d|lf drn +%d|Life Drain|..."); averiguar cómo se indexan por código y agregar
-   "Life Ward +%d|lf wrd +%d|Life Ward|..." y la versión (grp), en el juego y en el editor (war3ed_av.exe).
-3. Que el editor de unidades deje elegir los códigos 55 y 56.
-4. Decidir con el usuario qué unidades/héroes/objetos la llevan (paquete ARMY).
-5. TAREAS con la prueba en el juego; versión nueva de vista-aliada.
+1. TAREAS 169 (prueba en el juego).
+2. Si el usuario lo pide: Life Ward por magia, poder de héroe o item (para el atacante, grp[+6] del atacante
+   ya lo respeta lw_hit_a).

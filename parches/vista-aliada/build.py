@@ -6580,6 +6580,15 @@ wbu_out:
     cmp cl, 1
     jmp 0x4679e9
 ''')
+LW_MURO, LW_TORRE, LW_FARO, LW_MAX = 3, 2, 1, 3
+# lw_max: [edi + 6] = max([edi + 6], al). Preserva todo.
+lw_max = place('lw_max', '''
+    cmp byte ptr [edi + 6], al
+    jae lwm_out
+    mov byte ptr [edi + 6], al
+lwm_out:
+    ret
+''')
 # wb_grp, en lugar de "call 0x468440" en 0x464df2 (habilidades de grupo del defensor; ebx = ficha, [ebx+1] defensor).
 wb_grp = place('wb_grp', f'''
     push dword ptr [esp + 0x14]
@@ -6590,19 +6599,87 @@ wb_grp = place('wb_grp', f'''
     call 0x468440
     add esp, 0x14
     pushad
+    mov edi, dword ptr [esp + 0x34]
+    movsx esi, word ptr [esp + 0x2c]
+    movsx ebp, word ptr [esp + 0x30]
+    push ebp
+    push esi
+    call 0x440be0
+    add esp, 8
+    movsx eax, ax
+    test eax, eax
+    js wbg_ob
+    imul eax, eax, 0xde
+    movzx eax, byte ptr [eax + 0x537ed0]
+    cmp eax, {LW_MAX}
+    jbe wbg_city
+    mov eax, {LW_MAX}
+wbg_city:
+    call {lw_max:#x}
+wbg_ob:
+    mov eax, esi
+    mov edx, ebp
+    call {ob_at:#x}
+    test eax, eax
+    jz wbg_wall
+    movzx ecx, byte ptr [eax + 4]
+    mov eax, {LW_TORRE}
+    cmp ecx, {OB_TORRE}
+    je wbg_tw
+    mov eax, {LW_FARO}
+    cmp ecx, {OB_FARO}
+    jne wbg_wall
+wbg_tw:
+    call {lw_max:#x}
+wbg_wall:
     movsx eax, byte ptr [ebx + 1]
     cmp eax, 8
     jae wbg_out
-    movsx ecx, word ptr [esp + 0x2c]
-    movsx edx, word ptr [esp + 0x30]
+    mov ecx, esi
+    mov edx, ebp
     call {wb_near:#x}
     jz wbg_out
-    mov edi, dword ptr [esp + 0x34]
     add byte ptr [edi + 4], {WB_FORT}
     add byte ptr [edi + 0x16], {WB_LD}
+    mov eax, {LW_MURO}
+    call {lw_max:#x}
 wbg_out:
     popad
     ret
+''')
+# ---- Life Ward (PENDIENTE-life-ward.md; diseño del usuario del 11/11/2026): cada punto anula un punto del Life Drain
+# enemigo, sin sumar golpes por encima de los propios. Por ahora solo lo dan los edificios al grupo defensor (wb_grp):
+# muro LW_MURO (sobre el bloque o a 1 casilla, como los otros bonos del muro), torre LW_TORRE, faro LW_FARO (la pila de
+# esa casilla) y ciudad su tamaño (+0xa4: 1, 2 o 3); vale el mayor, tope LW_MAX. Se guarda en grp[+6], un bonus de
+# golpes de grupo que el juego pone en cero (0x46858f) y que nada carga: 0x4696c0 lo copia a out[2] (atacante) y
+# out[3] (defensor). lw_hit_a / lw_hit_d cambian "hits += out[2|3] - drenaje" por "hits -= max(0, drenaje - ward)".
+lw_hit_a = place('lw_hit_a', '''
+    push ecx
+    movsx ecx, byte ptr [esi + 0xe]
+    movsx edx, byte ptr [esi + 2]
+    sub ecx, edx
+    jge lwa_go
+    xor ecx, ecx
+lwa_go:
+    mov dl, byte ptr [eax + 0x12]
+    sub dl, cl
+    mov byte ptr [eax + 0x12], dl
+    pop ecx
+    jmp 0x469922
+''')
+lw_hit_d = place('lw_hit_d', '''
+    push ecx
+    movsx ecx, byte ptr [esi + 0xd]
+    movsx edx, byte ptr [esi + 3]
+    sub ecx, edx
+    jge lwd_go
+    xor ecx, ecx
+lwd_go:
+    mov dl, byte ptr [eax + 0x132]
+    sub dl, cl
+    mov byte ptr [eax + 0x132], dl
+    pop ecx
+    jmp 0x469a16
 ''')
 # wv_stat, en 0x4660d1 (resultado 0x465c80, defensor muerto de la ranura edi): a un arquero virtual lo da de baja sin
 # estadísticas (0x4039a0) ni aviso (0x461a60).
@@ -20431,6 +20508,9 @@ patch(0x469f35, asm('call 0x464ac0', 0x469f35), asm(f'call {wv_pre:#x}', 0x469f3
 # Bonos del muro (wb_unit, wb_grp).
 patch(0x4679e3, bytes.fromhex('88461d80f901'), asm(f'jmp {wb_unit:#x}', 0x4679e3) + bytes([0x90]))
 patch(0x464df2, asm('call 0x468440', 0x464df2), asm(f'call {wb_grp:#x}', 0x464df2))
+# Life Ward (lw_hit_a, lw_hit_d).
+patch(0x469913, bytes.fromhex('8a50120256028850122a560e885012'), asm(f'jmp {lw_hit_a:#x}', 0x469913).ljust(15, bytes([0x90])))
+patch(0x4699fe, bytes.fromhex('8a90320100000256038890320100002a560d889032010000'), asm(f'jmp {lw_hit_d:#x}', 0x4699fe).ljust(24, bytes([0x90])))
 patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
 patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))

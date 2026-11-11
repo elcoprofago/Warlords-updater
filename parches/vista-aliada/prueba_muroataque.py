@@ -233,8 +233,12 @@ ver('control: muro de otro bando: sin bonos', unidad(dueño_ej=5)[:2], (10, 3))
 ver('control: bloque caído (24): sin bonos', unidad(muertos=24)[:2], (10, 3))
 ver('23 muertos, en pie: con bonos', unidad(muertos=23)[:2], (13, 6))
 ver('control: torre de vigía (tipo 4): sin bonos', unidad(tipo=4)[:2], (10, 3))
-def grupo(defensor=2, x=5, y=7, **kw):
+def grupo(defensor=2, x=5, y=7, ciudad=None, **kw):
     g = juego(**kw); mu = g.mu
+    if ciudad is not None:   # (x, y, tamaño): una ciudad de 2 x 2 casillas
+        mu.mem_write(0x537e2a, struct.pack('<h', 1))
+        rec = bytearray(0xde); struct.pack_into('<hh', rec, 0, ciudad[0], ciudad[1]); rec[0xa4] = ciudad[2]; rec[0xa5] = 2
+        mu.mem_write(0x537e2c, bytes(rec))
     FI, GR = 0x150000, 0x151000
     mu.mem_write(FI, bytes([5, defensor])); mu.mem_write(GR, bytes(0x17))
     llam = []
@@ -244,14 +248,51 @@ def grupo(defensor=2, x=5, y=7, **kw):
     mu.reg_write(UC_X86_REG_EBX, FI); mu.reg_write(UC_X86_REG_EDI, 0x1234)
     g.correr(WB_GRP, RET, struct.pack('<IIIIII', RET, 3, 0x152000, x, y, GR))
     gr = mu.mem_read(GR, 0x17)
-    return gr[4], gr[0x16], llam, mu.reg_read(UC_X86_REG_EBX) == FI and mu.reg_read(UC_X86_REG_EDI) == 0x1234
-ver('defensor del muro: Fortify 2+3, Life Drain 1+3; llama a 0x468440 con los mismos argumentos',
-    grupo(), (5, 4, [(3, 0x152000, 5, 7, 0x151000)], True))
-ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2], (5, 4))
-ver('control: a 2 casillas: sin bonos', grupo(x=5, y=9)[:2], (2, 1))
-ver('control: defensor de otro bando: sin bonos', grupo(defensor=5)[:2], (2, 1))
-ver('control: bloque caído: sin bonos', grupo(muertos=24)[:2], (2, 1))
+    return gr[4], gr[0x16], llam, mu.reg_read(UC_X86_REG_EBX) == FI and mu.reg_read(UC_X86_REG_EDI) == 0x1234, gr[6]
+ver('defensor del muro: Fortify 2+3, Life Drain 1+1, Life Ward 3; llama a 0x468440 con los mismos argumentos',
+    grupo(), (5, 2, [(3, 0x152000, 5, 7, 0x151000)], True, 3))
+ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2] + grupo(x=4, y=6)[4:], (5, 2, 3))
+ver('control: a 2 casillas: sin bonos ni Life Ward', grupo(x=5, y=9)[:2] + grupo(x=5, y=9)[4:], (2, 1, 0))
+ver('control: defensor de otro bando: sin bonos', grupo(defensor=5)[:2] + grupo(defensor=5)[4:], (2, 1, 0))
+ver('control: bloque caído: sin bonos', grupo(muertos=24)[:2] + grupo(muertos=24)[4:], (2, 1, 0))
 ver('control: defensor neutral (8)', grupo(defensor=8)[:2], (2, 1))
+
+print('-- Life Ward de los edificios (11/11/2026): muro 3, torre 2, faro 1, ciudad su tamaño; vale el mayor')
+lw = lambda **kw: grupo(**kw)[4]
+ver('torre de vigía: 2, sin bonos del muro', grupo(tipo=4)[:2] + grupo(tipo=4)[4:], (2, 1, 2))
+ver('faro: 1', lw(tipo=5), 1)
+ver('control: a 1 casilla de la torre: 0', lw(tipo=4, x=6, y=7), 0)
+for t in (1, 2, 3):
+    ver(f'ciudad de tamaño {t} (sin obra cerca): {t}', lw(x=20, y=20, ciudad=(20, 20, t)), t)
+ver('ciudad de tamaño 2, casilla (21, 21) de las 4: 2', lw(x=21, y=21, ciudad=(20, 20, 2)), 2)
+ver('control: ciudad arrasada (tamaño 0): 0', lw(x=20, y=20, ciudad=(20, 20, 0)), 0)
+ver('control: fuera de la ciudad: 0', lw(x=22, y=20, ciudad=(20, 20, 3)), 0)
+ver('ciudad 1 con torre en la casilla: 2 (el mayor)', lw(tipo=4, ciudad=(5, 7, 1)), 2)
+ver('ciudad 3 con faro: 3', lw(tipo=5, ciudad=(5, 7, 3)), 3)
+ver('defensor neutral en una ciudad 2: 2', lw(defensor=8, x=20, y=20, ciudad=(20, 20, 2)), 2)
+
+print('-- Life Ward en los golpes (0x4698b0): hits -= max(0, drenaje enemigo - ward propio)')
+LW_A, LW_D = dest(0x469913), dest(0x4699fe)
+def golpes(lado, hits, drenaje, ward):
+    g = Juego(); mu = g.mu
+    U, O = 0x150000, 0x151000
+    mu.mem_write(U, bytes(0x200)); mu.mem_write(O, bytes(0x20))
+    if lado == 'a':
+        mu.mem_write(U + 0x12, bytes([hits])); mu.mem_write(O + 2, bytes([ward])); mu.mem_write(O + 0xe, bytes([drenaje]))
+        va, fin, off = LW_A, 0x469922, 0x12
+    else:
+        mu.mem_write(U + 0x132, bytes([hits])); mu.mem_write(O + 3, bytes([ward])); mu.mem_write(O + 0xd, bytes([drenaje]))
+        va, fin, off = LW_D, 0x469a16, 0x132
+    mu.reg_write(UC_X86_REG_EAX, U); mu.reg_write(UC_X86_REG_ESI, O); mu.reg_write(UC_X86_REG_ECX, 0x4321)
+    g.correr(va, fin, b'')
+    return (mu.reg_read(UC_X86_REG_EDX) & 0xff, mu.mem_read(U + off, 1)[0], mu.reg_read(UC_X86_REG_ECX))
+for lado in 'ad':
+    q = 'atacante' if lado == 'a' else 'defensor'
+    ver(f'{q}: 2 hits, drenaje 1, ward 0: 1', golpes(lado, 2, 1, 0), (1, 1, 0x4321))
+    ver(f'{q}: 2 hits, drenaje 3, ward 1: 0 (el tope 1 lo pone después el juego)', golpes(lado, 2, 3, 1)[:2], (0, 0))
+    ver(f'{q}: 3 hits, drenaje 2, ward 3: 3 (no suma golpes)', golpes(lado, 3, 2, 3)[:2], (3, 3))
+    ver(f'{q}: control: sin drenaje ni ward: igual', golpes(lado, 2, 0, 0)[:2], (2, 2))
+    ver(f'{q}: control: ward sin drenaje: igual', golpes(lado, 2, 0, 3)[:2], (2, 2))
 
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
