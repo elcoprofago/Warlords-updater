@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.23.0'
+VERSION = '1.0.24.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -581,9 +581,8 @@ class App(tk.Tk):
         self.sitio = tk.StringVar(value='nada')
         for i, (t, k, _, _) in enumerate(SITIOS):
             ttk.Radiobutton(f, text=t, value=k, variable=self.sitio, command=self.ver_defensas).grid(row=2 + i, column=0, columnspan=2, sticky='w')
-        self.noche = tk.BooleanVar(); ttk.Checkbutton(f, text='Noche (opción Day/Night)', variable=self.noche).grid(row=8, column=0, columnspan=2, sticky='w')
-        ttk.Label(f, text='Defensas').grid(row=9, column=0, columnspan=2, sticky='w')
-        self.defensas = ttk.Combobox(f, width=34, state='readonly'); self.defensas.grid(row=10, column=0, columnspan=2, sticky='w')
+        ttk.Label(f, text='Defensas').grid(row=8, column=0, columnspan=2, sticky='w')
+        self.defensas = ttk.Combobox(f, width=34, state='readonly'); self.defensas.grid(row=9, column=0, columnspan=2, sticky='w')
         self.ver_defensas()
 
     def ver_defensas(self, texto=None):
@@ -607,6 +606,8 @@ class App(tk.Tk):
         self.resultados = tk.StringVar(value=c.get('resultados', 'todos'))
         ttk.Radiobutton(f, text='Sobrevivientes y muertos', value='todos', variable=self.resultados).grid(row=4, column=0, columnspan=2, sticky='w')
         ttk.Radiobutton(f, text='Solo sobrevivientes', value='vivos', variable=self.resultados).grid(row=5, column=0, columnspan=2, sticky='w')
+        # de noche algunas armas pelean más fuerte: va al escenario (campo['noche']) además de verse
+        self.noche = tk.BooleanVar(); ttk.Checkbutton(f, text='Noche (opción Day/Night)', variable=self.noche).grid(row=6, column=0, columnspan=2, sticky='w')
 
     def configurar(self):
         """Carpeta del juego (de ahí salen armas, héroes, ítems, hechizos, imágenes y sonidos). El motor además necesita
