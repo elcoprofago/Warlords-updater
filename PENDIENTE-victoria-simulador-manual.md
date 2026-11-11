@@ -29,9 +29,6 @@ Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y m
 ## Parte C: Manual del juego — HECHA (vista-aliada 1.0.201.0, TAREAS 173)
 - Hecho: capítulo XVII «Obras y defensas» al final de manual\manual.html (al final para no renumerar las
   referencias «cap. N»), más filas en índice, novedades, referencia rápida y estado (apéndice C).
-- Después de A y B: actualizar Manual-Era-de-Alianzas.pdf (buscar su fuente en el repo) con: bonos del muro, Life
-  Ward de edificios, ventana de victoria solo para el atacante. Nueva versión de vista-aliada (el manual va en el
-  parche) y publicar.
 
 ## Para retomar
 Frase: «Seguimos con PENDIENTE-victoria-simulador-manual.md, parte C».
