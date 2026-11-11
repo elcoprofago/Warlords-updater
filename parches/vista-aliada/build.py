@@ -6507,7 +6507,7 @@ wi_no:
 # 0x464df2): Fortify en el grupo +4 (fuerza +N a cada unidad, menos el Siege del atacante; 0x4696c0) y Life Drain en
 # +0x16 (cada unidad atacante pierde N hits, mínimo 1; 0x4698b0). Vale también para el cálculo de probabilidades
 # (0x464a30 usa la misma 0x464ac0).
-WB_MIS, WB_ACID, WB_FORT, WB_LD = 3, 3, 5, 3
+WB_MIS, WB_ACID, WB_FORT, WB_LD = 3, 3, 3, 3
 # wb_near: eax = bando, ecx = x, edx = y -> eax != 0 (ZF apagado) si en (x, y) o en una vecina hay un bloque de muro de
 # piedra en pie de ese bando. Preserva el resto.
 wb_near = place('wb_near', f'''

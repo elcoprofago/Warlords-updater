@@ -27,7 +27,7 @@ Pedido completo:
   (vista-aliada 1.0.192.0, tarea 167 cumplida).
 - **Hecho: los bonos (vista-aliada 1.0.193.0, 11/11/2026).** Valores fijados por el usuario: **+5 Missiles, +5 Acid,
   +5 Fortify, +5 Life Drain** (reemplaza el +7 Fortify anterior; Assassin afuera). **Life Drain bajado a +3**
-  (1.0.194.0, mismo día), y **Missiles y Acid a +3** (1.0.195.0): el usuario quiere ir probando para que las murallas no queden indestructibles; los demás
+  (1.0.194.0, mismo día), **Missiles y Acid a +3** (1.0.195.0) y **Fortify a +3** (1.0.196.0): todos +3; el usuario quiere ir probando para que las murallas no queden indestructibles; los demás
   valores pueden ajustarse igual (WB_MIS, WB_ACID, WB_FORT, WB_LD en build.py). Ver «Hecho: bonos del muro».
   Prueba en el juego: TAREAS 168.
 - **Próximo paso:** la IA que repara sus muros (decidir junto con los bonos; TAREAS 159 es la prueba de Repair).
@@ -39,7 +39,7 @@ Pedido completo:
 - Por unidad (`wb_unit`, en 0x4679e3 del armado 0x467240, solo con el argumento atacante = 0): ficha +0x16 (Missiles,
   la que el juego llena desde la habilidad 30) y +0x1a (Acid, habilidad 38), +3 cada una, sumadas.
 - De grupo (`wb_grp`, en lugar de la llamada a 0x468440 del defensor en 0x464df2): grupo +4 (Fortify, código 6) y
-  +0x16 (Life Drain, código 54), +5 y +3, sumados al máximo del bando.
+  +0x16 (Life Drain, código 54), +3 cada uno, sumados al máximo del bando.
 - Qué hace cada uno (desensamblado, 11/11/2026): **Fortify +N** = +N de fuerza a cada unidad del grupo durante la
   batalla, menos el **Siege** del enemigo (código 5, su contrario; par «FortifySiegeLimit» del juego), dentro del tope
   general de bonos (0x56951c, «FinalBonusLimit»); se calcula en 0x4696c0 y se aplica en 0x4698b0. **Life Drain +N** =
