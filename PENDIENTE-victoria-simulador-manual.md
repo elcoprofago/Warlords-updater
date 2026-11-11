@@ -13,7 +13,7 @@ Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y m
 
 ## Parte B: Simulador de combate (simcombate\) con murallas, torre y faro
 - Se entiende por «visor de combates» el Simulador de combate (simcombate\, PENDIENTE-simulador-combate.md,
-  repo elcoprofago/Simulador-Combate). Si el usuario se refería a otro programa, corregir.
+  repo elcoprofago/Simulador-Combate). Confirmado por el usuario el 11/11/2026.
 - En el menú del escenario, agregar los edificios nuevos: **faro, torre de vigía y muralla**, con su Life Ward
   (+1, +2, +3) y, para la muralla, los bonos del muro (Missiles +3, Acid +3, Fortify +3, Life Drain +1).
 - Datos exactos en build.py: LW_MURO/LW_TORRE/LW_FARO, WB_MIS/WB_ACID/WB_FORT/WB_LD, wb_grp, wb_unit; ciudad: Life
