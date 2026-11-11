@@ -12681,7 +12681,12 @@ pp_end:
 # pinta su pieza p = (P - W) + (1, 1). Muro y empalizada: el centro y un brazo por cada bit de ob_wmask, en el orden
 # N, NO, NE, O, E, centro, SO, SE, S (lo de atrás primero). Como las celdas se redibujan de a una (bit 0x20 de la
 # celda), cada una repinta lo suyo de las obras vecinas y nada queda cortado.
-OD_PORFILA, OD_CAPAS = 5, 52
+OD_PORFILA = 5
+# Deterioro (11/11/2026): cada capa del cuerpo del muro de piedra (DM_CAPAS) tiene 3 copias dañadas, una por nivel, desde
+# la capa OD_DANO: la del nivel n (1..3) de la capa c en OD_DANO + (n - 1) * len(DM_CAPAS) + DM_CAPAS.index(c).
+DM_CAPAS = list(range(11, 22)) + list(range(42, 46)) + list(range(48, 52))
+OD_DANO = 52
+OD_CAPAS = OD_DANO + 3 * len(DM_CAPAS)
 OD_SOMBRA = 22              # capas 22..41: solo la sombra de las capas 0..19 (ob_draw las pinta antes que los cuerpos)
 OD_PDIAG = 42               # capas 42..45: puerta en un muro diagonal (d = 1 cerrada, abierta; d = 3 cerrada, abierta)
 OD_SDIAG = 46               # capas 46, 47: su sombra (d = 1, 3)
@@ -12733,6 +12738,48 @@ od_capas += [obras_img.muro_diag(_rl, _od_color, po_pal, d, p, 'cuerpo') for d i
 od_capas += [obras_img.muro_diag(_rl, _od_color, po_pal, d, 'cerrada', 'sombra') for d in (1, 3)]
 assert len(od_capas) == OD_SINT
 od_capas += [obras_img.brazo_sin_torre(_rl, _od_color, po_pal, d) for d in (1, 3, 5, 7)]
+assert len(od_capas) == OD_DANO
+import random as _rnd
+_dm_osc, _dm_gri, _dm_hol = _od_color((15, 12, 10)), _od_color((32, 28, 24)), _od_color((60, 52, 44))
+_dm_torre = {(x, y) for x in range(144) for y in range(144) if od_capas[11].getpixel((x, y)) != 11}
+def _dm_capa(im, L, semilla, ajena=frozenset()):   # copia con daño de nivel L: almenas caídas (transparente), agujeros,
+    r = _rnd.Random(semilla)                        # grietas; ajena: píxeles de la torre vecina, que no se tocan
+    out = im.copy(); px = out.load()
+    W, H = out.size
+    pts = [(x, y) for x in range(W) for y in range(H) if px[x, y] != 11 and (x, y) not in ajena]
+    if not pts: return out
+    top = {}
+    for x, y in pts: top[x] = min(top.get(x, 999), y)
+    xs = sorted(top)
+    for _ in range(L + len(xs) * L // 20):
+        cx = r.choice(xs); w = r.randint(2, 3 + L); d = r.randint(3, 3 + 2 * L)
+        for x in range(cx - w // 2, cx - w // 2 + w):
+            if x not in top: continue
+            for y in range(top[x], top[x] + d):
+                if (x, y) not in ajena: px[x, y] = 11
+            y = top[x] + d
+            if y < H and px[x, y] != 11 and (x, y) not in ajena: px[x, y] = _dm_gri
+    vivos = [q for q in pts if px[q] != 11]
+    for _ in range(max(1, len(vivos) // 300) * L):
+        cx, cy = r.choice(vivos); rad = r.randint(1, 1 + L)
+        for x in range(cx - rad - 1, cx + rad + 2):
+            for y in range(cy - rad - 1, cy + rad + 2):
+                if 0 <= x < W and 0 <= y < H and px[x, y] != 11 and (x, y) not in ajena:
+                    d = (x - cx) ** 2 + (y - cy) ** 2
+                    if d <= rad * rad: px[x, y] = _dm_osc
+                    elif d <= (rad + 1) ** 2 and r.random() < 0.6: px[x, y] = _dm_hol
+    for _ in range(max(1, len(vivos) // 500) * L):
+        x, y = r.choice(vivos)
+        for _ in range(6 + 3 * L):
+            if 0 <= x < W and 0 <= y < H and px[x, y] != 11 and (x, y) not in ajena: px[x, y] = _dm_gri
+            y += 1; x += r.choice((-1, 0, 0, 1))
+    return out
+def _dm_ajena(c):          # brazo d = c - 12 del muro: la torre de la vecina en (dx, dy)
+    if not 12 <= c <= 19: return frozenset()
+    dx, dy = (0, 1, 1, 1, 0, -1, -1, -1)[c - 12], (-1, -1, 0, 1, 1, 1, 0, -1)[c - 12]
+    return frozenset((x + 48 * dx, y + 48 * dy) for x, y in _dm_torre)
+for _L in (1, 2, 3):
+    od_capas += [_dm_capa(od_capas[c], _L, 1000 * _L + c, _dm_ajena(c)) for c in DM_CAPAS]
 assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
@@ -12742,7 +12789,7 @@ for L, im in enumerate(od_capas):
 caves['od_full'] = bytes(_full)
 # Deterioro del muro (pedido del 11/11/2026): según los arqueros muertos del bloque (byte +7), nivel 1 (6..11), 2 (12..17)
 # o 3 (18..23) de daño sobre la torre del centro (capa 11: hollín, almenas rotas, grietas, escombros al pie), y desde el
-# nivel 2 humo animado (4 cuadros). Cada cuadro es de 48x96: la casilla de arriba del bloque (pieza 1) y la suya (pieza 4).
+# nivel 2 humo animado (4 cuadros). Desde la 1.0.189.0 aquí va solo el humo: el daño sale de las capas dañadas (od_put). Cada cuadro es de 48x96: la casilla de arriba del bloque (pieza 1) y la suya (pieza 4).
 # Todo sale de una semilla fija, así se ve igual en todas las PC.
 import random as _rnd
 def _dm_cuadros():
@@ -12776,7 +12823,6 @@ def _dm_cuadros():
             dano[(r.randint(55, 90), r.randint(84, 92))] = r.choice(esc)
         for f in range(4):
             im = _I.new('P', (48, 96), 11); im.putpalette(po_pal)
-            for (x, y), c in dano.items(): im.putpixel((x - 48, y), c)
             if L >= 2:
                 rf = _rnd.Random(77)
                 for k in range(3 if L == 2 else 5):
@@ -12930,8 +12976,36 @@ odf_out:
     ret
 ''')
 # od_put: ecx = capa; pieza en [od_vars]; ebx = registro (para pw_put). Pinta la pieza si no está vacía. Preserva todo.
+dm_map = place_data('dm_map', bytes(DM_CAPAS.index(c) if c in DM_CAPAS else 0xff for c in range(OD_DANO)))
 od_put = place('od_put', f'''
     pushad
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    jne odp_cap
+    test ebx, ebx
+    jz odp_cap
+    cmp byte ptr [ebx + 4], {OB_MURO}
+    jne odp_cap
+    cmp ecx, {OD_DANO}
+    jae odp_cap
+    movzx eax, byte ptr [ebx + 7]
+    cmp eax, {DM_PASO}
+    jb odp_cap
+    cmp eax, {WV_MAX}
+    jae odp_cap
+    movzx edx, byte ptr [ecx + {dm_map:#x}]
+    cmp edx, 0xff
+    je odp_cap
+    push ecx
+    push edx
+    xor edx, edx
+    mov ecx, {DM_PASO}
+    div ecx
+    pop edx
+    pop ecx
+    dec eax
+    imul eax, eax, {len(DM_CAPAS)}
+    lea ecx, [eax + edx + {OD_DANO}]
+odp_cap:
     movzx eax, byte ptr [{od_vars + 5:#x}]
     add ecx, eax
     movzx eax, byte ptr [{od_vars:#x}]
@@ -13268,7 +13342,7 @@ dm_put = place('dm_put', f'''
     cmp byte ptr [ebx + 4], {OB_MURO}
     jne dmp_out
     movzx eax, byte ptr [ebx + 7]
-    cmp eax, {DM_PASO}
+    cmp eax, {2 * DM_PASO}
     jb dmp_out
     cmp eax, {WV_MAX}
     jae dmp_out

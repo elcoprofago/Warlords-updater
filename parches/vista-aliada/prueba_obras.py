@@ -310,7 +310,7 @@ ver('control: sin daño, nada', reparar(0), ([], 0))
 ver('control: caído (24), nada', reparar(24), ([], 24))
 ver('control: oro que no alcanza (49 para 50), nada', reparar(12, oro=49), ([], 12))
 ver('control: muro de otro bando, nada', reparar(12, dueno_otro=True), ([], 12))
-print('-- deterioro del muro (dm_put): cuadro según los arqueros muertos, humo en 4 fases')
+print('-- humo del muro dañado (dm_put): desde 12 muertos, 4 fases')
 _pat = re.compile(re.escape(bytes.fromhex('6085db74')) + b'.' + re.escape(bytes.fromhex('803d')) + b'(....)' + re.escape(bytes.fromhex('0075')) + b'.' + re.escape(bytes.fromhex('807b0407')), re.S)
 _k = [m for m in _pat.finditer(img)]
 assert len(_k) == 1, _k
@@ -328,9 +328,9 @@ def dano(muertos, pieza=4, tipo=7, fase=0, pasada=0):
     mu.hook_add(UC_HOOK_CODE, h, begin=PW_PUT, end=PW_PUT)
     g.correr(DM_PUT, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, OB_TAB)])
     return r
-_y = dano(6)[0][1] - 48     # DM_SY (fila de las piezas de arriba)
+_y = dano(12)[0][1] - 48     # DM_SY (fila de las piezas de arriba)
 # fase: ((FL_T + x + y) >> 1) & 3 con FL_T = 0, (5, 7) -> 12 >> 1 = 6 -> 2
-ver('6 muertos: nivel 1 (cuadros 0..3), pieza del bloque (fila de abajo)', dano(6), [(2, _y + 48)])
+ver('control: 6 muertos, nivel 1: sin humo (el daño va en las capas, od_put)', dano(6), [])
 ver('12 muertos: nivel 2 (cuadros 4..7)', dano(12), [(6, _y + 48)])
 ver('23 muertos: nivel 3, casilla de arriba (pieza 1)', dano(23, pieza=1), [(10, _y)])
 ver('control: 5 muertos, sin daño', dano(5), [])
