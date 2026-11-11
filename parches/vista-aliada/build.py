@@ -12740,6 +12740,58 @@ for L, im in enumerate(od_capas):
         if any(v != 11 for v in im.crop((48 * (pz % 3), 48 * (pz // 3), 48 * (pz % 3) + 48, 48 * (pz // 3) + 48)).tobytes()):
             _full[(L * 9 + pz) // 8] |= 1 << ((L * 9 + pz) % 8)
 caves['od_full'] = bytes(_full)
+# Deterioro del muro (pedido del 11/11/2026): según los arqueros muertos del bloque (byte +7), nivel 1 (6..11), 2 (12..17)
+# o 3 (18..23) de daño sobre la torre del centro (capa 11: hollín, almenas rotas, grietas, escombros al pie), y desde el
+# nivel 2 humo animado (4 cuadros). Cada cuadro es de 48x96: la casilla de arriba del bloque (pieza 1) y la suya (pieza 4).
+# Todo sale de una semilla fija, así se ve igual en todas las PC.
+import random as _rnd
+def _dm_cuadros():
+    base = od_capas[11]
+    torre = {(x, y) for x in range(48, 96) for y in range(96) if base.getpixel((x, y)) != 11}
+    tl = sorted(torre)
+    oscuro, grieta, hollin = _od_color((25, 22, 20)), _od_color((50, 45, 40)), _od_color((72, 64, 56))
+    esc = [_od_color((70, 68, 66)), _od_color((110, 106, 100)), _od_color((150, 146, 140))]
+    humo = [_od_color((70, 68, 68)), _od_color((105, 102, 100)), _od_color((140, 138, 136)), _od_color((170, 168, 166))]
+    ytop = min(y for x, y in tl)
+    out = []
+    for L in (1, 2, 3):
+        r = _rnd.Random(1000 + L)
+        dano = {}
+        for _ in range(3 * L):
+            cx, cy = r.choice(tl); rad = r.randint(2, 2 + L)
+            for x, y in tl:
+                d = (x - cx) ** 2 + (y - cy) ** 2
+                if d <= rad * rad: dano[(x, y)] = oscuro if d <= (rad - 2) ** 2 else hollin
+        arriba = [q for q in tl if q[1] < ytop + 14]
+        for _ in range(2 * L):
+            cx, cy = r.choice(arriba)
+            for x, y in tl:
+                if abs(x - cx) <= 2 and cy - 6 <= y <= cy + 1: dano[(x, y)] = oscuro
+        for _ in range(2 * L):
+            x, y = r.choice(tl)
+            for _ in range(8 + 4 * L):
+                if (x, y) in torre: dano[(x, y)] = grieta
+                y += 1; x += r.choice((-1, 0, 0, 1))
+        for _ in range(14 * L):
+            dano[(r.randint(55, 90), r.randint(84, 92))] = r.choice(esc)
+        for f in range(4):
+            im = _I.new('P', (48, 96), 11); im.putpalette(po_pal)
+            for (x, y), c in dano.items(): im.putpixel((x - 48, y), c)
+            if L >= 2:
+                rf = _rnd.Random(77)
+                for k in range(3 if L == 2 else 5):
+                    bx, by = 72 + rf.randint(-8, 8), ytop + 6 + rf.randint(0, 10)
+                    t = (f + k) % 4
+                    y, rad = by - t * 7, 3 + t + (L - 2)
+                    x = bx + t * (1 if k % 2 else -1)
+                    for yy in range(y - rad, y + rad + 1):
+                        for xx in range(x - rad, x + rad + 1):
+                            if (xx - x) ** 2 + (yy - y) ** 2 <= rad * rad and (xx + yy + f) % 2 == 0                                     and 48 <= xx < 96 and 0 <= yy < 96:
+                                im.putpixel((xx - 48, yy), humo[t])
+            out.append(im)
+    return out
+dm_cuadros = _dm_cuadros()
+DM_PASO = 6                 # arqueros muertos por nivel de daño; el humo desde 2 * DM_PASO
 # od_same: eax = x, edx = y, ecx = tipo -> ZF = 1 si en esa casilla hay una obra de ese tipo. Preserva todo.
 od_same = place('od_same', f'''
     push eax
@@ -13153,6 +13205,8 @@ fl_has = place('fl_has', f'''
     je flh_yes
     cmp cl, {OB_MURO}
     jne flh_no
+    cmp byte ptr [ebx + 7], {2 * DM_PASO}
+    jae flh_yes
     mov eax, dword ptr [esp + 28]
     mov edx, dword ptr [esp + 20]
     call {od_gate:#x}
@@ -13200,6 +13254,50 @@ fla_no:
 fla_yes:
     popad
     jmp 0x457214
+''')
+# dm_put (desde ob_draw, al pasar a la obra siguiente): ebx = registro (o 0), pieza en [od_vars]. En la pasada de los
+# cuerpos, si es un muro de piedra con daño, pinta su cuadro (fila DM_SY: pieza 1; DM_SY + 48: pieza 4). Preserva todo.
+DM_SY = FL_SY + 48
+dm_put = place('dm_put', f'''
+    pushad
+    test ebx, ebx
+    jz dmp_out
+    cmp byte ptr [{od_vars + 5:#x}], 0
+    jne dmp_out
+    cmp byte ptr [ebx + 4], {OB_MURO}
+    jne dmp_out
+    movzx eax, byte ptr [ebx + 7]
+    cmp eax, {DM_PASO}
+    jb dmp_out
+    cmp eax, {WV_MAX}
+    jae dmp_out
+    xor edx, edx
+    mov ecx, {DM_PASO}
+    div ecx
+    dec eax
+    shl eax, 2
+    mov edi, dword ptr [{FL_T:#x}]
+    movsx ecx, word ptr [ebx]
+    add edi, ecx
+    movsx ecx, word ptr [ebx + 2]
+    add edi, ecx
+    shr edi, 1
+    and edi, 3
+    add edi, eax
+    movzx eax, byte ptr [{od_vars:#x}]
+    mov ecx, {DM_SY}
+    cmp eax, 1
+    je dmp_go
+    add ecx, 48
+    cmp eax, 4
+    jne dmp_out
+dmp_go:
+    mov dword ptr [{po_sy:#x}], ecx
+    call {pw_put:#x}
+    mov dword ptr [{po_sy:#x}], 0
+dmp_out:
+    popad
+    ret
 ''')
 ob_draw = place('ob_draw', f'''
     pushad
@@ -13290,6 +13388,7 @@ odw_an:
     cmp ebp, 9
     jb odw_a
 odw_nx:
+    call {dm_put:#x}
     inc esi
     cmp esi, 9
     jb odw_l
@@ -21049,7 +21148,7 @@ def muro(empal=False):
         for x in range(48):
             if px[x, y] == (255, 0, 255): px[x, y] = (20, 18, 12)
     return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
-po_hoja = Image.new('P', (48 * PO_FRAMES, FL_SY + 48), 11); po_hoja.putpalette(po_pal)
+po_hoja = Image.new('P', (48 * PO_FRAMES, FL_SY + 144), 11); po_hoja.putpalette(po_pal)
 assert FL_SY == 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA) and 32 * 32 <= 48 * PO_FRAMES
 _flsrc = Image.open(r'C:\Warlords3\CITY\STDCAST0.PCX')
 assert _flsrc.getpalette()[:768] == po_pal
@@ -21057,6 +21156,10 @@ for _b in range(8):
     for _f in range(4):
         po_hoja.paste(obras_img.bandera_ciudad(_flsrc, _b, _f), ((_b * 4 + _f) * 32, FL_SY))
 assert OD_PORFILA * 9 <= PO_FRAMES
+assert DM_SY == FL_SY + 48 and len(dm_cuadros) <= PO_FRAMES
+for _i, _im in enumerate(dm_cuadros):
+    po_hoja.paste(_im.crop((0, 0, 48, 48)), (48 * _i, DM_SY))
+    po_hoja.paste(_im.crop((0, 48, 48, 96)), (48 * _i, DM_SY + 48))
 cuadros = ([pozo] + [remo_piezas[9 * k + 4] for k in range(4)] + [mina()] + detonada
            + [tumba, lapida, cruz] + remo_piezas + [mina(True), torre(), torre(True), muro(True), muro()])
 assert len(cuadros) == PO_FRAMES

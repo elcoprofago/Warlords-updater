@@ -310,5 +310,33 @@ ver('control: sin daño, nada', reparar(0), ([], 0))
 ver('control: caído (24), nada', reparar(24), ([], 24))
 ver('control: oro que no alcanza (49 para 50), nada', reparar(12, oro=49), ([], 12))
 ver('control: muro de otro bando, nada', reparar(12, dueno_otro=True), ([], 12))
+print('-- deterioro del muro (dm_put): cuadro según los arqueros muertos, humo en 4 fases')
+_pat = re.compile(re.escape(bytes.fromhex('6085db74')) + b'.' + re.escape(bytes.fromhex('803d')) + b'(....)' + re.escape(bytes.fromhex('0075')) + b'.' + re.escape(bytes.fromhex('807b0407')), re.S)
+_k = [m for m in _pat.finditer(img)]
+assert len(_k) == 1, _k
+DM_PUT = BASE + _k[0].start(); OD_VARS = struct.unpack('<I', _k[0].group(1))[0] - 5
+PW_PUT = llamadas(DM_PUT, 120)[0]
+def dano(muertos, pieza=4, tipo=7, fase=0, pasada=0):
+    g = muros([(5, 7, tipo, 2)]); mu = g.mu
+    mu.mem_write(OB_TAB + 7, bytes([muertos]))
+    mu.mem_write(OD_VARS, bytes([pieza])); mu.mem_write(OD_VARS + 5, bytes([pasada]))
+    r = []
+    def h(mu, a, size, _):
+        r.append((mu.reg_read(UC_X86_REG_EDI), mu.reg_read(UC_X86_REG_ECX)))
+        sp = mu.reg_read(UC_X86_REG_ESP)
+        mu.reg_write(UC_X86_REG_EIP, struct.unpack('<I', mu.mem_read(sp, 4))[0]); mu.reg_write(UC_X86_REG_ESP, sp + 4)
+    mu.hook_add(UC_HOOK_CODE, h, begin=PW_PUT, end=PW_PUT)
+    g.correr(DM_PUT, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, OB_TAB)])
+    return r
+_y = dano(6)[0][1] - 48     # DM_SY (fila de las piezas de arriba)
+# fase: ((FL_T + x + y) >> 1) & 3 con FL_T = 0, (5, 7) -> 12 >> 1 = 6 -> 2
+ver('6 muertos: nivel 1 (cuadros 0..3), pieza del bloque (fila de abajo)', dano(6), [(2, _y + 48)])
+ver('12 muertos: nivel 2 (cuadros 4..7)', dano(12), [(6, _y + 48)])
+ver('23 muertos: nivel 3, casilla de arriba (pieza 1)', dano(23, pieza=1), [(10, _y)])
+ver('control: 5 muertos, sin daño', dano(5), [])
+ver('control: 24 (caído), nada', dano(24), [])
+ver('control: otra pieza (0)', dano(12, pieza=0), [])
+ver('control: pasada de sombras', dano(12, pasada=22), [])
+ver('control: empalizada (6)', dano(12, tipo=6), [])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
