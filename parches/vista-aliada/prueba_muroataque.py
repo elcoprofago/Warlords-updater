@@ -211,7 +211,7 @@ def sin_muro():
     return g.llamadas
 ver('control: batalla común (sin muro): solo ia_bat', sin_muro(), ['ia_bat'])
 
-print('-- bonos del muro: +5 Missiles, +5 Acid (por unidad), +5 Fortify, +5 Life Drain (de grupo) (11/11/2026)')
+print('-- bonos del muro: +5 Missiles, +5 Acid (por unidad), +5 Fortify, +3 Life Drain (de grupo) (11/11/2026)')
 WB_UNIT = dest(0x4679e3)
 WB_GRP = dest(0x464df2)
 def unidad(dueño_ej=2, x=5, y=7, atacante=0, **kw):
@@ -245,9 +245,9 @@ def grupo(defensor=2, x=5, y=7, **kw):
     g.correr(WB_GRP, RET, struct.pack('<IIIIII', RET, 3, 0x152000, x, y, GR))
     gr = mu.mem_read(GR, 0x17)
     return gr[4], gr[0x16], llam, mu.reg_read(UC_X86_REG_EBX) == FI and mu.reg_read(UC_X86_REG_EDI) == 0x1234
-ver('defensor del muro: Fortify 2+5, Life Drain 1+5; llama a 0x468440 con los mismos argumentos',
-    grupo(), (7, 6, [(3, 0x152000, 5, 7, 0x151000)], True))
-ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2], (7, 6))
+ver('defensor del muro: Fortify 2+5, Life Drain 1+3; llama a 0x468440 con los mismos argumentos',
+    grupo(), (7, 4, [(3, 0x152000, 5, 7, 0x151000)], True))
+ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2], (7, 4))
 ver('control: a 2 casillas: sin bonos', grupo(x=5, y=9)[:2], (2, 1))
 ver('control: defensor de otro bando: sin bonos', grupo(defensor=5)[:2], (2, 1))
 ver('control: bloque caído: sin bonos', grupo(muertos=24)[:2], (2, 1))
