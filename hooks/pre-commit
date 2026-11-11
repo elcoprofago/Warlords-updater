@@ -17,6 +17,11 @@
 # 4) BLOQUEA: un archivo que sale de ARCHIVOS de vista-aliada en parches/parches.txt (un bono renombrado
 #    o quitado) sin estar en OBSOLETOS de parches/vista-aliada/build.py: el Actualizador no borra nada,
 #    y la copia vieja quedaria en las PC que ya lo tenian (DarklordAV.exe borra los OBSOLETOS al arrancar).
+# 6) BLOQUEA: una VERSION nueva de vista-aliada en parches/parches.txt sin, en el mismo commit,
+#    (a) manual/manual.html con esa version en el Apendice E (Historial de versiones) y
+#    (b) manual/Manual-Era-de-Alianzas.pdf regenerado (python manualuild_manual.py).
+#    Regla del usuario (11/11/2026): cada cambio se refleja en los registros del repo y en el
+#    manual del parche; el PDF va dentro del parche.
 
 version_de() {  # stdin: parches.txt; $1: ID
     tr -d '\r' | grep -v '^#' | awk -F'|' -v id="$1" '$1 == id { print $2 }'
@@ -84,6 +89,23 @@ done
 if git diff --cached -- parches/vista-aliada/build.py | grep -q '^[-+].*DC_CLOSE_TITLE'; then
     echo "pre-commit (recordatorio): cambiaste DC_CLOSE_TITLE en build.py: el mismo titulo tiene que estar en" >&2
     echo "  TituloCierre de DarkCompare (Program.cs), y DarkCompare publicado con ese cambio." >&2
+fi
+
+av_antes=$(git show HEAD:parches/parches.txt 2>/dev/null | version_de vista-aliada)
+av_ahora=$(git show :parches/parches.txt 2>/dev/null | version_de vista-aliada)
+if [ -n "$av_ahora" ] && [ "$av_antes" != "$av_ahora" ]; then
+    if ! git show :manual/manual.html 2>/dev/null | sed -n '/Historial de versiones<\/h1>/,$p' |
+         grep -q "<td>$av_ahora</td>"; then
+        echo "pre-commit: vista-aliada pasa a $av_ahora y el Manual no lo registra." >&2
+        echo "            Agrega su fila arriba en el Apendice E de manual/manual.html (y, si el cambio" >&2
+        echo "            se ve en el juego, explicalo en su capitulo)." >&2
+        fallo=1
+    fi
+    if ! printf '%s\n' "$staged" | grep -q -x 'manual/Manual-Era-de-Alianzas.pdf'; then
+        echo "pre-commit: vista-aliada pasa a $av_ahora sin regenerar el PDF del Manual." >&2
+        echo "            Corre python manual\build_manual.py y agrega el PDF a este commit." >&2
+        fallo=1
+    fi
 fi
 
 exit $fallo
