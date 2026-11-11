@@ -21,6 +21,13 @@ Pedido completo:
 - Torre de vigía (indicación del 10/11/2026): alumbra 3 casillas (DN_TORRE). El +1 de fuerza al grupo que está en
   ella ya existía desde la etapa A (bridgeab: defensores que no son héroes).
 
+## Estado al 11/11/2026 (para retomar en sesión nueva)
+- Hecho y aprobado por el usuario: ataque al muro, caída del bloque al morir los 24 arqueros, daño progresivo con
+  copias dañadas de las capas (od_put, 3 niveles), humo nuboso animado (dm_put), muralla gris azulado suave
+  (vista-aliada 1.0.192.0, tarea 167 cumplida).
+- **Próximo paso: los bonos (punto 3 del plan técnico, abajo).** Arqueros virtuales y grupos alojados con +5 Missiles,
+  +5 Acid, +7 Fortify, +5 Life Drain. Ver «Plan técnico» y «Averiguado». También queda la IA que repara (tarea 159).
+
 ## Diseño del ataque al muro (indicaciones del usuario, 10/11/2026)
 - Cada bloque sin grupo encima se defiende como si tuviera 3 arqueros comunes virtuales ("unidades fantasma", como
   la fuerza de una ciudad): no se ven en el mapa, no salen ni huyen; en la pantalla de combate se ven caer uno a uno.
