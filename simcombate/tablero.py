@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.22.0'
+VERSION = '1.0.23.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -35,6 +35,9 @@ def version_de(exe):
     os.remove(marca)
     return v
 JUEGO0 = r'C:\Warlords3'
+# Bosques del desplegable de terreno: en los mapas un bosque es la capa «woods» sobre llanura o colinas (el terreno
+# «forest» no aparece en ningún mapa y el motor no lo cuenta como bosque). Texto -> terreno real con capa de bosque.
+BOSQUES = {'forest': 'plains', 'hills con bosque': 'hills'}
 # Lo que hay en la casilla del defensor: (texto, clave, estructura de escenario.py, obra de vista-aliada)
 SITIOS = (('Nada', 'nada', 0, None), ('Camino / puente', 'camino', 1, None), ('Ciudad', 'ciudad', 3, None),
           ('Faro', 'faro', 0, 'faro'), ('Torre de vigía', 'torre', 0, 'torre'), ('Muralla', 'muro', 0, 'muro'))
@@ -578,10 +581,9 @@ class App(tk.Tk):
         self.sitio = tk.StringVar(value='nada')
         for i, (t, k, _, _) in enumerate(SITIOS):
             ttk.Radiobutton(f, text=t, value=k, variable=self.sitio, command=self.ver_defensas).grid(row=2 + i, column=0, columnspan=2, sticky='w')
-        self.bosque = tk.BooleanVar(); ttk.Checkbutton(f, text='Bosque (woods)', variable=self.bosque).grid(row=8, column=0, columnspan=2, sticky='w')
-        self.noche = tk.BooleanVar(); ttk.Checkbutton(f, text='Noche (opción Day/Night)', variable=self.noche).grid(row=9, column=0, columnspan=2, sticky='w')
-        ttk.Label(f, text='Defensas').grid(row=10, column=0, columnspan=2, sticky='w')
-        self.defensas = ttk.Combobox(f, width=34, state='readonly'); self.defensas.grid(row=11, column=0, columnspan=2, sticky='w')
+        self.noche = tk.BooleanVar(); ttk.Checkbutton(f, text='Noche (opción Day/Night)', variable=self.noche).grid(row=8, column=0, columnspan=2, sticky='w')
+        ttk.Label(f, text='Defensas').grid(row=9, column=0, columnspan=2, sticky='w')
+        self.defensas = ttk.Combobox(f, width=34, state='readonly'); self.defensas.grid(row=10, column=0, columnspan=2, sticky='w')
         self.ver_defensas()
 
     def ver_defensas(self, texto=None):
@@ -654,7 +656,12 @@ class App(tk.Tk):
             self.decir_estado('No se pudo cargar'); messagebox.showerror(TITULO, f'No se pudo cargar el juego:\n{err}'); return
         self.sim = sim; self.boton.state(['!disabled'])
         self.decir_estado(f'{len(sim.armas)} armas, {len(sim.barcos)} barcos, {len(sim.clases)} clases, {len(sim.items)} ítems, {len(sim.hechizos)} hechizos')
-        self.terreno['values'] = list(sim.terrenos)
+        ts = []
+        for t in sim.terrenos:
+            if t in BOSQUES and BOSQUES[t] not in sim.terrenos: continue
+            ts.append(t)
+            if t == 'hills' and 'hills con bosque' in BOSQUES: ts.append('hills con bosque')
+        self.terreno['values'] = ts
         if not self.terreno.get(): self.terreno.set('plains' if 'plains' in sim.terrenos else next(iter(sim.terrenos)))
         self.ver_agua()
         for p in (self.pa, self.pd): p.cargar_listas(sim)
@@ -669,8 +676,10 @@ class App(tk.Tk):
                 if c.get(clave): p.poner_estado(json.loads(c[clave]))
             campo = json.loads(c.get('campo', '{}'))
         except (ValueError, KeyError, TypeError, IndexError): return
-        if campo.get('terreno') in self.sim.terrenos: self.terreno.set(campo['terreno']); self.ver_agua()
-        self.bosque.set(campo.get('bosque', False)); self.noche.set(campo.get('noche', False))
+        t = campo.get('terreno')
+        if campo.get('bosque'): t = next((k for k, v in BOSQUES.items() if v == t), t)
+        if t in self.terreno['values']: self.terreno.set(t); self.ver_agua()
+        self.noche.set(campo.get('noche', False))
         est, obra, niv = campo.get('estructura', 0), campo.get('obra'), campo.get('defensas', 1)
         sitio = next((k for _, k, e, o in SITIOS if e == est and (o == obra or est == 3)), 'nada')
         self.sitio.set(sitio)
@@ -678,13 +687,18 @@ class App(tk.Tk):
 
     def ver_agua(self):
         if self.sim and self.terreno.get():
-            self.lagua['text'] = 'agua: hace falta barco (o puente)' if self.sim.es_agua(self.terreno.get()) else 'tierra'
+            self.lagua['text'] = 'agua: hace falta barco (o puente)' if self.sim.es_agua(self.terreno_real()[0]) else 'tierra'
+
+    def terreno_real(self):
+        """(terreno de la partida, capa de bosque) de lo elegido en el desplegable."""
+        t = self.terreno.get()
+        return (BOSQUES[t], True) if t in BOSQUES else (t, False)
 
     def escenario(self):
         k = self.sitio.get(); est = next(e for _, s, e, _ in SITIOS if s == k)
         d, obra = next(((n, o) for t, n, o in DEFENSAS[k] if t == self.defensas.get()), (1, None))
         return {'A': self.pa.lado(), 'D': self.pd.lado(),
-                'campo': dict(terreno=self.terreno.get(), estructura=est, bosque=self.bosque.get(),
+                'campo': dict(terreno=self.terreno_real()[0], estructura=est, bosque=self.terreno_real()[1],
                               noche=self.noche.get(), defensas=d, obra=obra)}
 
     def iniciar(self):
