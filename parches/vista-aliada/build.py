@@ -12798,7 +12798,7 @@ def _dm_cuadros():
     tl = sorted(torre)
     oscuro, grieta, hollin = _od_color((15, 12, 10)), _od_color((30, 26, 22)), _od_color((55, 48, 40))
     esc = [_od_color((70, 68, 66)), _od_color((110, 106, 100)), _od_color((150, 146, 140))]
-    humo = [_od_color((40, 38, 38)), _od_color((60, 58, 56)), _od_color((85, 82, 80)), _od_color((110, 106, 104))]
+    humo = [_od_color((120, 118, 116)), _od_color((155, 153, 150)), _od_color((190, 188, 185)), _od_color((220, 218, 215))]
     ytop = min(y for x, y in tl)
     out = []
     for L in (1, 2, 3):
@@ -12827,13 +12827,21 @@ def _dm_cuadros():
                 rf = _rnd.Random(77)
                 for k in range(3 if L == 2 else 5):
                     bx, by = 72 + rf.randint(-8, 8), ytop + 6 + rf.randint(0, 10)
+                    sub = [(rf.uniform(-1.6, 1.6), rf.uniform(-1.2, 0.6), rf.uniform(0.6, 0.95)) for _ in range(4)]
                     t = (f + k) % 4
                     y, rad = by - t * 7, 3 + t + (L - 2)
                     x = bx + t * (1 if k % 2 else -1)
-                    for yy in range(y - rad, y + rad + 1):
-                        for xx in range(x - rad, x + rad + 1):
-                            if (xx - x) ** 2 + (yy - y) ** 2 <= rad * rad and (xx + yy + f) % 3 != 0                                     and 48 <= xx < 96 and 0 <= yy < 96:
-                                im.putpixel((xx - 48, yy), humo[t])
+                    # nube (pedido del 11/11/2026: antes la trama (x+y)%3 se veía a rayas): bollos superpuestos,
+                    # rellenos, más claros al centro y arriba; solo el borde se deshilacha al azar
+                    rn = _rnd.Random(1000 * k + 10 * f + L)
+                    for yy in range(y - 2 * rad, y + 2 * rad + 1):
+                        for xx in range(x - 2 * rad, x + 2 * rad + 1):
+                            if not (48 <= xx < 96 and 0 <= yy < 96): continue
+                            m = max(1 - ((xx - x - ox * rad) ** 2 + (yy - y - oy * rad) ** 2) ** 0.5 / (rad * sr)
+                                    for ox, oy, sr in sub)
+                            if m <= 0 or (m < 0.25 and rn.random() < 0.5): continue
+                            luz = min(3, int(m * 3 + (y - yy) / (2.0 * rad) + t * 0.4))
+                            im.putpixel((xx - 48, yy), humo[max(0, luz)])
             out.append(im)
     return out
 dm_cuadros = _dm_cuadros()
