@@ -99,11 +99,12 @@ print('-- wl_cur: cursor de espadas sobre el muro vacío (BUILD01.SAV, 10/11/202
 WL_CUR = 0x473c24 + 5 + struct.unpack_from('<i', img, 0x473c24 - BASE + 1)[0]
 DECIDE = WL_CUR + img[WL_CUR - BASE:WL_CUR - BASE + 0x100].index(bytes([0xe9]), 0x50)
 DECIDE = DECIDE + 5 + struct.unpack_from('<i', img, DECIDE - BASE + 1)[0]
-def cursor(p, dx=1, dy=0, ejercito=0, **kw):
+def cursor(p, dx=1, dy=0, ejercito=0, clic=False, **kw):
     g = juego(**kw); mu = g.mu
     F, OUT = STACK - 0x100, 0x150000
     mu.mem_write(F + 0x22, struct.pack('<hh', dx, dy)); mu.mem_write(F + 0x2c, struct.pack('<hh', 5, 7))
     mu.mem_write(F + 0x44, struct.pack('<I', OUT)); mu.mem_write(F + 0x34, struct.pack('<I', RET))
+    mu.mem_write(F + 0x48, bytes([0 if clic else 1])); mu.mem_write(F + 0x50, bytes([1]))
     mu.mem_write(OUT, bytes(4)); mu.mem_write(0x537ce8, struct.pack('<h', p)); mu.mem_write(0x56075e, b'\0')
     r = []
     mu.hook_add(UC_HOOK_CODE, lambda mu, *_: (r.append(mu.reg_read(UC_X86_REG_AX)), mu.emu_stop()), begin=RET, end=RET)
@@ -112,6 +113,7 @@ def cursor(p, dx=1, dy=0, ejercito=0, **kw):
     mu.emu_start(0x473c24, 0, count=2000)
     return r[:1], struct.unpack('<hh', mu.mem_read(OUT, 4))
 ver('al lado de un muro enemigo: espadas (9) y destino la casilla del muro', cursor(5), ([9], (5, 7)))
+ver('clic: mover (7) a la casilla del muro, que arma la batalla (11/11/2026)', cursor(5, clic=True), ([7], (5, 7)))
 ver('en diagonal también', cursor(5, dx=1, dy=1), ([9], (5, 7)))
 ver('sin Diplomacy: espadas', cursor(5, guerra=False, diplo=False)[0], [9])
 ver('control: en paz, lo de siempre', cursor(5, guerra=False)[0], ['decide'])

@@ -6208,7 +6208,9 @@ ww_out:
 ''')
 # wl_cur (en 0x473c24, antes de decide): con un grupo elegido, una casilla vecina sin ejércitos que es un bloque de muro en
 # pie de un bando en guerra con el que juega ([0x537ce8], wl_war) da el cursor de ataque 9 (espadas), como un ejército
-# enemigo (0x473cc7..0x473d12); el clic mueve ahí y wv_step arma la batalla. Hasta 1.0.183.0 daba «mover» (BUILD01.SAV,
+# enemigo (0x473cc7..0x473d12). El clic ([esp + 0x48] = 0) en cambio da «mover» (0x473c5b, código 7 -> 0x4b91e0): el 9
+# llama a 0x4648d0, que ataca al ejército de la casilla y con el muro vacío no hacía nada (BUILD01.SAV, 11/11/2026);
+# al mover ahí, wv_step arma la batalla. Hasta 1.0.183.0 daba «mover» (BUILD01.SAV,
 # 10/11/2026). Lo demás sigue a decide.
 wl_cur = place('wl_cur', f'''
     cmp word ptr [esp + 0x22], 1
@@ -6230,6 +6232,8 @@ wl_cur = place('wl_cur', f'''
     pop ecx
     pop eax
     jz wc_no
+    cmp byte ptr [esp + 0x48], 0
+    je 0x473c5b
     mov ax, word ptr [esp + 0x2c]
     mov esi, dword ptr [esp + 0x44]
     mov dx, word ptr [esp + 0x2e]
