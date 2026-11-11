@@ -12749,16 +12749,16 @@ def _dm_cuadros():
     base = od_capas[11]
     torre = {(x, y) for x in range(48, 96) for y in range(96) if base.getpixel((x, y)) != 11}
     tl = sorted(torre)
-    oscuro, grieta, hollin = _od_color((25, 22, 20)), _od_color((50, 45, 40)), _od_color((72, 64, 56))
+    oscuro, grieta, hollin = _od_color((15, 12, 10)), _od_color((30, 26, 22)), _od_color((55, 48, 40))
     esc = [_od_color((70, 68, 66)), _od_color((110, 106, 100)), _od_color((150, 146, 140))]
-    humo = [_od_color((70, 68, 68)), _od_color((105, 102, 100)), _od_color((140, 138, 136)), _od_color((170, 168, 166))]
+    humo = [_od_color((40, 38, 38)), _od_color((60, 58, 56)), _od_color((85, 82, 80)), _od_color((110, 106, 104))]
     ytop = min(y for x, y in tl)
     out = []
     for L in (1, 2, 3):
         r = _rnd.Random(1000 + L)
         dano = {}
-        for _ in range(3 * L):
-            cx, cy = r.choice(tl); rad = r.randint(2, 2 + L)
+        for _ in range(4 * L):
+            cx, cy = r.choice(tl); rad = r.randint(3, 3 + L)
             for x, y in tl:
                 d = (x - cx) ** 2 + (y - cy) ** 2
                 if d <= rad * rad: dano[(x, y)] = oscuro if d <= (rad - 2) ** 2 else hollin
@@ -12786,7 +12786,7 @@ def _dm_cuadros():
                     x = bx + t * (1 if k % 2 else -1)
                     for yy in range(y - rad, y + rad + 1):
                         for xx in range(x - rad, x + rad + 1):
-                            if (xx - x) ** 2 + (yy - y) ** 2 <= rad * rad and (xx + yy + f) % 2 == 0                                     and 48 <= xx < 96 and 0 <= yy < 96:
+                            if (xx - x) ** 2 + (yy - y) ** 2 <= rad * rad and (xx + yy + f) % 3 != 0                                     and 48 <= xx < 96 and 0 <= yy < 96:
                                 im.putpixel((xx - 48, yy), humo[t])
             out.append(im)
     return out
@@ -13255,7 +13255,8 @@ fla_yes:
     popad
     jmp 0x457214
 ''')
-# dm_put (desde ob_draw, al pasar a la obra siguiente): ebx = registro (o 0), pieza en [od_vars]. En la pasada de los
+# dm_put (desde ob_draw, en una pasada final, después de todas las obras y puertas: así los tramos de los bloques
+# vecinos no tapan el daño): ebx = registro (o 0), pieza en [od_vars]. En la pasada de los
 # cuerpos, si es un muro de piedra con daño, pinta su cuadro (fila DM_SY: pieza 1; DM_SY + 48: pieza 4). Preserva todo.
 DM_SY = FL_SY + 48
 dm_put = place('dm_put', f'''
@@ -13388,7 +13389,6 @@ odw_an:
     cmp ebp, 9
     jb odw_a
 odw_nx:
-    call {dm_put:#x}
     inc esi
     cmp esi, 9
     jb odw_l
@@ -13439,6 +13439,23 @@ odw_gn:
     inc esi
     cmp esi, 9
     jb odw_g
+    xor esi, esi
+odw_d:
+    movsx eax, byte ptr [esi + {od_off:#x}]
+    movsx edx, byte ptr [esi + {od_offy:#x}]
+    movsx ecx, word ptr [{po_cx:#x}]
+    add eax, ecx
+    movsx ecx, word ptr [{po_cx + 2:#x}]
+    add edx, ecx
+    call {ob_at:#x}
+    mov ebx, eax
+    mov eax, 8
+    sub eax, esi
+    mov byte ptr [{od_vars:#x}], al
+    call {dm_put:#x}
+    inc esi
+    cmp esi, 9
+    jb odw_d
     mov byte ptr [{PV_IN:#x}], 0
     popad
     ret
