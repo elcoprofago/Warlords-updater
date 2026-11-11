@@ -456,4 +456,20 @@ original; (b) 35: tope tocado y huérfanos que quedan; 13 del 34; (c) resultados
 y deserciones. Si la nueva vuelve a ganar y su planificador arma tantos grupos como la original, queda OR_MAX 4.
 Si no gana: limitar los huérfanos a la meta Form (volver a una ciudad) en vez de dejar que el planificador los
 mande a atacar.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.10, al volver la tanda".
+**Paso 4.10, medido (11/11/2026, tandas 152 y 153, 1.0.192.0, 18 partidas ok; 2 colgadas en el turno 0).**
+(a) Evento 36: el planificador casi no arma grupos, en ninguna de las dos IA: 0,03 / 0,04 / 0,04 por turno
+(original) y 0,03 / 0,05 / 0,02 (nueva) por tramo; escoltas (y) 0 en todas. Grupos activos al empezar el turno:
+original 1,0 / 1,0 / 0,8, nueva 1,1 / 1,5 / 1,7. Con 10 lugares y menos de 2 ocupados, los huérfanos no le quitan
+lugar al planificador: la lectura (1) queda descartada. Los grupos los arma casi todos el juego con héroes.
+(b) Evento 35: 257 grupos con 914 ejércitos (31 / 92 / 134 por tramo); el tope de 4 se tocó en 80 turnos (2 / 15 /
+63) y dejó 528 huérfanos sin grupo (461 en 21-30). Evento 34, meta 13 sobre todas las pilas anotadas: nueva 32,7 %
+(24,5 % en 150-151), original 64,7 %.
+(c) Resultados (72 por IA): la nueva vuelve a estar arriba, por poco: puesto 2,84 contra 2,92, PV 6,49 / 5,29,
+ciudades 4,58 / 4,24, primeros 11 / 10 (en 150-151 perdía 3,07 / 2,64). Deserciones: nueva 18 en 2 color-partida,
+original 14 en 1. Ejércitos vivos por tramo iguales (2,4 / 13,9 / 27,4 contra 2,3 / 13,8 / 27,7); la nueva junta
+más oro (264 / 311 / 271 contra 201 / 206 / 167).
+Decisión (la prevista en el paso): queda OR_MAX 4. La diferencia de puesto es chica y cabe en el azar de 18
+partidas; como el planificador no usa los lugares, lo que cambió de 7 a 4 es cuántos huérfanos se mueven por
+turno: con 7 los mandaba a pelear de a muchos y los perdía. No se limita a Form por ahora.
+Sin verificar: que escoltas = 0 sea real y no un fallo de pl_es en el juego (la prueba emulada solo comprobó que
+cuenta cuando se lo llama).
