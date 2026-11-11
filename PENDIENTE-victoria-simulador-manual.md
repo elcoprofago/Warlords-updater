@@ -3,12 +3,13 @@
 Viene de PENDIENTE-life-ward.md (Life Ward de edificios hecho en vista-aliada 1.0.198.0; TAREAS 169).
 Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y magias se ven más adelante.
 
-## Parte A: ventana de victoria solo para el atacante
-- Hoy la ventana que aparece al ganar una batalla por una ciudad (ocupar, saquear, pillar, arrasar) **la ve también
-  el defensor**. Pedido: que la vea **solo el atacante**, que es el único que decide.
-- Sin averiguar todavía: dónde se abre esa ventana en Darklord.exe y por qué la ve el defensor (probablemente en
-  red o con la vista aliada compartida: buscar en build.py los ganchos de la vista aliada que repiten diálogos).
-- Prueba de juguete con control (el atacante la sigue viendo) + tarea en TAREAS.md para probar en red.
+## Parte A: ventana de victoria solo para el atacante — HECHA (vista-aliada 1.0.199.0, TAREAS 170)
+- Causa: no era el original sino el parche propio cv_chk (combate visto por el atacado, 5/11/2026). Abre la ventana
+  de combate (0x405a10) en la PC del atacado, y esta termina en 0x406d10, que abre la de victoria (0x4d52d0) si ganó
+  el atacante, hay ciudad y [0x537ce8] es humano; en la PC del atacado [0x537ce8] es el atacado.
+- Arreglo: marca cv_def = 1 mientras cv_chk muestra el combate; cv_vic (en 0x406da9) sale entonces sin abrirla.
+- Prueba de juguete en prueba_combatevisto.py (atacado no la ve; controles: el atacante la ve, sin humano igual que el
+  original): todo OK. Falta la prueba en red (TAREAS 170).
 
 ## Parte B: Simulador de combate (simcombate\) con murallas, torre y faro
 - Se entiende por «visor de combates» el Simulador de combate (simcombate\, PENDIENTE-simulador-combate.md,
@@ -26,4 +27,4 @@ Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y m
   parche) y publicar.
 
 ## Para retomar
-Frase: «Seguimos con PENDIENTE-victoria-simulador-manual.md, parte A».
+Frase: «Seguimos con PENDIENTE-victoria-simulador-manual.md, parte B».

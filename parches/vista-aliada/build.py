@@ -20408,6 +20408,18 @@ struct.pack_into('<II', exe, g_data, grp_va - BASE, len(grp))
 # espera de sincronización de la ventana (0x406cb0/0x406d10, paquete 0x1ad, para los combates de la computadora) no
 # corre. Las variables que pone la rama del atacante (0x4fc764, 0x56e940) no las lee la ventana; no se tocan. Después
 # sigue la rama original del que no ataca (0x469fa9).
+# Ventana de victoria solo para el atacante (pedido del 11/11/2026): la ventana de combate que cv_chk abre al atacado
+# termina en 0x406d10, que abre la de ocupar/saquear/pillar/arrasar (0x4d52d0) si ganó el atacante, hay ciudad y
+# [0x537ce8] es humano; como en la PC del atacado [0x537ce8] es el atacado, la veía él también. cv_def vale 1 mientras
+# cv_chk muestra el combate; cv_vic (en 0x406da9) en ese caso sale de 0x406d10 sin abrirla ni llamar a 0x4b9370, como
+# el original en la PC del que no ataca. La decisión del atacante llega por red como antes.
+cv_def = place_data('cv_def', bytes(4))
+cv_vic = place('cv_vic', f'''
+    cmp byte ptr [{cv_def:#x}], 0
+    jne 0x406dec
+    movsx eax, word ptr [0x537ce8]
+    jmp 0x406db0
+''')
 cv_chk = place('cv_chk', f'''
     cmp word ptr [0x537ce8], si
     je 0x469f65
@@ -20445,7 +20457,9 @@ cv_chk = place('cv_chk', f'''
     push ebp
     push ebx
     push esi
+    mov byte ptr [{cv_def:#x}], 1
     call 0x405a10
+    mov byte ptr [{cv_def:#x}], 0
     add esp, 0x18
     pop dword ptr [0x500bf8]
     pop dword ptr [0x500bf4]
@@ -20758,6 +20772,7 @@ patch(0x4aa6bf, asm('xor dword ptr [esp + 0x10], ebp; mov eax, dword ptr [esp + 
 patch(0x49ce08, asm('call 0x4a1ce0', 0x49ce08), asm(f'call {po_step:#x}', 0x49ce08))
 patch(0x49d151, asm('call 0x469ed0', 0x49d151), asm(f'call {po_enter:#x}', 0x49d151))
 patch(0x469f5c, asm('cmp word ptr [0x537ce8], si; jne 0x469fa9', 0x469f5c), asm(f'jmp {cv_chk:#x}', 0x469f5c))
+patch(0x406da9, asm('movsx eax, word ptr [0x537ce8]', 0x406da9), asm(f'jmp {cv_vic:#x}; nop; nop', 0x406da9))
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
 patch(0x459d54, bytes.fromhex('8a4606a801'), asm(f'jmp {po_draw2:#x}', 0x459d54))
