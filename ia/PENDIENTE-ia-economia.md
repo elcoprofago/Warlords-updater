@@ -473,3 +473,12 @@ partidas; como el planificador no usa los lugares, lo que cambió de 7 a 4 es cu
 turno: con 7 los mandaba a pelear de a muchos y los perdía. No se limita a Form por ahora.
 Sin verificar: que escoltas = 0 sea real y no un fallo de pl_es en el juego (la prueba emulada solo comprobó que
 cuenta cuando se lo llama).
+
+**Paso 4.11 (11/11/2026; falta la tanda, TAREAS 170).** Confirmar el 4.10 con una tanda más, sin tocar el parche
+(10 partidas, Scarpart y Kor). Se juntan 152, 153 y la nueva: si con unas 27 partidas la nueva sigue arriba
+(puesto, PV, ciudades), el hilo de los ejércitos ociosos se da por cerrado con OR_MAX 4. Si queda abajo, se
+limitan los huérfanos a la meta Form. Los cambios de muros y Life Ward que vengan en el medio valen para las dos IA.
+Después, y en otra sesión: el oro que la nueva ya junta (271 contra 167 de la original en los turnos 21-30) no
+tiene destino. Ese es el objetivo de origen, un ahorro con destino (puentes, trampas, caminos, ayuda a aliados).
+Depende de que la IA sepa hacer esas obras: paso 5 de PENDIENTE-ia-innovaciones.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.11, al volver la tanda".
