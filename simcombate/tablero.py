@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.20.0'
+VERSION = '1.0.21.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -36,6 +36,10 @@ def version_de(exe):
     return v
 JUEGO0 = r'C:\Warlords3'
 ESTRUCTURAS = (('Nada', 0), ('Camino / puente', 1), ('Ciudad', 3))
+# Obras de vista-aliada, del defensor, en su casilla (escenario.py): texto del desplegable -> clave
+OBRAS_TXT = {'Ninguna': None, 'Faro (Life Ward +1, fuerza +1)': 'faro',
+             'Torre de vigía (Life Ward +2, fuerza +1)': 'torre',
+             'Muralla (Life Ward +3, Missiles +3, Acid +3, Fortify +3, Life Drain +1)': 'muro'}
 ORO = '#c8a040'
 
 # Colores de cada bando (pedido del usuario, 5/11/2026): atacante en azules, defensor en rojos.
@@ -572,6 +576,10 @@ class App(tk.Tk):
         self.noche = tk.BooleanVar(); ttk.Checkbutton(f, text='Noche (opción Day/Night)', variable=self.noche).grid(row=6, column=0, columnspan=2, sticky='w')
         ttk.Label(f, text='Defensas (ciudad)').grid(row=7, column=0, sticky='w')
         self.defensas = ttk.Spinbox(f, from_=1, to=3, width=3); self.defensas.set(1); self.defensas.grid(row=7, column=1, sticky='w')
+        ttk.Label(f, text='(Life Ward de la ciudad = defensas)').grid(row=8, column=0, columnspan=2, sticky='w')
+        ttk.Label(f, text='Edificio del defensor').grid(row=9, column=0, columnspan=2, sticky='w')
+        self.obra = ttk.Combobox(f, values=list(OBRAS_TXT), width=34, state='readonly'); self.obra.set('Ninguna')
+        self.obra.grid(row=10, column=0, columnspan=2, sticky='w')
 
     def subpanel_visual(self, padre, c):
         f = ttk.LabelFrame(padre, text='VISUAL (ventana de combate)', padding=6); f.pack(fill='both', expand=True, pady=(6, 0))
@@ -653,6 +661,7 @@ class App(tk.Tk):
         if campo.get('terreno') in self.sim.terrenos: self.terreno.set(campo['terreno']); self.ver_agua()
         self.estructura.set(campo.get('estructura', 0)); self.bosque.set(campo.get('bosque', False))
         self.noche.set(campo.get('noche', False)); self.defensas.set(campo.get('defensas', 1))
+        self.obra.set(next((t for t, k in OBRAS_TXT.items() if k == campo.get('obra')), 'Ninguna'))
 
     def ver_agua(self):
         if self.sim and self.terreno.get():
@@ -663,7 +672,7 @@ class App(tk.Tk):
         except ValueError: d = 1
         return {'A': self.pa.lado(), 'D': self.pd.lado(),
                 'campo': dict(terreno=self.terreno.get(), estructura=self.estructura.get(), bosque=self.bosque.get(),
-                              noche=self.noche.get(), defensas=d)}
+                              noche=self.noche.get(), defensas=d, obra=OBRAS_TXT.get(self.obra.get()))}
 
     def iniciar(self):
         v = getattr(self, 'v_combate', None)   # una sola pelea a la vez: si ya hay una ventana, se la trae al frente

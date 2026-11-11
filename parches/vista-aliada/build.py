@@ -10326,7 +10326,7 @@ bvd_next:
 # caminos en 0x4a5135). Un puente derribado tiene estructura 0: no cuenta. No vale para héroes ([esp+0x26] = 0x10).
 # Sin bono ni puente, registros y pila quedan como en el original. El nombre lo dan los textos 0x18a (TEXTS).
 # Obras (torre y faro): +1 a cada defensor que no es héroe (5.º argumento [esp+0xc0] = 0) si la casilla de la batalla
-# (ebx = x, ebp = y) tiene una.
+# (bx = x, bp = y; la parte alta de ebx trae basura: sin movsx, ob_at no la encontraba y el +1 nunca se sumaba) tiene una.
 BRIDGE_AB = 34
 bridgeab = place('bridgeab', f'''
     push ecx
@@ -10358,8 +10358,8 @@ bab_no:
     cmp dword ptr [esp + 0xc0], 0
     jne bab_w
     push eax
-    mov eax, ebx
-    mov edx, ebp
+    movsx eax, bx
+    movsx edx, bp
     call {ob_at:#x}
     test eax, eax
     jz bab_z

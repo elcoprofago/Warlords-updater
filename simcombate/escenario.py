@@ -6,13 +6,15 @@
 #                             'items': [archivos .ITM], 'hechizos': [archivos .SPL]},
 #            'barco': archivo .ARM de barco o None,  'ciudades': None | cantidad de ciudades del bando}
 #   campo = {'terreno': nombre, 'estructura': 0 nada | 1 camino o puente | 3 ciudad, 'bosque': bool,
-#            'noche': bool, 'defensas': 1..3 (solo ciudad)}
+#            'noche': bool, 'defensas': 1..3 (solo ciudad), 'obra': None | 'torre' | 'faro' | 'muro'}
+#   La obra (vista-aliada) es del defensor y está en su casilla: torre Life Ward +2, faro +1 (y +1 de fuerza a los no
+#   héroes); muro Life Ward +3, Missiles +3, Acid +3, Fortify +3, Life Drain +1. Life Ward de la ciudad = su tamaño.
 # El atacante es el bando 0 y el defensor el 1; el casillero k de cada lado carga su arma en la ranura k del bando y
 # le da prioridad k en el fight order (Motor.orden), así que la pila pelea en el orden de la grilla. El héroe usa la
 # ranura de clase 0. En agua las tropas van embarcadas (hace falta un barco); con puente, no.
 import os, struct
 import datos
-from motor import Motor, CIUDAD0
+from motor import Motor, CIUDAD0, OBRAS
 
 MAX_PILA = 8
 AX, AY, DX, DY = 50, 40, 51, 40      # casillas de campo abierto (Tanda_Kor: tierra, sin nada)
@@ -67,6 +69,13 @@ class Simulador:
             nivel = c.get('defensas', 1)
             if not 1 <= nivel <= 3: raise Error('defensas de la ciudad: 1 a 3')
             m.mu.mem_write(CIUDAD0 + 0xa5, bytes([1])); m.mu.mem_write(CIUDAD0 + 0xa4, bytes([nivel])); m.call(0x4407d0, [])
+        obra = c.get('obra')
+        if obra:
+            if obra not in OBRAS: raise Error(f'obra «{obra}» desconocida')
+            if agua: raise Error('las obras van en tierra')
+            if est == 3 and obra != 'muro': raise Error('la torre y el faro no van en una ciudad (el muro sí, al lado)')
+            # en la casilla del defensor, de su bando: el muro vale igual sobre el bloque o a 1 casilla
+            m.poner_obra(obra, dx, dy, 1)
         ids = {}; self.clase_de = {}
         for b, lado, (x, y), pila in ((0, 'A', (ax, ay), PILA_A), (1, 'D', (dx, dy), PILA_D)):
             ids[lado] = self._lado(b, lado, esc[lado], x, y, pila, agua and est != 1, avisos)

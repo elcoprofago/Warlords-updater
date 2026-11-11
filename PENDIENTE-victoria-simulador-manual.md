@@ -11,7 +11,12 @@ Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y m
 - Prueba de juguete en prueba_combatevisto.py (atacado no la ve; controles: el atacante la ve, sin humano igual que el
   original): todo OK. Falta la prueba en red (TAREAS 170).
 
-## Parte B: Simulador de combate (simcombate\) con murallas, torre y faro
+## Parte B: Simulador de combate (simcombate\) con murallas, torre y faro — HECHA (simulador 1.0.21.0, vista-aliada 1.0.200.0, TAREAS 172)
+- Hecho: desplegable «Edificio del defensor» en TERRENO; el motor busca OB_TAB/ob_map en el exe por el código de ob_at
+  y pone la obra en la casilla del defensor; el exe emulado aplica los bonos solo. prueba_escenario.py 7: todo OK
+  (3 contra 3 gnollcav: 50,70 % sin obra, 38,99 % faro o torre, 18,93 % muralla).
+- Hallado al probar: bridgeab (vista-aliada) leía la x con basura en la parte alta de ebx y el +1 de fuerza de torre
+  y faro nunca se aplicaba en combate. Corregido (movsx) en 1.0.200.0.
 - Se entiende por «visor de combates» el Simulador de combate (simcombate\, PENDIENTE-simulador-combate.md,
   repo elcoprofago/Simulador-Combate). Confirmado por el usuario el 11/11/2026.
 - En el menú del escenario, agregar los edificios nuevos: **faro, torre de vigía y muralla**, con su Life Ward
@@ -27,4 +32,4 @@ Confirmado por el usuario: **Life Ward solo para edificios**; héroes, items y m
   parche) y publicar.
 
 ## Para retomar
-Frase: «Seguimos con PENDIENTE-victoria-simulador-manual.md, parte B».
+Frase: «Seguimos con PENDIENTE-victoria-simulador-manual.md, parte C».

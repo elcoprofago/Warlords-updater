@@ -1,7 +1,7 @@
 # Motor del simulador de combate: corre el código real de DarklordAV.exe (unicorn) sobre el estado de una partida.
 # 0x464ac0(atacante, x, y, ficha) arma la ficha; 0x466c90(ficha) la deja lista; 0x464ea0(ficha, resultado, modo) pelea.
 # Resultado (0x40c bytes): +0 palabra 1 = gana el atacante; +6.. registro de eventos, un byte por evento.
-import os, struct, pefile
+import os, re, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_MEM_INVALID, UC_HOOK_CODE, UcError
 from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EAX
 
@@ -58,6 +58,15 @@ REGIONES = ((0x503e00, 0x12), (0x503e58, 0x32000), (0x535ed0, 0xa96), (0x536b30,
 EVENTOS = {0: 'D-1', 1: 'A-1', 2: 'entra A', 3: 'entra D', 4: 'muere A', 5: 'muere D', 6: 'gana A', 7: 'gana D',
            8: 'cae D (especial)', 9: 'cae A (especial)', 10: 'asesinan a D', 11: 'asesinan a A'}
 
+# Obras de vista-aliada (torre, faro, muro de piedra): tabla propia del parche (registros de 8 bytes: x, y palabras,
+# +4 tipo, +6 dueño, +7 daño del muro) y ob_map (1 byte por casilla = registro + 1). Sus direcciones cambian con cada
+# compilación del parche: se buscan en el exe por el código de ob_at ("movzx eax, [edx + ob_map]; test eax, eax; jz;
+# lea eax, [eax*8 + OB_TAB - 8]"), y se comprueba que OB_TAB - 8 tenga la marca 'OBRA' del .SAV. El combate las lee
+# solo (wb_unit, wb_grp, bridgeab del parche): torre +2 y faro +1 de Life Ward y +1 de fuerza a los no héroes; muro
+# Missiles/Acid/Fortify +3, Life Drain +1 y Life Ward +3 (en la casilla o a 1 de distancia, del mismo bando).
+OB_TORRE, OB_FARO, OB_MURO = 4, 5, 7
+OBRAS = {'torre': OB_TORRE, 'faro': OB_FARO, 'muro': OB_MURO}
+
 def muertes(ev):
     """[('A', i) | ('D', i)]: qué unidad (por orden de pelea) muere, en orden. Se saca de la estructura y no del código
     de muerte (hay varios): cada «entra» de un lado después del primero = cayó la anterior de ese lado; «gana A»/«gana
@@ -97,6 +106,13 @@ class Motor:
         self.items0 = bytes(mu.mem_read(ITEMS_N, 2 + ITEMS_MAX * IREC))
         self.hech0 = bytes(mu.mem_read(HECH0, HECH_MAX * HECREC))
         self.mapa0 = bytes(mu.mem_read(0x503e58, 0x32000))
+        self.ob = None
+        for mt in re.finditer(rb'\x0f\xb6\x82(....)\x85\xc0\x74.\x8d\x04\xc5(....)', img, re.S):
+            omap, tab = struct.unpack('<I', mt.group(1))[0], struct.unpack('<I', mt.group(2))[0] + 8
+            if bytes(mu.mem_read(tab - 8, 4)) == b'OBRA': self.ob = (omap, tab)
+        if self.ob:
+            self.obmap0 = bytes(mu.mem_read(self.ob[0], 0x32000 // 10))
+            self.obtab0 = bytes(mu.mem_read(self.ob[1] - 4, 4 + 64 * 8))
         self.fallo = None
         def malo(m, acc, addr, sz, val, u):
             self.fallo = (acc, addr); return False
@@ -229,6 +245,16 @@ class Motor:
         self.mu.mem_write(UNIT0, self.inicial); self.mu.mem_write(UNITS_N, struct.pack('<h', self.n0))
         self.mu.mem_write(HEROE0, self.heroes0); self.mu.mem_write(ITEMS_N, self.items0)
         self.mu.mem_write(HECH0, self.hech0); self.mu.mem_write(0x503e58, self.mapa0)
+        if self.ob: self.mu.mem_write(self.ob[0], self.obmap0); self.mu.mem_write(self.ob[1] - 4, self.obtab0)
+
+    def poner_obra(self, tipo, x, y, dueno):
+        """Pone una obra del parche ('torre', 'faro' o 'muro', sano) de dueno en (x, y); reemplaza la tabla entera
+        (limpiar() vuelve a la de la partida)."""
+        if not self.ob: raise RuntimeError('este DarklordAV.exe no tiene obras (vista-aliada viejo)')
+        omap, tab = self.ob
+        self.mu.mem_write(omap, bytes(0x32000 // 10))
+        self.mu.mem_write(tab - 4, struct.pack('<I', 1) + struct.pack('<hhBBBB', x, y, OBRAS[tipo], 0, dueno, 0))
+        self.mu.mem_write(omap + (y << self.sh) + x, bytes([1]))
 
     def lanzar(self, u, spl):
         """El héroe u lanza el hechizo (.SPL, datos.Hechizo.registro) con la rutina del juego 0x48f300 (sin cobrar maná).

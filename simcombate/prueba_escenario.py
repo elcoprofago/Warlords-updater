@@ -66,4 +66,17 @@ for t in ('gnollcav.arm', 'moongard.arm', 'archons.arm', 'elephant.arm', 'Zapper
         ok += r['gana'] == (sum(1 for l, _ in mu if l == 'D') == 3) and r['gana'] != (sum(1 for l, _ in mu if l == 'A') == 3)
 ver(ok == 1500, f'secuencia de muertes coherente con el ganador en {ok} de 1500 batallas')
 print("muestra:", [muertes(r["eventos"])], "gana", "A" if r["gana"] else "D")
+# 7. Edificios del defensor (vista-aliada): faro, torre y muralla lo ayudan, la muralla más; el muro rechaza agua
+#    y la torre una ciudad. Control: sin obra, el mismo % que antes.
+G1 = lado(('gnollcav.arm', 3))
+po = {o: s.simular(esc(G1, G1, obra=o), N)['pct'] for o in (None, 'faro', 'torre', 'muro')}
+print('obras:', po)
+ver(po[None] == base, f'sin obra: {po[None]:.2f} % (campo abierto {base:.2f} %)')
+ver(po['faro'] < base and po['torre'] < base, f'faro {po["faro"]:.2f} %, torre {po["torre"]:.2f} % < {base:.2f} %')
+ver(po['muro'] < min(po['faro'], po['torre']), f'muralla {po["muro"]:.2f} % < faro y torre')
+for kw, que in ((dict(obra='torre', estructura=3), 'torre en ciudad'), (dict(obra='muro', terreno=agua, estructura=1), 'muro en agua')):
+    try: s.simular(esc(G1, G1, **kw), 10); ver(False, f'{que} aceptado')
+    except Error as e: ver(True, f'{que}: {e}')
+r = s.simular(esc(G1, G1, estructura=3, defensas=2, obra='muro'), N)['pct']
+ver(r < esp[2], f'ciudad nivel 2 con muralla al lado: {r:.2f} % < {esp[2]} %')
 print('RESULTADO:', 'TODO OK' if not mal else f'{mal} FALLAS')
