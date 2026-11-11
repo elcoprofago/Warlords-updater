@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 173).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 174).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **173.** Manual con obras y defensas (vista-aliada 1.0.201.0, 11/11/2026). Abrí `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y leé el capítulo nuevo **XVII «Obras y defensas»**: torres, faros y murallas, los bonos de cada edificio en combate, el Life Ward y la ventana de victoria solo para el atacante. Fijate también la fila nueva en «Novedades de un vistazo» (capítulo I). Anotá lo que esté mal o quieras cambiar.
 - [ ] **170.** Ventana de victoria solo para el atacante (vista-aliada 1.0.199.0, 11/11/2026). En `C:\Warlords` de las dos PC, actualizar el parche y jugar en red con DarklordAV.exe. (a) Un humano ataca y gana una ciudad del otro humano: la ventana de ocupar / saquear / pillar / arrasar tiene que aparecer **solo** en la PC del atacante. En la PC del atacado se sigue viendo la ventana de combate, pero no la de victoria. (b) Lo que elija el atacante (por ejemplo, arrasar) tiene que verse igual en las dos PC. (c) Control: en una partida de una sola PC, al ganar una ciudad la ventana sigue apareciendo. Anotar lo que no coincida.
 - [ ] **172.** Simulador de combate 1.0.21.0 y vista-aliada 1.0.200.0 (11/11/2026). (a) En el simulador (opción del Actualizador, o «Buscar actualización» en Configuración), en TERRENO elegir «Edificio del defensor»: Faro, Torre de vigía o Muralla, y comparar el % con «Ninguna» (los edificios tienen que bajar el % del atacante; la muralla, mucho más). (b) En el juego (`C:\Warlords3`, parche actualizado): una unidad común parada sobre una torre o un faro propio tiene que mostrar en su informe la fuerza +1 en violeta, y pelear con ese +1 al ser atacada. Antes de esta versión el +1 se mostraba pero **no se aplicaba en el combate**. Anotar lo que no coincida.
 - [ ] **171.** IA: tanda de confirmación, sin cambios (vista-aliada 1.0.192.0 o posterior, 11/11/2026)

@@ -133,6 +133,8 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
     <ol><li>DarkValidator · DarkCompare · Visor PGS · Sorteo · Votación</li></ol></li>
   <li><span>XVI.</span>El Visor de historia
     <ol><li>Abrir una partida · Recorrer las rondas · Buscar · Resultado y exportación · Configuración</li></ol></li>
+  <li><span>XVII.</span>Obras y defensas
+    <ol><li>Torres, faros y murallas · Bonos del muro · Life Ward de los edificios · La ventana de victoria</li></ol></li>
   <li><span>A.</span>Apéndice A — Referencia rápida</li>
   <li><span>B.</span>Apéndice B — Archivos que instala el parche</li>
   <li><span>C.</span>Apéndice C — Estado de las funciones</li>
@@ -180,6 +182,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Órdenes por chat</td><td>Escribir <code>.n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>X</td></tr>
 <tr><td>Votación, Sorteo, Comparador</td><td>Botones dentro del juego que abren las herramientas del clan en todas las PC.</td><td>III, XI</td></tr>
 <tr><td>Ítems en mapas al azar</td><td>Los ítems personalizados entran en el sorteo de las ruinas.</td><td>XII</td></tr>
+<tr><td>Torres, faros y murallas</td><td>Obras que ven lejos y defienden: +1 de fuerza, bonos del muro y Life Ward contra el Life Drain.</td><td>XVII</td></tr>
 <tr><td>IA mejorada</td><td>La computadora usa barcos, puentes, refugios aliados y esquiva los pozos que ve.</td><td>XIII</td></tr>
 </table>
 
@@ -779,6 +782,46 @@ no modifica la partida.</p>
 <p>La ruedita de abajo a la derecha elige el fondo de la ventana (color liso o textura) y tiene el botón
 <b>Actualizar versión</b>, que baja la última publicada. La versión está siempre en el título de la ventana.</p>
 
+<!-- ============================================================ XVII -->
+<h1><span class="num">Capítulo XVII</span>Obras y defensas</h1>
+<p class="entrada">Una ciudad no es el único lugar donde resistir. Un grupo puede levantar torres, faros y murallas en
+el campo, y quien las defiende pelea con ventaja.</p>
+
+<h2>Torres, faros y murallas</h2>
+<p>Se levantan con <i>Build</i>, en la casilla del líder del grupo: tierra sin camino, ciudad, ruina, sitio ni otra
+obra. Cada una cuesta la mitad de fundar una ciudad.</p>
+<ul>
+  <li><b>Torre de vigía.</b> Despeja la niebla a 5 casillas para su dueño y sus aliados.</li>
+  <li><b>Faro.</b> Igual, a 6 casillas; necesita agua en una de las cuatro casillas vecinas.</li>
+  <li><b>Empalizada y muro de piedra.</b> Cierran el paso. Un bloque de muro enemigo se ataca como una casilla con
+  ejércitos: lo defienden 24 arqueros del dueño y cae cuando mueren los 24. El dueño lo repara (renglón 7 de
+  <i>Build</i>, pagando según los arqueros perdidos) o lo derriba con <i>Raze</i> y recupera el 75 % del precio.</li>
+</ul>
+<p>Torre y faro pasan al bando que entra en ellos, si no es aliado del dueño.</p>
+
+<h2>Bonos de los edificios en combate</h2>
+<p>Todos valen solo <b>al defender</b>, y se suman a lo que ya tiene cada unidad.</p>
+<table>
+<tr><th style="width:24%">Edificio</th><th>Quién lo recibe</th><th>Bonos</th></tr>
+<tr><td>Torre de vigía</td><td>La pila en su casilla</td><td>+1 de fuerza a cada unidad que no es héroe · Life Ward +2</td></tr>
+<tr><td>Faro</td><td>La pila en su casilla</td><td>+1 de fuerza a cada unidad que no es héroe · Life Ward +1</td></tr>
+<tr><td>Muro de piedra</td><td>Los defensores sobre un bloque de muro propio en pie, o a 1 casilla de él</td><td>Missiles +3 · Acid +3 · Fortify +3 · Life Drain +1 · Life Ward +3</td></tr>
+<tr><td>Ciudad</td><td>Los defensores de la ciudad</td><td>Life Ward igual a su tamaño (1 a 3)</td></tr>
+</table>
+<p><b>Fortify +3</b> suma 3 de fuerza a cada defensor, menos el <i>Siege</i> del atacante. <b>Life Drain +1</b> le quita
+un golpe (hit) a cada unidad atacante, sin bajarla de 1.</p>
+
+<h2>Life Ward de los edificios</h2>
+<p>Cada punto de Life Ward anula un punto del Life Drain enemigo. No da golpes de más: solo protege los propios. Si
+varios edificios cubren al mismo grupo, vale el mayor, con un tope de 3. Por ahora solo lo dan los edificios; héroes,
+ítems y magias no.</p>
+<div class="consejo"><b>Probar antes de pelear.</b> El Simulador de combate (se baja de <code>github.com/elcoprofago/Simulador-Combate</code>) tiene en <i>TERRENO</i> la
+casilla del defensor: Nada, Camino, Ciudad, Faro, Torre o Muralla, con las defensas que corresponden a cada una.</div>
+
+<h2>La ventana de victoria</h2>
+<p>En red, el bando atacado también ve el combate en su PC. La ventana que aparece cuando cae una ciudad (ocupar,
+saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decide.</p>
+
 <!-- ============================================================ APÉNDICE A -->
 <h1><span class="num">Apéndice A</span>Referencia rápida</h1>
 <table>
@@ -797,6 +840,7 @@ no modifica la partida.</p>
 <tr><td>Sortear bandos</td><td>Anfitrión: botón Sorteo junto a <i>Chat</i>, en la preparación</td></tr>
 <tr><td>Comparar armas</td><td><i>Edit Side</i> → botón DarkCompare</td></tr>
 <tr><td>Jugar con día y noche</td><td><i>Customize Options</i> → <i>Day/Night</i></td></tr>
+<tr><td>Levantar torre, faro o muro</td><td>Grupo en la casilla → <i>Build</i></td></tr>
 <tr><td>Camuflar tropas de noche</td><td>Editor: Move Bonus <i>camouflg</i> en todas las unidades del grupo</td></tr>
 <tr><td>Pedir misión</td><td><kbd>Q</kbd> (Get Quest)</td></tr>
 </table>
@@ -842,6 +886,8 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <tr><td>Votación, Sorteo y pausa</td><td><span class="estado e-pr">en prueba</span> en otras PC del clan</td></tr>
 <tr><td>IA de alianzas</td><td><span class="estado e-pr">en prueba</span> (series A/B)</td></tr>
 <tr><td>Pozos y trampas en red (misma tabla en todas las PC)</td><td><span class="estado e-dev">en desarrollo</span></td></tr>
+<tr><td>Torres, faros, murallas y sus bonos</td><td><span class="estado e-pr">en prueba</span></td></tr>
+<tr><td>Ventana de victoria solo para el atacante</td><td><span class="estado e-pr">en prueba</span> en red</td></tr>
 <tr><td>Opción 9 exige la 6 (Actualizador 1.0.13.0)</td><td><span class="estado e-pr">en prueba</span></td></tr>
 </table>
 
