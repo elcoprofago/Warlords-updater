@@ -336,16 +336,16 @@ def _muro_piedra(lz, d, sombra, prohibido, puerta=None, lejana=True):
             u = int((math.atan2(ny, nx) + math.pi) * RT)
             luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             base, oscura = HM + 4, u % 8 >= 4
-        if z >= base: return _pardo(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
+        if z >= base: return _azul(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
         if puerta and (gx, gy) not in tramo and quien[(gx, gy)] == (C, C) and ny > 0:
             c = _arco(gx - C + 0.5, z, puerta)
             if c: return c
         # tostado (pedido del 9/11/2026): más claro arriba, más oscuro al pie
-        return _pardo(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
+        return _azul(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
 
     def arriba(gx, gy):
         base = HM if (gx, gy) in tramo else HM + 4
-        if alto[(gx, gy)] > base: return _pardo((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
+        if alto[(gx, gy)] > base: return _azul((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
         return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
@@ -362,8 +362,8 @@ def _arco(dx, z, puerta):
     if r > AW + 2.2: return None
     if r > AW:                                      # dovelas: claras, con juntas radiales
         ang = math.atan2(max(0.0, z - AH), dx)
-        if z > AH and int(ang * 9) % 2 == 0 and r > AW + 1.2: return _pardo((92, 88, 84))
-        return _pardo((170, 164, 156))
+        if z > AH and int(ang * 9) % 2 == 0 and r > AW + 1.2: return _azul((92, 88, 84))
+        return _azul((170, 164, 156))
     if puerta == 'abierta':
         if ax > AW - 2: return (108, 70, 34) if int(z) % 5 else (60, 40, 22)    # hojas abiertas, de canto
         return (0, 0, 0)        # negro (pedido del 10/11/2026): (22, 17, 12) caía en el pardo rojizo 80 de la paleta
@@ -406,15 +406,15 @@ def _muro_diag(lz, d, puerta, sombra):
             u = int((math.atan2(ny, nx) + math.pi) * RT)
             luz = 0.62 + 0.38 * max(0.0, (-0.45 * nx + 0.9 * ny) / max(1e-6, math.hypot(nx, ny)))
             base, oscura = HM + 4, u % 8 >= 4
-        if z >= base: return _pardo(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
+        if z >= base: return _azul(_parapeto(alto[(gx, gy)] - z, alto[(gx, gy)] > base + 2 and oscura, luz * 1.12))
         if (gx, gy) in tramo:
             c = _arco(gx - C + 0.5, z, puerta)
             if c: return c
-        return _pardo(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
+        return _azul(_ladrillo(u, base - 1 - z, luz * (0.68 + 0.44 * z / base)))
 
     def arriba(gx, gy):
         base = HM if (gx, gy) in tramo else HM + 4
-        if alto[(gx, gy)] > base: return _pardo((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
+        if alto[(gx, gy)] > base: return _azul((190, 190, 186) if alto[(gx, gy)] > base + 2 else (156, 156, 154))
         return _calzada(gx, gy)
     lz.voxeles(alto, cara, arriba)
 
