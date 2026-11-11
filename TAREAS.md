@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 171).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 172).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,7 +15,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [ ] **170.** Ventana de victoria solo para el atacante (vista-aliada 1.0.199.0, 11/11/2026). En `C:\Warlords` de las dos PC, actualizar el parche y jugar en red con DarklordAV.exe. (a) Un humano ataca y gana una ciudad del otro humano: la ventana de ocupar / saquear / pillar / arrasar tiene que aparecer **solo** en la PC del atacante. En la PC del atacado se sigue viendo la ventana de combate, pero no la de victoria. (b) Lo que elija el atacante (por ejemplo, arrasar) tiene que verse igual en las dos PC. (c) Control: en una partida de una sola PC, al ganar una ciudad la ventana sigue apareciendo. Anotar lo que no coincida.
-- [ ] **170.** IA: tanda de confirmación, sin cambios (vista-aliada 1.0.192.0 o posterior, 11/11/2026)
+- [ ] **171.** IA: tanda de confirmación, sin cambios (vista-aliada 1.0.192.0 o posterior, 11/11/2026)
 La computadora nueva volvió a ganarle a la original, pero por muy poco. Una tanda más con la misma versión dice si
 es de verdad o fue suerte.
 1. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.

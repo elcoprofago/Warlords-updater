@@ -474,7 +474,7 @@ turno: con 7 los mandaba a pelear de a muchos y los perdía. No se limita a Form
 Sin verificar: que escoltas = 0 sea real y no un fallo de pl_es en el juego (la prueba emulada solo comprobó que
 cuenta cuando se lo llama).
 
-**Paso 4.11 (11/11/2026; falta la tanda, TAREAS 170).** Confirmar el 4.10 con una tanda más, sin tocar el parche
+**Paso 4.11 (11/11/2026; falta la tanda, TAREAS 171).** Confirmar el 4.10 con una tanda más, sin tocar el parche
 (10 partidas, Scarpart y Kor). Se juntan 152, 153 y la nueva: si con unas 27 partidas la nueva sigue arriba
 (puesto, PV, ciudades), el hilo de los ejércitos ociosos se da por cerrado con OR_MAX 4. Si queda abajo, se
 limitan los huérfanos a la meta Form. Los cambios de muros y Life Ward que vengan en el medio valen para las dos IA.
