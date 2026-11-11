@@ -113,7 +113,7 @@ def cursor(p, dx=1, dy=0, ejercito=0, clic=False, **kw):
     mu.emu_start(0x473c24, 0, count=2000)
     return r[:1], struct.unpack('<hh', mu.mem_read(OUT, 4))
 ver('al lado de un muro enemigo: espadas (9) y destino la casilla del muro', cursor(5), ([9], (5, 7)))
-ver('clic: mover (7) a la casilla del muro, que arma la batalla (11/11/2026)', cursor(5, clic=True), ([7], (5, 7)))
+ver('clic: también espadas (9): la orden de atacar (11/11/2026)', cursor(5, clic=True), ([9], (5, 7)))
 ver('en diagonal también', cursor(5, dx=1, dy=1), ([9], (5, 7)))
 ver('sin Diplomacy: espadas', cursor(5, guerra=False, diplo=False)[0], [9])
 ver('control: en paz, lo de siempre', cursor(5, guerra=False)[0], ['decide'])
@@ -121,6 +121,29 @@ ver('control: el dueño, lo de siempre', cursor(2)[0], ['decide'])
 ver('control: lejos (2 casillas), lo de siempre', cursor(5, dx=2)[0], ['decide'])
 ver('control: con un ejército en la casilla, lo de siempre', cursor(5, ejercito=1)[0], ['decide'])
 ver('control: muro caído, lo de siempre', cursor(5, muertos=24)[0], ['decide'])
+
+print('-- wl_atk: la orden de atacar acepta el muro vacío (0x469b90, 11/11/2026)')
+def atacar(p, palabra=0, ciudad=-1, **kw):
+    g = juego(**kw); mu = g.mu
+    mu.mem_write(casilla(5, 7), struct.pack('<H', palabra))
+    r = []
+    for a, nm in ((0x469c4c, 'sigue'), (0x469d29, 'descartada')):
+        mu.hook_add(UC_HOOK_CODE, lambda mu, *_, nm=nm: (r.append(nm), mu.emu_stop()), begin=a, end=a)
+    F = STACK - 0x100
+    mu.mem_write(F + 0x24, struct.pack('<h', p))
+    mu.reg_write(UC_X86_REG_ESI, 5); mu.reg_write(UC_X86_REG_EDI, 7); mu.reg_write(UC_X86_REG_EBX, ciudad & 0xffff)
+    mu.reg_write(UC_X86_REG_EAX, (palabra & 0x3c00) >> 10); mu.reg_write(UC_X86_REG_ECX, palabra >> 15)
+    mu.reg_write(UC_X86_REG_ESP, F)
+    mu.emu_start(0x469c33, 0, count=2000)
+    return r[:1]
+ver('muro enemigo vacío: sigue como casilla enemiga ocupada', atacar(5), ['sigue'])
+ver('sin Diplomacy: sigue', atacar(5, guerra=False, diplo=False), ['sigue'])
+ver('control: en paz, descartada (como el original)', atacar(5, guerra=False), ['descartada'])
+ver('control: muro caído, descartada', atacar(5, muertos=24), ['descartada'])
+ver('control: el dueño, descartada', atacar(2), ['descartada'])
+ver('control: ejército enemigo (3) en la casilla, sigue', atacar(5, palabra=0x8000 | 3 << 10, muertos=24), ['sigue'])
+ver('control: ejército propio en la casilla, descartada', atacar(5, palabra=0x8000 | 5 << 10, muertos=24), ['descartada'])
+ver('control: ciudad vacía ajena, sigue', atacar(5, ciudad=3, muertos=24), ['sigue'])
 
 print('-- wv_pre')
 def pre(p=5, muertos=0, reales=0, ocup=None):

@@ -6208,9 +6208,8 @@ ww_out:
 ''')
 # wl_cur (en 0x473c24, antes de decide): con un grupo elegido, una casilla vecina sin ejércitos que es un bloque de muro en
 # pie de un bando en guerra con el que juega ([0x537ce8], wl_war) da el cursor de ataque 9 (espadas), como un ejército
-# enemigo (0x473cc7..0x473d12). El clic ([esp + 0x48] = 0) en cambio da «mover» (0x473c5b, código 7 -> 0x4b91e0): el 9
-# llama a 0x4648d0, que ataca al ejército de la casilla y con el muro vacío no hacía nada (BUILD01.SAV, 11/11/2026);
-# al mover ahí, wv_step arma la batalla. Hasta 1.0.183.0 daba «mover» (BUILD01.SAV,
+# enemigo (0x473cc7..0x473d12). El clic manda la orden de atacar (0x4648d0 -> mensaje 0x14f -> 0x469b90), que wl_atk
+# deja pasar con la casilla vacía (11/11/2026: mover hasta el muro solo frena al lado, no arma la batalla). Hasta 1.0.183.0 daba «mover» (BUILD01.SAV,
 # 10/11/2026). Lo demás sigue a decide.
 wl_cur = place('wl_cur', f'''
     cmp word ptr [esp + 0x22], 1
@@ -6232,8 +6231,6 @@ wl_cur = place('wl_cur', f'''
     pop ecx
     pop eax
     jz wc_no
-    cmp byte ptr [esp + 0x48], 0
-    je 0x473c5b
     mov ax, word ptr [esp + 0x2c]
     mov esi, dword ptr [esp + 0x44]
     mov dx, word ptr [esp + 0x2e]
@@ -6248,6 +6245,34 @@ wl_cur = place('wl_cur', f'''
     ret
 wc_no:
     jmp {decide:#x}
+''')
+# wl_atk (0x469c33 de 0x469b90, la orden de atacar del mensaje 0x14f; si/di = casilla, [esp + 0x24] = el que ataca,
+# ax = dueño de la palabra del mapa, cx = bit de ocupada, bx = ciudad o -1): el original descarta la orden (0x469d29)
+# si la casilla es del que ataca o si no tiene ejércitos ni ciudad. Un bloque de muro en pie de un bando en guerra con
+# el que ataca (wl_war) sigue como una casilla enemiga ocupada (0x469c4c); la batalla la arma wv_pre (BUILD01.SAV,
+# 11/11/2026: con el muro vacío las espadas no hacían nada).
+wl_atk = place('wl_atk', f'''
+    test cx, cx
+    jnz wa_orig
+    push eax
+    push ecx
+    push edx
+    movsx eax, si
+    movsx edx, di
+    movsx ecx, word ptr [esp + 0x24 + 12]
+    call {wl_war:#x}
+    pop edx
+    pop ecx
+    pop eax
+    jnz 0x469c4c
+wa_orig:
+    cmp ax, word ptr [esp + 0x24]
+    je 0x469d29
+    test cx, cx
+    jnz 0x469c4c
+    test bx, bx
+    jl 0x469d29
+    jmp 0x469c4c
 ''')
 # wv_type: eax = bando -> eax = su tipo de arma (0..14) cuyo nombre (+0) empieza con «longbow» (pedido del 10/11/2026:
 # los arqueros virtuales son Longbows); si no hay, el de archivo (+0x90) «archers»; si no, el primero con la habilidad
@@ -20144,6 +20169,7 @@ assert rel(0x44045a, 4) == bytes.fromhex('33c98ac8') and rel(0x440486, 12) == by
 patch(0x44045a, rel(0x44045a, 0x440492 - 0x44045a), asm(f'jmp {mana:#x}', 0x44045a))
 patch(0x418836, asm('call 0x4dd080', 0x418836), asm(f'call {shield2:#x}', 0x418836))
 patch(0x418871, bytes.fromhex('ff15ec9b5a00'), asm(f'call {ownertxt:#x}', 0x418871))
+patch(0x469c33, rel(0x469c33, 0x19), asm(f'jmp {wl_atk:#x}', 0x469c33))
 patch(0x473c24, bytes.fromhex('66391de87c5300741c'), asm(f'jmp {wl_cur:#x}', 0x473c24))
 patch(0x4a5d6d, bytes.fromhex('6681e1003c66c1e90a0fb7d93bda0f85b0000000'), asm(f'jmp {pathf:#x}', 0x4a5d6d))
 patch(0x4a5d34, bytes.fromhex('0fbfd78d0492c1e0050fbfcb'), asm(f'jmp {po_pf:#x}', 0x4a5d34) + bytes.fromhex('90') * 7)
