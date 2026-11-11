@@ -6499,6 +6499,111 @@ wi_no:
     pop ecx
     ret
 ''')
+# ---- Bonos del muro (PENDIENTE-faros-muros, punto 3; indicación del usuario del 11/11/2026: +5 Missiles, +5 Acid,
+# +5 Fortify, +5 Life Drain). Los reciben, sumados a lo suyo, los defensores de una casilla que es un bloque de muro de
+# piedra en pie (OB_MURO, +7 < WV_MAX) de su mismo bando o que está a 1 casilla de uno: los arqueros virtuales y las
+# pilas alojadas. Solo al defender. Por unidad (wb_unit, armado 0x467240): Missiles en la ficha +0x16 y Acid en +0x1a
+# (los bytes que el juego llena desde la habilidad 30 y 38). De grupo (wb_grp, después de 0x468440 para el defensor en
+# 0x464df2): Fortify en el grupo +4 (fuerza +N a cada unidad, menos el Siege del atacante; 0x4696c0) y Life Drain en
+# +0x16 (cada unidad atacante pierde N hits, mínimo 1; 0x4698b0). Vale también para el cálculo de probabilidades
+# (0x464a30 usa la misma 0x464ac0).
+WB_MIS, WB_ACID, WB_FORT, WB_LD = 5, 5, 5, 5
+# wb_near: eax = bando, ecx = x, edx = y -> eax != 0 (ZF apagado) si en (x, y) o en una vecina hay un bloque de muro de
+# piedra en pie de ese bando. Preserva el resto.
+wb_near = place('wb_near', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    mov ebx, eax
+    mov esi, ecx
+    mov edi, edx
+    xor ebp, ebp
+wbn_loop:
+    mov eax, ebp
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    lea ecx, [esi + edx - 1]
+    lea edx, [edi + eax - 1]
+    mov eax, ecx
+    call {ob_at:#x}
+    test eax, eax
+    jz wbn_next
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne wbn_next
+    cmp byte ptr [eax + 7], {WV_MAX}
+    jae wbn_next
+    movzx ecx, byte ptr [eax + 6]
+    cmp ecx, ebx
+    jne wbn_next
+    mov eax, 1
+    jmp wbn_out
+wbn_next:
+    inc ebp
+    cmp ebp, 9
+    jb wbn_loop
+    xor eax, eax
+wbn_out:
+    test eax, eax
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
+# wb_unit, en lugar de "mov [esi+0x1d], al; cmp cl, 1" en 0x4679e3 (0x467240: [esp+0xa8] ejército, +0xac x, +0xb0 y,
+# +0xb8 = 1 atacante / 0 defensor; esi = ficha de la unidad).
+wb_unit = place('wb_unit', f'''
+    mov byte ptr [esi + 0x1d], al
+    cmp dword ptr [esp + 0xb8], 0
+    jne wbu_out
+    pushad
+    movsx eax, word ptr [esp + 0xc8]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    movsx ecx, word ptr [esp + 0xcc]
+    movsx edx, word ptr [esp + 0xd0]
+    call {wb_near:#x}
+    jz wbu_pop
+    add byte ptr [esi + 0x16], {WB_MIS}
+    add byte ptr [esi + 0x1a], {WB_ACID}
+wbu_pop:
+    popad
+wbu_out:
+    cmp cl, 1
+    jmp 0x4679e9
+''')
+# wb_grp, en lugar de "call 0x468440" en 0x464df2 (habilidades de grupo del defensor; ebx = ficha, [ebx+1] defensor).
+wb_grp = place('wb_grp', f'''
+    push dword ptr [esp + 0x14]
+    push dword ptr [esp + 0x14]
+    push dword ptr [esp + 0x14]
+    push dword ptr [esp + 0x14]
+    push dword ptr [esp + 0x14]
+    call 0x468440
+    add esp, 0x14
+    pushad
+    movsx eax, byte ptr [ebx + 1]
+    cmp eax, 8
+    jae wbg_out
+    movsx ecx, word ptr [esp + 0x2c]
+    movsx edx, word ptr [esp + 0x30]
+    call {wb_near:#x}
+    jz wbg_out
+    mov edi, dword ptr [esp + 0x34]
+    add byte ptr [edi + 4], {WB_FORT}
+    add byte ptr [edi + 0x16], {WB_LD}
+wbg_out:
+    popad
+    ret
+''')
 # wv_stat, en 0x4660d1 (resultado 0x465c80, defensor muerto de la ranura edi): a un arquero virtual lo da de baja sin
 # estadísticas (0x4039a0) ni aviso (0x461a60).
 wv_stat = place('wv_stat', f'''
@@ -20323,6 +20428,9 @@ patch(0x409181, rel(0x409181, 0x40918b - 0x409181), asm(f'jmp {ch_pfx:#x}', 0x40
 patch(0x469f54, asm('call 0x465c80', 0x469f54), asm(f'call {wv_post:#x}', 0x469f54))
 # Ataque al muro (wv_pre, wv_stat, wv_step; wv_post arriba).
 patch(0x469f35, asm('call 0x464ac0', 0x469f35), asm(f'call {wv_pre:#x}', 0x469f35))
+# Bonos del muro (wb_unit, wb_grp).
+patch(0x4679e3, bytes.fromhex('88461d80f901'), asm(f'jmp {wb_unit:#x}', 0x4679e3) + bytes([0x90]))
+patch(0x464df2, asm('call 0x468440', 0x464df2), asm(f'call {wb_grp:#x}', 0x464df2))
 patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
 patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))

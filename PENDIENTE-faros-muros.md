@@ -25,8 +25,27 @@ Pedido completo:
 - Hecho y aprobado por el usuario: ataque al muro, caída del bloque al morir los 24 arqueros, daño progresivo con
   copias dañadas de las capas (od_put, 3 niveles), humo nuboso animado (dm_put), muralla gris azulado suave
   (vista-aliada 1.0.192.0, tarea 167 cumplida).
-- **Próximo paso: los bonos (punto 3 del plan técnico, abajo).** Arqueros virtuales y grupos alojados con +5 Missiles,
-  +5 Acid, +7 Fortify, +5 Life Drain. Ver «Plan técnico» y «Averiguado». También queda la IA que repara (tarea 159).
+- **Hecho: los bonos (vista-aliada 1.0.193.0, 11/11/2026).** Valores fijados por el usuario: **+5 Missiles, +5 Acid,
+  +5 Fortify, +5 Life Drain** (reemplaza el +7 Fortify anterior; Assassin afuera). Ver «Hecho: bonos del muro».
+  Prueba en el juego: TAREAS 168.
+- **Próximo paso:** la IA que repara sus muros (decidir junto con los bonos; TAREAS 159 es la prueba de Repair).
+
+## Hecho: bonos del muro (1.0.193.0, 11/11/2026)
+- Quién: los **defensores** de una casilla que es un bloque de muro de piedra en pie (OB_MURO, +7 < 24) de su mismo
+  bando, o que está a 1 casilla (también en diagonal) de uno (`wb_near`). Incluye los arqueros virtuales y las pilas
+  alojadas. El atacante nunca los recibe. Valen también en las probabilidades previas al ataque (0x464a30 usa 0x464ac0).
+- Por unidad (`wb_unit`, en 0x4679e3 del armado 0x467240, solo con el argumento atacante = 0): ficha +0x16 (Missiles,
+  la que el juego llena desde la habilidad 30) y +0x1a (Acid, habilidad 38), +5 cada una, sumadas.
+- De grupo (`wb_grp`, en lugar de la llamada a 0x468440 del defensor en 0x464df2): grupo +4 (Fortify, código 6) y
+  +0x16 (Life Drain, código 54), +5 cada uno, sumados al máximo del bando.
+- Qué hace cada uno (desensamblado, 11/11/2026): **Fortify +N** = +N de fuerza a cada unidad del grupo durante la
+  batalla, menos el **Siege** del enemigo (código 5, su contrario; par «FortifySiegeLimit» del juego), dentro del tope
+  general de bonos (0x56951c, «FinalBonusLimit»); se calcula en 0x4696c0 y se aplica en 0x4698b0. **Life Drain +N** =
+  cada unidad enemiga pierde N hits al empezar (mínimo 1, tope 4). Missiles y Acid son chances por unidad
+  (BaseAcidChance, etc. en la configuración del juego).
+- Corrección a «Averiguado»: Missiles va a la ficha +0x16 y Assassin a +0x17 (no +0x18 / +0x17 como decía).
+- Prueba: prueba_muroataque.py, sección «bonos del muro» (con controles: a 2 casillas, atacante, otro bando, bloque
+  caído, torre, neutral).
 
 ## Diseño del ataque al muro (indicaciones del usuario, 10/11/2026)
 - Cada bloque sin grupo encima se defiende como si tuviera 3 arqueros comunes virtuales ("unidades fantasma", como
