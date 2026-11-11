@@ -6445,7 +6445,90 @@ wv_stat = place('wv_stat', f'''
 # casilla vacía con un bloque de muro en guerra con él se ataca (código 2, 0x49e57d), como una con ejércitos. Un bloque
 # en pie de otro bando que no es aliado suyo con vista aliada (en paz) lo detiene (0x49e558, como la ciudad ajena de
 # stepc): un camino viejo o la IA no lo cruzan.
+# wl_foe: eax = x, edx = y, ecx = jugador -> eax = registro del bloque de muro en pie de otro bando que no es aliado suyo
+# con vista aliada (fogally), o 0 (con ZF). Preserva el resto.
+wl_foe = place('wl_foe', f'''
+    push ecx
+    push edx
+    cmp ecx, 8
+    jae wf_no
+    call {ob_at:#x}
+    test eax, eax
+    jz wf_no
+    cmp byte ptr [eax + 4], {OB_MURO}
+    jne wf_no
+    cmp byte ptr [eax + 7], {WV_MAX}
+    jae wf_no
+    movzx edx, byte ptr [eax + 6]
+    cmp edx, ecx
+    je wf_no
+    xchg ecx, edx
+    call {fogally:#x}
+    je wf_no
+    test eax, eax
+    jmp wf_out
+wf_no:
+    xor eax, eax
+wf_out:
+    pop edx
+    pop ecx
+    ret
+''')
+# wl_cut(jugador, x0, y0, x1, y1) cdecl -> eax != 0 si el paso es en diagonal y corta la esquina entre dos bloques de
+# muro ajenos (wl_foe en (x1, y0) y en (x0, y1)). Un muro en diagonal tiene sus bloques unidos solo por la esquina:
+# sin esto se cruzaba por el medio sin pisar ningún bloque (BUILD01_8.SAV y murallas01_9.SAV, 10/11/2026). Preserva el resto.
+wl_cut = place('wl_cut', f'''
+    push ecx
+    push edx
+    push esi
+    push edi
+    mov ecx, dword ptr [esp + 0x14]
+    movsx esi, word ptr [esp + 0x18]
+    movsx edi, word ptr [esp + 0x1c]
+    movsx eax, word ptr [esp + 0x20]
+    movsx edx, word ptr [esp + 0x24]
+    cmp eax, esi
+    je wc_no
+    cmp edx, edi
+    je wc_no
+    push edx
+    mov edx, edi
+    call {wl_foe:#x}
+    pop edx
+    jz wc_no
+    mov eax, esi
+    call {wl_foe:#x}
+    jz wc_no
+    mov eax, 1
+    jmp wc_out
+wc_no:
+    xor eax, eax
+wc_out:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    ret
+''')
 wv_step = place('wv_step', f'''
+    pushad
+    imul eax, ebp, 0x4f0
+    movsx eax, word ptr [eax + 0x56ea94]
+    imul eax, eax, 0x1c
+    movsx edx, di
+    push edx
+    movsx edx, si
+    push edx
+    movsx edx, word ptr [eax + 0x54fe54]
+    push edx
+    movsx edx, word ptr [eax + 0x54fe52]
+    push edx
+    push ebp
+    call {wl_cut:#x}
+    add esp, 0x14
+    test eax, eax
+    popad
+    jnz 0x49e558
     mov ax, word ptr [edx]
     and ax, 0x8000
     jnz 0x49e43d
@@ -11175,7 +11258,9 @@ pwt_no:
     popad
     ret
 ''')
-# po_urb: eax = registro -> ZF = 0 si su casilla es de una ciudad (bit 0x8000 de la celda). Preserva todo menos
+# po_urb: eax = registro -> ZF = 0 si su casilla es de una ciudad (tipo 3 en los bits 8-10 de la palabra +2 de la celda,
+# como 0x49e417; hasta 1.0.182.0 miraba el bit 0x8000, que es «hay ejércitos»: con el grupo parado encima, toda trampa
+# se gastaba en la primera explosión, muros03_6.SAV, 10/11/2026). Preserva todo menos
 # eflags. En una ciudad la trampa explota una sola vez y no se apila (pedido del usuario, 4/11/2026: la lupa no se
 # puede consultar ahí, la abre antes el cuadro de la ciudad).
 po_urb = place('po_urb', f'''
@@ -11187,7 +11272,11 @@ po_urb = place('po_urb', f'''
     add eax, eax
     shl eax, cl
     lea edx, [esi + esi*4]
-    test word ptr [eax + edx*2 + 0x503e58], 0x8000
+    mov al, byte ptr [eax + edx*2 + 0x503e5b]
+    and al, 7
+    cmp al, 3
+    sete al
+    test al, al
     popad
     ret
 ''')
@@ -13504,6 +13593,20 @@ pf2_out:
 # en pie de un bando en guerra con el que mueve (wl_war): se llega para atacarlo (wv_step). Preserva ebx, esi, edi, ebp; eax, ecx, edx los rehace lo
 # reemplazado (0x4a5d34..0x4a5d40).
 po_pf = place('po_pf', f'''
+    movsx eax, bx
+    push eax
+    movsx eax, di
+    push eax
+    movsx eax, word ptr [esp + 0x1c + 8]
+    push eax
+    movsx eax, word ptr [esp + 0x18 + 12]
+    push eax
+    movsx eax, word ptr [0x58715c]
+    push eax
+    call {wl_cut:#x}
+    add esp, 0x14
+    test eax, eax
+    jnz 0x4a5e31
     movsx eax, di
     movsx edx, bx
     call {ob_at:#x}

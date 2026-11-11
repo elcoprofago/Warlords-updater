@@ -82,8 +82,8 @@ print('-- menú: tr_check desde br_menu')
 def menu(ejs, x=5, y=7, turno=0, regs=(), p=0, urb=()):
     # ejs: (ranura, bono de combate, bonos de movimiento) del grupo de p; el primero es el líder, en (x, y).
     g = Juego(); mu = g.mu; g.poner(regs)
-    for ux, uy in urb:   # casilla de ciudad (bit 0x8000 de la celda)
-        w = struct.unpack('<H', mu.mem_read(casilla(ux, uy), 2))[0]; mu.mem_write(casilla(ux, uy), struct.pack('<H', w | 0x8000))
+    for ux, uy in urb:   # casilla de ciudad: estructura 3 en [+3] & 7 (el bit 0x8000 es «hay ejércitos», no ciudad)
+        b = mu.mem_read(casilla(ux, uy) + 3, 1)[0]; mu.mem_write(casilla(ux, uy) + 3, bytes([(b & ~7) | 3]))
     mu.mem_write(0x537ce8, struct.pack('<h', p))
     for i, (ranura, comb, bonos) in enumerate(ejs, 1):
         a = 0x54fe50 + i * 0x1c

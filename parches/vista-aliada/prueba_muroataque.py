@@ -18,7 +18,7 @@ def llamadas(va, n):
             r.append(BASE + k + 5 + struct.unpack_from('<i', img, k + 1)[0]); k += 5
         else: k += 1
     return r
-WL_WAR = llamadas(WV_STEP, 1)[0]
+WL_WAR = llamadas(WV_STEP, 2)[1]   # la primera es wl_cut (1.0.183.0)
 assert img[WV_PRE - BASE] == 0x60 and img[WV_PRE - BASE + 1:WV_PRE - BASE + 3] == b'\xc7\x05'
 WV_REC = d32(WV_PRE + 3); WV_N = WV_REC + 4; WV_IDS = WV_REC + 8
 OB_AT = llamadas(WL_WAR, 1)[0]
@@ -71,6 +71,29 @@ ver('control: muro caído: libre', paso(5, muertos=24), ['libre'])
 ver('control: torre (tipo 4): libre', paso(5, tipo=4), ['libre'])
 ver('control: el dueño: libre', paso(2), ['libre'])
 ver('control: ocupada: sigue el camino original', paso(5, palabra=0x8000), ['ocupada'])
+
+print('-- wl_cut: muro en diagonal (murallas01_9.SAV, BUILD01_8.SAV, 10/11/2026)')
+def diag(p, muros=((6, 6), (5, 7)), dueño=2, orig=(5, 6), dest=(6, 7)):
+    g = juego(dueño=dueño); mu = g.mu
+    mu.mem_write(OB_N, struct.pack('<I', len(muros)))
+    mu.mem_write(OB_MAP, bytes(64 * 64))
+    for i, (x, y) in enumerate(muros):
+        mu.mem_write(OB_TAB + 8 * i, struct.pack('<hhBBBB', x, y, 7, 3, dueño, 0))
+        mu.mem_write(OB_MAP + (y << 6) + x, bytes([i + 1]))
+    mu.mem_write(p * 0x4f0 + 0x56ea94, struct.pack('<h', 40))
+    mu.mem_write(40 * 0x1c + 0x54fe52, struct.pack('<hh', *orig))
+    mu.mem_write(W, struct.pack('<H', 0))
+    r = []
+    for a, nm in ((0x49e57d, 'ataque'), (0x49e558, 'detenido'), (0x49e467, 'libre'), (0x49e43d, 'ocupada')):
+        mu.hook_add(UC_HOOK_CODE, lambda mu, *_, nm=nm: (r.append(nm), mu.emu_stop()), begin=a, end=a)
+    mu.reg_write(UC_X86_REG_EDX, W); mu.reg_write(UC_X86_REG_ESI, dest[0]); mu.reg_write(UC_X86_REG_EDI, dest[1])
+    mu.reg_write(UC_X86_REG_EBP, p); mu.reg_write(UC_X86_REG_ESP, STACK)
+    mu.emu_start(0x49e434, 0, count=20000)
+    return r[:1]
+ver('cruzar entre dos bloques en diagonal de otro bando: detenido', diag(5), ['detenido'])
+ver('control: el dueño cruza su muro', diag(2), ['libre'])
+ver('control: un solo bloque en la esquina: libre', diag(5, muros=((6, 6),)), ['libre'])
+ver('control: paso recto junto al muro: libre', diag(5, orig=(6, 8)), ['libre'])
 
 print('-- wv_pre')
 def pre(p=5, muertos=0, reales=0, ocup=None):

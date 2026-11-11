@@ -124,10 +124,10 @@ from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_READ
 PO_PF = dest(0x4a5d34, 1)
 _calls = []
 _k = PO_PF - BASE
-while len(_calls) < 4:
+while len(_calls) < 5:
     if img[_k] == 0xe8: _calls.append(BASE + _k + 5 + struct.unpack('<i', img[_k + 1:_k + 5])[0]); _k += 5
     else: _k += 1
-FOGALLY = _calls[3]
+FOGALLY = _calls[4]   # la primera es wl_cut (1.0.183.0)
 def puerta(quien, aliado=False, camino=True, destino=None, guerra=False):
     g, c = recibir(pw=MURO, oro=1000)
     mu = g.mu
