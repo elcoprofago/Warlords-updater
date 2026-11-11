@@ -6206,6 +6206,45 @@ ww_out:
     pop ecx
     ret
 ''')
+# wl_cur (en 0x473c24, antes de decide): con un grupo elegido, una casilla vecina sin ejércitos que es un bloque de muro en
+# pie de un bando en guerra con el que juega ([0x537ce8], wl_war) da el cursor de ataque 9 (espadas), como un ejército
+# enemigo (0x473cc7..0x473d12); el clic mueve ahí y wv_step arma la batalla. Hasta 1.0.183.0 daba «mover» (BUILD01.SAV,
+# 10/11/2026). Lo demás sigue a decide.
+wl_cur = place('wl_cur', f'''
+    cmp word ptr [esp + 0x22], 1
+    jg wc_no
+    cmp word ptr [esp + 0x24], 1
+    jg wc_no
+    test si, si
+    jnz wc_no
+    cmp byte ptr [0x56075e], 0
+    jne wc_no
+    push eax
+    push ecx
+    push edx
+    movsx eax, word ptr [esp + 0x2c + 12]
+    movsx edx, word ptr [esp + 0x2e + 12]
+    movsx ecx, word ptr [0x537ce8]
+    call {wl_war:#x}
+    pop edx
+    pop ecx
+    pop eax
+    jz wc_no
+    mov ax, word ptr [esp + 0x2c]
+    mov esi, dword ptr [esp + 0x44]
+    mov dx, word ptr [esp + 0x2e]
+    mov word ptr [esi], ax
+    mov word ptr [esi + 2], dx
+    mov ax, 9
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    add esp, 0x24
+    ret
+wc_no:
+    jmp {decide:#x}
+''')
 # wv_type: eax = bando -> eax = su tipo de arma (0..14) cuyo nombre (+0) empieza con «longbow» (pedido del 10/11/2026:
 # los arqueros virtuales son Longbows); si no hay, el de archivo (+0x90) «archers»; si no, el primero con la habilidad
 # Missiles (30, +0xe6); si tampoco, 0. Solo hay Longbows si el bando los tiene entre sus 15 tipos (el juego crea
@@ -20101,7 +20140,7 @@ assert rel(0x44045a, 4) == bytes.fromhex('33c98ac8') and rel(0x440486, 12) == by
 patch(0x44045a, rel(0x44045a, 0x440492 - 0x44045a), asm(f'jmp {mana:#x}', 0x44045a))
 patch(0x418836, asm('call 0x4dd080', 0x418836), asm(f'call {shield2:#x}', 0x418836))
 patch(0x418871, bytes.fromhex('ff15ec9b5a00'), asm(f'call {ownertxt:#x}', 0x418871))
-patch(0x473c24, bytes.fromhex('66391de87c5300741c'), asm(f'jmp {decide:#x}', 0x473c24))
+patch(0x473c24, bytes.fromhex('66391de87c5300741c'), asm(f'jmp {wl_cur:#x}', 0x473c24))
 patch(0x4a5d6d, bytes.fromhex('6681e1003c66c1e90a0fb7d93bda0f85b0000000'), asm(f'jmp {pathf:#x}', 0x4a5d6d))
 patch(0x4a5d34, bytes.fromhex('0fbfd78d0492c1e0050fbfcb'), asm(f'jmp {po_pf:#x}', 0x4a5d34) + bytes.fromhex('90') * 7)
 patch(0x49e42a, bytes.fromhex('f64208800f8424010000'), asm(f'jmp {stepc:#x}', 0x49e42a))

@@ -95,6 +95,31 @@ ver('control: el dueño cruza su muro', diag(2), ['libre'])
 ver('control: un solo bloque en la esquina: libre', diag(5, muros=((6, 6),)), ['libre'])
 ver('control: paso recto junto al muro: libre', diag(5, orig=(6, 8)), ['libre'])
 
+print('-- wl_cur: cursor de espadas sobre el muro vacío (BUILD01.SAV, 10/11/2026)')
+WL_CUR = 0x473c24 + 5 + struct.unpack_from('<i', img, 0x473c24 - BASE + 1)[0]
+DECIDE = WL_CUR + img[WL_CUR - BASE:WL_CUR - BASE + 0x100].index(bytes([0xe9]), 0x50)
+DECIDE = DECIDE + 5 + struct.unpack_from('<i', img, DECIDE - BASE + 1)[0]
+def cursor(p, dx=1, dy=0, ejercito=0, **kw):
+    g = juego(**kw); mu = g.mu
+    F, OUT = STACK - 0x100, 0x150000
+    mu.mem_write(F + 0x22, struct.pack('<hh', dx, dy)); mu.mem_write(F + 0x2c, struct.pack('<hh', 5, 7))
+    mu.mem_write(F + 0x44, struct.pack('<I', OUT)); mu.mem_write(F + 0x34, struct.pack('<I', RET))
+    mu.mem_write(OUT, bytes(4)); mu.mem_write(0x537ce8, struct.pack('<h', p)); mu.mem_write(0x56075e, b'\0')
+    r = []
+    mu.hook_add(UC_HOOK_CODE, lambda mu, *_: (r.append(mu.reg_read(UC_X86_REG_AX)), mu.emu_stop()), begin=RET, end=RET)
+    mu.hook_add(UC_HOOK_CODE, lambda mu, *_: (r.append('decide'), mu.emu_stop()), begin=DECIDE, end=DECIDE)
+    mu.reg_write(UC_X86_REG_ESI, ejercito); mu.reg_write(UC_X86_REG_EDI, 1); mu.reg_write(UC_X86_REG_ESP, F)
+    mu.emu_start(0x473c24, 0, count=2000)
+    return r[:1], struct.unpack('<hh', mu.mem_read(OUT, 4))
+ver('al lado de un muro enemigo: espadas (9) y destino la casilla del muro', cursor(5), ([9], (5, 7)))
+ver('en diagonal también', cursor(5, dx=1, dy=1), ([9], (5, 7)))
+ver('sin Diplomacy: espadas', cursor(5, guerra=False, diplo=False)[0], [9])
+ver('control: en paz, lo de siempre', cursor(5, guerra=False)[0], ['decide'])
+ver('control: el dueño, lo de siempre', cursor(2)[0], ['decide'])
+ver('control: lejos (2 casillas), lo de siempre', cursor(5, dx=2)[0], ['decide'])
+ver('control: con un ejército en la casilla, lo de siempre', cursor(5, ejercito=1)[0], ['decide'])
+ver('control: muro caído, lo de siempre', cursor(5, muertos=24)[0], ['decide'])
+
 print('-- wv_pre')
 def pre(p=5, muertos=0, reales=0, ocup=None):
     g = juego(muertos=muertos); mu = g.mu
