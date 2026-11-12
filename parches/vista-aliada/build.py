@@ -14926,6 +14926,9 @@ LK_URL = 'https://sites.google.com/view/plagacarriers'
 LK_Y, LK_W = 468, 360                  # el marco termina en y 461 (dibujo del fondo); 12/11/2026: de 465 a 468, menos pegado
 lk_str = place_data('lk_str', cstr_(LK_URL))
 lk_cmd = place_data('lk_cmd', cstr_(f'explorer.exe "{LK_URL}"'))
+# 13/11/2026: el navegador abre detrás del juego, que ocupa la pantalla; el clic además copia la dirección al
+# portapapeles con clip.exe de Windows, sin ventana (CREATE_NO_WINDOW): el juego no importa las funciones del portapapeles.
+lk_clip = place_data('lk_clip', cstr_(f'cmd.exe /c "echo|set /p={LK_URL}|clip"'))
 # Alta del menú (0x4ab600, en 0x4ab7c5 antes de poner la versión): texto y color del enlace.
 # La zona de clic nace oculta, como la del Comparador (bk_init): sin 0x4dcec0(LK_HOT, 0) no recibía el clic.
 lk_init = place('lk_init', f'''
@@ -14952,6 +14955,24 @@ lk_click = place('lk_click', f'''
     cmp eax, {LK_HOT}
     jne lc_orig
     pushad
+    push {tl_pi:#x}
+    push {tl_si:#x}
+    push 0
+    push 0
+    push 0x08000000
+    push 0
+    push 0
+    push 0
+    push {lk_clip:#x}
+    push 0
+    call dword ptr [{CREATEPROC:#x}]
+    test eax, eax
+    jz lc_open
+    push dword ptr [{tl_pi:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    push dword ptr [{tl_pi + 4:#x}]
+    call dword ptr [{CLOSEH:#x}]
+lc_open:
     push {tl_pi:#x}
     push {tl_si:#x}
     push 0
@@ -19608,7 +19629,7 @@ FR_ANG = 30                          # apertura del haz en grados (pedido del 12
 FR_NPOS, FR_SHIFT = 48, 0            # 48 posiciones por vuelta (7,5 grados), un paso por tic (12/11/2026: 32 era un poco rápido)
 FR_VV = 100                          # largo de los vectores de dirección (fr_dir)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
-FR_TAB = bytes([1, 1, 1, 1, 1, 1, 2, 3, 4])   # 12/11/2026: lámpara en el nivel de las ciudades (DN_MIN), haz en degradé hasta 8
+FR_TAB = bytes([3, 3, 1, 1, 1, 1, 2, 3, 4])   # lámpara (0 y 1) en 3 (13/11/2026: 2 puntos menos que una ciudad), haz en degradé hasta 8
 assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
 fr_tab = place_data('fr_tab', FR_TAB)
 FR_DIRS = [(round(FR_VV * math.cos(2 * math.pi * k / FR_NPOS)), round(FR_VV * math.sin(2 * math.pi * k / FR_NPOS)))

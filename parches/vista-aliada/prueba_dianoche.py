@@ -28,7 +28,7 @@ FR_CNT = BASE + img.index(b'FARO' + bytes(20)) + 4 + 8
 FR_NPOS, FR_SHIFT, FR_VV, FR_ANG = 48, 0, 100, 30   # haz giratorio (fr_fan / fr_stamp)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
 FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
-FR_TAB, FR_AGUA, FR_TIERRA = (1, 1, 1, 1, 1, 1, 2, 3, 4), 8, 1   # haz de 8 casillas (tierra o agua), lámpara de 1
+FR_TAB, FR_AGUA, FR_TIERRA = (3, 3, 1, 1, 1, 1, 2, 3, 4), 8, 1   # haz de 8 casillas (tierra o agua), lámpara de 1
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
