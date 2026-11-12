@@ -474,11 +474,23 @@ turno: con 7 los mandaba a pelear de a muchos y los perdía. No se limita a Form
 Sin verificar: que escoltas = 0 sea real y no un fallo de pl_es en el juego (la prueba emulada solo comprobó que
 cuenta cuando se lo llama).
 
-**Paso 4.11 (11/11/2026; falta la tanda, TAREAS 171).** Confirmar el 4.10 con una tanda más, sin tocar el parche
+**Paso 4.11 (11/11/2026; TAREAS 171, hecha).** Confirmar el 4.10 con una tanda más, sin tocar el parche
 (10 partidas, Scarpart y Kor). Se juntan 152, 153 y la nueva: si con unas 27 partidas la nueva sigue arriba
 (puesto, PV, ciudades), el hilo de los ejércitos ociosos se da por cerrado con OR_MAX 4. Si queda abajo, se
 limitan los huérfanos a la meta Form. Los cambios de muros y Life Ward que vengan en el medio valen para las dos IA.
 Después, y en otra sesión: el oro que la nueva ya junta (271 contra 167 de la original en los turnos 21-30) no
 tiene destino. Ese es el objetivo de origen, un ahorro con destino (puentes, trampas, caminos, ayuda a aliados).
 Depende de que la IA sepa hacer esas obras: paso 5 de PENDIENTE-ia-innovaciones.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.11, al volver la tanda".
+**Paso 4.11, medido (11/11/2026, tandas 154 y 155, 1.0.202.0, 20 partidas ok).** La nueva gana en las dos:
+puesto 2,61 contra 3,32, PV 6,81 / 5,74, ciudades 4,92 / 4,40, primeros 13 / 9 (80 resultados por IA; tanda 154
+2,68 / 3,64, tanda 155 2,52 / 2,95). Juntas las cuatro tandas 152-155 (38 partidas, 152 resultados por IA): puesto
+2,72 / 3,14, PV 6,66 / 5,53, ciudades 4,76 / 4,32, primeros 24 / 19. Ejércitos vivos por tramo parejos (2,3 / 13,0 /
+28,2 contra 1,9 / 12,6 / 25,8); oro de la nueva 251 / 261 / 255 contra 203 / 209 / 163. Evento 36 igual que en el
+4.10 (el planificador casi no arma grupos; escoltas 0). Lo que sigue en contra: deserciones (evento 28) nueva 43 en
+4 color-partida, original 16 en 2; en las cuatro tandas 61 en 6 contra 30 en 3. Son pocos colores y no le cuestan
+el puesto, pero se miran si vuelven a crecer.
+**Decisión: el hilo de los ejércitos ociosos queda cerrado con OR_MAX 4.** No se limitan los huérfanos a Form.
+Próximo tema (en otra sesión): darle destino al oro que la nueva junta (255 contra 163 en 21-30): puentes, trampas,
+caminos, ayuda a aliados. Depende del paso 5 de PENDIENTE-ia-innovaciones (que la IA sepa hacer esas obras).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, el oro con destino, después del paso 5 de
+innovaciones".
