@@ -539,3 +539,29 @@ Sin verificar: la columna puesto viene vacía en 70 de 160 resultados; los prome
 ganar, mirar las deserciones (evento 28), que ya son 6 veces las de la original; (b) sumar destinos al oro cuando la
 IA sepa hacerlos (trampas, caminos, ayuda a aliados: pasos 5.3 y siguientes de PENDIENTE-ia-innovaciones).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, deserciones de la nueva".
+
+## Deserciones de la nueva: diagnóstico (12/11/2026, datos.db, tandas 148-157, sin tocar el parche)
+Cada episodio (color-partida con evento 28) cruzado con el 29 (ingreso, mantenimiento), el 33 (fuera de ciudad), el
+31/32 (frenos), el 35 (huérfanos), ciudades y batallas de los 4 turnos previos. Scripts de la sesión, sin versionar.
+- Tandas 152-157: nueva 108 deserciones en 10 color-partida, original 38 en 6. Turnos con mantenimiento > ingreso:
+  nueva 143 de 5.410, original 88 de 5.264; colores con 3 o más turnos seguidos así: nueva 13, original 7.
+- **Dos clases de episodio.** Derrumbe (pierde ciudades y pelea; ya conocido, igual en las dos IA): nueva 3 de 10,
+  original 4 de 6. **Estructural** (sin batallas y con las ciudades quietas, el mantenimiento pasa al ingreso y el
+  oro baja hasta 0 en 4-8 turnos): **nueva 7 de 10**, original 1 (1093 color 6).
+- Cómo es el estructural (ejemplos): 1135 color 5, 11 ciudades, ingreso 258: en el turno 17 pasan de 0 a 17
+  ejércitos fuera de ciudad y el mantenimiento salta de 76 a 221; turno 21, 35 fuera y 368. 1124 color 3: turno 25,
+  de 0 a 20 fuera, mantenimiento 43 → 175 con ingreso 106. 1145, 1114, 1107, 1086 color 3 (la misma posición: 4
+  ciudades, ingreso 82): 10 a 16 ejércitos fuera, quietos turno tras turno, mantenimiento 94-134 contra 82.
+- **La causa es el mantenimiento entero de los que están fuera, no la producción.** El freno de producción (32) ya
+  frena en todos esos turnos (4 por turno) y no alcanza: los ejércitos ya existen. Lo que fuera paga entero, en una
+  ciudad pagaría un tercio: en esos casos volver a una ciudad deja el mantenimiento bajo el ingreso (1145: 94 → unos
+  41 contra 82; 1135 color 5: 368 → unos 170 contra 258).
+- El 35 arma grupos de huérfanos esos mismos turnos (p. ej. 1135 color 5, turno 17: 3 grupos con 17), pero or_ok solo
+  toma ejércitos que **ya** estaban fuera: el salto lo hace quien los saca (planificador o grupos de héroes), no
+  or_run. Sin verificar quién los saca y por qué quedan quietos fuera (1145 color 3: 10 fuera 6 turnos seguidos).
+**Próximo paso (4.12), repliegue por quiebra:** cuando el oro + ingreso − mantenimiento del turno no alcance para
+el turno siguiente (oro + ingreso < 2 × mantenimiento) y el mantenimiento pase al ingreso, mandar los grupos de la
+nueva que no atacan a «Form» (meta 1, 0x40db40, volver a una ciudad) hasta que el mantenimiento proyectado (fuera
+pasando a un tercio) quede bajo el ingreso. Primero leer en el exe cómo se fija la meta de un grupo (0x40ca70,
+tabla 0x40d02c) y anotar con un evento la meta de los grupos fuera en esos turnos, para saber cuáles atacan.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, repliegue por quiebra (4.12)".
