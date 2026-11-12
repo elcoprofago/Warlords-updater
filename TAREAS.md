@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 175).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 176).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **175.** Muro sin Life Drain (vista-aliada 1.0.204.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y restaurar BUILD01.SAV. Atacar varias veces una pila sobre un muro de piedra o a 1 casilla de él: el muro ya no le quita golpes a los atacantes (siguen Missiles, Acid y Fortify +3 y Life Ward +3). En el Simulador 1.0.25.0, el muro dice «Missiles +3, Acid +3, Fortify +3». Anotar si sigue desparejo y para qué lado.
 - [ ] **174.** IA: ahorrar para reconstruir puentes (vista-aliada 1.0.203.0, 11/11/2026)
 Cambio: cuando un puente derribado le abriría camino pero no le alcanza el oro, la computadora nueva deja de comprar
 tipos de unidad y de agrandar ciudades hasta juntar lo que cuesta reconstruirlo. Hay que ver si reconstruye y si eso

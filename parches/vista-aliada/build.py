@@ -6500,14 +6500,14 @@ wi_no:
     ret
 ''')
 # ---- Bonos del muro (PENDIENTE-faros-muros, punto 3; indicación del usuario del 11/11/2026: +5 Missiles, +5 Acid,
-# +5 Fortify, +5 Life Drain; Life Drain bajado a +3 el 11/11/2026 para que el muro no sea indestructible). Los reciben, sumados a lo suyo, los defensores de una casilla que es un bloque de muro de
+# +5 Fortify, +5 Life Drain; Life Drain bajado a +3 y a +1 el 11/11/2026 y quitado el 12/11/2026 en la 1.0.204.0, porque el combate contra muros seguía muy desequilibrado). Los reciben, sumados a lo suyo, los defensores de una casilla que es un bloque de muro de
 # piedra en pie (OB_MURO, +7 < WV_MAX) de su mismo bando o que está a 1 casilla de uno: los arqueros virtuales y las
 # pilas alojadas. Solo al defender. Por unidad (wb_unit, armado 0x467240): Missiles en la ficha +0x16 y Acid en +0x1a
 # (los bytes que el juego llena desde la habilidad 30 y 38). De grupo (wb_grp, después de 0x468440 para el defensor en
 # 0x464df2): Fortify en el grupo +4 (fuerza +N a cada unidad, menos el Siege del atacante; 0x4696c0) y Life Drain en
 # +0x16 (cada unidad atacante pierde N hits, mínimo 1; 0x4698b0). Vale también para el cálculo de probabilidades
 # (0x464a30 usa la misma 0x464ac0).
-WB_MIS, WB_ACID, WB_FORT, WB_LD = 3, 3, 3, 1
+WB_MIS, WB_ACID, WB_FORT = 3, 3, 3   # sin Life Drain desde la 1.0.204.0
 # wb_near: eax = bando, ecx = x, edx = y -> eax != 0 (ZF apagado) si en (x, y) o en una vecina hay un bloque de muro de
 # piedra en pie de ese bando. Preserva el resto.
 wb_near = place('wb_near', f'''
@@ -6640,7 +6640,6 @@ wbg_wall:
     call {wb_near:#x}
     jz wbg_out
     add byte ptr [edi + 4], {WB_FORT}
-    add byte ptr [edi + 0x16], {WB_LD}
     mov eax, {LW_MURO}
     call {lw_max:#x}
 wbg_out:

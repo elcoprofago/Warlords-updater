@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.24.0'
+VERSION = '1.0.25.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -41,7 +41,7 @@ BOSQUES = {'forest': 'plains', 'hills con bosque': 'hills'}
 # Lo que hay en la casilla del defensor: (texto, clave, estructura de escenario.py, obra de vista-aliada)
 SITIOS = (('Nada', 'nada', 0, None), ('Camino / puente', 'camino', 1, None), ('Ciudad', 'ciudad', 3, None),
           ('Faro', 'faro', 0, 'faro'), ('Torre de vigía', 'torre', 0, 'torre'), ('Muralla', 'muro', 0, 'muro'))
-MURO_TXT = 'Missiles +3, Acid +3, Fortify +3, Life Drain +1'
+MURO_TXT = 'Missiles +3, Acid +3, Fortify +3'
 # Defensas que ofrece el desplegable según el sitio: (texto, nivel de la ciudad, obra)
 DEFENSAS = {'nada': [], 'camino': [],
             'ciudad': [(f'Nivel {n} (Life Ward +{n})', n, None) for n in (1, 2, 3)] +

@@ -8,7 +8,7 @@
 #   campo = {'terreno': nombre, 'estructura': 0 nada | 1 camino o puente | 3 ciudad, 'bosque': bool,
 #            'noche': bool, 'defensas': 1..3 (solo ciudad), 'obra': None | 'torre' | 'faro' | 'muro'}
 #   La obra (vista-aliada) es del defensor y está en su casilla: torre Life Ward +2, faro +1 (y +1 de fuerza a los no
-#   héroes); muro Life Ward +3, Missiles +3, Acid +3, Fortify +3, Life Drain +1. Life Ward de la ciudad = su tamaño.
+#   héroes); muro Life Ward +3, Missiles +3, Acid +3, Fortify +3 (sin Life Drain desde vista-aliada 1.0.204.0). Life Ward de la ciudad = su tamaño.
 # El atacante es el bando 0 y el defensor el 1; el casillero k de cada lado carga su arma en la ranura k del bando y
 # le da prioridad k en el fight order (Motor.orden), así que la pila pelea en el orden de la grilla. El héroe usa la
 # ranura de clase 0. En agua las tropas van embarcadas (hace falta un barco); con puente, no.

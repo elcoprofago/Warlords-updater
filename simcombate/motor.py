@@ -63,7 +63,7 @@ EVENTOS = {0: 'D-1', 1: 'A-1', 2: 'entra A', 3: 'entra D', 4: 'muere A', 5: 'mue
 # compilación del parche: se buscan en el exe por el código de ob_at ("movzx eax, [edx + ob_map]; test eax, eax; jz;
 # lea eax, [eax*8 + OB_TAB - 8]"), y se comprueba que OB_TAB - 8 tenga la marca 'OBRA' del .SAV. El combate las lee
 # solo (wb_unit, wb_grp, bridgeab del parche): torre +2 y faro +1 de Life Ward y +1 de fuerza a los no héroes; muro
-# Missiles/Acid/Fortify +3, Life Drain +1 y Life Ward +3 (en la casilla o a 1 de distancia, del mismo bando).
+# Missiles/Acid/Fortify +3 y Life Ward +3 (sin Life Drain desde vista-aliada 1.0.204.0) (en la casilla o a 1 de distancia, del mismo bando).
 OB_TORRE, OB_FARO, OB_MURO = 4, 5, 7
 OBRAS = {'torre': OB_TORRE, 'faro': OB_FARO, 'muro': OB_MURO}
 
