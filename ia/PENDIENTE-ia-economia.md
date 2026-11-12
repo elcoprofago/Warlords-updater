@@ -495,7 +495,7 @@ caminos, ayuda a aliados. Depende del paso 5 de PENDIENTE-ia-innovaciones (que l
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, el oro con destino, después del paso 5 de
 innovaciones".
 
-## Oro con destino, primer destino: el puente (11/11/2026, vista-aliada 1.0.203.0; falta la tanda, TAREAS 174)
+## Oro con destino, primer destino: el puente (11/11/2026, vista-aliada 1.0.203.0; medido en las tandas 156-157, TAREAS 174 hecha)
 Estado del paso 5 de PENDIENTE-ia-innovaciones al empezar: 5.1 (convoy) y 5.2 (puentes) medidos; 5.3 (trampas) y 5.4
 (noche) sin hacer. De las obras, la única que la IA ya sabe hacer es reconstruir un puente, y el 5.2 dejó la causa:
 el 94 % de las veces le falta el oro (800). Ese es el primer destino; trampas, caminos y ayuda a aliados se suman
@@ -520,3 +520,22 @@ veces y en qué turnos frena por el ahorro), y puesto, PV, ciudades y desercione
 Si reconstruye y no pierde puesto, queda. Si pierde puesto por frenar de más, limitar el ahorro (p. ej., solo si el
 oro ya pasa la mitad del costo, o un tope de turnos esperando).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, oro con destino, resultado de la tarea 174".
+**Medido (12/11/2026, tandas 156 y 157, 1.0.204.0, 20 partidas ok; la 1.0.204.0 solo quita el Life Drain del muro,
+vale para las dos IA).**
+- Reconstrucciones (evento 4): 3 de la nueva (turnos 7, 10 y 21; 640, 800 y 800 de oro), contra 1 en 20 partidas
+  antes. La original, ninguna.
+- Freno por el ahorro (evento 31): x = 11 (tipo de unidad) 46 veces en 8 color-partida, turnos 6-21; x = 12
+  (agrandar) 15 veces en 7, turnos 9-30. Frena poco: 12 color-partida de 80.
+- Evento 26 n = 2 («todo pasa, falta oro»): 19 de la nueva (el 94 % del 5.2 era el filtro viejo, que cortaba antes).
+- Los colores que frenaron: puesto 2,0, PV 9,6, ciudades 7,1; los 3 que reconstruyeron, primeros (PV 23); el resto
+  de la nueva, puesto 3,26, PV 5,2. El ahorro no le cuesta a quien lo hace (hay sesgo: el que tiene más ciudades
+  tiene más oro y más puentes a mano, así que tampoco prueba que ayude).
+- En conjunto la nueva quedó pareja con la original: puesto 3,00 / 3,02, PV 5,83 / 6,34, ciudades 4,31 / 4,89,
+  primeros 10 / 12. En 152-155 ganaba (2,72 / 3,14). La baja no viene de los que ahorraron; puede ser azar de 20
+  partidas o el muro sin Life Drain. Oro de la nueva 249 / 289 / 248 por tramo contra 202 / 204 / 150. Deserciones
+  (28): nueva 47, original 8 (sigue creciendo, ver el 4.11).
+Sin verificar: la columna puesto viene vacía en 70 de 160 resultados; los promedios usan solo los que la tienen.
+**Decisión: el ahorro para el puente queda, sin límite.** Próximo: (a) si en la próxima tanda la nueva sigue sin
+ganar, mirar las deserciones (evento 28), que ya son 6 veces las de la original; (b) sumar destinos al oro cuando la
+IA sepa hacerlos (trampas, caminos, ayuda a aliados: pasos 5.3 y siguientes de PENDIENTE-ia-innovaciones).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, deserciones de la nueva".
