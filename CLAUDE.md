@@ -5,8 +5,9 @@
 Pedido del usuario (11/11/2026): *«cada cambio debe verse reflejado en los registros del repo y en el manual del
 parche "Alianzas"»*, porque la actualización del Manual no puede depender de la memoria de nadie.
 
-- **Registros del repo:** el commit (mensaje con versión y qué cambió), `TAREAS.md` si hay algo que probar, y el
-  `PENDIENTE-*.md` del tema si lo hay.
+- **Registros del repo** (confirmado por el usuario el 11/11/2026): el commit (mensaje con versión y qué cambió),
+  el `PENDIENTE-*.md` del tema, la hoja de ruta (roadmap) si la hay, `TAREAS.md` si hay algo que probar, y toda
+  otra anotación del repo que hable de lo que cambió: se actualiza en el mismo commit, no después.
 - **Manual** (`manual/manual.html`, se compila a `manual/Manual-Era-de-Alianzas.pdf` con
   `python manual\build_manual.py`; el PDF va dentro del parche vista-aliada):
   - toda versión nueva de vista-aliada agrega su fila **arriba** en el Apéndice E «Historial de versiones»;
