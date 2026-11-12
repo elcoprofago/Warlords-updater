@@ -9,13 +9,16 @@
 #      modelo; los grupos que ya existían y los de los otros colores quedan iguales.
 #   3. controles sin cambio: sin ia_on, IA_MODE[p] = 0, jugador >= 8 y bando humano (0x536c12 = -1).
 #   4. con OR_MAX - 1 grupos ocupados a mano: arma uno solo (llega a OR_MAX).
-# Uso: python prueba_huerfanos.py <DarklordAV.exe> <ia_on hex> <ia_mode hex> <or_run hex> <partida.SAV> [...]
+#   5. (paso 4.13) cada ejército agrupado queda en ME_TAB con RP_HU (15) y la ronda; el resto de ME_TAB, en 0.
+# Uso: python prueba_huerfanos.py <DarklordAV.exe> <ia_on hex> <ia_mode hex> <or_run hex> <me_tab hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 AV, IA_ON, IA_MODE, OR_RUN = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16), int(sys.argv[4], 16)
-SAVS = sys.argv[5:]
+ME_TAB = int(sys.argv[5], 16)
+SAVS = sys.argv[6:]
+RONDA, RP_HU, ME_N = 12, 15, 4096
 OR_MAX = 4
 img = pefile.PE(AV).get_memory_mapped_image()
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4, 'sprintf': 0x5a9bec, 'time': 0x5a9b88}
@@ -92,6 +95,7 @@ def corrida(m, p, on=1, modo=1, jug=None, humano=False):
     mu.mem_write(0x4fb0ec, struct.pack('<h', p if jug is None else jug))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 2))
     mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([modo] * 8))
+    mu.mem_write(0x503328, struct.pack('<h', RONDA))
     mu.mem_write(0x427520, b'\xc3')                       # registro del juego: no hace falta
     for a in range(0x5a9b00, 0x5a9d00, 4): mu.mem_write(a, struct.pack('<I', STUB + 0x800))   # resto de la CRT
     mu.mem_write(STUB + 0x800, bytes([0xc3]))
@@ -117,6 +121,7 @@ def corrida(m, p, on=1, modo=1, jug=None, humano=False):
         mu.reg_read(UC_X86_REG_ESP) == sp + 4
     gm = bytes(mu.mem_read(G0, 0x5643c4 - G0))
     flags = {i: struct.unpack('<H', mu.mem_read(0x54fe50 + i * 0x1c + 0x1c, 2))[0] for i in range(h(m, 0x54fe50))}
+    corrida.tab = struct.unpack(f'<{ME_N}H', mu.mem_read(ME_TAB, 2 * ME_N))
     return gm, flags, lines, intactos
 
 
@@ -150,11 +155,16 @@ for sav in SAVS:
             got = list(struct.unpack('<8H', gm[a + 0xc:a + 0x1c]))
             ok(got == lista + [0] * (8 - len(lista)), f'p{p}: grupo {k} {got} != {lista}')
             for i in lista[1:]: ok(flags[i] & 0x3c00 == 0x400, f'p{p}: ejército {i} sin bit de pila')
+        marcados = {i for _, l in hechos for i in l if 0 < i < ME_N}
+        tab = corrida.tab
+        ok(all(tab[i] == (RP_HU | RONDA << 8 if i in marcados else 0) for i in range(ME_N)),
+           f'p{p}: ME_TAB {[(i, hex(tab[i])) for i in range(ME_N) if tab[i]][:10]} != {sorted(marcados)[:10]}')
         if hechos:
             print(f'  color {p}: {len(hechos)} grupos, {sum(len(l) for _, l in hechos)} ejércitos, quedan {quedan}')
         for nombre, kw in (('sin ia_on', dict(on=0)), ('IA_MODE 0', dict(modo=0)), ('jugador 8', dict(jug=8)),
                            ('humano', dict(humano=True))):
             gm, _, lines, intactos = corrida(m, p, **kw)
+            ok(not any(corrida.tab), f'p{p}: control {nombre} marcó ME_TAB')
             ok(gm == base and intactos and (lines == [] or nombre != 'sin ia_on') and
                all(l[3] != 35 for l in lines), f'p{p}: control {nombre} cambió algo {gm == base} {intactos} {lines}')
     # OR_MAX - 1 grupos ocupados a mano en el color con más huérfanos: solo uno nuevo

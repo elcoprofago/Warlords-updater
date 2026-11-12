@@ -7,6 +7,10 @@
 #     ME_TAB anota la meta nueva; eax = meta nueva, [esp+0x10] = 0, ebx y esp como el original;
 #   - controles (meta y destino intactos, sin evento 37): metas 0, 1, 5, 7, 8, 9; oro justo en el límite; sin
 #     déficit; IA_MODE 0; sin ia_on; jugador 8; bando humano; líder héroe; color sin ciudades propias.
+#   - paso 4.13, memoria del repliegue: las metas 7 y 8 también pasan a Form si el líder tiene en ME_TAB meta 1
+#     (código 2) de esta ronda o la anterior, o RP_HU (15, huérfano recién agrupado); evento 38 = (meta original,
+#     ciudad, distancia). Controles: código 2 de hace dos rondas, otros códigos (4, 8, 13), sin quiebra, líder héroe,
+#     metas 0, 5 y 9 con código 2.
 # Uso: python prueba_repliegue.py <DarklordAV.exe> <Darklord.exe> <ia_on> <ia_mode> <me_tab> <me_set> <SAV>...
 import math, pefile, struct, sys
 from unicorn import *
@@ -71,16 +75,16 @@ def ciudades(m):
         yield c, rd(m, 0x537ed0 + b, 1)[0], rd(m, 0x537ed1 + b, 1)[0], h(m, 0x537e2c + b), h(m, 0x537e2e + b)
 
 
-def modelo_ciudad(m, p, x, y):
+def modelo_ciudad(m, p, x, y, con_dist=False):
     best, bd = -1, 0x7fffffff
     for c, viva, o, cx, cy in ciudades(m):
         if not viva or o != p: continue
         d = dist(m, x, y, cx, cy)
         if d < bd: best, bd = c, d
-    return best
+    return (best, bd) if con_dist else best
 
 
-def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=False):
+def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=False, prev=0):
     mu = maquina(imgs['av'], m)
     mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([mode] * 8))
     mu.mem_write(0x4fb0ec, struct.pack('<h', p if jug is None else jug))
@@ -88,6 +92,7 @@ def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=Fa
     mu.mem_write(0x5643d8 + 2 * p, struct.pack('<h', mant)); mu.mem_write(0x5643f0 + 2 * p, struct.pack('<h', ing))
     mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<h', oro))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
+    mu.mem_write(ME_TAB + 2 * lider, struct.pack('<H', prev))
     rec = 0x10040000; mu.mem_write(rec + 0xc, struct.pack('<8h', lider, 0, 0, 0, 0, 0, 0, 0))
     mu.mem_write(0x5020d4, struct.pack('<I', rec))
     names = list(IAT)
@@ -115,7 +120,7 @@ def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=Fa
     tab = struct.unpack('<H', mu.mem_read(ME_TAB + 2 * lider, 2))[0]
     orig_ok = (mu.reg_read(UC_X86_REG_EAX) == nm and struct.unpack('<H', mu.mem_read(sp + 0x14, 2))[0] == 0
                and mu.reg_read(UC_X86_REG_EBX) == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp + 4)
-    ev = [l[3:] for l in lines if len(l) > 3 and l[3] == 37]
+    ev = [l[3:] for l in lines if len(l) > 3 and l[3] in (37, 38)]
     return nm, dest, tab, orig_ok, ev, lines
 
 
@@ -144,6 +149,8 @@ for sav in SAVS:
         if heroes:
             nm, dest, tab, oo, ev, _ = corrida(m, p, heroes[0], 3, 150, 100, 0)
             check(nm == 3 and dest == 777 and not ev and oo, f'color {p} líder héroe: no cambia')
+            nm, dest, tab, oo, ev, _ = corrida(m, p, heroes[0], 7, 150, 100, 0, prev=2 | 12 << 8)
+            check(nm == 7 and dest == 777 and not ev and oo, f'color {p} líder héroe con Form previa: no cambia')
         if not ej: continue
         lider = ej[len(ej) // 2]; e = 0x54fe50 + lider * 0x1c; x, y = h(m, e + 2), h(m, e + 4)
         mant, ing = 150, 100; lim = RP_TURNS * (mant - ing)
@@ -167,6 +174,22 @@ for sav in SAVS:
             a = dict(mant=mant, ing=ing, oro=0); a.update(kw)
             nm, dest, tab, oo, ev, _ = corrida(m, p, lider, 3, a.pop('mant'), a.pop('ing'), a.pop('oro'), **a)
             check(nm == 3 and dest == 777 and not ev and oo, f'color {p} {nombre}: no cambia ({nm}, {dest}, {ev})')
+        want, wd = modelo_ciudad(m, p, x, y, True)
+        for meta in (7, 8):
+            for prev in (2 | 12 << 8, 2 | 11 << 8, 15 | 12 << 8):
+                nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, lim - 1, prev=prev)
+                check(nm == 1 and dest == want and ev == [[38, meta, want, wd]] and tab == (2 | 12 << 8) and oo,
+                      f'color {p} meta {meta} previa {prev:#x}: {nm} -> {dest} (modelo {want}), evento {ev}')
+            for nombre, prev, kw in (('Form vieja', 2 | 10 << 8, {}), ('código 4', 4 | 12 << 8, {}),
+                                     ('código 8', 8 | 12 << 8, {}), ('código 13', 13 | 12 << 8, {}),
+                                     ('sin quiebra', 2 | 12 << 8, dict(oro=lim)),
+                                     ('IA_MODE 0', 2 | 12 << 8, dict(mode=0))):
+                a = dict(oro=lim - 1); a.update(kw)
+                nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, a.pop('oro'), prev=prev, **a)
+                check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} {nombre}: no cambia')
+        for meta in (0, 5, 9):
+            nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, lim - 1, prev=2 | 12 << 8)
+            check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} con Form previa: no cambia')
         nm, dest, tab, oo, ev, lines = corrida(m, p, lider, 3, mant, ing, 0, on=0)
         check(nm == 3 and dest == 777 and not lines and tab == 0 and oo, f'color {p} sin ia_on: nada')
         print(f'  color {p}: líder {lider} en ({x},{y}), {len(propias)} ciudades propias, va a la {want}')

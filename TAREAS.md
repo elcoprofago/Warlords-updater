@@ -14,6 +14,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **185.** IA: el repliegue por quiebra se sostiene (vista-aliada 1.0.214.0, 12/11/2026)
+Cambio: cuando a la computadora nueva se le acaba el oro, las pilas que ya volvían a su ciudad (y los grupos recién
+armados con ejércitos sueltos) siguen volviendo aunque el planificador les proponga atacar; antes iban y venían sin
+llegar y terminaban desertando. Hay que ver si deserta menos y si eso le cuesta partidas.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.214.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+
 - [x] **184.** Ayuda emergente del enlace del clan (vista-aliada 1.0.213.0, 13/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: dejar el cursor sobre el enlace del clan (y, si no aparece nada, probar con clic derecho, como en los otros botones del menú): debe verse la ayuda «Click copies the link: paste it in your browser (Ctrl+V)». Hacer clic, salir, pegar en el navegador y comprobar la dirección. — 13/11/2026, cumplida: el clic derecho muestra la ayuda en el papiro, como los demás botones del menú; el clic izquierdo abre el navegador (el juego queda en blanco al perder el foco, igual que con Sorteo, Votación o el Comparador).
 
 - [x] **183.** Aviso de enlace copiado (vista-aliada 1.0.212.0, 13/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: hacer clic en el enlace del clan: el texto debe cambiar a «Enlace copiado: pegalo en el navegador (Ctrl+V)» y seguir así mientras esté abierto el juego; que el texto entre entero y no se superponga con la versión. Salir, pegar en el navegador y comprobar la dirección. — 13/11/2026: el texto no cambia. Reemplazado por ayuda emergente en 1.0.213.0 (tarea 184).

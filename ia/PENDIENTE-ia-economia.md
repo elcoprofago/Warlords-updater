@@ -602,3 +602,29 @@ destino la ciudad propia más cercana en vez de una meta de ataque o captura; (b
 1 de 1170 color 3 (turnos 25-28) no entran a la ciudad: anotar con un evento el destino y la distancia de cada pila
 Form que termina fuera. Los atacantes (7) no se tocan.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.13 (huérfanos y Form en quiebra)".
+
+### 4.13 hecho: memoria del repliegue (vista-aliada 1.0.214.0, 12/11/2026)
+- Lo que mostraron los datos antes de tocar nada: los huérfanos **sí** se agrupan (evento 35, n = 0 en 1156 y 1170
+  color 3), así que el (a) tal como estaba escrito no hacía falta. El problema es una **oscilación**: en 1170 color 3
+  las mismas 13-20 pilas tienen meta 7 (ciudad enemiga) y meta 1 (Form) en turnos alternados (20: 7, 21: 1, 22: 7,
+  23: 1, 24: 7, 25: 1...) y **no hubo ninguna batalla** de ese color en los turnos 17-30; en 1156 color 3 igual
+  (26: 7, 27: 1, 28: 7, 29: 1). Los huérfanos recién agrupados entran en la misma oscilación (1170 turno 19: 16
+  huérfanos → meta 7). Esas pilas «atacantes» no atacan: se cambia la decisión del 4.12 de no tocar las metas 7 y 8.
+- Cambio (build.py): or_run anota en ME_TAB, con la ronda, el código RP_HU = 15 para cada ejército que agrupa.
+  me_set, con la misma condición de quiebra del 4.12 y líder no héroe: si la meta es 7 u 8 y el líder tiene en
+  ME_TAB, de esta ronda o la anterior, meta 1 (código 2) o RP_HU, la pasa a Form hacia la ciudad propia viva más
+  cercana. **Evento 38** = (meta original, ciudad, distancia a ella): sirve también para el (b), saber a qué
+  distancia queda la ciudad de las pilas que no llegan. El 37 sigue igual para las metas 2, 3, 4 y 6. Fuera de
+  quiebra no cambia nada; una pila que ya llegó y está en quiebra queda en la ciudad (distancia 0).
+- Pruebas: `prueba_repliegue.py` 450 controles TODO OK (los casos nuevos: 7 y 8 con Form de esta ronda y de la
+  anterior y con RP_HU; controles con Form de hace dos rondas, códigos 4, 8 y 13, sin quiebra, IA_MODE 0, líder
+  héroe, metas 0, 5 y 9 con Form previa); `prueba_huerfanos.py` 3.705 TODO OK (ahora controla la marca en ME_TAB;
+  uso nuevo: `<AV> <ia_on> <ia_mode> <or_run> <me_tab> <SAV>...`, en 1.0.214.0 6d035b 6d0353 6d2910 6d0440);
+  `prueba_mantenimiento.py` 280 TODO OK. Las cinco partidas de siempre.
+- Sin verificar: que con la meta sostenida las pilas lleguen a la ciudad en juego real (en 1166 la ruta Form sí
+  llegó); que una pila no quede trabada en Form si la ciudad más cercana es inalcanzable (el 38 con la distancia
+  repetida turno tras turno lo mostraría).
+- A medir con la tanda de la TAREAS 185: eventos 37 y 38 por color y si se repiten con la misma distancia; ejércitos
+  fuera (33) y mantenimiento contra ingreso en los turnos siguientes; deserciones (28) de la nueva contra la
+  original; puesto, PV y ciudades.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado de la memoria del repliegue (TAREAS 185)".
