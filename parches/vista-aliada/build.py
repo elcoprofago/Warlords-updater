@@ -7817,15 +7817,24 @@ gl_skip:
 RS_MIN = 50
 RS_EVT = 31
 RS_UNIT, RS_GROW = 1, 2
+# Ahorro con destino (PENDIENTE-ia-economia, oro con destino, 11/11/2026): ai_brrebev anota en RS_GOAL[p] el costo
+# de reconstruir un puente derribado que pasó todos sus filtros salvo, quizás, el oro, y en RS_GOALT[p] el turno + 1.
+# Mientras la anotación sea de este turno o del anterior, el piso de rs_ok suma ese costo: la IA en prueba deja de
+# comprar tipos de unidad y de agrandar ciudades hasta juntarlo. ai_brreb la borra al reconstruir. En el evento 31,
+# x = tipo + 10 cuando el freno incluye el ahorro con destino.
+RS_GOAL = place_data('rs_goal', bytes(32))
+RS_GOALT = place_data('rs_goalt', bytes(32))
+RS_GOALX = 10
 # rs_ok(p, costo, tipo) cdecl -> eax = 1 puede gastar, 0 no. Preserva el resto.
 rs_ok = place('rs_ok', f'''
     push ebx
     push ecx
     push edx
+    push esi
     mov eax, 1
     cmp byte ptr [{IA_ON:#x}], 0
     je rs_out
-    mov ebx, dword ptr [esp + 0x10]
+    mov ebx, dword ptr [esp + 0x14]
     cmp ebx, 8
     jae rs_out
     cmp byte ptr [ebx + {IA_MODE:#x}], 1
@@ -7839,21 +7848,32 @@ rs_ok = place('rs_ok', f'''
     jge rs_floor
     mov edx, {RS_MIN}
 rs_floor:
+    mov esi, dword ptr [esp + 0x1c]
+    movsx eax, word ptr [0x503328]
+    inc eax
+    sub eax, dword ptr [ebx*4 + {RS_GOALT:#x}]
+    cmp eax, 1
+    ja rs_nogoal
+    add edx, dword ptr [ebx*4 + {RS_GOAL:#x}]
+    add esi, {RS_GOALX}
+rs_nogoal:
+    mov eax, 1
     movsx ecx, word ptr [ecx + 0x536c14]
     push ecx
-    sub ecx, dword ptr [esp + 0x18]
+    sub ecx, dword ptr [esp + 0x1c]
     cmp ecx, edx
     pop ecx
     jge rs_out
     push ecx
-    push dword ptr [esp + 0x18]
-    push dword ptr [esp + 0x20]
+    push dword ptr [esp + 0x1c]
+    push esi
     push ebx
     push {RS_EVT}
     call {ia_evt:#x}
     add esp, 0x14
     xor eax, eax
 rs_out:
+    pop esi
     pop edx
     pop ecx
     pop ebx
@@ -9420,8 +9440,11 @@ bdv_out:
 # Valor = max(0, 50 - costo) + 2 * oportunidades + 0x4deb20(1, 6), como el de una ciudad. Si el mejor es un puente,
 # se guarda con su código en la tabla de candidatos ([0x5032e6]) y se salta el final del original, que lo nombraría
 # como ciudad.
-EV_X, EV_Y, EV_N, EV_D, EV_SX, EV_SY, EV_P, EV_DI, EV_V, EV_E, EV_EM = (4 * i for i in range(11))
-EV_LOC = 4 * 11
+# Oro con destino (11/11/2026): la falta de oro ya no corta los filtros; se miran los demás y, si pasa todo, el costo
+# queda como ahorro con destino del jugador (RS_GOAL, que respeta rs_ok) y, si el oro no alcanza, evento 26 n = 2
+# (ahora: «todo lo demás pasa, falta oro»; antes de 1.0.203.0 el 2 cortaba antes de mirar camino, enemigo, etc.).
+EV_X, EV_Y, EV_N, EV_D, EV_SX, EV_SY, EV_P, EV_DI, EV_V, EV_E, EV_EM, EV_C, EV_SH = (4 * i for i in range(13))
+EV_LOC = 4 * 13
 RBE_EVNO = 26    # evento (paso 5.2): puente derribado que no se propone; n = motivo (RBE_ARMIES...), 7 pasó todo
 RBE_EVPROP = 27  # evento (paso 5.2): un puente queda como candidato de la meta 9 (n = costo)
 RBE_ARMIES, RBE_GOLD, RBE_HEAD, RBE_ENEMY, RBE_RAZE, RBE_GAIN, RBE_OK = range(1, 8)
@@ -9501,9 +9524,13 @@ rbe_free:
     call 0x4b65e0
     add esp, 8
     movsx eax, ax
+    mov dword ptr [esp + {EV_C:#x}], eax
     imul ecx, dword ptr [esp + {EV_P:#x}], 0x1f8
-    cmp eax, dword ptr [ecx + 0x536c14]
-    jg rbe_r2
+    movsx ecx, word ptr [ecx + 0x536c14]
+    xor edx, edx
+    cmp eax, ecx
+    setg dl
+    mov dword ptr [esp + {EV_SH:#x}], edx
     push dword ptr [esp + {EV_SY:#x}]
     push dword ptr [esp + {EV_SX + 4:#x}]
     push dword ptr [esp + {EV_N + 8:#x}]
@@ -9547,6 +9574,17 @@ rbe_d:
     add esi, eax
     test esi, esi
     jle rbe_r6
+    mov ecx, dword ptr [esp + {EV_P:#x}]
+    cmp ecx, 8
+    jae rbe_nogoal
+    mov eax, dword ptr [esp + {EV_C:#x}]
+    mov dword ptr [ecx*4 + {RS_GOAL:#x}], eax
+    movsx eax, word ptr [0x503328]
+    inc eax
+    mov dword ptr [ecx*4 + {RS_GOALT:#x}], eax
+rbe_nogoal:
+    cmp dword ptr [esp + {EV_SH:#x}], 0
+    jne rbe_r2
     push {RBE_OK}
     call rbe_ev
     add esp, 4
@@ -9790,6 +9828,10 @@ arb_here:
     push 4
     call {ia_evtb:#x}
     add esp, 0x10
+    cmp ebx, 8
+    jae arb_nogoal
+    mov dword ptr [ebx*4 + {RS_GOALT:#x}], 0
+arb_nogoal:
     push 0x7d0
     call 0x4275b0
     add esp, 4

@@ -299,7 +299,7 @@ def model_ev(c):
     for k in sorted((k for k, st in c['bridges'].items() if st == 'razed'), key=lambda k: BC(*BRIDGES[k][0])):
         tl = BRIDGES[k]; p0 = tl[0]; code = BC(*p0)
         if c['stack'] in tl or any(xy in tl for xy, _ in c['armies']): no(code, 1); continue
-        if cost(c) > c['gold']: no(code, 2); continue
+        corto = cost(c) > c['gold']   # desde 1.0.203.0 el oro no corta: se miran los demás filtros (oro con destino)
         hk = heads(c, tl)
         d = min(hk.values(), default=0x7fffffff)
         if d >= 0x10000: no(code, 3); continue
@@ -310,6 +310,7 @@ def model_ev(c):
         if s is not None and s >= 5: no(code, 5); continue
         o = opp(p0)
         if o <= 0: no(code, 6); continue
+        if corto: no(code, 2); continue
         no(code, 7)
         v = max(0, 50 - d) + 2 * o + c['r']
         lines.append(('linea', v, d, o, e, NAME))

@@ -494,3 +494,29 @@ Próximo tema (en otra sesión): darle destino al oro que la nueva junta (255 co
 caminos, ayuda a aliados. Depende del paso 5 de PENDIENTE-ia-innovaciones (que la IA sepa hacer esas obras).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, el oro con destino, después del paso 5 de
 innovaciones".
+
+## Oro con destino, primer destino: el puente (11/11/2026, vista-aliada 1.0.203.0; falta la tanda, TAREAS 174)
+Estado del paso 5 de PENDIENTE-ia-innovaciones al empezar: 5.1 (convoy) y 5.2 (puentes) medidos; 5.3 (trampas) y 5.4
+(noche) sin hacer. De las obras, la única que la IA ya sabe hacer es reconstruir un puente, y el 5.2 dejó la causa:
+el 94 % de las veces le falta el oro (800). Ese es el primer destino; trampas, caminos y ayuda a aliados se suman
+cuando la IA sepa hacerlos, con la misma anotación (RS_GOAL).
+Qué cambió (build.py):
+- ai_brrebev: la falta de oro ya no corta los filtros. Si el puente pasa todo lo demás (vacío, cabecera alcanzable,
+  sin enemigo cerca, no lo volvería a derribar, algo que ganar), anota RS_GOAL[p] = costo y RS_GOALT[p] = turno + 1;
+  si además falta oro, evento 26 n = 2. **Desde 1.0.203.0 el 26 n = 2 significa «todo lo demás pasa, falta oro»**;
+  antes cortaba sin mirar el resto, así que los 770 del 5.2 no se comparan con los nuevos.
+- rs_ok: si la anotación es de este turno o del anterior, el piso suma ese costo; el evento 31 lleva x = tipo + 10
+  (11 = tipo de unidad, 12 = agrandar) cuando el freno incluye el ahorro. Solo IA en prueba (IA_MODE 1), como antes.
+- ai_brreb: al reconstruir (evento 4) borra la anotación.
+No frena la producción de los tipos ya comprados (eso es pr_ok), ni los héroes.
+Sin cubrir: una anotación de una partida anterior en el mismo proceso, si coincide el turno, vale un turno de más.
+Prueba emulada: prueba_reserva.py ampliada (ahorro vigente, del turno anterior, vencido, sin anotar, costo 0, y
+humano / IA original / sin ia_on con ahorro anotado): 2.148 controles TODO OK (ABN_000_29, agua03, IA_ROTADA).
+Uso nuevo: `python prueba_reserva.py <AV> <orig> <ia_on> <ia_mode> <rs_goal> <rs_goalt> <SAV>...` (en 1.0.203.0:
+6d035b 6d0353 6d2a0b 6d2a2b). prueba_iareconstruye.py con el modelo nuevo (oro al final): 109 OK; prueba_iarazea,
+prueba_iapuente y prueba_oro OK. No probado en emulación: que ai_brrebev escriba RS_GOAL (solo sus eventos).
+Al volver la tanda: eventos 4 (reconstrucciones; antes 1 en 20 partidas), 26 por motivo, 31 con x = 11/12 (cuántas
+veces y en qué turnos frena por el ahorro), y puesto, PV, ciudades y deserciones (28) de la nueva contra la original.
+Si reconstruye y no pierde puesto, queda. Si pierde puesto por frenar de más, limitar el ahorro (p. ej., solo si el
+oro ya pasa la mitad del costo, o un tope de turnos esperando).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, oro con destino, resultado de la tarea 174".

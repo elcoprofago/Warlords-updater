@@ -4,13 +4,18 @@
 # original; en 0x405310, a la instrucción que sigue a la entrada) o se frena (vuelve sin cobrar, con el evento 31 y
 # los registros intactos). Piso = 2 x mantenimiento, nunca menos de 50.
 # Controles que deben seguir como el original: humano, IA original (ia_mode 0), sin ia_on, ciudad de otro, costo 0.
-# Uso: python prueba_reserva.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
+# Ahorro con destino (11/11/2026): con RS_GOAL[p] = costo de un puente y RS_GOALT[p] = turno + 1 de este turno o del
+# anterior, el piso suma ese costo y el evento 31 lleva x = tipo + 10; vencido (2 turnos) o sin anotar, no cuenta.
+# Uso: python prueba_reserva.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <rs_goal hex> <rs_goalt hex>
+#      <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 AV, ORIG, IA_ON, IA_MODE = sys.argv[1], sys.argv[2], int(sys.argv[3], 16), int(sys.argv[4], 16)
-SAVS = sys.argv[5:]
+RS_GOAL, RS_GOALT = int(sys.argv[5], 16), int(sys.argv[6], 16)
+SAVS = sys.argv[7:]
+TURNO = 7
 imgs = {k: pefile.PE(f).get_memory_mapped_image() for k, f in (('av', AV), ('orig', ORIG))}
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4}
 STUB, CALLER = 0xdeac0000, 0xdead0000
@@ -29,7 +34,7 @@ def load(sav):
 
 def i16(v): return struct.unpack('<h', struct.pack('<H', v & 0xffff))[0]
 
-def corrida(img, sav, fn, args, p, oro, mant, humano, on, modo):
+def corrida(img, sav, fn, args, p, oro, mant, humano, on, modo, meta=None):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
     STK = 0x10000000; mu.mem_map(STK, 0x100000); mu.mem_map(STUB, 0x1000); mu.mem_map(CALLER, 0x1000)
@@ -37,8 +42,10 @@ def corrida(img, sav, fn, args, p, oro, mant, humano, on, modo):
     mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<h', oro))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
     mu.mem_write(0x5643d8 + 2 * p, struct.pack('<h', mant))
-    mu.mem_write(0x503328, struct.pack('<h', 7))
-    if img is imgs['av']: mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([modo] * 8))
+    mu.mem_write(0x503328, struct.pack('<h', TURNO))
+    if img is imgs['av']:
+        mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([modo] * 8))
+        if meta: mu.mem_write(RS_GOAL + 4 * p, struct.pack('<i', meta[0])); mu.mem_write(RS_GOALT + 4 * p, struct.pack('<i', meta[1]))
     names = list(IAT)
     for k, n in enumerate(names):
         mu.mem_write(IAT[n], struct.pack('<I', STUB + k * 16)); mu.mem_write(STUB + k * 16, b'\xc3')
@@ -134,5 +141,30 @@ for sav in SAVS:
                         check(r == [SIGUE] and l == [], f'{sav} c{p} agrandar {desc}: {l} {r}')
                 l, r, _ = corrida(imgs['av'], sav, 0x405310, (ciudad, 2, 0), p, 0, mant, False, 1, 1)
                 check(r == [SIGUE] and l == [], f'{sav} c{p} agrandar gratis: {l} {r}')
+            # ahorro con destino: (costo, turno + 1 anotado, cuenta)
+            for meta, cuenta in (((800, TURNO + 1), True), ((800, TURNO), True), ((800, TURNO - 1), False),
+                                 ((800, 0), False), ((0, TURNO + 1), True)):
+                extra = meta[0] if cuenta else 0; xg = 10 if cuenta else 0
+                for ciudad in mias[:1]:
+                    t, aj = 1, 2; cost = costo_unidad(m, p, t, aj); args = (ciudad, p, t, 0, aj)
+                    _, r0, _ = corrida(imgs['orig'], sav, 0x48ba50, args, p, piso + extra + cost, mant, False, 1, 1)
+                    for oro, frena in ((piso + extra + cost, False), (piso + extra + cost - 1, True)):
+                        l, r, pr = corrida(imgs['av'], sav, 0x48ba50, args, p, oro, mant, False, 1, 1, meta)
+                        if frena:
+                            check(r == [] and pr and l == [[7, p, 1, 31, 1 + xg, cost, oro]],
+                                  f'{sav} c{p} meta {meta} unidad oro {oro}: debe frenar {l} {r} {pr}')
+                        else:
+                            check(r == r0 and r0 and all(x[3] != 31 for x in l), f'{sav} c{p} meta {meta} unidad oro {oro}: debe seguir {l} {r}')
+                    for oro, frena in ((piso + extra + 300, False), (piso + extra + 299, True)):
+                        l, r, pr = corrida(imgs['av'], sav, 0x405310, (ciudad, 2, 300), p, oro, mant, False, 1, 1, meta)
+                        if frena:
+                            check(r == [] and pr and l == [[7, p, 1, 31, 2 + xg, 300, oro]],
+                                  f'{sav} c{p} meta {meta} agrandar oro {oro}: debe frenar {l} {r} {pr}')
+                        else:
+                            check(r == [SIGUE] and l == [], f'{sav} c{p} meta {meta} agrandar oro {oro}: debe seguir {l} {r}')
+                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0), ('sin ia_on', False, 0, 1)):
+                        l, r, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, piso + cost, mant, hum, on, modo, meta)
+                        _, r0, _ = corrida(imgs['orig'], sav, 0x48ba50, args, p, piso + cost, mant, hum, on, modo)
+                        check(r == r0 and not any(x[3] == 31 for x in l), f'{sav} c{p} meta {meta} {desc}: {l} {r} {r0}')
     print(sav, n - antes, 'controles')
 print(n, 'controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)

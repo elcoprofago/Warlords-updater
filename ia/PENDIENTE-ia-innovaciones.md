@@ -321,3 +321,7 @@ Resultado del paso 5.2 (tandas 131-132, vista-aliada 1.0.128.0, 20 partidas ok, 
 Lectura: la IA no reconstruye porque gasta el oro en producción cada turno y nunca junta 800. No es una falla del
 código. Cambiarlo es una decisión de juego (abaratar reconstruir, o que la IA ahorre para un puente que le abre
 camino); se le planteó al usuario. Mientras no decida, paso 5.2 cerrado.
+
+Decisión del 5.2 (11/11/2026): la IA ahorra para el puente que le abre camino, en vez de abaratar reconstruir (era
+el objetivo del usuario del 4/11 en PENDIENTE-ia-economia). Hecho en vista-aliada 1.0.203.0: ver «Oro con destino,
+primer destino: el puente» en PENDIENTE-ia-economia.md (tanda: TAREAS 174). Siguen sin hacer el 5.3 (trampas) y 5.4.
