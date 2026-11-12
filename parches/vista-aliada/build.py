@@ -14928,11 +14928,9 @@ lk_str = place_data('lk_str', cstr_(LK_URL))
 lk_cmd = place_data('lk_cmd', cstr_(f'explorer.exe "{LK_URL}"'))
 # 13/11/2026: el navegador abre detrás del juego, que ocupa la pantalla; el clic además copia la dirección al
 # portapapeles con clip.exe de Windows, sin ventana (CREATE_NO_WINDOW): el juego no importa las funciones del portapapeles.
-# 13/11/2026 (usuario: ¿cómo se entera quien hace clic?): tras el clic, el texto del enlace pasa a LK_MSG; lk_flag lo
-# mantiene aunque el menú se rearme (0x4ab600 corre de nuevo en algunos eventos).
-LK_MSG = 'Enlace copiado: pegalo en el navegador (Ctrl+V)'
-lk_msg = place_data('lk_msg', cstr_(LK_MSG))
-lk_flag = place_data('lk_flag', bytes(4))
+# 13/11/2026 (usuario: ¿cómo se entera quien hace clic?): cambiar el texto del enlace tras el clic no se vio en el
+# juego (1.0.212.0); el aviso es la ayuda emergente de LK_HOT, botón tipo 1 como los del menú (ver el recurso).
+LK_TIP = 'Click copies the link: paste it in your browser (Ctrl+V)'
 lk_clip = place_data('lk_clip', cstr_(f'cmd.exe /c "echo|set /p={LK_URL}|clip"'))
 # Alta del menú (0x4ab600, en 0x4ab7c5 antes de poner la versión): texto y color del enlace.
 # La zona de clic nace oculta, como la del Comparador (bk_init): sin 0x4dcec0(LK_HOT, 0) no recibía el clic.
@@ -14941,12 +14939,7 @@ lk_init = place('lk_init', f'''
     push {LK_HOT}
     call 0x4dcec0
     add esp, 8
-    mov eax, {lk_str:#x}
-    cmp dword ptr [{lk_flag:#x}], 0
-    je li_txt
-    mov eax, {lk_msg:#x}
-li_txt:
-    push eax
+    push {lk_str:#x}
     push {LK_TXT}
     call 0x4dd240
     add esp, 8
@@ -15001,15 +14994,6 @@ lc_open:
     push dword ptr [{tl_pi + 4:#x}]
     call dword ptr [{CLOSEH:#x}]
 lc_end:
-    mov dword ptr [{lk_flag:#x}], 1
-    push {lk_msg:#x}
-    push {LK_TXT}
-    call 0x4dd240
-    add esp, 8
-    mov ecx, 0x588bd0
-    call 0x4d82a0
-    mov ecx, 0x588bd0
-    call 0x4d7f60
     popad
     jmp 0x4ab273
 lc_orig:
@@ -21278,11 +21262,14 @@ lktxt = bytearray(res[p:p + 4 + SZ[0x13]])
 struct.pack_into('<IIII', lktxt, 4, LK_TXT, 322, LK_Y, 1)
 struct.pack_into('<I', lktxt, 0x14, LK_W)
 struct.pack_into('<I', lktxt, 0x20, 1)                       # fuente 1, la de los checks
-# Zona de clic: tipo 3, como la del Comparador del diálogo 93 (la copia del botón 7, tipo 1, no recibía el clic).
-p, t = r93[0x10]; assert t == 3
-lkhot = bytearray(res[p:p + 4 + SZ[3]])
+# Zona de clic: copia del botón 7 (tipo 1, sin dibujo propio: los botones del menú son zonas sobre el fondo), con su
+# ayuda emergente LK_TIP. Nace oculta: lk_init la muestra (antes de eso no recibía el clic).
+p, t = r1[7]; assert t == 1 and struct.unpack_from('<4I', res, p + 0x14) == (0, 0, 0, 0)
+lkhot = bytearray(res[p:p + 4 + SZ[1]])
 struct.pack_into('<IIII', lkhot, 4, LK_HOT, 322 - LK_W // 2, LK_Y - 2, 1)
-struct.pack_into('<II', lkhot, 0x18, LK_W, 14)
+struct.pack_into('<II', lkhot, 0x24, LK_W, 14)
+setstr(lkhot, 0x30, 16, 'Clan')
+setstr(lkhot, 0x40, 64, LK_TIP)
 new_list[1] = [lktxt, lkhot]
 
 for did in (115, 111, 93, 86, 35, 34, 9, 7, 1):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
