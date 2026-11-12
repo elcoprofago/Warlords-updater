@@ -24,7 +24,7 @@ Sorteo están acá (tarea 18).
 
 - [x] **180.** Haz del faro más visible y enlace del clan (vista-aliada 1.0.209.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) en el menú principal, pasar el cursor por `https://sites.google.com/view/plagacarriers` y hacer clic: debe abrirse el sitio en el navegador; (b) en una partida con **Day/Night** y un faro, de noche: el haz debe verse claro sobre tierra y agua hasta 6 casillas, y girar un poco más lento que en la 1.0.207.0. Anotar si el cursor no cambia sobre el enlace (el del juego no siempre lo hace), si sigue sin abrir, o si el haz conviene más fuerte, más ancho o más lento. — 12/11/2026: el enlace seguía sin responder; el faro, visible. Ajustes en 1.0.210.0 (tarea 181).
 
-- [ ] **179.** IA: repliegue por quiebra (vista-aliada 1.0.208.0, 12/11/2026)
+- [x] **179.** IA: repliegue por quiebra (vista-aliada 1.0.208.0, 12/11/2026) — 12/11/2026: corrida en las tandas 158 y 159 (1.0.213.0). El repliegue anduvo donde se activó, pero las dos deserciones de la nueva fueron de pilas que no cubre; resultado en ia\PENDIENTE-ia-economia.md.
 Cambio: cuando a la computadora nueva el mantenimiento le supera al ingreso y el oro se le acaba, las pilas que
 estaban paradas yendo a ciudades neutrales, ruinas, ítems o misiones vuelven a su ciudad más cercana. Hay que ver si
 deserta menos y si eso le cuesta partidas.

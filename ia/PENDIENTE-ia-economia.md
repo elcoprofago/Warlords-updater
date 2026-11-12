@@ -581,3 +581,24 @@ tabla 0x40d02c) y anotar con un evento la meta de los grupos fuera en esos turno
   contra 108 en 10 color-partidas de 152-157); turnos con mant > ing; puesto, PV y ciudades de la nueva contra la
   original. Si se repliega y vuelve a salir (37 repetidos en la misma pila), hace falta memoria del repliegue.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del repliegue (TAREAS 179)".
+
+### Resultado del repliegue (tandas 158 y 159, vista-aliada 1.0.213.0, 12/11/2026)
+- **Donde se activa, funciona y no vuelve a salir.** 1160 color 3 (turno 22) y 1166 color 3 (turnos 22 y 28), siempre
+  meta 3 (neutral). En 1166: mantenimiento 113 → 55 y 119 → 29 al turno siguiente, contra un ingreso de 82; en el
+  turno 23 quedan 2 ejércitos fuera (antes, 25). No desertó. Los 37 salen repetidos en el mismo turno (3 o 4 con la
+  misma meta, ciudad y oro): son varias pilas o varias llamadas a me_set, no una pila que vuelve a salir.
+- **Deserciones de la nueva:** 30 en 2 color-partidas (1156 color 3: 16; 1170 color 3: 14), sin batallas ni ciudades
+  perdidas: las dos estructurales. En las dos el repliegue **no se activó**: según el evento 34, las pilas fuera
+  eran huérfanos (meta 13), atacantes (7) y pilas que ya iban a Form (1) y no llegaban. 1170 color 3: de los turnos
+  19 a 28, entre 13 y 20 ejércitos fuera con mantenimiento 124-162 contra 106; en el turno 25, 17 con meta 1 y
+  siguen fuera los turnos siguientes. Original: 29 deserciones en 3 color-partidas.
+- Turnos con mantenimiento > ingreso: nueva 58 de 1.942 (3,0 %; antes 2,6 %), original 40 de 1.899 (2,1 %; antes
+  1,7 %). No bajó.
+- Resultado de las partidas: nueva puesto 2,65 / 2,92, PV 8,5 / 7,0, ciudades 6,1 / 5,05; original puesto 3,27 /
+  3,19, PV 5,1 / 5,4, ciudades 3,8 / 4,3. El repliegue no le costó partidas.
+- Conclusión: el cambio queda. Lo que sigue desertando son huérfanos y pilas con meta Form que no entran a la ciudad.
+**Próximo paso (4.13):** en quiebra (misma condición que 4.12), (a) que or_run arme los grupos de huérfanos con
+destino la ciudad propia más cercana en vez de una meta de ataque o captura; (b) averiguar por qué las pilas con meta
+1 de 1170 color 3 (turnos 25-28) no entran a la ciudad: anotar con un evento el destino y la distancia de cada pila
+Form que termina fuera. Los atacantes (7) no se tocan.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.13 (huérfanos y Form en quiebra)".
