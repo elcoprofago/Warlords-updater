@@ -28,7 +28,7 @@ FR_CNT = BASE + img.index(b'FARO' + bytes(20)) + 4 + 8
 FR_NPOS, FR_SHIFT, FR_VV, FR_ANG = 48, 0, 100, 30   # haz giratorio (fr_fan / fr_stamp)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
 FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
-FR_TAB, FR_AGUA, FR_TIERRA = (0, 0, 0, 0, 1, 1, 2), 6, 1   # haz de 6 casillas (tierra o agua), lámpara de 1
+FR_TAB, FR_AGUA, FR_TIERRA = (1, 1, 1, 1, 1, 1, 2, 3, 4), 8, 1   # haz de 8 casillas (tierra o agua), lámpara de 1
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
@@ -308,8 +308,8 @@ print(f'8) Hidden Map de noche: {n} pasadas; lo no explorado no alumbra')
 b = Bench(); b.pre()
 def cnt(): return struct.unpack('<I', b.mu.mem_read(FR_CNT, 4))[0]
 fx, fy = FARO_XY
-alcance = {(fx + dx, fy + dy) for dx in range(-6, 7) for dy in range(-6, 7)
-           if 2 <= max(abs(dx), abs(dy)) + min(abs(dx), abs(dy)) // 2 <= 6
+alcance = {(fx + dx, fy + dy) for dx in range(-FR_AGUA, FR_AGUA + 1) for dy in range(-FR_AGUA, FR_AGUA + 1)
+           if 2 <= max(abs(dx), abs(dy)) + min(abs(dx), abs(dy)) // 2 <= FR_AGUA
            and 0 <= fx + dx - VX < VW and 0 <= fy + dy - VY < VH}
 vistas, prev = set(), grid(b)
 for paso in range(FR_NPOS * (1 << FR_SHIFT)):

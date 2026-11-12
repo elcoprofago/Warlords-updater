@@ -14923,11 +14923,16 @@ dr_end:
 # explorer.exe (el navegador predeterminado). El diálogo tiene los controles 1 a 30.
 LK_TXT, LK_HOT = 31, 32
 LK_URL = 'https://sites.google.com/view/plagacarriers'
-LK_Y, LK_W = 465, 360                  # el marco termina en y 461 (dibujo del fondo); 640x480 deja 15 píxeles abajo
+LK_Y, LK_W = 468, 360                  # el marco termina en y 461 (dibujo del fondo); 12/11/2026: de 465 a 468, menos pegado
 lk_str = place_data('lk_str', cstr_(LK_URL))
 lk_cmd = place_data('lk_cmd', cstr_(f'explorer.exe "{LK_URL}"'))
 # Alta del menú (0x4ab600, en 0x4ab7c5 antes de poner la versión): texto y color del enlace.
+# La zona de clic nace oculta, como la del Comparador (bk_init): sin 0x4dcec0(LK_HOT, 0) no recibía el clic.
 lk_init = place('lk_init', f'''
+    push 0
+    push {LK_HOT}
+    call 0x4dcec0
+    add esp, 8
     push {lk_str:#x}
     push {LK_TXT}
     call 0x4dd240
@@ -19598,12 +19603,12 @@ ds_out:
 # después de las casillas sucias 0x456f9b) y cuenta los tics en FR_CNT. Las casillas que el haz deja o toma cambian de
 # nivel y dn_pre las marca sucias, así que se repintan solo esas. En el minimapa (DN_BASE != dn_d) queda solo la
 # lámpara: se rearma pocas veces y el haz quedaría congelado.
-DN_FAGUA, DN_FTIERRA = 6, 1          # alcance del haz: 6 casillas (pedido del 10/11/2026)
+DN_FAGUA, DN_FTIERRA = 8, 1          # alcance del haz: 6 casillas (10/11/2026), 8 desde el 12/11/2026
 FR_ANG = 30                          # apertura del haz en grados (pedido del 12/11/2026: 25 a 30)
 FR_NPOS, FR_SHIFT = 48, 0            # 48 posiciones por vuelta (7,5 grados), un paso por tic (12/11/2026: 32 era un poco rápido)
 FR_VV = 100                          # largo de los vectores de dirección (fr_dir)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
-FR_TAB = bytes([0, 0, 0, 0, 1, 1, 2])   # 12/11/2026: con 1..7 el haz casi no se veía
+FR_TAB = bytes([1, 1, 1, 1, 1, 1, 2, 3, 4])   # 12/11/2026: lámpara en el nivel de las ciudades (DN_MIN), haz en degradé hasta 8
 assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
 fr_tab = place_data('fr_tab', FR_TAB)
 FR_DIRS = [(round(FR_VV * math.cos(2 * math.pi * k / FR_NPOS)), round(FR_VV * math.sin(2 * math.pi * k / FR_NPOS)))
