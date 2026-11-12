@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 176).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 177).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **177.** Botón de la torre (vista-aliada 1.0.206.0, 12/11/2026). En `C:Warlords3`, actualizar el parche (opción 9) y en una partida pasar el mouse o hacer clic en el botón de la torre de la botonera: el texto debe decir «Build /Rebuild - Repair». El menú que abre sigue igual.
 - [ ] **176.** Torre, enlace del clan y grupos SHIFT (vista-aliada 1.0.205.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) en el menú principal, debajo del cuadro de opciones, debe verse `https://sites.google.com/view/plagacarriers` con el color y la letra de las opciones, del tamaño de los checks; un clic la abre en el navegador; (b) en una partida, una torre de vigía despeja la niebla a 4 casillas (antes 5) y de noche alumbra menos; (c) seleccionar ejércitos distintos y apretar SHIFT+1, SHIFT+2… SHIFT+9; luego 1, 2… 9: cada número debe volver a seleccionar su grupo. Anotar lo que no ande. El muro queda sin Life Drain hasta la opinión del clan.
 - [x] **175.** Muro sin Life Drain (vista-aliada 1.0.204.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y restaurar BUILD01.SAV. Atacar varias veces una pila sobre un muro de piedra o a 1 casilla de él: el muro ya no le quita golpes a los atacantes (siguen Missiles, Acid y Fortify +3 y Life Ward +3). En el Simulador 1.0.25.0, el muro dice «Missiles +3, Acid +3, Fortify +3». Anotar si sigue desparejo y para qué lado.
 - [ ] **173.** Manual con obras y defensas (vista-aliada 1.0.201.0, 11/11/2026). Abrí `C:\Warlords3\Manual-Era-de-Alianzas.pdf` y leé el capítulo nuevo **XVII «Obras y defensas»**: torres, faros y murallas, los bonos de cada edificio en combate, el Life Ward y la ventana de victoria solo para el atacante. Fijate también la fila nueva en «Novedades de un vistazo» (capítulo I). Anotá lo que esté mal o quieras cambiar.

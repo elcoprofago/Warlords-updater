@@ -1011,7 +1011,7 @@ TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0x18a, 3, 'Each point of Bridge adds 1 to the strength of ', 'XXXX '),
     (0x18a, 4, 'this army when the battle is on a bridge that ', 'XXXX '),
     (0x18a, 5, 'is still standing.', 'XXXX'),
-    (0x168, 2, 'Rebuild City/Site', 'Build City/Site'),   # menú de la torre (pedido del usuario)
+    (0x168, 2, 'Build /Rebuild - Repair', 'Build City/Site'),   # botón de la torre (pedido del usuario, 12/11/2026)
     # Menú del disquete (pedido del usuario, 8/11/2026): Chat Mode y EMail Statistics no se usaban. En la línea de
     # Chat va "Pausa" (ver Pausa manual); EMail queda sin texto y fuera del menú (diálogo 35, más abajo).
     (0x164, 1, 'Pausa', 'Chat Mode'),
