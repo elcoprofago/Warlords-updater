@@ -23,7 +23,9 @@ Pedido completo:
   sentido horario: FR_NPOS = 32 pasos por vuelta, un paso cada 2^FR_SHIFT tics de la animación del mapa (dn_pre
   cuenta los tics en FR_CNT; la vista se pinta en cada tic desde 0x456fa2). Las casillas que cambian de nivel se
   marcan sucias y se repintan solas. En el minimapa, solo la lámpara. Si la vuelta resulta rápida o lenta, se ajusta
-  con FR_SHIFT (cada +1 la hace el doble de lenta). Prueba: prueba_dianoche.py, sección 9 (al este en el paso 0, al
+  con FR_NPOS (pasos por vuelta; el contador se toma módulo FR_NPOS) o FR_SHIFT (cada +1, el doble de lenta).
+  1.0.209.0 (usuario: «casi imperceptible», «un poquito más lento»): FR_TAB de 1..7 a 0,0,0,0,1,1,2 (el haz
+  ilumina casi como la lámpara hasta 6 casillas) y FR_NPOS de 32 a 48 (vuelta 1,5 veces más lenta). Prueba: prueba_dianoche.py, sección 9 (al este en el paso 0, al
   sur a un cuarto de vuelta, todas las casillas al alcance alumbradas en una vuelta, sucias = lo que cambió). La
   prueba esperaba todavía la torre a 3 casillas (luz 2 desde la 1.0.205.0): corregida.
 - Torre de vigía (indicación del 10/11/2026): alumbra 3 casillas (DN_TORRE). El +1 de fuerza al grupo que está en

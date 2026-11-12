@@ -14919,7 +14919,7 @@ dr_end:
 
 # Enlace al sitio del clan en el menú principal (diálogo 1; pedido del usuario, 12/11/2026): debajo del marco de las
 # opciones, centrado, el texto LK_TXT (copia del texto de opción 14, en la fuente 1 de los checks de afuera y en el
-# color de las opciones, 0x8c) y encima la zona de clic LK_HOT (copia del botón 7). El clic abre la dirección con
+# color de las opciones, 0x8c) y encima la zona de clic LK_HOT (tipo 3, copia de la del Comparador del diálogo 93). El clic abre la dirección con
 # explorer.exe (el navegador predeterminado). El diálogo tiene los controles 1 a 30.
 LK_TXT, LK_HOT = 31, 32
 LK_URL = 'https://sites.google.com/view/plagacarriers'
@@ -19594,17 +19594,17 @@ ds_out:
 # real. Alrededor del faro, DN_FTIERRA casillas siempre encendidas (la lámpara); hasta DN_FAGUA casillas, solo lo que
 # cae dentro del haz de FR_ANG grados, sobre tierra o agua, con degradé por distancia (max + min // 2; niveles en
 # fr_tab). El haz da una vuelta en FR_NPOS pasos, en el sentido de las agujas del reloj (y crece hacia abajo en la
-# pantalla), y avanza un paso cada 2^FR_SHIFT tics de la animación del mapa: dn_pre corre en cada tic (0x456fa2, justo
+# pantalla), y avanza un paso (contador mod FR_NPOS) cada 2^FR_SHIFT tics de la animación del mapa: dn_pre corre en cada tic (0x456fa2, justo
 # después de las casillas sucias 0x456f9b) y cuenta los tics en FR_CNT. Las casillas que el haz deja o toma cambian de
 # nivel y dn_pre las marca sucias, así que se repintan solo esas. En el minimapa (DN_BASE != dn_d) queda solo la
 # lámpara: se rearma pocas veces y el haz quedaría congelado.
 DN_FAGUA, DN_FTIERRA = 6, 1          # alcance del haz: 6 casillas (pedido del 10/11/2026)
 FR_ANG = 30                          # apertura del haz en grados (pedido del 12/11/2026: 25 a 30)
-FR_NPOS, FR_SHIFT = 32, 0            # 32 posiciones por vuelta (11,25 grados), un paso por tic
+FR_NPOS, FR_SHIFT = 48, 0            # 48 posiciones por vuelta (7,5 grados), un paso por tic (12/11/2026: 32 era un poco rápido)
 FR_VV = 100                          # largo de los vectores de dirección (fr_dir)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
-FR_TAB = bytes([1, 2, 3, 4, 5, 6, 7])
-assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N and FR_NPOS & (FR_NPOS - 1) == 0
+FR_TAB = bytes([0, 0, 0, 0, 1, 1, 2])   # 12/11/2026: con 1..7 el haz casi no se veía
+assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
 fr_tab = place_data('fr_tab', FR_TAB)
 FR_DIRS = [(round(FR_VV * math.cos(2 * math.pi * k / FR_NPOS)), round(FR_VV * math.sin(2 * math.pi * k / FR_NPOS)))
            for k in range(FR_NPOS)]
@@ -19650,9 +19650,12 @@ fr_stamp = place('fr_stamp', f'''
     pushad
     mov dword ptr [{fr_var:#x}], eax
     mov dword ptr [{fr_var + 4:#x}], edx
-    mov ecx, dword ptr [{FR_CNT:#x}]
-    shr ecx, {FR_SHIFT}
-    and ecx, {FR_NPOS - 1}
+    mov eax, dword ptr [{FR_CNT:#x}]
+    shr eax, {FR_SHIFT}
+    xor edx, edx
+    mov ecx, {FR_NPOS}
+    div ecx
+    mov ecx, edx
     mov eax, dword ptr [ecx*8 + {fr_dir:#x}]
     mov dword ptr [{FR_VX:#x}], eax
     mov eax, dword ptr [ecx*8 + {fr_dir + 4:#x}]
@@ -21230,12 +21233,11 @@ lktxt = bytearray(res[p:p + 4 + SZ[0x13]])
 struct.pack_into('<IIII', lktxt, 4, LK_TXT, 322, LK_Y, 1)
 struct.pack_into('<I', lktxt, 0x14, LK_W)
 struct.pack_into('<I', lktxt, 0x20, 1)                       # fuente 1, la de los checks
-p, t = r1[7]; assert t == 1
-lkhot = bytearray(res[p:p + 4 + SZ[1]])
+# Zona de clic: tipo 3, como la del Comparador del diálogo 93 (la copia del botón 7, tipo 1, no recibía el clic).
+p, t = r93[0x10]; assert t == 3
+lkhot = bytearray(res[p:p + 4 + SZ[3]])
 struct.pack_into('<IIII', lkhot, 4, LK_HOT, 322 - LK_W // 2, LK_Y - 2, 1)
-struct.pack_into('<II', lkhot, 0x24, LK_W, 14)
-setstr(lkhot, 0x30, 16, 'Clan')
-setstr(lkhot, 0x40, 64, 'Open the clan web site')
+struct.pack_into('<II', lkhot, 0x18, LK_W, 14)
 new_list[1] = [lktxt, lkhot]
 
 for did in (115, 111, 93, 86, 35, 34, 9, 7, 1):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores

@@ -25,10 +25,10 @@ assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4; OB_TAB = OB_N + 4
 assert img.count(b'FARO' + bytes(20)) == 1, 'falta fr_var'
 FR_CNT = BASE + img.index(b'FARO' + bytes(20)) + 4 + 8
-FR_NPOS, FR_SHIFT, FR_VV, FR_ANG = 32, 0, 100, 30   # haz giratorio (fr_fan / fr_stamp)
+FR_NPOS, FR_SHIFT, FR_VV, FR_ANG = 48, 0, 100, 30   # haz giratorio (fr_fan / fr_stamp)
 FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
 FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
-FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 6, 7), 6, 1   # haz de 6 casillas (tierra o agua), lámpara de 1
+FR_TAB, FR_AGUA, FR_TIERRA = (0, 0, 0, 0, 1, 1, 2), 6, 1   # haz de 6 casillas (tierra o agua), lámpara de 1
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
@@ -244,7 +244,7 @@ print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
 assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
-assert g[22 - VX, 14 - VY] == 1 and g[21 - VX, 14 - VY] == 2 and g[23 - VX, 15 - VY] == 2, 'el faro: lámpara de 1 casilla'
+assert (g[22 - VX, 14 - VY], g[21 - VX, 14 - VY], g[23 - VX, 15 - VY]) == (FR_TAB[0], FR_TAB[1], FR_TAB[1]), ('el faro: lámpara de 1 casilla', g[22 - VX, 14 - VY], g[21 - VX, 14 - VY], g[23 - VX, 15 - VY])
 assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 2 casillas'
 # 2) sin cambios: nada sucio y nada que pintar
 b.clear_dirty(); b.pre(); assert b.dirty() == set(), 'sucias 2'
@@ -278,6 +278,7 @@ b.mini()
 assert all(c[0] == 0x28 and c[4] == 1 for c in b.mcalls)
 mt = b.mcalls[0][5] - exp[0][3] * 256
 got = [(x, y, w, (t - mt) // 256) for sheet, x, y, w, h, t in b.mcalls]
+exp = [e for e in exp if e[3]]   # nivel 0 (la lámpara del faro): sin oscurecer, no se pinta
 assert got == exp, ([e for e in got if e not in exp][:5], [e for e in exp if e not in got][:5])
 tabs = [bytes(b.mu.mem_read(mt + 256 * L, 256)) for L in range(N + 1)]
 assert tabs[0] == bytes(range(256)) and all(tabs[L + 1] == bytes(tabs[1][c] for c in tabs[L]) for L in range(N))
