@@ -16,7 +16,7 @@
 # Botón del Comparador (ícono de DarkCompare en Edit Side): cada PC abre su Herramientas\DarkCompare.exe; su dibujo es
 # SETS\Fantasy\darkcomp.pcx.
 # Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
-import struct, sys, os
+import struct, sys, os, math
 import keystone, capstone
 
 SRC_EXE = r'C:\Warlords3\Darklord.exe'
@@ -19495,43 +19495,50 @@ ds_out:
 # Hidden Map, una ciudad, ruina, sitio o puente solo alumbra desde una casilla explorada por quien mira (bit 0x10 del
 # byte +3): su halo no delata lo que está bajo el negro.
 # Faros (pedido del 10/11/2026; ver fr_stamp) y torres de vigía, recorridos aparte en la tabla de obras para que un faro fuera del margen de la grilla igual llegue.
-# Faro (cambio del 10/11/2026): la luz se proyecta hacia el mar. Degradé de DN_FAGUA casillas sobre agua (aimed &
-# 0x80) y DN_FTIERRA sobre tierra, con la distancia de las ciudades (max + min // 2); niveles en fr_tab.
-DN_FAGUA, DN_FTIERRA = 6, 1          # 6 sobre agua: pedido del 10/11/2026 (antes 5)
+# Faro (cambio del 12/11/2026, antes un abanico fijo de 90 grados hacia el mar): un haz que gira como el de un faro
+# real. Alrededor del faro, DN_FTIERRA casillas siempre encendidas (la lámpara); hasta DN_FAGUA casillas, solo lo que
+# cae dentro del haz de FR_ANG grados, sobre tierra o agua, con degradé por distancia (max + min // 2; niveles en
+# fr_tab). El haz da una vuelta en FR_NPOS pasos, en el sentido de las agujas del reloj (y crece hacia abajo en la
+# pantalla), y avanza un paso cada 2^FR_SHIFT tics de la animación del mapa: dn_pre corre en cada tic (0x456fa2, justo
+# después de las casillas sucias 0x456f9b) y cuenta los tics en FR_CNT. Las casillas que el haz deja o toma cambian de
+# nivel y dn_pre las marca sucias, así que se repintan solo esas. En el minimapa (DN_BASE != dn_d) queda solo la
+# lámpara: se rearma pocas veces y el haz quedaría congelado.
+DN_FAGUA, DN_FTIERRA = 6, 1          # alcance del haz: 6 casillas (pedido del 10/11/2026)
+FR_ANG = 30                          # apertura del haz en grados (pedido del 12/11/2026: 25 a 30)
+FR_NPOS, FR_SHIFT = 32, 0            # 32 posiciones por vuelta (11,25 grados), un paso por tic
+FR_VV = 100                          # largo de los vectores de dirección (fr_dir)
+FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
 FR_TAB = bytes([1, 2, 3, 4, 5, 6, 7])
-assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N
+assert len(FR_TAB) == DN_FAGUA + 1 and max(FR_TAB) < DN_N and FR_NPOS & (FR_NPOS - 1) == 0
 fr_tab = place_data('fr_tab', FR_TAB)
-fr_var = place_data('fr_var', bytes(16))       # x, y del faro; +8, +12: vector hacia el agua (fr_fan)
-# Abanico (pedido del 10/11/2026): más allá de DN_FTIERRA la luz del faro alumbra solo dentro de 90 grados (45 a cada
-# lado) de la dirección del agua: la suma de los desplazamientos (dx, dy) de las casillas de agua del cuadrado de
-# radio DN_FAGUA, que apunta a la masa de agua principal. Sin agua alrededor, solo queda el anillo de DN_FTIERRA.
-# fr_fan: esi = dx, edi = dy -> eax = 1 si (dx, dy) cae en el abanico: punto > 0 y 2 * punto^2 >= |d|^2 * |v|^2.
-# |v| <= 13 * 21 * 2, así que los productos entran en 32 bits. Preserva el resto.
+FR_DIRS = [(round(FR_VV * math.cos(2 * math.pi * k / FR_NPOS)), round(FR_VV * math.sin(2 * math.pi * k / FR_NPOS)))
+           for k in range(FR_NPOS)]
+fr_dir = place_data('fr_dir', b''.join(struct.pack('<ii', *v) for v in FR_DIRS))
+# fr_var: 'FARO' (para que la prueba lo encuentre), x, y del faro, contador de tics, vector del haz (vx, vy)
+fr_var = place_data('fr_var', b'FARO' + bytes(20)) + 4
+FR_CNT, FR_VX, FR_VY = fr_var + 8, fr_var + 12, fr_var + 16
+# fr_fan: esi = dx, edi = dy -> eax = 1 si (dx, dy) cae en el haz: punto > 0 y 1000 * punto^2 >= FR_COS2 * |d|^2 *
+# FR_VV^2. punto <= 2 * 6 * 100 y |d|^2 <= 72: todo entra en 32 bits sin signo. Preserva el resto.
+assert 1000 * (2 * DN_FAGUA * FR_VV) ** 2 < 2 ** 32 and FR_COS2 * 2 * DN_FAGUA ** 2 * FR_VV ** 2 < 2 ** 32
 fr_fan = place('fr_fan', f'''
     push ebx
-    push ecx
     push edx
     push edi
-    mov ebx, dword ptr [{fr_var + 8:#x}]
-    mov ecx, dword ptr [{fr_var + 12:#x}]
     mov eax, esi
-    imul eax, ebx
+    imul eax, dword ptr [{FR_VX:#x}]
     mov edx, edi
-    imul edx, ecx
+    imul edx, dword ptr [{FR_VY:#x}]
     add eax, edx
     jle ff_no
     imul eax, eax
-    add eax, eax
-    mov edx, esi
-    imul edx, edx
+    imul ebx, eax, 1000
+    mov eax, esi
+    imul eax, eax
     imul edi, edi
-    add edx, edi
-    imul ebx, ebx
-    imul ecx, ecx
-    add ebx, ecx
-    imul edx, ebx
-    cmp eax, edx
-    jl ff_no
+    add eax, edi
+    imul eax, eax, {FR_COS2 * FR_VV * FR_VV}
+    cmp ebx, eax
+    jb ff_no
     mov eax, 1
     jmp ff_out
 ff_no:
@@ -19539,7 +19546,6 @@ ff_no:
 ff_out:
     pop edi
     pop edx
-    pop ecx
     pop ebx
     ret
 ''')
@@ -19549,28 +19555,13 @@ fr_stamp = place('fr_stamp', f'''
     pushad
     mov dword ptr [{fr_var:#x}], eax
     mov dword ptr [{fr_var + 4:#x}], edx
-    mov dword ptr [{fr_var + 8:#x}], 0
-    mov dword ptr [{fr_var + 12:#x}], 0
-    mov edi, {-DN_FAGUA}
-fv_y:
-    mov esi, {-DN_FAGUA}
-fv_x:
-    mov eax, dword ptr [{fr_var:#x}]
-    add eax, esi
-    mov edx, dword ptr [{fr_var + 4:#x}]
-    add edx, edi
-    call {aimed:#x}
-    test al, 0x80
-    jz fv_next
-    add dword ptr [{fr_var + 8:#x}], esi
-    add dword ptr [{fr_var + 12:#x}], edi
-fv_next:
-    inc esi
-    cmp esi, {DN_FAGUA}
-    jle fv_x
-    inc edi
-    cmp edi, {DN_FAGUA}
-    jle fv_y
+    mov ecx, dword ptr [{FR_CNT:#x}]
+    shr ecx, {FR_SHIFT}
+    and ecx, {FR_NPOS - 1}
+    mov eax, dword ptr [ecx*8 + {fr_dir:#x}]
+    mov dword ptr [{FR_VX:#x}], eax
+    mov eax, dword ptr [ecx*8 + {fr_dir + 4:#x}]
+    mov dword ptr [{FR_VY:#x}], eax
     mov edi, {-DN_FAGUA}
 fs_y:
     cmp edi, {DN_FAGUA}
@@ -19613,13 +19604,10 @@ fs_mx:
     jge fs_xnext
     cmp ebp, {DN_FTIERRA}
     jle fs_lev
-    push eax
+    cmp dword ptr [{DN_BASE:#x}], {dn_d:#x}
+    jne fs_xnext
     call {fr_fan:#x}
     test eax, eax
-    pop eax
-    jz fs_xnext
-    call {aimed:#x}
-    test al, 0x80
     jz fs_xnext
 fs_lev:
     imul ecx, dword ptr [{DN_STR:#x}]
@@ -19759,6 +19747,7 @@ dl_out:
 
 dn_pre = place('dn_pre', f'''
     pushad
+    inc dword ptr [{FR_CNT:#x}]
     mov ebp, ecx
     xor ebx, ebx
     test byte ptr [{SHOPT:#x}], 2

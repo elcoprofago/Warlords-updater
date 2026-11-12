@@ -9,7 +9,7 @@
 # Minimapa (dn_mini, en 0x4114ef) de 100x125: cada fila de píxeles se recolorea (0x4ede30, stub) en tramos de igual
 # nivel, con el nivel de la casilla del mapa entero; no toca la grilla de la vista; de día no pinta, y el cambio
 # entre día y noche marca el minimapa para rearmar.
-import sys, struct, pefile
+import sys, struct, math, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
@@ -23,8 +23,12 @@ DN_PRE, DN_POST, DN_MINI = jmp_target(0x459790), jmp_target(0x45aa6e), jmp_targe
 _OB = b'OBRA' + bytes(4 + 64 * 8)
 assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4; OB_TAB = OB_N + 4
+assert img.count(b'FARO' + bytes(20)) == 1, 'falta fr_var'
+FR_CNT = BASE + img.index(b'FARO' + bytes(20)) + 4 + 8
+FR_NPOS, FR_SHIFT, FR_VV, FR_ANG = 32, 0, 100, 30   # haz giratorio (fr_fan / fr_stamp)
+FR_COS2 = round(1000 * math.cos(math.radians(FR_ANG / 2)) ** 2)
 FARO_XY, TORRE_XY = (22, 14), (14, 6)   # faro en la costa: mar al este (x >= 23, filas 9..19); torre: control
-FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 6, 7), 6, 1   # degradé de 6 casillas sobre agua, 1 sobre tierra
+FR_TAB, FR_AGUA, FR_TIERRA = (1, 2, 3, 4, 5, 6, 7), 6, 1   # haz de 6 casillas (tierra o agua), lámpara de 1
 
 N = 8; MIN = 1; AMIN = 4   # AMIN: la luz de los ejércitos no pasa del nivel 4 (~45 %)
 MW = MH = 30; SHIFT = 8; WATER, LAND = 3, 2
@@ -115,8 +119,9 @@ class Bench:
     def dirty(self):
         return {(i % VW, i // VW) for i in range(VW * VH) if self.mu.mem_read(CELLS + i * 0x1c + 6, 1)[0] & 0x20}
 
-    def pre(self):
+    def pre(self, gira=False):   # sin gira, el haz del faro queda quieto (dn_pre cuenta un tic en cada llamada)
         mu = self.mu
+        if not gira: mu.mem_write(FR_CNT, struct.pack('<I', (struct.unpack('<I', mu.mem_read(FR_CNT, 4))[0] - 1) & 0xffffffff))
         mu.reg_write(UC_X86_REG_ECX, VIEW)
         mu.reg_write(UC_X86_REG_ESP, STACK - 0x100)
         mu.mem_write(STACK - 0x100, struct.pack('<I', END))
@@ -149,7 +154,7 @@ class Bench:
         assert mu.reg_read(UC_X86_REG_ESI) == MINI and mu.reg_read(UC_X86_REG_EBX) == 0xbbbb
 
 # ---- el mismo cálculo en Python
-def level(b, x, y):
+def level(b, x, y, mini=False):
     lev = N
     for lx, ly, r0, round_, lmin in lights(b):
         dx, dy = abs(x - lx), abs(y - ly)
@@ -162,15 +167,19 @@ def level(b, x, y):
     if seen(b, *FARO_XY):
         dx, dy = abs(x - FARO_XY[0]), abs(y - FARO_XY[1])
         d = max(dx, dy) + min(dx, dy) // 2
-        sx, sy = x - FARO_XY[0], y - FARO_XY[1]
-        dot = sx * FV[0] + sy * FV[1]
-        fan = dot > 0 and 2 * dot * dot >= (sx * sx + sy * sy) * (FV[0] ** 2 + FV[1] ** 2)
-        if d <= FR_TIERRA or (d <= FR_AGUA and fan and (x, y) in SEA): lev = min(lev, FR_TAB[d])
+        if d <= FR_TIERRA or (not mini and d <= FR_AGUA and in_beam(b, x - FARO_XY[0], y - FARO_XY[1])):
+            lev = min(lev, FR_TAB[d])
     return lev
 
-# abanico del faro: vector hacia el agua del cuadrado de radio FR_AGUA (fr_fan)
-FV = (sum(dx for dx in range(-FR_AGUA, FR_AGUA + 1) for dy in range(-FR_AGUA, FR_AGUA + 1) if (FARO_XY[0] + dx, FARO_XY[1] + dy) in SEA),
-      sum(dy for dx in range(-FR_AGUA, FR_AGUA + 1) for dy in range(-FR_AGUA, FR_AGUA + 1) if (FARO_XY[0] + dx, FARO_XY[1] + dy) in SEA))
+# haz del faro: dirección del paso (contador de tics >> FR_SHIFT) de FR_NPOS por vuelta, sentido horario
+def beam_dir(b):
+    k = (struct.unpack('<I', b.mu.mem_read(FR_CNT, 4))[0] >> FR_SHIFT) % FR_NPOS
+    a = 2 * math.pi * k / FR_NPOS
+    return round(FR_VV * math.cos(a)), round(FR_VV * math.sin(a))
+def in_beam(b, sx, sy):
+    vx, vy = beam_dir(b)
+    dot = sx * vx + sy * vy
+    return dot > 0 and 1000 * dot * dot >= FR_COS2 * (sx * sx + sy * sy) * FR_VV * FR_VV
 
 def seen(b, x, y):   # con Hidden Map, solo alumbra lo explorado (bit 0x10 del byte +3)
     return not b.hidden or b.mu.mem_read(tile_va(x, y) + 3, 1)[0] & 0x10
@@ -179,7 +188,7 @@ def lights(b):
     out = []
     for x, y in ((10, 10), (11, 10), (10, 11), (11, 11)): out.append((x, y, 1, False, MIN))
     out += [(20, 5, 0, True, MIN), (8, 22, 0, True, MIN), (5, 20, 0, True, MIN), (6, 20, 0, True, MIN)]
-    out.append((*TORRE_XY, 3, False, MIN))
+    out.append((*TORRE_XY, 2, False, MIN))   # DN_TORRE = 2 desde 1.0.205.0
     out = [l for l in out if seen(b, l[0], l[1])]
     out += [(x, y, 1, True, AMIN) for x, y, p in b.army_list if p == ME]
     return out
@@ -235,11 +244,8 @@ print(f'1) noche: {len(b.dirty())} celdas sucias, {n} pasadas de recoloreo')
 assert g[15 - VX, 17 - VY] == AMIN and g[16 - VX, 17 - VY] == AMIN and g[10 - VX, 10 - VY] == MIN and g[20 - VX, 5 - VY] == MIN
 assert g[24 - VX, 8 - VY] > MIN, 'el ejército enemigo no debe dar luz'
 assert g[22 - VX, 17 - VY] > MIN and g[22 - VX, 12 - VY] > MIN, 'camino y puente derribado no deben dar luz'
-assert g[22 - VX, 14 - VY] == 1 and g[24 - VX, 14 - VY] == 3 , 'el faro: degradé sobre el mar'
-assert g[24 - VX, 18 - VY] != 6 and g[25 - VX, 19 - VY] != 7, 'el faro: fuera del abanico de 90 grados no alumbra'
-assert g[21 - VX, 14 - VY] == 2 and g[20 - VX, 14 - VY] == N, 'el faro: 1 casilla hacia tierra'
-assert g[22 - VX, 17 - VY] == N, 'el faro no alumbra tierra a 3 casillas'
-assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 3 casillas'
+assert g[22 - VX, 14 - VY] == 1 and g[21 - VX, 14 - VY] == 2 and g[23 - VX, 15 - VY] == 2, 'el faro: lámpara de 1 casilla'
+assert g[TORRE_XY[0] - VX, TORRE_XY[1] - VY] == MIN, 'la torre de vigía alumbra 2 casillas'
 # 2) sin cambios: nada sucio y nada que pintar
 b.clear_dirty(); b.pre(); assert b.dirty() == set(), 'sucias 2'
 b.post(); assert b.calls == [], 'pintó sin celdas sucias'
@@ -259,7 +265,7 @@ for kw in (dict(night=False), dict(option=False)):
 print('5) día / sin opción: OK')
 # 6) minimapa: tramos de igual nivel por fila, tablas compuestas, y la vista intacta
 b.set(night=True); b.pre(); g = grid(b)
-lev = [[level(b, x, y) for x in range(MW)] for y in range(MH)]
+lev = [[level(b, x, y, mini=True) for x in range(MW)] for y in range(MH)]
 exp = []
 for py in range(MMH):
     row = [lev[py * MH // MMH][px * MW // MMW] for px in range(MMW)]
@@ -296,4 +302,27 @@ assert g[24 - VX, 14 - VY] > MIN, 'el faro sin explorar no debe dar luz'
 b.post(full=True); n = check_calls(b, g)
 b.mini(); assert b.mcalls
 print(f'8) Hidden Map de noche: {n} pasadas; lo no explorado no alumbra')
+# 9) el haz gira: un paso por tic en sentido horario; se ensucia solo lo que cambió, y en una vuelta pasa por toda
+# casilla de 2 a 6 de distancia, tierra o agua
+b = Bench(); b.pre()
+def cnt(): return struct.unpack('<I', b.mu.mem_read(FR_CNT, 4))[0]
+fx, fy = FARO_XY
+alcance = {(fx + dx, fy + dy) for dx in range(-6, 7) for dy in range(-6, 7)
+           if 2 <= max(abs(dx), abs(dy)) + min(abs(dx), abs(dy)) // 2 <= 6
+           and 0 <= fx + dx - VX < VW and 0 <= fy + dy - VY < VH}
+vistas, prev = set(), grid(b)
+for paso in range(FR_NPOS * (1 << FR_SHIFT)):
+    b.mu.mem_write(FR_CNT, struct.pack('<I', (paso - 1) & 0xffffffff)); b.clear_dirty(); b.pre(gira=True)
+    assert cnt() == paso
+    g = grid(b)
+    if paso: assert b.dirty() == changed(prev, g), ('sucias 9', paso)
+    b.post(); check_calls(b, g, b.dirty())
+    k = paso % FR_NPOS
+    if k == 0: assert g[fx + 2 - VX, fy - VY] == FR_TAB[2] and g[fx - 2 - VX, fy - VY] == N, 'paso 0: al este'
+    if k == FR_NPOS // 4: assert g[fx - VX, fy + 3 - VY] == FR_TAB[3] and g[fx - VX, fy - 3 - VY] > FR_TAB[3], 'un cuarto de vuelta: al sur (horario)'
+    vistas |= {(x, y) for x, y in alcance if g[x - VX, y - VY] <= FR_TAB[max(abs(x - fx), abs(y - fy)) + min(abs(x - fx), abs(y - fy)) // 2]}
+    prev = g
+assert vistas == alcance, sorted(alcance - vistas)
+assert (fx, fy + 3) in vistas and (fx - 3, fy) in vistas, 'el haz alumbra tierra'
+print(f'9) haz giratorio: {FR_NPOS} pasos, {len(alcance)} casillas al alcance, todas alumbradas en una vuelta')
 print('TODO OK')
