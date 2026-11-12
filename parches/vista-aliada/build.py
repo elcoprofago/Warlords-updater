@@ -4243,7 +4243,7 @@ OB_MAX, OB_REC, OB_TORRE, OB_FARO = 64, 8, 4, 5
 OB_EMPAL, OB_MURO = 6, 7                       # etapa B: empalizada y muro de piedra (mismo precio OB_FRAC)
 OB_MCAM = 5                                    # puerta (camino sobre un muro): 25 % de fundar una ciudad (usuario, 9/11)
 OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedido sin precio; a confirmar, TAREAS 137)
-OB_VISTA = {OB_TORRE: 5, OB_FARO: 6}
+OB_VISTA = {OB_TORRE: 4, OB_FARO: 6}             # torre 5 -> 4 (usuario, 12/11/2026)
 OB_BLOQUE = 10
 OB_MAPSZ = 0x32000 // 10
 # Detrás de la tabla, PP_CNT: pausas manuales usadas por cada jugador (tope PP_MAX; parte 3 del pedido del 9/11/2026).
@@ -10567,6 +10567,51 @@ kr_out:
     popad
     ret
 ''')
+# Grupos con SHIFT+1-9 (pedido del usuario, 12/11/2026: solo se guardaba el primero). 0x44d160 decide qué grupo
+# guarda según el carácter que llega (! @ # $ % ^ & * ( del teclado de EE.UU.); con el teclado en español SHIFT+2, 7 y
+# 9 no guardan nada y SHIFT+6 y 8 guardan en otro número. gk_grp lee la tecla física: con SHIFT apretado y una de las
+# teclas 1 a 9 abajo, guarda en ese número (cx = número - 1, bl = 1, al = 0, como el original en 0x44d1f5); si no,
+# sigue el original.
+gk_grp = place('gk_grp', f'''
+    pushad
+    cmp dword ptr [{pk_gak:#x}], 0
+    jne gk_have
+    call {pk_resolve:#x}
+    cmp dword ptr [{pk_gak:#x}], 0
+    je gk_no
+gk_have:
+    push 0x10
+    call dword ptr [{pk_gak:#x}]
+    test ax, ax
+    jns gk_no
+    mov esi, 0x31
+gk_loop:
+    push esi
+    call dword ptr [{pk_gak:#x}]
+    test ax, ax
+    js gk_yes
+    inc esi
+    cmp esi, 0x39
+    jbe gk_loop
+gk_no:
+    popad
+    xor cx, cx
+    push ebx
+    push esi
+    xor ebx, ebx
+    jmp 0x44d167
+gk_yes:
+    lea ecx, [esi - 0x31]
+    mov dword ptr [esp + 0x18], ecx
+    popad
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov bl, 1
+    xor eax, eax
+    jmp 0x44d1f5
+''')
 pz_keys = place('pz_keys', f'''
     pushad
     test byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
@@ -14775,6 +14820,63 @@ dr_fail:
 dr_end:
     popad
     ret
+''')
+
+# Enlace al sitio del clan en el menú principal (diálogo 1; pedido del usuario, 12/11/2026): debajo del marco de las
+# opciones, centrado, el texto LK_TXT (copia del texto de opción 14, en la fuente 1 de los checks de afuera y en el
+# color de las opciones, 0x8c) y encima la zona de clic LK_HOT (copia del botón 7). El clic abre la dirección con
+# explorer.exe (el navegador predeterminado). El diálogo tiene los controles 1 a 30.
+LK_TXT, LK_HOT = 31, 32
+LK_URL = 'https://sites.google.com/view/plagacarriers'
+LK_Y, LK_W = 465, 360                  # el marco termina en y 461 (dibujo del fondo); 640x480 deja 15 píxeles abajo
+lk_str = place_data('lk_str', cstr_(LK_URL))
+lk_cmd = place_data('lk_cmd', cstr_(f'explorer.exe "{LK_URL}"'))
+# Alta del menú (0x4ab600, en 0x4ab7c5 antes de poner la versión): texto y color del enlace.
+lk_init = place('lk_init', f'''
+    push {lk_str:#x}
+    push {LK_TXT}
+    call 0x4dd240
+    add esp, 8
+    push 0
+    push 0
+    push 0x8c
+    push {LK_TXT}
+    call 0x4dd2b0
+    add esp, 0x10
+    push {ver_str:#x}
+    jmp 0x4ab7ca
+''')
+# Clic (0x4aad50, evento 3 en 0x4aadb8, control en [esi + 4]).
+lk_click = place('lk_click', f'''
+    mov eax, dword ptr [esi + 4]
+    cmp eax, {LK_HOT}
+    jne lc_orig
+    pushad
+    push {tl_pi:#x}
+    push {tl_si:#x}
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push 0
+    push {lk_cmd:#x}
+    push 0
+    call dword ptr [{CREATEPROC:#x}]
+    test eax, eax
+    jz lc_end
+    push dword ptr [{tl_pi:#x}]
+    call dword ptr [{CLOSEH:#x}]
+    push dword ptr [{tl_pi + 4:#x}]
+    call dword ptr [{CLOSEH:#x}]
+lc_end:
+    popad
+    jmp 0x4ab273
+lc_orig:
+    dec eax
+    cmp eax, 0xf
+    ja 0x4ab273
+    jmp 0x4aadc5
 ''')
 
 # Clic en Edit Side (0x44d3a0; evento 3 en 0x44d3e7, edx = control; los que no están entre 2 y 73 caen en
@@ -19441,7 +19543,7 @@ ff_out:
     pop ebx
     ret
 ''')
-DN_TORRE = 3                                   # torre de vigía: 3 casillas (usuario, 10/11/2026)
+DN_TORRE = 2                                   # torre de vigía: 3 casillas (usuario, 10/11/2026); 2 desde el 12/11/2026
 # fr_stamp: eax = x, edx = y del faro -> baja el nivel de las casillas de la grilla a su alcance. Preserva todo.
 fr_stamp = place('fr_stamp', f'''
     pushad
@@ -20631,8 +20733,11 @@ patch(0x4a2cb6, asm('call 0x4dd260', 0x4a2cb6), asm(f'call {al_seal:#x}', 0x4a2c
 assert rel(0x457200, 2) == asm('je 0x457214', 0x457200)
 patch(0x4571f8, bytes.fromhex('6683e20f6683fa08'), asm(f'jmp {fldirty:#x}', 0x4571f8))
 patch(0x457231, bytes.fromhex('668b450080e41c'), asm(f'jmp {fl_anim:#x}', 0x457231))
-for va in (0x4a979e, 0x4ab7c5):
-    patch(va, asm('push 0x4f90b4', va), asm(f'push {ver_str:#x}', va))
+patch(0x4a979e, asm('push 0x4f90b4', 0x4a979e), asm(f'push {ver_str:#x}', 0x4a979e))
+patch(0x4ab7c5, asm('push 0x4f90b4', 0x4ab7c5), asm(f'jmp {lk_init:#x}', 0x4ab7c5))   # versión y enlace del clan
+patch(0x4aadb8, asm('mov eax, dword ptr [esi + 4]; dec eax; cmp eax, 0xf; ja 0x4ab273', 0x4aadb8),
+      asm(f'jmp {lk_click:#x}', 0x4aadb8) + bytes([0x90]) * 6)
+patch(0x44d160, bytes.fromhex('6633c9535633db'), asm(f'jmp {gk_grp:#x}', 0x44d160) + bytes([0x90]) * 2)
 patch(0x49e48b, rel(0x49e48b, 0x49e49a - 0x49e48b), asm(f'jmp {stepcap:#x}', 0x49e48b))
 assert rel(0x49e49a, 2) == bytes.fromhex('3bca')
 assert rel(0x49e4a7, 7) == bytes.fromhex('5756e8c2020000')
@@ -21033,7 +21138,23 @@ setstr(seal, 0x30, 16, 'Certified')
 setstr(seal, 0x40, 64, 'Certified: no unit is forbidden by the Validator')
 new_list[111] = [seal]
 
-for did in (115, 111, 93, 86, 35, 34, 9, 7):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
+# Diálogo 1 (menú principal): enlace al sitio del clan (ver lk_init): texto LK_TXT y zona de clic LK_HOT.
+r1 = records(res, 1)
+assert sorted(r1) == list(range(1, LK_TXT))
+p, t = r1[14]; assert t == 0x13 and struct.unpack_from('<3I', res, p + 0x20) == (2, 1, 2)
+lktxt = bytearray(res[p:p + 4 + SZ[0x13]])
+struct.pack_into('<IIII', lktxt, 4, LK_TXT, 322, LK_Y, 1)
+struct.pack_into('<I', lktxt, 0x14, LK_W)
+struct.pack_into('<I', lktxt, 0x20, 1)                       # fuente 1, la de los checks
+p, t = r1[7]; assert t == 1
+lkhot = bytearray(res[p:p + 4 + SZ[1]])
+struct.pack_into('<IIII', lkhot, 4, LK_HOT, 322 - LK_W // 2, LK_Y - 2, 1)
+struct.pack_into('<II', lkhot, 0x24, LK_W, 14)
+setstr(lkhot, 0x30, 16, 'Clan')
+setstr(lkhot, 0x40, 64, 'Open the clan web site')
+new_list[1] = [lktxt, lkhot]
+
+for did in (115, 111, 93, 86, 35, 34, 9, 7, 1):   # de atrás para adelante: agregar a uno no corre el offset de los anteriores
     append(res, did, b''.join(new_list[did]))
 
 # Nombre del juego en los textos de los diálogos (ayudas de botón: +0x40, 64 bytes; texto tipo 0x12: +0x2c, se

@@ -27,7 +27,7 @@ Pedido completo:
   (vista-aliada 1.0.192.0, tarea 167 cumplida).
 - **Hecho: los bonos (vista-aliada 1.0.193.0, 11/11/2026).** Valores fijados por el usuario: **+5 Missiles, +5 Acid,
   +5 Fortify, +5 Life Drain** (reemplaza el +7 Fortify anterior; Assassin afuera). **Life Drain bajado a +3**
-  (1.0.194.0, mismo día), **Missiles y Acid a +3** (1.0.195.0) y **Fortify a +3** (1.0.196.0); luego **Life Drain a +1** (1.0.197.0): Missiles, Acid y Fortify +3, Life Drain +1; y **Life Drain quitado** (1.0.204.0, 12/11/2026: el combate contra muros seguía muy desequilibrado). Ojo: el bono se suma después de los topes del juego (Life Drain de grupo máx. 3, Fortify), así que puede pasarlos; el usuario quiere ir probando para que las murallas no queden indestructibles; los demás
+  (1.0.194.0, mismo día), **Missiles y Acid a +3** (1.0.195.0) y **Fortify a +3** (1.0.196.0); luego **Life Drain a +1** (1.0.197.0): Missiles, Acid y Fortify +3, Life Drain +1; y **Life Drain quitado** (1.0.204.0, 12/11/2026: el combate contra muros seguía muy desequilibrado). Queda así (12/11/2026), sujeto a aprobación del clan. Torre de vigía: visión 4 y luz nocturna 2 desde la 1.0.205.0. Ojo: el bono se suma después de los topes del juego (Life Drain de grupo máx. 3, Fortify), así que puede pasarlos; el usuario quiere ir probando para que las murallas no queden indestructibles; los demás
   valores pueden ajustarse igual (WB_MIS, WB_ACID, WB_FORT, WB_LD en build.py). Ver «Hecho: bonos del muro».
   Prueba en el juego: TAREAS 168.
 - **Próximo paso:** la IA que repara sus muros (decidir junto con los bonos; TAREAS 159 es la prueba de Repair).
