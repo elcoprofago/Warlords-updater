@@ -7282,10 +7282,105 @@ ME_EVT = 34
 # (entero − tercio) y anota el evento 34: x = meta, y = ese ahorro, n = cuántos. Solo anota; no cambia nada.
 ME_N = 4096
 ME_TAB = place_data('me_tab', bytes(ME_N * 2))
+RP_EVT = 37
+RP_TURNS = 8
+# Paso 4.12 (PENDIENTE-ia-economia), repliegue por quiebra. Las deserciones de la nueva vienen sobre todo de pilas
+# fuera de ciudad que pagan el mantenimiento entero mientras persiguen una meta sin pelea (en las tandas 148-157,
+# meta 3 neutral durante 6 o más turnos, quietas). En me_set, antes de anotar: con ia_on, IA_MODE[p] = 1, bando de
+# la computadora, mantenimiento > ingreso y oro < RP_TURNS × (mantenimiento − ingreso), si la meta es 2 ruina,
+# 3 neutral, 4 ítem o 6 misión y el líder de la pila no es un héroe, la cambia a 1 «Form» con destino la ciudad
+# propia viva más cercana al líder (0x4974a0; en empate, la primera). En una ciudad pagan un tercio. Las metas de
+# ataque a enemigos (7, 8), héroe (5), reconstruir (9) y ninguna (0) no se tocan. Evento 37: x = meta original,
+# y = ciudad elegida, n = oro.
 me_set = place('me_set', f'''
     pushad
     cmp byte ptr [{IA_ON:#x}], 0
     je me_skip
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae rp_no
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne rp_no
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je rp_no
+    movsx ecx, word ptr [esp + 0x3e]
+    cmp ecx, 2
+    je rp_m
+    cmp ecx, 3
+    je rp_m
+    cmp ecx, 4
+    je rp_m
+    cmp ecx, 6
+    jne rp_no
+rp_m:
+    movsx edx, word ptr [ebx * 2 + 0x5643d8]
+    movsx edi, word ptr [ebx * 2 + 0x5643f0]
+    sub edx, edi
+    jle rp_no
+    imul edx, edx, {RP_TURNS}
+    movsx edi, word ptr [eax + 0x536c14]
+    cmp edi, edx
+    jge rp_no
+    mov esi, dword ptr [0x5020d4]
+    movsx eax, word ptr [esi + 0xc]
+    test eax, eax
+    js rp_no
+    imul eax, eax, 0x1c
+    movzx edx, word ptr [eax + 0x54fe5e]
+    and edx, 0x1f
+    cmp edx, 0x10
+    je rp_no
+    movsx esi, word ptr [eax + 0x54fe52]
+    movsx edi, word ptr [eax + 0x54fe54]
+    or ebp, -1
+    sub esp, 8
+    mov dword ptr [esp], 0x7fffffff
+    mov dword ptr [esp + 4], 0
+rp_lp:
+    mov ecx, dword ptr [esp + 4]
+    movsx eax, word ptr [0x537e2a]
+    cmp ecx, eax
+    jge rp_le
+    imul edx, ecx, 0xde
+    cmp byte ptr [edx + 0x537ed0], 0
+    je rp_ln
+    movzx eax, byte ptr [edx + 0x537ed1]
+    cmp eax, ebx
+    jne rp_ln
+    movsx eax, word ptr [edx + 0x537e2e]
+    push eax
+    movsx eax, word ptr [edx + 0x537e2c]
+    push eax
+    push edi
+    push esi
+    call 0x4974a0
+    add esp, 0x10
+    movsx eax, ax
+    cmp eax, dword ptr [esp]
+    jge rp_ln
+    mov dword ptr [esp], eax
+    mov ebp, dword ptr [esp + 4]
+rp_ln:
+    inc dword ptr [esp + 4]
+    jmp rp_lp
+rp_le:
+    add esp, 8
+    test ebp, ebp
+    js rp_no
+    imul eax, ebx, 0x1f8
+    movsx eax, word ptr [eax + 0x536c14]
+    push eax
+    push ebp
+    movsx eax, word ptr [esp + 0x46]
+    push eax
+    push ebx
+    push {RP_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    mov word ptr [esp + 0x3e], 1
+    mov word ptr [esp + 0x42], bp
+rp_no:
     movsx ebx, word ptr [esp + 0x3e]
     inc ebx
     mov bh, byte ptr [0x503328]

@@ -564,4 +564,20 @@ el turno siguiente (oro + ingreso < 2 × mantenimiento) y el mantenimiento pase 
 nueva que no atacan a «Form» (meta 1, 0x40db40, volver a una ciudad) hasta que el mantenimiento proyectado (fuera
 pasando a un tercio) quede bajo el ingreso. Primero leer en el exe cómo se fija la meta de un grupo (0x40ca70,
 tabla 0x40d02c) y anotar con un evento la meta de los grupos fuera en esos turnos, para saber cuáles atacan.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, repliegue por quiebra (4.12)".
+
+### 4.12 hecho: repliegue por quiebra (vista-aliada 1.0.208.0, 12/11/2026)
+
+- Lo que mostró el evento 34: en los casos estructurales del color 3 (1107, 1114, 1145, 1086) las pilas fuera tienen
+  **meta 3 (neutral)** y quedan quietas 6 turnos o más; en 1135 color 5 son huérfanos (meta 13).
+- Cambio en me_set (build.py, `RP_EVT = 37`, `RP_TURNS = 8`): con IA_MODE 1, color de la computadora, mant > ing y
+  oro < 8 × (mant − ing), si la meta elegida es 2 (ruina), 3 (neutral), 4 (ítem) o 6 (misión) y el líder no es héroe,
+  la meta pasa a 1 (Form) con destino la ciudad propia viva más cercana al líder (0x4974a0; en empate, la primera).
+  Evento 37 = (meta original, ciudad, oro). ME_TAB anota la meta nueva. Ataques (7, 8), héroes (5) y reconstrucción
+  (9) no se tocan. Los huérfanos (meta 13) no pasan por me_set: quedan para otro paso si siguen pesando.
+- Pruebas: `prueba_repliegue.py` 198 controles TODO OK (ABN_000_29, IA_ROTADA, Tanda_Kor_CA, roads02, agua03);
+  `prueba_mantenimiento.py` 280 TODO OK.
+- Sin verificar: que la ruta Form llegue a la ciudad en juego real y que no vuelva a salir al turno siguiente.
+- A medir con la tanda de la TAREAS 179: eventos 37 por color y su relación con los 28 (deserciones de la nueva
+  contra 108 en 10 color-partidas de 152-157); turnos con mant > ing; puesto, PV y ciudades de la nueva contra la
+  original. Si se repliega y vuelve a salir (37 repetidos en la misma pila), hace falta memoria del repliegue.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del repliegue (TAREAS 179)".

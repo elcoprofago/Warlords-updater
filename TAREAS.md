@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 178).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 180).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **179.** IA: repliegue por quiebra (vista-aliada 1.0.208.0, 12/11/2026)
+Cambio: cuando a la computadora nueva el mantenimiento le supera al ingreso y el oro se le acaba, las pilas que
+estaban paradas yendo a ciudades neutrales, ruinas, ítems o misiones vuelven a su ciudad más cercana. Hay que ver si
+deserta menos y si eso le cuesta partidas.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.208.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 - [ ] **178.** Haz giratorio del faro (vista-aliada 1.0.207.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir una partida con **Day/Night** que tenga un faro (por ejemplo BUILD01.SAV, o levantar uno con *Build*). En una vuelta de noche, mirar el faro unos segundos: (a) su casilla y las vecinas quedan siempre iluminadas; (b) un haz en forma de embudo, de unas 6 casillas, gira en el sentido de las agujas del reloj e ilumina tierra y agua al pasar; (c) el resto del mapa no parpadea ni se pone lento. Anotar si la vuelta es muy rápida o muy lenta (se ajusta), y si el haz debería ser más ancho o más angosto.
 - [x] **177.** Botón de la torre (vista-aliada 1.0.206.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y en una partida pasar el mouse o hacer clic en el botón de la torre de la botonera: el texto debe decir «Build /Rebuild - Repair». El menú que abre sigue igual.
 - [ ] **176.** Torre, enlace del clan y grupos SHIFT (vista-aliada 1.0.205.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) en el menú principal, debajo del cuadro de opciones, debe verse `https://sites.google.com/view/plagacarriers` con el color y la letra de las opciones, del tamaño de los checks; un clic la abre en el navegador; (b) en una partida, una torre de vigía despeja la niebla a 4 casillas (antes 5) y de noche alumbra menos; (c) seleccionar ejércitos distintos y apretar SHIFT+1, SHIFT+2… SHIFT+9; luego 1, 2… 9: cada número debe volver a seleccionar su grupo. Anotar lo que no ande. El muro queda sin Life Drain hasta la opinión del clan.
