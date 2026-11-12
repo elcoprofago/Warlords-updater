@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 183).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 184).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,7 +14,9 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **182.** Copiar el enlace del clan y base del faro más tenue (vista-aliada 1.0.211.0, 13/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) hacer clic en el enlace del clan; salir del juego, abrir el navegador y pegar (Ctrl+V) en la barra de direcciones: debe aparecer `https://sites.google.com/view/plagacarriers`. Mirar también si al salir del juego quedó abierta una ventana del navegador con el sitio; (b) en una partida con **Day/Night** y un faro, de noche: la casilla del faro y sus vecinas, más tenues que antes; el haz, igual que en la 1.0.210.0. Anotar qué no anda o qué ajustar.
+- [ ] **183.** Aviso de enlace copiado (vista-aliada 1.0.212.0, 13/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: hacer clic en el enlace del clan: el texto debe cambiar a «Enlace copiado: pegalo en el navegador (Ctrl+V)» y seguir así mientras esté abierto el juego; que el texto entre entero y no se superponga con la versión. Salir, pegar en el navegador y comprobar la dirección.
+
+- [ ] **182.** Copiar el enlace del clan y base del faro más tenue (vista-aliada 1.0.211.0, 13/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) hacer clic en el enlace del clan; salir del juego, abrir el navegador y pegar (Ctrl+V) en la barra de direcciones: debe aparecer `https://sites.google.com/view/plagacarriers`. Mirar también si al salir del juego quedó abierta una ventana del navegador con el sitio; (b) en una partida con **Day/Night** y un faro, de noche: la casilla del faro y sus vecinas, más tenues que antes; el haz, igual que en la 1.0.210.0. Anotar qué no anda o qué ajustar. — 13/11/2026: el enlace se copia; faro cerrado (tema terminado). Falta avisar que se copió: 1.0.212.0 (tarea 183).
 
 - [ ] **181.** Enlace del clan y faro a 8 casillas (vista-aliada 1.0.210.0, 12/11/2026). En `C:\Warlords3`, actualizar el parche (opción 9) y abrir DarklordAV.exe: (a) el enlace del clan debe verse un poco más abajo, separado del cuadro de opciones; hacer clic sobre él: debe abrirse el sitio en el navegador (el cursor puede no cambiar; lo que importa es el clic); (b) en una partida con **Day/Night** y un faro, de noche: el haz llega a unas 8 casillas y se apaga de a poco hacia la punta; la casilla del faro y sus vecinas se ven iluminadas como el centro de una ciudad, no más. Anotar qué no anda o qué ajustar. — 13/11/2026: aparece la mano sobre el enlace pero no se ve el navegador (el juego ocupa la pantalla); el faro, bien; base más tenue pedida. Ajustes en 1.0.211.0 (tarea 182).
 

@@ -14928,6 +14928,11 @@ lk_str = place_data('lk_str', cstr_(LK_URL))
 lk_cmd = place_data('lk_cmd', cstr_(f'explorer.exe "{LK_URL}"'))
 # 13/11/2026: el navegador abre detrás del juego, que ocupa la pantalla; el clic además copia la dirección al
 # portapapeles con clip.exe de Windows, sin ventana (CREATE_NO_WINDOW): el juego no importa las funciones del portapapeles.
+# 13/11/2026 (usuario: ¿cómo se entera quien hace clic?): tras el clic, el texto del enlace pasa a LK_MSG; lk_flag lo
+# mantiene aunque el menú se rearme (0x4ab600 corre de nuevo en algunos eventos).
+LK_MSG = 'Enlace copiado: pegalo en el navegador (Ctrl+V)'
+lk_msg = place_data('lk_msg', cstr_(LK_MSG))
+lk_flag = place_data('lk_flag', bytes(4))
 lk_clip = place_data('lk_clip', cstr_(f'cmd.exe /c "echo|set /p={LK_URL}|clip"'))
 # Alta del menú (0x4ab600, en 0x4ab7c5 antes de poner la versión): texto y color del enlace.
 # La zona de clic nace oculta, como la del Comparador (bk_init): sin 0x4dcec0(LK_HOT, 0) no recibía el clic.
@@ -14936,7 +14941,12 @@ lk_init = place('lk_init', f'''
     push {LK_HOT}
     call 0x4dcec0
     add esp, 8
-    push {lk_str:#x}
+    mov eax, {lk_str:#x}
+    cmp dword ptr [{lk_flag:#x}], 0
+    je li_txt
+    mov eax, {lk_msg:#x}
+li_txt:
+    push eax
     push {LK_TXT}
     call 0x4dd240
     add esp, 8
@@ -14991,6 +15001,15 @@ lc_open:
     push dword ptr [{tl_pi + 4:#x}]
     call dword ptr [{CLOSEH:#x}]
 lc_end:
+    mov dword ptr [{lk_flag:#x}], 1
+    push {lk_msg:#x}
+    push {LK_TXT}
+    call 0x4dd240
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d82a0
+    mov ecx, 0x588bd0
+    call 0x4d7f60
     popad
     jmp 0x4ab273
 lc_orig:
