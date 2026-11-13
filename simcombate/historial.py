@@ -3,7 +3,7 @@ Cada ficha lleva el número del contador general de pruebas, la fecha y hora, la
 el campo y el resultado (porcentaje y batalla de muestra con sus caídas)."""
 import json
 
-MAXIMO = 20
+MAXIMO = 40
 
 def cargar(ruta):
     try:

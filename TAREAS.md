@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 202).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 203).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **202.** Simulador de combate 1.0.41.0 (13/11/2026). 1) El botón dice «Historial (últimos 40)» y guarda hasta 40 combates. 2) En el Historial, entre «Ver ficha» y «Cerrar», hay tres botones nuevos: «Stats» abre una torta con las formaciones que ganaron (en cada combate cuenta la del bando que gana la mayoría de las peleas), cada una con su porcentaje, y arriba «La mejor»; «Exportar ficha» guarda como imagen la ficha del combate elegido; «Exportar gráfica» guarda la torta. Probar guardar una como PNG y otra como JPG y abrirlas. Anotar lo que no coincida.
 - [ ] **201.** Simulador de combate 1.0.40.0 (13/11/2026). El recuadro del título TERRENO ahora es marrón claro (antes blanco); la letra sigue blanca con borde verde. Anotar lo que no convenza.
 - [ ] **200.** Simulador de combate 1.0.39.0 (13/11/2026). Los títulos ATACANTE y DEFENSOR ya no tienen el recuadro blanco: la letra blanca con borde negro y sombra va directo sobre la franja de color. TERRENO conserva su recuadro. Anotar lo que no convenza.
 - [ ] **199.** Simulador de combate 1.0.38.0 (13/11/2026). Mirar los títulos de los tres paneles: ATACANTE y DEFENSOR en Arial negrita blanca con borde negro y sombra, dentro de un recuadro blanco de borde fino oscuro; TERRENO igual, con el borde de la letra verde. Anotar lo que no convenza.

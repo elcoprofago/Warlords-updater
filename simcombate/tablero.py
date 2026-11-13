@@ -11,10 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA, TOPE_CIUDAD   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
-import contador, historial                         # noqa: E402
+import contador, historial, imagenes               # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.40.0'
+VERSION = '1.0.41.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -910,6 +910,32 @@ class App(tk.Tk):
         marcar(elegida['i']); t.focus_set()
         fb = ttk.Frame(fr); fb.pack(fill='x')
         ttk.Button(fb, text='Ver ficha', command=abrir).pack(side='left')
+        def exportar_ficha():
+            if elegida['i'] is None: return messagebox.showinfo('Exportar ficha', 'No hay combates guardados.', parent=v)
+            f = h[elegida['i']]
+            self.exportar(imagenes.imagen_ficha(f, VERSION), f"Ficha-combate-{f['numero']:06d}", v)
+        ttk.Button(fb, text='Stats', command=lambda: self.ver_stats(h)).pack(side='left', padx=(12, 0))
+        ttk.Button(fb, text='Exportar ficha', command=exportar_ficha).pack(side='left', padx=(6, 0))
+        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(imagenes.imagen_torta(h, VERSION),
+                   'Stats-formaciones', v)).pack(side='left', padx=(6, 0))
+        ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
+
+    def exportar(self, im, nombre, padre):
+        ruta = filedialog.asksaveasfilename(parent=padre, title='Exportar imagen', initialfile=nombre + '.png',
+                                            defaultextension='.png', filetypes=[('PNG', '*.png'), ('JPG', '*.jpg *.jpeg')])
+        if not ruta: return
+        try: imagenes.guardar(im, ruta)
+        except (OSError, ValueError) as e: return messagebox.showerror('Exportar imagen', f'No se pudo guardar:\n{e}', parent=padre)
+        messagebox.showinfo('Exportar imagen', f'Guardada en:\n{ruta}', parent=padre)
+
+    def ver_stats(self, h):
+        v = tk.Toplevel(self); v.title(f'Stats: mejor formación — VERSIÓN {VERSION}'); v.transient(self)
+        im = imagenes.imagen_torta(h, VERSION)
+        esc = min(1.0, (self.winfo_screenwidth() - 80) / im.width, (self.winfo_screenheight() - 160) / im.height)
+        vista = im.resize((int(im.width * esc), int(im.height * esc)), Image.LANCZOS) if esc < 1 else im
+        v.foto = ImageTk.PhotoImage(vista); tk.Label(v, image=v.foto, bg='white').pack(padx=6, pady=6)
+        fb = ttk.Frame(v, padding=(10, 0, 10, 10)); fb.pack(fill='x')
+        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(im, 'Stats-formaciones', v)).pack(side='left')
         ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
 
     def ver_ficha(self, f):
@@ -920,20 +946,8 @@ class App(tk.Tk):
         v.fuentes = (neg, tach)   # que no se las lleve el recolector
         tx.tag_configure('t', font=neg); tx.tag_configure('x', font=tach, foreground='#a00000')
         tx.tag_configure('A', foreground=BANDOS['ATACANTE']['medio']); tx.tag_configure('D', foreground=BANDOS['DEFENSOR']['medio'])
-        w = lambda s, *tag: tx.insert('end', s, tag)
-        w(f"COMBATE N.º {f['numero']:06d}", 't'); w(f"   {f['fecha']}\n"); w(f"Campo: {f['campo']}\n\n")
-        for L, nom in (('A', 'ATACANTE'), ('D', 'DEFENSOR')):
-            c = f[L]; w(nom, 't', L); w('\n')
-            for a, n in c['tropas']: w(f'  {n} × {a}\n')
-            if c['barco']: w(f"  Barco: {c['barco']}\n")
-            if c['heroe']: w(f"  Héroe: {c['heroe']}\n")
-            if not c['tropas'] and not c['heroe']: w('  (nadie)\n')
-            w('\n')
         tx.tag_configure('gris', foreground='#808080')
-        (g, pg), (p_, pp) = (('ATACANTE', f['pct']), ('defensor', 100 - f['pct'])) if f['pct'] >= 50 else (('DEFENSOR', 100 - f['pct']), ('atacante', f['pct']))
-        w('RESULTADO: ', 't'); w(g, 't', g[0]); w(f' con {pg:.2f} %', 't')
-        w(f"  ({p_} gana el {pp:.2f} % en {f['n']} peleas)\n\n", 'gris')
-        for a in f['avisos']: w(f'\nAviso: {a}')
+        for trozo, tag in imagenes.partes_ficha(f): tx.insert('end', trozo, tag)
         tx['state'] = 'disabled'
         ttk.Button(v, text='Cerrar', command=v.destroy).pack(anchor='e', padx=10, pady=(0, 10))
 

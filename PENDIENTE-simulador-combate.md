@@ -316,3 +316,7 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   (verde en TERRENO) y sombra, en un recuadro blanco con borde fino oscuro (letra_titulo en tablero.py).
 - 13/11/2026 (1.0.39.0): ATACANTE y DEFENSOR sin el recuadro blanco detrás del título (pedido del usuario); TERRENO lo conserva.
 - 13/11/2026 (1.0.40.0): recuadro del título TERRENO en marrón claro (#d2b48c), pedido del usuario.
+- 13/11/2026 (1.0.41.0): Historial de 40 combates (antes 20). Botones nuevos en el Historial: Stats (torta de
+  formaciones ganadoras: en cada combate, la del bando que gana la mayoría; la mejor = más victorias, a igualdad
+  mayor % medio), Exportar ficha y Exportar gráfica (PNG o JPG, según la extensión). Módulo nuevo imagenes.py
+  (solo PIL); la ficha en pantalla y la exportada salen de los mismos trozos. Prueba: prueba_imagenes.py, TODO OK.
