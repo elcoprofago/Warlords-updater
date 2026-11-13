@@ -329,3 +329,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   al final del consejo «Probar antes de pelear»; antes no tenía ninguna. Si la ventana cambia, se vuelve a capturar.
   La captura muestra el combate 18/19 (5 Sparks + 1 Sun Priests contra Moonguard, Esfinge, Bannerman y Devourers,
   hills, de noche, 6000 peleas: atacante 76,85 %), simulado sin sumar al contador ni al Historial.
+- 13/11/2026 (1.0.44.0): degradé de los botones pixelado (pedido del usuario): la paleta de los escudos viene en
+  escalones de 2-3 píxeles; ahora se suaviza con un promedio gaussiano (suavizar) antes de estirarla. Captura del Manual rehecha.

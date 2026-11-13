@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes               # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.43.0'
+VERSION = '1.0.44.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -150,6 +150,21 @@ FONDOS = dict(negro='000000 000000 000000 000000 000000 000000 232323 2f2f2f 2f2
               naranja='f33f07 f33f07 f33f07 fb5f07 fb5f07 fb5f07 ff7b07 ff7b07 ff7b07 ff9b1b ff9b1b ff9b1b ffb733 ffb733 ffb733 ffb733 ff9b1b ff9b1b ffb733 ff9b1b ff9b1b ffb733 ff7b07 ff7b07 ff9b1b ff7b07 ff7b07 ff9b1b ff7b07 ff7b07 ff7b07 fb5f07 fb5f07 ff7b07 fb5f07 fb5f07 fb5f07 f33f07 f33f07 fb5f07 f33f07 f33f07 f33f07',
               blanco='9f9f9f 9f9f9f 9f9f9f b7b7b7 b7b7b7 b7b7b7 c3c3c3 c3c3c3 c3c3c3 dfdfdf dfdfdf dfdfdf f3f3f3 ffffff ffffff ffffff ffffff ffffff ffffff ffffff ffffff f3f3f3 dfdfdf dfdfdf f3f3f3 cfcfcf cfcfcf dfdfdf cfcfcf cfcfcf cfcfcf c3c3c3 c3c3c3 c3c3c3 b7b7b7 b7b7b7 b7b7b7 ababab ababab ababab 9f9f9f 9f9f9f 9f9f9f')
 
+def suavizar(colores, sigma=3.0):
+    """Los escudos del juego tienen la paleta en escalones (2 o 3 píxeles del mismo color): estirados al ancho del
+    botón se ven como franjas. Un promedio gaussiano los vuelve un degradé continuo."""
+    import math
+    n, r = len(colores), int(sigma * 3)
+    pesos = [math.exp(-(d * d) / (2 * sigma * sigma)) for d in range(-r, r + 1)]
+    out = []
+    for i in range(n):
+        acc, tot = [0.0, 0.0, 0.0], 0.0
+        for d, w in zip(range(-r, r + 1), pesos):
+            c = colores[min(n - 1, max(0, i + d))]; tot += w
+            for k in range(3): acc[k] += c[k] * w
+        out.append(tuple(v / tot for v in acc))
+    return out
+
 class BotonAzul(tk.Canvas):
     """Botón dibujado: letra blanca en negrita con sombra negra sobre un degradé (por omisión el azul del escudo del
     juego; con fondo=, uno de FONDOS). En los fondos claros la letra lleva además un borde negro fino para leerse.
@@ -158,7 +173,7 @@ class BotonAzul(tk.Canvas):
         if ancho is None: ancho = tkfont.Font(font=('Segoe UI', 10, 'bold')).measure(text) + 28
         super().__init__(padre, width=ancho, height=alto, highlightthickness=0, bd=0, cursor='hand2')
         self.texto, self.cmd, self.ancho, self.alto, self.activo, self.sobre = text, command, ancho, alto, True, False
-        self.fondo = [tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) for c in FONDOS[fondo].split()] if fondo else None
+        self.fondo = suavizar([tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) for c in FONDOS[fondo].split()]) if fondo else None
         self.bind('<Enter>', lambda e: self.poner(sobre=True)); self.bind('<Leave>', lambda e: self.poner(sobre=False))
         self.bind('<ButtonRelease-1>', lambda e: self.activo and self.cmd())
         self.dibujar()

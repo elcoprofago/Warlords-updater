@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 205).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 206).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **205.** Simulador de combate 1.0.44.0 (13/11/2026). Mirar los botones de colores (Carpeta del juego, INICIAR COMBATE, Invertir, Historial y los dos Héroe): el degradé tiene que verse suave, sin franjas ni escalones. Anotar lo que no convenza.
 - [ ] **204.** Simulador de combate 1.0.43.0 (13/11/2026). Abrir Historial → Stats: las formaciones de la leyenda dicen solo el nombre de la unidad como se la conoce en el juego (por ejemplo «5 Archers», no «archers — Archers»), con cualquiera de los dos órdenes de los desplegables. Anotar lo que no coincida.
 - [ ] **203.** Simulador de combate 1.0.42.0 (13/11/2026). Los botones tienen el estilo de INICIAR COMBATE (letra blanca en negrita con sombra) y el fondo de los escudos que pasaste: Carpeta del juego negro, INICIAR COMBATE cyan, Invertir atacante y defensor naranja, Historial verde y los dos Héroe blancos. En los fondos claros (cyan, naranja, blanco) la letra lleva un borde negro fino para que se lea. Probar que todos respondan al clic. Anotar lo que no convenza.
 - [ ] **202.** Simulador de combate 1.0.41.0 (13/11/2026). 1) El botón dice «Historial (últimos 40)» y guarda hasta 40 combates. 2) En el Historial, entre «Ver ficha» y «Cerrar», hay tres botones nuevos: «Stats» abre una torta con las formaciones que ganaron (en cada combate cuenta la del bando que gana la mayoría de las peleas), cada una con su porcentaje, y arriba «La mejor»; «Exportar ficha» guarda como imagen la ficha del combate elegido; «Exportar gráfica» guarda la torta. Probar guardar una como PNG y otra como JPG y abrirlas. Anotar lo que no coincida.
