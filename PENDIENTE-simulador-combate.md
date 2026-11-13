@@ -327,3 +327,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   se toma de la tabla del juego cargado (nombres_del_juego); medido: 379 armas y barcos, 0 mal, en los dos órdenes.
 - 13/11/2026: el Manual suma la captura de la ventana del Simulador 1.0.43.0 (img/capturas/simulador-combate.png),
   al final del consejo «Probar antes de pelear»; antes no tenía ninguna. Si la ventana cambia, se vuelve a capturar.
+  La captura muestra el combate 18/19 (5 Sparks + 1 Sun Priests contra Moonguard, Esfinge, Bannerman y Devourers,
+  hills, de noche, 6000 peleas: atacante 76,85 %), simulado sin sumar al contador ni al Historial.
