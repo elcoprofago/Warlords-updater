@@ -723,3 +723,25 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.14 (pilas 
 Form fuera: quietas, lentas/lejos o trabadas, y decidir según eso qué corregir. Los huérfanos en quiebra (1191 color 6)
 siguen para después.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.14 (TAREAS 190)".
+
+### Resultado del 4.14: pilas Form fuera (tanda 164, vista-aliada 1.0.216.0, 13/11/2026)
+- 10 partidas completas. **Evento 39: 89 líneas** (nueva 55 con 189 ejércitos; original 34 con 81).
+- Clasificación (nueva): **quietas 2** (las dos en 1216 color 5 turno 24, a 2-3 casillas de la ciudad 50 con 7 y
+  13 de movimiento sin usar); **lentas/lejos el resto**: 29 de 55 gastaron todo el movimiento, 18 terminan a 1-2
+  casillas y la distancia baja turno a turno (ej. 1216 color 5 a la ciudad 26: 11 → 1). **Trabadas: ninguna.** Una
+  sola con la ciudad ya perdida (1219 color 5, +1000). La original da lo mismo (19 de 34 sin movimiento, 0 quietas).
+- Deserciones (28): nueva 34 en un solo color-partida, **1216 color 5**; original 11 (1214 color 0) y 10 (1216
+  color 6).
+- **1216 color 5 no es un problema de pilas Form:** 11 ciudades todo el tramo, pero los ejércitos suben de 34 a 75
+  (turnos 18-26) con 487 de oro; el saldo por turno (evento 30, 0x4b7dcd) cae de +103 (turno 20) a -101, -227 y
+  -270 (26-28) y el oro llega a 0 en el 29. El freno de producción (32) recién actúa desde el turno 25, cuando ya
+  sobran ejércitos para el ingreso; los huérfanos (35) pasan de 13 a 27. Las pilas Form fuera en esos turnos son
+  4-8 ejércitos: aunque entraran todas, el mantenimiento casi no cambia.
+- Resultado: nueva puesto 3,19, PV 6,5, ciudades 4,63; original 3,15 / 5,78 / 4,48.
+- Conclusión: las pilas Form llegan; no hay nada que corregir en el repliegue. El 39 queda como medición.
+**Próximo paso (4.15):** la quiebra por sobreproducción con muchas ciudades (1216 color 5): que el freno de
+producción (32) mire el saldo por turno que va a quedar con los ejércitos que ya tiene y los que está por sacar, no
+solo el oro de ese momento, para que frene antes de que el saldo se haga negativo. Antes, medir en la tanda 164 en
+cuántos color-partida de la nueva el saldo pasa a negativo con oro alto (como acá, 487) y cuántos turnos antes del 32.
+Los huérfanos en quiebra (1191 color 6) siguen para después.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.15 (freno antes de la quiebra)".
