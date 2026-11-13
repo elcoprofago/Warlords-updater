@@ -16,12 +16,21 @@ def esc(a, d, **campo):
     return {'A': a, 'D': d, 'campo': c}
 G3 = lado(('gnollcav.arm', 3))
 
-# 1. Ciudad y defensas: los mismos % de prueba_motor.py 2c (ciudad 0 del defensor, 3 contra 3 gnollcav)
-esp = {1: 38.99, 2: 30.17, 3: 21.64}
+# 1. Ciudad y defensas (ciudad 0 del defensor, 3 contra 3 gnollcav): el % exacto del juego, medido con las 65 536
+#    semillas (13/11/2026), y el simulador con N peleas tiene que caer dentro de 4 desvíos del muestreo.
+#    (prueba_motor 2c daba 38,99 / 30,17 / 21,64 con el azar encadenado, que repite un ciclo de ~2 200 peleas.)
+esp = {1: 38.58, 2: 29.10, 3: 21.65}
 for k, v in esp.items():
-    r = s.simular(esc(G3, G3, estructura=3, defensas=k), N)
-    ver(abs(r['pct'] - v) < 0.005, f'ciudad con defensas {k}: {r["pct"]:.2f} % (prueba_motor: {v} %)')
+    r = s.simular(esc(G3, G3, estructura=3, defensas=k), N); tol = 4 * 100 * (v / 100 * (1 - v / 100) / N) ** 0.5
+    ver(abs(r['pct'] - v) <= tol, f'ciudad con defensas {k}: {r["pct"]:.2f} % (exacto: {v} %, margen ±{tol:.2f})')
 base = s.simular(esc(G3, G3), N)['pct']; print(f'campo abierto (plains): {base:.2f} %')
+# 1b. Azar: con 65 536 peleas se recorren todos los estados, así que la semilla no cambia nada (el % es el exacto).
+#     Control: el azar encadenado (como antes del 13/11/2026) se queda en un ciclo y da otro número.
+at, (dx, dy), _ = s.armar(esc(G3, G3, estructura=3, defensas=2))
+ex = [s.m.probabilidad_motor(0, at, dx, dy, sem, 65536, sembrar=True) for sem in (1, 12345)]
+ver(ex[0] == ex[1], f'65 536 peleas: mismo resultado con dos semillas ({ex[0]} y {ex[1]})')
+enc = s.m.probabilidad_motor(0, at, dx, dy, 12345, 65536)
+ver(enc != ex[0], f'control: el azar encadenado da otro número ({enc} contra {ex[0]})')
 
 # 2. La grilla manda el orden de pelea, de los dos lados
 for t in ((('moongard.arm', 1), ('gnollcav.arm', 1), ('Zappers.arm', 1)),

@@ -83,6 +83,8 @@ def muertes(ev):
         elif c == 7: r.append(('A', na)); na += 1
     return r
 
+PASO_SEMILLA = 40503   # impar: (semilla + i * paso) % 65536 recorre los 65 536 estados del azar sin repetir
+
 class Motor:
     muertes = staticmethod(muertes)
 
@@ -395,12 +397,16 @@ class Motor:
         self.seleccionar(p, atac); self.mu.mem_write(SEED, struct.pack('<I', semilla & 0xffff))
         return self.call(0x464a10, [p, dx, dy]) & 0xffff
 
-    def probabilidad_motor(self, p, atac, dx, dy, semilla, n=10):
-        """Lo mismo, con las rutinas sueltas del motor: arma (0x464ac0) y n veces copia, 0x466c90, 0x464ea0(modo 1)."""
+    def probabilidad_motor(self, p, atac, dx, dy, semilla, n=10, sembrar=False):
+        """Lo mismo, con las rutinas sueltas del motor: arma (0x464ac0) y n veces copia, 0x466c90, 0x464ea0(modo 1).
+        sembrar=False encadena el azar como el juego (0x464a10). Pero el azar del juego tiene 65 536 estados y, encadenado,
+        cae en un ciclo de unas 2 200 peleas que se repiten: con sembrar=True cada pelea arranca de un estado distinto
+        (paso impar: con n = 65 536 se recorren todos, y el % es el exacto del juego)."""
         self.seleccionar(p, atac); self.mu.mem_write(SEED, struct.pack('<I', semilla & 0xffff))
         f = FICHA + p * FSZ; r = RES + p * RSZ; tmp = STK + 0x90000
         self.call(0x464ac0, [p, dx, dy, f]); ficha = bytes(self.mu.mem_read(f, FSZ)); g = 0
-        for _ in range(n):
+        for i in range(n):
+            if sembrar: self.mu.mem_write(SEED, struct.pack('<I', (semilla + i * PASO_SEMILLA) & 0xffff))
             self.mu.mem_write(tmp, ficha); self.call(0x466c90, [tmp])
             g += self.call(0x464ea0, [tmp, r, 1]) & 1
         return g

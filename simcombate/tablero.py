@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.35.0'
+VERSION = '1.0.36.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -483,7 +483,7 @@ class App(tk.Tk):
         caja = reborde(self); caja.master.grid(row=2, column=0, columnspan=3, sticky='w', padx=10, pady=4)
         fila = ttk.Frame(caja, padding=6); fila.pack(fill='x')
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
-        self.n = ttk.Spinbox(fila, from_=10, to=100000, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
+        self.n = ttk.Spinbox(fila, from_=10, to=65536, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
         m = reborde(fila); m.master.pack(side='left', padx=12)
         self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar); self.boton.pack()
         boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')

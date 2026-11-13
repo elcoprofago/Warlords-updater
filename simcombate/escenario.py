@@ -14,7 +14,7 @@
 # ranura de clase 0. En agua las tropas van embarcadas (hace falta un barco); con puente, no.
 import os, struct
 import datos
-from motor import Motor, CIUDAD0, OBRAS
+from motor import Motor, CIUDAD0, OBRAS, VUELTA, PASO_SEMILLA
 
 MAX_PILA = 8          # tope común de una pila; los otros topes, en Simulador.tope
 TOPE_CIUDAD = 32      # la ciudad defiende con sus 4 casillas de 8 (la ficha del defensor tiene 32 lugares; medido)
@@ -26,6 +26,8 @@ PILA_A, PILA_D = 200, 201
 
 class Error(ValueError):
     pass
+
+NOCHES = 20   # de noche, el % promedia 20 noches (vueltas 2, 4 … 40): cada una sortea su bono
 
 class Simulador:
     """Carga una vez el exe, la partida base y los datos del juego; arma y pelea escenarios."""
@@ -169,7 +171,17 @@ class Simulador:
     def simular(self, esc, n=1000, semilla=12345):
         """% de victorias del atacante en n peleas y una batalla de muestra con su secuencia."""
         atac, (dx, dy), avisos = self.armar(esc)
-        g = self.m.probabilidad_motor(0, atac, dx, dy, semilla, n)
+        # Cada pelea arranca de un estado de azar distinto (sembrar). De noche, el bono de monster/demon/undead se sortea
+        # según la vuelta: las peleas se reparten entre NOCHES vueltas pares y el % es el de una noche cualquiera.
+        if esc['campo'].get('noche'):
+            g, hecho = 0, 0
+            for k in range(NOCHES):
+                m = n * (k + 1) // NOCHES - hecho
+                if m <= 0: continue
+                self.m.mu.mem_write(VUELTA, struct.pack('<h', 2 + 2 * k))
+                g += self.m.probabilidad_motor(0, atac, dx, dy, semilla + hecho * PASO_SEMILLA, m, sembrar=True); hecho += m
+        else:
+            g = self.m.probabilidad_motor(0, atac, dx, dy, semilla, n, sembrar=True)
         # La batalla de muestra (la que se ve en la ventana de combate) la gana el que gana la mayoría de las peleas:
         # con una semilla fija podía tocar una del lado perdedor y parecer que el resultado estaba al revés.
         quien = 2 * g >= n

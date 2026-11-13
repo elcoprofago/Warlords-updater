@@ -296,3 +296,17 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   sola batalla con semilla fija (12345) y esa caía en el 20 % del defensor. Ahora Simulador.simular busca, desde esa
   semilla, la primera batalla que gana el ganador de la mayoría (hasta 200 intentos). Mismo caso: muestra gana A.
   Pruebas escenario, combate, barcos, topes y tablero: TODO OK.
+- 13/11/2026 (1.0.36.0): **revisión de la confiabilidad del %** (pedido del usuario: «revisa absolutamente todo»).
+  1. El % nunca salió de la batalla de muestra: sale de las n peleas (probabilidad_motor).
+  2. **Hallazgo: el azar del juego tiene 65 536 estados y, encadenado pelea tras pelea, cae en un ciclo de ~2 234
+     peleas** (medido con 2 semillas: período 2234). De 6000 peleas solo ~2234 eran distintas y el % quedaba fijado
+     por el ciclo, igual con cualquier semilla. Ahora cada pelea arranca de un estado distinto (semilla + i·40503,
+     impar: con 65 536 peleas se recorren todos y el % es el exacto del juego). Sesgo medido del método viejo:
+     caso 18/19 de día 80,05 contra 80,36 exacto; ciudad nivel 2, 30,17 contra 29,10 exacto.
+  3. **Hallazgo: de noche se usaba siempre la vuelta 6**, y el bono de monster/demon/undead se sortea por vuelta.
+     Caso 18/19 de noche: 80,1 % en las vueltas 2-16, 67,6 % en las 18-22 y 28-30. Ahora reparte las peleas entre
+     20 noches (vueltas 2…40) y da el promedio (≈77 %).
+  4. Lo demás, ya medido antes y vuelto a correr: las 11 pruebas TODO OK (prueba_escenario comparaba contra valores
+     del método viejo con tolerancia 0; ahora contra el exacto con margen de 4 desvíos, y suma la prueba de las
+     65 536 semillas con su control). Cantidad de ciudades: descartada antes (no cambia la pelea).
+  Spinbox de peleas: tope 65 536 (más no agrega nada).
