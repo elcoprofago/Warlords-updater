@@ -325,3 +325,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   Invertir naranja, Historial verde, Héroe blanco; en fondos claros, la letra con borde negro fino.
 - 13/11/2026 (1.0.43.0): leyenda de Stats sin nombres de archivo. El archivo no lleva extensión, así que el nombre
   se toma de la tabla del juego cargado (nombres_del_juego); medido: 379 armas y barcos, 0 mal, en los dos órdenes.
+- 13/11/2026: el Manual suma la captura de la ventana del Simulador 1.0.43.0 (img/capturas/simulador-combate.png),
+  al final del consejo «Probar antes de pelear»; antes no tenía ninguna. Si la ventana cambia, se vuelve a capturar.
