@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 190).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 191).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,14 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+
+- [ ] **190.** IA: pilas que vuelven a su ciudad y no llegan (vista-aliada 1.0.216.0, 13/11/2026)
+La versión nueva no cambia cómo juega la computadora: solo anota, al final de cada turno, dónde quedó cada pila que
+iba de vuelta a su ciudad (a qué distancia y cuánto movimiento le sobró), para saber si no llega por lenta o porque
+se queda quieta.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.216.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
 
 - [x] **187.** IA: la memoria del repliegue, corregida (vista-aliada 1.0.215.0, 13/11/2026) — 13/11/2026: corrida en la tanda 163 (10 partidas completas). El cambio ya actúa (6 veces) y las pilas vuelven a la ciudad. Resultado en ia\PENDIENTE-ia-economia.md.
 En las tandas de la 186 el caso apareció (una computadora sin oro iba y venía entre atacar y volver), pero el cambio

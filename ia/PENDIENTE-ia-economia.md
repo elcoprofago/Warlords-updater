@@ -698,3 +698,28 @@ antes 1170 color 3). Anotar con un evento, para cada pila Form de la nueva que t
 destino, distancia y movimiento que le quedó, para saber si no alcanzan a llegar (lejos, lentas) o si se quedan
 quietas. Los huérfanos en quiebra (1191 color 6) siguen para después.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.14 (pilas Form que no llegan)".
+
+### 4.14 hecho: medición de las pilas Form que no llegan (vista-aliada 1.0.216.0, 13/11/2026)
+- Solo medición, no cambia ninguna decisión. **Evento 39**, al final del turno de cada bando de la computadora
+  (fm_end reemplaza el call 0x40eab0 de 0x40ea9a: después del bucle que hace jugar las pilas), con ia_on, en las dos
+  IA: una línea por casilla fuera de ciudad con algún ejército que eligió Form en esta ronda (ME_TAB código 2), una
+  vez por casilla. x = ciudad destino (+1000 si ya no es una ciudad viva del color), y = distancia a ella (0x4974a0),
+  n = ejércitos del color en la casilla × 100000 + movimiento total × 1000 + movimiento que le quedó (del ejército
+  de índice menor con Form).
+- La ciudad destino es la que el original usa en la meta 1 (0x40cc5c: [esp+0x1e] como índice de ciudad); me_set la
+  copia a una tabla nueva FM_DST (0x6d4444) cuando la meta final es Form (también la que ponen el 4.12 y el 4.13).
+- Cómo leerlo: le quedó todo el movimiento = se quedó quieta; le quedó 0 y la distancia baja turno a turno = lenta o
+  lejos; le quedó 0 y la distancia no baja = camino trabado; +1000 = la ciudad ya no es suya.
+- Pruebas: `prueba_formfuera.py` (nueva) 188 TODO OK: el 39 contra un modelo en Python con ME_TAB y FM_DST cargadas
+  a mano (Form de esta ronda, de la anterior, otra meta; ciudad propia, ajena y -1); controles sin ia_on, jugador 8,
+  Form de la ronda anterior y ejércitos Form en ciudad; preserva registros y pila (la distancia simulada pisa ecx y
+  edx); me_set copia la ciudad solo con meta final Form. Probada con una dirección equivocada de FM_DST: falla.
+  Uso `<AV> <ia_on> <me_tab> <fm_dst> <fm_end> <me_set> <SAV>...`, en 1.0.216.0 6d035b 6d0440 6d4444 6d6a70 6d6450.
+  Sin regresiones: `prueba_repliegue.py` 1.022, `prueba_huerfanos.py` 3.799 y `prueba_mantenimiento.py` 322 TODO OK
+  (con C:\Warlords\NETSAVES: NA_158_19, NAB_002_27, murallas01_4_pausa, BUILD01_19 y NA_156_5).
+- Sin verificar: que en juego real 0x40eab0 termine de mover las pilas antes de volver (si alguna orden quedara
+  pendiente, el movimiento restante saldría más alto que el real).
+**Próximo paso:** con la tanda de la TAREAS 190, para cada color con 39 y deserciones (28), clasificar las pilas
+Form fuera: quietas, lentas/lejos o trabadas, y decidir según eso qué corregir. Los huérfanos en quiebra (1191 color 6)
+siguen para después.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.14 (TAREAS 190)".

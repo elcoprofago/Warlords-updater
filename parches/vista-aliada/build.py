@@ -7292,6 +7292,9 @@ RP_K = place_data('rp_k', bytes(4))
 # Form de la ronda anterior y el evento 38 no salió en ninguna partida (tandas 160-162; 1200 color 3 osciló 7/1 en
 # quiebra los turnos 24-30). RP_TAB solo la escriben me_set (cuando la meta final es Form, código 2) y or_run (RP_HU).
 RP_TAB = place_data('rp_tab', bytes(ME_N * 2))
+# FM_DST (paso 4.14, 1.0.216.0): ciudad destino de la última meta Form (código 2 en ME_TAB) de cada ejército, la que
+# me_set deja en [esp+0x1e] del original (0x40cc5c la usa como ciudad: 0x537e30 + c*0xde). La lee fm_evt.
+FM_DST = place_data('fm_dst', bytes(ME_N * 2))
 # Paso 4.13: memoria del repliegue. En las tandas 158-159 las pilas en quiebra (huérfanos ya agrupados por or_run y
 # las que iban a Form) alternaban turno a turno meta 7 (ciudad enemiga) y meta 1 sin pelear nunca (1170 color 3:
 # ninguna batalla en los turnos 17-30), y no llegaban a ninguna ciudad. Con la misma condición de quiebra, una meta 7
@@ -7438,6 +7441,8 @@ me_lp:
     cmp bl, 2
     jne me_nx
     mov word ptr [eax*2 + {RP_TAB:#x}], bx
+    mov dx, word ptr [esp + 0x42]
+    mov word ptr [eax*2 + {FM_DST:#x}], dx
 me_nx:
     inc ecx
     cmp ecx, 8
@@ -7629,6 +7634,215 @@ mt_en:
     popad
     mov esp, ebp
     pop ebp
+    ret
+''')
+
+FM_EVT = 39
+# Paso 4.14 (PENDIENTE-ia-economia): pilas con meta Form que terminan el turno fuera de una ciudad (1206 color 3,
+# turnos 26-29: Form sostenida y deserciones). fm_end reemplaza el call 0x40eab0 de 0x40ea9a (el bucle que hace jugar
+# las pilas de un bando de la computadora; después de él termina su turno) y, con ia_on, llama a fm_evt(p): por cada
+# casilla fuera de ciudad (como mt_evt) con algún ejército vivo de p que eligió Form en esta ronda (ME_TAB código 2,
+# byte de la ronda igual), una vez por casilla (el de índice menor), evento 39: x = ciudad destino (FM_DST; + 1000 si
+# ya no es una ciudad viva de p), y = distancia a ella (0x4974a0), n = ejércitos de p en la casilla × 100000 +
+# movimiento total del primero (+0x12 & 0x7f) × 1000 + movimiento que le quedó (+0x11 & 0x7f). Quieta = le quedó
+# todo; lejos o lenta = le quedó 0 y la distancia baja de un turno al otro. Solo anota; no cambia nada.
+fm_evt = place('fm_evt', f'''
+    push ebp
+    mov ebp, esp
+    sub esp, 4
+    pushad
+    movsx ecx, word ptr [0x54fe50]
+    mov dword ptr [ebp - 4], ecx
+    xor ecx, ecx
+fm_lp:
+    cmp ecx, dword ptr [ebp - 4]
+    jge fm_done
+    cmp ecx, {ME_N}
+    jae fm_done
+    push ecx
+    call fm_ok
+    add esp, 4
+    test eax, eax
+    jz fm_nx
+    xor edi, edi
+    xor esi, esi
+fm_dup:
+    cmp esi, dword ptr [ebp - 4]
+    jge fm_wr
+    cmp esi, ecx
+    je fm_dn
+    push esi
+    call fm_same
+    add esp, 4
+    test eax, eax
+    jz fm_dn
+    inc edi
+    cmp esi, ecx
+    jae fm_dn
+    push esi
+    call fm_ok
+    add esp, 4
+    test eax, eax
+    jnz fm_nx
+fm_dn:
+    inc esi
+    jmp fm_dup
+fm_wr:
+    inc edi
+    imul edx, ecx, 0x1c
+    imul edi, edi, 100000
+    movzx eax, byte ptr [edx + 0x54fe62]
+    and eax, 0x7f
+    imul eax, eax, 1000
+    add edi, eax
+    movzx eax, byte ptr [edx + 0x54fe61]
+    and eax, 0x7f
+    add edi, eax
+    movsx ebx, word ptr [ecx*2 + {FM_DST:#x}]
+    or esi, -1
+    test ebx, ebx
+    js fm_ev
+    movsx eax, word ptr [0x537e2a]
+    cmp ebx, eax
+    jge fm_ev
+    imul eax, ebx, 0xde
+    push ecx
+    push edx
+    movsx esi, word ptr [eax + 0x537e2e]
+    push esi
+    movsx esi, word ptr [eax + 0x537e2c]
+    push esi
+    movsx esi, word ptr [edx + 0x54fe54]
+    push esi
+    movsx esi, word ptr [edx + 0x54fe52]
+    push esi
+    call 0x4974a0
+    add esp, 0x10
+    pop edx
+    pop ecx
+    movsx esi, ax
+    imul eax, ebx, 0xde
+    cmp byte ptr [eax + 0x537ed0], 0
+    je fm_lost
+    movzx eax, byte ptr [eax + 0x537ed1]
+    cmp eax, dword ptr [ebp + 8]
+    je fm_ev
+fm_lost:
+    add ebx, 1000
+fm_ev:
+    push edi
+    push esi
+    push ebx
+    push dword ptr [ebp + 8]
+    push {FM_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+fm_nx:
+    inc ecx
+    jmp fm_lp
+fm_done:
+    popad
+    mov esp, ebp
+    pop ebp
+    ret
+fm_ok:
+    push ecx
+    mov ecx, dword ptr [esp + 8]
+    push ecx
+    call fm_same0
+    add esp, 4
+    test eax, eax
+    jz fo_r
+    xor eax, eax
+    movzx edx, word ptr [ecx*2 + {ME_TAB:#x}]
+    cmp dl, 2
+    jne fo_r
+    cmp dh, byte ptr [0x503328]
+    jne fo_r
+    inc eax
+fo_r:
+    pop ecx
+    ret
+fm_same:
+    push ebx
+    mov ebx, dword ptr [esp + 8]
+    push ebx
+    call fm_same0
+    add esp, 4
+    test eax, eax
+    jz fs_r
+    xor eax, eax
+    imul ebx, ebx, 0x1c
+    imul edx, ecx, 0x1c
+    push esi
+    mov si, word ptr [ebx + 0x54fe52]
+    cmp si, word ptr [edx + 0x54fe52]
+    jne fs_n
+    mov si, word ptr [ebx + 0x54fe54]
+    cmp si, word ptr [edx + 0x54fe54]
+    jne fs_n
+    inc eax
+fs_n:
+    pop esi
+fs_r:
+    pop ebx
+    ret
+fm_same0:
+    push ebx
+    push edx
+    mov edx, dword ptr [esp + 0xc]
+    imul edx, edx, 0x1c
+    xor eax, eax
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz f0_r
+    movzx ebx, word ptr [edx + 0x54fe5e]
+    and ebx, 0x1e0
+    shr ebx, 5
+    cmp ebx, dword ptr [ebp + 8]
+    jne f0_r
+    movsx ebx, word ptr [edx + 0x54fe52]
+    test ebx, ebx
+    js f0_r
+    push ecx
+    movsx eax, word ptr [edx + 0x54fe54]
+    test eax, eax
+    js f0_n
+    lea eax, [eax + eax * 4]
+    add eax, eax
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    lea ebx, [ebx + ebx * 4]
+    lea ebx, [eax + ebx * 2 + 0x503e58]
+    xor eax, eax
+    movzx edx, word ptr [ebx + 2]
+    and edx, 0x700
+    cmp edx, 0x300
+    jne f0_y
+    test byte ptr [ebx + 9], 3
+    jnz f0_n2
+f0_y:
+    inc eax
+    jmp f0_n2
+f0_n:
+    xor eax, eax
+f0_n2:
+    pop ecx
+f0_r:
+    pop edx
+    pop ebx
+    ret
+''')
+fm_end = place('fm_end', f'''
+    call 0x40eab0
+    cmp byte ptr [{IA_ON:#x}], 0
+    je fe_r
+    movsx eax, word ptr [0x4fb0ec]
+    cmp eax, 8
+    jae fe_r
+    push eax
+    call {fm_evt:#x}
+    add esp, 4
+fe_r:
     ret
 ''')
 
@@ -20828,6 +21042,7 @@ patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50)) 
 patch(0x405310, rel(0x405310, 5), asm(f'jmp {rs_grow:#x}', 0x405310))   # reserva: agrandar ciudad
 patch(0x43bdf2, bytes.fromhex('80be057f530000'), asm(f'jmp {pr_unit:#x}; nop; nop', 0x43bdf2))   # freno de producción
 patch(0x40edf1, asm('call 0x40c990', 0x40edf1), asm(f'call {me_pre:#x}', 0x40edf1))
+patch(0x40ea9a, asm('call 0x40eab0', 0x40ea9a), asm(f'call {fm_end:#x}', 0x40ea9a))   # paso 4.14, evento 39
 patch(0x40ea65, asm('call 0x40efc0', 0x40ea65), asm(f'call {or_grp:#x}', 0x40ea65))   # paso 4.8, huérfanos
 patch(0x40d434, asm('call 0x40f1a0', 0x40d434), asm(f'call {pl_mk:#x}', 0x40d434))   # paso 4.10, grupos del planificador
 patch(0x40cfd5, asm('call 0x4a66a0', 0x40cfd5), asm(f'call {pl_es:#x}', 0x40cfd5))   # paso 4.10, escoltas
