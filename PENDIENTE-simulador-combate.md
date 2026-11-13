@@ -291,3 +291,8 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   («(atacante gana el 6.50 % en 200 peleas)»). Capturas OK.
 - 13/11/2026 (1.0.34.0): pedido del usuario: la ficha ya no muestra la «batalla de muestra» (confundía: podía ganarla
   el que pierde en el porcentaje). Queda composición, campo, resultado y avisos. Captura OK.
+- 13/11/2026 (1.0.35.0): reporte del usuario: en los combates 18 y 19 «ganó el defensor» pero el historial decía
+  atacante. El historial estaba bien (atacante 80 %; 400 batallas sueltas: 82 %): la ventana de combate muestra una
+  sola batalla con semilla fija (12345) y esa caía en el 20 % del defensor. Ahora Simulador.simular busca, desde esa
+  semilla, la primera batalla que gana el ganador de la mayoría (hasta 200 intentos). Mismo caso: muestra gana A.
+  Pruebas escenario, combate, barcos, topes y tablero: TODO OK.

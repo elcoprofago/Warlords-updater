@@ -170,7 +170,12 @@ class Simulador:
         """% de victorias del atacante en n peleas y una batalla de muestra con su secuencia."""
         atac, (dx, dy), avisos = self.armar(esc)
         g = self.m.probabilidad_motor(0, atac, dx, dy, semilla, n)
-        r = self.m.batalla(0, atac, dx, dy, semilla)
+        # La batalla de muestra (la que se ve en la ventana de combate) la gana el que gana la mayoría de las peleas:
+        # con una semilla fija podía tocar una del lado perdedor y parecer que el resultado estaba al revés.
+        quien = 2 * g >= n
+        for k in range(200):
+            r = self.m.batalla(0, atac, dx, dy, semilla + k)
+            if r['gana'] == quien: break
         f = r['ficha']; u = lambda i: self.m.unidades()[i - 1]
         def fichas(lado):
             out = []
