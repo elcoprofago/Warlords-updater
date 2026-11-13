@@ -278,3 +278,7 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   a la derecha del encabezado con la leyenda «PRUEBAS» a su izquierda. Se guarda en el .ini ([contador] n, periodo,
   clave); no se borra al reiniciar. Configuración: periodo (manual, día, semana, mes, año; se resetea al cambiar la
   clave del periodo) y «Poner en cero». Probado: 3 pruebas = 3, cambio de mes = 0, reset manual = 0. Captura OK.
+- 13/11/2026 (1.0.31.0): pedido del usuario: botón «Historial (últimos 20)…» junto a Invertir. Lista por número del
+  contador (6 cifras), fecha y hora y resultado; doble clic o Enter abre la ficha en texto: campo, composición de los
+  dos lados (tropas, barco, héroe), porcentaje y batalla de muestra con las caídas tachadas. Se guarda en
+  Simulador-Combate-historial.json junto al .ini (historial.py, MAXIMO = 20). Probado con 3 combates; capturas OK.

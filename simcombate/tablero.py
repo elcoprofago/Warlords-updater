@@ -3,7 +3,7 @@
 # del bando y héroe (subpanel: clase, nivel, elecciones, ítems y hechizos); subpanel de terreno y subpanel visual
 # (se guarda para la ventana de combate, etapa 4). INICIAR COMBATE arma el escenario (escenario.py) y muestra el % de
 # victorias y abre la ventana de combate (combate.py) con una batalla de muestra. Uso: python tablero.py
-import configparser, json, os, struct, subprocess, sys, threading, urllib.request, webbrowser
+import configparser, json, os, struct, subprocess, sys, threading, time, urllib.request, webbrowser
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, font as tkfont
 
@@ -11,13 +11,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA, TOPE_CIUDAD   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
-import contador                                    # noqa: E402
+import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.30.0'
+VERSION = '1.0.31.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
+HISTORIAL = os.path.join(CARPETA, 'Simulador-Combate-historial.json')
 REPO = 'elcoprofago/Simulador-Combate'   # repo público donde se publican las releases del .exe (el fuente vive acá)
 EXE_REL = 'Simulador-Combate.exe'
 # El ícono de configuración es el del Monitor de IA (ia\monitor-ia\assets); en el .exe va adentro (build.py).
@@ -486,6 +487,7 @@ class App(tk.Tk):
         m = reborde(fila); m.master.pack(side='left', padx=12)
         self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar); self.boton.pack()
         boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
+        boton(fila, text=f'Historial (últimos {historial.MAXIMO})…', command=self.ver_historial).pack(side='left', padx=(12, 0))
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
         plegable(self, [(caja, self.salida)], 'resultado')
@@ -807,7 +809,7 @@ class App(tk.Tk):
         try: r = self.sim.simular(self.escenario(), n)
         except Error as e: messagebox.showerror(TITULO, str(e)); return
         except Exception as e: messagebox.showerror(TITULO, f'Falló el motor:\n{e}'); return
-        self.mostrar(r); self.contar_prueba()
+        self.mostrar(r); self.contar_prueba(); self.anotar_ficha(r)
         self.v_combate = VentanaCombate(self, self.juego.get(), r, TITULO, velocidad=self.velocidad.get(), efectos=self.efectos.get(),
                        sonido=self.sonido.get(), tamano=self.tamano.get(), resultados=self.resultados.get())
 
@@ -827,6 +829,71 @@ class App(tk.Tk):
         if r['avisos']: t += [''] + ['Aviso: ' + a for a in r['avisos']]
         self.salida['state'] = 'normal'; self.salida.delete('1.0', 'end'); self.salida.insert('1.0', '\n'.join(t))
         self.salida['state'] = 'disabled'
+
+    # ---- historial: ficha de cada combate, con el número del contador de pruebas ----
+    def anotar_ficha(self, r):
+        def comp(p):
+            lado = p.lado(); h = lado['heroe']
+            return dict(tropas=[(cb.get(), n) for (a, n), cb in zip(lado['tropas'], p.armas) if a and n > 0],
+                        barco=p.barco.get() or None, heroe=f"{h['clase']} nivel {h['nivel']}" if h else None)
+        k = self.sitio.get(); sitio = next(t for t, s, _, _ in SITIOS if s == k)
+        campo = (f'{self.terreno.get()} · {sitio}' + (f' · {self.defensas.get()}' if self.defensas.get() else '')
+                 + (' · noche' if self.noche.get() else ''))
+        historial.guardar(HISTORIAL, dict(numero=self.pruebas(), fecha=time.strftime('%d/%m/%Y %H:%M:%S'), campo=campo,
+            A=comp(self.pa), D=comp(self.pd), pct=r['pct'], n=r['n'], gana=bool(r['gana']), orden_a=list(r['orden_a']),
+            orden_d=list(r['orden_d']), muertes=[list(m) for m in r['muertes']], avisos=list(r['avisos'])))
+
+    def ver_historial(self):
+        v = getattr(self, 'v_historial', None)
+        if v is not None and v.winfo_exists(): v.destroy()
+        h = historial.cargar(HISTORIAL)
+        v = self.v_historial = tk.Toplevel(self); v.title(f'Historial de combates — VERSIÓN {VERSION}'); v.transient(self)
+        fr = ttk.Frame(v, padding=10); fr.pack(fill='both', expand=True)
+        ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha)').pack(anchor='w')
+        t = self.t_historial = ttk.Treeview(fr, columns=('n', 'f', 'g'), show='headings', height=min(20, max(5, len(h))))
+        for c, tx, w in (('n', 'N.º', 70), ('f', 'Fecha y hora', 150), ('g', 'Resultado', 260)):
+            t.heading(c, text=tx); t.column(c, width=w, anchor='w')
+        for i, f in enumerate(h):
+            t.insert('', 'end', iid=str(i), values=(f"{f['numero']:06d}", f['fecha'], f"Atacante gana {f['pct']:.2f} % de {f['n']}"))
+        t.pack(fill='both', expand=True, pady=6)
+        if not h: ttk.Label(fr, text='Todavía no hay combates guardados.').pack(anchor='w')
+        def abrir(e=None):
+            for i in t.selection(): self.ver_ficha(h[int(i)])
+        t.bind('<Double-1>', abrir); t.bind('<Return>', abrir)
+        fb = ttk.Frame(fr); fb.pack(fill='x')
+        ttk.Button(fb, text='Ver ficha', command=abrir).pack(side='left')
+        ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
+
+    def ver_ficha(self, f):
+        v = tk.Toplevel(self); v.title(f"Ficha del combate {f['numero']:06d} — VERSIÓN {VERSION}"); v.transient(self)
+        tx = tk.Text(v, width=80, height=24, wrap='word', bd=0, padx=12, pady=10, font=('Segoe UI', 10))
+        tx.pack(fill='both', expand=True)
+        neg = tkfont.Font(family='Segoe UI', size=10, weight='bold'); tach = tkfont.Font(family='Segoe UI', size=10, overstrike=1)
+        v.fuentes = (neg, tach)   # que no se las lleve el recolector
+        tx.tag_configure('t', font=neg); tx.tag_configure('x', font=tach, foreground='#a00000')
+        tx.tag_configure('A', foreground=BANDOS['ATACANTE']['medio']); tx.tag_configure('D', foreground=BANDOS['DEFENSOR']['medio'])
+        w = lambda s, *tag: tx.insert('end', s, tag)
+        w(f"COMBATE N.º {f['numero']:06d}", 't'); w(f"   {f['fecha']}\n"); w(f"Campo: {f['campo']}\n\n")
+        for L, nom in (('A', 'ATACANTE'), ('D', 'DEFENSOR')):
+            c = f[L]; w(nom, 't', L); w('\n')
+            for a, n in c['tropas']: w(f'  {n} × {a}\n')
+            if c['barco']: w(f"  Barco: {c['barco']}\n")
+            if c['heroe']: w(f"  Héroe: {c['heroe']}\n")
+            if not c['tropas'] and not c['heroe']: w('  (nadie)\n')
+            w('\n')
+        w('RESULTADO', 't')
+        w(f"\nEl atacante gana el {f['pct']:.2f} % de {f['n']} peleas (defensor: {100 - f['pct']:.2f} %).\n\n")
+        w(f"Batalla de muestra: gana el {'ATACANTE' if f['gana'] else 'DEFENSOR'} (tachadas, las unidades caídas)\n", 't')
+        muertos = {tuple(m) for m in f['muertes']}
+        for L, orden in (('A', f['orden_a']), ('D', f['orden_d'])):
+            w(f"  {'Atacante' if L == 'A' else 'Defensor'}: ", L)
+            for i, nm in enumerate(orden):
+                w(f'{i + 1}. {nm}', *(('x',) if (L, i) in muertos else ())); w('   ')
+            w('\n')
+        if f['muertes']: w('  Caídas en orden: ' + ', '.join(f'{l}{i + 1}' for l, i in f['muertes']) + '\n')
+        for a in f['avisos']: w(f'\nAviso: {a}')
+        tx['state'] = 'disabled'
+        ttk.Button(v, text='Cerrar', command=v.destroy).pack(anchor='e', padx=10, pady=(0, 10))
 
     def cerrar(self):
         c = self.cfg['tablero']
