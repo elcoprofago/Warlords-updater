@@ -285,3 +285,7 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.32.0): reporte del usuario: la lista del historial decía «Atacante gana X %» aunque ganara el
   defensor (X bajo). Ahora dice quién gana («Gana el DEFENSOR: 93.50 % de 200»). Además, barra de desplazamiento
   vertical (10 filas a la vista). Probado con 12 combates ganados por el defensor; captura OK.
+- 13/11/2026 (1.0.33.0): pedido del usuario: la lista pasa a columna «Ganador» con ATACANTE/DEFENSOR en su color
+  y el porcentaje (lista en un tk.Text, porque el Treeview no colorea celdas; clic, flechas, doble clic y Enter).
+  La ficha empieza el resultado por el ganador («RESULTADO: DEFENSOR con 93.50 %») y en gris lo del perdedor
+  («(atacante gana el 6.50 % en 200 peleas)»). Capturas OK.

@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.32.0'
+VERSION = '1.0.33.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -850,19 +850,46 @@ class App(tk.Tk):
         v = self.v_historial = tk.Toplevel(self); v.title(f'Historial de combates — VERSIÓN {VERSION}'); v.transient(self)
         fr = ttk.Frame(v, padding=10); fr.pack(fill='both', expand=True)
         ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha)').pack(anchor='w')
+        # lista en un Text (no Treeview) para poder pintar ATACANTE y DEFENSOR cada uno con su color
         fl = ttk.Frame(fr); fl.pack(fill='both', expand=True, pady=6)
-        t = self.t_historial = ttk.Treeview(fl, columns=('n', 'f', 'g'), show='headings', height=10)
-        for c, tx, w in (('n', 'N.º', 70), ('f', 'Fecha y hora', 150), ('g', 'Resultado', 260)):
-            t.heading(c, text=tx); t.column(c, width=w, anchor='w')
-        for i, f in enumerate(h):
-            gana, pct = ('ATACANTE', f['pct']) if f['pct'] >= 50 else ('DEFENSOR', 100 - f['pct'])
-            t.insert('', 'end', iid=str(i), values=(f"{f['numero']:06d}", f['fecha'], f"Gana el {gana}: {pct:.2f} % de {f['n']}"))
+        t = self.t_historial = tk.Text(fl, width=50, height=11, wrap='none', cursor='arrow', font=('Segoe UI', 10),
+                                       tabs=('70', '230'), bd=1, relief='solid', padx=6, pady=4)
         sb = ttk.Scrollbar(fl, orient='vertical', command=t.yview); t.configure(yscrollcommand=sb.set)
         t.pack(side='left', fill='both', expand=True); sb.pack(side='right', fill='y')
-        if not h: ttk.Label(fr, text='Todavía no hay combates guardados.').pack(anchor='w')
+        neg = tkfont.Font(family='Segoe UI', size=10, weight='bold'); v.fuentes = (neg,)
+        t.tag_configure('cab', font=neg)
+        for L in ('ATACANTE', 'DEFENSOR'): t.tag_configure(L, foreground=BANDOS[L]['medio'], font=neg)
+        t.tag_configure('sel_fila', background='#cce4ff')
+        t.insert('end', 'N.º\tFecha y hora\tGanador\n', 'cab')
+        for i, f in enumerate(h):
+            gana, pct = ('ATACANTE', f['pct']) if f['pct'] >= 50 else ('DEFENSOR', 100 - f['pct'])
+            fila = f'f{i}'
+            t.insert('end', f"{f['numero']:06d}\t{f['fecha']}\t", fila)
+            t.insert('end', gana, (fila, gana)); t.insert('end', f'  {pct:.2f} %\n', fila)
+        if not h: t.insert('end', 'Todavía no hay combates guardados.')
+        t['state'] = 'disabled'
+        elegida = {'i': 0 if h else None}
+        def marcar(i):
+            t.tag_remove('sel_fila', '1.0', 'end')
+            if i is None: return
+            elegida['i'] = i; t.tag_add('sel_fila', f'{i + 2}.0', f'{i + 3}.0'); t.see(f'{i + 2}.0')
+        def fila_en(e):
+            n = int(t.index(f'@{e.x},{e.y}').split('.')[0]) - 2
+            return n if 0 <= n < len(h) else None
+        def clic(e):
+            n = fila_en(e)
+            if n is not None: marcar(n)
+            return 'break'
         def abrir(e=None):
-            for i in t.selection(): self.ver_ficha(h[int(i)])
-        t.bind('<Double-1>', abrir); t.bind('<Return>', abrir)
+            if e is not None and getattr(e, 'type', None) == tk.EventType.ButtonPress: clic(e)
+            if elegida['i'] is not None: self.ver_ficha(h[elegida['i']])
+            return 'break'
+        def mover(d):
+            if elegida['i'] is not None: marcar(max(0, min(len(h) - 1, elegida['i'] + d)))
+            return 'break'
+        t.bind('<Button-1>', clic); t.bind('<Double-1>', abrir); t.bind('<Return>', abrir)
+        t.bind('<Up>', lambda e: mover(-1)); t.bind('<Down>', lambda e: mover(1))
+        marcar(elegida['i']); t.focus_set()
         fb = ttk.Frame(fr); fb.pack(fill='x')
         ttk.Button(fb, text='Ver ficha', command=abrir).pack(side='left')
         ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
@@ -884,8 +911,10 @@ class App(tk.Tk):
             if c['heroe']: w(f"  Héroe: {c['heroe']}\n")
             if not c['tropas'] and not c['heroe']: w('  (nadie)\n')
             w('\n')
-        w('RESULTADO', 't')
-        w(f"\nEl atacante gana el {f['pct']:.2f} % de {f['n']} peleas (defensor: {100 - f['pct']:.2f} %).\n\n")
+        tx.tag_configure('gris', foreground='#808080')
+        (g, pg), (p_, pp) = (('ATACANTE', f['pct']), ('defensor', 100 - f['pct'])) if f['pct'] >= 50 else (('DEFENSOR', 100 - f['pct']), ('atacante', f['pct']))
+        w('RESULTADO: ', 't'); w(g, 't', g[0]); w(f' con {pg:.2f} %', 't')
+        w(f"  ({p_} gana el {pp:.2f} % en {f['n']} peleas)\n\n", 'gris')
         w(f"Batalla de muestra: gana el {'ATACANTE' if f['gana'] else 'DEFENSOR'} (tachadas, las unidades caídas)\n", 't')
         muertos = {tuple(m) for m in f['muertes']}
         for L, orden in (('A', f['orden_a']), ('D', f['orden_d'])):
