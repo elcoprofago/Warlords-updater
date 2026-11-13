@@ -771,3 +771,16 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.15 (freno 
 contra 158-164; puesto, PV y ciudades de la nueva contra la original (si el puesto empeora como en la 1.0.135.0,
 aflojar el margen). Los huérfanos en quiebra (1191 color 6) siguen para después.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.15 (TAREAS 197)".
+
+### Resultado del 4.15: freno con el mantenimiento entero (tanda 165, vista-aliada 1.0.217.0, 13/11/2026)
+- 10 partidas completas, 30 turnos. **Deserciones (28): nueva 0** (tandas 158-164: 1 a 34 por tanda, siempre
+  concentradas en un color-partida); original 48 (1230 color 5: 30; 1231 color 3: 14; 1229 color 0: 4).
+- **Evento 40: 403 líneas en 93 turnos-color de 938 (9,9 %)**, en 17 color-partida. Más que el 6,6 % simulado, por
+  debajo del 11 % del margen oro / 8. El freno viejo (32) baja de 53-111 por tanda a 27.
+- Resultado: nueva puesto **2,73**, PV 6,43, ciudades 4,70; original 2,90 / 5,48 / 4,43. El puesto no empeora (el
+  de 158-164 fue 2,65-3,19); ganadas 12,5 % (158-164: 7,5-17,5 %). Ejércitos al turno 30: 33,2 (158-164: 27,7-44,8);
+  oro 331 (245-374).
+- Conclusión: el freno cumple: se acabó la quiebra por sobreproducción sin costar puesto. Queda como está (margen
+  oro / 4).
+**Próximo paso:** los huérfanos en quiebra (1191 color 6).
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, huérfanos en quiebra (1191 color 6)".
