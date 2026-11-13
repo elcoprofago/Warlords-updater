@@ -310,3 +310,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
      del método viejo con tolerancia 0; ahora contra el exacto con margen de 4 desvíos, y suma la prueba de las
      65 536 semillas con su control). Cantidad de ciudades: descartada antes (no cambia la pelea).
   Spinbox de peleas: tope 65 536 (más no agrega nada).
+- 13/11/2026 (1.0.37.0): Historial: los combates repetidos (mismo campo y mismos dos lados) comparten un color de fondo,
+  uno por grupo; los que no se repiten quedan en blanco. Probado con un historial de 2 pares + 1 control: OK.

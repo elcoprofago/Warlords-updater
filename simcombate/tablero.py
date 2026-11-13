@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.36.0'
+VERSION = '1.0.37.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -849,7 +849,7 @@ class App(tk.Tk):
         h = historial.cargar(HISTORIAL)
         v = self.v_historial = tk.Toplevel(self); v.title(f'Historial de combates — VERSIÓN {VERSION}'); v.transient(self)
         fr = ttk.Frame(v, padding=10); fr.pack(fill='both', expand=True)
-        ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha)').pack(anchor='w')
+        ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha; los repetidos, del mismo color)').pack(anchor='w')
         # lista en un Text (no Treeview) para poder pintar ATACANTE y DEFENSOR cada uno con su color
         fl = ttk.Frame(fr); fl.pack(fill='both', expand=True, pady=6)
         t = self.t_historial = tk.Text(fl, width=50, height=11, wrap='none', cursor='arrow', font=('Segoe UI', 10),
@@ -859,13 +859,22 @@ class App(tk.Tk):
         neg = tkfont.Font(family='Segoe UI', size=10, weight='bold'); v.fuentes = (neg,)
         t.tag_configure('cab', font=neg)
         for L in ('ATACANTE', 'DEFENSOR'): t.tag_configure(L, foreground=BANDOS[L]['medio'], font=neg)
-        t.tag_configure('sel_fila', background='#cce4ff')
+        # combates repetidos (mismo campo y mismos dos lados): sus filas comparten un color de fondo
+        clave = lambda f: json.dumps([f.get('campo'), f.get('A'), f.get('D')], sort_keys=True)
+        cuantos = {}
+        for f in h: cuantos[clave(f)] = cuantos.get(clave(f), 0) + 1
+        COLORES = ('#fff2b3', '#d4f5d4', '#ffd9b3', '#e6d9ff', '#ffd6e7', '#c9f0f0', '#e8f0c0', '#f0dcc8')
+        grupo = {}
+        for k in (clave(f) for f in h):
+            if cuantos[k] > 1 and k not in grupo:
+                grupo[k] = f'rep{len(grupo)}'; t.tag_configure(grupo[k], background=COLORES[len(grupo) % len(COLORES)])
+        t.tag_configure('sel_fila', background='#cce4ff'); t.tag_raise('sel_fila')
         t.insert('end', 'N.º\tFecha y hora\tGanador\n', 'cab')
         for i, f in enumerate(h):
             gana, pct = ('ATACANTE', f['pct']) if f['pct'] >= 50 else ('DEFENSOR', 100 - f['pct'])
-            fila = f'f{i}'
+            fila = (f'f{i}',) + ((grupo[clave(f)],) if clave(f) in grupo else ())
             t.insert('end', f"{f['numero']:06d}\t{f['fecha']}\t", fila)
-            t.insert('end', gana, (fila, gana)); t.insert('end', f'  {pct:.2f} %\n', fila)
+            t.insert('end', gana, fila + (gana,)); t.insert('end', f'  {pct:.2f} %\n', fila)
         if not h: t.insert('end', 'Todavía no hay combates guardados.')
         t['state'] = 'disabled'
         elegida = {'i': 0 if h else None}
