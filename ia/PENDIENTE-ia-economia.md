@@ -628,3 +628,23 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.13 (huérf
   fuera (33) y mantenimiento contra ingreso en los turnos siguientes; deserciones (28) de la nueva contra la
   original; puesto, PV y ciudades.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado de la memoria del repliegue (TAREAS 185)".
+
+### Resultado de la memoria del repliegue (tanda 160, vista-aliada 1.0.214.0, 12/11/2026)
+- **El cambio no llegó a actuar: evento 38 = 0.** En esta tanda no se dio la oscilación meta 7 / meta 1 en quiebra
+  que lo motivó (1156 y 1170 color 3 en las tandas 158-159). El 37 salió 4 veces (1176 color 3 turno 30, 1179 color
+  5 turno 20, siempre meta 3).
+- **Deserciones (28):** nueva 1 (1174 color 5); original 30 (todas 1176 color 2, turnos 23-27). No se le puede
+  atribuir al cambio: no hubo quiebra con oscilación que corregir.
+- Turnos con mantenimiento > ingreso: nueva 23 de 952 (2,4 %; 3,0 % en 159), original 18 de 989 (1,8 %).
+- Caso que el 4.12 deja pasar a propósito: 1176 color 3, turnos 19-29, una pila con meta 3 (neutral) quieta fuera
+  con 10 ejércitos (mantenimiento 88 contra ingreso 82, oro 100-134): el déficit (6 por turno) no llega a la
+  condición oro < 8 × déficit, y no desertó. No se toca.
+- Resultado de las partidas: nueva puesto 2,96, PV 5,55, ciudades 3,8; original 2,84 / 6,95 / 5,55. Primera tanda
+  de esta serie en que la original queda arriba; como el 37 y el 38 casi no actuaron, es variación entre tandas
+  y no efecto del cambio (158: nueva 2,65 contra 3,27; 159: 2,92 contra 3,19).
+- Conclusión: sin datos para juzgar la memoria del repliegue. El cambio queda (fuera de quiebra con oscilación no
+  hace nada) y se repite la tanda con la misma versión (TAREAS 186).
+**Próximo paso:** con la tanda de la TAREAS 186, buscar eventos 38: cuántos, si se repiten con la misma distancia
+en la misma pila (pila trabada) y si los colores con 38 desertan menos que 1156/1170 color 3. Comparar de nuevo
+puesto, PV y ciudades sumando las tandas 158-160 y la nueva.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, memoria del repliegue (TAREAS 186)".

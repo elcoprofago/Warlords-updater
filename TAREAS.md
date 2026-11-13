@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 185).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 187).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,7 +14,13 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **185.** IA: el repliegue por quiebra se sostiene (vista-aliada 1.0.214.0, 12/11/2026)
+- [ ] **186.** IA: repetir la tanda de la memoria del repliegue (vista-aliada 1.0.214.0, 12/11/2026)
+En la tanda de la 185 no se dio el caso que el cambio corrige, así que hace falta otra igual.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.214.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+
+- [x] **185.** IA: el repliegue por quiebra se sostiene (vista-aliada 1.0.214.0, 12/11/2026) — 12/11/2026: corrida en la tanda 160. El caso que corrige el cambio no apareció (evento 38 = 0); la nueva desertó 1 vez y la original 30. Se repite la tanda (tarea 186); resultado en ia\PENDIENTE-ia-economia.md.
 Cambio: cuando a la computadora nueva se le acaba el oro, las pilas que ya volvían a su ciudad (y los grupos recién
 armados con ejércitos sueltos) siguen volviendo aunque el planificador les proponga atacar; antes iban y venían sin
 llegar y terminaban desertando. Hay que ver si deserta menos y si eso le cuesta partidas.
