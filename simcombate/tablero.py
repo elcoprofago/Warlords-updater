@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes               # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.41.0'
+VERSION = '1.0.42.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -142,13 +142,23 @@ def boton(padre, **kw):
     m = reborde(padre); b = ttk.Button(m, **kw); b.pack(fill='both', expand=True); m.master.boton = b
     return m.master
 
+# Fondos de los botones: la fila del medio de los escudos que pasó el usuario (13/11/2026), sin el borde,
+# de izquierda a derecha; el botón la estira a su ancho.
+FONDOS = dict(negro='000000 000000 000000 000000 000000 000000 232323 2f2f2f 2f2f2f 2f2f2f 474747 474747 474747 575757 575757 676767 676767 676767 575757 575757 575757 474747 575757 575757 3b3b3b 474747 474747 3b3b3b 3b3b3b 3b3b3b 2f2f2f 2f2f2f 2f2f2f 232323 232323 232323 000000 000000 000000 000000 000000 000000 232323',
+              cyan='17a7f3 3fafeb 3fafeb 5fcbef 5fcbef 5fcbef 6fd7f3 83dff3 83dff3 87ebf7 a7f7fb a7f7fb cfffff cfffff cfffff a7f7fb cfffff cfffff a7f7fb a7f7fb a7f7fb 87ebf7 87ebf7 87ebf7 83dff3 83dff3 83dff3 6fd7f3 6fd7f3 6fd7f3 5fcbef 5fcbef 5fcbef 5fcbef 5fcbef 5fcbef 5fcbef 5fcbef 5fcbef 17a7f3 3fafeb 3fafeb 17a7f3',
+              verde='005b13 006b13 006b13 007b13 008b13 008b13 009b13 00ab13 00ab13 13bb13 1bcb1b 1bcb1b 33df33 4fef4f 4fef4f 4fef4f 33df33 33df33 33df33 1bcb1b 1bcb1b 1bcb1b 13bb13 13bb13 13bb13 00ab13 00ab13 00ab13 009b13 009b13 009b13 007b13 007b13 008b13 006b13 006b13 007b13 005b13 005b13 005b13 004b13 004b13 004b13',
+              naranja='f33f07 f33f07 f33f07 fb5f07 fb5f07 fb5f07 ff7b07 ff7b07 ff7b07 ff9b1b ff9b1b ff9b1b ffb733 ffb733 ffb733 ffb733 ff9b1b ff9b1b ffb733 ff9b1b ff9b1b ffb733 ff7b07 ff7b07 ff9b1b ff7b07 ff7b07 ff9b1b ff7b07 ff7b07 ff7b07 fb5f07 fb5f07 ff7b07 fb5f07 fb5f07 fb5f07 f33f07 f33f07 fb5f07 f33f07 f33f07 f33f07',
+              blanco='9f9f9f 9f9f9f 9f9f9f b7b7b7 b7b7b7 b7b7b7 c3c3c3 c3c3c3 c3c3c3 dfdfdf dfdfdf dfdfdf f3f3f3 ffffff ffffff ffffff ffffff ffffff ffffff ffffff ffffff f3f3f3 dfdfdf dfdfdf f3f3f3 cfcfcf cfcfcf dfdfdf cfcfcf cfcfcf cfcfcf c3c3c3 c3c3c3 c3c3c3 b7b7b7 b7b7b7 b7b7b7 ababab ababab ababab 9f9f9f 9f9f9f 9f9f9f')
+
 class BotonAzul(tk.Canvas):
-    """Botón dibujado: fondo azul claro, letra blanca con sombra negra. Acepta .state(['disabled'/'!disabled'])
-    como un ttk.Button."""
-    AZUL, AZUL_SOBRE, AZUL_APAGADO = '#5aa8e6', '#7cbcf0', '#9db4c6'
-    def __init__(self, padre, text, command, ancho=170, alto=30):
+    """Botón dibujado: letra blanca en negrita con sombra negra sobre un degradé (por omisión el azul del escudo del
+    juego; con fondo=, uno de FONDOS). En los fondos claros la letra lleva además un borde negro fino para leerse.
+    Acepta .state(['disabled'/'!disabled']) como un ttk.Button."""
+    def __init__(self, padre, text, command, ancho=170, alto=30, fondo=None):
+        if ancho is None: ancho = tkfont.Font(font=('Segoe UI', 10, 'bold')).measure(text) + 28
         super().__init__(padre, width=ancho, height=alto, highlightthickness=0, bd=0, cursor='hand2')
         self.texto, self.cmd, self.ancho, self.alto, self.activo, self.sobre = text, command, ancho, alto, True, False
+        self.fondo = [tuple(int(c[i:i + 2], 16) for i in (0, 2, 4)) for c in FONDOS[fondo].split()] if fondo else None
         self.bind('<Enter>', lambda e: self.poner(sobre=True)); self.bind('<Leave>', lambda e: self.poner(sobre=False))
         self.bind('<ButtonRelease-1>', lambda e: self.activo and self.cmd())
         self.dibujar()
@@ -163,16 +173,26 @@ class BotonAzul(tk.Canvas):
         # Degradé de izquierda a derecha como el escudo azul del juego: bordes oscuros, brillo a un tercio.
         pasos = [(0, (0x00, 0x2f, 0x9f)), (.12, (0x00, 0x6b, 0xe3)), (.33, (0x17, 0xa7, 0xf3)), (.55, (0x00, 0x77, 0xe7)),
                  (.75, (0x00, 0x6b, 0xe3)), (.9, (0x00, 0x43, 0xb7)), (1, (0x00, 0x2f, 0x9f))]
+        if self.fondo: n = len(self.fondo); pasos = [(i / (n - 1), c) for i, c in enumerate(self.fondo)]
         for x in range(self.ancho):
             t = x / (self.ancho - 1)
             (t0, c0), (t1, c1) = next((pasos[i], pasos[i + 1]) for i in range(len(pasos) - 1) if t <= pasos[i + 1][0])
-            k = (t - t0) / (t1 - t0); rgb = [a + (b - a) * k for a, b in zip(c0, c1)]
+            k = (t - t0) / (t1 - t0) if t1 > t0 else 0; rgb = [a + (b - a) * k for a, b in zip(c0, c1)]
             if not self.activo: g = sum(rgb) / 3; rgb = [(v + g * 2) / 3 for v in rgb]
             elif self.sobre: rgb = [v + (255 - v) * .15 for v in rgb]
             self.create_line(x, 0, x, self.alto, fill='#%02x%02x%02x' % tuple(int(v) for v in rgb))
         f = ('Segoe UI', 10, 'bold'); x, y = self.ancho // 2, self.alto // 2
         self.create_text(x + 2, y + 2, text=self.texto, font=f, fill='#000000')
+        claro = self.fondo and sum(map(sum, self.fondo)) / len(self.fondo) > 3 * 140
+        if claro:
+            for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
+                self.create_text(x + dx, y + dy, text=self.texto, font=f, fill='#000000')
         self.create_text(x, y, text=self.texto, font=f, fill='#ffffff')
+
+def boton_color(padre, text, command, fondo, alto=30):
+    """Botón dibujado (estilo INICIAR COMBATE) con reborde dorado; devuelve el marco a ubicar (botón en .boton)."""
+    m = reborde(padre); b = BotonAzul(m, text, command, ancho=None, alto=alto, fondo=fondo); b.pack(); m.master.boton = b
+    return m.master
 
 def elecciones(clase):
     """Las 10 elecciones de una clase (.HER) y los puntos por nivel: [(texto, costo)], [puntos de cada subida]."""
@@ -294,7 +314,7 @@ class Panel(ttk.Frame):
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w', pady=(8, 0))
         fh = ttk.Frame(f); fh.grid(row=2, column=1, sticky='w', pady=(8, 0))
-        boton(fh, text='Héroe…', command=self.editar_heroe).pack(side='left')
+        boton_color(fh, 'Héroe…', self.editar_heroe, 'blanco').pack(side='left')
         self.luz = LuzTope(fh); self.luz.pack(side='left', padx=(10, 0))
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
         self.coef = RecuadroFactor(self, titulo); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
@@ -494,9 +514,9 @@ class App(tk.Tk):
         ttk.Label(fila, text='Peleas para el %').pack(side='left')
         self.n = ttk.Spinbox(fila, from_=10, to=65536, increment=500, width=8); self.n.set(c.get('peleas', '1000')); self.n.pack(side='left', padx=4)
         m = reborde(fila); m.master.pack(side='left', padx=12)
-        self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar); self.boton.pack()
-        boton(fila, text='⇄ Invertir atacante y defensor', command=self.invertir).pack(side='left')
-        boton(fila, text=f'Historial (últimos {historial.MAXIMO})…', command=self.ver_historial).pack(side='left', padx=(12, 0))
+        self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar, fondo='cyan'); self.boton.pack()
+        boton_color(fila, '⇄ Invertir atacante y defensor', self.invertir, 'naranja').pack(side='left')
+        boton_color(fila, f'Historial (últimos {historial.MAXIMO})…', self.ver_historial, 'verde').pack(side='left', padx=(12, 0))
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
         plegable(self, [(caja, self.salida)], 'resultado')
@@ -522,7 +542,7 @@ class App(tk.Tk):
         caja = reborde(self); caja.master.grid(row=0, column=0, columnspan=3, sticky='we', padx=10, pady=(10, 4))
         cv = self.cab = tk.Canvas(caja, height=70, bg='#1b2a3a', highlightthickness=0); cv.pack(fill='x')
         self.estado_txt = ''
-        self.b_carpeta = boton(cv, text='Carpeta del juego…', command=self.configurar)
+        self.b_carpeta = boton_color(cv, 'Carpeta del juego…', self.configurar, 'negro')
         imgs = {}
         for e in ('normal', 'hover', 'active', 'disabled'):
             try: imgs[e] = ImageTk.PhotoImage(Image.open(os.path.join(ASSETS, f'menu_settings_{e}.png')).convert('RGBA').resize((28, 28), Image.LANCZOS))

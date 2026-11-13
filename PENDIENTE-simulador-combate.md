@@ -320,3 +320,6 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   formaciones ganadoras: en cada combate, la del bando que gana la mayoría; la mejor = más victorias, a igualdad
   mayor % medio), Exportar ficha y Exportar gráfica (PNG o JPG, según la extensión). Módulo nuevo imagenes.py
   (solo PIL); la ficha en pantalla y la exportada salen de los mismos trozos. Prueba: prueba_imagenes.py, TODO OK.
+- 13/11/2026 (1.0.42.0): botones modernizados (pedido del usuario) con BotonAzul(fondo=...) y boton_color: fondos
+  tomados de la fila del medio de 5 escudos que pasó el usuario (FONDOS en tablero.py). Carpeta negro, INICIAR cyan,
+  Invertir naranja, Historial verde, Héroe blanco; en fondos claros, la letra con borde negro fino.
