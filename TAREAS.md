@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 199).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 200).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **199.** Simulador de combate 1.0.38.0 (13/11/2026). Mirar los títulos de los tres paneles: ATACANTE y DEFENSOR en Arial negrita blanca con borde negro y sombra, dentro de un recuadro blanco de borde fino oscuro; TERRENO igual, con el borde de la letra verde. Anotar lo que no convenza.
 - [ ] **198.** Simulador de combate 1.0.37.0 (13/11/2026). Repetir dos veces un mismo combate (mismos ejércitos, terreno y sitio) y abrir el Historial: esas dos filas tienen que tener el mismo color de fondo; un combate distinto queda en blanco, y cada grupo de repetidos tiene su propio color. La fila elegida se sigue viendo en celeste. Anotar lo que no coincida.
 - [ ] **197.** IA: freno de producción antes de la quiebra (vista-aliada 1.0.217.0, 13/11/2026). La computadora en prueba deja de fabricar ejércitos cuando lo que pagaría con todo el ejército fuera de las ciudades supera lo que cobra, con un margen del oro guardado; antes frenaba recién cuando ya gastaba más de lo que cobraba, y con muchas ciudades se quedaba sin oro y los ejércitos desertaban. 1) Actualizador, opción **9**: vista-aliada en **1.0.217.0** o posterior. 2) Monitor de IA → **Ninguna**, marcar **Scarpart** y **Kor**, Partidas **10**, **Nueva tanda**. 3) Mientras corre, no instalar otra versión del parche. Avisar cuando termine.
 - [ ] **196.** Simulador de combate 1.0.36.0: cálculo más confiable (13/11/2026). Repetir el combate 18/19 de noche con 6000 peleas: ahora tiene que dar alrededor de 77 % para el atacante (antes 80,48 %), porque promedia 20 noches y en algunas el sorteo favorece al defensor. De día, alrededor de 80,4 %. Con 65 536 peleas el número es el exacto del juego y no cambia de una corrida a otra. Anotar lo que no coincida.

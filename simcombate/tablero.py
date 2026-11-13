@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.37.0'
+VERSION = '1.0.38.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -57,6 +57,19 @@ ORO = '#c8a040'
 BANDOS = {'ATACANTE': dict(oscuro='#001a66', medio='#0050d0', claro='#38a8ff', letra='#0a3c9c', suave='#a8d4ff', escudo='Cbludrag.PCX'),
           'DEFENSOR': dict(oscuro='#5a0000', medio='#c01818', claro='#ff6040', letra='#9c1010', suave='#ffb0a0', escudo='Creddrag.PCX')}
 
+FUENTE_TITULO = ('Arial', 17, 'bold')
+
+def letra_titulo(cv, cx, cy, texto, borde):
+    """Título de panel: recuadro blanco con borde fino oscuro y, adentro, el texto en Arial bold blanco con borde
+    del color pedido (negro en los bandos, verde en el terreno) y sombra. Devuelve el ancho del recuadro."""
+    f = tkfont.Font(font=FUENTE_TITULO); w, h = f.measure(texto) + 20, f.metrics('linespace') + 6
+    cv.create_rectangle(cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2, fill='#ffffff', outline='#202020', width=1)
+    cv.create_text(cx + 2, cy + 2, text=texto, font=FUENTE_TITULO, fill='#9a9a9a')               # sombra
+    for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
+        cv.create_text(cx + dx, cy + dy, text=texto, font=FUENTE_TITULO, fill=borde)            # borde de la letra
+    cv.create_text(cx, cy, text=texto, font=FUENTE_TITULO, fill='#ffffff')
+    return w
+
 def mezcla(a, b, t):
     a, b = [int(a[i:i + 2], 16) for i in (1, 3, 5)], [int(b[i:i + 2], 16) for i in (1, 3, 5)]
     return '#%02x%02x%02x' % tuple(round(x + (y - x) * t) for x, y in zip(a, b))
@@ -86,19 +99,15 @@ class Estandarte(tk.Canvas):
         self.create_line(0, 1, w, 1, fill=ORO, width=2); self.create_line(0, h - 2, w, h - 2, fill=ORO, width=2)
         if self.fotos:
             self.create_image(8, h // 2, image=self.fotos[1], anchor='w'); self.create_image(w - 8, h // 2, image=self.fotos[0], anchor='e')
-        for dx, col in ((2, '#000000'), (0, '#ffffff')):
-            self.create_text(w // 2 + dx, h // 2 + dx, text=self.titulo, font=('Georgia', 17, 'bold'), fill=col)
+        letra_titulo(self, w // 2, h // 2, self.titulo, '#000000')
 
 def titulo_verde(padre, texto, aclaracion=''):
-    """Título de subpanel: Arial bold del tamaño de los estandartes, verde con borde dorado y sombra."""
+    """Título de subpanel: mismo estilo que los estandartes (letra_titulo), con el borde de la letra verde."""
     fondo = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
-    f = tk.Frame(padre, bg=fondo); fuente = ('Arial', 17, 'bold')
-    w = tkfont.Font(font=fuente).measure(texto) + 8
-    cv = tk.Canvas(f, width=w, height=30, bg=fondo, highlightthickness=0); cv.pack(side='left')
-    cv.create_text(5, 17, text=texto, font=fuente, fill='#303030', anchor='w')                 # sombra
-    for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
-        cv.create_text(3 + dx, 15 + dy, text=texto, font=fuente, fill=ORO, anchor='w')       # borde dorado
-    cv.create_text(3, 15, text=texto, font=fuente, fill='#0a8a28', anchor='w')
+    f = tk.Frame(padre, bg=fondo); fn = tkfont.Font(font=FUENTE_TITULO)
+    w, h = fn.measure(texto) + 22, fn.metrics('linespace') + 8
+    cv = tk.Canvas(f, width=w, height=h, bg=fondo, highlightthickness=0); cv.pack(side='left')
+    letra_titulo(cv, w // 2, h // 2, texto, '#0a8a28')
     if aclaracion: tk.Label(f, text=aclaracion, bg=fondo).pack(side='left', padx=(2, 0), pady=(6, 0))
     return f
 
