@@ -274,3 +274,7 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.29.0): pedido del usuario: la aclaración bajo FACTOR y COSTO quedaba cortada. Sale la cantidad de
   unidades; queda «Factor medio X · tope N: motivo» (el tope solo si no es 8 o si se pasa). La cantidad va como
   contador «unidades / tope» en la leyenda de la luz: gris apagada, roja «tope excedido 9 / 8» encendida. Captura OK.
+- 13/11/2026 (1.0.30.0): pedido del usuario: contador general de pruebas, retro de tambores (contador.odometro, PIL),
+  a la derecha del encabezado con la leyenda «PRUEBAS» a su izquierda. Se guarda en el .ini ([contador] n, periodo,
+  clave); no se borra al reiniciar. Configuración: periodo (manual, día, semana, mes, año; se resetea al cambiar la
+  clave del periodo) y «Poner en cero». Probado: 3 pruebas = 3, cambio de mes = 0, reset manual = 0. Captura OK.

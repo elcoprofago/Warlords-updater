@@ -11,9 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA, TOPE_CIUDAD   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
+import contador                                    # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.29.0'
+VERSION = '1.0.30.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -528,7 +529,13 @@ class App(tk.Tk):
             cv.create_text(x + 1, y + 1, text=t, font=f, fill='#000000', anchor=anchor, tags=tag)
             cv.create_text(x, y, text=t, font=f, fill='#ffffff', anchor=anchor, tags=tag)
         sombra(10, 18, TITULO, ('Segoe UI', 12, 'bold'))
-        der = W - 10
+        # contador general de pruebas: a la derecha, a todo el alto del encabezado; leyenda a su izquierda
+        self.foto_odo = ImageTk.PhotoImage(contador.odometro(self.pruebas(), alto=56))
+        cv.create_image(W - 8, 35, image=self.foto_odo, anchor='e')
+        der = W - 22 - self.foto_odo.width()
+        per = self.cfg.get('contador', 'periodo', fallback='manual')
+        ley = 'PRUEBAS' + ('' if per == 'manual' else f' ({contador.PERIODOS[per].lower()})')
+        sombra(der, 50, ley, ('Segoe UI', 10, 'bold'), anchor='e')
         if self.icono_cfg:
             e = 'disabled' if self.cfg_abierta else 'normal'
             cv.create_image(der, 18, image=self.icono_cfg[e], anchor='e', tags='cfg'); der -= 38
@@ -544,6 +551,28 @@ class App(tk.Tk):
         cv.tag_bind('orden', '<Enter>', lambda e: cv.configure(cursor='hand2')); cv.tag_bind('orden', '<Leave>', lambda e: cv.configure(cursor=''))
         x = cv.bbox('orden')[2] + 24 if cv.bbox('orden') else 420
         cv.create_window(x, 50, window=self.b_carpeta, anchor='w')
+
+    # ---- contador general de pruebas (sección [contador] del .ini; se guarda en cada prueba) ----
+    def _contador(self):
+        if not self.cfg.has_section('contador'): self.cfg.add_section('contador')
+        c = self.cfg['contador']; per = c.get('periodo', 'manual')
+        if per not in contador.PERIODOS: per = c['periodo'] = 'manual'
+        if per != 'manual' and c.get('clave', '') != contador.clave(per):   # empezó otro período: a cero
+            c['valor'], c['clave'] = '0', contador.clave(per)
+        return c
+
+    def pruebas(self):
+        try: return int(self._contador().get('valor', '0'))
+        except ValueError: return 0
+
+    def guardar_cfg(self):
+        try:
+            with open(CONFIG, 'w', encoding='utf-8') as f: self.cfg.write(f)
+        except OSError: pass
+
+    def contar_prueba(self, poner=None):
+        c = self._contador(); c['valor'] = str(0 if poner == 0 else self.pruebas() + 1)
+        self.guardar_cfg(); self.pintar_encabezado()
 
     def decir_estado(self, t):
         self.estado_txt = t; self.pintar_encabezado()
@@ -567,6 +596,18 @@ class App(tk.Tk):
         tk.Button(fr, text='Buscar actualización', width=20, command=lambda: self.actualizar(v, estado)).pack(anchor='w', pady=(8, 0))
         estado.pack(anchor='w', pady=(6, 0))
         estado.barra = ttk.Progressbar(fr, length=410, maximum=100)   # aparece solo mientras baja la versión nueva
+        tk.Label(fr, text='Contador de pruebas', font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(14, 0))
+        fc = tk.Frame(fr); fc.pack(anchor='w', pady=(6, 0))
+        nombres = list(contador.PERIODOS.values()); clave_de = {t: k for k, t in contador.PERIODOS.items()}
+        per = ttk.Combobox(fc, values=nombres, state='readonly', width=16)
+        per.set(contador.PERIODOS[self._contador().get('periodo', 'manual')])
+        def cambiar(e=None):
+            c = self._contador(); c['periodo'] = clave_de[per.get()]; c['clave'] = contador.clave(c['periodo'])
+            self.guardar_cfg(); self.pintar_encabezado()
+        per.bind('<<ComboboxSelected>>', cambiar); per.pack(side='left')
+        def cero():
+            if messagebox.askyesno(TITULO, f'¿Poner en cero el contador de pruebas ({self.pruebas()})?', parent=v): self.contar_prueba(poner=0)
+        tk.Button(fc, text='Poner en cero', width=14, command=cero).pack(side='left', padx=(10, 0))
         tk.Label(fr, text='RA Sistemas & Claude © 2026', fg='#696969').pack(anchor='w', pady=(14, 0))
         correo = tk.Label(fr, text=CORREO, fg='#0066cc', cursor='hand2', font=('Segoe UI', 9, 'underline')); correo.pack(anchor='w')
         correo.bind('<Button-1>', lambda e: webbrowser.open(f'mailto:{CORREO}'))
@@ -766,7 +807,7 @@ class App(tk.Tk):
         try: r = self.sim.simular(self.escenario(), n)
         except Error as e: messagebox.showerror(TITULO, str(e)); return
         except Exception as e: messagebox.showerror(TITULO, f'Falló el motor:\n{e}'); return
-        self.mostrar(r)
+        self.mostrar(r); self.contar_prueba()
         self.v_combate = VentanaCombate(self, self.juego.get(), r, TITULO, velocidad=self.velocidad.get(), efectos=self.efectos.get(),
                        sonido=self.sonido.get(), tamano=self.tamano.get(), resultados=self.resultados.get())
 
@@ -796,9 +837,7 @@ class App(tk.Tk):
         if self.sim:   # la última pelea armada, para la próxima vez (restaurar)
             c.update(atacante=json.dumps(self.pa.estado()), defensor=json.dumps(self.pd.estado()),
                      campo=json.dumps(self.escenario()['campo']))
-        try:
-            with open(CONFIG, 'w', encoding='utf-8') as f: self.cfg.write(f)
-        except OSError: pass
+        self.guardar_cfg()
         self.destroy()
 
 if __name__ == '__main__':
