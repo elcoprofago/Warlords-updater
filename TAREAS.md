@@ -14,7 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **187.** IA: la memoria del repliegue, corregida (vista-aliada 1.0.215.0, 13/11/2026)
+- [x] **187.** IA: la memoria del repliegue, corregida (vista-aliada 1.0.215.0, 13/11/2026) — 13/11/2026: corrida en la tanda 163 (10 partidas completas). El cambio ya actúa (6 veces) y las pilas vuelven a la ciudad. Resultado en ia\PENDIENTE-ia-economia.md.
 En las tandas de la 186 el caso apareció (una computadora sin oro iba y venía entre atacar y volver), pero el cambio
 de la 1.0.214.0 nunca actuaba por un error: la marca de «volviendo a la ciudad» se borraba antes de leerla. Corregido.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.215.0** o posterior.

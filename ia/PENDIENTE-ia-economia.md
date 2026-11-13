@@ -676,3 +676,25 @@ la misma pila) y si los colores con oscilación 7/1 en quiebra dejan de desertar
 sostenida, ver si llegan a la ciudad (ejércitos fuera del 33 bajando) o si la distancia del 38 no baja (trabadas).
 Los huérfanos en quiebra (1191 color 6) quedan para después.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, memoria del repliegue corregida (TAREAS 187)".
+
+### Resultado de la memoria del repliegue corregida (tanda 163, vista-aliada 1.0.215.0, 13/11/2026)
+- 10 partidas completas. **El 38 ya actúa: 6 veces** (1207 color 2 turno 30: distancias 60 y 15; 1208 color 0
+  turnos 23, 24, 24, 26: distancias 11, 11, 11 y 33), siempre desde meta 7. Ninguna distancia se repite en la
+  misma pila en turnos seguidos: no hay pilas trabadas. El 37 salió una vez (1206 color 3 turno 25, meta 3).
+- **1208 color 0 (nueva):** pierde 5 ciudades en los turnos 22-23 (16 → 9), el oro cae de 343 a 7 y deserta 16
+  ejércitos en los turnos 23-24. No es la quiebra estructural que corrige el 4.13: es la caída del ingreso por
+  ciudades perdidas. El 38 actúa en esos turnos y los ejércitos fuera bajan (33: 20 → 12 → 6 en los turnos 23-25);
+  desde el turno 26 el oro vuelve a subir (102 → 217) y no deserta más.
+- **1206 color 3 (nueva), el único caso estructural:** 4 ciudades, ingreso 82, mantenimiento 97-135 desde el turno
+  22; deserta 7 en los turnos 28-29. **No hay oscilación 7/1** (ninguna meta 7 en esos turnos): las pilas fuera
+  tienen meta 1 (Form) sostenida en los turnos 26-29 (4, 5, 11 y 3 ejércitos) y aun así quedan fuera; el 38 no
+  aplica. Es el (b) del 4.13 que quedó sin medir: pilas Form que no llegan a la ciudad.
+- Deserciones (28): nueva 23 en 2 color-partidas (16 por ciudades perdidas, 7 estructurales); original 0.
+- Resultado: nueva puesto 2,76, PV 6,95, ciudades 5,03; original 3,13 / 5,75 / 4,45. Sumando 158-163 (232 bandos
+  por IA): nueva 2,91 / 6,99 / 4,99; original 3,05 / 5,90 / 4,56.
+- Conclusión: la memoria del repliegue funciona y queda. La oscilación 7/1 no volvió a provocar deserciones.
+**Próximo paso (4.14):** las pilas con meta Form sostenida que no entran a la ciudad (1206 color 3, turnos 26-29;
+antes 1170 color 3). Anotar con un evento, para cada pila Form de la nueva que termina el turno fuera: ciudad
+destino, distancia y movimiento que le quedó, para saber si no alcanzan a llegar (lejos, lentas) o si se quedan
+quietas. Los huérfanos en quiebra (1191 color 6) siguen para después.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.14 (pilas Form que no llegan)".
