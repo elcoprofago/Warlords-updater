@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 206).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 207).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **206.** Simulador de combate 1.0.45.0 (13/11/2026). Pasar el tope en cualquiera de los dos paneles (por ejemplo, 9 unidades en una pila): la luz roja de «tope excedido» llega a un rojo más claro que antes, se queda encendida medio segundo y vuelve a apagarse despacio, una y otra vez. Anotar lo que no convenza.
 - [ ] **205.** Simulador de combate 1.0.44.0 (13/11/2026). Mirar los botones de colores (Carpeta del juego, INICIAR COMBATE, Invertir, Historial y los dos Héroe): el degradé tiene que verse suave, sin franjas ni escalones. Anotar lo que no convenza.
 - [ ] **204.** Simulador de combate 1.0.43.0 (13/11/2026). Abrir Historial → Stats: las formaciones de la leyenda dicen solo el nombre de la unidad como se la conoce en el juego (por ejemplo «5 Archers», no «archers — Archers»), con cualquiera de los dos órdenes de los desplegables. Anotar lo que no coincida.
 - [ ] **203.** Simulador de combate 1.0.42.0 (13/11/2026). Los botones tienen el estilo de INICIAR COMBATE (letra blanca en negrita con sombra) y el fondo de los escudos que pasaste: Carpeta del juego negro, INICIAR COMBATE cyan, Invertir atacante y defensor naranja, Historial verde y los dos Héroe blancos. En los fondos claros (cyan, naranja, blanco) la letra lleva un borde negro fino para que se lea. Probar que todos respondan al clic. Anotar lo que no convenza.

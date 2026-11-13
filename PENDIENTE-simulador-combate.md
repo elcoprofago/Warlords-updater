@@ -331,3 +331,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   hills, de noche, 6000 peleas: atacante 76,85 %), simulado sin sumar al contador ni al Historial.
 - 13/11/2026 (1.0.44.0): degradé de los botones pixelado (pedido del usuario): la paleta de los escudos viene en
   escalones de 2-3 píxeles; ahora se suaviza con un promedio gaussiano (suavizar) antes de estirarla. Captura del Manual rehecha.
+- 13/11/2026 (1.0.45.0): luz de «tope excedido» más clara en el pico (centro 255,78,78) y quieta 500 ms ahí
+  (LuzTope.PICO_MS); medido: pico 501-502 ms, los demás cuadros ~110 ms o menos.

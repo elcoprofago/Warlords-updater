@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes               # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.44.0'
+VERSION = '1.0.45.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -261,8 +261,9 @@ class RecuadroFactor(tk.Frame):
 
 class LuzTope(ttk.Frame):
     """Luz roja «tope excedido»: la del Monitor de IA (circle_09.png del Monitor llevada a rojo, con marco.png, 26 px),
-    que titila con un fundido lento (2 s por ciclo) mientras la pila pase su tope."""
-    TAM, PASOS, CICLO_MS = 26, 16, 2000
+    que titila con un fundido lento (2 s por ciclo) mientras la pila pase su tope. En el punto más encendido es un rojo
+    más claro y se queda PICO_MS antes de volver a apagarse."""
+    TAM, PASOS, CICLO_MS, PICO_MS = 26, 16, 2000, 500
 
     def __init__(self, padre):
         super().__init__(padre)
@@ -271,11 +272,11 @@ class LuzTope(ttk.Frame):
             marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
             naranja = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
             h, sat, v = naranja.convert('HSV').split()
-            def tono(f):
-                im = Image.merge('HSV', (h.point(lambda x: 0), sat, v.point(f))).convert('RGBA')
+            def tono(f, s=lambda x: x):
+                im = Image.merge('HSV', (h.point(lambda x: 0), sat.point(s), v.point(f))).convert('RGBA')
                 im.putalpha(naranja.getchannel('A')); im.alpha_composite(marco.resize(im.size))
                 return im.resize((self.TAM, self.TAM), Image.LANCZOS)
-            roja, apagada = tono(lambda x: x), tono(lambda x: x * 0.3)
+            roja, apagada = tono(lambda x: min(255, x * 1.4), lambda x: x * 0.72), tono(lambda x: x * 0.3)   # roja: más clara
             c = [Image.blend(apagada, roja, i / (self.PASOS - 1)) for i in range(self.PASOS)]
             self.cuadros = [ImageTk.PhotoImage(i) for i in c + c[-2:0:-1]]
         except OSError: self.cuadros = []
@@ -297,8 +298,8 @@ class LuzTope(ttk.Frame):
 
     def titilar(self):
         if not self.encendida or not self.cuadros: return
-        self.l_img.configure(image=self.cuadros[self.cuadro % len(self.cuadros)]); self.cuadro += 1
-        self.after(self.CICLO_MS // len(self.cuadros), self.titilar)
+        i = self.cuadro % len(self.cuadros); self.l_img.configure(image=self.cuadros[i]); self.cuadro += 1
+        self.after(self.PICO_MS if i == self.PASOS - 1 else self.CICLO_MS // len(self.cuadros), self.titilar)
 
 class Panel(ttk.Frame):
     """Un lado: 8 casilleros, barco, héroe y Factor total, con los colores de su bando."""
