@@ -208,7 +208,7 @@ cargaba el .rul y dejaba esos topes en 0. Ahora `Motor` carga [COMBAT] de `Defau
 - **El tipo en memoria es copia de los primeros 0xfc bytes del `.ARM`** (mismo orden de campos que lee DarkCompare:
   +0 nombre, +0x10 descripción, +0x90 archivo, +0x99 medalla, fuerza, mov, vidas, turnos, mantenimiento, vista;
   +0xb2 4 bonos de movimiento de 9 bytes; +0xd6 bono de combate y +0xdf su valor; +0xe2 costo; +0xe4 armado;
-  +0xe6 poder, +0xe8 su valor). Solo +0xe0 es del juego (un contador): `cargar_arma` lo conserva.
+  +0xe6 poder, +0xe8 su valor). Solo +0xe0 es del juego: los bonos de movimiento en bits (hills 1, forest 2, fly 4); `cargar_arma` lo calcula.
 - **La partida guarda su propia copia de los tipos**: si un `.ARM` cambió después de grabarla (pasa con Zappers,
   barcaza, orcs_ram y Tanda_Kor.SAV), la partida pelea con el viejo. El simulador carga siempre el `.ARM` del ARMY.
 - Ranuras: la 15 es el barco del bando; en Tanda_Kor las 12-14 están vacías. Cada lado usa su propio bando, así que
@@ -260,5 +260,10 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   k*0x24 hasta 0x5cc). Ciudad: el defensor, hasta 32, repartido en las 4 casillas de 8 (con 25+ en una sola casilla
   0x464ac0 se cae). Barco «Landing»: 5 (6 con «Carrier»), LANDCAP del parche. Barco «Carrier» del defensor: convoy de
   3 pilas (24, crlink). `python simcombate\prueba_topes.py` → TODO OK (incluye: 8/9/17/32 defensores en la ciudad
-  llegan enteros a la ficha; 94,75 → 31,5 → 0 % con 4, 8 y 16 defensores). No hay en el parche un «Carrier» para
-  voladores: solo para el barco (ranura 15), así que no se aplica a pilas en tierra.
+  llegan enteros a la ficha; 94,75 → 31,5 → 0 % con 4, 8 y 16 defensores).
+- 13/11/2026 (1.0.27.0): voladores, pedido del usuario: tienen su propio tope de 6 (FLYCAP del parche: pila con
+  algún volador). En campo y en agua el tope es 6 si hay un volador (y no más que el del barco); en la ciudad, los
+  voladores van en casillas de 6 y el resto en casillas de 8 (6 voladores + 24 = 30). El héroe cuenta como no volador.
+  Corregido de paso: +0xe0 del tipo no es un contador, es lo que el juego arma con los bonos de movimiento (bit 0
+  hills, 1 forest, 2 fly; visto en las 6 partidas de SAVES). `cargar_arma` conservaba el de la ranura, así que un
+  volador cargado no llevaba el bit 4; ahora lo calcula. prueba_topes.py → TODO OK; escenario, barcos y combate, OK.

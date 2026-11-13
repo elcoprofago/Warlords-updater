@@ -19,6 +19,7 @@ from motor import Motor, CIUDAD0, OBRAS
 MAX_PILA = 8          # tope común de una pila; los otros topes, en Simulador.tope
 TOPE_CIUDAD = 32      # la ciudad defiende con sus 4 casillas de 8 (la ficha del defensor tiene 32 lugares; medido)
 TOPE_LANDING, TOPE_LANDING_CARRIER = 5, 6     # pila en agua con barco "Landing" (LANDCAP del parche vista-aliada)
+TOPE_VOLADORES = 6    # pila con algún volador ("fly"): FLYCAP del parche vista-aliada
 TOPE_CONVOY = 3       # el convoy ("Carrier"): hasta 3 pilas embarcadas vecinas defienden juntas (crlink del parche)
 AX, AY, DX, DY = 50, 40, 51, 40      # casillas de campo abierto (Tanda_Kor: tierra, sin nada)
 PILA_A, PILA_D = 200, 201
@@ -45,19 +46,32 @@ class Simulador:
     def es_agua(self, terreno):
         return self.m.w(0x535ef8 + self.terrenos[terreno] * 0x58 + 0x14) == 1
 
+    def vuela(self, archivo):
+        a = self.armas.get((archivo or '').lower())
+        return bool(a) and 'fly' in {x.lower() for x in a.bonos_mov}
+
     def tope(self, lado, d, campo):
-        """(unidades que entran, motivo) para el lado 'A' o 'D' con su barco d['barco'] en ese campo. La ficha de
-        batalla tiene 8 lugares para el atacante y 32 para el defensor."""
+        """(unidades que entran, motivo) para el lado 'A' o 'D' (con sus tropas y su barco) en ese campo. La ficha de
+        batalla tiene 8 lugares para el atacante y 32 para el defensor. Una pila con voladores lleva 6. El héroe se
+        cuenta como no volador (su vuelo por clase u objeto no se mira acá)."""
         est = campo.get('estructura', 0)
-        if lado == 'D' and est == 3: return TOPE_CIUDAD, 'ciudad: 4 casillas de 8'
+        vol = sum(n for a, n in d.get('tropas', []) if a and n > 0 and self.vuela(a))
+        if lado == 'D' and est == 3:
+            if not vol: return TOPE_CIUDAD, 'ciudad: 4 casillas de 8'
+            cv = -(-vol // TOPE_VOLADORES)
+            if cv > 4: return TOPE_CIUDAD - 8, 'ciudad: 4 casillas de 6 con voladores'
+            return vol + (4 - cv) * MAX_PILA, f'ciudad: {cv} casilla(s) de {TOPE_VOLADORES} con voladores y {4 - cv} de 8'
         agua = campo.get('terreno') in self.terrenos and self.es_agua(campo['terreno']) and est != 1
         b = self.barcos.get((d.get('barco') or '').lower()) if agua else None
         bonos = {x.lower() for x in b.bonos_mov} if b else set()
-        pila = (TOPE_LANDING_CARRIER if 'carrier' in bonos else TOPE_LANDING) if 'landing' in bonos else MAX_PILA
+        pila, mot = MAX_PILA, 'pila común'
+        if 'landing' in bonos:
+            pila = TOPE_LANDING_CARRIER if 'carrier' in bonos else TOPE_LANDING
+            mot = 'barco «Landing»' + (' y «Carrier»' if 'carrier' in bonos else '')
+        if vol and TOPE_VOLADORES < pila: pila, mot = TOPE_VOLADORES, 'pila con voladores'
         if lado == 'D' and 'carrier' in bonos:
-            return TOPE_CONVOY * pila, f'convoy «Carrier»: {TOPE_CONVOY} pilas de {pila}'
-        if pila < MAX_PILA: return pila, 'barco «Landing»' + (' y «Carrier»' if 'carrier' in bonos else '')
-        return MAX_PILA, 'pila común'
+            return TOPE_CONVOY * pila, f'convoy «Carrier»: {TOPE_CONVOY} pilas de {pila}' + (' (con voladores)' if vol else '')
+        return pila, mot
 
     def _busca(self, tabla, archivo, que):
         x = tabla.get((archivo or '').lower())
@@ -114,14 +128,18 @@ class Simulador:
             m.cargar_arma(b, k, self._busca(self.armas, a, 'el arma').registro)
             ranuras.append(k); tipos += [k] * n
         m.orden(b, ranuras)
-        casillas = [(x, y)] + list(otras) if otras else [(x, y)]
-        por = MAX_PILA if otras else max(len(tipos), 1)
+        casillas = [(x, y)] + list(otras)
+        if otras:   # ciudad: los voladores en casillas de 6, el resto en casillas de 8
+            vol = [t for t in tipos if self.vuela(d['tropas'][t][0])]; resto = [t for t in tipos if t not in vol]
+            partes = [vol[i:i + TOPE_VOLADORES] for i in range(0, len(vol), TOPE_VOLADORES)]
+            partes += [resto[i:i + MAX_PILA] for i in range(0, len(resto), MAX_PILA)]
+        else: partes = [tipos]
         ids = []
-        for i, (cx, cy) in enumerate(casillas):
-            parte = tipos[i * por:(i + 1) * por]
-            if parte: ids += m.poner(b, parte, cx, cy, pila + 10 * i)
+        for i, parte in enumerate(partes):
+            if parte: ids += m.poner(b, parte, *casillas[i], pila + 10 * i)
         if d.get('heroe'):     # el héroe va en la primera casilla con lugar
-            i = min(len(tipos) // por, len(casillas) - 1) if otras else 0
+            i = next((i for i, p in enumerate(partes + [[]]) if not p or (len(p) < (TOPE_VOLADORES if
+                      self.vuela(d['tropas'][p[0]][0]) else MAX_PILA))), 0) if otras else 0
             x, y, pila = casillas[i][0], casillas[i][1], pila + 10 * i
         h = d.get('heroe')
         if h:

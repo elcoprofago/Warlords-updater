@@ -215,11 +215,14 @@ class Motor:
         return dict(corto=r[0x90:0x9a].split(bytes(1))[0].decode('latin-1'), fuerza=r[0x9a], mov=r[0x9b], vidas=r[0x9c])
 
     def cargar_arma(self, dueno, ranura, registro):
-        """Pone un .ARM (sus primeros 0xfc bytes, datos.Arma.registro) en la ranura 0..15 del bando; conserva +0xe0
-        (contador del juego, no viene del .ARM)."""
+        """Pone un .ARM (sus primeros 0xfc bytes, datos.Arma.registro) en la ranura 0..15 del bando. +0xe0 no viene del
+        .ARM: el juego lo arma con los bonos de movimiento, bit 0 "hills", 1 "forest", 2 "fly" (visto en las 6 partidas
+        de SAVES; 4 = volador, el criterio del tope de 6 del parche); +0xe1 se conserva."""
         a = TIPOS + (dueno * 16 + ranura) * TREC
-        e0 = bytes(self.mu.mem_read(a + 0xe0, 2))
-        self.mu.mem_write(a, bytes(registro[:TREC])); self.mu.mem_write(a + 0xe0, e0)
+        e1 = bytes(self.mu.mem_read(a + 0xe1, 1))
+        bonos = {bytes(registro[o:o + 9]).split(bytes(1))[0].lower() for o in (0xb2, 0xbb, 0xc4, 0xcd)}
+        e0 = sum(bit for nom, bit in ((b'hills', 1), (b'forest', 2), (b'fly', 4)) if nom in bonos)
+        self.mu.mem_write(a, bytes(registro[:TREC])); self.mu.mem_write(a + 0xe0, bytes([e0]) + e1)
 
     def plantilla(self):
         for d in self.unidades():
