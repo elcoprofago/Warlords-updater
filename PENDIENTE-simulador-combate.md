@@ -289,3 +289,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   y el porcentaje (lista en un tk.Text, porque el Treeview no colorea celdas; clic, flechas, doble clic y Enter).
   La ficha empieza el resultado por el ganador («RESULTADO: DEFENSOR con 93.50 %») y en gris lo del perdedor
   («(atacante gana el 6.50 % en 200 peleas)»). Capturas OK.
+- 13/11/2026 (1.0.34.0): pedido del usuario: la ficha ya no muestra la «batalla de muestra» (confundía: podía ganarla
+  el que pierde en el porcentaje). Queda composición, campo, resultado y avisos. Captura OK.

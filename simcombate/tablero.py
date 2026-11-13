@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.33.0'
+VERSION = '1.0.34.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -915,14 +915,6 @@ class App(tk.Tk):
         (g, pg), (p_, pp) = (('ATACANTE', f['pct']), ('defensor', 100 - f['pct'])) if f['pct'] >= 50 else (('DEFENSOR', 100 - f['pct']), ('atacante', f['pct']))
         w('RESULTADO: ', 't'); w(g, 't', g[0]); w(f' con {pg:.2f} %', 't')
         w(f"  ({p_} gana el {pp:.2f} % en {f['n']} peleas)\n\n", 'gris')
-        w(f"Batalla de muestra: gana el {'ATACANTE' if f['gana'] else 'DEFENSOR'} (tachadas, las unidades caídas)\n", 't')
-        muertos = {tuple(m) for m in f['muertes']}
-        for L, orden in (('A', f['orden_a']), ('D', f['orden_d'])):
-            w(f"  {'Atacante' if L == 'A' else 'Defensor'}: ", L)
-            for i, nm in enumerate(orden):
-                w(f'{i + 1}. {nm}', *(('x',) if (L, i) in muertos else ())); w('   ')
-            w('\n')
-        if f['muertes']: w('  Caídas en orden: ' + ', '.join(f'{l}{i + 1}' for l, i in f['muertes']) + '\n')
         for a in f['avisos']: w(f'\nAviso: {a}')
         tx['state'] = 'disabled'
         ttk.Button(v, text='Cerrar', command=v.destroy).pack(anchor='e', padx=10, pady=(0, 10))
