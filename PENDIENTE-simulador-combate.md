@@ -315,3 +315,4 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.38.0): títulos de los paneles (pedido del usuario): Arial bold 17, letra blanca con borde negro
   (verde en TERRENO) y sombra, en un recuadro blanco con borde fino oscuro (letra_titulo en tablero.py).
 - 13/11/2026 (1.0.39.0): ATACANTE y DEFENSOR sin el recuadro blanco detrás del título (pedido del usuario); TERRENO lo conserva.
+- 13/11/2026 (1.0.40.0): recuadro del título TERRENO en marrón claro (#d2b48c), pedido del usuario.

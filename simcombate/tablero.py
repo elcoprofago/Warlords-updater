@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.39.0'
+VERSION = '1.0.40.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -59,11 +59,11 @@ BANDOS = {'ATACANTE': dict(oscuro='#001a66', medio='#0050d0', claro='#38a8ff', l
 
 FUENTE_TITULO = ('Arial', 17, 'bold')
 
-def letra_titulo(cv, cx, cy, texto, borde, recuadro=True):
+def letra_titulo(cv, cx, cy, texto, borde, recuadro=True, fondo='#ffffff'):
     """Título de panel: recuadro blanco con borde fino oscuro y, adentro, el texto en Arial bold blanco con borde
     del color pedido (negro en los bandos, verde en el terreno) y sombra. Devuelve el ancho del recuadro."""
     f = tkfont.Font(font=FUENTE_TITULO); w, h = f.measure(texto) + 20, f.metrics('linespace') + 6
-    if recuadro: cv.create_rectangle(cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2, fill='#ffffff', outline='#202020', width=1)
+    if recuadro: cv.create_rectangle(cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2, fill=fondo, outline='#202020', width=1)
     cv.create_text(cx + 2, cy + 2, text=texto, font=FUENTE_TITULO, fill='#9a9a9a')               # sombra
     for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
         cv.create_text(cx + dx, cy + dy, text=texto, font=FUENTE_TITULO, fill=borde)            # borde de la letra
@@ -107,7 +107,7 @@ def titulo_verde(padre, texto, aclaracion=''):
     f = tk.Frame(padre, bg=fondo); fn = tkfont.Font(font=FUENTE_TITULO)
     w, h = fn.measure(texto) + 22, fn.metrics('linespace') + 8
     cv = tk.Canvas(f, width=w, height=h, bg=fondo, highlightthickness=0); cv.pack(side='left')
-    letra_titulo(cv, w // 2, h // 2, texto, '#0a8a28')
+    letra_titulo(cv, w // 2, h // 2, texto, '#0a8a28', fondo='#d2b48c')   # recuadro marrón claro
     if aclaracion: tk.Label(f, text=aclaracion, bg=fondo).pack(side='left', padx=(2, 0), pady=(6, 0))
     return f
 
