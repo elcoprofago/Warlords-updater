@@ -719,10 +719,10 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.14 (pilas 
   (con C:\Warlords\NETSAVES: NA_158_19, NAB_002_27, murallas01_4_pausa, BUILD01_19 y NA_156_5).
 - Sin verificar: que en juego real 0x40eab0 termine de mover las pilas antes de volver (si alguna orden quedara
   pendiente, el movimiento restante saldría más alto que el real).
-**Próximo paso:** con la tanda de la TAREAS 190, para cada color con 39 y deserciones (28), clasificar las pilas
+**Próximo paso:** con la tanda de la TAREAS 195, para cada color con 39 y deserciones (28), clasificar las pilas
 Form fuera: quietas, lentas/lejos o trabadas, y decidir según eso qué corregir. Los huérfanos en quiebra (1191 color 6)
 siguen para después.
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.14 (TAREAS 190)".
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.14 (TAREAS 195)".
 
 ### Resultado del 4.14: pilas Form fuera (tanda 164, vista-aliada 1.0.216.0, 13/11/2026)
 - 10 partidas completas. **Evento 39: 89 líneas** (nueva 55 con 189 ejércitos; original 34 con 81).

@@ -18,7 +18,7 @@ Sorteo están acá (tarea 18).
 - [ ] **193.** Simulador de combate 1.0.34.0 (13/11/2026). Abrir una ficha del Historial: termina en el RESULTADO (y los avisos, si hay); ya no aparece la «batalla de muestra». Anotar lo que no coincida.
 - [ ] **192.** Simulador de combate 1.0.33.0 (13/11/2026). En el Historial, la columna se llama «Ganador» y cada fila dice solo ATACANTE (azul) o DEFENSOR (rojo) con su porcentaje. Abrir una ficha: el resultado empieza por el ganador («RESULTADO: DEFENSOR con 92 %») y sigue en gris lo del que perdió. Anotar lo que no coincida.
 - [ ] **191.** Simulador de combate 1.0.32.0 (13/11/2026). Abrir el Historial: tiene barra de desplazamiento a la derecha, y en los combates que ganó el defensor (por ejemplo, el 14 y el 15) la columna Resultado dice «Gana el DEFENSOR» con su porcentaje. Anotar lo que no coincida.
-- [x] **190.** IA: pilas que vuelven a su ciudad y no llegan (vista-aliada 1.0.216.0, 13/11/2026) — 13/11/2026: corrida en la tanda 164 (10 partidas completas). Las pilas llegan (ninguna trabada); la deserción de la nueva vino de fabricar más ejércitos de los que paga. Resultado en ia\PENDIENTE-ia-economia.md.
+- [x] **195.** IA: pilas que vuelven a su ciudad y no llegan (vista-aliada 1.0.216.0, 13/11/2026) — 13/11/2026: corrida en la tanda 164 (10 partidas completas). Las pilas llegan (ninguna trabada); la deserción de la nueva vino de fabricar más ejércitos de los que paga. Resultado en ia\PENDIENTE-ia-economia.md.
 La versión nueva no cambia cómo juega la computadora: solo anota, al final de cada turno, dónde quedó cada pila que
 iba de vuelta a su ciudad (a qué distancia y cuánto movimiento le sobró), para saber si no llega por lenta o porque
 se queda quieta.
