@@ -35,6 +35,7 @@ def rehacer(origen, lineas, grados=0):
     letra = np.zeros(lum.shape, bool)
     letra[y0:y1, x0:x1] = (vecindad - lum)[y0:y1, x0:x1] > 12
     tinta = tuple(int(v) for v in np.median(a[letra][:, :3], axis=0)) if letra.any() else (40, 30, 20)
+    tinta = tuple(int(v * .6) for v in tinta)  # letra más oscura que la original
     mascara = np.asarray(Image.fromarray(letra.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(5))) > 0
     # Rellenar lo enmascarado difundiendo los colores de alrededor.
     rgb = a[..., :3].copy()
@@ -57,15 +58,15 @@ def rehacer(origen, lineas, grados=0):
     img = Image.fromarray(a.astype(np.uint8), 'RGBA')
 
     d = ImageDraw.Draw(img)
-    tam = 27 if len(lineas) > 1 else 25
+    tam = 27 if len(lineas) > 1 else 29
     f = ImageFont.truetype(FUENTE, tam)
     alto = tam * 1.15
     y = h / 2 - alto * len(lineas) / 2
     for ln in lineas:
         ancho = d.textlength(ln, font=f)
-        while ancho > w * .58:
+        while ancho > w * (.58 if len(lineas) > 1 else .64):
             tam -= 1; f = ImageFont.truetype(FUENTE, tam); ancho = d.textlength(ln, font=f)
-        d.text((w / 2 - ancho / 2, y), ln, font=f, fill=tinta + (235,))
+        d.text((w / 2 - ancho / 2, y), ln, font=f, fill=tinta + (255,))
         y += alto
     return img
 
