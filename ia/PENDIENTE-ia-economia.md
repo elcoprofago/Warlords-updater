@@ -648,3 +648,31 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado de la m
 en la misma pila (pila trabada) y si los colores con 38 desertan menos que 1156/1170 color 3. Comparar de nuevo
 puesto, PV y ciudades sumando las tandas 158-160 y la nueva.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, memoria del repliegue (TAREAS 186)".
+
+### Resultado de la memoria del repliegue, segunda vuelta (tandas 161 y 162, 1.0.214.0, 13/11/2026)
+- 20 partidas (162: 8 completas, las 2 primeras colgadas en el turno 0). **Evento 38 = 0 otra vez**, pero ahora el
+  caso **sí apareció**: 1200 color 3 (nueva), quiebra en los turnos 24-30 (ingreso 106, mantenimiento 117-185, oro
+  171 → 0) y las mismas 10-15 pilas con meta 7 y meta 1 alternadas (25: 7, 26: 1, 27: 7, 28: 1, 29: 7, 30: 1);
+  19 deserciones.
+- **Causa: error del 4.13.** me_pre (paso 4.6, en 0x40edf1, antes de ai_ord) marca código 12 en ME_TAB a todos los
+  ejércitos del grupo; recién después 0x40c990 llega a me_set, que buscaba la Form previa del líder en ME_TAB y
+  encontraba siempre el 12 de esta ronda. En juego real el 38 no podía salir. prueba_repliegue no lo vio porque
+  llamaba a me_set suelta, sin me_pre.
+- **Corrección (vista-aliada 1.0.215.0):** tabla aparte RP_TAB (4096 palabras, 0x6d2444), que solo escriben me_set
+  (cuando la meta final es Form, código 2 | ronda) y or_run (RP_HU | ronda); el 4.13 la lee en vez de ME_TAB. ME_TAB
+  y el evento 34 quedan igual. Pruebas: `prueba_repliegue.py` 472 TODO OK (cada corrida arranca con ME_TAB del líder
+  como lo deja me_pre, la memoria en RP_TAB; control nuevo: la Form solo en ME_TAB no cuenta; controla RP_TAB tras
+  cada corrida; uso nuevo `<AV> <orig> <ia_on> <ia_mode> <me_tab> <rp_tab> <me_set> <SAV>...`, en 1.0.215.0
+  6d035b 6d0353 6d0440 6d2444 6d4450); `prueba_huerfanos.py` 3.745 TODO OK (RP_TAB igual a ME_TAB tras or_run);
+  `prueba_mantenimiento.py` 280 TODO OK (me_pre 6e2e70, ai_ord 6e2c80). Las cinco partidas de siempre.
+- Otros datos de estas tandas: 1191 color 6 (nueva, 17 deserciones): quiebra en los turnos 27-30; el 37 actuó
+  (8 pilas de meta 3 a Form, que siguen en Form los turnos 28-30) pero desertan igual: lo que pesa ahí son los
+  huérfanos (meta 13: 8-22 ejércitos) y 9 ejércitos con meta 5 (héroe), que el 4.12 no toca. Original: 1 y 26
+  deserciones.
+- Resultado: 161 nueva puesto 3,15, PV 7,3, ciudades 5,2; original 2,82 / 5,38 / 4,15. 162 nueva 3,0 / 6,53 / 4,69;
+  original 3,05 / 7,03 / 5,22. Sumando 158-162 (192 bandos por IA): nueva puesto 2,94, PV 6,99, ciudades 4,98; original 3,04 / 5,93 / 4,58.
+**Próximo paso:** con la tanda de la TAREAS 187, buscar eventos 38 (cuántos, si se repiten con la misma distancia en
+la misma pila) y si los colores con oscilación 7/1 en quiebra dejan de desertar. Si siguen desertando con Form
+sostenida, ver si llegan a la ciudad (ejércitos fuera del 33 bajando) o si la distancia del 38 no baja (trabadas).
+Los huérfanos en quiebra (1191 color 6) quedan para después.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, memoria del repliegue corregida (TAREAS 187)".

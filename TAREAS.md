@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 187).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 188).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,7 +14,14 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
-- [ ] **186.** IA: repetir la tanda de la memoria del repliegue (vista-aliada 1.0.214.0, 12/11/2026)
+- [ ] **187.** IA: la memoria del repliegue, corregida (vista-aliada 1.0.215.0, 13/11/2026)
+En las tandas de la 186 el caso apareció (una computadora sin oro iba y venía entre atacar y volver), pero el cambio
+de la 1.0.214.0 nunca actuaba por un error: la marca de «volviendo a la ciudad» se borraba antes de leerla. Corregido.
+1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.215.0** o posterior.
+2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.
+3. Mientras corre, no instales otra versión del parche. Avisame cuando termine.
+
+- [x] **186.** IA: repetir la tanda de la memoria del repliegue (vista-aliada 1.0.214.0, 12/11/2026) — 13/11/2026: corrida dos veces (tandas 161 y 162). El caso apareció en 1200 color 3, pero el cambio no actuó nunca por un error del parche; corregido en 1.0.215.0 (tarea 187). Resultado en ia\PENDIENTE-ia-economia.md.
 En la tanda de la 185 no se dio el caso que el cambio corrige, así que hace falta otra igual.
 1. Actualizador, opción **9**: vista-aliada tiene que estar en **1.0.214.0** o posterior.
 2. Monitor de IA → **Ninguna**, marcá **Scarpart** y **Kor**, Partidas: **10**, **Nueva tanda**.

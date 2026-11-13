@@ -10,6 +10,7 @@
 #   3. controles sin cambio: sin ia_on, IA_MODE[p] = 0, jugador >= 8 y bando humano (0x536c12 = -1).
 #   4. con OR_MAX - 1 grupos ocupados a mano: arma uno solo (llega a OR_MAX).
 #   5. (paso 4.13) cada ejército agrupado queda en ME_TAB con RP_HU (15) y la ronda; el resto de ME_TAB, en 0.
+#      Desde 1.0.215.0, lo mismo en RP_TAB (ME_TAB + 0x2004), la tabla que lee me_set.
 # Uso: python prueba_huerfanos.py <DarklordAV.exe> <ia_on hex> <ia_mode hex> <or_run hex> <me_tab hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
@@ -122,6 +123,7 @@ def corrida(m, p, on=1, modo=1, jug=None, humano=False):
     gm = bytes(mu.mem_read(G0, 0x5643c4 - G0))
     flags = {i: struct.unpack('<H', mu.mem_read(0x54fe50 + i * 0x1c + 0x1c, 2))[0] for i in range(h(m, 0x54fe50))}
     corrida.tab = struct.unpack(f'<{ME_N}H', mu.mem_read(ME_TAB, 2 * ME_N))
+    corrida.rp = struct.unpack(f'<{ME_N}H', mu.mem_read(ME_TAB + 0x2004, 2 * ME_N))
     return gm, flags, lines, intactos
 
 
@@ -159,12 +161,13 @@ for sav in SAVS:
         tab = corrida.tab
         ok(all(tab[i] == (RP_HU | RONDA << 8 if i in marcados else 0) for i in range(ME_N)),
            f'p{p}: ME_TAB {[(i, hex(tab[i])) for i in range(ME_N) if tab[i]][:10]} != {sorted(marcados)[:10]}')
+        ok(corrida.rp == tab, f'p{p}: RP_TAB distinta de ME_TAB')
         if hechos:
             print(f'  color {p}: {len(hechos)} grupos, {sum(len(l) for _, l in hechos)} ejércitos, quedan {quedan}')
         for nombre, kw in (('sin ia_on', dict(on=0)), ('IA_MODE 0', dict(modo=0)), ('jugador 8', dict(jug=8)),
                            ('humano', dict(humano=True))):
             gm, _, lines, intactos = corrida(m, p, **kw)
-            ok(not any(corrida.tab), f'p{p}: control {nombre} marcó ME_TAB')
+            ok(not any(corrida.tab) and not any(corrida.rp), f'p{p}: control {nombre} marcó ME_TAB o RP_TAB')
             ok(gm == base and intactos and (lines == [] or nombre != 'sin ia_on') and
                all(l[3] != 35 for l in lines), f'p{p}: control {nombre} cambió algo {gm == base} {intactos} {lines}')
     # OR_MAX - 1 grupos ocupados a mano en el color con más huérfanos: solo uno nuevo

@@ -7287,6 +7287,11 @@ RP_TURNS = 8
 RP_LK = 38   # evento del repliegue sostenido (paso 4.13)
 RP_HU = 15   # código en ME_TAB de un ejército que or_run acaba de agrupar (huérfano)
 RP_K = place_data('rp_k', bytes(4))
+# RP_TAB (1.0.215.0): la memoria del 4.13 va en una tabla propia. En ME_TAB no sobrevive: me_pre (paso 4.6) marca
+# código 12 a todos los ejércitos del grupo antes de 0x40c990, así que al llegar a me_set el líder nunca tenía la
+# Form de la ronda anterior y el evento 38 no salió en ninguna partida (tandas 160-162; 1200 color 3 osciló 7/1 en
+# quiebra los turnos 24-30). RP_TAB solo la escriben me_set (cuando la meta final es Form, código 2) y or_run (RP_HU).
+RP_TAB = place_data('rp_tab', bytes(ME_N * 2))
 # Paso 4.13: memoria del repliegue. En las tandas 158-159 las pilas en quiebra (huérfanos ya agrupados por or_run y
 # las que iban a Form) alternaban turno a turno meta 7 (ciudad enemiga) y meta 1 sin pelear nunca (1170 color 3:
 # ninguna batalla en los turnos 17-30), y no llegaban a ninguna ciudad. Con la misma condición de quiebra, una meta 7
@@ -7333,7 +7338,7 @@ rp_l:
     jle rp_no
     cmp edx, {ME_N}
     jae rp_no
-    movzx edx, word ptr [edx*2 + {ME_TAB:#x}]
+    movzx edx, word ptr [edx*2 + {RP_TAB:#x}]
     cmp dl, 2
     je rp_lr
     cmp dl, {RP_HU}
@@ -7430,6 +7435,9 @@ me_lp:
     cmp eax, {ME_N}
     jae me_nx
     mov word ptr [eax*2 + {ME_TAB:#x}], bx
+    cmp bl, 2
+    jne me_nx
+    mov word ptr [eax*2 + {RP_TAB:#x}], bx
 me_nx:
     inc ecx
     cmp ecx, 8
@@ -7797,6 +7805,7 @@ or_mt:
     mov dh, byte ptr [0x503328]
     mov dl, {RP_HU}
     mov word ptr [eax*2 + {ME_TAB:#x}], dx
+    mov word ptr [eax*2 + {RP_TAB:#x}], dx
 or_mn:
     inc ebp
     cmp ebp, esi

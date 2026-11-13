@@ -11,14 +11,17 @@
 #     (código 2) de esta ronda o la anterior, o RP_HU (15, huérfano recién agrupado); evento 38 = (meta original,
 #     ciudad, distancia). Controles: código 2 de hace dos rondas, otros códigos (4, 8, 13), sin quiebra, líder héroe,
 #     metas 0, 5 y 9 con código 2.
-# Uso: python prueba_repliegue.py <DarklordAV.exe> <Darklord.exe> <ia_on> <ia_mode> <me_tab> <me_set> <SAV>...
+#   - 1.0.215.0: la memoria se lee de RP_TAB, no de ME_TAB (me_pre pisa ME_TAB con código 12 antes de me_set). En cada
+#     corrida ME_TAB del líder arranca como lo deja me_pre (12, esta ronda) y la memoria va en RP_TAB; control: la Form
+#     previa solo en ME_TAB ya no cuenta. RP_TAB queda en 2 | ronda cuando la meta final es Form, y si no, intacta.
+# Uso: python prueba_repliegue.py <DarklordAV.exe> <Darklord.exe> <ia_on> <ia_mode> <me_tab> <rp_tab> <me_set> <SAV>...
 import math, pefile, struct, sys
 from unicorn import *
 from unicorn.x86_const import *
 
 AV, ORIG = sys.argv[1], sys.argv[2]
-IA_ON, IA_MODE, ME_TAB, ME_SET = (int(a, 16) for a in sys.argv[3:7])
-SAVS = sys.argv[7:]
+IA_ON, IA_MODE, ME_TAB, RP_TAB, ME_SET = (int(a, 16) for a in sys.argv[3:8])
+SAVS = sys.argv[8:]
 RP_TURNS = 8
 imgs = {k: pefile.PE(f).get_memory_mapped_image() for k, f in (('av', AV), ('orig', ORIG))}
 IAT = {'fopen': 0x5a9bdc, 'fclose': 0x5a9be4, 'fprintf': 0x5a9bf4}
@@ -84,7 +87,7 @@ def modelo_ciudad(m, p, x, y, con_dist=False):
     return (best, bd) if con_dist else best
 
 
-def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=False, prev=0):
+def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=False, prev=0, solo_me=False):
     mu = maquina(imgs['av'], m)
     mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([mode] * 8))
     mu.mem_write(0x4fb0ec, struct.pack('<h', p if jug is None else jug))
@@ -92,7 +95,8 @@ def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=Fa
     mu.mem_write(0x5643d8 + 2 * p, struct.pack('<h', mant)); mu.mem_write(0x5643f0 + 2 * p, struct.pack('<h', ing))
     mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<h', oro))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
-    mu.mem_write(ME_TAB + 2 * lider, struct.pack('<H', prev))
+    mu.mem_write(ME_TAB + 2 * lider, struct.pack('<H', prev if solo_me else 12 | 12 << 8))   # como lo deja me_pre
+    mu.mem_write(RP_TAB + 2 * lider, struct.pack('<H', 0 if solo_me else prev))
     rec = 0x10040000; mu.mem_write(rec + 0xc, struct.pack('<8h', lider, 0, 0, 0, 0, 0, 0, 0))
     mu.mem_write(0x5020d4, struct.pack('<I', rec))
     names = list(IAT)
@@ -118,17 +122,31 @@ def corrida(m, p, lider, meta, mant, ing, oro, on=1, mode=1, jug=None, humano=Fa
     mu.emu_start(ME_SET, END, count=200000)
     nm, dest = struct.unpack('<hh', mu.mem_read(sp + 0x1e, 4) + b'')[0], struct.unpack('<h', mu.mem_read(sp + 0x22, 2))[0]
     tab = struct.unpack('<H', mu.mem_read(ME_TAB + 2 * lider, 2))[0]
+    rpt = struct.unpack('<H', mu.mem_read(RP_TAB + 2 * lider, 2))[0]
+    global ULT_RP; ULT_RP = (rpt, 0 if solo_me else prev)
     orig_ok = (mu.reg_read(UC_X86_REG_EAX) == nm and struct.unpack('<H', mu.mem_read(sp + 0x14, 2))[0] == 0
                and mu.reg_read(UC_X86_REG_EBX) == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp + 4)
     ev = [l[3:] for l in lines if len(l) > 3 and l[3] in (37, 38)]
+    LAST_NM[0] = nm
     return nm, dest, tab, orig_ok, ev, lines
 
 
-ok = True; nctl = 0
+LAST_NM = [0]
+ok = True; nctl = 0; ULT_RP = (0, 0)
+
+
+def rp_ok(nm):
+    rpt, prev = ULT_RP
+    return rpt == ((2 | 12 << 8) if nm == 1 else prev)
+
+
+rp_ok_flag = [True]
 
 
 def check(c, msg):
+    rp_ok_flag[0] = rp_ok(LAST_NM[0])
     global ok, nctl; nctl += 1
+    if not rp_ok_flag[0]: c = False; msg += f' (RP_TAB {ULT_RP[0]:#x})'
     if not c: print('    FALLA', msg)
     ok &= c
 
@@ -187,10 +205,12 @@ for sav in SAVS:
                 a = dict(oro=lim - 1); a.update(kw)
                 nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, a.pop('oro'), prev=prev, **a)
                 check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} {nombre}: no cambia')
+            nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, lim - 1, prev=2 | 11 << 8, solo_me=True)
+            check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} Form solo en ME_TAB: no cambia')
         for meta in (0, 5, 9):
             nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, lim - 1, prev=2 | 12 << 8)
             check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} con Form previa: no cambia')
-        nm, dest, tab, oo, ev, lines = corrida(m, p, lider, 3, mant, ing, 0, on=0)
+        nm, dest, tab, oo, ev, lines = corrida(m, p, lider, 3, mant, ing, 0, on=0, solo_me=True)
         check(nm == 3 and dest == 777 and not lines and tab == 0 and oo, f'color {p} sin ia_on: nada')
         print(f'  color {p}: líder {lider} en ({x},{y}), {len(propias)} ciudades propias, va a la {want}')
 check(probados > 0, f'algún color probado ({probados})')
