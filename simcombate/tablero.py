@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial                         # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.31.0'
+VERSION = '1.0.32.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -850,12 +850,15 @@ class App(tk.Tk):
         v = self.v_historial = tk.Toplevel(self); v.title(f'Historial de combates — VERSIÓN {VERSION}'); v.transient(self)
         fr = ttk.Frame(v, padding=10); fr.pack(fill='both', expand=True)
         ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha)').pack(anchor='w')
-        t = self.t_historial = ttk.Treeview(fr, columns=('n', 'f', 'g'), show='headings', height=min(20, max(5, len(h))))
+        fl = ttk.Frame(fr); fl.pack(fill='both', expand=True, pady=6)
+        t = self.t_historial = ttk.Treeview(fl, columns=('n', 'f', 'g'), show='headings', height=10)
         for c, tx, w in (('n', 'N.º', 70), ('f', 'Fecha y hora', 150), ('g', 'Resultado', 260)):
             t.heading(c, text=tx); t.column(c, width=w, anchor='w')
         for i, f in enumerate(h):
-            t.insert('', 'end', iid=str(i), values=(f"{f['numero']:06d}", f['fecha'], f"Atacante gana {f['pct']:.2f} % de {f['n']}"))
-        t.pack(fill='both', expand=True, pady=6)
+            gana, pct = ('ATACANTE', f['pct']) if f['pct'] >= 50 else ('DEFENSOR', 100 - f['pct'])
+            t.insert('', 'end', iid=str(i), values=(f"{f['numero']:06d}", f['fecha'], f"Gana el {gana}: {pct:.2f} % de {f['n']}"))
+        sb = ttk.Scrollbar(fl, orient='vertical', command=t.yview); t.configure(yscrollcommand=sb.set)
+        t.pack(side='left', fill='both', expand=True); sb.pack(side='right', fill='y')
         if not h: ttk.Label(fr, text='Todavía no hay combates guardados.').pack(anchor='w')
         def abrir(e=None):
             for i in t.selection(): self.ver_ficha(h[int(i)])

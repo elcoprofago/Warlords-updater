@@ -282,3 +282,6 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   contador (6 cifras), fecha y hora y resultado; doble clic o Enter abre la ficha en texto: campo, composición de los
   dos lados (tropas, barco, héroe), porcentaje y batalla de muestra con las caídas tachadas. Se guarda en
   Simulador-Combate-historial.json junto al .ini (historial.py, MAXIMO = 20). Probado con 3 combates; capturas OK.
+- 13/11/2026 (1.0.32.0): reporte del usuario: la lista del historial decía «Atacante gana X %» aunque ganara el
+  defensor (X bajo). Ahora dice quién gana («Gana el DEFENSOR: 93.50 % de 200»). Además, barra de desplazamiento
+  vertical (10 filas a la vista). Probado con 12 combates ganados por el defensor; captura OK.
