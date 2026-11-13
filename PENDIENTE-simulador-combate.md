@@ -252,3 +252,13 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   blanco; «Carpeta del juego…» junto a la casilla de ordenar, ventana más angosta (1186 px).
 - 5/11/2026 (tablero 1.0.7.0): barra de Velocidad con la bola dorada del Visor (dibujada, no es imagen del juego); encabezado sobre el mármol; engranaje de configuración del Monitor de IA con créditos y actualización en línea desde el repo público elcoprofago/Simulador-Combate (build.py y publicar.py, como el Monitor). El relámpago suena con FX\Lightning.wav (en el parche: RES de sonido 57, en lugar del zzzt en 0x446bff/0x446c33/0x446d03/0x446d37).
 - 5/11/2026 (1.0.10.0): el .exe se cerraba en la primera pelea (0xC0000409): el cargador de PyInstaller trae Control Flow Guard y unicorn ejecuta código generado en memoria. build.py apaga el bit GUARD_CF del .exe (python.exe no lo trae).
+- 13/11/2026 (1.0.26.0): pedido del usuario: los barcos «no parecen tener efecto» y el tope de 8 no debería ser fijo.
+  Barcos: el motor ya corría el combate del juego, que da a la unidad embarcada min(fuerza, barco) y min(vidas, barco)
+  (prueba_barcos.py); casi todos los barcos tienen F7-9 y V3-4, así que con tropas comunes no cambian nada, y en tierra
+  no cuentan. Ahora el simulador lo avisa en el resultado. Medido: 3 gnollcav en warship contra 3 en lancha (F1 V2), 97,8 %.
+  Topes (`Simulador.tope`): la ficha de batalla tiene 8 lugares para el atacante y 32 para el defensor (+0x12e +
+  k*0x24 hasta 0x5cc). Ciudad: el defensor, hasta 32, repartido en las 4 casillas de 8 (con 25+ en una sola casilla
+  0x464ac0 se cae). Barco «Landing»: 5 (6 con «Carrier»), LANDCAP del parche. Barco «Carrier» del defensor: convoy de
+  3 pilas (24, crlink). `python simcombate\prueba_topes.py` → TODO OK (incluye: 8/9/17/32 defensores en la ciudad
+  llegan enteros a la ficha; 94,75 → 31,5 → 0 % con 4, 8 y 16 defensores). No hay en el parche un «Carrier» para
+  voladores: solo para el barco (ranura 15), así que no se aplica a pilas en tierra.

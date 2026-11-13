@@ -16,7 +16,10 @@ import os, struct
 import datos
 from motor import Motor, CIUDAD0, OBRAS
 
-MAX_PILA = 8
+MAX_PILA = 8          # tope común de una pila; los otros topes, en Simulador.tope
+TOPE_CIUDAD = 32      # la ciudad defiende con sus 4 casillas de 8 (la ficha del defensor tiene 32 lugares; medido)
+TOPE_LANDING, TOPE_LANDING_CARRIER = 5, 6     # pila en agua con barco "Landing" (LANDCAP del parche vista-aliada)
+TOPE_CONVOY = 3       # el convoy ("Carrier"): hasta 3 pilas embarcadas vecinas defienden juntas (crlink del parche)
 AX, AY, DX, DY = 50, 40, 51, 40      # casillas de campo abierto (Tanda_Kor: tierra, sin nada)
 PILA_A, PILA_D = 200, 201
 
@@ -41,6 +44,20 @@ class Simulador:
 
     def es_agua(self, terreno):
         return self.m.w(0x535ef8 + self.terrenos[terreno] * 0x58 + 0x14) == 1
+
+    def tope(self, lado, d, campo):
+        """(unidades que entran, motivo) para el lado 'A' o 'D' con su barco d['barco'] en ese campo. La ficha de
+        batalla tiene 8 lugares para el atacante y 32 para el defensor."""
+        est = campo.get('estructura', 0)
+        if lado == 'D' and est == 3: return TOPE_CIUDAD, 'ciudad: 4 casillas de 8'
+        agua = campo.get('terreno') in self.terrenos and self.es_agua(campo['terreno']) and est != 1
+        b = self.barcos.get((d.get('barco') or '').lower()) if agua else None
+        bonos = {x.lower() for x in b.bonos_mov} if b else set()
+        pila = (TOPE_LANDING_CARRIER if 'carrier' in bonos else TOPE_LANDING) if 'landing' in bonos else MAX_PILA
+        if lado == 'D' and 'carrier' in bonos:
+            return TOPE_CONVOY * pila, f'convoy «Carrier»: {TOPE_CONVOY} pilas de {pila}'
+        if pila < MAX_PILA: return pila, 'barco «Landing»' + (' y «Carrier»' if 'carrier' in bonos else '')
+        return MAX_PILA, 'pila común'
 
     def _busca(self, tabla, archivo, que):
         x = tabla.get((archivo or '').lower())
@@ -78,24 +95,34 @@ class Simulador:
             m.poner_obra(obra, dx, dy, 1)
         ids = {}; self.clase_de = {}
         for b, lado, (x, y), pila in ((0, 'A', (ax, ay), PILA_A), (1, 'D', (dx, dy), PILA_D)):
-            ids[lado] = self._lado(b, lado, esc[lado], x, y, pila, agua and est != 1, avisos)
+            ids[lado] = self._lado(b, lado, esc[lado], x, y, pila, agua and est != 1, avisos, self.tope(lado, esc[lado], c),
+                                   [(dx + 1, dy), (dx, dy + 1), (dx + 1, dy + 1)] if lado == 'D' and est == 3 else [])
         if not ids['A']: raise Error('el atacante no tiene unidades')
         if not ids['D']: raise Error('el defensor no tiene unidades')
         self.ids = ids
         return ids['A'], (dx, dy), avisos
 
-    def _lado(self, b, lado, d, x, y, pila, embarcadas, avisos):
+    def _lado(self, b, lado, d, x, y, pila, embarcadas, avisos, tope=(MAX_PILA, 'pila común'), otras=()):
+        """otras: más casillas del lado (las de la ciudad), que se llenan de a MAX_PILA después de (x, y)."""
         m = self.m; nombre = 'atacante' if lado == 'A' else 'defensor'
         tropas = [(a, n) for a, n in d['tropas'] if a and n > 0]
         total = sum(n for _, n in tropas) + (1 if d.get('heroe') else 0)
-        if total > MAX_PILA: raise Error(f'el {nombre} tiene {total} unidades; una pila lleva {MAX_PILA} como máximo')
+        if total > tope[0]: raise Error(f'el {nombre} tiene {total} unidades; aquí entran {tope[0]} como máximo ({tope[1]})')
         ranuras, tipos = [], []
         for k, (a, n) in enumerate(d['tropas']):
             if not a or n <= 0: continue
             m.cargar_arma(b, k, self._busca(self.armas, a, 'el arma').registro)
             ranuras.append(k); tipos += [k] * n
         m.orden(b, ranuras)
-        ids = m.poner(b, tipos, x, y, pila)
+        casillas = [(x, y)] + list(otras) if otras else [(x, y)]
+        por = MAX_PILA if otras else max(len(tipos), 1)
+        ids = []
+        for i, (cx, cy) in enumerate(casillas):
+            parte = tipos[i * por:(i + 1) * por]
+            if parte: ids += m.poner(b, parte, cx, cy, pila + 10 * i)
+        if d.get('heroe'):     # el héroe va en la primera casilla con lugar
+            i = min(len(tipos) // por, len(casillas) - 1) if otras else 0
+            x, y, pila = casillas[i][0], casillas[i][1], pila + 10 * i
         h = d.get('heroe')
         if h:
             cl = self._busca(self.clases, h['clase'], 'la clase'); self.clase_de[lado] = cl
@@ -110,8 +137,15 @@ class Simulador:
             ids.append(u)
         if embarcadas and ids:
             if not d.get('barco'): raise Error(f'el {nombre} está en el agua sin barco')
-            m.cargar_arma(b, 15, self._busca(self.barcos, d['barco'], 'el barco').registro)
+            bar = self._busca(self.barcos, d['barco'], 'el barco')
+            m.cargar_arma(b, 15, bar.registro)
             m.embarcar(ids)
+            # el juego: embarcada, cada unidad pelea con min(su fuerza, la del barco) y min(sus vidas, las del barco)
+            if not any(self.armas[a.lower()].fuerza > bar.fuerza or self.armas[a.lower()].vidas > bar.vidas for a, _ in tropas):
+                avisos.append(f'{bar.archivo} ({nombre}): F{bar.fuerza} V{bar.vidas}, ninguna tropa lo supera, así que no '
+                              'cambia nada (embarcada, cada unidad pelea con el menor entre su fuerza y vidas y las del barco)')
+        elif d.get('barco') and ids:
+            avisos.append(f'{d["barco"]} ({nombre}): el barco solo pelea en agua (sin puente); en esta casilla no cuenta')
         return ids
 
     def simular(self, esc, n=1000, semilla=12345):

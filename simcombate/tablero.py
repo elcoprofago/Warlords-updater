@@ -8,12 +8,12 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, font as tkfont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from escenario import Simulador, Error, MAX_PILA   # noqa: E402
+from escenario import Simulador, Error, MAX_PILA, TOPE_CIUDAD   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.25.0'
+VERSION = '1.0.26.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -230,7 +230,7 @@ class Panel(ttk.Frame):
             n.bind('<B1-Motion>', self.mover)
             n.bind('<ButtonRelease-1>', self.soltar)
             cb = ttk.Combobox(self, width=34, state='readonly'); cb.grid(row=k + 1, column=1, pady=1)
-            sp = ttk.Spinbox(self, from_=0, to=MAX_PILA, width=4, command=self.recalcular); sp.set(0)
+            sp = ttk.Spinbox(self, from_=0, to=TOPE_CIUDAD, width=4, command=self.recalcular); sp.set(0)
             sp.grid(row=k + 1, column=2, padx=4)
             cb.bind('<<ComboboxSelected>>', lambda e, s=sp: (s.get() == '0' and s.set(1), self.recalcular()))
             sp.bind('<KeyRelease>', lambda e: self.recalcular())
@@ -238,6 +238,7 @@ class Panel(ttk.Frame):
         f = ttk.Frame(self); f.grid(row=9, column=0, columnspan=3, sticky='we', pady=(6, 0))
         ttk.Label(f, text='Barco', style=est).grid(row=0, column=0, sticky='w')
         self.barco = ttk.Combobox(f, width=28, state='readonly'); self.barco.grid(row=0, column=1, sticky='w')
+        self.barco.bind('<<ComboboxSelected>>', lambda e: self.recalcular())
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w')
         boton(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
@@ -317,7 +318,12 @@ class Panel(ttk.Frame):
             if a and c > 0: tot += sim.armas[a].factor() * c; n += c; costo += sim.armas[a].costo * c
         h = d['heroe']
         det = (f'{n} unidad' if n == 1 else f'{n} unidades') + (' + héroe' if h else '') + (f'  ·  Factor medio {tot / n:.1f}' if n else '')
-        if n + (1 if h else 0) > MAX_PILA: det += f'  ·  ¡MÁS DE {MAX_PILA}!'
+        try:
+            lado = 'A' if self is self.app.pa else 'D'
+            tope, motivo = sim.tope(lado, d, self.app.escenario()['campo'])
+        except Exception: tope, motivo = MAX_PILA, 'pila común'
+        if n + (1 if h else 0) > tope: det += f'  ·  ¡MÁS DE {tope}! ({motivo})'
+        elif tope != MAX_PILA: det += f'  ·  entran {tope} ({motivo})'
         self.coef.poner((f'FACTOR = {tot:.0f}     COSTO = $ {costo:,}'.replace(',', '.')) if n else 'FACTOR = —     COSTO = $ 0', det)
         if self.heroe:
             cl = sim.clases[self.heroe['clase']]; el, _ = elecciones(cl)
@@ -586,6 +592,7 @@ class App(tk.Tk):
         self.ver_defensas()
 
     def ver_defensas(self, texto=None):
+        self.after_idle(self.recalcular_lados)
         """Llena el desplegable de defensas con las del sitio elegido (vacío y apagado si no tiene)."""
         ops = [t for t, _, _ in DEFENSAS[self.sitio.get()]]
         self.defensas['values'] = ops
@@ -686,7 +693,12 @@ class App(tk.Tk):
         self.sitio.set(sitio)
         self.ver_defensas(next((t for t, n, o in DEFENSAS[sitio] if o == obra and (sitio != 'ciudad' or n == niv)), None))
 
+    def recalcular_lados(self):
+        for p in (getattr(self, 'pa', None), getattr(self, 'pd', None)):
+            if p is not None and hasattr(p, 'nombres'): p.recalcular()
+
     def ver_agua(self):
+        self.after_idle(self.recalcular_lados)
         if self.sim and self.terreno.get():
             self.lagua['text'] = 'agua: hace falta barco (o puente)' if self.sim.es_agua(self.terreno_real()[0]) else 'tierra'
 
