@@ -267,3 +267,7 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   Corregido de paso: +0xe0 del tipo no es un contador, es lo que el juego arma con los bonos de movimiento (bit 0
   hills, 1 forest, 2 fly; visto en las 6 partidas de SAVES). `cargar_arma` conservaba el de la ranura, así que un
   volador cargado no llevaba el bit 4; ahora lo calcula. prueba_topes.py → TODO OK; escenario, barcos y combate, OK.
+- 13/11/2026 (1.0.28.0): pedido del usuario: luz roja «tope excedido» en cada panel, junto al botón Héroe (bajado 8 px
+  del desplegable de barcos). Es la luz del Monitor de IA (circle_09.png llevada a rojo con marco.png, 26 px; los
+  assets ya van en el .exe), con fundido lento de 2 s por ciclo mientras el lado pase su tope (`LuzTope`, se enciende
+  desde Panel.recalcular). Probado en la ventana (captura): 9 en campo la enciende, 8 la apaga.

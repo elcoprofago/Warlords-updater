@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.27.0'
+VERSION = '1.0.28.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -213,6 +213,48 @@ class RecuadroFactor(tk.Frame):
         for dx, col in ((1, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
+class LuzTope(ttk.Frame):
+    """Luz roja «tope excedido»: la del Monitor de IA (circle_09.png del Monitor llevada a rojo, con marco.png, 26 px),
+    que titila con un fundido lento (2 s por ciclo) mientras la pila pase su tope."""
+    TAM, PASOS, CICLO_MS = 26, 16, 2000
+
+    def __init__(self, padre):
+        super().__init__(padre)
+        bg = ttk.Style(self).lookup('TFrame', 'background') or '#f0f0f0'
+        try:
+            marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
+            naranja = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
+            h, sat, v = naranja.convert('HSV').split()
+            def tono(f):
+                im = Image.merge('HSV', (h.point(lambda x: 0), sat, v.point(f))).convert('RGBA')
+                im.putalpha(naranja.getchannel('A')); im.alpha_composite(marco.resize(im.size))
+                return im.resize((self.TAM, self.TAM), Image.LANCZOS)
+            roja, apagada = tono(lambda x: x), tono(lambda x: x * 0.3)
+            c = [Image.blend(apagada, roja, i / (self.PASOS - 1)) for i in range(self.PASOS)]
+            self.cuadros = [ImageTk.PhotoImage(i) for i in c + c[-2:0:-1]]
+        except OSError: self.cuadros = []
+        self.l_img = tk.Label(self, bg=bg, bd=0)
+        if self.cuadros: self.l_img.configure(image=self.cuadros[0])
+        self.l_img.pack(side='left')
+        self.l_txt = tk.Label(self, text='tope excedido', bg=bg, fg='#b00000', font=('Segoe UI', 8, 'bold'))
+        self.encendida, self.cuadro = False, 0
+        self.grid_remove_txt()
+
+    def grid_remove_txt(self): self.l_txt.pack_forget()
+
+    def poner(self, si):
+        if si and not self.encendida:
+            self.encendida, self.cuadro = True, 0
+            self.l_txt.pack(side='left', padx=(4, 0)); self.titilar()
+        elif not si and self.encendida:
+            self.encendida = False; self.grid_remove_txt()
+            if self.cuadros: self.l_img.configure(image=self.cuadros[0])
+
+    def titilar(self):
+        if not self.encendida or not self.cuadros: return
+        self.l_img.configure(image=self.cuadros[self.cuadro % len(self.cuadros)]); self.cuadro += 1
+        self.after(self.CICLO_MS // len(self.cuadros), self.titilar)
+
 class Panel(ttk.Frame):
     """Un lado: 8 casilleros, barco, héroe y Factor total, con los colores de su bando."""
     def __init__(self, app, padre, titulo):
@@ -240,8 +282,10 @@ class Panel(ttk.Frame):
         self.barco = ttk.Combobox(f, width=28, state='readonly'); self.barco.grid(row=0, column=1, sticky='w')
         self.barco.bind('<<ComboboxSelected>>', lambda e: self.recalcular())
         self.con_heroe = tk.BooleanVar()
-        ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w')
-        boton(f, text='Héroe…', command=self.editar_heroe).grid(row=2, column=1, sticky='w')
+        ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w', pady=(8, 0))
+        fh = ttk.Frame(f); fh.grid(row=2, column=1, sticky='w', pady=(8, 0))
+        boton(fh, text='Héroe…', command=self.editar_heroe).pack(side='left')
+        self.luz = LuzTope(fh); self.luz.pack(side='left', padx=(10, 0))
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
         self.coef = RecuadroFactor(self, titulo); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
 
@@ -322,6 +366,7 @@ class Panel(ttk.Frame):
             lado = 'A' if self is self.app.pa else 'D'
             tope, motivo = sim.tope(lado, d, self.app.escenario()['campo'])
         except Exception: tope, motivo = MAX_PILA, 'pila común'
+        self.luz.poner(n + (1 if h else 0) > tope)
         if n + (1 if h else 0) > tope: det += f'  ·  ¡MÁS DE {tope}! ({motivo})'
         elif tope != MAX_PILA: det += f'  ·  entran {tope} ({motivo})'
         self.coef.poner((f'FACTOR = {tot:.0f}     COSTO = $ {costo:,}'.replace(',', '.')) if n else 'FACTOR = —     COSTO = $ 0', det)
