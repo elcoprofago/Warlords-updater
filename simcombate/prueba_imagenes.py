@@ -14,4 +14,9 @@ imagenes.imagen_torta([], 'X').save(out + '/vacia.png')
 r = os.path.join(tempfile.mkdtemp(), 'h.json')
 for i in range(50): historial.guardar(r, mk(i, L('A'), L('B'), 60))
 hh = historial.cargar(r); assert len(hh) == 40 and hh[0]['numero'] == 49, len(hh)
+from types import SimpleNamespace as U
+N = imagenes.nombres_del_juego(({'a': U(nombre='Archers', archivo='archers'), 'b': U(nombre='Sun Priests', archivo='sunpr')}, {'c': U(nombre='Drakkar', archivo='drak')}))
+assert imagenes.sin_archivo('archers — Archers', N) == 'Archers' and imagenes.sin_archivo('Archers — archers', N) == 'Archers'
+assert imagenes.sin_archivo('Elves', N) == 'Elves'   # control: lo que no está en el juego queda igual
+assert imagenes.nombre_formacion(dict(tropas=[['sunpr — Sun Priests', 1]], barco='Drakkar — drak', heroe=None), N) == '1 Sun Priests · barco Drakkar'
 print('TODO OK')

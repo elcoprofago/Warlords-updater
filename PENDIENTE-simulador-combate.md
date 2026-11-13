@@ -323,3 +323,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.42.0): botones modernizados (pedido del usuario) con BotonAzul(fondo=...) y boton_color: fondos
   tomados de la fila del medio de 5 escudos que pasó el usuario (FONDOS en tablero.py). Carpeta negro, INICIAR cyan,
   Invertir naranja, Historial verde, Héroe blanco; en fondos claros, la letra con borde negro fino.
+- 13/11/2026 (1.0.43.0): leyenda de Stats sin nombres de archivo. El archivo no lleva extensión, así que el nombre
+  se toma de la tabla del juego cargado (nombres_del_juego); medido: 379 armas y barcos, 0 mal, en los dos órdenes.

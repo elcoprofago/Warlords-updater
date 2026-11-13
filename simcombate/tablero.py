@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes               # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.42.0'
+VERSION = '1.0.43.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -936,7 +936,7 @@ class App(tk.Tk):
             self.exportar(imagenes.imagen_ficha(f, VERSION), f"Ficha-combate-{f['numero']:06d}", v)
         ttk.Button(fb, text='Stats', command=lambda: self.ver_stats(h)).pack(side='left', padx=(12, 0))
         ttk.Button(fb, text='Exportar ficha', command=exportar_ficha).pack(side='left', padx=(6, 0))
-        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(imagenes.imagen_torta(h, VERSION),
+        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(imagenes.imagen_torta(h, VERSION, self.nombres_juego()),
                    'Stats-formaciones', v)).pack(side='left', padx=(6, 0))
         ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
 
@@ -948,9 +948,13 @@ class App(tk.Tk):
         except (OSError, ValueError) as e: return messagebox.showerror('Exportar imagen', f'No se pudo guardar:\n{e}', parent=padre)
         messagebox.showinfo('Exportar imagen', f'Guardada en:\n{ruta}', parent=padre)
 
+    def nombres_juego(self):
+        sim = getattr(self, 'sim', None)
+        return imagenes.nombres_del_juego((sim.armas, sim.barcos)) if sim else None
+
     def ver_stats(self, h):
         v = tk.Toplevel(self); v.title(f'Stats: mejor formación — VERSIÓN {VERSION}'); v.transient(self)
-        im = imagenes.imagen_torta(h, VERSION)
+        im = imagenes.imagen_torta(h, VERSION, self.nombres_juego())
         esc = min(1.0, (self.winfo_screenwidth() - 80) / im.width, (self.winfo_screenheight() - 160) / im.height)
         vista = im.resize((int(im.width * esc), int(im.height * esc)), Image.LANCZOS) if esc < 1 else im
         v.foto = ImageTk.PhotoImage(vista); tk.Label(v, image=v.foto, bg='white').pack(padx=6, pady=6)

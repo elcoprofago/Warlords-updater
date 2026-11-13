@@ -53,23 +53,35 @@ def imagen_ficha(f, version=''):
             d.text((x, 18 + k * alto), s, font=fo, fill=col); x += d.textlength(s, font=fo)
     return im
 
-def nombre_formacion(c):
-    s = ' + '.join(f'{n} {a}' for a, n in c['tropas']) or '(sin tropas)'
-    if c['barco']: s += f" · barco {c['barco']}"
+def nombres_del_juego(tablas):
+    """{rótulo del desplegable: nombre en el juego}. Los rótulos son «nombre — archivo» o «archivo — nombre» según el
+    orden elegido, y el archivo no lleva extensión: solo la tabla del juego dice cuál de las dos partes es el nombre."""
+    d = {}
+    for tabla in tablas:
+        for a in tabla.values(): d[f'{a.nombre} — {a.archivo}'] = d[f'{a.archivo} — {a.nombre}'] = a.nombre
+    return d
+
+def sin_archivo(rotulo, nombres=None):
+    """El nombre de la unidad como se la conoce en el juego (sin juego cargado, el rótulo tal cual)."""
+    return (nombres or {}).get(rotulo, rotulo)
+
+def nombre_formacion(c, nombres=None):
+    s = ' + '.join(f'{n} {sin_archivo(a, nombres)}' for a, n in c['tropas']) or '(sin tropas)'
+    if c['barco']: s += f" · barco {sin_archivo(c['barco'], nombres)}"
     if c['heroe']: s += f" · héroe {c['heroe']}"
     return s
 
-def formaciones(h):
+def formaciones(h, nombres=None):
     """Formaciones ganadoras de los combates del historial: [(nombre, victorias, % medio de victoria)], la mejor primero
     (más victorias; a igualdad, mayor % medio)."""
     t = {}
     for f in h:
-        g, pg = ganador(f); n = nombre_formacion(f[g[0]])
+        g, pg = ganador(f); n = nombre_formacion(f[g[0]], nombres)
         v, s = t.get(n, (0, 0.0)); t[n] = (v + 1, s + pg)
     return sorted(((n, v, s / v) for n, (v, s) in t.items()), key=lambda x: (-x[1], -x[2]))
 
-def imagen_torta(h, version=''):
-    fo = formaciones(h); total = sum(v for _, v, _ in fo)
+def imagen_torta(h, version='', nombres=None):
+    fo = formaciones(h, nombres); total = sum(v for _, v, _ in fo)
     ft, fn, fb = fuente(True, 20), fuente(False, 14), fuente(True, 14)
     medir = ImageDraw.Draw(Image.new('RGB', (1, 1)))
     ley = [f'{v * 100 / total:.1f} %  ({v} de {total}, gana con {p:.1f} % de media)  {n}' for n, v, p in fo] if total else []
