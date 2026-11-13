@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 197).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 198).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **197.** IA: freno de producción antes de la quiebra (vista-aliada 1.0.217.0, 13/11/2026). La computadora en prueba deja de fabricar ejércitos cuando lo que pagaría con todo el ejército fuera de las ciudades supera lo que cobra, con un margen del oro guardado; antes frenaba recién cuando ya gastaba más de lo que cobraba, y con muchas ciudades se quedaba sin oro y los ejércitos desertaban. 1) Actualizador, opción **9**: vista-aliada en **1.0.217.0** o posterior. 2) Monitor de IA → **Ninguna**, marcar **Scarpart** y **Kor**, Partidas **10**, **Nueva tanda**. 3) Mientras corre, no instalar otra versión del parche. Avisar cuando termine.
 - [ ] **196.** Simulador de combate 1.0.36.0: cálculo más confiable (13/11/2026). Repetir el combate 18/19 de noche con 6000 peleas: ahora tiene que dar alrededor de 77 % para el atacante (antes 80,48 %), porque promedia 20 noches y en algunas el sorteo favorece al defensor. De día, alrededor de 80,4 %. Con 65 536 peleas el número es el exacto del juego y no cambia de una corrida a otra. Anotar lo que no coincida.
 - [ ] **194.** Simulador de combate 1.0.35.0 (13/11/2026). Repetir el combate 18/19 (5 Sparks + 1 Sun Priests contra 5 Moonguard, Esfinge, Bannerman y Devourers, en hills, de noche): la ventana de combate ahora tiene que mostrar ganando al ATACANTE, igual que el porcentaje (≈80 %) y el Historial. En cualquier combate, el que gana en la ventana tiene que ser el mismo que figura como Ganador en el Historial. Anotar lo que no coincida.
 - [ ] **193.** Simulador de combate 1.0.34.0 (13/11/2026). Abrir una ficha del Historial: termina en el RESULTADO (y los avisos, si hay); ya no aparece la «batalla de muestra». Anotar lo que no coincida.

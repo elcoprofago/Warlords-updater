@@ -8330,6 +8330,61 @@ rg_no:
 PR_EVT = 32
 PR_ACC = place_data('pr_acc', bytes(16))   # mantenimiento producido en el turno, por color (word)
 PR_TRN = place_data('pr_trn', bytes(16))   # turno de pr_acc, por color (word)
+# Paso 4.15: segunda condición, para frenar antes de la quiebra. El mantenimiento [0x5643d8] es el del momento, con
+# casi todo el ejército en las ciudades (un tercio); cuando las pilas salen se triplica (1216 color 5: 155 -> 528 con
+# 11 ciudades y 487 de oro, 34 deserciones). Con la regla anterior cumplida, además: si mantenimiento entero de todos
+# los ejércitos de p al empezar a producir en el turno (PR_MEC, pr_me) + lo producido entero en el turno (PR_ACE) +
+# la unidad nueva entera > ingreso + oro / 4 (oro negativo cuenta 0; el oro cubre 4 turnos del peor déficit), no sale.
+# Evento 40 (x = tipo, y = ese total, n = ingreso + oro / 4). PR_MEC se calcula una vez por turno para no contar dos
+# veces lo que se crea en el turno.
+PE_EVT = 40
+PR_ACE = place_data('pr_ace', bytes(16))   # mantenimiento entero producido en el turno, por color (word)
+PR_MEC = place_data('pr_mec', bytes(16))   # pr_me(p) al primer intento del turno, por color (word)
+# pr_me(p) cdecl -> eax = mantenimiento entero de los ejércitos vivos de p (mismo recorrido y valor que mt_evt, sin
+# mirar si están en una ciudad). Preserva el resto.
+pr_me = place('pr_me', f'''
+    push ebx
+    push ecx
+    push edx
+    push esi
+    xor esi, esi
+    movsx ecx, word ptr [0x54fe50]
+pm_loop:
+    dec ecx
+    js pm_done
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz pm_loop
+    movzx eax, word ptr [edx + 0x54fe5e]
+    and eax, 0x1e0
+    cmp eax, 0x100
+    jae pm_loop
+    shr eax, 5
+    cmp eax, dword ptr [esp + 0x14]
+    jne pm_loop
+    cmp word ptr [edx + 0x54fe52], 0
+    jl pm_loop
+    cmp word ptr [edx + 0x54fe54], 0
+    jl pm_loop
+    movzx eax, word ptr [edx + 0x54fe60]
+    and eax, 0xf0
+    shr eax, 4
+    test byte ptr [edx + 0x54fe64], 8
+    jz pm_m
+    cmp eax, 4
+    jg pm_m
+    mov eax, 4
+pm_m:
+    add esi, eax
+    jmp pm_loop
+pm_done:
+    mov eax, esi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    ret
+''')
 # pr_ok(ciudad, p, tipo) cdecl -> eax = 1 sale la unidad, 0 no. Preserva el resto.
 pr_ok = place('pr_ok', f'''
     push ebp
@@ -8377,6 +8432,11 @@ po_t3:
     je po_same
     mov word ptr [ebx * 2 + {PR_TRN:#x}], ax
     mov word ptr [ebx * 2 + {PR_ACC:#x}], 0
+    mov word ptr [ebx * 2 + {PR_ACE:#x}], 0
+    push ebx
+    call {pr_me:#x}
+    add esp, 4
+    mov word ptr [ebx * 2 + {PR_MEC:#x}], ax
 po_same:
     movsx edi, word ptr [ebx * 2 + 0x5643d8]
     movsx eax, word ptr [ebx * 2 + {PR_ACC:#x}]
@@ -8395,7 +8455,37 @@ po_same:
     xor eax, eax
     jmp po_out
 po_yes:
+    movzx edi, byte ptr [ebp - 4]
+    and edi, 0xf
+    movsx eax, word ptr [ebx * 2 + {PR_ACE:#x}]
+    add edi, eax
+    movsx eax, word ptr [ebx * 2 + {PR_MEC:#x}]
+    add edi, eax
+    imul ecx, ebx, 0x1f8
+    movsx eax, word ptr [ecx + 0x536c14]
+    test eax, eax
+    jns po_og
+    xor eax, eax
+po_og:
+    shr eax, 2
+    movsx edx, word ptr [ebx * 2 + 0x5643f0]
+    add edx, eax
+    cmp edi, edx
+    jle po_ok2
+    push edx
+    push edi
+    push dword ptr [ebp + 0x10]
+    push ebx
+    push {PE_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    xor eax, eax
+    jmp po_out
+po_ok2:
     add word ptr [ebx * 2 + {PR_ACC:#x}], si
+    movzx eax, byte ptr [ebp - 4]
+    and eax, 0xf
+    add word ptr [ebx * 2 + {PR_ACE:#x}], ax
     mov eax, 1
 po_out:
     pop edi

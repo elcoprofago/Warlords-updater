@@ -5,6 +5,9 @@
 # produce solo si mantenimiento + lo producido en el turno + tercio de la unidad nueva (truncado, mínimo 1; paso 4.3)
 # <= ingreso;
 # si no, no crea ni reinicia, deja la cuenta en 1 y anota el evento 32 (x = tipo, y = total, n = ingreso).
+# Paso 4.15: además, si mantenimiento entero de los ejércitos de p (al primer intento del turno) + lo producido entero en
+# el turno + la unidad nueva entera > ingreso + oro / 4 (oro negativo = 0), no sale y anota el evento 40 (mismos campos;
+# n = ingreso + oro / 4). Los casos del tercio corren con oro 32000 para que la regla nueva no intervenga.
 # Controles que deben seguir como el original: humano, IA original (ia_mode 0), sin ia_on, ingreso holgado.
 # Uso: python prueba_produccion.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
 import pefile, struct, sys
@@ -31,7 +34,7 @@ def load(sav):
         m[va] = b[off:off + n]; off += n
     return m
 
-def maquina(img, sav, p, ing, mant, humano, on, modo, turno=7):
+def maquina(img, sav, p, ing, mant, humano, on, modo, turno=7, oro=32000):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(0x400000, (len(img) + 0xfff) & ~0xfff); mu.mem_write(0x400000, img)
     mu.mem_map(0x10000000, 0x100000); mu.mem_map(STUB, 0x1000); mu.mem_map(CALLER, 0x1000)
@@ -44,6 +47,7 @@ def maquina(img, sav, p, ing, mant, humano, on, modo, turno=7):
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', -1 if humano else 0))
     mu.mem_write(0x5643d8 + 2 * p, struct.pack('<h', mant)); mu.mem_write(0x5643f0 + 2 * p, struct.pack('<h', ing))
     mu.mem_write(0x503328, struct.pack('<h', turno))
+    mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<h', oro))
     mu.mem_write(0x537ce8, struct.pack('<h', (p + 1) % 8))
     if img is imgs['av']: mu.mem_write(IA_ON, bytes([on, 0, 0, 0])); mu.mem_write(IA_MODE, bytes([modo] * 8))
     return mu, ncity
@@ -76,7 +80,7 @@ def corrida(mu, fn, args):
     regs = {UC_X86_REG_EBX: 0x11110000, UC_X86_REG_ESI: 0x2222abcd, UC_X86_REG_EBP: 0x11110002, UC_X86_REG_EDI: 0x3333}
     for r, v in regs.items(): mu.reg_write(r, v)
     mu.reg_write(UC_X86_REG_ESP, sp)
-    mu.emu_start(CALLER, CALLER + 5, count=2_000_000)
+    mu.emu_start(CALLER, CALLER + 5, count=50_000_000)
     pres = mu.reg_read(UC_X86_REG_EIP) == CALLER + 5 and all(mu.reg_read(r) == v for r, v in regs.items())
     for x in h: mu.hook_del(x)
     return lines, res, pres
@@ -88,6 +92,28 @@ def mant_unidad(sav, p, ciudad, tipo):   # salida[4] de 0x43b6d0 en el original,
     return mu.mem_read(0x20000000 + 4, 1)[0] & 0xf
 
 ok = True; n = 0
+def me_modelo(mu, p):   # pr_me: mantenimiento entero de los ejércitos vivos de p (como mt_evt, sin mirar la casilla)
+    n = struct.unpack('<h', mu.mem_read(0x54fe50, 2))[0]; t = 0
+    for i in range(n):
+        a = 0x54fe50 + i * 0x1c; b = mu.mem_read(a, 0x1c)
+        if not b[0x13] & 0x40: continue
+        own = struct.unpack('<H', b[0xe:0x10])[0] & 0x1e0
+        if own >= 0x100 or own >> 5 != p: continue
+        if struct.unpack('<h', b[2:4])[0] < 0 or struct.unpack('<h', b[4:6])[0] < 0: continue
+        m = (struct.unpack('<H', b[0x10:0x12])[0] & 0xf0) >> 4
+        if b[0x14] & 8 and m <= 4: m = 4
+        t += m
+    return t
+
+def me_al_producir(sav, p):   # me_modelo leído en el primer intento de producción (0x43bdf2): 0x43b930 toca
+    mu, _ = maquina(imgs['av'], sav, p, 30000, 0, False, 1, 1)   # ejércitos antes de producir, y pr_me ve eso
+    v = []
+    def hk(mu, a, s, _):
+        if not v: v.append(me_modelo(mu, p))
+    mu.hook_add(UC_HOOK_CODE, hk, begin=0x43bdf2, end=0x43bdf2)
+    corrida(mu, 0x43b930, (p,))
+    return v[0]
+
 def tercio(m):   # como 0x4406b0 en una casilla de ciudad
     return max(1, m // 3) if m > 0 else 0
 
@@ -147,6 +173,33 @@ for sav in SAVS:
                     for i in mias: mu.mem_write(CITY + i * CSZ + 0xd8, b'\x01')
                     _, r3, _ = corrida(mu, 0x43b930, (p,))
                     check([c for a, c, _ in r3 if a == 0x43b120] == sale, f'{sav} c{p} ing {ing}: turno siguiente {r3}')
+            # paso 4.15: ingreso holgado para la regla del tercio; el oro decide con la regla del entero
+            ent = {i: mant_unidad(sav, p, i, tipos[i]) for i in mias}
+            me = me_al_producir(sav, p)
+            ingE = 100
+            for k in range(len(mias) + 1):
+                lim = me + sum(ent[i] for i in mias[:k])   # el menor ingreso + oro/4 con el que salen las k primeras
+                for oro in (4 * (lim - ingE), 4 * (lim - ingE) + 3, 4 * (lim - ingE) - 1):
+                    if oro < 0: continue
+                    L = ingE + oro // 4
+                    acc, sale, frena = me, [], []
+                    for i in mias:
+                        if acc + ent[i] <= L: acc += ent[i]; sale.append(i)
+                        else: frena.append((i, acc + ent[i]))
+                    mu, _ = maquina(imgs['av'], sav, p, ingE, 0, False, 1, 1, oro=oro)
+                    # la regla del tercio no debe frenar: ingreso de la regla 1 = ingE; se fuerza holgura con mant 0
+                    # y se comprueba antes que el tercio entre
+                    if sum(u[i] for i in mias) > ingE: continue
+                    l, r, pr = corrida(mu, 0x43b930, (p,))
+                    cre = [c for a, c, _ in r if a == 0x43b120]
+                    ev = [x for x in l if x[3] in (32, 40)]
+                    check(pr and cre == sale, f'{sav} c{p} 4.15 oro {oro}: sale {cre}, se esperaba {sale}')
+                    check(ev == [[7, p, 1, 40, tipos[i], t, L] for i, t in frena], f'{sav} c{p} 4.15 oro {oro}: eventos {ev}, se esperaba {frena} L {L}')
+                    check(all(cuenta(mu, ncity)[i] == 1 for i, _ in frena), f'{sav} c{p} 4.15: cuenta')
+            # oro negativo cuenta 0
+            mu, _ = maquina(imgs['av'], sav, p, 30000, 0, False, 1, 1, oro=-500)
+            l, r, pr = corrida(mu, 0x43b930, (p,))
+            check(pr and not any(x[3] == 40 for x in l), f'{sav} c{p} 4.15 oro negativo con ingreso holgado frenó')
             for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0), ('sin ia_on', False, 0, 1)):
                 mu, _ = maquina(imgs['av'], sav, p, 0, mant, hum, on, modo)
                 l, r, pr = corrida(mu, 0x43b930, (p,))

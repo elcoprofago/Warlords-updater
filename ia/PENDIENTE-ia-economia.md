@@ -745,3 +745,29 @@ solo el oro de ese momento, para que frene antes de que el saldo se haga negativ
 cuántos color-partida de la nueva el saldo pasa a negativo con oro alto (como acá, 487) y cuántos turnos antes del 32.
 Los huérfanos en quiebra (1191 color 6) siguen para después.
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, paso 4.15 (freno antes de la quiebra)".
+
+### 4.15 hecho: freno con el mantenimiento entero (vista-aliada 1.0.217.0, 13/11/2026)
+- Medición previa (tandas 158-164, eventos 29, 32 y 33): en la nueva, el primer freno 32 cae **en el mismo turno** en
+  que el saldo se hace negativo, nunca antes. Causa: el mantenimiento de 0x5643d8 es el del momento y oscila con dónde
+  terminan el turno las pilas (en ciudad pagan un tercio): 1216 color 5 155 → 286 → 528 con 11 ciudades fijas;
+  1191 color 6 igual. El freno ve el valor bajo, deja crecer el ejército y, cuando las pilas salen, el gasto se triplica.
+  (En la partida 1216 el color de los eventos trae bits altos: usar color & 255.)
+- Simulación (mantenimiento entero ≈ x33 + 3 × (y29 − x33)): con margen oro / 4 el freno nuevo actúa en el 6,6 % de
+  los turnos-color de la nueva (425 de 6.432) y de 1 a 5 turnos antes del saldo negativo en 5 de 7 bandos que
+  desertaron (1191 c6: 21 contra 24; 1200 c3: 16 contra 21; 1206 c3: 13 contra 16; 1208 c0: 22 contra 23;
+  1174 c5: 21 contra 22). Con oro / 8 sería el 11 %, cerca del freno de la 1.0.135.0 que costó puesto.
+- Cambio (build.py, pr_ok): con la regla del tercio cumplida, además frena si mantenimiento entero de los ejércitos
+  vivos de p (pr_me, 0x6d7040; se toma una vez por turno en PR_MEC 0x6d7029) + lo producido entero en el turno
+  (PR_ACE 0x6d7019) + la unidad nueva entera > ingreso + oro / 4 (oro negativo = 0). **Evento 40** (x = tipo,
+  y = ese total, n = ingreso + oro / 4).
+- Pruebas: `prueba_produccion.py` 5.301 TODO OK (casos nuevos: oro en el límite, uno arriba y uno abajo; oro negativo;
+  el modelo lee los ejércitos en el primer 0x43bdf2 porque 0x43b930 los toca antes; tope de emulación 50 millones).
+  Con oro / 3 falla. Sin regresiones: repliegue 940, huerfanos 3.061, formfuera 154, reserva 3.514, mantenimiento
+  266 TODO OK (saves C:\Warlords\NETSAVES NA_158_19, NAB_002_27, BUILD01_19, NA_156_5).
+  Uso: `python prueba_produccion.py <AV> <orig> 6d035b 6d0353 <SAV>...`.
+- Sin verificar en juego real.
+
+**Próximo paso:** tanda de la TAREAS 197: eventos 40 por color y turno; saldo negativo con oro alto y deserciones (28)
+contra 158-164; puesto, PV y ciudades de la nueva contra la original (si el puesto empeora como en la 1.0.135.0,
+aflojar el margen). Los huérfanos en quiebra (1191 color 6) siguen para después.
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.15 (TAREAS 197)".
