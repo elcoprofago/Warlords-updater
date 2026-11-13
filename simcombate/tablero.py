@@ -13,7 +13,7 @@ from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.28.0'
+VERSION = '1.0.29.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -236,18 +236,17 @@ class LuzTope(ttk.Frame):
         self.l_img = tk.Label(self, bg=bg, bd=0)
         if self.cuadros: self.l_img.configure(image=self.cuadros[0])
         self.l_img.pack(side='left')
-        self.l_txt = tk.Label(self, text='tope excedido', bg=bg, fg='#b00000', font=('Segoe UI', 8, 'bold'))
+        self.l_txt = tk.Label(self, text='', bg=bg, fg='#606060', font=('Segoe UI', 8, 'bold'))
+        self.l_txt.pack(side='left', padx=(4, 0))
         self.encendida, self.cuadro = False, 0
-        self.grid_remove_txt()
 
-    def grid_remove_txt(self): self.l_txt.pack_forget()
-
-    def poner(self, si):
+    def poner(self, si, cuenta=''):
+        """cuenta = 'unidades / tope'; encendida: «tope excedido 9 / 8» en rojo; apagada: «8 / 8» en gris."""
+        self.l_txt.configure(text=f'tope excedido  {cuenta}' if si else cuenta, fg='#b00000' if si else '#606060')
         if si and not self.encendida:
-            self.encendida, self.cuadro = True, 0
-            self.l_txt.pack(side='left', padx=(4, 0)); self.titilar()
+            self.encendida, self.cuadro = True, 0; self.titilar()
         elif not si and self.encendida:
-            self.encendida = False; self.grid_remove_txt()
+            self.encendida = False
             if self.cuadros: self.l_img.configure(image=self.cuadros[0])
 
     def titilar(self):
@@ -361,14 +360,14 @@ class Panel(ttk.Frame):
         for a, c in d['tropas']:   # costo: el de comprar cada unidad (Arma.costo), no el de armar la producción
             if a and c > 0: tot += sim.armas[a].factor() * c; n += c; costo += sim.armas[a].costo * c
         h = d['heroe']
-        det = (f'{n} unidad' if n == 1 else f'{n} unidades') + (' + héroe' if h else '') + (f'  ·  Factor medio {tot / n:.1f}' if n else '')
+        det = f'Factor medio {tot / n:.1f}' if n else ''   # la cantidad va en la leyenda de la luz (n / tope)
         try:
             lado = 'A' if self is self.app.pa else 'D'
             tope, motivo = sim.tope(lado, d, self.app.escenario()['campo'])
         except Exception: tope, motivo = MAX_PILA, 'pila común'
-        self.luz.poner(n + (1 if h else 0) > tope)
-        if n + (1 if h else 0) > tope: det += f'  ·  ¡MÁS DE {tope}! ({motivo})'
-        elif tope != MAX_PILA: det += f'  ·  entran {tope} ({motivo})'
+        total = n + (1 if h else 0)
+        self.luz.poner(total > tope, f'{total} / {tope}')
+        if tope != MAX_PILA or total > tope: det += ('  ·  ' if det else '') + f'tope {tope}: {motivo}'
         self.coef.poner((f'FACTOR = {tot:.0f}     COSTO = $ {costo:,}'.replace(',', '.')) if n else 'FACTOR = —     COSTO = $ 0', det)
         if self.heroe:
             cl = sim.clases[self.heroe['clase']]; el, _ = elecciones(cl)

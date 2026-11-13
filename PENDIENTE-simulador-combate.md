@@ -271,3 +271,6 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   del desplegable de barcos). Es la luz del Monitor de IA (circle_09.png llevada a rojo con marco.png, 26 px; los
   assets ya van en el .exe), con fundido lento de 2 s por ciclo mientras el lado pase su tope (`LuzTope`, se enciende
   desde Panel.recalcular). Probado en la ventana (captura): 9 en campo la enciende, 8 la apaga.
+- 13/11/2026 (1.0.29.0): pedido del usuario: la aclaración bajo FACTOR y COSTO quedaba cortada. Sale la cantidad de
+  unidades; queda «Factor medio X · tope N: motivo» (el tope solo si no es 8 o si se pasa). La cantidad va como
+  contador «unidades / tope» en la leyenda de la luz: gris apagada, roja «tope excedido 9 / 8» encendida. Captura OK.
