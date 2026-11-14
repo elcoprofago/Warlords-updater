@@ -460,7 +460,7 @@ sembrar trampas:</p>
   <li><b>El dueño también cae</b> si vuelve a pisarla.</li>
   <li><b>Mina submarina:</b> sembrada en el agua, hunde barcos como un remolino y no deja rastro al explotar.</li>
 </ul>
-<div class="nota"><b>Nota.</b> La computadora no construye trampas, pero sí esquiva las que ve.</div>
+<div class="nota"><b>Nota.</b> La computadora esquiva las trampas que ve. <span class="estado e-pr">en prueba</span> Desde la versión 1.0.219.0, en los bandos que el banco de simulación pone en «IA de prueba», también siembra: una pila con una unidad con «Trap», fuera de una ciudad y a 3 casillas o menos de una ciudad propia, con un enemigo a 12 o menos, siembra en su casilla si le alcanza el oro para el costo más dos turnos de mantenimiento. Una por bando y turno.</div>
 
 <h2>Misión dura «escoltar al equipo que desarma una trampa»</h2>
 <p><span class="estado e-pr">en prueba</span> En dificultad <b>Hard</b>, si el héroe conoce una trampa enemiga
@@ -632,7 +632,7 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
 </ul>
 <h2>Lo que todavía no hace</h2>
 <ul>
-  <li>No construye trampas ni recibe la misión de escolta.</li>
+  <li>No recibe la misión de escolta. Construir trampas está en prueba (solo en el banco de simulación; capítulo VII).</li>
   <li>No elige su personalidad según el mapa ni cambia de prioridades según la fase de la partida (etapas futuras del
   plan de entrenamiento).</li>
 </ul>
@@ -946,6 +946,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.219.0</td><td>13/11/2026</td><td>IA en prueba: la computadora siembra trampas. Una pila con una unidad con el bono «Trap», fuera de una ciudad, a 3 casillas o menos de una ciudad propia y con un enemigo a 12 o menos, siembra una trampa en su casilla si le sobra el oro (costo más dos turnos de mantenimiento). Una por bando y turno. Por ahora solo en los bandos que el banco de simulación pone en «IA de prueba».</td></tr>
 <tr><td>1.0.218.0</td><td>13/11/2026</td><td>La IA nueva juega también en las partidas normales y en las del ranking del clan (sin <code>DATA\IA.INI</code>): reserva de oro, freno de producción, pilas sueltas y repliegue por quiebra. En la tanda 165 no tuvo ninguna deserción (la original, 48) y quedó mejor ubicada. Las reglas de alianzas siguen solo en el banco de simulación.</td></tr>
 <tr><td>1.0.217.0</td><td>13/11/2026</td><td>IA en prueba: deja de fabricar ejércitos antes de quedarse sin oro. Antes miraba lo que pagaba en ese momento, con casi todo el ejército dentro de las ciudades (donde paga un tercio); al salir las pilas el gasto se triplicaba y los ejércitos desertaban. Ahora cuenta lo que pagaría con todo el ejército afuera, con un margen del oro guardado.</td></tr>
 <tr><td>1.0.216.0</td><td>13/11/2026</td><td>IA en prueba: solo agrega un registro para las pruebas (pilas que vuelven a su ciudad y terminan el turno afuera); el juego no cambia.</td></tr>

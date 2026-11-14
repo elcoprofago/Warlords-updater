@@ -180,7 +180,8 @@ ver('control: no alcanza el oro', recibir(oro=TRAMPA - 1), NADA)
 ver('casilla con camino: se acepta', recibir(x=10)[:2], ([(10, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
 ver('puente: se acepta', recibir(x=31, y=3)[:2], ([(31, 3, 2, 0, 4, 2)], [(2, -TRAMPA)]))
 ver('agua: se acepta', recibir(x=33)[:2], ([(33, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
-ver('control: bando de la computadora', recibir(humano=False), NADA)
+ver('bando de la computadora (1.0.219.0, la IA siembra): se acepta sin mirar la máquina',
+    recibir(humano=False, maquina=0)[:2], ([(5, 7, 2, 0, 4, 2)], [(2, -2)]))   # el juego le da a la computadora otro costo (0x4b65e0); tr_ai usa el mismo
 ver('control: bando fuera de rango', recibir(p=9)[:3], NADA[:3])
 ver('control: tabla llena', recibir(regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[:2], NADA[:2])
 r = recibir(regs=[(1, 1, 0, 0, 0, 0xff)] * (PO_MAX - 1) + [(20, 20, 2, 2, 0xff, 1)], todo=True)

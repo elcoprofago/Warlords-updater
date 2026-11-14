@@ -324,4 +324,22 @@ camino); se le planteó al usuario. Mientras no decida, paso 5.2 cerrado.
 
 Decisión del 5.2 (11/11/2026): la IA ahorra para el puente que le abre camino, en vez de abaratar reconstruir (era
 el objetivo del usuario del 4/11 en PENDIENTE-ia-economia). Hecho en vista-aliada 1.0.203.0: ver «Oro con destino,
-primer destino: el puente» en PENDIENTE-ia-economia.md (tanda: TAREAS 174). Siguen sin hacer el 5.3 (trampas) y 5.4.
+primer destino: el puente» en PENDIENTE-ia-economia.md (tanda: TAREAS 174). Siguen sin hacer el 5.3 (trampas) y 5.4. (5.3 hecho: ver abajo.)
+
+## Paso 5.3, hecho el código: la IA siembra trampas (13/11/2026, vista-aliada 1.0.219.0)
+
+`tr_ai` (build.py) corre antes de cada meta de pila de la IA (0x40cc3f -> tr_me -> me_set). Una pila con un ejército
+no héroe con el bono «Trap» siembra en su propia casilla si, en este orden: 1) no es una ciudad; 2) hay una ciudad
+propia viva a 3 o menos; 3) hay un enemigo visible a 12 o menos; 4) la casilla está libre en po_map y hay lugar en la
+tabla; 5) tiene oro >= costo de la trampa + 2 × mantenimiento. Una por bando y turno. Manda el mismo paquete que el
+humano (TR_PKT), así la trampa queda igual en todas las PC; tr_recv ahora acepta el paquete de un bando de la
+computadora sin mirar la máquina. Su propio buscador ya trata sus trampas como intransitables (paso 3).
+
+Eventos: 41 = sembró (n = costo); 42 = pila con «Trap» que no sembró (n = el filtro que falló, 1 a 5).
+Solo con DATA\IA.INI y para los colores en prueba, hasta que una tanda lo confirme (regla del repo).
+Pruebas: prueba_iatrampas.py (siembra, motivos 1 a 5 y controles), prueba_trampas.py (recepción), regresiones de
+pozos, misión trampa e IA de pozos: todas sin fallas.
+
+Próximo paso: tanda TAREAS 212. Leer cuántos eventos 41 y 42 hay y con qué motivos; si casi todo es 42, revisar el
+filtro que más falla. Si siembra, comparar posiciones y bajas enemigas en trampas entre prueba y original.
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.3 (tarea 212)».

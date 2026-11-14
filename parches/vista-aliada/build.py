@@ -18390,11 +18390,12 @@ tr_recv = place('tr_recv', f'''
     cmp byte ptr [eax + {SIDE_ON:#x}], 0
     je tv_x
     cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
-    jne tv_x
+    jne tv_any
     movzx ecx, byte ptr [eax + {SIDE_MACHINE:#x}]
     movsx edx, word ptr [esi + 6]
     cmp ecx, edx
     jne tv_x
+tv_any:
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
     call {tr_stk:#x}
@@ -18469,6 +18470,197 @@ tv_x1:
 tv_x:
     popad
     jmp 0x4b85bb
+''')
+# ---- La IA siembra trampas (paso 5.3 de ia\PENDIENTE-ia-innovaciones.md, 13/11/2026). tr_ai corre antes de me_set
+# (0x40cc3f, una vez por pila de la computadora, antes de ejecutar su meta), en la máquina que juega esa pila. Si la
+# pila tiene un ejército (no héroe) con el bono "Trap" y su líder está:
+#   1 fuera de una casilla de ciudad, 2 a TRA_CITY o menos de una ciudad propia viva (0x4974a0), 3 con un ejército
+#   hostil visible a TRA_ENEMY o menos (0x497a90, como ai_brrebev), 4 en una casilla libre de po_map con lugar en la
+#   tabla (pg_ok PO_TRAMPA; no apila ni reusa gastadas), 5 con oro >= costo (0x4b65e0(TR_MARK), el de fundar una
+#   ciudad) + 2 x mantenimiento (el piso de rs_ok),
+# manda TR_PKT (bando, x, y) como tr_send: tr_recv la aplica en todas las PC (desde 1.0.219.0 acepta el paquete de un
+# bando de la computadora sin mirar la máquina). Una por bando y turno (TRA_LAST). Evento 41: sembró (n = costo);
+# evento 42: pila con "Trap" que no sembró (n = el primer filtro que falló, 1..5). Mientras no lo confirme una tanda
+# (regla del repo), solo con DATA\IA.INI y para los colores en prueba (IA_ON e IA_MODE = 1).
+# La propia IA no pisa su trampa: el buscador la trata como intransitable (paso 3).
+TRA_EVT, TRA_EVNO = 41, 42
+TRA_CITY, TRA_ENEMY = 3, 12
+TRA_LAST = place_data('tra_last', bytes(32))   # por bando: turno + 1 de la última trampa sembrada
+tr_ai = place('tr_ai', f'''
+    pushad
+    sub esp, 0x10
+    cmp byte ptr [{IA_ON:#x}], 0
+    je ta_out
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae ta_out
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne ta_out
+    imul eax, ebx, {SIDE:#x}
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    je ta_out
+    movsx eax, word ptr [0x503328]
+    inc eax
+    cmp dword ptr [ebx*4 + {TRA_LAST:#x}], eax
+    je ta_out
+    mov esi, dword ptr [0x5020d4]
+    test esi, esi
+    jz ta_out
+    xor ecx, ecx
+ta_army:
+    cmp ecx, 8
+    jae ta_out
+    movsx eax, word ptr [esi + ecx*2 + 0xc]
+    inc ecx
+    test eax, eax
+    js ta_army
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 15
+    ja ta_army
+    shr eax, 5
+    and eax, 0xf
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {trapstr:#x}
+    push ecx
+    push esi
+    call {reccomb:#x}
+    pop esi
+    pop ecx
+    test eax, eax
+    jz ta_army
+    movsx eax, word ptr [esi + 0xc]
+    test eax, eax
+    js ta_out
+    imul eax, eax, 0x1c
+    movsx ecx, word ptr [eax + 0x54fe52]
+    mov dword ptr [esp], ecx
+    movsx ecx, word ptr [eax + 0x54fe54]
+    mov dword ptr [esp + 4], ecx
+    mov dword ptr [esp + 8], 1
+    mov esi, dword ptr [esp]
+    mov edi, dword ptr [esp + 4]
+    test esi, esi
+    jl ta_out
+    test edi, edi
+    jl ta_out
+    cmp si, word ptr [0x503e00]
+    jge ta_out
+    cmp di, word ptr [0x503e02]
+    jge ta_out
+    mov cl, byte ptr [0x503e06]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    shl eax, cl
+    lea edx, [esi + esi*4]
+    mov al, byte ptr [eax + edx*2 + 0x503e5b]
+    and al, 7
+    cmp al, 3
+    je ta_no
+    mov dword ptr [esp + 8], 2
+    mov ebp, 0x7fffffff
+    xor ecx, ecx
+ta_city:
+    movsx eax, word ptr [0x537e2a]
+    cmp ecx, eax
+    jge ta_cend
+    imul edx, ecx, 0xde
+    cmp byte ptr [edx + 0x537ed0], 0
+    je ta_cnext
+    movzx eax, byte ptr [edx + 0x537ed1]
+    cmp eax, ebx
+    jne ta_cnext
+    push ecx
+    movsx eax, word ptr [edx + 0x537e2e]
+    push eax
+    movsx eax, word ptr [edx + 0x537e2c]
+    push eax
+    push edi
+    push esi
+    call 0x4974a0
+    add esp, 0x10
+    pop ecx
+    movsx eax, ax
+    cmp eax, ebp
+    jge ta_cnext
+    mov ebp, eax
+ta_cnext:
+    inc ecx
+    jmp ta_city
+ta_cend:
+    cmp ebp, {TRA_CITY}
+    jg ta_no
+    mov dword ptr [esp + 8], 3
+    push 0
+    push edi
+    push esi
+    call 0x497a90
+    add esp, 0xc
+    movsx eax, ax
+    cmp eax, {TRA_ENEMY}
+    jg ta_no
+    mov dword ptr [esp + 8], 4
+    cmp dword ptr [{PO_N:#x}], {PO_MAX}
+    jae ta_no
+    mov ebp, {PO_TRAMPA}
+    call {pg_ok:#x}
+    jnz ta_no
+    mov dword ptr [esp + 8], 5
+    push ebx
+    push {TR_MARK:#x}
+    call 0x4b65e0
+    add esp, 8
+    movsx eax, ax
+    mov dword ptr [esp + 0xc], eax
+    movsx ecx, word ptr [ebx*2 + 0x5643d8]
+    lea eax, [eax + ecx*2]
+    imul ecx, ebx, {SIDE:#x}
+    movsx ecx, word ptr [ecx + 0x536c14]
+    cmp ecx, eax
+    jl ta_no
+    movsx eax, word ptr [0x503328]
+    inc eax
+    mov dword ptr [ebx*4 + {TRA_LAST:#x}], eax
+    sub esp, 8
+    mov word ptr [esp], bx
+    mov word ptr [esp + 2], si
+    mov word ptr [esp + 4], di
+    mov word ptr [esp + 6], 0
+    mov eax, esp
+    push 8
+    push eax
+    push {TR_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0x14
+    push dword ptr [esp + 0xc]
+    push edi
+    push esi
+    push ebx
+    push {TRA_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp ta_out
+ta_no:
+    push dword ptr [esp + 8]
+    push edi
+    push esi
+    push ebx
+    push {TRA_EVNO}
+    call {ia_evt:#x}
+    add esp, 0x14
+ta_out:
+    add esp, 0x10
+    popad
+    ret
+''')
+tr_me = place('tr_me', f'''
+    call {tr_ai:#x}
+    jmp {me_set:#x}
 ''')
 # Recepción del camino (antes que tr_recv; paquete como el de la trampa: +6 máquina, +0xc bando, x, y).
 bd_recv = place('bd_recv', f'''
@@ -21119,7 +21311,7 @@ def rel(va, n):  # bytes originales
 patch(0x441c9f, rel(0x441c9f, 0x441cc9 - 0x441c9f), asm(f'jmp {reveal:#x}', 0x441c9f))
 patch(0x4223ad, asm('call 0x442470', 0x4223ad), asm(f'call {ia_turn:#x}', 0x4223ad))
 patch(0x415995, rel(0x415995, 0x4159a5 - 0x415995), asm(f'call {ds_evt:#x}', 0x415995))   # deserción (evento 28)
-patch(0x40cc3f, bytes.fromhex('0fbf44241a66c74424100000'), asm(f'call {me_set:#x}', 0x40cc3f) + bytes([0x90]) * 7)   # meta de cada pila (evento 34)
+patch(0x40cc3f, bytes.fromhex('0fbf44241a66c74424100000'), asm(f'call {tr_me:#x}', 0x40cc3f) + bytes([0x90]) * 7)   # meta de cada pila (evento 34)
 patch(0x422482, rel(0x422482, 0x422494 - 0x422482), asm(f'call {ec_evt:#x}', 0x422482))   # saldo del turno (evento 29)
 patch(0x43fd60, rel(0x43fd60, 6), asm(f'call {gl_evt:#x}; nop', 0x43fd60))   # cambio de oro (evento 30)
 patch(0x48ba50, rel(0x48ba50, 7), asm(f'jmp {rs_unit:#x}; nop; nop', 0x48ba50))   # reserva: comprar tipo de unidad
