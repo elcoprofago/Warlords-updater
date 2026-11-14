@@ -340,6 +340,6 @@ Solo con DATA\IA.INI y para los colores en prueba, hasta que una tanda lo confir
 Pruebas: prueba_iatrampas.py (siembra, motivos 1 a 5 y controles), prueba_trampas.py (recepción), regresiones de
 pozos, misión trampa e IA de pozos: todas sin fallas.
 
-Próximo paso: tanda TAREAS 212. Leer cuántos eventos 41 y 42 hay y con qué motivos; si casi todo es 42, revisar el
+Próximo paso: tanda TAREAS 212, con Tanda_hex_control (Zapadores y Blade Runners tienen «trap» en los 6 colores). Leer cuántos eventos 41 y 42 hay y con qué motivos; si casi todo es 42, revisar el
 filtro que más falla. Si siembra, comparar posiciones y bajas enemigas en trampas entre prueba y original.
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.3 (tarea 212)».
