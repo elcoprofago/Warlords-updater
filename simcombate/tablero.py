@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.50.0'
+VERSION = '1.0.51.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -272,10 +272,11 @@ class LuzTope(tk.Canvas):
     que titila con un fundido lento (2 s por ciclo) mientras la pila pase su tope. En el punto más encendido es un rojo
     más claro y se queda PICO_MS antes de volver a apagarse."""
     TAM, PASOS, CICLO_MS, PICO_MS = 26, 16, 2000, 500
+    MARGEN = 10   # separación de la luz respecto del borde derecho del panel (pedido del usuario, 13/11/2026)
 
     def __init__(self, padre):
         bg = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
-        self.fuente = ('Segoe UI', 8, 'bold'); ancho = self.TAM + 8 + tkfont.Font(font=self.fuente).measure('tope excedido  99 / 99')
+        self.fuente = ('Segoe UI', 8, 'bold'); ancho = self.TAM + 8 + self.MARGEN + tkfont.Font(font=self.fuente).measure('tope excedido  99 / 99')
         # un lienzo: la luz (con transparencia) y su leyenda sobre la textura de los paneles (fondo_lienzo)
         super().__init__(padre, width=ancho, height=self.TAM, bg=bg, highlightthickness=0); self.tex_lienzo = True
         try:
@@ -292,8 +293,8 @@ class LuzTope(tk.Canvas):
         except OSError: self.cuadros = []
         # la luz a la derecha (contra el borde del panel) y la leyenda a su izquierda, con un halo blanco de 1 px para
         # que se lea sobre cualquier textura
-        self.l_img = self.create_image(ancho, self.TAM // 2, anchor='e', image=self.cuadros[0] if self.cuadros else '')
-        xt, yt = ancho - self.TAM - 4, self.TAM // 2
+        self.l_img = self.create_image(ancho - self.MARGEN, self.TAM // 2, anchor='e', image=self.cuadros[0] if self.cuadros else '')
+        xt, yt = ancho - self.MARGEN - self.TAM - 4, self.TAM // 2
         self.halo = [self.create_text(xt + dx, yt + dy, anchor='e', text='', fill='#ffffff', font=self.fuente)
                      for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
         self.l_txt = self.create_text(xt, yt, anchor='e', text='', fill='#606060', font=self.fuente)
