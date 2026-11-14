@@ -23,11 +23,11 @@ PO_MAP = PO_SAVE + 8 + PO_MAX * PO_REC + 4
 assert img[0x40cc3f - BASE] == 0xe8
 TR_ME = dest(0x40cc3f); assert img[TR_ME - BASE] == 0xe8
 TR_AI = dest(TR_ME)
-assert img[TR_AI - BASE:TR_AI - BASE + 6] == bytes.fromhex('6083ec10803d'), img[TR_AI - BASE:TR_AI - BASE + 8].hex()
-IA_ON = d32(TR_AI + 6)
+assert img[TR_AI - BASE:TR_AI - BASE + 4] == bytes.fromhex('6083ec10'), img[TR_AI - BASE:TR_AI - BASE + 8].hex()
 IA_MODE = d32(buscar(TR_AI, b'\x80\xbb') + 2)
 TRA_LAST = d32(buscar(TR_AI, b'\x39\x04\x9d') + 3)
 IA_EVT = dest(buscar(TR_AI, b'\x6a\x29\xe8') + 2)
+assert img[IA_EVT - BASE:IA_EVT - BASE + 2] == b'\x80\x3d'; IA_ON = d32(IA_EVT + 2)   # ia_evt: cmp byte [IA_ON], 0
 assert IA_EVT == dest(buscar(TR_AI, b'\x6a\x2a\xe8') + 2)
 STK = 0x150000
 TURNO = 7
@@ -130,7 +130,7 @@ ver('oro uno menos que costo + reserva: motivo 5', caso(oro=39), no(5))
 print('-- fuera de su alcance (sin evento)')
 ver('control: ya sembró este turno', caso(ultimo=TURNO + 1), ([], [], TURNO + 1, True))
 ver('control: bando humano', caso(humano=True), NADA)
-ver('control: sin IA.INI (ia_on = 0; hasta que una tanda lo confirme)', caso(ia_on=0), NADA)
+ver('sin IA.INI (ranking, desde 1.0.220.0): siembra igual (ia_evt mismo no escribe sin ia_on)', caso(ia_on=0), SI)
 ver('control: color con la IA original (ia_mode 0)', caso(modo=0), NADA)
 ver('control: bando fuera de rango', caso(p=9)[0:2], ([], []))
 print('MAL:', mal)

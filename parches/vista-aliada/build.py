@@ -18480,8 +18480,8 @@ tv_x:
 #   ciudad) + 2 x mantenimiento (el piso de rs_ok),
 # manda TR_PKT (bando, x, y) como tr_send: tr_recv la aplica en todas las PC (desde 1.0.219.0 acepta el paquete de un
 # bando de la computadora sin mirar la máquina). Una por bando y turno (TRA_LAST). Evento 41: sembró (n = costo);
-# evento 42: pila con "Trap" que no sembró (n = el primer filtro que falló, 1..5). Mientras no lo confirme una tanda
-# (regla del repo), solo con DATA\IA.INI y para los colores en prueba (IA_ON e IA_MODE = 1).
+# evento 42: pila con "Trap" que no sembró (n = el primer filtro que falló, 1..5). Confirmada en la tanda 167 (TAREAS 212):
+# desde 1.0.220.0 juega también sin DATA\IA.INI (ranking; ia_mode queda en 1); con IA.INI, solo en colores de prueba.
 # La propia IA no pisa su trampa: el buscador la trata como intransitable (paso 3).
 TRA_EVT, TRA_EVNO = 41, 42
 TRA_CITY, TRA_ENEMY = 3, 12
@@ -18489,8 +18489,6 @@ TRA_LAST = place_data('tra_last', bytes(32))   # por bando: turno + 1 de la últ
 tr_ai = place('tr_ai', f'''
     pushad
     sub esp, 0x10
-    cmp byte ptr [{IA_ON:#x}], 0
-    je ta_out
     movsx ebx, word ptr [0x4fb0ec]
     cmp ebx, 8
     jae ta_out

@@ -346,3 +346,19 @@ de prueba va por equipo). La tanda 166 (14/11/2026) se corrió con Tanda_hex_con
 eventos 41/42, como corresponde. Leer cuántos eventos 41 y 42 hay y con qué motivos; si casi todo es 42, revisar el
 filtro que más falla. Si siembra, comparar posiciones y bajas enemigas en trampas entre prueba y original.
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.3 (tarea 212)».
+
+## Resultado del paso 5.3 (tanda 167 = TAREAS 212, Tanda_hex_alianzas, revisado 14/11/2026)
+
+10 partidas completas, la IA de prueba por equipo (013 o 457). Sembró **11 trampas** en 7 de las 10 partidas
+(turnos 14 a 29). No sembró (evento 42): 3690 veces por estar en una ciudad (motivo 1, lo normal: las pilas pasan el
+turno ahí), 849 lejos de una ciudad propia (2), 49 sin enemigo cerca (3), 15 sin oro (5); ninguna por casilla
+ocupada (4).
+**Caídas**: las únicas 2 de la tanda son en esas trampas, de bandos de la IA original, sin verlas: partida 3, turno 22,
+(94,64), sembrada ese turno por el color 0, 1 muerto; partida 6, turno 20, (65,148), sembrada el turno 19 por el color
+4, 8 muertos. 2 de 11 trampas mataron 9 ejércitos enemigos. Ningún bando de prueba cayó en una propia.
+Resultado general: prueba 3,64 de puesto medio y 6,7 ciudades, original 2,79 y 13,9; la misma diferencia que en esta
+guardada sin trampas (tanda 40: 3,56 contra 2,77; viene de las reglas de alianzas que solo juega el equipo de
+prueba), así que no se le atribuye a las trampas, que cuestan poco y tienen la reserva de oro.
+**Decisión** (regla del repo, IA al ranking): avance genuino. Desde **vista-aliada 1.0.220.0** tr_ai juega también sin
+IA.INI (las partidas del ranking); con IA.INI, solo en colores de prueba. Paso 5.3 cerrado.
+Queda el 5.4. Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.4».
