@@ -11,10 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escenario import Simulador, Error, MAX_PILA, TOPE_CIUDAD   # noqa: E402
 from datos import HABILIDADES, SIN_VALOR           # noqa: E402
 from combate import VentanaCombate, pcx            # noqa: E402
-import contador, historial, imagenes               # noqa: E402
+import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.45.0'
+VERSION = '1.0.46.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -521,7 +521,7 @@ class App(tk.Tk):
         for caja, t in ((cajas[0], 'ATACANTE'), (cajas[1], 'DEFENSOR')): Estandarte(caja, t, self.juego.get()).pack(fill='x')
         self.pa = Panel(self, cajas[0], 'ATACANTE'); self.pa.pack(fill='both')
         self.pd = Panel(self, cajas[1], 'DEFENSOR'); self.pd.pack(fill='both')
-        der = ttk.Frame(cajas[2], padding=4); der.pack(fill='both', expand=True)
+        der = self.der = ttk.Frame(cajas[2], padding=4); der.pack(fill='both', expand=True)
         self.subpanel_terreno(der); self.subpanel_visual(der, c)
         self.plegados = {}
         plegable(self, [(cajas[0], self.pa), (cajas[1], self.pd), (cajas[2], der)], 'tablero')
@@ -537,6 +537,8 @@ class App(tk.Tk):
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
         plegable(self, [(caja, self.salida)], 'resultado')
         self.rowconfigure(3, weight=1); self.columnconfigure(2, weight=1)
+        self.tex_nombre, self.tex_im, self.tex_fotos, self.tex_pend = c.get('textura', 'liso'), None, [], None
+        for r in (self.pa, self.pd, der): r.bind('<Configure>', lambda e: self.vestir_luego(), add='+')
         self.poner_marmol()
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
         self.after(100, self.cargar)
@@ -551,7 +553,55 @@ class App(tk.Tk):
             for x in range(0, W, t.width): m.paste(t, (x, y))
         self.marmol_im = m
         self.foto_marmol = ImageTk.PhotoImage(m); self.marmol.configure(image=self.foto_marmol, anchor='nw')
-        self.pintar_encabezado()
+        self.pintar_encabezado(); self.poner_textura()
+
+    # ---- textura de fondo de los paneles (Configuración). Tk no tiene transparencia: cada marco lleva detrás su
+    # recorte de la textura y cada rótulo la lleva como imagen bajo el texto; las casillas de opción, el color medio.
+    def poner_textura(self):
+        if not hasattr(self, 'tex_nombre'): return   # todavía armando la ventana
+        self.tex_im = texturas.textura(self.tex_nombre, self.winfo_screenwidth(), self.winfo_screenheight(), self.juego.get(), pcx)
+        self.tex_medidas = None; self.vestir_luego()
+
+    def vestir_luego(self):
+        if self.tex_pend: self.after_cancel(self.tex_pend)
+        self.tex_pend = self.after(60, self.vestir)
+
+    def vestir(self):
+        """Marcos: su recorte de la textura detrás (un rótulo ubicado con place, que no cambia ningún tamaño).
+        Rótulos, casillas y recuadros: el color medio de la textura, por estilo (Tk no tiene transparencia)."""
+        self.tex_pend = None; im = self.tex_im
+        medidas = (self.tex_nombre, self.juego.get()) + tuple((r.winfo_width(), r.winfo_height(), r.winfo_ismapped())
+                                                             for r in (self.pa, self.pd, self.der))
+        if medidas == getattr(self, 'tex_medidas', None): return   # nada cambió: no repintar (evita ciclos)
+        self.tex_medidas = medidas; fotos = []; st = ttk.Style(self)
+        m = texturas.promedio(im) if im is not None else None
+        for raiz in (self.pa, self.pd, self.der):
+            if not raiz.winfo_ismapped(): continue
+            rx, ry = raiz.winfo_rootx(), raiz.winfo_rooty(); pila = [raiz]
+            while pila:
+                w = pila.pop(); cl = w.winfo_class()
+                if isinstance(w, LuzTope) or getattr(w, 'es_fondo', False): continue
+                pila.extend(w.winfo_children())
+                if cl in ('TLabel', 'TCheckbutton', 'TRadiobutton', 'TLabelframe'):
+                    if not hasattr(w, 'tex_estilo'): w.tex_estilo = str(w.cget('style')) or cl
+                    if m is None: w.configure(style=w.tex_estilo)
+                    else:
+                        e = 'Tex.' + w.tex_estilo; st.configure(e, background=m)
+                        if cl == 'TLabelframe': st.configure(e + '.Label', background=m)
+                        w.configure(style=e)
+                if cl not in ('TFrame', 'TLabelframe'): continue
+                if not hasattr(w, 'fondo_tex'):
+                    w.fondo_tex = tk.Label(w, bd=0, highlightthickness=0); w.fondo_tex.es_fondo = True
+                fl = w.fondo_tex; an, al = w.winfo_width(), w.winfo_height()
+                if im is None or an < 4 or al < 4: fl.place_forget(); continue
+                x, y = w.winfo_rootx() - rx, w.winfo_rooty() - ry; dx = dy = 0
+                if cl == 'TLabelframe':
+                    lw = str(w.cget('labelwidget')); dy = self.nametowidget(lw).winfo_height() if lw else 18; dx = 2
+                    fl.place(x=dx, y=dy, width=max(1, an - 2 * dx), height=max(1, al - dy - 2))
+                else: fl.place(x=0, y=0, relwidth=1, relheight=1)
+                f = ImageTk.PhotoImage(im.crop((x + dx, y + dy, x + an, y + al))); fotos.append(f)
+                fl.configure(image=f, anchor='nw'); fl.lower()
+        self.tex_fotos = fotos
 
     # ---- encabezado: sobre el mármol, con título, estado, casilla de orden, carpeta y configuración ----
     def encabezado(self, c):
@@ -655,6 +705,13 @@ class App(tk.Tk):
         def cero():
             if messagebox.askyesno(TITULO, f'¿Poner en cero el contador de pruebas ({self.pruebas()})?', parent=v): self.contar_prueba(poner=0)
         tk.Button(fc, text='Poner en cero', width=14, command=cero).pack(side='left', padx=(10, 0))
+        tk.Label(fr, text='Fondo de los paneles', font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(14, 0))
+        tex = ttk.Combobox(fr, values=list(texturas.NOMBRES.values()), state='readonly', width=26)
+        tex.set(texturas.NOMBRES.get(self.tex_nombre, texturas.NOMBRES['liso'])); tex.pack(anchor='w', pady=(6, 0))
+        def textura(e=None):
+            self.tex_nombre = {t: k for k, t in texturas.NOMBRES.items()}[tex.get()]
+            self.cfg['tablero']['textura'] = self.tex_nombre; self.guardar_cfg(); self.poner_textura()
+        tex.bind('<<ComboboxSelected>>', textura)
         tk.Label(fr, text='RA Sistemas & Claude © 2026', fg='#696969').pack(anchor='w', pady=(14, 0))
         correo = tk.Label(fr, text=CORREO, fg='#0066cc', cursor='hand2', font=('Segoe UI', 9, 'underline')); correo.pack(anchor='w')
         correo.bind('<Button-1>', lambda e: webbrowser.open(f'mailto:{CORREO}'))

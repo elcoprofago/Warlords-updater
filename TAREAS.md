@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 208).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 209).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **208.** Simulador de combate 1.0.46.0 (13/11/2026). Abrir Configuración (el engranaje) → «Fondo de los paneles» y probar cada opción: Pergamino, Piedra, Madera, Mármol claro (del juego) y Liso. Los paneles ATACANTE, DEFENSOR y TERRENO cambian de fondo al momento, la ventana no cambia de tamaño y la letra se sigue leyendo. Cerrar y volver a abrir el simulador: tiene que acordarse de la última elegida. Anotar lo que no convenza.
 - [ ] **207.** La IA nueva en las partidas del ranking (vista-aliada 1.0.218.0, 13/11/2026). Desde esta versión, en las partidas normales (sin el Monitor de IA) la computadora juega con la IA nueva: guarda oro, frena la producción antes de quedarse sin plata y no le desertan los ejércitos. 1) Actualizar `C:\Warlords` (la carpeta del ranking) con el Actualizador, opción **9**, a vista-aliada **1.0.218.0** o posterior; avisar a los del clan que actualicen también. 2) En la próxima partida con bandos de la computadora, fijarse si alguno se queda sin oro o pierde ejércitos por deserción (el aviso del juego al empezar su turno). Anotar lo que se vea raro.
 - [ ] **206.** Simulador de combate 1.0.45.0 (13/11/2026). Pasar el tope en cualquiera de los dos paneles (por ejemplo, 9 unidades en una pila): la luz roja de «tope excedido» llega a un rojo más claro que antes, se queda encendida medio segundo y vuelve a apagarse despacio, una y otra vez. Anotar lo que no convenza.
 - [x] **205.** Simulador de combate 1.0.44.0 (13/11/2026). Mirar los botones de colores (Carpeta del juego, INICIAR COMBATE, Invertir, Historial y los dos Héroe): el degradé tiene que verse suave, sin franjas ni escalones. Anotar lo que no convenza.

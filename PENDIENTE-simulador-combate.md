@@ -333,3 +333,9 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   escalones de 2-3 píxeles; ahora se suaviza con un promedio gaussiano (suavizar) antes de estirarla. Captura del Manual rehecha.
 - 13/11/2026 (1.0.45.0): luz de «tope excedido» más clara en el pico (centro 255,78,78) y quieta 500 ms ahí
   (LuzTope.PICO_MS); medido: pico 501-502 ms, los demás cuadros ~110 ms o menos.
+- 13/11/2026 (1.0.46.0): Configuración → «Fondo de los paneles» (pedido del usuario): liso, pergamino, piedra, madera
+  o mármol claro (MARBLE.PCX aclarado); se guarda como `textura` en [tablero] del .ini. Texturas en texturas.py
+  (PIL, claras para que la letra oscura se lea). Tk no tiene transparencia: cada marco lleva detrás su recorte
+  (rótulo con place, no cambia tamaños) y rótulos, casillas y recuadros toman el color medio por estilo. Un primer
+  intento ponía la textura como imagen de cada rótulo y entraba en un ciclo de redibujado; ahora vestir() solo
+  repinta si cambió el tamaño de un panel. Medido: ventana 1183x949 igual con las 5 opciones, un repintado por cambio.
