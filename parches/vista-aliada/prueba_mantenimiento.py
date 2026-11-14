@@ -7,10 +7,10 @@
 #   3. con un ejército movido a mano a una ciudad y fuera de toda ciudad; control sin ia_on: nada anotado.
 #   4. evento 34 (paso 4.5): con ME_TAB cargada a mano (meta de la ronda, de la anterior, vieja o sin dato), el ahorro
 #      (entero − tercio) por meta de los de fuera coincide con el modelo; y me_set (en 0x40cc3f) anota meta + 1 y la
-#      ronda para los ejércitos de la pila y deja eax y [esp+0x10] como el original; sin ia_on no anota.
+#      ronda para los ejércitos de la pila y deja eax y [esp+0x10] como el original; sin ia_on también (1.0.218.0).
 #   5. paso 4.6: el 34 también separa 11 (jugó sin meta) y 12 (lo decidió ai_ally); me_pre (en 0x40edf1) marca 11 con
 #      la ronda en los ejércitos de la pila del jugador [0x4fb0ec] y sigue a ai_ord con la pila intacta; con jugador
-#      >= 8 o sin ia_on no marca.
+#      >= 8 no marca; sin ia_on sí (1.0.218.0: ME_TAB la usa el repliegue en las partidas del ranking).
 # Uso: python prueba_mantenimiento.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <me_tab hex> <me_set hex>
 #      <me_pre hex> <ai_ord hex> <partida.SAV> [...]
 import pefile, struct, sys
@@ -222,8 +222,8 @@ for on in (1, 0):
         mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBX, 0x1234)
         mu.emu_start(ME_SET, 0xdead0000, count=10000)
         tab = struct.unpack('<4096H', mu.mem_read(ME_TAB, 8192))
-        want = (meta + 1) | (12 << 8) if on else 0
-        check(tab[3] == want and tab[17] == want and sum(1 for t in tab if t) == (2 if on else 0),
+        want = (meta + 1) | (12 << 8)   # también sin ia_on desde 1.0.218.0: ME_TAB la usa el repliegue del ranking
+        check(tab[3] == want and tab[17] == want and sum(1 for t in tab if t) == 2,
               f'me_set ia_on={on} meta {meta}: tabla {tab[3]:#x} {tab[17]:#x}')
         check(mu.reg_read(UC_X86_REG_EAX) == meta and struct.unpack('<H', mu.mem_read(sp + 0x14, 2))[0] == 0
               and mu.reg_read(UC_X86_REG_EBX) == 0x1234 and mu.reg_read(UC_X86_REG_ESP) == sp + 4,
@@ -239,7 +239,7 @@ for on, jug in ((1, 3), (0, 3), (1, 8)):
     mu.reg_write(UC_X86_REG_ESP, sp); mu.reg_write(UC_X86_REG_EBX, 0x1234)
     mu.emu_start(ME_PRE, AI_ORD, count=10000)
     tab = struct.unpack('<4096H', mu.mem_read(ME_TAB, 8192))
-    want = 12 | (9 << 8) if on and jug < 8 else 0
+    want = 12 | (9 << 8) if jug < 8 else 0   # también sin ia_on desde 1.0.218.0
     check(mu.reg_read(UC_X86_REG_EIP) == AI_ORD and mu.reg_read(UC_X86_REG_ESP) == sp
           and mu.mem_read(sp, 12) == struct.pack('<III', 0xdead0000, 2, 0) and mu.reg_read(UC_X86_REG_EBX) == 0x1234,
           f'me_pre ia_on={on} jugador {jug}: sigue a ai_ord con la pila intacta')

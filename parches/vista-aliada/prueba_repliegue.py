@@ -6,7 +6,8 @@
 #     primera); evento 37 = (meta original, ciudad, oro);
 #     ME_TAB anota la meta nueva; eax = meta nueva, [esp+0x10] = 0, ebx y esp como el original;
 #   - controles (meta y destino intactos, sin evento 37): metas 0, 1, 5, 7, 8, 9; oro justo en el límite; sin
-#     déficit; IA_MODE 0; sin ia_on; jugador 8; bando humano; líder héroe; color sin ciudades propias.
+#     déficit; IA_MODE 0; jugador 8; bando humano; líder héroe; color sin ciudades propias. Sin ia_on (sin IA.INI,
+#     partidas del ranking): igual que la de prueba, sin eventos.
 #   - paso 4.13, memoria del repliegue: las metas 7 y 8 también pasan a Form si el líder tiene en ME_TAB meta 1
 #     (código 2) de esta ronda o la anterior, o RP_HU (15, huérfano recién agrupado); evento 38 = (meta original,
 #     ciudad, distancia). Controles: código 2 de hace dos rondas, otros códigos (4, 8, 13), sin quiebra, líder héroe,
@@ -210,8 +211,10 @@ for sav in SAVS:
         for meta in (0, 5, 9):
             nm, dest, tab, oo, ev, _ = corrida(m, p, lider, meta, mant, ing, lim - 1, prev=2 | 12 << 8)
             check(nm == meta and dest == 777 and not ev and oo, f'color {p} meta {meta} con Form previa: no cambia')
+        # sin IA.INI (ranking, 1.0.218.0): repliega igual que la de prueba y no escribe eventos
+        r1 = corrida(m, p, lider, 3, mant, ing, 0, solo_me=True)
         nm, dest, tab, oo, ev, lines = corrida(m, p, lider, 3, mant, ing, 0, on=0, solo_me=True)
-        check(nm == 3 and dest == 777 and not lines and tab == 0 and oo, f'color {p} sin ia_on: nada')
+        check((nm, dest, tab, oo) == r1[:4] and not lines and not ev, f'color {p} sin IA.INI: {(nm, dest, tab)} vs {r1[:4]} {lines}')
         print(f'  color {p}: líder {lider} en ({x},{y}), {len(propias)} ciudades propias, va a la {want}')
 check(probados > 0, f'algún color probado ({probados})')
 print(f'{nctl} controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)

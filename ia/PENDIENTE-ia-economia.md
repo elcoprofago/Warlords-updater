@@ -782,5 +782,21 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.1
   oro 331 (245-374).
 - Conclusión: el freno cumple: se acabó la quiebra por sobreproducción sin costar puesto. Queda como está (margen
   oro / 4).
+
+### La IA nueva pasa a las partidas del ranking (vista-aliada 1.0.218.0, 13/11/2026)
+- Regla nueva del usuario (CLAUDE.md del repo): todo avance genuino de la IA pasa enseguida a las partidas sin
+  `DATA\IA.INI` (las del ranking del clan, en `C:\Warlords`).
+- Antes, sin IA.INI, ia_on = 0 e ia_mode = 0: la computadora jugaba con la original más puentes, barcos y pozos.
+  Ahora ia_mode vale 1 para todos los colores sin IA.INI (dato inicial y en ia_turn antes de buscar el archivo), y
+  me_set (repliegue y ME_TAB), me_mk, or_run (huérfanos), rs_ok (reserva y ahorro con destino) y pr_ok (freno de
+  producción) ya no piden ia_on. Los registros (ia_evt, ia_bat, ia_fin, ia_vic) siguen escribiendo solo con IA.INI.
+- Fuera: ai_ally (alianzas) sigue pidiendo ia_on: en las series A/B no dio ventaja ni desventaja medible
+  (PENDIENTE-entrenamiento-ia.md, 24/10), no es un avance.
+- Pruebas: los controles «sin ia_on» pasan a «sin IA.INI: decide igual que la de prueba y no escribe eventos».
+  produccion 5.301, reserva 4.066, huerfanos 3.759, repliegue 940, mantenimiento 266, formfuera 154, desbande, oro,
+  saldo y planificador 444 TODO OK. `prueba_iaregistro.py` (desde la 1.0.35.0) y `prueba_iaalianzas.py` ya fallaban
+  igual con la 1.0.217.0: están desactualizadas, no las rompe este cambio. ia_turn verificado desensamblando el exe.
+- Sin verificar en una partida real del clan.
+
 **Próximo paso:** los huérfanos en quiebra (1191 color 6).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, huérfanos en quiebra (1191 color 6)".

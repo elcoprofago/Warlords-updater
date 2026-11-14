@@ -7,7 +7,8 @@
 #   2. corre or_run en el exe parcheado (ia_on, IA_MODE[p] = 1, [0x4fb0ec] = p, bando de la computadora) y compara
 #      los grupos nuevos (lugar, activo, líder, lista), el bit 0x400 en +0x1a de cada miembro y el evento 35 con el
 #      modelo; los grupos que ya existían y los de los otros colores quedan iguales.
-#   3. controles sin cambio: sin ia_on, IA_MODE[p] = 0, jugador >= 8 y bando humano (0x536c12 = -1).
+#   3. controles sin cambio: IA_MODE[p] = 0, jugador >= 8 y bando humano (0x536c12 = -1). Sin ia_on (sin IA.INI,
+#      partidas del ranking): agrupa como la de prueba y no escribe eventos.
 #   4. con OR_MAX - 1 grupos ocupados a mano: arma uno solo (llega a OR_MAX).
 #   5. (paso 4.13) cada ejército agrupado queda en ME_TAB con RP_HU (15) y la ronda; el resto de ME_TAB, en 0.
 #      Desde 1.0.215.0, lo mismo en RP_TAB (ME_TAB + 0x2004), la tabla que lee me_set.
@@ -164,7 +165,13 @@ for sav in SAVS:
         ok(corrida.rp == tab, f'p{p}: RP_TAB distinta de ME_TAB')
         if hechos:
             print(f'  color {p}: {len(hechos)} grupos, {sum(len(l) for _, l in hechos)} ejércitos, quedan {quedan}')
-        for nombre, kw in (('sin ia_on', dict(on=0)), ('IA_MODE 0', dict(modo=0)), ('jugador 8', dict(jug=8)),
+        # sin IA.INI (ranking, 1.0.218.0): agrupa igual que la de prueba y no escribe eventos
+        gm0, _, lines0, intactos0 = corrida(m, p)
+        tab0, rp0 = list(corrida.tab), list(corrida.rp)
+        gm1, _, lines1, intactos1 = corrida(m, p, on=0)
+        ok(gm1 == gm0 and intactos1 == intactos0 and lines1 == [] and list(corrida.tab) == tab0 and
+           list(corrida.rp) == rp0, f'p{p}: sin IA.INI distinto de prueba o con eventos {lines1}')
+        for nombre, kw in (('IA_MODE 0', dict(modo=0)), ('jugador 8', dict(jug=8)),
                            ('humano', dict(humano=True))):
             gm, _, lines, intactos = corrida(m, p, **kw)
             ok(not any(corrida.tab) and not any(corrida.rp), f'p{p}: control {nombre} marcó ME_TAB o RP_TAB')

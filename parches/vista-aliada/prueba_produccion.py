@@ -8,7 +8,8 @@
 # Paso 4.15: además, si mantenimiento entero de los ejércitos de p (al primer intento del turno) + lo producido entero en
 # el turno + la unidad nueva entera > ingreso + oro / 4 (oro negativo = 0), no sale y anota el evento 40 (mismos campos;
 # n = ingreso + oro / 4). Los casos del tercio corren con oro 32000 para que la regla nueva no intervenga.
-# Controles que deben seguir como el original: humano, IA original (ia_mode 0), sin ia_on, ingreso holgado.
+# Controles que deben seguir como el original: humano, IA original (ia_mode 0), ingreso holgado. Sin ia_on (sin
+# IA.INI, partidas del ranking): decide como la de prueba y no escribe eventos.
 # Uso: python prueba_produccion.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <partida.SAV> [...]
 import pefile, struct, sys
 from unicorn import *
@@ -200,11 +201,17 @@ for sav in SAVS:
             mu, _ = maquina(imgs['av'], sav, p, 30000, 0, False, 1, 1, oro=-500)
             l, r, pr = corrida(mu, 0x43b930, (p,))
             check(pr and not any(x[3] == 40 for x in l), f'{sav} c{p} 4.15 oro negativo con ingreso holgado frenó')
-            for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0), ('sin ia_on', False, 0, 1)):
+            for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0)):
                 mu, _ = maquina(imgs['av'], sav, p, 0, mant, hum, on, modo)
                 l, r, pr = corrida(mu, 0x43b930, (p,))
                 mo, _ = maquina(imgs['orig'], sav, p, 0, mant, hum, on, modo)
                 _, ro, _ = corrida(mo, 0x43b930, (p,))
                 check(pr and r == ro and not any(x[3] == 32 for x in l), f'{sav} c{p} {desc}: {r} vs {ro}')
+            # sin IA.INI (partidas del ranking, 1.0.218.0): decide igual que la de prueba, sin escribir eventos
+            mu, _ = maquina(imgs['av'], sav, p, 0, mant, False, 1, 1)
+            _, r1, _ = corrida(mu, 0x43b930, (p,))
+            mu, _ = maquina(imgs['av'], sav, p, 0, mant, False, 0, 1)
+            l, r, pr = corrida(mu, 0x43b930, (p,))
+            check(pr and r == r1 and l == [], f'{sav} c{p} sin IA.INI: {r} vs prueba {r1}, eventos {l}')
     print(sav, n - antes, 'controles')
 print(n, 'controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)

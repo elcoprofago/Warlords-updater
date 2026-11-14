@@ -617,9 +617,13 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
   <li><b>Barcos con Landing y Carrier:</b> planea desembarcos en playa, parte el grupo cuando no entra en el barco y forma
   convoyes.</li>
   <li><b>Puentes:</b> cumple las misiones de derribar puentes y reconstruye los que necesita.</li>
-  <li><b>Ahorro con destino</b> <span class="estado e-pr">en prueba</span>: cuando un puente derribado le abriría camino
-  pero no le alcanza el oro para reconstruirlo, la IA nueva deja de comprar tipos de unidad y de agrandar ciudades
-  hasta juntar lo que cuesta.</li>
+  <li><b>Economía:</b> guarda una reserva de oro antes de comprar tipos de unidad o agrandar ciudades; deja de fabricar
+  ejércitos antes de que el mantenimiento supere lo que cobra (cuenta lo que pagaría con todo el ejército fuera de las
+  ciudades); junta en pilas a los ejércitos que quedaron sueltos; y, cuando se está quedando sin oro, manda de vuelta a
+  una ciudad propia (donde pagan un tercio) a las pilas que perseguían algo sin pelea. Así no se queda en bancarrota ni
+  le desertan los ejércitos.</li>
+  <li><b>Ahorro con destino:</b> cuando un puente derribado le abriría camino pero no le alcanza el oro para
+  reconstruirlo, deja de comprar tipos de unidad y de agrandar ciudades hasta juntar lo que cuesta.</li>
   <li><b>Pozos y trampas:</b> nunca entra en uno que ve.</li>
   <li><b>Alianzas</b> <span class="estado e-pr">en prueba</span>: una pila amenazada se refugia en la ciudad compartida
   de un aliado; un héroe perseguido por una misión de asesinato busca refugio; las pilas defienden las ciudades aliadas
@@ -632,9 +636,10 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
   <li>No elige su personalidad según el mapa ni cambia de prioridades según la fase de la partida (etapas futuras del
   plan de entrenamiento).</li>
 </ul>
-<div class="nota"><b>Nota.</b> Las decisiones de alianzas solo actúan en los bandos que el banco de simulación pone en
-«IA de prueba». En las partidas normales, sin el archivo <code>DATA\IA.INI</code>, la computadora juega con la IA de
-siempre más las mejoras de barcos, puentes y pozos.</div>
+<div class="nota"><b>Nota.</b> Desde la versión 1.0.218.0, en las partidas normales (también las del ranking del clan),
+la computadora juega con todas las mejoras que el banco de simulación confirmó: las de esta lista menos las de alianzas.
+Las decisiones de alianzas no dieron ventaja medible y solo actúan en los bandos que el banco pone en «IA de
+prueba».</div>
 
 <!-- ============================================================ XIII -->
 <h1><span class="num">Capítulo XIV</span>El banco de simulación de partidas</h1>
@@ -649,7 +654,8 @@ resultado (comparación A/B).</p>
 
 <h2>El archivo IA.INI</h2>
 <p><code>DATA\IA.INI</code> de la carpeta del juego, sección <code>[IA]</code>, claves <code>Color0</code> a <code>Color7</code>
-con valor <code>original</code> o <code>prueba</code>. Sin ese archivo el juego no lee ni escribe nada distinto. Con
+con valor <code>original</code> o <code>prueba</code>. Sin ese archivo el juego no lee ni escribe nada y la
+computadora juega con la IA nueva (capítulo XIII). Con
 él, el juego anota por turno y bando oro, ciudades, ejércitos y héroes (<code>IA.CSV</code>), las batallas, la
 diplomacia, los eventos (puentes, convoyes, refugios, órdenes) y el podio final.</p>
 
@@ -908,6 +914,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <tr><td>Army List con las 25 reglas</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Órdenes por chat a la IA</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Votación, Sorteo y pausa</td><td><span class="estado e-pr">en prueba</span> en otras PC del clan</td></tr>
+<tr><td>IA: economía (reserva, freno de producción, pilas sueltas, repliegue)</td><td><span class="estado e-pr">en prueba</span> en partidas del clan; confirmada en el banco</td></tr>
 <tr><td>IA de alianzas</td><td><span class="estado e-pr">en prueba</span> (series A/B)</td></tr>
 <tr><td>Pozos y trampas en red (misma tabla en todas las PC)</td><td><span class="estado e-dev">en desarrollo</span></td></tr>
 <tr><td>Torres, faros, murallas y sus bonos</td><td><span class="estado e-pr">en prueba</span></td></tr>
@@ -939,6 +946,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.218.0</td><td>13/11/2026</td><td>La IA nueva juega también en las partidas normales y en las del ranking del clan (sin <code>DATA\IA.INI</code>): reserva de oro, freno de producción, pilas sueltas y repliegue por quiebra. En la tanda 165 no tuvo ninguna deserción (la original, 48) y quedó mejor ubicada. Las reglas de alianzas siguen solo en el banco de simulación.</td></tr>
 <tr><td>1.0.217.0</td><td>13/11/2026</td><td>IA en prueba: deja de fabricar ejércitos antes de quedarse sin oro. Antes miraba lo que pagaba en ese momento, con casi todo el ejército dentro de las ciudades (donde paga un tercio); al salir las pilas el gasto se triplicaba y los ejércitos desertaban. Ahora cuenta lo que pagaría con todo el ejército afuera, con un margen del oro guardado.</td></tr>
 <tr><td>1.0.216.0</td><td>13/11/2026</td><td>IA en prueba: solo agrega un registro para las pruebas (pilas que vuelven a su ciudad y terminan el turno afuera); el juego no cambia.</td></tr>
 <tr><td>1.0.215.0</td><td>13/11/2026</td><td>IA en prueba: corrige el cambio de la 1.0.214.0, que no llegaba a actuar; ahora la pila que volvía a su ciudad sin oro sigue volviendo de verdad.</td></tr>

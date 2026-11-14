@@ -7202,7 +7202,7 @@ aibn_bridge:
 # lee antes (0x4223ad), así que turno.oro - n = lo que se cobró al empezar el turno antes del saldo (producción), y
 # n + x - y - turno.oro del turno siguiente = lo gastado (o ganado, si da negativo) durante el turno.
 IA_A = place_data('ia_a', cstr_('a'))
-IA_MODE = place_data('ia_mode', bytes(8))
+IA_MODE = place_data('ia_mode', bytes([1] * 8))   # sin DATA\IA.INI: todos prueba (CLAUDE.md, IA al ranking)
 IA_ON = place_data('ia_on', bytes(4))   # 1 si en el último turno existía DATA\IA.INI (activa los registros)
 FOPEN, FCLOSE, FPRINTF, STRICMP = 0x5a9bdc, 0x5a9be4, 0x5a9bf4, 0x5a9be0
 IA_ECSV = place_data('ia_ecsv', cstr_(r'.\DATA\IA_EVT.CSV'))
@@ -7302,7 +7302,7 @@ FM_DST = place_data('fm_dst', bytes(ME_N * 2))
 # RP_HU (or_run lo agrupó en este turno). Evento 38: x = meta original, y = ciudad elegida, n = distancia a ella.
 # Paso 4.12 (PENDIENTE-ia-economia), repliegue por quiebra. Las deserciones de la nueva vienen sobre todo de pilas
 # fuera de ciudad que pagan el mantenimiento entero mientras persiguen una meta sin pelea (en las tandas 148-157,
-# meta 3 neutral durante 6 o más turnos, quietas). En me_set, antes de anotar: con ia_on, IA_MODE[p] = 1, bando de
+# meta 3 neutral durante 6 o más turnos, quietas). En me_set, antes de anotar: con IA_MODE[p] = 1 (sin IA.INI, siempre), bando de
 # la computadora, mantenimiento > ingreso y oro < RP_TURNS × (mantenimiento − ingreso), si la meta es 2 ruina,
 # 3 neutral, 4 ítem o 6 misión y el líder de la pila no es un héroe, la cambia a 1 «Form» con destino la ciudad
 # propia viva más cercana al líder (0x4974a0; en empate, la primera). En una ciudad pagan un tercio. Las metas de
@@ -7310,8 +7310,6 @@ FM_DST = place_data('fm_dst', bytes(ME_N * 2))
 # y = ciudad elegida, n = oro.
 me_set = place('me_set', f'''
     pushad
-    cmp byte ptr [{IA_ON:#x}], 0
-    je me_skip
     movsx ebx, word ptr [0x4fb0ec]
     cmp ebx, 8
     jae rp_no
@@ -7457,14 +7455,12 @@ me_skip:
 # (registro +0xc). me_pre, en el call de 0x40edf1 (cada pila de la IA que juega su turno, antes de ai_ord), marca 11
 # = jugó pero no eligió meta (0x40c990 no llegó a 0x40cc3f); si llega, me_set lo pisa con la meta. ai_ally, cuando
 # decide por su cuenta sin 0x40c990 (refugio, defensa, refugiada que espera: al_done), marca 12. Lo que queda en 10 es
-# un ejército que no jugó en esta ronda ni en la anterior (fuera de toda pila que se juegue). Solo con ia_on.
+# un ejército que no jugó en esta ronda ni en la anterior (fuera de toda pila que se juegue). También sin ia_on (1.0.218.0).
 # Paso 4.7: el 10 se parte por los grupos de la IA (0x561f00 + 1178·p, 10 de 64 bytes, activo = bit 0, ejércitos en
 # +0xc..+0x1a; solo esos juegan, en el bucle de 0x40eab0): 10 = está en un grupo activo de su color y no jugó;
 # 13 = no está en ningún grupo (huérfano: ningún camino del juego lo vuelve a mover).
 me_mk = place('me_mk', f'''
     pushad
-    cmp byte ptr [{IA_ON:#x}], 0
-    je mk_skip
     mov ebx, dword ptr [esp + 0x28]
     mov bh, byte ptr [0x503328]
     mov esi, dword ptr [esp + 0x24]
@@ -7935,8 +7931,6 @@ ok_ret:
 or_run = place('or_run', f'''
     pushad
     sub esp, 0x20
-    cmp byte ptr [{IA_ON:#x}], 0
-    je or_out
     movsx ebx, word ptr [0x4fb0ec]
     cmp ebx, 8
     jae or_out
@@ -8176,7 +8170,7 @@ gl_skip:
     ret
 ''')
 
-# ---- Reserva de oro (PENDIENTE-ia-economia, paso 4): solo con ia_on y para los bandos de la computadora en prueba
+# ---- Reserva de oro (PENDIENTE-ia-economia, paso 4): para los bandos de la computadora en prueba (sin IA.INI, todos)
 # (IA_MODE = 1). Piso = 2 x mantenimiento del turno [0x5643d8 + 2p], nunca menos de RS_MIN. La IA en prueba no compra
 # un tipo de unidad para una ciudad (0x48ba50, paquete de red, 61 % del gasto medido) ni agranda una ciudad (0x405310,
 # 25 %) si el oro le quedaría por debajo del piso; no hace nada ni cobra, y lo puede volver a pedir otro turno.
@@ -8200,8 +8194,6 @@ rs_ok = place('rs_ok', f'''
     push edx
     push esi
     mov eax, 1
-    cmp byte ptr [{IA_ON:#x}], 0
-    je rs_out
     mov ebx, dword ptr [esp + 0x14]
     cmp ebx, 8
     jae rs_out
@@ -8323,7 +8315,7 @@ rg_no:
 # unidad = salida[4] de 0x43b6d0(ciudad, dueño, tipo, salida) (tipo +0x9e con los ajustes de objetos, 1-16), el mismo
 # valor que 0x43b120 pone en los bits 0xf0 de +0xe del ejército. 0x4406b0 lo suma y en una casilla de ciudad cobra un
 # tercio truncado, mínimo 1 (0 si es 0): la unidad nueva nace en la ciudad y se cuenta así (paso 4.3; en la 4.2 iba
-# entera y frenaba de más). Con ia_on, IA_MODE[p] = 1 y bando de la computadora: si
+# entera y frenaba de más). Con IA_MODE[p] = 1 (sin IA.INI, siempre) y bando de la computadora: si
 # mantenimiento [0x5643d8 + 2p] + lo producido en este turno + el tercio de la unidad nueva > ingreso
 # [0x5643f0 + 2p] (paso 4.3; en la 4.2, 90 % del ingreso), la unidad no sale: se saltea la creación y el reinicio, y la ciudad la vuelve a intentar el turno
 # siguiente con la cuenta en 1. Evento 32 (x = tipo, y = mantenimiento con la unidad nueva, n = ingreso).
@@ -8396,8 +8388,6 @@ pr_ok = place('pr_ok', f'''
     push esi
     push edi
     mov eax, 1
-    cmp byte ptr [{IA_ON:#x}], 0
-    je po_out
     mov ebx, dword ptr [ebp + 0xc]
     cmp ebx, 8
     jae po_out
@@ -15510,15 +15500,17 @@ as_set:
 ''')
 
 # ---------------------------------------------------------------- IA: base de pruebas (specs\ia-destrezas-v1.md)
-# DATA\IA.INI, sección [IA], claves Color0..Color7 = original | prueba: qué IA maneja cada color. Sin el archivo el exe
-# no hace nada distinto (ni lee ni escribe). Con el archivo, al empezar el turno de cada bando (antes de 0x442470(p),
+# DATA\IA.INI, sección [IA], claves Color0..Color7 = original | prueba: qué IA maneja cada color. Sin el archivo (las
+# partidas reales, las del ranking) no lee ni escribe registros, y desde 1.0.218.0 ia_mode queda en 1 para todos: las
+# destrezas confirmadas en las tandas (reserva, freno de producción, huérfanos, repliegue) juegan siempre; las que no
+# dieron ventaja (alianzas, ai_ally) siguen pidiendo ia_on (regla del CLAUDE.md del repo: IA al ranking). Con el archivo, al empezar el turno de cada bando (antes de 0x442470(p),
 # en 0x4223ad) se releen las claves a ia_mode (0 original, 1 prueba, 2 valor inválido: se juega con la original) y se
 # agrega a DATA\IA.CSV la línea turno, color, ia, vivo, control, oro, ciudades, ejércitos, héroes, s0..s15:
 #   turno = [0x5032f8 + 0x30] (0x420a80); vivo = +1 del registro del jugador (0x536b30 + p*0x1f8); control = +0xe2
 #   (-1 humano); oro = +0xe4; ciudades: dueño +0xa5 de cada ciudad (0x537e2c + i*0xde, [0x537e2a] ciudades);
 #   ejércitos vivos (+0x13 & 0x40) de 0x54fe50 + i*0x1c (1 <= i < [0x54fe50]) cuya palabra +0xe tiene dueño p en los
 #   bits 5-8; los bits 0-4 son la ranura del bando (0..15 se cuentan en s0..s15; 0x10 es héroe).
-# Las destrezas de la IA de prueba leen ia_mode[p] (todavía no hay ninguna: con "prueba" juega igual que la original).
+# Las destrezas de la IA de prueba leen ia_mode[p]; los registros (ia_evt, ia_bat, ia_fin, ia_vic) solo escriben con ia_on.
 IA_SEC = place_data('ia_sec', cstr_('IA'))
 IA_PATH = place_data('ia_path', cstr_(r'.\DATA\IA.INI'))
 IA_CSV = place_data('ia_csv', cstr_(r'.\DATA\IA.CSV'))
@@ -18772,6 +18764,8 @@ ia_turn = place('ia_turn', f'''
     dec byte ptr [ebx*8 + {OR_TAB + 1:#x}]
 it_ord:
     mov byte ptr [{IA_ON:#x}], 0
+    mov dword ptr [{IA_MODE:#x}], 0x01010101
+    mov dword ptr [{IA_MODE + 4:#x}], 0x01010101
     push {IA_R:#x}
     push {IA_PATH:#x}
     call dword ptr [{FOPEN:#x}]

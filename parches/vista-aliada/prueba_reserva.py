@@ -3,7 +3,8 @@
 # en el exe parcheado y en el original, y mira si la compra sigue (llega al cobro, 0x43fd60, con el mismo costo que el
 # original; en 0x405310, a la instrucción que sigue a la entrada) o se frena (vuelve sin cobrar, con el evento 31 y
 # los registros intactos). Piso = 2 x mantenimiento, nunca menos de 50.
-# Controles que deben seguir como el original: humano, IA original (ia_mode 0), sin ia_on, ciudad de otro, costo 0.
+# Controles que deben seguir como el original: humano, IA original (ia_mode 0), ciudad de otro, costo 0. Sin ia_on (sin
+# IA.INI, partidas del ranking): decide como la de prueba y no escribe eventos.
 # Ahorro con destino (11/11/2026): con RS_GOAL[p] = costo de un puente y RS_GOALT[p] = turno + 1 de este turno o del
 # anterior, el piso suma ese costo y el evento 31 lleva x = tipo + 10; vencido (2 turnos) o sin anotar, no cuenta.
 # Uso: python prueba_reserva.py <DarklordAV.exe> <Darklord.exe> <ia_on hex> <ia_mode hex> <rs_goal hex> <rs_goalt hex>
@@ -115,11 +116,15 @@ for sav in SAVS:
                             check(r == r0 and l == [[7, p, 1, 30, 0x48baea - (1 << 32), -cost, oro]] or
                                   r == r0 and r0 and l == [],
                                   f'{sav} c{p} unidad t{t} oro {oro}: debe seguir {l} {r}')
-                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0),
-                                                ('sin ia_on', False, 0, 1)):
+                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0)):
                         l, r, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, 0, mant, hum, on, modo)
                         _, r0, _ = corrida(imgs['orig'], sav, 0x48ba50, args, p, 0, mant, hum, on, modo)
                         check(r == r0 and not any(x[3] == 31 for x in l), f'{sav} c{p} unidad {desc}: {l} {r} {r0}')
+                    # sin IA.INI (ranking, 1.0.218.0): decide como la de prueba, sin eventos
+                    for oro in (piso + cost, piso + cost - 1):
+                        _, r1, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, oro, mant, False, 1, 1)
+                        l, r, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, oro, mant, False, 0, 1)
+                        check(r == r1 and l == [], f'{sav} c{p} unidad sin IA.INI oro {oro}: {l} {r} {r1}')
             # ciudad de otro: el original no hace nada; el parche tampoco ni anota
             l, r, pr = corrida(imgs['av'], sav, 0x48ba50, (otra, p, 0, 0, 0), p, 0, mant, False, 1, 1)
             _, r0, _ = corrida(imgs['orig'], sav, 0x48ba50, (otra, p, 0, 0, 0), p, 0, mant, False, 1, 1)
@@ -135,10 +140,13 @@ for sav in SAVS:
                                   f'{sav} c{p} agrandar {cost} oro {oro}: debe frenar {l} {r} {pr}')
                         else:
                             check(r == [SIGUE] and l == [], f'{sav} c{p} agrandar {cost} oro {oro}: debe seguir {l} {r}')
-                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0),
-                                                ('sin ia_on', False, 0, 1)):
+                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0)):
                         l, r, _ = corrida(imgs['av'], sav, 0x405310, args, p, 0, mant, hum, on, modo)
                         check(r == [SIGUE] and l == [], f'{sav} c{p} agrandar {desc}: {l} {r}')
+                    for oro in (piso + cost, piso + cost - 1):
+                        _, r1, _ = corrida(imgs['av'], sav, 0x405310, args, p, oro, mant, False, 1, 1)
+                        l, r, _ = corrida(imgs['av'], sav, 0x405310, args, p, oro, mant, False, 0, 1)
+                        check(r == r1 and l == [], f'{sav} c{p} agrandar sin IA.INI oro {oro}: {l} {r} {r1}')
                 l, r, _ = corrida(imgs['av'], sav, 0x405310, (ciudad, 2, 0), p, 0, mant, False, 1, 1)
                 check(r == [SIGUE] and l == [], f'{sav} c{p} agrandar gratis: {l} {r}')
             # ahorro con destino: (costo, turno + 1 anotado, cuenta)
@@ -162,9 +170,13 @@ for sav in SAVS:
                                   f'{sav} c{p} meta {meta} agrandar oro {oro}: debe frenar {l} {r} {pr}')
                         else:
                             check(r == [SIGUE] and l == [], f'{sav} c{p} meta {meta} agrandar oro {oro}: debe seguir {l} {r}')
-                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0), ('sin ia_on', False, 0, 1)):
+                    for desc, hum, on, modo in (('humano', True, 1, 1), ('IA original', False, 1, 0)):
                         l, r, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, piso + cost, mant, hum, on, modo, meta)
                         _, r0, _ = corrida(imgs['orig'], sav, 0x48ba50, args, p, piso + cost, mant, hum, on, modo)
                         check(r == r0 and not any(x[3] == 31 for x in l), f'{sav} c{p} meta {meta} {desc}: {l} {r} {r0}')
+                    for oro in (piso + extra + cost, piso + extra + cost - 1):
+                        _, r1, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, oro, mant, False, 1, 1, meta)
+                        l, r, _ = corrida(imgs['av'], sav, 0x48ba50, args, p, oro, mant, False, 0, 1, meta)
+                        check(r == r1 and l == [], f'{sav} c{p} meta {meta} sin IA.INI oro {oro}: {l} {r} {r1}')
     print(sav, n - antes, 'controles')
 print(n, 'controles:', 'TODO OK' if ok else 'HAY FALLAS'); sys.exit(0 if ok else 1)
