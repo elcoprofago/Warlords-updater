@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.48.0'
+VERSION = '1.0.49.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -275,7 +275,7 @@ class LuzTope(tk.Canvas):
 
     def __init__(self, padre):
         bg = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
-        self.fuente = ('Segoe UI', 8, 'bold'); ancho = self.TAM + 4 + tkfont.Font(font=self.fuente).measure('tope excedido  99 / 99')
+        self.fuente = ('Segoe UI', 8, 'bold'); ancho = self.TAM + 8 + tkfont.Font(font=self.fuente).measure('tope excedido  99 / 99')
         # un lienzo: la luz (con transparencia) y su leyenda sobre la textura de los paneles (fondo_lienzo)
         super().__init__(padre, width=ancho, height=self.TAM, bg=bg, highlightthickness=0); self.tex_lienzo = True
         try:
@@ -290,13 +290,20 @@ class LuzTope(tk.Canvas):
             c = [Image.blend(apagada, roja, i / (self.PASOS - 1)) for i in range(self.PASOS)]
             self.cuadros = [ImageTk.PhotoImage(i) for i in c + c[-2:0:-1]]
         except OSError: self.cuadros = []
-        self.l_img = self.create_image(0, self.TAM // 2, anchor='w', image=self.cuadros[0] if self.cuadros else '')
-        self.l_txt = self.create_text(self.TAM + 4, self.TAM // 2, anchor='w', text='', fill='#606060', font=self.fuente)
+        # la luz a la derecha (contra el borde del panel) y la leyenda a su izquierda, con un halo blanco de 1 px para
+        # que se lea sobre cualquier textura
+        self.l_img = self.create_image(ancho, self.TAM // 2, anchor='e', image=self.cuadros[0] if self.cuadros else '')
+        xt, yt = ancho - self.TAM - 4, self.TAM // 2
+        self.halo = [self.create_text(xt + dx, yt + dy, anchor='e', text='', fill='#ffffff', font=self.fuente)
+                     for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
+        self.l_txt = self.create_text(xt, yt, anchor='e', text='', fill='#606060', font=self.fuente)
         self.encendida, self.cuadro = False, 0
 
     def poner(self, si, cuenta=''):
         """cuenta = 'unidades / tope'; encendida: «tope excedido 9 / 8» en rojo; apagada: «8 / 8» en gris."""
-        self.itemconfigure(self.l_txt, text=f'tope excedido  {cuenta}' if si else cuenta, fill='#b00000' if si else '#606060')
+        t = f'tope excedido  {cuenta}' if si else cuenta
+        for h in self.halo: self.itemconfigure(h, text=t)
+        self.itemconfigure(self.l_txt, text=t, fill='#b00000' if si else '#404040')
         if si and not self.encendida:
             self.encendida, self.cuadro = True, 0; self.titilar()
         elif not si and self.encendida:
@@ -336,9 +343,9 @@ class Panel(ttk.Frame):
         self.barco.bind('<<ComboboxSelected>>', lambda e: self.recalcular())
         self.con_heroe = tk.BooleanVar()
         ttk.Checkbutton(f, text='Héroe', variable=self.con_heroe, command=self.recalcular).grid(row=2, column=0, sticky='w', pady=(8, 0))
-        fh = ttk.Frame(f); fh.grid(row=2, column=1, sticky='w', pady=(8, 0))
+        fh = ttk.Frame(f); fh.grid(row=2, column=1, sticky='we', pady=(8, 0)); f.columnconfigure(1, weight=1)
         boton_color(fh, 'Héroe…', self.editar_heroe, 'blanco').pack(side='left')
-        self.luz = LuzTope(fh); self.luz.pack(side='left', padx=(10, 0))
+        self.luz = LuzTope(fh); self.luz.pack(side='right', padx=(10, 0))
         self.txt_heroe = ttk.Label(f, text='(sin armar)'); self.txt_heroe.grid(row=3, column=0, columnspan=2, sticky='w')
         self.coef = RecuadroFactor(self, titulo); self.coef.grid(row=10, column=0, columnspan=3, sticky='we', pady=(8, 0))
 

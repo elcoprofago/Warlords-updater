@@ -345,3 +345,5 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.48.0): «Imagen de la PC…» en el fondo de los paneles (pedido del usuario): buscador de archivos,
   la imagen va tal cual en mosaico; ruta en `textura_archivo` del .ini. Si no se puede abrir o se cancela, queda el
   fondo anterior. Medido con escudo.png: ventana 1183x949, textura aplicada.
+- 13/11/2026 (1.0.49.0): luz de tope contra el borde derecho del panel, leyenda a su izquierda con halo blanco de
+  1 px (8 copias del texto) para contrastar con las texturas; gris de la leyenda apagada a #404040. Medido con Madera.

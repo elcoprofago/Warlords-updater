@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 211).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 212).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **211.** Simulador de combate 1.0.49.0 (13/11/2026). La luz de «tope excedido» está ahora contra el borde derecho de cada panel, y la leyenda («0 / 8» o «tope excedido 9 / 8») a su izquierda, con un contorno blanco fino para que se lea sobre cualquier textura. Probarlo con varias texturas (y con una imagen propia oscura, si querés) y pasando el tope en una pila. Anotar lo que no convenza.
 - [ ] **210.** Simulador de combate 1.0.48.0 (13/11/2026). Configuración → «Fondo de los paneles» → «Imagen de la PC…»: se abre el buscador de archivos; elegir una imagen (PNG, JPG, BMP, GIF o PCX). Los paneles la muestran repetida en mosaico y debajo de la lista aparece la ruta elegida. Probar también Cancelar (queda el fondo anterior), y cerrar y volver a abrir el simulador (se acuerda de la imagen). Conviene una imagen clara y pareja; en una muy cargada los rótulos se ven sobre su recuadro de color medio. Anotar lo que no convenza.
 - [ ] **209.** Simulador de combate 1.0.47.0 (13/11/2026). Con una textura elegida en Configuración (por ejemplo Madera): la luz roja de «tope excedido» y su leyenda, la barra de Velocidad y la aclaración «(casilla del defensor)» junto a TERRENO ya no tienen un recuadro de color liso; se ve la textura detrás. Pasar el tope en una pila para ver la luz encendida. Anotar lo que no convenza.
 - [ ] **208.** Simulador de combate 1.0.46.0 (13/11/2026). Abrir Configuración (el engranaje) → «Fondo de los paneles» y probar cada opción: Pergamino, Piedra, Madera, Mármol claro (del juego) y Liso. Los paneles ATACANTE, DEFENSOR y TERRENO cambian de fondo al momento, la ventana no cambia de tamaño y la letra se sigue leyendo. Cerrar y volver a abrir el simulador: tiene que acordarse de la última elegida. Anotar lo que no convenza.
