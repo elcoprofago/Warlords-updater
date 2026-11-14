@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 215).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 216).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **215.** IA: la computadora espera la noche (vista-aliada 1.0.221.0, 14/11/2026). Con unidades de noche (monstruos, demonios, no muertos), la IA de prueba no ataca de día a un enemigo parejo y espera la vuelta de noche. 1) Actualizador, opción **9**: vista-aliada en **1.0.221.0** o posterior en `C:\Warlords3`. 2) Monitor de IA → **Ninguna**, marcá solo **Borderlands_NO** (sin «control»), Partidas: **10**, **Nueva tanda**. 3) Avisame cuando termine; el análisis lo hago yo.
 - [ ] **213.** Las trampas de la computadora llegan al ranking (vista-aliada 1.0.220.0, 14/11/2026). Actualizar `C:\Warlords` (la carpeta del ranking) con el Actualizador, opción **9**, a vista-aliada **1.0.220.0** o posterior, y avisar a los del clan que actualicen. Desde esta versión la computadora siembra trampas cerca de sus ciudades cuando hay enemigos cerca.
 - [x] **211.** Simulador de combate 1.0.49.0 (13/11/2026). La luz de «tope excedido» está ahora contra el borde derecho de cada panel, y la leyenda («0 / 8» o «tope excedido 9 / 8») a su izquierda, con un contorno blanco fino para que se lea sobre cualquier textura. Probarlo con varias texturas (y con una imagen propia oscura, si querés) y pasando el tope en una pila. Anotar lo que no convenza.
 - [x] **210.** Simulador de combate 1.0.48.0 (13/11/2026). Configuración → «Fondo de los paneles» → «Imagen de la PC…»: se abre el buscador de archivos; elegir una imagen (PNG, JPG, BMP, GIF o PCX). Los paneles la muestran repetida en mosaico y debajo de la lista aparece la ruta elegida. Probar también Cancelar (queda el fondo anterior), y cerrar y volver a abrir el simulador (se acuerda de la imagen). Conviene una imagen clara y pareja; en una muy cargada los rótulos se ven sobre su recuadro de color medio. Anotar lo que no convenza.

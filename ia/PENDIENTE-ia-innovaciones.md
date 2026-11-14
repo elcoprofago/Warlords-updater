@@ -381,3 +381,24 @@ Próximo paso: programar en la IA de prueba que use la noche (las pilas con mayo
 vuelta par para atacar un blanco parejo, y evitan pelear de día contra pilas así) y medirla contra la original con
 `noche.py Tanda_Borderlands` (sin _control: la IA de prueba en la mitad de los colores).
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.4: programar la noche en la IA de prueba».
+
+### Paso 5.4, hecho el código: la pila de noche espera la noche (14/11/2026, vista-aliada 1.0.221.0)
+
+`nt_wait` (build.py) corre al final de ai_ally, en al_orig (cuando ni el refugio ni la defensa de ciudades aliadas
+decidieron), solo para ia_mode = prueba y solo con IA.INI (ai_ally entero depende de ia_on). La pila no juega ese
+turno (al_done, como la refugiada que espera) si: Day/Night puesto y vuelta impar (día); más de la mitad de sus
+ejércitos vivos son de noche (no héroes, clase monster/demon/undead en +0xa0 o +0xa9; el héroe cuenta en el total);
+y la amenaza al alcance (al_thr, la misma del refugio) es > 0 y al menos la mitad de la fuerza de la pila (blanco
+parejo). Contra uno más débil sigue la original, de día. Espera a lo sumo una vuelta: la siguiente es noche.
+Evento 43: esperó (x, y = líder, n = amenaza × 1000 + fuerza, topes 999).
+Prueba: prueba_ianoche.py (14 casos: espera, segunda clase en mayúscula, monster, borde de la mitad, y controles sin
+Day/Night, de noche, sin amenaza, blanco débil, mitad justa de unidades, muertos, héroe, «undeadx»): TODO OK.
+Regresiones sin cambios: prueba_iatrampas, prueba_iarazea, prueba_iapuente, prueba_iareconstruye, prueba_noche_razas,
+prueba_dianoche; prueba_iaalianzas da las mismas 2 fallas del evento 12 (al_surv) que la 1.0.220.0, ajenas a esto.
+No hecho: la contraparte (que una pila sin unidades de noche evite pelear de noche contra una pila de noche): al_thr
+suma la fuerza de todos los enemigos sin separar los de noche; queda para después de medir esta.
+Guardada: `noche.py Tanda_Borderlands` → Tanda_Borderlands_NO.SAV (sin _control: IA de prueba en la mitad de los
+colores). Tanda: TAREAS 215. Al volver: contar eventos 43 por partida y comparar, entre prueba y original, las
+batallas de noche y de día de las unidades de noche (ranuras 1, 3, 5, 7, 9, 11), su porcentaje de victorias, puestos
+y PV. Si espera mucho y no gana más, la espera cuesta tiempo: revisar el umbral de la mitad.
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.4 (tarea 215)».

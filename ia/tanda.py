@@ -56,7 +56,8 @@ EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo parti
            4: 'puente reconstruido', 5: 'refugio en ciudad aliada', 6: 'puente derribado (misión)',
            18: 'caída en pozo', 19: 'caída en remolino', 20: 'caída en trampa', 24: 'convoy no armado (diagnóstico)', 25: 'convoy formado (cualquier vía)',
            28: 'deserción por falta de oro', 29: 'saldo del turno (x ingreso, y mantenimiento, n oro)',
-           30: 'cambio de oro (x quien lo hizo, y cantidad, n oro antes)'}
+           30: 'cambio de oro (x quien lo hizo, y cantidad, n oro antes)',
+           43: 'pila de noche que espera de día (n = amenaza * 1000 + fuerza)'}
 POZOS_EV = (18, 19, 20)   # n = muertos + 100 si el que cayó ya lo veía (error evitable)
 
 ESQUEMA = f'''

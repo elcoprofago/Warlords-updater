@@ -16165,10 +16165,110 @@ hu_out:
     pop ebx
     ret
 ''')
+# ---- La noche (paso 5.4 de ia\PENDIENTE-ia-innovaciones.md, 14/11/2026). De día (Day/Night puesto, SHOPT & 2, y
+# vuelta impar), una pila de la IA de prueba con mayoría de ejércitos de noche (no héroes, de clase monster, demon o
+# undead: +2 en la batalla de noche, ver «Efecto noche») y un enemigo que la alcanza (al_thr) con al menos la mitad
+# de su fuerza (blanco parejo) no juega ese turno: espera la vuelta par para atacar con el bono. Contra un enemigo
+# mucho más débil (menos de la mitad) sigue la original, de día. Una vuelta de espera a lo sumo: la siguiente es
+# noche. Va al final de ai_ally (al_orig: ni refugio ni defensa decidieron), solo ia_mode = prueba.
+# Evento 43: esperó la noche (x, y = líder, n = amenaza * 1000 + fuerza de la pila, topes 999).
+NT_EVT = 43
+nt_monstr = place_data('nt_monstr', b'monster\0')
+nt_demstr = place_data('nt_demstr', b'demon\0')
+nt_undstr = place_data('nt_undstr', b'undead\0')
+nt_sub = place('nt_sub', boatbon_src('nt_sub', None, rec=True, off=0xa0, slots=2))
+# nt_isnt: eax = ejército -> eax = 1 si es de noche (no héroe, tipo con clase monster/demon/undead). Preserva el resto.
+nt_isnt = place('nt_isnt', f'''
+    push edx
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 0x10
+    jae ni_no
+    shr eax, 5
+    and eax, 0xf
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    push eax
+    mov edx, {nt_monstr:#x}
+    call {nt_sub:#x}
+    test eax, eax
+    jnz ni_yes
+    mov eax, dword ptr [esp]
+    mov edx, {nt_demstr:#x}
+    call {nt_sub:#x}
+    test eax, eax
+    jnz ni_yes
+    mov eax, dword ptr [esp]
+    mov edx, {nt_undstr:#x}
+    call {nt_sub:#x}
+    test eax, eax
+    jnz ni_yes
+    pop eax
+ni_no:
+    xor eax, eax
+    pop edx
+    ret
+ni_yes:
+    pop eax
+    mov eax, 1
+    pop edx
+    ret
+''')
+# nt_wait(registro de pila, fuerza, amenaza) cdecl -> eax = 1 si la pila espera la noche. Preserva ebx esi edi ebp.
+nt_wait = place('nt_wait', f'''
+    push ebx
+    push esi
+    push edi
+    xor eax, eax
+    test byte ptr [{SHOPT:#x}], 2
+    jz nw_out
+    test byte ptr [0x503328], 1
+    jz nw_out
+    mov ecx, dword ptr [esp + 0x18]
+    test ecx, ecx
+    jle nw_out
+    add ecx, ecx
+    cmp ecx, dword ptr [esp + 0x14]
+    jl nw_out
+    mov esi, dword ptr [esp + 0x10]
+    xor ebx, ebx
+    xor edi, edi
+nw_lp:
+    movsx eax, word ptr [esi + ebx*2 + 0xc]
+    test eax, eax
+    jle nw_nx
+    imul ecx, eax, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz nw_nx
+    add edi, 0x100
+    call {nt_isnt:#x}
+    add edi, eax
+nw_nx:
+    inc ebx
+    cmp ebx, 8
+    jb nw_lp
+    movzx eax, di
+    shr eax, 8
+    movzx ecx, di
+    and ecx, 0xff
+    add ecx, ecx
+    cmp ecx, eax
+    seta al
+    movzx eax, al
+nw_out:
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
 # ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
 L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
-    L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT = (4 * (i + 1) for i in range(23))
-L_SIZE = 0x60
+    L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT, L_OK = (4 * (i + 1) for i in range(24))
+L_SIZE = 0x64
 def _al_go(lbl):
     # mueve la pila hacia la ciudad [ebp - L_BEST] (arma el grupo si hace falta)
     return f'''
@@ -16205,6 +16305,7 @@ ai_ally = place('ai_ally', f'''
     lea edx, [edx + ecx + 0x561f00]
     mov dword ptr [ebp - {L_REC}], edx
     mov dword ptr [ebp - {L_MAP}], 0
+    mov dword ptr [ebp - {L_OK}], 0
     movsx eax, word ptr [edx + 0xc]
     mov dword ptr [ebp - {L_LEAD}], eax
     test eax, eax
@@ -16229,6 +16330,7 @@ ai_ally = place('ai_ally', f'''
     mov dword ptr [ebp - {L_E}], eax
     mov dword ptr [ebp - {L_HUNT}], edx
     mov dword ptr [ebp - {L_NEAR}], ecx
+    mov dword ptr [ebp - {L_OK}], 1
     cmp eax, dword ptr [ebp - {L_STR}]
     jle al_mode
     push dword ptr [ebp - {L_LEAD}]
@@ -16694,6 +16796,36 @@ al_done:
     leave
     ret
 al_orig:
+    cmp dword ptr [ebp - {L_OK}], 0
+    je al_orig2
+    mov eax, dword ptr [ebp - {L_P}]
+    cmp byte ptr [eax + {IA_MODE:#x}], 1
+    jne al_orig2
+    push dword ptr [ebp - {L_E}]
+    push dword ptr [ebp - {L_STR}]
+    push dword ptr [ebp - {L_REC}]
+    call {nt_wait:#x}
+    add esp, 0xc
+    test eax, eax
+    jz al_orig2
+    mov eax, dword ptr [ebp - {L_E}]
+    mov ecx, 999
+    cmp eax, ecx
+    cmovg eax, ecx
+    imul eax, eax, 1000
+    mov edx, dword ptr [ebp - {L_STR}]
+    cmp edx, ecx
+    cmovg edx, ecx
+    add eax, edx
+    push eax
+    push dword ptr [ebp - {L_LY}]
+    push dword ptr [ebp - {L_LX}]
+    push dword ptr [ebp - {L_P}]
+    push {NT_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    jmp al_done
+al_orig2:
     popad
     leave
     jmp 0x40c990
