@@ -374,8 +374,10 @@ Guardada: `ia
 oche.py Tanda_Borderlands _control` escribe Tanda_Borderlands_NO_control.SAV: Day/Night encendido
 (SHOPT & 2; offset verificado: 2 en las dos hex_pozos, 0 en las demás) y clase «Undead» (segunda clase, +0xa9) en las
 ranuras 1, 3, 5, 7 y 9 de los 8 bandos; con la 11 (Demon) quedan 6 de noche y 6 de día. Se controla sola.
-Medición 1 (TAREAS 214, línea base, IA original en todos): por vuelta par (noche) e impar (día), qué parte de los
-ataques lleva unidades de noche y con qué resultado. Si la original no carga los ataques nocturnos sobre esas
-unidades, el paso siguiente es programar en la IA de prueba que las pilas con mayoría de noche esperen la noche para
-atacar un blanco parejo (y lo contrario de día), y medirlo con `noche.py Tanda_Borderlands` (sin _control).
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.4 (tarea 214)».
+Línea base con la IA original (TAREAS 214): anulada sin correr. La original no tiene código que lea el día/noche
+(invento del parche) ni su estimación de ataque pasa por el armado de batalla 0x467240 (no hay llamada desde la IA):
+no puede preferir la noche, el resultado se sabía. Objeción del usuario, 14/11/2026.
+Próximo paso: programar en la IA de prueba que use la noche (las pilas con mayoría de unidades de noche esperan la
+vuelta par para atacar un blanco parejo, y evitan pelear de día contra pilas así) y medirla contra la original con
+`noche.py Tanda_Borderlands` (sin _control: la IA de prueba en la mitad de los colores).
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.4: programar la noche en la IA de prueba».
