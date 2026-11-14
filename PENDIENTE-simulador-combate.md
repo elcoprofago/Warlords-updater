@@ -347,3 +347,4 @@ lo acepta como paso de montaña al 25 %). Cerrado.
   fondo anterior. Medido con escudo.png: ventana 1183x949, textura aplicada.
 - 13/11/2026 (1.0.49.0): luz de tope contra el borde derecho del panel, leyenda a su izquierda con halo blanco de
   1 px (8 copias del texto) para contrastar con las texturas; gris de la leyenda apagada a #404040. Medido con Madera.
+- 13/11/2026 (1.0.50.0): a la derecha del marco de INICIAR COMBATE / Historial, `elcoprofago@gmail.com` en dorado con la letra caligráfica del juego (FONTS\blacc_.ttf.ttf), directo sobre el mármol, sin recuadro.

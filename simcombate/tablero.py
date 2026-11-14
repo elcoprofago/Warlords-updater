@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.49.0'
+VERSION = '1.0.50.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -547,15 +547,49 @@ class App(tk.Tk):
         self.boton = BotonAzul(m, 'INICIAR COMBATE', self.iniciar, fondo='cyan'); self.boton.pack()
         boton_color(fila, '⇄ Invertir atacante y defensor', self.invertir, 'naranja').pack(side='left')
         boton_color(fila, f'Historial (últimos {historial.MAXIMO})…', self.ver_historial, 'verde').pack(side='left', padx=(12, 0))
+        marco = caja.master; fi = self.firma(self)   # sobre el mármol de la ventana, fuera del marco
+        def ubicar(e=None):
+            fi.place(x=marco.winfo_x() + marco.winfo_width() + 16, y=marco.winfo_y() + (marco.winfo_height() - fi.winfo_reqheight()) // 2)
+            self.after_idle(self.pintar_firma)
+        marco.bind('<Configure>', ubicar, add='+')
         caja = reborde(self); caja.master.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=(4, 10))
         self.salida = tk.Text(caja, height=12, width=60, wrap='word', state='disabled', bd=0); self.salida.pack(fill='both', expand=True)
         plegable(self, [(caja, self.salida)], 'resultado')
         self.rowconfigure(3, weight=1); self.columnconfigure(2, weight=1)
+
         self.tex_nombre, self.tex_im, self.tex_fotos, self.tex_pend = c.get('textura', 'liso'), None, [], None
         for r in (self.pa, self.pd, der): r.bind('<Configure>', lambda e: self.vestir_luego(), add='+')
         self.poner_marmol()
         self.protocol('WM_DELETE_WINDOW', self.cerrar)
         self.after(100, self.cargar)
+
+    def firma(self, padre):
+        """elcoprofago@gmail.com en dorado, con la letra caligráfica de las listas de comandos del juego
+        (FONTS\\blacc_.ttf.ttf, Black Chancery); pedido del usuario, 13/11/2026. Sin fondo propio: detrás va su
+        recorte del mármol del juego (MARBLE.PCX), como el resto de la ventana. Sin la fuente, Times en negrita."""
+        texto = 'elcoprofago@gmail.com'
+        try:
+            from PIL import ImageDraw, ImageFont
+            f = ImageFont.truetype(os.path.join(self.juego.get(), 'FONTS', 'blacc_.ttf.ttf'), 22)
+            x0, y0, x1, y1 = f.getbbox(texto, stroke_width=1)
+            im = Image.new('RGBA', (x1 - x0 + 4, y1 - y0 + 4), (0, 0, 0, 0))
+            ImageDraw.Draw(im).text((2 - x0, 2 - y0), texto, font=f, fill='#ffc830', stroke_width=1, stroke_fill='#5a3a00')
+            self.firma_im = im
+            self.foto_firma = ImageTk.PhotoImage(Image.new('RGB', im.size, (240, 240, 240)))
+            l = self.l_firma = tk.Label(padre, image=self.foto_firma, bd=0, highlightthickness=0)
+            l.bind('<Configure>', lambda e: self.after_idle(self.pintar_firma)); return l
+        except Exception:
+            return tk.Label(padre, text=texto, fg='#d4a017', font=('Times New Roman', 13, 'bold italic'))
+
+    def pintar_firma(self):
+        l, im = getattr(self, 'l_firma', None), getattr(self, 'firma_im', None)
+        if l is None or im is None: return
+        fondo = getattr(self, 'marmol_im', None)
+        if fondo is None: fondo = Image.new('RGBA', im.size, (240, 240, 240, 255))
+        else:
+            x, y = l.winfo_rootx() - self.winfo_rootx(), l.winfo_rooty() - self.winfo_rooty()
+            fondo = fondo.crop((x, y, x + im.width, y + im.height)).convert('RGBA')
+        self.foto_firma = ImageTk.PhotoImage(Image.alpha_composite(fondo, im)); l.configure(image=self.foto_firma)
 
     def poner_marmol(self):
         """Fondo de la ventana: MARBLE.PCX del juego (EDPICTS) en mosaico; sin él queda el color de siempre."""
@@ -567,7 +601,7 @@ class App(tk.Tk):
             for x in range(0, W, t.width): m.paste(t, (x, y))
         self.marmol_im = m
         self.foto_marmol = ImageTk.PhotoImage(m); self.marmol.configure(image=self.foto_marmol, anchor='nw')
-        self.pintar_encabezado(); self.poner_textura()
+        self.pintar_encabezado(); self.poner_textura(); self.pintar_firma()
 
     # ---- textura de fondo de los paneles (Configuración). Tk no tiene transparencia: cada marco lleva detrás su
     # recorte de la textura y cada rótulo la lleva como imagen bajo el texto; las casillas de opción, el color medio.
