@@ -363,22 +363,19 @@ prueba), así que no se le atribuye a las trampas, que cuestan poco y tienen la 
 IA.INI (las partidas del ranking); con IA.INI, solo en colores de prueba. Paso 5.3 cerrado.
 Queda el 5.4 (cerrado: ver abajo).
 
-## Paso 5.4: atacar de noche con monster/demon/undead (14/11/2026): cerrado sin programar
+## Paso 5.4: atacar de noche con monster/demon/undead (14/11/2026)
 
-Medido en datos.db, sin tanda nueva. La noche es la vuelta par de [0x503328], la misma que el turno de IA_BAT.CSV.
-En las guardadas hex, la única unidad con clase de noche es la ranura 11 («undead_b», Undead) de los 6 bandos. Batallas
-cuyo atacante lleva al menos una:
+Primer vistazo, de paso, con datos ya juntados (no es la medición del 5.4): en las guardadas hex la única unidad de
+noche es la ranura 11 («undead_b»); en hex_pozos_control y hex_pozos_PV_control (con día/noche) atacó en 87 batallas de
+noche y 65 de día, de unas 25.000, y ganó el 94-95 % de día o de noche. Con tan pocas unidades no se puede concluir
+nada: hace falta una guardada armada para medir la noche, como se hizo con Carrier (convoy.py) y Trap.
 
-| Guardada (día/noche) | Batallas de noche / de día | Con Undead, de noche / de día | Gana el atacante con Undead, noche / día |
-|---|---|---|---|
-| hex_pozos_control (sí) | 1616 / 1575 | 21 / 12 | 90 % / 100 % |
-| hex_pozos_PV_control (sí) | 11310 / 10978 | 66 / 53 | 95 % / 94 % |
-| hex_alianzas (no, control) | 8040 / 8152 | 545 / 538 | 96 % / 94 % |
-
-Lectura: 1) las pilas con Undead pelean en el 0,5 % de las batallas de las guardadas con día/noche; 2) ya ganan el
-94-95 % de sus ataques, de día o de noche, así que el +2 nocturno no tiene victorias que sumar; 3) el leve exceso
-nocturno (87 contra 65) cabe en el azar. Que la IA espere la noche para atacar solo demoraría ataques que ya gana, y
-ninguna tanda podría medir el efecto con tan pocas batallas. No se programa. El efecto noche sigue pasivo: la batalla y
-el cálculo de probabilidades (0x467240) ya suman el +2.
-Se reabre si una guardada de tanda trae bandos con muchas unidades monster/demon/undead y día/noche.
-Paso 5 cerrado (5.1 a 5.4).
+Guardada: `ia
+oche.py Tanda_Borderlands _control` escribe Tanda_Borderlands_NO_control.SAV: Day/Night encendido
+(SHOPT & 2; offset verificado: 2 en las dos hex_pozos, 0 en las demás) y clase «Undead» (segunda clase, +0xa9) en las
+ranuras 1, 3, 5, 7 y 9 de los 8 bandos; con la 11 (Demon) quedan 6 de noche y 6 de día. Se controla sola.
+Medición 1 (TAREAS 214, línea base, IA original en todos): por vuelta par (noche) e impar (día), qué parte de los
+ataques lleva unidades de noche y con qué resultado. Si la original no carga los ataques nocturnos sobre esas
+unidades, el paso siguiente es programar en la IA de prueba que las pilas con mayoría de noche esperen la noche para
+atacar un blanco parejo (y lo contrario de día), y medirlo con `noche.py Tanda_Borderlands` (sin _control).
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.4 (tarea 214)».

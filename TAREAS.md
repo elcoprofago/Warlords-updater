@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 214).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 215).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **214.** IA: el efecto noche, medido con una guardada armada para eso (14/11/2026). Ya está creada `C:\Warlords3\SAVES\Tanda_Borderlands_NO_control.SAV`: Borderlands con día/noche encendido y, en los 8 bandos, la mitad de las unidades de clase noche (Undead o Demon) y la otra mitad no. Todos los colores juegan con la IA original: es la línea base, para ver si la computadora ya aprovecha la noche. 1) Monitor de IA → **Ninguna**, marcá solo **Borderlands_NO_control**, Partidas: **10**, **Nueva tanda**. 2) Avisame cuando termine; el análisis lo hago yo.
 - [ ] **213.** Las trampas de la computadora llegan al ranking (vista-aliada 1.0.220.0, 14/11/2026). Actualizar `C:\Warlords` (la carpeta del ranking) con el Actualizador, opción **9**, a vista-aliada **1.0.220.0** o posterior, y avisar a los del clan que actualicen. Desde esta versión la computadora siembra trampas cerca de sus ciudades cuando hay enemigos cerca.
 - [x] **211.** Simulador de combate 1.0.49.0 (13/11/2026). La luz de «tope excedido» está ahora contra el borde derecho de cada panel, y la leyenda («0 / 8» o «tope excedido 9 / 8») a su izquierda, con un contorno blanco fino para que se lea sobre cualquier textura. Probarlo con varias texturas (y con una imagen propia oscura, si querés) y pasando el tope en una pila. Anotar lo que no convenza.
 - [x] **210.** Simulador de combate 1.0.48.0 (13/11/2026). Configuración → «Fondo de los paneles» → «Imagen de la PC…»: se abre el buscador de archivos; elegir una imagen (PNG, JPG, BMP, GIF o PCX). Los paneles la muestran repetida en mosaico y debajo de la lista aparece la ruta elegida. Probar también Cancelar (queda el fondo anterior), y cerrar y volver a abrir el simulador (se acuerda de la imagen). Conviene una imagen clara y pareja; en una muy cargada los rótulos se ven sobre su recuadro de color medio. Anotar lo que no convenza.
