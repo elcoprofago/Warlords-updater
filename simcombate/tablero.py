@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.46.0'
+VERSION = '1.0.47.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -104,12 +104,19 @@ class Estandarte(tk.Canvas):
 def titulo_verde(padre, texto, aclaracion=''):
     """Título de subpanel: mismo estilo que los estandartes (letra_titulo), con el borde de la letra verde."""
     fondo = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
-    f = tk.Frame(padre, bg=fondo); fn = tkfont.Font(font=FUENTE_TITULO)
+    fn = tkfont.Font(font=FUENTE_TITULO); fa = tkfont.nametofont('TkDefaultFont')
     w, h = fn.measure(texto) + 22, fn.metrics('linespace') + 8
-    cv = tk.Canvas(f, width=w, height=h, bg=fondo, highlightthickness=0); cv.pack(side='left')
+    wa = fa.measure(aclaracion) + 4 if aclaracion else 0
+    # un solo lienzo (título y aclaración) para que la textura de los paneles se vea detrás (fondo_lienzo)
+    cv = tk.Canvas(padre, width=w + wa, height=h, bg=fondo, highlightthickness=0); cv.tex_lienzo = True
     letra_titulo(cv, w // 2, h // 2, texto, '#0a8a28', fondo='#d2b48c')   # recuadro marrón claro
-    if aclaracion: tk.Label(f, text=aclaracion, bg=fondo).pack(side='left', padx=(2, 0), pady=(6, 0))
-    return f
+    if aclaracion: cv.create_text(w + 2, h // 2 + 3, text=aclaracion, anchor='w', font=fa)
+    return cv
+
+def fondo_lienzo(cv, foto):
+    """Pone (o quita, con None) el recorte de la textura de los paneles detrás de todo lo dibujado en un lienzo."""
+    cv.delete('fondo'); cv.tex_foto = foto
+    if foto is not None: cv.create_image(0, 0, image=foto, anchor='nw', tags='fondo'); cv.tag_lower('fondo')
 
 def reborde(padre, color='#000000'):
     """Reborde dorado como el de los cuadros de texto del Visor de historia: dorado ancho por fuera y una línea negra
@@ -227,6 +234,7 @@ class Deslizador(tk.Canvas):
     def __init__(self, padre, variable, desde, hasta, ancho=130):
         fondo = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
         super().__init__(padre, width=ancho, height=22, bg=fondo, highlightthickness=0, cursor='hand2')
+        self.tex_lienzo = True
         self.var, self.desde, self.hasta, self.ancho = variable, desde, hasta, ancho
         self.bind('<Button-1>', self.clic); self.bind('<B1-Motion>', self.clic)
         variable.trace_add('write', lambda *a: self.dibujar()); self.dibujar()
@@ -235,9 +243,9 @@ class Deslizador(tk.Canvas):
         v = round(self.desde + (e.x - 9) * (self.hasta - self.desde) / (self.ancho - 18))
         self.var.set(max(self.desde, min(self.hasta, v)))
     def dibujar(self):
-        self.delete('all'); x = self.x(self.var.get())
-        self.create_line(9, 11, self.ancho - 9, 11, fill='#777', width=3)
-        self.create_oval(x - 7, 4, x + 7, 18, fill=ORO, outline='#000')
+        self.delete('dib'); x = self.x(self.var.get())   # el fondo (textura) queda
+        self.create_line(9, 11, self.ancho - 9, 11, fill='#777', width=3, tags='dib')
+        self.create_oval(x - 7, 4, x + 7, 18, fill=ORO, outline='#000', tags='dib')
 
 class RecuadroFactor(tk.Frame):
     """El Factor total de la pila: fondo negro, letra blanca con sombra gris, borde dorado (pedido del usuario,
@@ -259,15 +267,17 @@ class RecuadroFactor(tk.Frame):
         for dx, col in ((1, '#707070'), (0, '#ffffff')):
             cv.create_text(w + dx, 40 + dx, text=self.t[1], font=('Arial', 9, 'bold'), fill=col)
 
-class LuzTope(ttk.Frame):
+class LuzTope(tk.Canvas):
     """Luz roja «tope excedido»: la del Monitor de IA (circle_09.png del Monitor llevada a rojo, con marco.png, 26 px),
     que titila con un fundido lento (2 s por ciclo) mientras la pila pase su tope. En el punto más encendido es un rojo
     más claro y se queda PICO_MS antes de volver a apagarse."""
     TAM, PASOS, CICLO_MS, PICO_MS = 26, 16, 2000, 500
 
     def __init__(self, padre):
-        super().__init__(padre)
-        bg = ttk.Style(self).lookup('TFrame', 'background') or '#f0f0f0'
+        bg = ttk.Style(padre).lookup('TFrame', 'background') or '#f0f0f0'
+        self.fuente = ('Segoe UI', 8, 'bold'); ancho = self.TAM + 4 + tkfont.Font(font=self.fuente).measure('tope excedido  99 / 99')
+        # un lienzo: la luz (con transparencia) y su leyenda sobre la textura de los paneles (fondo_lienzo)
+        super().__init__(padre, width=ancho, height=self.TAM, bg=bg, highlightthickness=0); self.tex_lienzo = True
         try:
             marco = Image.open(os.path.join(ASSETS, 'marco.png')).convert('RGBA')
             naranja = Image.open(os.path.join(ASSETS, 'circle_09.png')).convert('RGBA')
@@ -280,25 +290,22 @@ class LuzTope(ttk.Frame):
             c = [Image.blend(apagada, roja, i / (self.PASOS - 1)) for i in range(self.PASOS)]
             self.cuadros = [ImageTk.PhotoImage(i) for i in c + c[-2:0:-1]]
         except OSError: self.cuadros = []
-        self.l_img = tk.Label(self, bg=bg, bd=0)
-        if self.cuadros: self.l_img.configure(image=self.cuadros[0])
-        self.l_img.pack(side='left')
-        self.l_txt = tk.Label(self, text='', bg=bg, fg='#606060', font=('Segoe UI', 8, 'bold'))
-        self.l_txt.pack(side='left', padx=(4, 0))
+        self.l_img = self.create_image(0, self.TAM // 2, anchor='w', image=self.cuadros[0] if self.cuadros else '')
+        self.l_txt = self.create_text(self.TAM + 4, self.TAM // 2, anchor='w', text='', fill='#606060', font=self.fuente)
         self.encendida, self.cuadro = False, 0
 
     def poner(self, si, cuenta=''):
         """cuenta = 'unidades / tope'; encendida: «tope excedido 9 / 8» en rojo; apagada: «8 / 8» en gris."""
-        self.l_txt.configure(text=f'tope excedido  {cuenta}' if si else cuenta, fg='#b00000' if si else '#606060')
+        self.itemconfigure(self.l_txt, text=f'tope excedido  {cuenta}' if si else cuenta, fill='#b00000' if si else '#606060')
         if si and not self.encendida:
             self.encendida, self.cuadro = True, 0; self.titilar()
         elif not si and self.encendida:
             self.encendida = False
-            if self.cuadros: self.l_img.configure(image=self.cuadros[0])
+            if self.cuadros: self.itemconfigure(self.l_img, image=self.cuadros[0])
 
     def titilar(self):
         if not self.encendida or not self.cuadros: return
-        i = self.cuadro % len(self.cuadros); self.l_img.configure(image=self.cuadros[i]); self.cuadro += 1
+        i = self.cuadro % len(self.cuadros); self.itemconfigure(self.l_img, image=self.cuadros[i]); self.cuadro += 1
         self.after(self.PICO_MS if i == self.PASOS - 1 else self.CICLO_MS // len(self.cuadros), self.titilar)
 
 class Panel(ttk.Frame):
@@ -580,8 +587,14 @@ class App(tk.Tk):
             rx, ry = raiz.winfo_rootx(), raiz.winfo_rooty(); pila = [raiz]
             while pila:
                 w = pila.pop(); cl = w.winfo_class()
-                if isinstance(w, LuzTope) or getattr(w, 'es_fondo', False): continue
+                if getattr(w, 'es_fondo', False): continue
                 pila.extend(w.winfo_children())
+                if getattr(w, 'tex_lienzo', False):
+                    an, al = w.winfo_width(), w.winfo_height(); f = None
+                    if im is not None and an > 1:
+                        x, y = w.winfo_rootx() - rx, w.winfo_rooty() - ry
+                        f = ImageTk.PhotoImage(im.crop((x, y, x + an, y + al))); fotos.append(f)
+                    fondo_lienzo(w, f); continue
                 if cl in ('TLabel', 'TCheckbutton', 'TRadiobutton', 'TLabelframe'):
                     if not hasattr(w, 'tex_estilo'): w.tex_estilo = str(w.cget('style')) or cl
                     if m is None: w.configure(style=w.tex_estilo)
