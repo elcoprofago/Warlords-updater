@@ -342,3 +342,6 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.47.0): transparentes sobre la textura (pedido del usuario) la luz de tope y su leyenda, la barra de
   Velocidad y la aclaración de TERRENO: cada uno es un solo lienzo con el recorte de la textura detrás (fondo_lienzo;
   la luz es PNG con transparencia). Medido con Madera y la luz encendida: ventana 1183x949, sin recuadros lisos.
+- 13/11/2026 (1.0.48.0): «Imagen de la PC…» en el fondo de los paneles (pedido del usuario): buscador de archivos,
+  la imagen va tal cual en mosaico; ruta en `textura_archivo` del .ini. Si no se puede abrir o se cancela, queda el
+  fondo anterior. Medido con escudo.png: ventana 1183x949, textura aplicada.

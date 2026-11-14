@@ -5,7 +5,8 @@ import os
 from PIL import Image, ImageFilter, ImageChops, ImageOps
 
 NOMBRES = {'liso': 'Liso (sin textura)', 'pergamino': 'Pergamino', 'piedra': 'Piedra', 'madera': 'Madera',
-           'marmol': 'Mármol claro (del juego)'}
+           'marmol': 'Mármol claro (del juego)', 'archivo': 'Imagen de la PC…'}
+TIPOS = [('Imágenes', '*.png *.jpg *.jpeg *.bmp *.gif *.pcx'), ('Todos', '*.*')]
 
 
 def _ruido(w, h, escala, sigma=64, blur=0):
@@ -19,8 +20,20 @@ def _tenir(gris, oscuro, claro):
     return Image.merge('RGB', [gris.point(lambda v, a=a, b=b: a + (b - a) * v // 255) for a, b in zip(oscuro, claro)])
 
 
-def textura(nombre, w, h, juego=None, pcx=None):
-    """La textura `nombre` de w×h, o None para liso (o si falta lo que hace falta para hacerla)."""
+def mosaico(t, w, h):
+    m = Image.new(t.mode, (w, h))
+    for y in range(0, h, t.height):
+        for x in range(0, w, t.width): m.paste(t, (x, y))
+    return m
+
+
+def textura(nombre, w, h, juego=None, pcx=None, archivo=None):
+    """La textura `nombre` de w×h, o None para liso (o si falta lo que hace falta para hacerla).
+    'archivo': una imagen cualquiera de la PC elegida por el usuario, tal cual, repetida en mosaico."""
+    if nombre == 'archivo':
+        try:
+            with Image.open(archivo) as t: return mosaico(t.convert('RGB'), w, h)
+        except (OSError, ValueError, TypeError, AttributeError): return None
     if nombre == 'pergamino':
         g = ImageChops.add(_ruido(w, h, 40, 50, 6), _ruido(w, h, 1, 30), scale=2.0)
         return _tenir(g, (200, 176, 128), (250, 238, 205))
@@ -34,9 +47,7 @@ def textura(nombre, w, h, juego=None, pcx=None):
     if nombre == 'marmol' and juego and pcx:
         t = pcx(os.path.join(juego, 'EDPICTS', 'MARBLE.PCX'))
         if t is None: return None
-        t = t.convert('L'); m = Image.new('L', (w, h))
-        for y in range(0, h, t.height):
-            for x in range(0, w, t.width): m.paste(t, (x, y))
+        m = mosaico(t.convert('L'), w, h)
         return _tenir(m, (170, 186, 204), (240, 246, 252))
     return None
 

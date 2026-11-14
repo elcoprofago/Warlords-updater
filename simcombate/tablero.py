@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.47.0'
+VERSION = '1.0.48.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -566,7 +566,8 @@ class App(tk.Tk):
     # recorte de la textura y cada rótulo la lleva como imagen bajo el texto; las casillas de opción, el color medio.
     def poner_textura(self):
         if not hasattr(self, 'tex_nombre'): return   # todavía armando la ventana
-        self.tex_im = texturas.textura(self.tex_nombre, self.winfo_screenwidth(), self.winfo_screenheight(), self.juego.get(), pcx)
+        self.tex_im = texturas.textura(self.tex_nombre, self.winfo_screenwidth(), self.winfo_screenheight(), self.juego.get(), pcx,
+                                       self.cfg['tablero'].get('textura_archivo'))
         self.tex_medidas = None; self.vestir_luego()
 
     def vestir_luego(self):
@@ -721,9 +722,20 @@ class App(tk.Tk):
         tk.Label(fr, text='Fondo de los paneles', font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(14, 0))
         tex = ttk.Combobox(fr, values=list(texturas.NOMBRES.values()), state='readonly', width=26)
         tex.set(texturas.NOMBRES.get(self.tex_nombre, texturas.NOMBRES['liso'])); tex.pack(anchor='w', pady=(6, 0))
+        ruta = tk.Label(fr, text='', fg='#696969', anchor='w', justify='left', wraplength=410); ruta.pack(anchor='w')
+        def ver_ruta():
+            ruta['text'] = self.cfg['tablero'].get('textura_archivo', '') if self.tex_nombre == 'archivo' else ''
         def textura(e=None):
-            self.tex_nombre = {t: k for k, t in texturas.NOMBRES.items()}[tex.get()]
-            self.cfg['tablero']['textura'] = self.tex_nombre; self.guardar_cfg(); self.poner_textura()
+            nombre = {t: k for k, t in texturas.NOMBRES.items()}[tex.get()]; c = self.cfg['tablero']
+            if nombre == 'archivo':   # buscar una imagen en la PC; si se cancela o no se puede abrir, queda la anterior
+                a = filedialog.askopenfilename(parent=v, title='Imagen para el fondo de los paneles', filetypes=texturas.TIPOS,
+                                               initialdir=os.path.dirname(c.get('textura_archivo', '')) or None)
+                if a and texturas.textura('archivo', 8, 8, archivo=a) is None:
+                    messagebox.showerror(TITULO, f'No se pudo abrir la imagen:\n{a}', parent=v); a = ''
+                if not a: tex.set(texturas.NOMBRES.get(self.tex_nombre, texturas.NOMBRES['liso'])); return
+                c['textura_archivo'] = os.path.normpath(a)
+            self.tex_nombre = c['textura'] = nombre; self.guardar_cfg(); self.poner_textura(); ver_ruta()
+        ver_ruta()
         tex.bind('<<ComboboxSelected>>', textura)
         tk.Label(fr, text='RA Sistemas & Claude © 2026', fg='#696969').pack(anchor='w', pady=(14, 0))
         correo = tk.Label(fr, text=CORREO, fg='#0066cc', cursor='hand2', font=('Segoe UI', 9, 'underline')); correo.pack(anchor='w')

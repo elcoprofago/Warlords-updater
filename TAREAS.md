@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 210).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 211).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **210.** Simulador de combate 1.0.48.0 (13/11/2026). Configuración → «Fondo de los paneles» → «Imagen de la PC…»: se abre el buscador de archivos; elegir una imagen (PNG, JPG, BMP, GIF o PCX). Los paneles la muestran repetida en mosaico y debajo de la lista aparece la ruta elegida. Probar también Cancelar (queda el fondo anterior), y cerrar y volver a abrir el simulador (se acuerda de la imagen). Conviene una imagen clara y pareja; en una muy cargada los rótulos se ven sobre su recuadro de color medio. Anotar lo que no convenza.
 - [ ] **209.** Simulador de combate 1.0.47.0 (13/11/2026). Con una textura elegida en Configuración (por ejemplo Madera): la luz roja de «tope excedido» y su leyenda, la barra de Velocidad y la aclaración «(casilla del defensor)» junto a TERRENO ya no tienen un recuadro de color liso; se ve la textura detrás. Pasar el tope en una pila para ver la luz encendida. Anotar lo que no convenza.
 - [ ] **208.** Simulador de combate 1.0.46.0 (13/11/2026). Abrir Configuración (el engranaje) → «Fondo de los paneles» y probar cada opción: Pergamino, Piedra, Madera, Mármol claro (del juego) y Liso. Los paneles ATACANTE, DEFENSOR y TERRENO cambian de fondo al momento, la ventana no cambia de tamaño y la letra se sigue leyendo. Cerrar y volver a abrir el simulador: tiene que acordarse de la última elegida. Anotar lo que no convenza.
 - [ ] **207.** La IA nueva en las partidas del ranking (vista-aliada 1.0.218.0, 13/11/2026). Desde esta versión, en las partidas normales (sin el Monitor de IA) la computadora juega con la IA nueva: guarda oro, frena la producción antes de quedarse sin plata y no le desertan los ejércitos. 1) Actualizar `C:\Warlords` (la carpeta del ranking) con el Actualizador, opción **9**, a vista-aliada **1.0.218.0** o posterior; avisar a los del clan que actualicen también. 2) En la próxima partida con bandos de la computadora, fijarse si alguno se queda sin oro o pierde ejércitos por deserción (el aviso del juego al empezar su turno). Anotar lo que se vea raro.
