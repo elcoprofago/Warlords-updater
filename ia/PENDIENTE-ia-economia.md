@@ -800,3 +800,19 @@ Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, resultado del 4.1
 
 **Próximo paso:** los huérfanos en quiebra (1191 color 6).
 Frase para retomar: "Seguimos con ia\PENDIENTE-ia-economia.md, huérfanos en quiebra (1191 color 6)".
+
+### Huérfanos en quiebra (1191 color 6): medido, no hace falta cambio (13/11/2026)
+- 1191 color 6 era quiebra por sobreproducción: la simulación del 4.15 ya daba el freno nuevo 3 turnos antes del saldo
+  negativo (21 contra 24). Los huérfanos fuera eran consecuencia del ejército de más, no una causa aparte.
+- Medido en datos.db (evento 34 con x = 13 en turnos con mantenimiento > ingreso, evento 29), IA nueva:
+  | tanda | turnos-color con mant > ing | con huérfanos | ejércitos-turno huérfanos | deserciones (28) |
+  |---|---|---|---|---|
+  | 158-164 (1.0.213-216) | 12-34 por tanda | 7-22 | 35-204 | 1-34 |
+  | 165 (1.0.217.0, freno 4.15) | 10 | 3 | 12 | 0 |
+  Los 3 de la 165 tienen oro de sobra para el déficit (1226 c3 t18: oro 174, déficit 15; 1228 c0 t26: 281 / 36;
+  1228 c2 t28: 118 / 7). La original en la 165: 166 ejércitos-turno huérfanos en quiebra y 48 deserciones.
+  Turnos de la nueva con oro < 8 × déficit: 5-15 por tanda en 158-164, 2 en la 165.
+- Conclusión: no se toca or_run. Sin verificar con más de una tanda: si en las próximas vuelven a aparecer
+  deserciones (28) de la nueva con huérfanos (34, x = 13) fuera, se retoma con estos mismos números como referencia.
+**Próximo paso:** la serie de economía no tiene pendientes abiertos. Lo que sigue es mirar el evento 28 y el 34 x = 13
+de la nueva en cada tanda que se corra por otro tema.
