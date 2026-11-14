@@ -361,4 +361,24 @@ guardada sin trampas (tanda 40: 3,56 contra 2,77; viene de las reglas de alianza
 prueba), así que no se le atribuye a las trampas, que cuestan poco y tienen la reserva de oro.
 **Decisión** (regla del repo, IA al ranking): avance genuino. Desde **vista-aliada 1.0.220.0** tr_ai juega también sin
 IA.INI (las partidas del ranking); con IA.INI, solo en colores de prueba. Paso 5.3 cerrado.
-Queda el 5.4. Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.4».
+Queda el 5.4 (cerrado: ver abajo).
+
+## Paso 5.4: atacar de noche con monster/demon/undead (14/11/2026): cerrado sin programar
+
+Medido en datos.db, sin tanda nueva. La noche es la vuelta par de [0x503328], la misma que el turno de IA_BAT.CSV.
+En las guardadas hex, la única unidad con clase de noche es la ranura 11 («undead_b», Undead) de los 6 bandos. Batallas
+cuyo atacante lleva al menos una:
+
+| Guardada (día/noche) | Batallas de noche / de día | Con Undead, de noche / de día | Gana el atacante con Undead, noche / día |
+|---|---|---|---|
+| hex_pozos_control (sí) | 1616 / 1575 | 21 / 12 | 90 % / 100 % |
+| hex_pozos_PV_control (sí) | 11310 / 10978 | 66 / 53 | 95 % / 94 % |
+| hex_alianzas (no, control) | 8040 / 8152 | 545 / 538 | 96 % / 94 % |
+
+Lectura: 1) las pilas con Undead pelean en el 0,5 % de las batallas de las guardadas con día/noche; 2) ya ganan el
+94-95 % de sus ataques, de día o de noche, así que el +2 nocturno no tiene victorias que sumar; 3) el leve exceso
+nocturno (87 contra 65) cabe en el azar. Que la IA espere la noche para atacar solo demoraría ataques que ya gana, y
+ninguna tanda podría medir el efecto con tan pocas batallas. No se programa. El efecto noche sigue pasivo: la batalla y
+el cálculo de probabilidades (0x467240) ya suman el +2.
+Se reabre si una guardada de tanda trae bandos con muchas unidades monster/demon/undead y día/noche.
+Paso 5 cerrado (5.1 a 5.4).
