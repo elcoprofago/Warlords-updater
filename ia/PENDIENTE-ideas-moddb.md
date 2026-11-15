@@ -27,7 +27,7 @@ No copiar nada del plugin. Ojo: el Code Patch también toca 0x45EC40 (misiones),
   elegir hechizo: suma los 4 efectos del hechizo con costo 1. Ahí está el error: un hechizo de 1 efecto suma 3 azares.
 - Arreglo: `hs_w` en `build.py` reemplaza el call de 0x49b7ed; con efecto id 0 devuelve 0, solo con IA.INI y si el
   dueño de la unidad (+0xe, bits 5-8) está en prueba. Sin IA.INI juega como el original: no llega al ranking hasta
-  que una tanda lo confirme. `parchesista-aliada\prueba_iahechizos.py` → TODO OK (vacío vale 0 solo en prueba con
+  que una tanda lo confirme. `parches\vista-aliada\prueba_iahechizos.py` → TODO OK (vacío vale 0 solo en prueba con
   IA.INI; efecto lleno, color original y sin IA.INI dan lo mismo que el original).
 - Límite: la tanda no registra qué hechizos se lanzan; se juzga por victorias y puestos. Si no se ve nada, sumar un
   evento de hechizo lanzado antes de descartarlo.
