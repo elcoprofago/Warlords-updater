@@ -11405,6 +11405,60 @@ pz_chk = {va: place(f'pz_chk_{va:x}', f'''
                       (0x4c10c0, 'cmp byte ptr [0x4ff7a0], 0'),
                       (0x4c1250, 'cmp byte ptr [0x4ff7a0], 0'))}
 
+# ---- Cuenta regresiva en el mapa (cr_*; pedido del usuario, 15/11/2026). La de los informes es la gracia de 20 s de
+# 0x4c10c0: al cambiar el segundo suena 0x4465e0(0x14, -1) y el cursor pasa a 0x4ddfa0(0x10 + segundos) (si [0x4fb6c4]
+# es 0) sobre [0x589814]. En el mapa, 0x4c0fe0 solo escribía los segundos que quedan: en 0x4c1074 (ecx = ms que quedan,
+# positivo) cr_tick hace lo mismo en los últimos 5 s (5, 4, 3, 2, 1), solo en la PC del jugador de turno
+# ([0x537ce8] == [0x560b20]) y no en pausa. El cursor se vuelve a poner cada 200 ms porque el mapa lo cambia al mover
+# el mouse. Al salir de la cuenta (pausa, fin del turno) el mapa repone su cursor al mover el mouse.
+cr_vars = place_data('cr_vars', bytes(8))    # +0 número a la vista (0 = ninguno), +4 último tick del cursor
+CR_N, CR_T = cr_vars, cr_vars + 4
+cr_tick = place('cr_tick', f'''
+    pushad
+    cmp byte ptr [{PZ_ON:#x}], 0
+    jne cr_off
+    mov ax, word ptr [0x537ce8]
+    cmp ax, word ptr [0x560b20]
+    jne cr_off
+    cmp ecx, 5000
+    jge cr_off
+    mov eax, ecx
+    xor edx, edx
+    mov ecx, 1000
+    div ecx
+    inc eax
+    mov ebx, eax
+    cmp byte ptr [{CR_N:#x}], bl
+    je cr_cur
+    mov byte ptr [{CR_N:#x}], bl
+    push -1
+    push 0x14
+    call 0x4465e0
+    add esp, 8
+    jmp cr_set
+cr_cur:
+    call dword ptr [{GETTICK:#x}]
+    sub eax, dword ptr [{CR_T:#x}]
+    cmp eax, 200
+    jb cr_out
+cr_set:
+    call dword ptr [{GETTICK:#x}]
+    mov dword ptr [{CR_T:#x}], eax
+    cmp byte ptr [0x4fb6c4], 0
+    jne cr_out
+    lea eax, [ebx + 0x10]
+    push eax
+    mov ecx, dword ptr [0x589814]
+    call 0x4ddfa0
+    jmp cr_out
+cr_off:
+    mov byte ptr [{CR_N:#x}], 0
+cr_out:
+    popad
+    mov esi, 0x3e8
+    jmp 0x4c1079
+''')
+
 # ---- Resultado de la votación en el Events Report (vt_*). Los sucesos de la ronda en curso viven en 0x572788 (8
 # jugadores x 2 renglones de 0x1c: +0 tipo, que es también la prioridad, +2 jugador, +4 parámetro, +6 nombre[16],
 # +0x16/+0x18/+0x1a tres words). Al terminar la ronda, 0x4989d0 agrega un bloque a HISTORY.DAT (cabecera de 0x48 con
@@ -21806,6 +21860,7 @@ for va, op in ((0x417652, 'ff15'), (0x417847, 'ff15'), (0x4790c9, '8b1d'), (0x4d
 patch(0x4c0fe0, bytes.fromhex('f6058fc35300f8'), asm(f'jmp {pz_chk[0x4c0fe0]:#x}', 0x4c0fe0))
 patch(0x4c10c0, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c10c0]:#x}', 0x4c10c0))
 patch(0x4c1250, bytes.fromhex('803da0f74f0000'), asm(f'jmp {pz_chk[0x4c1250]:#x}', 0x4c1250))
+patch(0x4c1074, bytes.fromhex('bee8030000'), asm(f'jmp {cr_tick:#x}', 0x4c1074))
 assert rel(0x4c2790, 7) == bytes.fromhex('5333c05633d257') and rel(0x4e33c0, 2) == bytes.fromhex('ff25')
 # Resultado de la votación en el Events Report (vt_*)
 patch(0x4988d0, bytes.fromhex('53566633f6'), asm(f'jmp {vt_clear:#x}', 0x4988d0))

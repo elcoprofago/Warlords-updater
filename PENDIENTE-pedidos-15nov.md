@@ -23,6 +23,8 @@ La pausa manual (PZ_MANUAL, `parches/vista-aliada/build.py` ~línea 10950) no gu
 partida como hace el guardado automático del turno.
 
 ## C. Cuenta regresiva sonora al fin del turno
+**Hecho en vista-aliada 1.0.224.0 (cr_tick en 0x4c1074; prueba_cuentaturno.py TODO OK). Falta publicar cuando
+termine la tanda 170 (publicar-parche compara con C:\Warlords3) y la prueba del usuario (TAREAS 223).**
 Que la cuenta regresiva sonora de los informes suene también en los últimos 5 s del turno (vencimiento en
 [0x4ff7a8], ver build.py ~10936), y que los números se vean junto al cursor.
 Aclaración del usuario: hoy la cuenta solo se activa mientras se consultan los informes; jugando en el mapa

@@ -68,6 +68,7 @@ class Juego:
         self.interceptar(0x4dd390, lambda a: 1)                                    # una sola PC
         self.interceptar(0x421310, lambda a: 0)
         self.interceptar(0x4465e0, lambda a: 0)
+        self.interceptar(0x4ddfa0, lambda a: 0, pop=4)                             # cursor de la cuenta (cr_tick)
         self.interceptar(0x4c0c00, lambda a: self.log.append(('fin de turno', (self.t - 1000000) // 1000)))
         self.interceptar(0x4e33f0, lambda a: self.log.append(('quedan', a[0])), pop=8)   # ret 8
         self.interceptar(0x4dd3b0, lambda a: self.log.append(('red', a[0], bytes(mu.mem_read(a[1], a[2])))))
