@@ -19073,6 +19073,33 @@ tt_end:
     popad
     ret
 ''')
+# ---- La IA elige hechizos sin casillas vacías al azar (ia\PENDIENTE-ideas-moddb.md, Paso 3; idea pública del Code Patch
+# 1.q10, código propio). Al elegir qué hechizo lanzar (0x49b7ed), la IA suma 0x492c40(unidad, efecto, 1) de los 4
+# efectos del hechizo; un efecto vacío (id 0) cae en el caso por defecto de 0x492c40 y vale un azar 1..6 x 1..6, así
+# que un hechizo de un solo efecto suma tres azares que no tienen nada que ver con él. hs_w: si el efecto es vacío,
+# vale 0. Solo con IA.INI y para los colores en prueba (todavía sin tanda); el resto, como el original. Subir de nivel
+# (0x49b4a6) no pasa por acá. Preserva todo menos eax (lo que devuelve 0x492c40).
+hs_w = place('hs_w', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je hs_orig
+    mov eax, dword ptr [esp + 8]
+    cmp word ptr [eax], 0
+    jne hs_orig
+    movsx eax, word ptr [esp + 4]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, 8
+    jae hs_orig
+    cmp byte ptr [eax + {IA_MODE:#x}], 1
+    jne hs_orig
+    xor eax, eax
+    ret
+hs_orig:
+    jmp 0x492c40
+''')
+
 # ---- La IA repara sus muros (PENDIENTE-faros-muros, «Reparar»; pedido del 10/11/2026). ai_wrep(ebx = jugador), al
 # empezar el turno de un bando de la computadora (+0xe2 != -1), en todas las PC (ia_turn corre en cada una): cada bloque
 # de muro de piedra propio dañado (byte +7 entre 1 y WV_MAX - 1) con un ejército propio en su casilla o en una de las 8
@@ -21811,6 +21838,7 @@ patch(0x459d54, bytes.fromhex('8a4606a801'), asm(f'jmp {po_draw2:#x}', 0x459d54)
 patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:#x}', 0x473d32))
 patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
 patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))
+patch(0x49b7ed, asm('call 0x492c40', 0x49b7ed), asm(f'call {hs_w:#x}', 0x49b7ed))   # hechizos: vacíos valen 0
 for _a in (0x4c2880, 0x4c28d0):
     patch(_a, asm('call 0x4dd1c0', _a), asm(f'call {pz_scroll:#x}', _a))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)
