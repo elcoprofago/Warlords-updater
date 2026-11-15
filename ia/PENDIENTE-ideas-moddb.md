@@ -13,6 +13,18 @@ Tanda con los héroes nuevos en el mismo mapa y criterio de bandos que las últi
 Mirar: niveles y habilidades que compran los héroes de la IA, misiones cumplidas, victorias. Si mejora, el
 paquete HERO se publica (`tools\publicar-paquete.ps1 HERO`) y llega al ranking.
 
+**Preparado el 15/11/2026 (TAREAS 222).** El usuario puso los 15 `.HER` del 25th en `C:\Warlords3\HERO` (originales en
+`HERO\back`). Medido: esos héroes piden 42 hechizos propios del 25th (`25mason`, `25pets`...) que nuestro SPELL no
+tiene; ninguno pisa uno nuestro y las 11 tropas que invocan ya existen. El resto del mod (ARMY, ITEMS, 25th.rul) no
+hace falta para los héroes y no se instala: cambiaría más que lo que se quiere medir. `ia\heroes25.py 25th|original|
+estado` cambia entre los dos juegos y verifica byte a byte lo que quedó (probado en carpeta de juguete con controles).
+- Diseño: el cambio de héroes les toca a todos los colores, así que no se mide prueba contra original dentro de una
+  tanda. Se comparan dos tandas iguales y con la misma versión: la 221 (héroes originales, `C:\Warlords3` ya quedó así)
+  y la 222 (héroes del 25th). Ojo: la 221 cambia los hechizos de los colores en prueba; se compara color a color.
+- Límite: el banco no registra niveles ni habilidades compradas, solo héroes vivos por turno. Se juzga por héroes vivos
+  al final, ciudades, puestos y largo de partida; si eso no alcanza, sumar el registro de las habilidades (+0x3fc).
+- Si mejora, para el ranking hay que publicar también los 42 hechizos (paquete SPELL), no solo HERO.
+
 ## Paso 3 — Error de la IA al elegir hechizos (Claude)
 Descripción pública del Code Patch 1.q10: al pesar un hechizo, la IA suma también las casillas de efecto vacías,
 que le dan un valor al azar. Arreglo: que las vacías pesen cero. Reprogramarlo con código propio en
