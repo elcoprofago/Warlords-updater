@@ -402,3 +402,25 @@ colores). Tanda: TAREAS 215. Al volver: contar eventos 43 por partida y comparar
 batallas de noche y de día de las unidades de noche (ranuras 1, 3, 5, 7, 9, 11), su porcentaje de victorias, puestos
 y PV. Si espera mucho y no gana más, la espera cuesta tiempo: revisar el umbral de la mitad.
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 5.4 (tarea 215)».
+
+## Resultado del paso 5.4 (tandas 168 y 169 = TAREAS 215, Tanda_Borderlands_NO, revisado 15/11/2026)
+
+20 partidas completas (30 turnos), 1.0.221.0 (exe d8d8a053), IA de prueba en 4 de los 8 colores, rotando.
+**Espera (evento 43): 55 veces**, solo en colores de prueba, en 12 de las 20 partidas (0 a 9 por partida).
+Ataques de pilas con mayoría de unidades de noche (ranuras 1, 3, 5, 7, 9, 11), noche = vuelta par:
+
+| IA | de noche | ganados | de día | ganados |
+|---|---|---|---|---|
+| original | 46 | 96 % | 47 | 87 % |
+| prueba | 78 | 92 % | 47 | 94 % |
+
+La prueba corre sus ataques de noche (62 % contra 49 % de la original), pero no gana más: 92 % de noche, menos que de
+día. Las pilas sin unidades de noche ganan 85-86 % sea de día o de noche, en las dos IA: el efecto noche del juego
+casi no cambia el resultado de batallas que ya se ganan en más de 85 %.
+Resultado general (80 colores por IA): prueba puesto 3,33, 7,1 PV y 5,2 ciudades; original 3,26, 6,5 PV y 5,2.
+Diferencias del tamaño del ruido (tanda 168 favorece a prueba en PV, la 169 a la original).
+**Decisión**: no es avance genuino; nt_wait queda solo en los colores de prueba (con IA.INI), no pasa al ranking.
+Tampoco se programa la contraparte (evitar pelear de noche contra pilas de noche): si atacar de noche no ayuda,
+esquivarlo tampoco. Paso 5.4 cerrado.
+Con esto el orden del paso 5 queda completo (5.1 a 5.4). De la tabla del relevamiento solo queda sin IA «build»
+(construir caminos), que es tema de PENDIENTE-construcciones.md.
