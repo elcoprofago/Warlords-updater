@@ -10917,7 +10917,7 @@ tl_caption = place_data('tl_caption', cstr_(GAME))
 tl_vars = place_data('tl_vars', bytes(16))   # +0 tick, +4 ocupado, +8 abrir[2], +0xc estado[2]
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = tl_vars, tl_vars + 4, tl_vars + 8, tl_vars + 0xc
 tl_n = place_data('tl_n', bytes(4))
-tl_openpkt = place_data('tl_openpkt', bytes(4))
+tl_openpkt = place_data('tl_openpkt', bytes(8))   # herramienta, moción (MO_*; solo cuenta en la Votación)
 tl_pkt = place_data('tl_pkt', bytes(4 + 256))
 tl_buf = place_data('tl_buf', bytes(256 * len(TOOLS)))   # último estado recibido, por herramienta
 tl_si = place_data('tl_si', struct.pack('<I', 68) + bytes(64))   # STARTUPINFOA
@@ -10927,11 +10927,44 @@ for t, n in enumerate(TOOLS):
     for ext in ('ver', 'vtmp', 'op', 'env'):
         tl_path[t, ext] = place_data(f'tl_{n}_{ext}', cstr_(f'Herramientas\\{n}.{ext}'))
     tl_path[t, 'exe'] = place_data(f'tl_{n}_exe', cstr_(f'Herramientas\\{n}.exe'))
-    tl_path[t, 'op_cmd'] = place_data(f'tl_{n}_opcmd', cstr_(f'"Herramientas\\{n}.exe" --operador'))
-    sp = cstr_(f'"Herramientas\\{n}.exe" --espectador 00000000')
+    mo = ' --mocion 0' if t == 0 else ''   # la Votación recibe la moción (MO_*): la cifra se escribe al recibir TL_OPEN
+    op = cstr_(f'"Herramientas\\{n}.exe" --operador{mo}')
+    tl_path[t, 'op_cmd'] = place_data(f'tl_{n}_opcmd', op)
+    sp = cstr_(f'"Herramientas\\{n}.exe" --espectador 00000000{mo}')
     tl_path[t, 'sp_cmd'] = place_data(f'tl_{n}_spcmd', sp)
-    tl_path[t, 'mask'] = tl_path[t, 'sp_cmd'] + len(sp) - 9   # carácter s: '1' si el bando s es humano de esta PC
+    tl_path[t, 'mask'] = tl_path[t, 'sp_cmd'] + sp.index(b'00000000')   # carácter s: '1' si el bando s es humano de esta PC
+    if t == 0:
+        tl_path[t, 'op_mo'] = tl_path[t, 'op_cmd'] + len(op) - 2
+        tl_path[t, 'sp_mo'] = tl_path[t, 'sp_cmd'] + len(sp) - 2
     tl_path[t, 'err'] = place_data(f'tl_{n}_err', cstr_(f'No se pudo abrir Herramientas\\{n}.exe'))
+
+# ---- Mociones de votación (mo_*; PENDIENTE-pedidos-15nov.md, D2). «Votacion» del menú de partida abre un submenú
+# (diálogo MO_DLG, copia del menú de partida con sus mismos manejadores en modo MO_ON, como el de Build) con una moción
+# por renglón; elegir una manda TL_OPEN con la moción en el segundo dword. Cada PC la anota en MO_CUR y se la pasa a
+# votacion.exe (--mocion N). Al cerrarse la Votación con votos (vt_state, «cerrado»), cada PC aplica la moción con los
+# mismos datos (mo_apply), así no desincroniza. MO_EN: renglones habilitados (las mociones sin acción todavía, en gris).
+# Moción 1, «Partida a prueba»: con el SI de todos los humanos en juego, bit MO_PRUEBA de MO_FLAGS: la P en el mapa
+# (mo_pdraw) y el Visor de historia abre la partida aunque no haya terminado. MO_FLAGS va en el .SAV ('MOCI', dword).
+MO_ROWS = ['Votacion libre', 'Partida a prueba', 'Finalizacion', 'Descalificacion', 'Vale todo', 'Enganche']
+MO_ENABLED = [1, 1, 0, 0, 0, 0]
+MO_LIBRE, MO_P = 0, 1
+MO_PRUEBA = 1
+MO_DLG = 134                 # siguiente id de la tabla de diálogos, después de BM_DLG (ver table_add, más abajo)
+MO_RES = 139                 # siguiente id de los recursos de diálogo, después de BM_RES
+# Renglones del menú de partida de arriba abajo (MENU del diálogo 35, más abajo): textos y zonas de clic.
+MO_TXT = [1, 2, VOTE_TXT, 3, 4, 5, 6, 7, 8, 9, 0x17, 10]
+MO_HOT = [0xb, 0xc, VOTE_HOT, 0xd, 0xe, 0xf, 0x10, 0x11, 0x12, 0x13, 0x18, 0x14]
+MO_NROW = len(MO_TXT)
+mo_vars = place_data('mo_vars', bytes(32))
+MO_ON, MO_CUR, MO_MARKS = mo_vars, mo_vars + 4, mo_vars + 8    # MO_MARKS: las 8 marcas s/n/- del último estado
+mo_save = place_data('mo_save', b'MOCI' + bytes(4))           # tal cual se escribe al final del .SAV
+MO_FLAGS = mo_save + 4
+mo_magic = place_data('mo_magic', bytes(4))
+mo_en = place_data('mo_en', bytes(MO_ENABLED + [0] * (MO_NROW - len(MO_ENABLED))))
+mo_strs = place_data('mo_strs', struct.pack(f'<{MO_NROW}I', *([place_data(f'mo_s{i}', cstr_(t)) for i, t in enumerate(MO_ROWS)]
+                                                              + [place_data('mo_empty', b'\0')] * (MO_NROW - len(MO_ROWS)))))
+mo_txt = place_data('mo_txt', struct.pack(f'<{MO_NROW}I', *MO_TXT))
+mo_hot = place_data('mo_hot', struct.pack(f'<{MO_NROW}I', *MO_HOT))
 
 # ---- Pausa mientras se vota (pz_*). Cada PC lleva su propia cuenta regresiva del turno (vence en [0x4ff7a8], con el
 # timeGetTime de esa PC; al vencer, la PC del jugador de turno manda el fin de turno), así que la pausa se arma en cada
@@ -11560,6 +11593,36 @@ VT_SKIP = lambda l: f'''
     cmp al, 0x20
     jne {l}
 '''
+# La Votación se cerró con votos (antes de anotarlos): aplicar la moción en curso. «Partida a prueba»: todo bando en
+# juego y humano tiene que haber votado SI (las marcas de MO_MARKS, en el orden de los bandos). Conserva los registros.
+mo_apply = place('mo_apply', f'''
+    pushad
+    cmp byte ptr [{VT_HAVE:#x}], 0
+    je ma_end
+    cmp dword ptr [{MO_CUR:#x}], {MO_P}
+    jne ma_end
+    xor ecx, ecx
+    xor edx, edx
+ma_l:
+    imul ebx, ecx, {SIDE:#x}
+    cmp byte ptr [ebx + {SIDE_ON:#x}], 0
+    je ma_n
+    cmp word ptr [ebx + {SIDE_HUMAN:#x}], -1
+    jne ma_n
+    inc edx
+    cmp byte ptr [ecx + {MO_MARKS:#x}], 0x73
+    jne ma_end
+ma_n:
+    inc ecx
+    cmp ecx, 8
+    jb ma_l
+    test edx, edx
+    jz ma_end
+    or byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
+ma_end:
+    popad
+    ret
+''')
 vt_state = place('vt_state', f'''
     pushad
     cmp byte ptr [{PZ_ARM:#x}], 0
@@ -11622,6 +11685,10 @@ vs_numend:
     mov dword ptr [{VT_RES:#x}], edx
     call {vt_commit:#x}
 vs_marks:
+    mov eax, dword ptr [esi]
+    mov dword ptr [{MO_MARKS:#x}], eax
+    mov eax, dword ptr [esi + 4]
+    mov dword ptr [{MO_MARKS + 4:#x}], eax
     xor ecx, ecx
     xor edx, edx
 vs_mk:
@@ -11648,6 +11715,7 @@ vs_mkx:
 vs_close:
     test ebp, ebp
     jz vs_end
+    call {mo_apply:#x}
     call {vt_commit:#x}
 vs_end:
     popad
@@ -11885,6 +11953,24 @@ obl_bad:
     mov dword ptr [{OB_N:#x}], 0
 obl_end:
     call {ob_rebuild:#x}
+    mov dword ptr [{MO_FLAGS:#x}], 0
+    mov dword ptr [{mo_magic:#x}], 0
+    push 4
+    push {mo_magic:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 4
+    jne mol_end
+    cmp dword ptr [{mo_magic:#x}], 0x49434f4d
+    jne mol_end
+    push 4
+    push {MO_FLAGS:#x}
+    lea ecx, [ebp - 0x120]
+    call 0x4dfd20
+    cmp eax, 4
+    je mol_end
+    mov dword ptr [{MO_FLAGS:#x}], 0
+mol_end:
     popad
     ret
 ''')
@@ -12223,6 +12309,7 @@ pk_no:
 ''')
 po_gen = place('po_gen', f'''
     pushad
+    mov dword ptr [{MO_FLAGS:#x}], 0
     mov dword ptr [{PO_N:#x}], 0
     mov dword ptr [{OB_N:#x}], 0
     mov dword ptr [{PP_CNT:#x}], 0
@@ -14895,6 +14982,11 @@ vt_savef = place('vt_savef', f'''
     push {ob_save:#x}
     call 0x4dfd70
     pop ecx
+    push ecx
+    push 8
+    push {mo_save:#x}
+    call 0x4dfd70
+    pop ecx
     jmp 0x4dfdc0
 ''')
 
@@ -14944,12 +15036,29 @@ tl_sendopen = place('tl_sendopen', f'''
     jnz tso_end
     mov eax, dword ptr [esp + 4]
     mov dword ptr [{tl_openpkt:#x}], eax
-    push 4
+    push 8
     push {tl_openpkt:#x}
     push {TL_OPEN:#x}
     call 0x4dd3b0
     add esp, 0xc
 tso_end:
+    ret
+''')
+
+# Llegó la orden de abrir la Votación (esi = paquete): la moción del segundo dword (fuera de rango: votación libre) va a
+# MO_CUR y a la cifra de --mocion de las dos líneas de comandos. Conserva todos los registros.
+mo_recv = place('mo_recv', f'''
+    pushad
+    mov eax, dword ptr [esi + 0x10]
+    cmp eax, {len(MO_ROWS)}
+    jb mr_set
+    xor eax, eax
+mr_set:
+    mov dword ptr [{MO_CUR:#x}], eax
+    add al, 0x30
+    mov byte ptr [{tl_path[0, 'op_mo']:#x}], al
+    mov byte ptr [{tl_path[0, 'sp_mo']:#x}], al
+    popad
     ret
 ''')
 
@@ -14992,6 +15101,7 @@ tr_open:
     mov byte ptr [eax + {TL_PEND_OPEN:#x}], 1
     test eax, eax
     jnz 0x4b85bb
+    call {mo_recv:#x}
     call {vt_open:#x}
     call {pz_open:#x}
     jmp 0x4b85bb
@@ -15184,7 +15294,162 @@ ti_done:
 # Menú de partida, al abrirse (0x4bce20, que habilita o deshabilita cada línea con 0x4dcec0): la zona de "Votacion"
 # también. Sin esto el control queda como sin mostrar y la búsqueda de 0x4d95d0 no lo encuentra: ni se resalta ni
 # responde al clic. Habilitada en el anfitrión, deshabilitada en las demás PC.
+# Submenú de mociones (MO_ON): habilita los renglones de MO_EN y apaga el resto (también EMail Statistics, 0x16).
+mo_init = place('mo_init', f'''
+    pushad
+    xor ebx, ebx
+moi_l:
+    cmp byte ptr [ebx + {mo_en:#x}], 1
+    sbb eax, eax
+    and eax, 2
+    push eax
+    push dword ptr [ebx*4 + {mo_hot:#x}]
+    call 0x4dcec0
+    add esp, 8
+    inc ebx
+    cmp ebx, {MO_NROW}
+    jb moi_l
+    push 2
+    push 0x16
+    call 0x4dcec0
+    add esp, 8
+    popad
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    ret
+''')
+# mo_draw (reemplaza 0x4bd180(crear, x, y) en el submenú): textos al crear y color de cada renglón (0xf bajo el mouse,
+# 0x5c habilitado, 0x56 apagado), como bm_hover.
+mo_draw = place('mo_draw', f'''
+    pushad
+    cmp dword ptr [esp + 0x24], 0
+    je mod_col
+    xor ebx, ebx
+mod_t:
+    push dword ptr [ebx*4 + {mo_strs:#x}]
+    push dword ptr [ebx*4 + {mo_txt:#x}]
+    call 0x4dd240
+    add esp, 8
+    inc ebx
+    cmp ebx, {MO_NROW}
+    jb mod_t
+mod_col:
+    movsx eax, word ptr [esp + 0x2c]
+    movsx ecx, word ptr [esp + 0x28]
+    push 2
+    push eax
+    push ecx
+    call 0x4dcee0
+    add esp, 0xc
+    mov esi, eax
+    xor ebx, ebx
+mod_c:
+    mov eax, 0x56
+    cmp byte ptr [ebx + {mo_en:#x}], 0
+    je mod_set
+    mov eax, 0x5c
+    cmp esi, dword ptr [ebx*4 + {mo_hot:#x}]
+    jne mod_set
+    mov eax, 0xf
+mod_set:
+    push 0
+    push 0
+    push eax
+    push dword ptr [ebx*4 + {mo_txt:#x}]
+    call 0x4dd2b0
+    add esp, 0x10
+    inc ebx
+    cmp ebx, {MO_NROW}
+    jb mod_c
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    popad
+    ret
+''')
+# Entrada de 0x4bd180 (reemplaza "push ebx; mov ecx, 0x5032f8").
+mo_entry = place('mo_entry', f'''
+    cmp byte ptr [{MO_ON:#x}], 0
+    jne {mo_draw:#x}
+    push ebx
+    mov ecx, 0x5032f8
+    jmp 0x4bd186
+''')
+# Apertura del menú de partida (0x4bcb90, reemplaza "sub esp, 8; mov eax, -1"): siempre el menú normal.
+mo_norm = place('mo_norm', f'''
+    mov byte ptr [{MO_ON:#x}], 0
+    sub esp, 8
+    mov eax, 0xffffffff
+    jmp 0x4bcb98
+''')
+# mo_open: copia de 0x4bcb90 (abrir el menú de partida) en -1, -1 con el diálogo MO_DLG y MO_ON = 1.
+mo_open = place('mo_open', f'''
+    mov byte ptr [{MO_ON:#x}], 1
+    sub esp, 8
+    mov eax, 0xffffffff
+    mov dword ptr [esp + 4], eax
+    mov dword ptr [esp], eax
+    xor eax, eax
+    mov byte ptr [0x588280], al
+    mov word ptr [0x588284], ax
+    push 0
+    push -1
+    push dword ptr [esp + 8]
+    push dword ptr [esp + 0x10]
+    push 0
+    mov ecx, 0x588bd0
+    push 0x4bd140
+    push 0x4bd030
+    push 0x4bce20
+    push 0x4bcc60
+    push {MO_DLG}
+    call 0x4d7980
+    mov dword ptr [esp + 4], -1
+    mov dword ptr [esp], -1
+    lea edx, [esp]
+    lea ecx, [esp + 4]
+    push edx
+    push ecx
+    mov ecx, 0x588bd0
+    call 0x4d8230
+    mov ecx, 0x588bd0
+    call 0x4d82a0
+    push dword ptr [esp]
+    push dword ptr [esp + 8]
+    push 1
+    call 0x4bd180
+    add esp, 0xc
+    mov ecx, 0x588bd0
+    call 0x4d7f60
+    add esp, 8
+    ret
+''')
+# Clic en el submenú (eax = zona): si el renglón está habilitado, cierra y manda abrir la Votación con esa moción.
+mo_click = place('mo_click', f'''
+    xor ecx, ecx
+mc_l:
+    cmp eax, dword ptr [ecx*4 + {mo_hot:#x}]
+    je mc_f
+    inc ecx
+    cmp ecx, {MO_NROW}
+    jb mc_l
+    ret
+mc_f:
+    cmp byte ptr [ecx + {mo_en:#x}], 0
+    je mc_r
+    mov dword ptr [{tl_openpkt + 4:#x}], ecx
+    mov byte ptr [{MO_ON:#x}], 0
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    push 0
+    call {tl_sendopen:#x}
+    add esp, 4
+mc_r:
+    ret
+''')
+
 tl_menuinit = place('tl_menuinit', f'''
+    cmp byte ptr [{MO_ON:#x}], 0
+    jne {mo_init:#x}
     call 0x4dd3a0
     xor ecx, ecx
     test ax, ax
@@ -15232,6 +15497,8 @@ tm_set:
 
 # Despachador del menú (0x4bd520, eax = control). La línea de Chat Mode (0xc) es ahora "Pausa".
 tl_disp = place('tl_disp', f'''
+    cmp byte ptr [{MO_ON:#x}], 0
+    jne {mo_click:#x}
     cmp eax, {VOTE_HOT:#x}
     je td_vote
     cmp eax, 0xc
@@ -15243,10 +15510,7 @@ tl_disp = place('tl_disp', f'''
 td_vote:
     mov ecx, 0x588bd0
     call 0x4d7d70
-    push 0
-    call {tl_sendopen:#x}
-    add esp, 4
-    ret
+    jmp {mo_open:#x}
 td_pause:
     mov ecx, 0x588bd0
     call 0x4d7d70
@@ -20066,6 +20330,50 @@ GO_W, GO_H = 16, 14                    # alto del escudo chico (imagen 0x69: 11x
 GO_PIE_DX, GO_PIE_DY = 123, 262        # centro del diálogo (175 - 52) y encima del botón Done (376 - 92 - 22)
 GO_IMG = RAM_IMG + 1
 GO_FILE = SEAL_FILE + 1
+# Marca de partida a prueba (mociones, MO_PRUEBA): hoja MOP_FILE = RUINS\prueba.pcx con la P (Arial Bold, verde
+# claro con borde rojo; 11 transparente), pegada en la esquina superior izquierda del mapa cada vez que el juego dibuja
+# los avisos (0x4c2810(superficie, x0, y0, ...), x0 y0 = origen del mapa en la pantalla).
+MOP_FILE = GO_FILE + 1
+MOP_W, MOP_H, MOP_M = 34, 40, 8
+mo_pdraw = place('mo_pdraw', f'''
+    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
+    jz mp_go
+    pushad
+    push {MOP_FILE}
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz mp_end
+    cmp dword ptr [eax + 8], 0
+    jne mp_blit
+    push {MOP_FILE}
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jz mp_end
+mp_blit:
+    movsx eax, word ptr [esp + 0x2c]
+    add eax, {MOP_M}
+    push eax
+    movsx eax, word ptr [esp + 0x2c]
+    add eax, {MOP_M}
+    push eax
+    push dword ptr [esp + 0x2c]
+    push {MOP_H}
+    push {MOP_W}
+    push 0
+    push 0
+    push {MOP_FILE}
+    call 0x4dd530
+    add esp, 0x20
+mp_end:
+    popad
+mp_go:
+    push ebx
+    push esi
+    mov esi, dword ptr [esp + 0xc]
+    jmp 0x4c2816
+''')
 GO_GOLD = 137
 GO_K32 = place_data('go_k32', cstr_('KERNEL32.DLL'))
 GO_GLTN = place_data('go_gltn', cstr_('GetLocalTime'))
@@ -21836,6 +22144,10 @@ patch(0x4bce20, asm('push ebx; mov ecx, 0x5032f8', 0x4bce20), asm(f'jmp {tl_menu
 patch(0x4bd512, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x4bd512), asm(f'jmp {tl_menu:#x}', 0x4bd512))
 assert rel(0x4bd51c, 3) == bytes.fromhex('5e5bc3') and rel(0x4bd520, 4) == bytes.fromhex('8b442404')
 patch(0x4bd524, asm('sub eax, 0xb; cmp eax, 0xd; ja 0x4bd533', 0x4bd524), asm(f'jmp {tl_disp:#x}', 0x4bd524))
+# Mociones de votación (mo_*)
+patch(0x4bd180, asm('push ebx; mov ecx, 0x5032f8', 0x4bd180), asm(f'jmp {mo_entry:#x}; nop', 0x4bd180))
+patch(0x4bcb90, asm('sub esp, 8; mov eax, 0xffffffff', 0x4bcb90), asm(f'jmp {mo_norm:#x}; nop; nop; nop', 0x4bcb90))
+patch(0x4c2810, asm('push ebx; push esi; mov esi, dword ptr [esp + 0xc]', 0x4c2810), asm(f'jmp {mo_pdraw:#x}; nop', 0x4c2810))
 patch(0x46f341, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x46f341), asm(f'jmp {tl_setinit:#x}', 0x46f341))
 assert rel(0x46f34b, 4) == bytes.fromhex('5d5f5e5b')
 assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
@@ -22201,7 +22513,7 @@ table_add(res, 2, RAM_FILE, bytes(ram))
 # corrido un píxel abajo a la derecha y con contorno naranja (71, el aro de los botones apretados de BUTT_STD); con el
 # puntero encima, con el contorno; deshabilitado, oscurecido. Los colores salen de la paleta de BUTT_STD.PCX (la misma
 # de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageFont, ImageDraw
 SRC_BUTT = r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX'
 butt = Image.open(SRC_BUTT)
 assert butt.mode == 'P' and butt.size == (472, 224)
@@ -22341,6 +22653,32 @@ table_add(res, 2, GO_FILE, bytes(_pr))
 o6, _ = table(res, 6)
 assert struct.unpack_from('<8i', res, o6 + 20 + 31 * 32) == (31, 104, 34, 182, 284, 0, 0, 1)
 table_add(res, 6, BM_DLG, struct.pack('<8i', BM_DLG, 104, BM_RES, 182, 284, 0, 0, 1))
+# Submenú de mociones (MO_DLG): el registro del menú de partida (0x20) con los controles MO_RES (copia del 35, más abajo).
+_d20 = list(struct.unpack_from('<8i', res, o6 + 20 + 0x20 * 32))
+assert _d20[0] == 0x20 and _d20[2] == 35, _d20
+table_add(res, 6, MO_DLG, struct.pack('<8i', MO_DLG, _d20[1], MO_RES, *_d20[3:]))
+# Hoja MOP_FILE = RUINS\prueba.pcx (mo_pdraw), con los campos de henge y la paleta del mapa: la P en Arial Bold, verde
+# claro con borde rojo, sobre 11 (transparente).
+struct.pack_into('<I', henge, 0, MOP_FILE)
+setstr(henge, 4, 32, 'prueba')
+table_add(res, 2, MOP_FILE, bytes(henge))
+_pal = Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
+def _cerca(rgb):
+    return min((i for i in range(256) if i != 11), key=lambda i: sum((_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
+_verde, _rojo = _cerca((144, 238, 144)), _cerca((220, 0, 0))
+_fnt = ImageFont.truetype(r'C:\Windows\Fonts\arialbd.ttf', 40)
+_m = Image.new('L', (MOP_W, MOP_H), 0); _md = ImageDraw.Draw(_m)
+_bb = _md.textbbox((0, 0), 'P', font=_fnt, stroke_width=3)
+_org = ((MOP_W - (_bb[2] - _bb[0])) // 2 - _bb[0], (MOP_H - (_bb[3] - _bb[1])) // 2 - _bb[1])
+_md.text(_org, 'P', font=_fnt, fill=255, stroke_width=3, stroke_fill=128)
+assert _m.getbbox() and _m.getbbox()[0] >= 0 and _m.getbbox()[2] <= MOP_W and _m.getbbox()[3] <= MOP_H
+mop_hoja = Image.new('P', (MOP_W, MOP_H), 11); mop_hoja.putpalette(_pal)
+for _y in range(MOP_H):
+    for _x in range(MOP_W):
+        _v = _m.getpixel((_x, _y))
+        if _v >= 192: mop_hoja.putpixel((_x, _y), _verde)
+        elif _v >= 64: mop_hoja.putpixel((_x, _y), _rojo)
+pcx = io.BytesIO(); mop_hoja.save(pcx, 'PCX'); MOP_PCX = pcx.getvalue()
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -22816,6 +23154,7 @@ NUEVOS[os.path.join('RUINS', 'pozos.pcx')] = PO_PCX
 NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
+NUEVOS[os.path.join('RUINS', 'prueba.pcx')] = MOP_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)
@@ -22856,6 +23195,18 @@ for _i, (_tx, _ht) in enumerate(zip(BM_TXT, BM_HOT)):
     struct.pack_into('<i', _blk, _r[_ht] + 0xc, _ny + _hy - _ty)
 res += _blk
 assert find_dialog(res, BM_RES)[0] == len(res) - len(_blk)
+# Controles del submenú de mociones (MO_RES; ver MO_DLG): copia del 35 ya terminado, sin cambios (los textos los pone
+# mo_draw y los renglones sin moción quedan vacíos y apagados).
+_o, _h = find_dialog(res, 35)
+assert _h[3] == _h[4]
+assert set(MO_TXT + MO_HOT) <= set(records(res, 35))
+try:
+    find_dialog(res, MO_RES); raise AssertionError('MO_RES ya existe')
+except KeyError: pass
+_blk = bytearray(res[_o:_o + 20 + _h[4]])
+struct.pack_into('<I', _blk, 4, MO_RES)
+res += _blk
+assert find_dialog(res, MO_RES)[0] == len(res) - len(_blk)
 open(OUT_RES, 'wb').write(res)
 for rel_, data in NUEVOS.items():
     path = os.path.join(OUT_DIR, rel_)

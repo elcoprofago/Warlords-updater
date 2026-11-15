@@ -27,7 +27,7 @@ GAME = b'Warlords III Era de Alianzas\0'
 k = img.index(b'Votacion\0' + GAME)
 TL_VARS = BASE + k + 9 + len(GAME)
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = TL_VARS, TL_VARS + 4, TL_VARS + 8, TL_VARS + 0xc
-TL_BUF = TL_VARS + 16 + 4 + 4 + 260
+TL_BUF = TL_VARS + 16 + 4 + 8 + 260
 ERR = [BASE + img.index(f'No se pudo abrir Herramientas\\{n}.exe\0'.encode()) for n in ('votacion', 'sorteo')]
 DC_ERR = BASE + img.index(b'No se pudo abrir Herramientas\\DarkCompare.exe\0')
 DC_BTN, DC_FILE = 75, 167
@@ -118,11 +118,13 @@ def despacho(item, machine=0):
     interceptar(mu, 0x4d7d70, 0, lambda mu, a: ('cerrar',), out)
     interceptar(mu, 0x4dd3b0, 0, lambda mu, a: ('red', a[0], bytes(mu.mem_read(a[1], a[2]))), out)
     interceptar(mu, 0x408a00, 0, lambda mu, a: ('chat',), out)
+    for a, pop in ((0x4d7980, 40), (0x4d8230, 8), (0x4d82a0, 0), (0x4bd180, 0), (0x4d7f60, 0)):
+        interceptar(mu, a, pop, lambda mu, a: ('submenu',), out)
     correr(mu, 0x4bd520, [item])
     return out
 print('-- menú de partida: clic')
-ver('anfitrión, Votacion', despacho(VOTE_HOT), [('cerrar',), ('red', 0x2a0, struct.pack('<I', 0))])
-ver('control: otra máquina, Votacion', despacho(VOTE_HOT, 1), [('cerrar',)])
+# «Votacion» abre el submenú de mociones (prueba_mociones.py); acá solo que cierra el menú y no manda nada todavía.
+ver('anfitrión, Votacion', despacho(VOTE_HOT)[:1], [('cerrar',)])
 ver('Pausa (ex Chat Mode), fuera de red: cierra el menú y avisa a todos, sin guardar', despacho(0xc),
     [('cerrar',), ('red', 0x2a5, struct.pack('<I', 1))])
 def despacho_red(item):
@@ -161,7 +163,7 @@ def prep_clic(cid, machine=0):
 print('-- preparación')
 ver('anfitrión: moneda visible', prep_init(0), [('mostrar', COIN, 0), ('refresco',)])
 ver('otra máquina: moneda deshabilitada', prep_init(2), [('mostrar', COIN, 2), ('refresco',)])
-ver('anfitrión: clic en la moneda', prep_clic(COIN), [('red', 0x2a0, struct.pack('<I', 1))])
+ver('anfitrión: clic en la moneda', prep_clic(COIN), [('red', 0x2a0, struct.pack('<II', 1, 0))])
 ver('control: otra máquina, clic en la moneda', prep_clic(COIN, 2), [])
 ver('control: control 98', prep_clic(98), [])
 mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 80)); mu.reg_write(UC_X86_REG_ESI, PKT)
@@ -275,7 +277,7 @@ H = 'Herramientas\\'
 print('-- función ociosa')
 w, red, po, ps, _ = ociosa(0, {H + 'votacion.op': b'v1 auto 1 0 s-------', H + 'votacion.ver': b'viejo'}, abrir=(1, 0))
 ver('anfitrión abre Votación como operador', [x for x in w.log if x[0] == 'proceso'],
-    [('proceso', H + 'votacion.exe', f'"{H}votacion.exe" --operador', 0)])
+    [('proceso', H + 'votacion.exe', f'"{H}votacion.exe" --operador --mocion 0', 0)])
 ver('  y cierra los handles del proceso', [x for x in w.log if x[0] == 'cerrar'], [('cerrar', 0x501), ('cerrar', 0x502)])
 ver('  y no manda el .op viejo (lo borra antes de lanzar)', red, [])
 ver('  sin dejar .op, .env ni .ver viejo', sorted(w.fs), [])
@@ -422,7 +424,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: siete más (165 a 171; 168 pozos, 169 aviso, 170 sello, 171 alianza)', (len(fn), len(fo)), (172, 165))
+ver('archivos: ocho más (165 a 172; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 la P de partida a prueba)', (len(fn), len(fo)), (173, 165))
 def dialogos(path):
     d = open(path, 'rb').read(); o = 8
     while True:
@@ -463,7 +465,7 @@ ver('control: registros originales de Army List intactos', all(n111[i] == o111[i
 se = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sello.pcx'))
 ver('sello.pcx: 4 cuadros de 56x56; el deshabilitado (3.º) = fondo de DLG_BIG bajo el botón (tapa el sello anterior)',
     (se.size, list(se.crop((0, 112, 56, 168)).getdata()) ==
-     list(Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'DLG_BIG.PCX')).crop((532, 52, 588, 108)).getdata())),
+     list(Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').crop((532, 52, 588, 108)).getdata())),
     ((56, 224), True))
 ver('sello.pcx: normal, apretado y puntero encima iguales y con dibujo',
     [list(se.crop((0, 56 * k, 56, 56 * k + 56)).getdata()) == list(se.crop((0, 0, 56, 56)).getdata()) for k in (1, 3)]

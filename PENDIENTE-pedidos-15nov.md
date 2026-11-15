@@ -41,6 +41,11 @@ Aclaración del usuario: hoy la cuenta solo se activa mientras se consultan los 
   humanos, y viaja dentro del .SAV.
 
 ### D2. Menú «Mociones de votación» (definido por el usuario el 15/11)
+**Etapa 1 hecha en vista-aliada 1.0.226.0** (submenú de mociones, moción en TL_OPEN y `--mocion N` a votacion.exe,
+«Partida a prueba» por unanimidad de humanos → bloque 'MOCI' en el .SAV y P en el mapa con `RUINS\prueba.pcx`),
+herramientas 1.0.0.4 (Votación 1.1.5 muestra la moción) y Visor de historia 1.0.22.0 (no abre partidas sin .FIN ni
+marca P). Pruebas: prueba_mociones.py y prueba_botones.py (MAL 0). Falta publicar vista-aliada y herramientas después de
+la tanda 170, y la prueba del usuario (TAREAS 225). Siguen las etapas 2 a 4.
 En el menú de comandos, un submenú (como el de Build) con mociones predeterminadas; elegir una abre la Votación
 ya cargada con esa moción, y al cerrarse con resultado afirmativo el programa aplica la acción sola:
 1. Partida «a prueba» → pone la marca P (y habilita el Visor en curso).
@@ -53,6 +58,23 @@ ya cargada con esa moción, y al cerrarse con resultado afirmativo el programa a
 El resultado sigue apareciendo en el informe de eventos, como hoy.
 Primer paso: ver cómo la Votación actual (TL_*, build.py) guarda la moción y el resultado, y dónde se engancha el
 submenú (dialogo de Build como modelo).
+
+#### Diseño (15/11, tras estudiar el código)
+- Hoy: «Votacion» del menú de partida (diálogo 35, VOTE_HOT) → `tl_disp` → `tl_sendopen(0)` → TL_OPEN (carga:
+  herramienta, dword) → en cada PC `tl_recv` → `vt_open`/`pz_open` y `tl_idle` abre `votacion.exe --operador` o
+  `--espectador <mascara>`. El estado vuelve como texto "VOT <sesión> <fase> ..." (`vt_state`); al "cerrado" se
+  anota SI/NO en vt_tab (informe de eventos, tipo 0x13) y se guarda en el .SAV como bloque 'VOTA' (después vienen
+  'POZO', 'OBRA'...). votacion.exe (repo `F:\source\repos\Votacion`, 1.1.4) no sabe de mociones.
+- Submenú: como Build (`bm_open`, BM_DLG/BM_RES, modo BM_ON con los mismos manejadores del diálogo): un diálogo
+  MO_DLG copia del 35 con un renglón por moción + «Votación libre» (la de hoy), abierto al elegir «Votacion».
+- Moción elegida: va en la carga de TL_OPEN (segundo dword; un parche viejo la ignora) → MO_CUR en todas las PC;
+  votacion.exe la recibe en la línea de comandos (`--mocion N`) y muestra su texto.
+- Al cerrarse con resultado afirmativo (P: SI = humanos activos y NO = 0), cada PC aplica la acción en el mismo
+  punto (vt_commit), así no desincroniza. El renglón del informe dice qué moción fue.
+- Marca P: bloque nuevo del .SAV ('MOCI', banderas) detrás de los existentes; el Visor lo busca al final del .SAV.
+- Etapas: 1) submenú + moción a votacion.exe + P (marca, dibujo, Visor); 2) Finalización; 3) Descalificación y
+  Enganche (bando humano ↔ sistema); 4) Vale todo.
+
 - Con la marca, el mapa principal muestra una **P** mayúscula, Arial Bold, verde claro con borde rojo, en el ángulo
   superior izquierdo.
 - El Visor (`ia\visor-historia`) lee la marca y el estado de terminada (ver `PENDIENTE-partidas-terminadas.md`) y

@@ -606,6 +606,20 @@ todas las PC, el anfitrión como operador y los demás como espectadores.</p>
 <h2>El resultado en el Events Report</h2>
 <p>Al cerrar o reiniciar una votación con al menos un voto, el resultado (SÍ y NO, con el escudo del bando que la abrió)
 queda en el <i>Events Report</i> de la ronda y se guarda con la partida.</p>
+<h2>Mociones de votación</h2>
+<p>Desde la versión 1.0.226.0, la línea <b>Votacion</b> abre un submenú con <b>mociones</b>: votaciones con una
+acción ya definida, que el juego aplica solo si la votación se cierra con resultado afirmativo. La Votación se abre en
+todas las PC con la moción escrita en el título y en un cartel de la columna derecha (Votación 1.1.5 o posterior).
+<span class="estado e-pr">en prueba</span></p>
+<ul>
+  <li><b>Votacion libre</b>: la votación de siempre, sin acción.</li>
+  <li><b>Partida a prueba</b>: marca la partida «a prueba». Se aprueba solo si <b>todos</b> los jugadores humanos que
+  siguen en juego votan SÍ (los bandos de la computadora no cuentan). La marca se guarda con la partida y el mapa
+  muestra una <b>P</b> verde con borde rojo en la esquina superior izquierda. Una partida marcada se puede abrir en el
+  Visor de historia aunque no haya terminado.</li>
+  <li><b>Finalizacion</b>, <b>Descalificacion</b>, <b>Vale todo</b> y <b>Enganche</b> aparecen en gris: llegan en
+  próximas versiones.</li>
+</ul>
 
 <!-- ============================================================ XI -->
 <h1><span class="num">Capítulo XII</span>Mapas al azar e ítems</h1>
@@ -772,6 +786,9 @@ no modifica la partida.</p>
 <ul>
   <li><b>Abrir…</b> busca primero en la carpeta <code>HISTORY</code> del juego, donde el parche deja las partidas
   terminadas; si no existe, en <code>SAVES</code>. Después recuerda la última carpeta usada.</li>
+  <li>Solo abre partidas <b>terminadas</b> (las que tienen su archivo <code>.FIN</code> en <code>HISTORY</code>). Una
+  partida en curso se abre únicamente si está marcada <b>«a prueba»</b> por una moción de votación (capítulo XI);
+  si no, el Visor avisa y no la abre. Desde la versión 1.0.22.0 del Visor.</li>
   <li>Arriba quedan el nombre de la partida, los <b>turnos jugados</b>, la condición de <b>victoria</b>, el tipo de
   <b>mapa</b> (aleatorio o con nombre) y la fecha del <b>último guardado</b>.</li>
   <li>Las luces <b>Single</b> y <b>Multi</b> indican si la partida fue de un jugador o en red.</li>
@@ -876,7 +893,8 @@ saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decid
 <tr><td>Sembrar una trampa</td><td>Grupo con bono Trap en la casilla → menú de órdenes → <i>Build Trap</i></td></tr>
 <tr><td>Ver un pozo o trampa</td><td>Mouse encima (lupa) y botón derecho</td></tr>
 <tr><td>Ordenar a un aliado de la IA</td><td>Chat: <code>#n ataca CIUDAD</code>, <code>#n ataca a BANDO</code>, <code>#n mandame refuerzos</code></td></tr>
-<tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Votacion</i></td></tr>
+<tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Votacion</i> → moción</td></tr>
+<tr><td>Marcar la partida «a prueba»</td><td>Anfitrión: <i>Votacion</i> → <i>Partida a prueba</i>; todos los humanos votan SÍ</td></tr>
 <tr><td>Sortear bandos</td><td>Anfitrión: botón Sorteo junto a <i>Chat</i>, en la preparación</td></tr>
 <tr><td>Comparar armas</td><td><i>Edit Side</i> → botón DarkCompare</td></tr>
 <tr><td>Jugar con día y noche</td><td><i>Customize Options</i> → <i>Day/Night</i></td></tr>
@@ -924,6 +942,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <tr><td>Army List con las 25 reglas</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Órdenes por chat a la IA</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Votación, Sorteo y pausa</td><td><span class="estado e-pr">en prueba</span> en otras PC del clan</td></tr>
+<tr><td>Mociones de votación (Partida a prueba, marca P, Visor)</td><td><span class="estado e-pr">en prueba</span></td></tr>
 <tr><td>IA: economía (reserva, freno de producción, pilas sueltas, repliegue)</td><td><span class="estado e-pr">en prueba</span> en partidas del clan; confirmada en el banco</td></tr>
 <tr><td>IA de alianzas</td><td><span class="estado e-pr">en prueba</span> (series A/B)</td></tr>
 <tr><td>Pozos y trampas en red (misma tabla en todas las PC)</td><td><span class="estado e-dev">en desarrollo</span></td></tr>
@@ -956,6 +975,10 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.226.0</td><td>15/11/2026</td><td>Mociones de votación: la línea <i>Votacion</i> abre un submenú con
+mociones. «Partida a prueba», aprobada por todos los humanos, marca la partida (se guarda con ella), el mapa muestra
+una P verde con borde rojo arriba a la izquierda y el Visor de historia la abre aunque no haya terminado. Las demás
+mociones quedan en gris para próximas versiones. Requiere Votación 1.1.5 (paquete herramientas 1.0.0.4).</td></tr>
 <tr><td>1.0.225.0</td><td>15/11/2026</td><td>Al pedir Pausa en una partida en red, todas las PC guardan la misma partida («_pausa»); antes solo la guardaba la PC que la pedía y al cargarla en red el juego decía que no todos los jugadores podían unirse.</td></tr>
 <tr><td>1.0.224.0</td><td>15/11/2026</td><td>En los últimos 5 segundos del turno (partidas con límite de tiempo) suena la cuenta regresiva de los informes y el cursor muestra los números, también jugando en el mapa.</td></tr>
 <tr><td>1.0.223.0</td><td>15/11/2026</td><td>Solo en las tandas de prueba (con el Monitor de IA): la computadora en prueba elige qué hechizo lanzar sin que las casillas de efecto vacías le sumen un valor al azar. En las partidas normales no cambia nada.</td></tr>

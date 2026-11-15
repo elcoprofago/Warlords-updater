@@ -15,7 +15,7 @@ from datetime import datetime
 
 # programa: (repo, fuente con VERSION, version que se publica, lo que cuenta como "el programa" en git)
 PROGRAMAS = {
-    'votacion': ('Votacion', 'votacion.py', '1.1.4', ['votacion.py', 'assets', 'votacion.spec']),
+    'votacion': ('Votacion', 'votacion.py', '1.1.5', ['votacion.py', 'assets', 'votacion.spec']),
     'sorteo': ('Sorteo', 'sorteo.py', '1.1.4', ['sorteo.py', 'assets', 'sorteo.spec']),
 }
 

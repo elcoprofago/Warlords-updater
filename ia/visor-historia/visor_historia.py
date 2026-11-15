@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.21.0'
+VERSION = '1.0.22.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -46,6 +46,17 @@ def juego_de(sav):
     """Carpeta del juego: la de arriba de SAVES si tiene Sagetext.tex; si no, la de siempre."""
     j = os.path.dirname(os.path.dirname(os.path.abspath(sav)))
     return j if os.path.exists(os.path.join(j, 'Sagetext.tex')) else tanda.JUEGO
+
+
+def a_prueba(d):
+    """Marca «partida a prueba» (moción votada por todos los humanos, vista-aliada 1.0.226.0): el último bloque del .SAV
+    es 'MOCI' + 4 bytes de banderas, y la 1 es la marca."""
+    return len(d) >= 8 and d[-8:-4] == b'MOCI' and d[-4] & 1 == 1
+
+
+BLOQUEADA = ('Esta partida no terminó: el Visor solo abre partidas terminadas.\n\n'
+             'Para verla en curso, los jugadores tienen que marcarla «a prueba» con una moción de votación aprobada por '
+             'todos (menú de la partida → Votacion → Partida a prueba).')
 
 
 def leer_fin(sav):
@@ -516,6 +527,9 @@ class Visor:
         try:
             with open(ruta, 'rb') as f:
                 d = f.read()
+            if not leer_fin(ruta) and not a_prueba(d):
+                messagebox.showwarning(TITULO, f'{ruta}\n\n{BLOQUEADA}')
+                return
             self.juego = juego_de(ruta)
             p = historia.Partida(d, self.juego)
             self.cargar_arte(p)
