@@ -40,7 +40,8 @@ ya cargada con esa moción, y al cerrarse con resultado afirmativo el programa a
 2. Finalización → termina la partida en forma anticipada (como el decreto).
 3. Descalificación de un jugador → el humano pasa a jugador del sistema.
 4. «Vale todo» → partida sin fair play.
-5. «Neganche» → un jugador del sistema pasa a humano (como `sides list`).
+5. «Enganche» (de engancharse) → un humano eliminado que quiere seguir jugando en la misma partida recibe el color
+   del sistema con menos puntaje en ese momento (como `sides list`, color → human).
 6. Otras, a incorporar.
 El resultado sigue apareciendo en el informe de eventos, como hoy.
 Primer paso: ver cómo la Votación actual (TL_*, build.py) guarda la moción y el resultado, y dónde se engancha el
