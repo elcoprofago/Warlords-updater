@@ -25,11 +25,26 @@ partida como hace el guardado automático del turno.
 ## C. Cuenta regresiva sonora al fin del turno
 Que la cuenta regresiva sonora de los informes suene también en los últimos 5 s del turno (vencimiento en
 [0x4ff7a8], ver build.py ~10936), y que los números se vean junto al cursor.
+Aclaración del usuario: hoy la cuenta solo se activa mientras se consultan los informes; jugando en el mapa
+(moviendo, etc.) nada avisa. Tiene que sonar y verse en cualquier pantalla del turno.
 
 ## D. Visor de historia: bloquear partidas en curso
 - Una partida que no terminó (ni por final normal ni por decreto) no se puede ver en el Visor.
-- Excepción: partidas marcadas "de prueba". La marca la pone el clan escribiendo `prueba` en el chat (con acuerdo,
-  definir: ¿todos los jugadores humanos deben escribirla?) y viaja dentro del .SAV.
+- Excepción: partidas marcadas "de prueba". La marca la decide una Votación con el voto favorable de **todos** los
+  humanos, y viaja dentro del .SAV.
+
+### D2. Menú «Mociones de votación» (definido por el usuario el 15/11)
+En el menú de comandos, un submenú (como el de Build) con mociones predeterminadas; elegir una abre la Votación
+ya cargada con esa moción, y al cerrarse con resultado afirmativo el programa aplica la acción sola:
+1. Partida «a prueba» → pone la marca P (y habilita el Visor en curso).
+2. Finalización → termina la partida en forma anticipada (como el decreto).
+3. Descalificación de un jugador → el humano pasa a jugador del sistema.
+4. «Vale todo» → partida sin fair play.
+5. «Neganche» → un jugador del sistema pasa a humano (como `sides list`).
+6. Otras, a incorporar.
+El resultado sigue apareciendo en el informe de eventos, como hoy.
+Primer paso: ver cómo la Votación actual (TL_*, build.py) guarda la moción y el resultado, y dónde se engancha el
+submenú (dialogo de Build como modelo).
 - Con la marca, el mapa principal muestra una **P** mayúscula, Arial Bold, verde claro con borde rojo, en el ángulo
   superior izquierdo.
 - El Visor (`ia\visor-historia`) lee la marca y el estado de terminada (ver `PENDIENTE-partidas-terminadas.md`) y
