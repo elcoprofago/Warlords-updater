@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 224).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 225).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **224.** Guardado de la Pausa en todas las PC (vista-aliada 1.0.225.0, 15/11/2026). **Después de que termine la tanda 170.** 1) Actualizador, opción **9**, en las dos PC: vista-aliada en **1.0.225.0** o posterior. 2) Partida en red con Nico: un jugador elige **Pausa** en el menú de partida. 3) En **las dos** PC tiene que aparecer en `NETSAVES` el mismo archivo `<partida>_<turno>_pausa.SAV`. 4) Salir y volver a cargar ese guardado en red: tiene que unirse todos, sin el mensaje «no todos los jugadores pueden unirse». Anotar lo que no coincida.
 - [ ] **223.** Cuenta regresiva al final del turno (vista-aliada 1.0.224.0, 15/11/2026). **Después de que termine la tanda 170** (no actualizar `C:\Warlords3` mientras corre). 1) Actualizador, opción **9**: vista-aliada en **1.0.224.0** o posterior. 2) Partida con límite de tiempo por turno (el más corto), quedarse en el mapa moviendo ejércitos sin abrir informes: en los últimos 5 segundos suena la cuenta regresiva de los informes y el cursor muestra 5, 4, 3, 2, 1, aunque se mueva el mouse. 3) Controles: con más de 5 segundos no suena nada; en red, solo lo oye el jugador de turno; con Pausa no corre. Anotar lo que no coincida (por ejemplo, si el cursor parpadea entre el número y la flecha).
 - [x] **215.** IA: la computadora espera la noche (vista-aliada 1.0.221.0, 14/11/2026) — 15/11/2026: corrida dos veces (tandas 168 y 169, 20 partidas completas). La espera actúa (55 veces) y las pilas de noche de prueba atacan más de noche, pero no ganan más ni suben de puesto: queda solo en la IA de prueba. Resultado en ia\PENDIENTE-ia-innovaciones.md. Con unidades de noche (monstruos, demonios, no muertos), la IA de prueba no ataca de día a un enemigo parejo y espera la vuelta de noche. 1) Actualizador, opción **9**: vista-aliada en **1.0.221.0** o posterior en `C:\Warlords3`. 2) Monitor de IA → **Ninguna**, marcá solo **Borderlands_NO** (sin «control»), Partidas: **10**, **Nueva tanda**. 3) Avisame cuando termine; el análisis lo hago yo.
 - [x] **213.** Las trampas de la computadora llegan al ranking (vista-aliada 1.0.220.0, 14/11/2026). Actualizar `C:\Warlords` (la carpeta del ranking) con el Actualizador, opción **9**, a vista-aliada **1.0.220.0** o posterior, y avisar a los del clan que actualicen. Desde esta versión la computadora siembra trampas cerca de sus ciudades cuando hay enemigos cerca.

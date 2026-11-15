@@ -233,5 +233,31 @@ g = Juego(machine=2, proceso_ok=False); g.abrir(); g.segundo()
 ver('control: otra PC sin el programa no manda nada', [x for x in g.log if x[0] == 'red'], [])
 g = Juego(proceso_ok=False); g.abrir(1); g.segundo()
 ver('control: sin el programa de Sorteo no manda nada', [x for x in g.log if x[0] == 'red'], [])
+
+# ---------------------------------------------------------------- guardado de la pausa (1.0.225.0)
+print('-- guardado de la pausa en cada PC')
+def pc_red(machine, red=2):
+    g = Juego(machine=machine)
+    g.mu.mem_write(0x503de8, struct.pack('<H', red)); g.mu.mem_write(0x503da0, b'Clan\0')
+    g.interceptar(0x420a80, lambda a: 7)
+    g.interceptar(0x439880, lambda a: g.log.append(('guardar', cstr(g.mu, a[0]).decode(), a[1])))
+    g.mu.mem_write(0x5a9bec, struct.pack('<I', STUBS + 0x800))   # sprintf (cdecl)
+    def sprintf(a):
+        f = cstr(g.mu, a[1]).decode().replace('%s', '{}').replace('%d', '{}')
+        g.mu.mem_write(a[0], f.format(cstr(g.mu, a[2]).decode(), a[3]).encode() + bytes(1))
+    g.interceptar(STUBS + 0x800, sprintf)
+    g.mu.mem_write(0x5a984c, struct.pack('<I', STUBS + 0x810))   # GetModuleHandleA (stdcall): sin el módulo
+    g.interceptar(STUBS + 0x810, lambda a: 0, pop=4)
+    return g
+for m in (0, 2):
+    g = pc_red(m); g.paquete(0x2a5, struct.pack('<I', 1))
+    ver(f'PC {m}: al recibir la pausa no guarda dentro de la recepción', [x for x in g.log if x[0] == 'guardar'], [])
+    g.segundo(); g.segundo()
+    ver(f'  y guarda una sola vez Clan_7_pausa en la ociosa', [x for x in g.log if x[0] == 'guardar'],
+        [('guardar', 'Clan_7_pausa', 0)])
+g = pc_red(0, red=0); g.paquete(0x2a5, struct.pack('<I', 1)); g.segundo()
+ver('control: fuera de red no guarda', [x for x in g.log if x[0] == 'guardar'], [])
+g = pc_red(0); g.segundo()
+ver('control: sin pausa no guarda', [x for x in g.log if x[0] == 'guardar'], [])
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

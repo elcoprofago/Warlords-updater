@@ -140,8 +140,8 @@ def despacho_red(item):
     interceptar(mu, STUBS + 0x800, 0, sprintf, None)
     correr(mu, 0x4bd520, [item])
     return out
-ver('Pausa en red: guarda Clan_7_pausa y avisa a todos', despacho_red(0xc),
-    [('cerrar',), ('turno', '0x5032f8'), ('guardar', 'Clan_7_pausa', 0), ('red', 0x2a5, struct.pack('<I', 1))])
+ver('Pausa en red: solo avisa a todos (guarda cada PC al recibir el aviso, 1.0.225.0)', despacho_red(0xc),
+    [('cerrar',), ('red', 0x2a5, struct.pack('<I', 1))])
 ver('control: control desconocido', despacho(0x30), [('cerrar',)])
 
 # ---------------------------------------------------------------- pantalla de preparación

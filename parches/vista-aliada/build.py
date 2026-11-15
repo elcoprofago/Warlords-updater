@@ -11195,9 +11195,42 @@ pf_found:
     ret
 ''')
 
+pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pausa'))
+pp_name = place_data('pp_name', bytes(0x80))
+# Desde 1.0.225.0 (15/11/2026: la partida guardada en la pausa no se podía cargar en red, "no todos los jugadores
+# pueden unirse", porque solo la PC que pidió la pausa tenía el archivo) guarda cada PC al recibir PP_PKT 1 (el eco
+# incluido): pp_recv anota PP_SAVE y tl_idle (PZ_SLOW) llama a pp_save, fuera de la recepción de red. Mismo nombre en
+# todas las PC: el nombre base [0x503da0] y el turno son los mismos.
+PP_SAVE = place_data('pp_save_f', bytes(4))
+pp_save = place('pp_save', f'''
+    pushad
+    cmp word ptr [0x503de8], 2
+    jne ps_out
+    mov ecx, {GAMECLK:#x}
+    call 0x420a80
+    movsx eax, ax
+    push eax
+    push 0x503da0
+    push {pp_fmt:#x}
+    push {pp_name:#x}
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0x10
+    push 0
+    push {pp_name:#x}
+    call 0x439880
+    add esp, 8
+ps_out:
+    popad
+    ret
+''')
 # Cada ~250 ms (desde tl_idle): vigilancia de los 60 s y el aviso (se pone si no está, se le estira el vencimiento si
 # está; al reanudar se lo deja vencer ya).
 PZ_SLOW = f'''
+    cmp byte ptr [{PP_SAVE:#x}], 0
+    je pw_nosave
+    mov byte ptr [{PP_SAVE:#x}], 0
+    call {pp_save:#x}
+pw_nosave:
     cmp byte ptr [{PP_REQ:#x}], 0
     je pw_req
     mov byte ptr [{PP_REQ:#x}], 0
@@ -11357,8 +11390,6 @@ pz_dptr = place_data('pz_dptr', struct.pack('<I', pz_disp))
 # Tope (9/11/2026): PP_MAX pausas por jugador. La carga lleva quien pausa ([0x560b20]) en el byte 1; cada PC cuenta en
 # PP_CNT al recibir (todas reciben lo mismo) y descarta la que pasa el tope; pp_click ni la pide. PP_CNT va al .SAV
 # detrás de la tabla de obras y vuelve a cero en partida nueva.
-pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pausa'))
-pp_name = place_data('pp_name', bytes(0x80))
 pp_click = place('pp_click', f'''
     pushad
     movsx eax, word ptr [0x560b20]
@@ -11370,21 +11401,6 @@ pp_click = place('pp_click', f'''
     or eax, 1
     mov dword ptr [{pp_pause:#x}], eax
 pc_who:
-    cmp word ptr [0x503de8], 2
-    jne pc_send
-    mov ecx, {GAMECLK:#x}
-    call 0x420a80
-    movsx eax, ax
-    push eax
-    push 0x503da0
-    push {pp_fmt:#x}
-    push {pp_name:#x}
-    call dword ptr [{SPRINTF:#x}]
-    add esp, 0x10
-    push 0
-    push {pp_name:#x}
-    call 0x439880
-    add esp, 8
 pc_send:
     push 4
     push {pp_pause:#x}
@@ -19045,6 +19061,7 @@ pp_recv = place('pp_recv', f'''
     inc byte ptr [eax + {PP_CNT:#x}]
 pp_on:
     or byte ptr [{PZ_ON:#x}], {PZ_MANUAL}
+    mov byte ptr [{PP_SAVE:#x}], 1
     jmp 0x4b85bb
 pp_off:
     and byte ptr [{PZ_ON:#x}], {0xff & ~PZ_MANUAL:#x}

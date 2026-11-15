@@ -19,6 +19,11 @@ Recibidos mientras corría la tanda 170. Cada parte es independiente; se trabaja
    Ver `PENDIENTE-faros-muros.md` (orden de dibujo del faro).
 
 ## B. Guardado al pausar
+**Hecho en vista-aliada 1.0.225.0.** El guardado ya existía, pero solo en la PC que pedía la pausa, y al cargarlo en red
+el juego decía «no todos los jugadores pueden unirse». Ahora cada PC guarda al recibir el aviso de pausa (PP_PKT 1, con
+el eco incluido), desde tl_idle (pp_save), con el mismo nombre `<partida>_<turno>_pausa`. Prueba: prueba_pausa.py
+(MAL 0) y prueba_botones.py. Falta publicar después de la tanda 170 y la prueba del usuario (TAREAS 224).
+Pedido original:
 La pausa manual (PZ_MANUAL, `parches/vista-aliada/build.py` ~línea 10950) no guarda. Al entrar en pausa, guardar la
 partida como hace el guardado automático del turno.
 
