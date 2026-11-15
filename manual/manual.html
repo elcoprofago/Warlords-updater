@@ -814,7 +814,9 @@ obra. Cada una cuesta la mitad de fundar una ciudad.</p>
   de luz giratorio (capítulo VIII).</li>
   <li><b>Empalizada y muro de piedra.</b> Cierran el paso. Un bloque de muro enemigo se ataca como una casilla con
   ejércitos: lo defienden 24 arqueros del dueño y cae cuando mueren los 24. El dueño lo repara (renglón 7 de
-  <i>Build</i>, pagando según los arqueros perdidos) o lo derriba con <i>Raze</i> y recupera el 75 % del precio.</li>
+  <i>Build</i>, pagando según los arqueros perdidos) o lo derriba con <i>Raze</i> y recupera el 75 % del precio. La computadora repara sola sus muros al empezar su
+  turno, con las mismas condiciones (un grupo propio en el bloque o al lado), si la reparación no le cuesta más de la
+  mitad de su oro.</li>
 </ul>
 <p>Torre y faro pasan al bando que entra en ellos, si no es aliado del dueño.</p>
 
@@ -947,6 +949,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.222.0</td><td>15/11/2026</td><td>La computadora repara sus muros de piedra dañados al empezar su turno, en todas las partidas (también las del ranking): un bloque con un grupo propio encima o al lado, si la reparación no cuesta más de la mitad de su oro.</td></tr>
 <tr><td>1.0.221.0</td><td>14/11/2026</td><td>IA en prueba: la computadora espera la noche. De día, una pila con mayoría de monstruos, demonios o no muertos y un enemigo parejo al alcance no ataca y espera la vuelta de noche, cuando esas unidades ganan +2. Por ahora solo en los bandos que el banco de simulación pone en «IA de prueba».</td></tr>
 <tr><td>1.0.220.0</td><td>14/11/2026</td><td>La computadora siembra trampas también en las partidas normales y en las del ranking del clan (sin <code>DATA\IA.INI</code>). En la tanda 167 sembró 11 trampas en 10 partidas; 2 de ellas mataron 9 ejércitos enemigos y ningún bando cayó en una propia.</td></tr>
 <tr><td>1.0.219.0</td><td>13/11/2026</td><td>IA en prueba: la computadora siembra trampas. Una pila con una unidad con el bono «Trap», fuera de una ciudad, a 3 casillas o menos de una ciudad propia y con un enemigo a 12 o menos, siembra una trampa en su casilla si le sobra el oro (costo más dos turnos de mantenimiento). Una por bando y turno. Por ahora solo en los bandos que el banco de simulación pone en «IA de prueba».</td></tr>

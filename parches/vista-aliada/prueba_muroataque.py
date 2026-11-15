@@ -249,9 +249,9 @@ def grupo(defensor=2, x=5, y=7, ciudad=None, **kw):
     g.correr(WB_GRP, RET, struct.pack('<IIIIII', RET, 3, 0x152000, x, y, GR))
     gr = mu.mem_read(GR, 0x17)
     return gr[4], gr[0x16], llam, mu.reg_read(UC_X86_REG_EBX) == FI and mu.reg_read(UC_X86_REG_EDI) == 0x1234, gr[6]
-ver('defensor del muro: Fortify 2+3, Life Drain 1+1, Life Ward 3; llama a 0x468440 con los mismos argumentos',
-    grupo(), (5, 2, [(3, 0x152000, 5, 7, 0x151000)], True, 3))
-ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2] + grupo(x=4, y=6)[4:], (5, 2, 3))
+ver('defensor del muro: Fortify 2+3, Life Drain 1 (sin bono desde la 1.0.204.0), Life Ward 3; llama a 0x468440 con los mismos argumentos',
+    grupo(), (5, 1, [(3, 0x152000, 5, 7, 0x151000)], True, 3))
+ver('defensor a 1 casilla: con bonos', grupo(x=4, y=6)[:2] + grupo(x=4, y=6)[4:], (5, 1, 3))
 ver('control: a 2 casillas: sin bonos ni Life Ward', grupo(x=5, y=9)[:2] + grupo(x=5, y=9)[4:], (2, 1, 0))
 ver('control: defensor de otro bando: sin bonos', grupo(defensor=5)[:2] + grupo(defensor=5)[4:], (2, 1, 0))
 ver('control: bloque caído: sin bonos', grupo(muertos=24)[:2] + grupo(muertos=24)[4:], (2, 1, 0))
@@ -293,6 +293,38 @@ for lado in 'ad':
     ver(f'{q}: 3 hits, drenaje 2, ward 3: 3 (no suma golpes)', golpes(lado, 3, 2, 3)[:2], (3, 3))
     ver(f'{q}: control: sin drenaje ni ward: igual', golpes(lado, 2, 0, 0)[:2], (2, 2))
     ver(f'{q}: control: ward sin drenaje: igual', golpes(lado, 2, 0, 3)[:2], (2, 2))
+
+print('-- la IA repara sus muros (ai_wrep, al empezar el turno; 15/11/2026)')
+AI_WREP = llamadas(dest(0x4223ad), 3)[2]
+def wrep(p=2, muertos=12, oro=1000, humano=False, ej=(6, 8, 2), tipo=7):
+    g = juego(muertos=muertos, tipo=tipo); mu = g.mu
+    if not humano: mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', 2))
+    mu.mem_write(0x536c14 + p * 0x1f8, struct.pack('<i', oro))
+    if ej:
+        x, y, d = ej
+        mu.mem_write(casilla(x, y), struct.pack('<H', 0x8000 | d << 10))
+    pagos = []
+    g.interceptar(0x43fd60, lambda a: pagos.append((a[0], struct.unpack('<i', struct.pack('<I', a[1]))[0])))
+    for a, nom in ((0x4a4f20, 'grafo'), (REDRAW, 'redibujo')):
+        g.interceptar(a, lambda _, nom=nom: g.llamadas.append(nom))
+    g.correr(AI_WREP, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, p), (UC_X86_REG_ESI, 0x777)])
+    return mu.mem_read(OB_TAB + 7, 1)[0], pagos, g.llamadas[:2], mu.reg_read(UC_X86_REG_ESI) == 0x777
+_r = wrep()
+ver('computadora, 12 muertos, ejército propio en diagonal: +7 = 0, paga la mitad del muro, redibuja, preserva',
+    (_r[0], len(_r[1]), _r[1][0][0], _r[2], _r[3]), (0, 1, 2, ['grafo', 'redibujo'], True))
+_precio = -_r[1][0][1]
+ver('precio de 6 muertos: la mitad del de 12', -wrep(muertos=6)[1][0][1], _precio // 2)
+ver('ejército sobre el bloque mismo: repara', wrep(ej=(5, 7, 2))[0], 0)
+ver('oro justo (2 x precio): repara', wrep(oro=2 * _precio)[0], 0)
+ver('control: oro menor que 2 x precio: no repara', wrep(oro=2 * _precio - 1)[:3], (12, [], []))
+ver('control: bando humano: no repara', wrep(humano=True)[:2], (12, []))
+ver('control: sin ejército cerca: no repara', wrep(ej=None)[:2], (12, []))
+ver('control: ejército a 2 casillas: no repara', wrep(ej=(7, 7, 2))[:2], (12, []))
+ver('control: ejército de otro bando al lado: no repara', wrep(ej=(6, 7, 5))[:2], (12, []))
+ver('control: muro sano: nada', wrep(muertos=0)[:2], (0, []))
+ver('control: bloque caído (24): no se repara', wrep(muertos=24)[:2], (24, []))
+ver('control: torre (tipo 4) con +7: nada', wrep(tipo=4)[:2], (12, []))
+ver('control: muro de otro bando: nada', wrep(p=5)[:2], (12, []))
 
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

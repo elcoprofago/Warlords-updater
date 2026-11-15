@@ -43,7 +43,21 @@ Pedido completo:
   (1.0.194.0, mismo día), **Missiles y Acid a +3** (1.0.195.0) y **Fortify a +3** (1.0.196.0); luego **Life Drain a +1** (1.0.197.0): Missiles, Acid y Fortify +3, Life Drain +1; y **Life Drain quitado** (1.0.204.0, 12/11/2026: el combate contra muros seguía muy desequilibrado). Queda así (12/11/2026), sujeto a aprobación del clan. Torre de vigía: visión 4 y luz nocturna 2 desde la 1.0.205.0. Ojo: el bono se suma después de los topes del juego (Life Drain de grupo máx. 3, Fortify), así que puede pasarlos; el usuario quiere ir probando para que las murallas no queden indestructibles; los demás
   valores pueden ajustarse igual (WB_MIS, WB_ACID, WB_FORT, WB_LD en build.py). Ver «Hecho: bonos del muro».
   Prueba en el juego: TAREAS 168.
-- **Próximo paso:** la IA que repara sus muros (decidir junto con los bonos; TAREAS 159 es la prueba de Repair).
+- **Hecho: la IA repara sus muros (vista-aliada 1.0.222.0, 15/11/2026).** Ver «Hecho: la IA repara sus muros».
+
+## Hecho: la IA repara sus muros (1.0.222.0, 15/11/2026)
+- `ai_wrep` (build.py), llamada desde `ia_turn` después de `tr_turn`, al empezar el turno de cada bando (corre en
+  todas las PC, como las trampas). Solo bandos de la computadora (+0xe2 != -1). Recorre OB_TAB: cada bloque OB_MURO
+  propio con +7 entre 1 y 23 y un ejército propio en su casilla o en una de las 8 vecinas (palabra del mapa: bit
+  0x8000 y dueño (w & 0x3c00) >> 10; la misma condición que «Repair Wall» del humano) se repara con `wr_price` si
+  2 * precio <= oro (AW_DIV = 2: que reparar no la deje sin oro para sus tropas). Cobra con 0x43fd60 (queda en el
+  evento 30 de cambios de oro), pone +7 = 0 y redibuja (0x4a4f20, REDRAW, br_mapview) si reparó algo.
+- Vale para la IA original y la de prueba, con o sin IA.INI (no cambia cómo juega: solo repone defensa ya pagada).
+- La IA no construye muros: tiene muros cuando un bando humano pasa a la computadora (tandas, abandono) o en
+  escenarios. No mueve ejércitos para ir a reparar: repara donde ya tiene un grupo.
+- Prueba: prueba_muroataque.py, sección «la IA repara sus muros» (controles: humano, sin ejército, a 2 casillas,
+  ejército ajeno, oro escaso, muro sano, caído, torre, muro ajeno). En la misma prueba se corrigió lo esperado para el
+  Life Drain del grupo, que seguía en +1 desde la 1.0.204.0. Prueba en el juego: TAREAS 218.
 
 ## Hecho: bonos del muro (1.0.193.0, 11/11/2026)
 - Quién: los **defensores** de una casilla que es un bloque de muro de piedra en pie (OB_MURO, +7 < 24) de su mismo
@@ -90,7 +104,7 @@ Pedido completo:
 
 - Renglón 8 de la botonera «Build»: encendido si hay un bloque de muro de piedra propio dañado (+7 entre 1 y 23) en la casilla del líder o en una vecina y el oro alcanza; no pide constructor. Cada clic ofrece el siguiente bloque (wr_scan, wr_vars).
 - Precio bd_price(OB_FRAC) * muertos / 24 (wr_price); viaja como BD_PKT con BD_PW = 0x4000 | OB_REP (0x10); bd_recv vuelve a comprobar, cobra y pone +7 = 0. Texto «Repairing a stone wall».
-- Falta: la IA no repara (decidir junto con los bonos). Tarea 159.
+- La IA repara desde la 1.0.222.0 (ai_wrep). Tarea 159.
 
 ## Hecho: Longbows, portón oscuro, banderas en caminos y reintegro del 75 % (1.0.178.0, 10/11/2026)
 

@@ -19073,6 +19073,94 @@ tt_end:
     popad
     ret
 ''')
+# ---- La IA repara sus muros (PENDIENTE-faros-muros, «Reparar»; pedido del 10/11/2026). ai_wrep(ebx = jugador), al
+# empezar el turno de un bando de la computadora (+0xe2 != -1), en todas las PC (ia_turn corre en cada una): cada bloque
+# de muro de piedra propio dañado (byte +7 entre 1 y WV_MAX - 1) con un ejército propio en su casilla o en una de las 8
+# vecinas (la misma condición que «Repair Wall» del humano) vuelve a 0 muertos pagando wr_price, si el precio no pasa
+# de la mitad del oro (AW_DIV; que reparar no deje al bando sin oro para pagar sus tropas). Vale para la IA original y
+# la de prueba, con o sin IA.INI. Preserva todo.
+AW_DIV = 2
+ai_wrep = place('ai_wrep', f'''
+    pushad
+    cmp ebx, 8
+    jae aw_out
+    imul eax, ebx, {SIDE:#x}
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    je aw_out
+    xor ebp, ebp
+    xor esi, esi
+aw_loop:
+    cmp esi, dword ptr [{OB_N:#x}]
+    jae aw_end
+    lea edi, [esi*8 + {OB_TAB:#x}]
+    cmp byte ptr [edi + 4], {OB_MURO}
+    jne aw_next
+    movzx eax, byte ptr [edi + 6]
+    cmp eax, ebx
+    jne aw_next
+    mov al, byte ptr [edi + 7]
+    test al, al
+    jz aw_next
+    cmp al, {WV_MAX}
+    jae aw_next
+    push esi
+    xor esi, esi
+aw_nb:
+    mov eax, esi
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    movsx ecx, word ptr [edi]
+    lea ecx, [ecx + edx - 1]
+    movsx edx, word ptr [edi + 2]
+    lea edx, [edx + eax - 1]
+    mov eax, ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz aw_nbn
+    movzx eax, word ptr [eax]
+    test ax, 0x8000
+    jz aw_nbn
+    and eax, 0x3c00
+    shr eax, 10
+    cmp eax, ebx
+    je aw_hit
+aw_nbn:
+    inc esi
+    cmp esi, 9
+    jb aw_nb
+    pop esi
+    jmp aw_next
+aw_hit:
+    pop esi
+    mov eax, edi
+    mov ecx, ebx
+    call {wr_price:#x}
+    imul ecx, ebx, {SIDE:#x}
+    mov edx, dword ptr [ecx + 0x536c14]
+    imul ecx, eax, {AW_DIV}
+    cmp ecx, edx
+    jg aw_next
+    neg eax
+    push eax
+    push ebx
+    call 0x43fd60
+    add esp, 8
+    mov byte ptr [edi + 7], 0
+    inc ebp
+aw_next:
+    inc esi
+    jmp aw_loop
+aw_end:
+    test ebp, ebp
+    jz aw_out
+    call 0x4a4f20
+    call {REDRAW:#x}
+    call {br_mapview:#x}
+aw_out:
+    popad
+    ret
+''')
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
     pushad
@@ -19081,6 +19169,7 @@ ia_turn = place('ia_turn', f'''
     cmp ebx, 8
     jae it_out
     call {tr_turn:#x}
+    call {ai_wrep:#x}
     cmp byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0
     je it_ord
     dec byte ptr [ebx*8 + {OR_TAB + 1:#x}]
