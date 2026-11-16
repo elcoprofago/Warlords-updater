@@ -20565,7 +20565,9 @@ GO_FILE = SEAL_FILE + 1
 # los avisos (0x4c2810(superficie, x0, y0, ...), x0 y0 = origen del mapa en la pantalla).
 MOP_FILE = GO_FILE + 1
 MOP_W, MOP_H, MOP_M = 34, 40, 8
-# Vale todo (MO_VALE): hoja MOV_FILE = RUINS\valetodo.pcx con una V (roja con borde amarillo), a la derecha de la P.
+# Vale todo (MO_VALE): hoja MOV_FILE = RUINS\valetodo.pcx con una V (roja con borde amarillo). Es otra moción, sin
+# relación con la P: las marcas visibles van todas en el mismo lugar, la esquina superior izquierda del mapa (pedido del
+# usuario, 15/11/2026); si hay dos a la vez, la segunda sigue a la derecha para no taparse.
 MOV_FILE = MOP_FILE + 1
 # mo_one(dx, hoja): pega la hoja en (x0 + dx, y0 + MOP_M); ebx = superficie, esi = x0, edi = y0 (mo_pdraw).
 mo_one = place('mo_one', f'''
@@ -20612,11 +20614,12 @@ mo_pdraw = place('mo_pdraw', f'''
     push {MOP_M}
     call {mo_one:#x}
     add esp, 8
+    add esi, {MOP_W + 4}
 mp_v:
     test byte ptr [{MO_FLAGS:#x}], {MO_VALE}
     jz mp_end
     push {MOV_FILE}
-    push {MOP_M + MOP_W + 4}
+    push {MOP_M}
     call {mo_one:#x}
     add esp, 8
 mp_end:
