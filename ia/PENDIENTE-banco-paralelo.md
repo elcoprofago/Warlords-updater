@@ -12,8 +12,9 @@ partidas simultáneas»): eso venía de una suposición, no de una medición.
 ## Qué lo impide hoy (`ia\tanda.py`)
 1. Una sola carpeta, `C:\Warlords3` (`JUEGO`): ahí se escribe qué partida cargar (IA.INI, guardada rotada) y el
    juego deja sus registros (IA.CSV, eventos, IA_FIN.CSV). Dos partidas ahí se pisan.
-   Plan: una carpeta de juego por partida simultánea (`C:\Warlords3-1`, `-2`, …). Son copias de trabajo del banco,
-   no respaldos; por la regla global 11 se hacen recién con el visto bueno del usuario.
+   Hecho (16/11/2026, autorizado por el usuario, que pidió E: y no C:): `E:\Warlords-TEST\Warlords3-1` a `-6`,
+   copias de trabajo de `C:\Warlords3` (robocopy /E /XJ; verificadas: 6056 archivos y 583,8 MB cada una, igual
+   que el origen). Se copiaron con la tanda 222 en curso: antes de usarlas, refrescarlas con vista-aliada al día.
 2. `cerrar_juego()` cierra el juego por nombre: mataría todas. Cerrar cada una por su PID.
 3. Reparto de partidas (`plan`/`correr`), grabación en `datos.db` y el Monitor de IA suponen una partida por vez:
    repartir entre carpetas y grabar sin chocar (una sola escritura a la base por vez).
