@@ -93,3 +93,6 @@ submenú (dialogo de Build como modelo).
   superior izquierdo.
 - El Visor (`ia\visor-historia`) lee la marca y el estado de terminada (ver `PENDIENTE-partidas-terminadas.md`) y
   solo abre una partida en curso si está marcada.
+- 1.0.232.0: mociones Special tournament (bit 0x10, T azul/dorado, RUINS	orneo.pcx) y Void game (bit 0x20, A gris/negro,
+  RUINSnulada.pcx). Las mociones de solo bit van en MO_SOLOBIT y las letras en MO_MARCAS (agregar una nueva = una
+  entrada en cada tabla + su hoja con _letra). Visor 1.0.23.0: letras junto al nombre (tabla MARCAS) y abre A como P.

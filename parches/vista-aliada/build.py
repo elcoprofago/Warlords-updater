@@ -10964,13 +10964,17 @@ for t, n in enumerate(TOOLS):
 #   su PC sin otro bando vivo) toma el bando del sistema vivo con menos puntos (0x440840 → 0x5643c8): +0xe2 = -1 y la
 #   máquina del eliminado. Sin eliminado o sin bando del sistema vivo, no pasa nada.
 # 6 «Campeonato»: bit MO_CAMP de MO_FLAGS, a la vista con una C en el mapa (partida de campeonato).
-# Marcas en el mapa (mo_pdraw), de izquierda a derecha: P, F, V, C. La votación libre no lleva marca.
+# 7 «Torneo especial»: bit MO_TORNEO, una T (azul con borde dorado). 8 «Partida anulada» (por un error del juego, una
+#   anotación errónea del armador...): bit MO_ANUL, una A, para que quede constancia en el Visor de historia.
+# Marcas en el mapa (mo_pdraw), de izquierda a derecha: P, F, V, C, T, A (MO_MARCAS). La votación libre no lleva marca.
 # Textos a la vista en inglés (pedido del usuario, 15/11/2026: el juego se va a distribuir; otros idiomas, con un
 # parche aparte). En los comentarios siguen los nombres en castellano.
-MO_ROWS = ['Free vote', 'Test game', 'Early end', 'Disqualification', 'Anything goes', 'Re-entry', 'Championship']
+MO_ROWS = ['Free vote', 'Test game', 'Early end', 'Disqualification', 'Anything goes', 'Re-entry', 'Championship', 'Special tournament', 'Void game']
 MO_ENABLED = [1] * len(MO_ROWS)
-MO_LIBRE, MO_P, MO_FIN, MO_DESC, MO_VT, MO_ENG, MO_CAMPN = range(7)
-MO_PRUEBA, MO_VALE, MO_FINAL, MO_CAMP, MO_DMASK, MO_ENGP = 1, 2, 4, 8, 0xf00, 0x1000
+MO_LIBRE, MO_P, MO_FIN, MO_DESC, MO_VT, MO_ENG, MO_CAMPN, MO_TORN, MO_ANULN = range(9)
+MO_PRUEBA, MO_VALE, MO_FINAL, MO_CAMP, MO_TORNEO, MO_ANUL, MO_DMASK, MO_ENGP = 1, 2, 4, 8, 0x10, 0x20, 0xf00, 0x1000
+# Mociones que solo ponen su bit (más SI que NO), y el orden de las letras en el mapa: (bit, archivo, letra, relleno, borde)
+MO_SOLOBIT = {MO_VT: MO_VALE, MO_FIN: MO_FINAL, MO_CAMPN: MO_CAMP, MO_TORN: MO_TORNEO, MO_ANULN: MO_ANUL}
 MO_COLS = ['White', 'Yellow', 'Orange', 'Red', 'Green', 'Blue', 'Light Blue', 'Black']
 MO_DLG = 134                 # siguiente id de la tabla de diálogos, después de BM_DLG (ver table_add, más abajo)
 MO_RES = 139                 # siguiente id de los recursos de diálogo, después de BM_RES
@@ -11627,6 +11631,12 @@ VT_SKIP = lambda l: f'''
 # La Votación se cerró con votos (antes de anotarlos): aplicar la moción en curso. «Partida a prueba»: todo bando en
 # juego y humano tiene que haber votado SI (las marcas de MO_MARKS, en el orden de los bandos). Las demás: más SI que
 # NO (VT_SI, VT_NO). Conserva los registros.
+MO_BIT = '''    cmp eax, {m}
+    jne ma_b{m}
+    or dword ptr [%#x], {b:#x}
+    jmp ma_end
+ma_b{m}:
+''' % MO_FLAGS
 mo_apply = place('mo_apply', f'''
     pushad
     cmp byte ptr [{VT_HAVE:#x}], 0
@@ -11639,13 +11649,9 @@ mo_apply = place('mo_apply', f'''
     mov cx, word ptr [{VT_SI:#x}]
     cmp cx, word ptr [{VT_NO:#x}]
     jbe ma_end
-    cmp eax, {MO_FIN}
-    jne ma_3
-    or dword ptr [{MO_FLAGS:#x}], {MO_FINAL}
-    jmp ma_end
-ma_3:
+{''.join(MO_BIT.format(m=m_, b=b_) for m_, b_ in MO_SOLOBIT.items())}ma_3:
     cmp eax, {MO_DESC}
-    jne ma_4
+    jne ma_6
     mov eax, dword ptr [{MO_TGT:#x}]
     cmp eax, 8
     jae ma_end
@@ -11653,16 +11659,6 @@ ma_3:
     shl eax, 8
     and dword ptr [{MO_FLAGS:#x}], {~MO_DMASK & 0xffffffff:#x}
     or dword ptr [{MO_FLAGS:#x}], eax
-    jmp ma_end
-ma_4:
-    cmp eax, {MO_VT}
-    jne ma_5
-    or dword ptr [{MO_FLAGS:#x}], {MO_VALE}
-    jmp ma_end
-ma_5:
-    cmp eax, {MO_CAMPN}
-    jne ma_6
-    or dword ptr [{MO_FLAGS:#x}], {MO_CAMP}
     jmp ma_end
 ma_6:
     cmp eax, {MO_ENG}
@@ -20578,7 +20574,12 @@ MOV_FILE = MOP_FILE + 1
 # Final anticipado (MO_FINAL): RUINSinal.pcx con una F; Campeonato (MO_CAMP): RUINS\campeon.pcx con una C.
 MOF_FILE = MOV_FILE + 1
 MOC_FILE = MOF_FILE + 1
-MO_MARCAS_BITS = MO_PRUEBA | MO_FINAL | MO_VALE | MO_CAMP
+# Torneo especial (MO_TORNEO): RUINS\torneo.pcx con una T; Partida anulada (MO_ANUL): RUINS\anulada.pcx con una A.
+MOT_FILE = MOC_FILE + 1
+MOA_FILE = MOT_FILE + 1
+MO_MARCAS = [(MO_PRUEBA, MOP_FILE), (MO_FINAL, MOF_FILE), (MO_VALE, MOV_FILE), (MO_CAMP, MOC_FILE), (MO_TORNEO, MOT_FILE),
+             (MO_ANUL, MOA_FILE)]
+MO_MARCAS_BITS = sum(b for b, _ in MO_MARCAS)
 # mo_one(dx, hoja): pega la hoja en (x0 + dx, y0 + MOP_M); ebx = superficie, esi = x0, edi = y0 (mo_pdraw).
 mo_one = place('mo_one', f'''
     mov ebp, dword ptr [esp + 8]
@@ -20616,6 +20617,15 @@ mo1_r:
 # modos: esi = superficie, ebx = x0, ebp = y0; las marcas van dentro del mapa, a la derecha del panel izquierdo (0x24)
 # y debajo del de arriba (0x54). Se llama en lugar de «add esp, 0x20; test byte [0x53c393], 8»: corre la dirección de
 # vuelta encima de los 0x20 bytes que quita y vuelve con las banderas del test para el je que sigue.
+MO_UNA = '''    test byte ptr [%#x], {b}
+    jz mp_{i}
+    push {f}
+    push %d
+    call %#x
+    add esp, 8
+    add esi, %d
+mp_{i}:
+''' % (MO_FLAGS, MOP_M, mo_one, MOP_W + 4)
 mo_pdraw = place('mo_pdraw', f'''
     push eax
     mov eax, dword ptr [esp + 4]
@@ -20630,39 +20640,7 @@ mo_pdraw = place('mo_pdraw', f'''
     mov eax, ebx
     mov ebx, esi
     lea esi, [eax + 0x24]
-    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
-    jz mp_0
-    push {MOP_FILE}
-    push {MOP_M}
-    call {mo_one:#x}
-    add esp, 8
-    add esi, {MOP_W + 4}
-mp_0:
-    test byte ptr [{MO_FLAGS:#x}], {MO_FINAL}
-    jz mp_1
-    push {MOF_FILE}
-    push {MOP_M}
-    call {mo_one:#x}
-    add esp, 8
-    add esi, {MOP_W + 4}
-mp_1:
-    test byte ptr [{MO_FLAGS:#x}], {MO_VALE}
-    jz mp_2
-    push {MOV_FILE}
-    push {MOP_M}
-    call {mo_one:#x}
-    add esp, 8
-    add esi, {MOP_W + 4}
-mp_2:
-    test byte ptr [{MO_FLAGS:#x}], {MO_CAMP}
-    jz mp_3
-    push {MOC_FILE}
-    push {MOP_M}
-    call {mo_one:#x}
-    add esp, 8
-    add esi, {MOP_W + 4}
-mp_3:
-mp_end:
+{''.join(MO_UNA.format(b=b_, f=f_, i=i_) for i_, (b_, f_) in enumerate(MO_MARCAS))}mp_end:
     popad
 mp_go:
     test byte ptr [0x53c393], 8
@@ -23012,6 +22990,8 @@ def _letra(fid, nombre, letra, relleno, borde):
     out = io.BytesIO(); h.save(out, 'PCX'); return out.getvalue()
 MOF_PCX = _letra(MOF_FILE, 'final', 'F', (120, 200, 255), (255, 255, 255))
 MOC_PCX = _letra(MOC_FILE, 'campeon', 'C', (255, 200, 0), (0, 0, 140))
+MOT_PCX = _letra(MOT_FILE, 'torneo', 'T', (40, 90, 230), (255, 200, 0))      # azul con borde dorado
+MOA_PCX = _letra(MOA_FILE, 'anulada', 'A', (200, 200, 200), (0, 0, 0))       # gris con borde negro
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -23491,6 +23471,8 @@ NUEVOS[os.path.join('RUINS', 'prueba.pcx')] = MOP_PCX
 NUEVOS[os.path.join('RUINS', 'valetodo.pcx')] = MOV_PCX
 NUEVOS[os.path.join('RUINS', 'final.pcx')] = MOF_PCX
 NUEVOS[os.path.join('RUINS', 'campeon.pcx')] = MOC_PCX
+NUEVOS[os.path.join('RUINS', 'torneo.pcx')] = MOT_PCX
+NUEVOS[os.path.join('RUINS', 'anulada.pcx')] = MOA_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

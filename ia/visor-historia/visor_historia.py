@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import historia, tanda   # noqa: E402
 
-VERSION = '1.0.22.0'
+VERSION = '1.0.23.0'
 TITULO = f'VISOR DE HISTORIA — VERSIÓN {VERSION}'
 FONDO = '#1b1b1b'
 TEXTO, SOMBRA, RESALTE = '#f0e6c8', '#000000', '#ffd966'
@@ -48,15 +48,26 @@ def juego_de(sav):
     return j if os.path.exists(os.path.join(j, 'Sagetext.tex')) else tanda.JUEGO
 
 
+def mociones(d):
+    """Banderas de las mociones aprobadas (vista-aliada 1.0.226.0 y posteriores): el último bloque del .SAV es 'MOCI' +
+    4 bytes; 0 si no lo tiene."""
+    return d[-4] if len(d) >= 8 and d[-8:-4] == b'MOCI' else 0
+
+
+# Letras de las mociones, en el orden del mapa del juego (vista-aliada 1.0.232.0): bandera y hoja RUINS\<hoja>.pcx
+# (34x40, 11 = transparente), las mismas que dibuja el juego.
+MARCAS = [(1, 'prueba'), (4, 'final'), (2, 'valetodo'), (8, 'campeon'), (0x10, 'torneo'), (0x20, 'anulada')]
+MO_PRUEBA, MO_ANUL = 1, 0x20
+
+
 def a_prueba(d):
-    """Marca «partida a prueba» (moción votada por todos los humanos, vista-aliada 1.0.226.0): el último bloque del .SAV
-    es 'MOCI' + 4 bytes de banderas, y la 1 es la marca."""
-    return len(d) >= 8 and d[-8:-4] == b'MOCI' and d[-4] & 1 == 1
+    """Se abre aunque no haya terminado: marcada «a prueba» (P) o «anulada» (A, para que quede constancia)."""
+    return bool(mociones(d) & (MO_PRUEBA | MO_ANUL))
 
 
 BLOQUEADA = ('Esta partida no terminó: el Visor solo abre partidas terminadas.\n\n'
              'Para verla en curso, los jugadores tienen que marcarla «a prueba» con una moción de votación aprobada por '
-             'todos (menú de la partida → Votacion → Partida a prueba).')
+             'todos (menú de la partida → Voting → Test game), o anularla (Voting → Void game).')
 
 
 def leer_fin(sav):
@@ -223,8 +234,14 @@ class Visor:
         sup.configure(padx=10, pady=8)
         sup.pack(fill='x')
         boton(sup, text='Abrir…', width=10, command=self.abrir).grid(row=0, column=0, sticky='w', padx=(0, 14), pady=(0, 4))
-        marco = reborde(sup)
-        marco.master.grid(row=0, column=1, sticky='w', pady=(0, 4))
+        cab = self.caja(sup)
+        cab.grid(row=0, column=1, sticky='w', pady=(0, 4))
+        marco = reborde(cab)
+        marco.master.pack(side='left')
+        # Las letras de las mociones aprobadas (P, F, V, C, T, A), como en el mapa del juego, a la derecha del nombre
+        self.l_marcas = tk.Label(cab, bd=0, highlightthickness=0)
+        self.l_marcas.pack(side='left', padx=(8, 0))
+        self.marcas = []
         self.d_nombre = tk.Entry(marco, font=('Segoe UI', 13, 'bold'), readonlybackground='#ffffff', fg='#000000',
                                  relief='flat', bd=0, width=26, state='readonly')
         self.d_nombre.pack()
@@ -354,6 +371,7 @@ class Visor:
             cv.configure(bg=self.base)
         self.pintar_ruedita()
         self.pintar_luces()
+        self.pintar_marcas()
         self.dibujar()
 
     def fondo_canvas(self, cv):
@@ -391,6 +409,37 @@ class Visor:
             base = base.convert('RGBA') if base is not None else Image.new('RGBA', img.size, self.base)
             base.alpha_composite(img)
             l.configure(image=self.foto_de(l, base), bg=self.base)
+
+    def pintar_marcas(self):
+        if not self.marcas:
+            self.l_marcas.configure(image='', width=1, bg=self.base)
+            self.l_marcas.pack_forget()
+            return
+        if not self.l_marcas.winfo_ismapped():
+            self.l_marcas.pack(side='left', padx=(8, 0))
+            self.raiz.update_idletasks()
+        w = sum(m.width for m in self.marcas) + 4 * (len(self.marcas) - 1)
+        h = max(m.height for m in self.marcas)
+        base = self.recorte(self.l_marcas, (w, h))
+        base = base.convert('RGBA') if base is not None else Image.new('RGBA', (w, h), self.base)
+        x = 0
+        for m in self.marcas:
+            base.alpha_composite(m, (x, (h - m.height) // 2))
+            x += m.width + 4
+        self.l_marcas.configure(image=self.foto_de(self.l_marcas, base), bg=self.base)
+
+    def cargar_marcas(self, d):
+        self.marcas, f = [], mociones(d)
+        for bit, hoja in MARCAS:
+            ruta = os.path.join(self.juego, 'RUINS', hoja + '.pcx')
+            if f & bit and os.path.exists(ruta):
+                im = Image.open(ruta)
+                rgba = im.convert('RGBA'); px, ix = rgba.load(), im.load()
+                for y in range(im.height):
+                    for x in range(im.width):
+                        if ix[x, y] == 11:
+                            px[x, y] = (0, 0, 0, 0)
+                self.marcas.append(rgba)
 
     # ---- ruedita: normal, hover con el mouse encima, active mientras se aprieta, disabled con la ventana abierta ----
     def armar_ruedita(self, padre):
@@ -533,6 +582,7 @@ class Visor:
             self.juego = juego_de(ruta)
             p = historia.Partida(d, self.juego)
             self.cargar_arte(p)
+            self.cargar_marcas(d)
         except Exception as e:
             messagebox.showerror(TITULO, f'No se pudo leer la partida:\n{ruta}\n\n{e}')
             return
