@@ -82,3 +82,4 @@ rojo; desde el Monitor 1.0.26 lee «% Processor Utility» (PdhAddEnglishCounterW
 tareas; psutil queda de respaldo). Probado en caliente: 66-71 % contra 65 % del contador de Windows por WMI.
 **Próximo paso:** después de la serie de la TAREAS 232, crear `Warlords3-7` y `-8` y correr una tanda con 8. Se
 compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el procesador ya estaría saturado.
+- **Monitor 1.0.26 commiteado pero sin publicar** (16/11/2026): publicar.py no pudo compilar porque ia\Monitor-IA.exe estaba corriendo la serie. Publicar (`python ia\monitor-ia\publicar.py`) cuando termine.
