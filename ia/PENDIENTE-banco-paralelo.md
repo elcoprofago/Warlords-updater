@@ -24,3 +24,10 @@ Prueba de pocos minutos, sin tanda corriendo:
 - ¿el juego abre una segunda copia (en otra carpeta)?
 - ¿se frena cuando su ventana no está al frente?
 - con 6 a la vez, ¿cada partida va a la misma velocidad que sola?
+
+## Orden de carpetas (pedido del usuario, 16/11/2026)
+Cuando se confirme que el juego admite varias copias: en C: queda solo `C:\Warlords` (ranking). Todas las carpetas
+de prueba, incluida la que hoy es `C:\Warlords3`, pasan a `E:\Warlords-TEST`. Hoy 75 archivos del repo (.py, .ps1,
+.cs, .ini) nombran `C:\Warlords3` (tanda.py, build.py de los parches, pruebas, publicar-parche.ps1, Visor, opción 9
+del Actualizador): cambiarlos todos a una sola ruta configurable en el mismo commit, y recién después retirar
+`C:\Warlords3` (borrarla es decisión del usuario, regla global 1).
