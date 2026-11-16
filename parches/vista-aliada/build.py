@@ -14768,6 +14768,27 @@ po_draw2 = place('po_draw2', f'''
     mov byte ptr [{po_mode:#x}], 1
     jmp {po_draw:#x}
 ''')
+# Cúpula del faro tapada por el bosque (pedido 15/11/2026, NA_159): la 3.ª pasada (0x459fb0) pinta, en las celdas con el
+# bit 0x20 de +1, el borde del bosque que se derrama sobre la casilla vecina (hojas 0x73..0x7a), después de ob_draw. Si
+# esa casilla es la de arriba del faro, el borde tapa la cúpula. po_draw3: tras ese borde, la celda vuelve a pintar sus
+# piezas de obras (ob_draw), como en la 2.ª pasada. Pila de la 3.ª pasada: [esp+0x14] columna, [esp+0x16] fila;
+# di = x, bx = y en pantalla.
+po_draw3 = place('po_draw3', f'''
+    call 0x4dd530
+    add esp, 0x20
+    pushad
+    mov ax, word ptr [esp + 0x34]
+    add ax, word ptr [ebp + 0x28]
+    mov word ptr [{po_cx:#x}], ax
+    mov ax, word ptr [esp + 0x36]
+    add ax, word ptr [ebp + 0x2a]
+    mov word ptr [{po_cx + 2:#x}], ax
+    mov word ptr [{po_cx + 4:#x}], di
+    mov word ptr [{po_cx + 6:#x}], bx
+    call {ob_draw:#x}
+    popad
+    jmp 0x459ffd
+''')
 
 # Lupa y botón derecho (pedido del usuario, 22/10/2026): como en ruinas y sitios. El decodificador de clic/cursor
 # 0x4735c0, sin grupo elegido, devuelve 0x14 en una ruina descubierta (cursor 9, la lupa, por las tablas 0x4c00f8 /
@@ -22526,6 +22547,7 @@ patch(0x406da9, asm('movsx eax, word ptr [0x537ce8]', 0x406da9), asm(f'jmp {cv_v
 patch(0x4b6e9d, asm('call 0x49d1a0', 0x4b6e9d), asm(f'call {po_fall:#x}', 0x4b6e9d))
 patch(0x459b95, bytes.fromhex('807e1000741e'), asm(f'jmp {po_draw:#x}', 0x459b95))
 patch(0x459d54, bytes.fromhex('8a4606a801'), asm(f'jmp {po_draw2:#x}', 0x459d54))
+patch(0x459ff5, asm('call 0x4dd530', 0x459ff5) + bytes.fromhex('83c420'), asm(f'jmp {po_draw3:#x}', 0x459ff5) + b'\x90' * 3)
 patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:#x}', 0x473d32))
 patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
 patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))

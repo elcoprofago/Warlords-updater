@@ -15,7 +15,10 @@ Recibidos mientras corría la tanda 170. Cada parte es independiente; se trabaja
    mosaicos de ejércitos repetidos (captura del usuario). Hipótesis a descartar: superficie de dibujo perdida
    por falta de memoria vs. un índice de imagen fuera de rango en nuestro código de vista aliada. Mirar primero si
    pasa en otra PC con el mismo .SAV.
-3. **Bosque tapa la cúpula del faro (NA_159).** La cúpula debe dibujarse siempre encima del bosque.
+3. **Hecho en vista-aliada 1.0.234.0.** Causa: la 3.ª pasada del dibujo (0x459fb0) pinta el borde del bosque que se
+   derrama sobre la casilla vecina después de las obras; po_draw3 repinta las obras de esa casilla (prueba_faro_bosque.py,
+   MAL 0). Prueba del usuario: TAREAS 236.
+   **Bosque tapa la cúpula del faro (NA_159).** La cúpula debe dibujarse siempre encima del bosque.
    Ver `PENDIENTE-faros-muros.md` (orden de dibujo del faro).
 
 ### Averiguado el 16/11/2026 (sin cambios en el código todavía)

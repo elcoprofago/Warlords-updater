@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 236).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 237).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **236.** Cúpula del faro sobre el bosque (vista-aliada 1.0.234.0, 16/11/2026). 1) Actualizador, opción **9**. 2) Cargar NA_159 (o cualquier partida con un faro o torre que tenga bosque en la casilla de arriba) y mirar la obra: la cúpula del faro tiene que verse entera, encima de los árboles, también después de mover un grupo cerca y de desplazar el mapa. Control: el bosque del resto del mapa se ve igual que antes. Anotar lo que no coincida.
 - [ ] **234.** Simulador de combate 1.0.52.0 (16/11/2026). Abrilo y actualizalo (engranaje) a la **1.0.52.0**. Cargá el juego y apretá «Héroe…» del atacante y del defensor: tiene que abrirse la ventana con clase, nivel, habilidades, ítems y magias (antes quedaba en blanco). Elegí algo, «Aceptar», y debajo del botón tiene que decir la clase y el nivel. Anotar lo que no ande.
 - [ ] **235.** Simulador de combate 1.0.53.0 (16/11/2026). Actualizalo (engranaje) a la **1.0.53.0**. 1) Corré más de 40 combates: la lista del Historial sigue mostrando 40 y arriba dice cuántos hay registrados; «Stats» tiene que decir en el título ese total, no 40. 2) En el engranaje, «Poner en cero»: el aviso tiene que decir que se borrarán los registros; aceptá y abrí el Historial: vacío. 3) Elegí «Reset diario»: tiene que advertir lo mismo; si respondés «No», queda en el período anterior. Anotar lo que no ande.
 - [X] **233.** Retirar `C:\Warlords3` (16/11/2026). El juego de pruebas ya está en `E:\Warlords-TEST\Warlords3` (copia verificada: 6010 archivos, 583,7 MB, igual que el origen) y el repo ya no usa `C:\Warlords3` para nada: la ruta vive solo en `juego_pruebas.py`. Borrarla es decisión tuya. Si la borrás: 1) cerrá el **Puente Warlords**, que hoy corre desde `C:\Warlords3\HERRAMIENTAS\PuenteWarlords`, y volvé a abrirlo desde `E:\Warlords-TEST\Warlords3\HERRAMIENTAS\PuenteWarlords\PuenteWarlords.exe` (o desde `C:\Warlords`, si es el que usás para el ranking); 2) si tenés accesos directos en el escritorio a `C:\Warlords3`, apuntalos a E:; 3) borrá `C:\Warlords3`. `C:\Warlords` (ranking) no se toca. Anotar si algo deja de abrir.
