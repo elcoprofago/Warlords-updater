@@ -23,10 +23,11 @@ def cargar(nombre):
     return pe, base, bytes(pe.get_memory_mapped_image()), imports
 AV, ORIG = cargar('DarklordAV.exe'), cargar('Darklord.exe')
 _, BASE, img, _ = AV
-# vt_clear empieza con "mov dword ptr [VT_N], 0"; detrás de VT_N, la tabla
+# vt_clear, después de la llamada a mo_round del fin de ronda, hace "mov dword ptr [VT_N], 0"; detrás de VT_N, la tabla
 CLEAR = 0x4988d0 + 5 + struct.unpack_from('<i', img, 0x4988d1 - BASE)[0]
-assert img[CLEAR - BASE:CLEAR - BASE + 2] == b'\xc7\x05'
-VT_N = struct.unpack_from('<I', img, CLEAR + 2 - BASE)[0]; VT_TAB = VT_N + 4
+_c = img.index(b'\xc7\x05', CLEAR - BASE, CLEAR - BASE + 32)
+assert img[_c + 6:_c + 10] == bytes(4)
+VT_N = struct.unpack_from('<I', img, _c + 2)[0]; VT_TAB = VT_N + 4
 VT_MAX = 8
 PZ_ARM = BASE + img.index(b'Voting in progress: game paused\0') + len(b'Voting in progress: game paused\0') + 1
 
@@ -225,7 +226,7 @@ ver('votación de un bando: su escudo y el texto, igual que un suceso común de 
 ver('  (el escudo del bando 5)', av.renglon(rec(0x13, 5, 0, b'', (5, 3, 0)))[0], ('escudo', 0x69 + 5, 100, 200))
 ver('votación sin bando (8, de un .SAV de 1.0.18.0): el texto, sin escudo, donde va el texto de los demás', av.renglon(VOTO(5, 3)),
     [('texto', 120, 200, 'Voting results: 5 YES, 3 NO')])
-ver('  con 0 y 8', av.renglon(VOTO(0, 8))[0][3], 'Resultados votacion: 0 por el SI, 8 por el NO')
+ver('  con 0 y 8', av.renglon(VOTO(0, 8))[0][3], 'Voting results: 0 YES, 8 NO')
 ver('control: bando fuera de rango (-1, 9): sin escudo', [[d[0] for d in av.renglon(rec(0x13, p, 0, b'', (1, 1, 0)))] for p in (-1, 9)],
     [['texto'], ['texto']])
 r = rec(0, 3, 0, b'Nombre')
