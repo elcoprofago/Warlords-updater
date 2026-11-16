@@ -29,9 +29,34 @@ carpetas de `E:\Warlords-TEST` (mismo DarklordAV.exe que `C:\Warlords3`, md5 com
   ventana al frente.
 - No se probó con más de 6 (hay 6 carpetas). Hoy no hace falta: 6 ya multiplica por 5,6.
 
+## Hecho: el banco juega en paralelo (16/11/2026, Monitor de IA 1.0.24)
+`ia\tanda.py` resuelve los puntos 1 a 3:
+- Las partidas se reparten entre las carpetas de `[Carpetas] paralelas` de `tanda.ini` (separadas por coma); sin esa
+  línea, las `E:\Warlords-TEST\Warlords3-1` a `-6` que existan; sin ninguna, se juega en `JUEGO` como antes.
+  `[Carpetas] juego` cambia `JUEGO` (por defecto `C:\Warlords3`).
+- `JUEGO` sigue siendo el origen: ahí instala `build.py` y ahí están las guardadas. Antes de cada tanda (y al
+  retomar), `sincronizar` copia a cada carpeta lo que cambió (`robocopy /MIR /XJ`, sin tocar IA.INI, los CSV ni
+  IA_ROTADA.SAV) y verifica que el exe quedó igual; si no, la tanda no arranca.
+- Un hilo por carpeta, que toma la siguiente partida pendiente; se abren de a una cada 3 s. Cada juego se cierra por
+  su PID. Las escrituras a `datos.db` van de a una (`DBLOCK`). La tabla `partida` suma la columna `carpeta`.
+- Al retomar se juegan las partidas que falten, no solo las del final; antes se cierran los juegos que hayan quedado
+  abiertos en carpetas del banco (por ruta del exe: nunca uno de `C:\Warlords`).
+- Monitor de IA: lee los registros de la carpeta de la partida; con varias, dice «jugando N a la vez» y muestra la
+  tabla de la primera; el fin estimado divide por las que corren a la vez.
+
+Probado en caliente con una base aparte (no `datos.db`):
+- 7 partidas con tope de 3 turnos en 6 carpetas: la carpeta 2 jugó dos, todas grabadas con su carpeta, tanda
+  terminada, ningún juego abierto al final.
+- Tanda de 8 cortada matando el proceso a los 35 s: quedaron 5 juegos abiertos; «seguir» los cerró, marcó las 6 a
+  medias como «cortada», las volvió a jugar y conservó la ya terminada.
+- Monitor leyendo una tanda de 6 en curso: «jugando 4 a la vez», luego 6, luego 5 de 6 terminadas, y «terminada».
+- El silencio del juego fallaba en los hilos (COM sin iniciar): corregido con `CoInitialize` en cada hilo.
+
+Prueba con una tanda real: `TAREAS.md` 231.
+
 ## Próximo paso
-Adaptar `ia\tanda.py` (puntos 2 y 3 de arriba) para repartir una tanda entre las 6 carpetas, junto con el cambio a
-una sola ruta configurable del punto «Orden de carpetas».
+El punto «Orden de carpetas»: las menciones a `C:\Warlords3` del repo pasan a una sola ruta configurable, y
+`JUEGO` (el origen del banco) pasa a `E:\Warlords-TEST`. Después, retirar `C:\Warlords3` es decisión del usuario.
 
 ## Orden de carpetas (pedido del usuario, 16/11/2026)
 Cuando se confirme que el juego admite varias copias: en C: queda solo `C:\Warlords` (ranking). Todas las carpetas

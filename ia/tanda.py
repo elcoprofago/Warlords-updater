@@ -12,6 +12,10 @@
 # Rotación: las partidas van de a pares con asignaciones complementarias (los colores que en una juegan con la IA de
 # prueba en la otra juegan con la original), así cada color ocupa cada IA la misma cantidad de veces en el total.
 #
+# En paralelo (ia\PENDIENTE-banco-paralelo.md): las partidas se reparten entre las carpetas de [Carpetas] paralelas
+# de tanda.ini (por defecto E:\Warlords-TEST\Warlords3-1 a -6), una partida por carpeta a la vez. Antes de cada
+# tanda se sincronizan con JUEGO (donde build.py instala el parche y viven las guardadas). Sin carpetas, juega en JUEGO.
+#
 # Uso:
 #   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor
 #   python ia\tanda.py seguir            (retoma la última tanda sin terminar)
@@ -19,17 +23,67 @@
 import argparse, configparser, csv, ctypes, json, os, sqlite3, subprocess, sys, threading, time
 from ctypes import wintypes
 
-JUEGO = r'C:\Warlords3'
-EXE = 'DarklordAV.exe'
-DATA = os.path.join(JUEGO, 'DATA')
-INI = os.path.join(DATA, 'IA.INI')
-CSV_T, CSV_B, CSV_F = (os.path.join(DATA, n) for n in ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV'))
-# Etapa 3 (alianzas, vista-aliada 1.0.33.0): diplomacia por turno y eventos (puentes, convoyes, refugios).
-CSV_D, CSV_E, CSV_V = (os.path.join(DATA, n) for n in ('IA_DIP.CSV', 'IA_EVT.CSV', 'IA_VIC.CSV'))
 # Empaquetado en Monitor-IA.exe (ia\monitor-ia), el exe queda en ia\: la base y la configuración van junto a él.
 BASE = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 DB = os.path.join(BASE, 'datos.db')
 CONFIG = os.path.join(BASE, 'tanda.ini')
+
+
+def _config():
+    c = configparser.ConfigParser(); c.read(CONFIG)
+    return c
+
+
+JUEGO = _config().get('Carpetas', 'juego', fallback=r'C:\Warlords3')
+EXE = 'DarklordAV.exe'
+# Etapa 3 (alianzas, vista-aliada 1.0.33.0) sumó diplomacia por turno y eventos (puentes, convoyes, refugios).
+NOMBRES_CSV = ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV', 'IA_DIP.CSV', 'IA_EVT.CSV', 'IA_VIC.CSV')
+# Guardada que arma cada partida con los perfiles rotados (sin "Tanda_": no aparece en la lista del Monitor).
+ROTADA = 'IA_ROTADA'
+
+
+class Carpeta:
+    """Una carpeta de juego: su IA.INI, sus registros y su guardada rotada. Dos partidas no comparten carpeta."""
+    def __init__(self, d):
+        self.d = d
+        self.ini = os.path.join(d, 'DATA', 'IA.INI')
+        self.csvs = tuple(os.path.join(d, 'DATA', n) for n in NOMBRES_CSV)
+        self.t, self.b, self.f, self.dip, self.e, self.v = self.csvs
+
+
+PRINCIPAL = Carpeta(JUEGO)
+INI = PRINCIPAL.ini
+CSV_T, CSV_B, CSV_F, CSV_D, CSV_E, CSV_V = PRINCIPAL.csvs
+
+
+def carpetas_paralelas():
+    """Carpetas donde se juegan las partidas: [Carpetas] paralelas de tanda.ini (separadas por coma), o las
+    E:\\Warlords-TEST\\Warlords3-N que existan; si no hay ninguna, solo JUEGO."""
+    v = _config().get('Carpetas', 'paralelas', fallback=None)
+    ds = [x.strip() for x in v.split(',') if x.strip()] if v is not None else \
+        [rf'E:\Warlords-TEST\Warlords3-{i}' for i in range(1, 7)]
+    ds = [d for d in ds if os.path.isdir(d) and os.path.normcase(d) != os.path.normcase(JUEGO)]
+    return [Carpeta(d) for d in ds] or [PRINCIPAL]
+
+
+def carpeta_de(d):
+    return Carpeta(d) if d else PRINCIPAL
+
+
+def sincronizar(cs):
+    """Deja cada carpeta paralela igual a JUEGO (exe, datos del parche, guardadas), sin tocar sus registros."""
+    for c in cs:
+        if c is PRINCIPAL:
+            continue
+        r = subprocess.run(['robocopy', JUEGO, c.d, '/MIR', '/XJ', '/R:1', '/W:1', '/NFL', '/NDL', '/NJH', '/NJS',
+                            '/NP', '/XF', 'IA.INI', *NOMBRES_CSV, ROTADA + '.SAV'], capture_output=True)
+        if r.returncode >= 8:   # robocopy: 0-7 bien, 8 o más falló algo
+            sys.exit(f'No se pudo sincronizar {c.d} con {JUEGO} (robocopy {r.returncode}).')
+        if parche_actual(c.d) != parche_actual():
+            sys.exit(f'{c.d} quedó con otro DarklordAV.exe que {JUEGO} después de sincronizar.')
+
+
+DBLOCK = threading.RLock()   # una sola escritura a la base por vez (varias partidas a la vez)
 
 # Controles del Monitor de IA: sonido del juego y corte de la tanda en curso.
 CONTROL = {'silenciar': True}
@@ -80,9 +134,9 @@ create table if not exists resultado (partida integer, color integer, ia integer
 PARCHES_TXT = os.path.join(os.path.dirname(BASE), 'parches', 'parches.txt')
 
 
-def parche_actual():
+def parche_actual(d=None):
     import hashlib
-    with open(os.path.join(JUEGO, EXE), 'rb') as f:
+    with open(os.path.join(d or JUEGO, EXE), 'rb') as f:
         exe = hashlib.sha256(f.read()).hexdigest()[:8]
     ver = '?'
     if os.path.exists(PARCHES_TXT):
@@ -162,9 +216,10 @@ def leer(ruta, n):
         return [[int(v) for v in r] for r in csv.reader(f) if len(r) == n]
 
 
-def leer_batallas():
+def leer_batallas(ruta=None):
     """IA_BAT.CSV; el exe anterior a 1.0.33.0 no escribe colores_d (queda None)."""
-    return leer(CSV_B, len(COL_B)) + [r + [None] for r in leer(CSV_B, len(COL_B) - 1)]
+    ruta = ruta or CSV_B
+    return leer(ruta, len(COL_B)) + [r + [None] for r in leer(ruta, len(COL_B) - 1)]
 
 
 def pv_calc(ciudades, heroes, oro):
@@ -183,15 +238,20 @@ def puestos(filas, clave):
     return out
 
 
-def importar(db, pid, estado):
-    """Pasa los tres CSV a la base, completa el resultado y los borra. Devuelve la cantidad de turnos."""
-    t, f = leer(CSV_T, len(COL_T)), leer(CSV_F, len(COL_F))
-    b = leer_batallas()
-    db.executemany(f'insert into diplo values (?{", ?" * len(COL_D)})', [[pid] + r for r in leer(CSV_D, len(COL_D))])
-    db.executemany(f'insert into evento values (?{", ?" * len(COL_E)})', [[pid] + r for r in leer(CSV_E, len(COL_E))])
+def importar(db, pid, estado, c=None):
+    """Pasa los CSV de la carpeta a la base, completa el resultado y los borra. Devuelve la cantidad de turnos."""
+    with DBLOCK:
+        return _importar(db, pid, estado, c or PRINCIPAL)
+
+
+def _importar(db, pid, estado, carp):
+    t, f = leer(carp.t, len(COL_T)), leer(carp.f, len(COL_F))
+    b = leer_batallas(carp.b)
+    db.executemany(f'insert into diplo values (?{", ?" * len(COL_D)})', [[pid] + r for r in leer(carp.dip, len(COL_D))])
+    db.executemany(f'insert into evento values (?{", ?" * len(COL_E)})', [[pid] + r for r in leer(carp.e, len(COL_E))])
     # ia_fin corre cada vez que se dibuja el cartel: vale el primer bloque (orden 1, 2, ...).
     corte = next((k for k, r in enumerate(f) if k and r[1] == 1), len(f)); f = f[:corte]
-    v = leer(CSV_V, len(COL_V))
+    v = leer(carp.v, len(COL_V))
     if not f and v:   # victoria aliada: vale el primer cartel; orden y puestos como el podio (por PV)
         tabla = puestos([r for r in v if r[0] == v[0][0]], lambda r: r[3])
         f = [[r[0], k + 1, -1 if k and p == tabla[k - 1][0] else p] + r[1:] for k, (p, r) in enumerate(tabla)]
@@ -222,7 +282,7 @@ def importar(db, pid, estado):
             db.execute('insert into resultado values (?,?,?,null,null,0,0,0,?)', (pid, c, u['ia'], u['turno'] + 1))
     db.execute('update partida set fin=?, estado=?, turnos=? where id=?', (ahora(), estado, turnos, pid))
     db.commit()
-    for ruta in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E, CSV_V):
+    for ruta in carp.csvs:
         if os.path.exists(ruta):
             os.remove(ruta)
     return turnos
@@ -317,6 +377,7 @@ def silenciar(pid, mudo=True):
     """Silencia (o devuelve) el sonido del juego (solo su sesión de audio, no el resto de la PC). La sesión aparece recién
     cuando el juego empieza a sonar, por eso se llama en cada vuelta. Requiere pycaw (pip install pycaw)."""
     try:
+        ctypes.windll.ole32.CoInitialize(None)   # pycaw usa COM, que se inicia en cada hilo (partidas en paralelo)
         from pycaw.pycaw import AudioUtilities
         for s in AudioUtilities.GetAllSessions():
             if s.ProcessId == pid and bool(s.SimpleAudioVolume.GetMute()) != mudo:
@@ -327,16 +388,18 @@ def silenciar(pid, mudo=True):
             print(f'  (no se pudo silenciar el juego: {e})', flush=True)
 
 
-def devolver_sonido():
+def devolver_sonido(cs=None):
     """Windows recuerda el silencio de cada programa (Mezclador de volumen): si el juego queda silenciado al cerrarse,
     también arranca mudo en una partida normal (17/10/2026). El servicio de audio lo guarda en su memoria y lo vuelve
     a escribir en el registro al cerrarse el juego: borrarlo del registro no alcanza (medido el 17/10/2026). Solo
     sirve quitarlo con la sesión de audio viva, así que se abre el juego un momento, se le quita y se cierra.
     Se llama al terminar la tanda, después de escribir_ini sin [Tanda], para que el juego no cargue nada."""
     proc = None
+    d = (cs or [PRINCIPAL])[0].d   # Windows lo recuerda por ruta del exe: alcanza con la carpeta donde se jugó
     try:
+        ctypes.windll.ole32.CoInitialize(None)   # pycaw usa COM, que se inicia en cada hilo (partidas en paralelo)
         from pycaw.pycaw import AudioUtilities
-        proc = subprocess.Popen([os.path.join(JUEGO, EXE)], cwd=JUEGO)
+        proc = subprocess.Popen([os.path.join(d, EXE)], cwd=d)
         # La sesión aparece recién cuando el juego abre el sonido, y Windows le aplica el silencio guardado un
         # momento después: se mira durante 8 s desde que aparece y se le quita cada vez que esté (medido el 17/10/2026).
         desde = None
@@ -374,8 +437,8 @@ def apretar_un_jugador(pid):
     return False
 
 
-def escribir_ini(prueba, guardada):
-    with open(INI, 'w', newline='\r\n') as f:
+def escribir_ini(prueba, guardada, c=None):
+    with open((c or PRINCIPAL).ini, 'w', newline='\r\n') as f:
         f.write('[IA]\n')
         for c in range(8):
             f.write(f'Color{c}={"prueba" if c in prueba else "original"}\n')
@@ -383,8 +446,21 @@ def escribir_ini(prueba, guardada):
             f.write(f'[Tanda]\nPartida={guardada}\n')
 
 
-def cerrar_juego():
-    subprocess.run(['taskkill', '/F', '/IM', EXE], capture_output=True)
+def cerrar_juego(proc=None):
+    """Cierra el juego de esa partida (por su PID); sin proc, los que hayan quedado abiertos en carpetas del banco
+    (nunca uno abierto en otra carpeta, como C:\\Warlords del ranking)."""
+    if proc:
+        if proc.poll() is None:
+            proc.kill(); proc.wait()
+        return
+    dirs = {os.path.normcase(c.d) for c in carpetas_paralelas() + [PRINCIPAL]}
+    r = subprocess.run(['powershell', '-NoProfile', '-Command',
+                        f'Get-Process {EXE[:-4]} -ErrorAction SilentlyContinue | % {{ "$($_.Id)|$($_.Path)" }}'],
+                       capture_output=True, text=True)
+    for l in r.stdout.splitlines():
+        pid, _, ruta = l.partition('|')
+        if os.path.normcase(os.path.dirname(ruta)) in dirs:
+            subprocess.run(['taskkill', '/F', '/PID', pid], capture_output=True)
 
 
 def equipos_de(texto):
@@ -400,8 +476,6 @@ PERFIL = 0xc0
 PUNTOS = ['Strong', 'Very Strong', 'Herculean', 'Fast', 'Very Fast', 'Lightning', 'Informed', 'Farseeing', 'Heroic',
           'Legendary', 'Merchant', 'Famous', 'Renowned', 'Disciplined', 'Resolute', 'Immovable', 'Rich', 'Opulent',
           'Engineer', 'Artificer', 'Ceremonial', 'Devout']
-# Guardada que arma cada partida con los perfiles rotados (sin "Tanda_": no aparece en la lista del Monitor).
-ROTADA = 'IA_ROTADA'
 
 
 def jugadores(d):
@@ -421,8 +495,8 @@ def nombre_perfil(bits):
     return ' + '.join(n for i, n in enumerate(PUNTOS) if bits >> i & 1) or 'ninguno'
 
 
-def escribir_rotada(guardada, origen):
-    """SAVES\\IA_ROTADA.SAV: la guardada con el perfil de origen[c] en cada color c y sin alianzas."""
+def escribir_rotada(guardada, origen, carp=None):
+    """SAVES\\IA_ROTADA.SAV de la carpeta: la guardada con el perfil de origen[c] en cada color c y sin alianzas."""
     with open(os.path.join(JUEGO, 'SAVES', guardada + '.SAV'), 'rb') as f:
         d = bytearray(f.read())
     pf = perfiles(guardada); js = jugadores(d)
@@ -442,7 +516,7 @@ def escribir_rotada(guardada, origen):
                 d[f + y] = d[f + 9 + y] = 2
                 d[f + 18 + 2 * y:f + 20 + 2 * y] = (50).to_bytes(2, 'little')
                 d[f + 36 + 2 * y:f + 38 + 2 * y] = (40).to_bytes(2, 'little')
-    with open(os.path.join(JUEGO, 'SAVES', ROTADA + '.SAV'), 'wb') as f:
+    with open(os.path.join((carp or PRINCIPAL).d, 'SAVES', ROTADA + '.SAV'), 'wb') as f:
         f.write(d)
 
 
@@ -480,24 +554,27 @@ def plan(partidas, guardadas, alianzas_de=None):
     return out
 
 
-def jugar(db, tid, n, p, a):
+def jugar(db, tid, n, p, a, carp=None):
+    carp = carp or PRINCIPAL
     asign = ''.join('P' if c in p['prueba'] else 'O' for c in range(8))
     # perfiles: {color: color de la guardada cuyo perfil recibe}; el json vuelve con claves de texto
     origen = {int(c): o for c, o in p.get('perfiles', {}).items()}
-    pid = db.execute('insert into partida (tanda, n, guardada, asignacion, perfiles, inicio, estado) '
-                     'values (?,?,?,?,?,?,?)', (tid, n, p['guardada'], asign, json.dumps(origen) if origen else None,
-                                               ahora(), 'jugando')).lastrowid
-    db.commit()
+    with DBLOCK:
+        pid = db.execute('insert into partida (tanda, n, guardada, asignacion, perfiles, inicio, estado, carpeta) '
+                         'values (?,?,?,?,?,?,?,?)', (tid, n, p['guardada'], asign,
+                                                      json.dumps(origen) if origen else None, ahora(), 'jugando',
+                                                      carp.d)).lastrowid
+        db.commit()
+    lugar = '' if carp is PRINCIPAL else f' [{os.path.basename(carp.d)}]'
     if origen:
-        escribir_rotada(p['guardada'], origen)
-        print(f'[{ahora()}] partida {n + 1}: {p["guardada"]}, perfiles ' +
+        escribir_rotada(p['guardada'], origen, carp)
+        print(f'[{ahora()}] partida {n + 1}{lugar}: {p["guardada"]}, perfiles ' +
               ', '.join(f'{COLORES[c]} <- {COLORES[o]}' for c, o in origen.items()), flush=True)
     else:
-        print(f'[{ahora()}] partida {n + 1}: {p["guardada"]}, colores con IA de prueba {p["prueba"]} ({asign})',
-              flush=True)
-    escribir_ini(set(p['prueba']), ROTADA if origen else p['guardada'])
-    cerrar_juego()
-    proc = subprocess.Popen([os.path.join(JUEGO, EXE)], cwd=JUEGO)
+        print(f'[{ahora()}] partida {n + 1}{lugar}: {p["guardada"]}, colores con IA de prueba {p["prueba"]} '
+              f'({asign})', flush=True)
+    escribir_ini(set(p['prueba']), ROTADA if origen else p['guardada'], carp)
+    proc = subprocess.Popen([os.path.join(carp.d, EXE)], cwd=carp.d)
     mon = monitor_configurado()
     for _ in range(30):   # la ventana tarda en aparecer: hasta 15 s
         time.sleep(0.5)
@@ -512,12 +589,12 @@ def jugar(db, tid, n, p, a):
         silenciar(proc.pid, CONTROL['silenciar'])
         if CORTAR.is_set():
             estado = 'cortada'; break
-        if any(os.path.exists(r) and os.path.getsize(r) > 0 for r in (CSV_F, CSV_V)):
+        if any(os.path.exists(r) and os.path.getsize(r) > 0 for r in (carp.f, carp.v)):
             time.sleep(3); estado = 'ok'; break
-        s = os.path.getsize(CSV_T) if os.path.exists(CSV_T) else 0
+        s = os.path.getsize(carp.t) if os.path.exists(carp.t) else 0
         if s != tam:
             tam, ultimo_cambio = s, time.time()
-        if a.tope_turnos and leer(CSV_T, len(COL_T)) and max(r[0] for r in leer(CSV_T, len(COL_T))) > a.tope_turnos:
+        if a.tope_turnos and leer(carp.t, len(COL_T)) and max(r[0] for r in leer(carp.t, len(COL_T))) > a.tope_turnos:
             estado = 'tope'
         elif proc.poll() is not None:
             estado = 'cerrada'
@@ -525,27 +602,56 @@ def jugar(db, tid, n, p, a):
             estado = 'colgada'
     if proc.poll() is None:
         silenciar(proc.pid, False)   # que no quede silenciado para una partida normal
-    cerrar_juego()
+    cerrar_juego(proc)
     time.sleep(2)
-    turnos = importar(db, pid, estado)
-    print(f'[{ahora()}]   -> {estado}, {turnos} turnos, {(time.time() - t0) / 60:.1f} min', flush=True)
+    turnos = importar(db, pid, estado, carp)
+    print(f'[{ahora()}]   -> partida {n + 1}{lugar}: {estado}, {turnos} turnos, {(time.time() - t0) / 60:.1f} min',
+          flush=True)
 
 
 def correr(db, tid, a):
     pl = json.loads(db.execute('select plan from tanda where id=?', (tid,)).fetchone()[0])
-    # Una partida cortada a mano queda registrada, pero al retomar se vuelve a jugar.
-    hechas = db.execute("select count(*) from partida where tanda=? and estado!='cortada'", (tid,)).fetchone()[0]
+    # Una partida cortada a mano queda registrada, pero al retomar se vuelve a jugar. En paralelo pueden faltar
+    # partidas sueltas (no solo las del final): se juegan las que no tienen registro válido.
+    hechas = {r[0] for r in db.execute("select n from partida where tanda=? and estado!='cortada'", (tid,))}
+    faltan = [n for n in range(len(pl)) if n not in hechas]
+    cs = carpetas_paralelas()[:max(1, len(faltan))]
+    cerrar_juego()
+    sincronizar(cs)
+    if len(cs) > 1:
+        print(f'[{ahora()}] {len(faltan)} partidas en {len(cs)} carpetas a la vez: '
+              + ', '.join(os.path.basename(c.d) for c in cs), flush=True)
+    cola = list(faltan); tomar = threading.Lock(); errores = []
+
+    def obrero(c, demora):
+        time.sleep(demora)   # abrirlas de a una: la ventana tarda en aparecer y el botón se aprieta por ventana
+        while not CORTAR.is_set() and not errores:
+            with tomar:
+                if not cola:
+                    return
+                n = cola.pop(0)
+            try:
+                jugar(db, tid, n, pl[n], a, c)
+            except Exception as e:
+                errores.append(e); CORTAR.set()
     try:
-        for n in range(hechas, len(pl)):
-            if CORTAR.is_set():
-                print(f'[{ahora()}] Tanda {tid} cortada. Se retoma con "Retomar".', flush=True)
-                return
-            jugar(db, tid, n, pl[n], a)
-        db.execute('update tanda set terminada=1 where id=?', (tid,)); db.commit()
+        hs = [threading.Thread(target=obrero, args=(c, 3 * i), daemon=True) for i, c in enumerate(cs)]
+        for h in hs:
+            h.start()
+        for h in hs:
+            h.join()
+        if errores:
+            raise errores[0]
+        if CORTAR.is_set():
+            print(f'[{ahora()}] Tanda {tid} cortada. Se retoma con "Retomar".', flush=True)
+            return
+        with DBLOCK:
+            db.execute('update tanda set terminada=1 where id=?', (tid,)); db.commit()
         print(f'Tanda {tid} terminada. Informe: python ia\\informe.py {tid}')
     finally:
-        escribir_ini(set(), None)   # sin [Tanda]: abrir el juego a mano ya no carga nada solo
-        devolver_sonido()
+        for c in cs:
+            escribir_ini(set(), None, c)   # sin [Tanda]: abrir el juego a mano ya no carga nada solo
+        devolver_sonido(cs)
 
 
 def main():
@@ -564,27 +670,38 @@ def main():
     correr(db, tid, a)
 
 
-def preparar(a):
-    """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
-    db = sqlite3.connect(DB, check_same_thread=False); db.executescript(ESQUEMA)
+def migrar(db):
+    """Crea las tablas y suma las columnas que les falten a bases anteriores (también la usa el Monitor de IA)."""
+    db.executescript(ESQUEMA)
     cols = [r[1] for r in db.execute('pragma table_info(tanda)')]
     for c in ('parche', 'exe', 'bandos', 'alianzas'):   # bases anteriores al registro de parche, bandos y alianzas
         if c not in cols:
             db.execute(f'alter table tanda add column {c} text')
-    if 'perfiles' not in [r[1] for r in db.execute('pragma table_info(partida)')]:   # bases anteriores al 25/10/2026
+    cols_p = [r[1] for r in db.execute('pragma table_info(partida)')]
+    if 'perfiles' not in cols_p:   # bases anteriores al 25/10/2026
         db.execute('alter table partida add column perfiles text')
+    if 'carpeta' not in cols_p:   # bases anteriores al banco en paralelo (16/11/2026): null = JUEGO
+        db.execute('alter table partida add column carpeta text')
     if 'colores_d' not in [r[1] for r in db.execute('pragma table_info(batalla)')]:   # bases anteriores a 1.0.33.0
         db.execute('alter table batalla add column colores_d integer')
+    db.commit()
+
+
+def preparar(a):
+    """Abre la base, guarda registros sueltos y crea la tanda nueva o busca la última sin terminar."""
+    db = sqlite3.connect(DB, check_same_thread=False); migrar(db)
     ver, exe = parche_actual()
     # Partida que quedó "jugando" porque se cerró la ventana de la tanda: sus registros son suyos y se retoma.
-    for (pid,) in db.execute("select id from partida where estado='jugando'").fetchall():
-        importar(db, pid, 'cortada')
+    cerrar_juego()   # un juego que quedó abierto de una tanda cerrada a la fuerza seguiría escribiendo registros
+    for pid, d in db.execute("select id, carpeta from partida where estado='jugando'").fetchall():
+        importar(db, pid, 'cortada', carpeta_de(d))
         print(f'Partida {pid} había quedado a medias: guardada como "cortada", se vuelve a jugar al retomar.')
-    if any(os.path.exists(r) for r in (CSV_T, CSV_B, CSV_F, CSV_D, CSV_E, CSV_V)):   # registros de una partida a mano: no se pierden
-        pid = db.execute('insert into partida (guardada, inicio, estado) values (?,?,?)',
-                         ('(a mano)', ahora(), 'suelta')).lastrowid
-        importar(db, pid, 'suelta')
-        print(f'Registros sueltos de una partida anterior guardados como partida {pid} (estado "suelta").')
+    for c in [PRINCIPAL] + [c for c in carpetas_paralelas() if c is not PRINCIPAL]:
+        if any(os.path.exists(r) for r in c.csvs):   # registros de una partida a mano: no se pierden
+            pid = db.execute('insert into partida (guardada, inicio, estado, carpeta) values (?,?,?,?)',
+                             ('(a mano)', ahora(), 'suelta', None if c is PRINCIPAL else c.d)).lastrowid
+            importar(db, pid, 'suelta', c)
+            print(f'Registros sueltos de una partida anterior en {c.d} guardados como partida {pid} (estado "suelta").')
     if a.accion == 'nueva':
         gs = a.guardadas.split(',')
         faltan = [g for g in gs if not os.path.exists(os.path.join(JUEGO, 'SAVES', g + '.SAV'))]

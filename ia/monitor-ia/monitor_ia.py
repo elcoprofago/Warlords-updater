@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.23'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.24'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -849,7 +849,7 @@ class Monitor(tk.Tk):
         self.progreso = [('Tanda', None, '—', False), ('Partida', None, '—', False)]
         if not os.path.exists(tanda.DB):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
-        db = sqlite3.connect(tanda.DB)
+        db = sqlite3.connect(tanda.DB); tanda.migrar(db)   # la columna carpeta (banco en paralelo) puede faltar
         # La tanda que se está jugando; si no hay ninguna, la que corrió este panel; si no, la última.
         r = db.execute("select tanda from partida where estado='jugando' and tanda is not null "
                        "order by id desc").fetchone()
@@ -861,10 +861,12 @@ class Monitor(tk.Tk):
             self.v_tanda.set('Sin tandas todavía.'); self.v_tanda2.set(''); self.v_parche.set(''); self.v_todas.set(''); return
         tid, inicio, plan, term = t
         total = len(json.loads(plan))
-        parts = db.execute('select n, guardada, asignacion, inicio, fin, estado, turnos from partida where tanda=? '
-                           'order by id', (tid,)).fetchall()
+        parts = db.execute('select n, guardada, asignacion, inicio, fin, estado, turnos, carpeta from partida '
+                           'where tanda=? order by id', (tid,)).fetchall()
         validas = [p for p in parts if p[5] != 'cortada']
-        en_curso = next((p for p in reversed(parts) if p[5] == 'jugando'), None)
+        # En paralelo (ia\PENDIENTE-banco-paralelo.md) hay varias a la vez: se muestra la que empezó primero.
+        jugando = [p for p in parts if p[5] == 'jugando']
+        en_curso = jugando[0] if jugando else None
         hechas = [p for p in validas if p[5] != 'jugando']
         self.externa = bool(en_curso) and not self.corriendo() and juego_abierto()
         estado = ('terminada' if term else 'corriendo' if self.corriendo() else
@@ -872,12 +874,14 @@ class Monitor(tk.Tk):
         self.v_tanda.set(f'Tanda {tid} ({estado}) — desde {inicio}')
         self.parada = (True, 'Detenida') if estado == 'detenida' else (False, 'Terminada' if term else 'En curso')
         txt = f'{len(hechas)} de {total} partidas terminadas'
-        if en_curso:
+        if len(jugando) > 1:
+            txt += f' — jugando {len(jugando)} a la vez: ' + ', '.join(f'{p[0] + 1}.ª' for p in jugando)
+        elif en_curso:
             txt += f' — jugando la {en_curso[0] + 1}.ª'
         dur = [time.mktime(time.strptime(p[4], '%Y-%m-%d %H:%M:%S')) -
                time.mktime(time.strptime(p[3], '%Y-%m-%d %H:%M:%S')) for p in hechas if p[3] and p[4]]
         if dur and not term:
-            fin = time.time() + sum(dur) / len(dur) * (total - len(hechas))
+            fin = time.time() + sum(dur) / len(dur) * (total - len(hechas)) / max(1, len(jugando))
             txt += f' — fin estimado {time.strftime("%H:%M", time.localtime(fin))}'
         self.v_tanda2.set(txt)
         # Cronómetro: desde el inicio de la primera tanda de la serie (o de esta, si no hay serie) hasta ahora,
@@ -901,10 +905,11 @@ class Monitor(tk.Tk):
             self.tabla.delete(*self.tabla.get_children())
             return
         n, guardada, asig, ini = en_curso[:4]
-        filas = tanda.leer(tanda.CSV_T, len(tanda.COL_T))
-        bats = tanda.leer_batallas()
+        c = tanda.carpeta_de(en_curso[7])
+        filas = tanda.leer(c.t, len(tanda.COL_T))
+        bats = tanda.leer_batallas(c.b)
         evs = {}
-        for r in tanda.leer(tanda.CSV_E, len(tanda.COL_E)):
+        for r in tanda.leer(c.e, len(tanda.COL_E)):
             k = (r[3], r[6] >= 100) if r[3] in tanda.POZOS_EV else (r[3], None)
             evs[k] = evs.get(k, 0) + 1
         turno = max((r[0] for r in filas), default=0)
@@ -930,11 +935,11 @@ class Monitor(tk.Tk):
                       '\nEventos: ' +(', '.join(f'{tanda.EVENTOS.get(t, t)}{"" if v is None else " visto" if v else " oculto"} {k}'
                                                    for (t, v), k in sorted(evs.items()))
                                         or 'ninguno todavía'))
-        quieto = time.time() - os.path.getmtime(tanda.CSV_T) if os.path.exists(tanda.CSV_T) else \
+        quieto = time.time() - os.path.getmtime(c.t) if os.path.exists(c.t) else \
             time.time() - time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))
         # El juego usa un núcleo entero aun pausado, así que la pausa se ve en los CSV: mientras juega, alguno se
         # escribe cada ~8 s (un turno de los 8 colores tarda ~1 min); PAUSA_SEG sin cambios = partida parada.
-        csvs = [os.path.getmtime(r) for r in (tanda.CSV_T, tanda.CSV_B, tanda.CSV_D, tanda.CSV_E) if os.path.exists(r)]
+        csvs = [os.path.getmtime(r) for r in (c.t, c.b, c.dip, c.e) if os.path.exists(r)]
         sin_cambios = time.time() - max(csvs + [time.mktime(time.strptime(ini, '%Y-%m-%d %H:%M:%S'))])
         if sin_cambios > PAUSA_SEG and not self.parada[0]:
             self.parada = (True, f'Parada {sin_cambios / 60:.0f}′' if sin_cambios >= 60 else 'Parada')

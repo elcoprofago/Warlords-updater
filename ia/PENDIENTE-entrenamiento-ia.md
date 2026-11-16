@@ -11,7 +11,7 @@ Lo que valga para single player vale para multi player (la IA es la misma).
   (parches\vista-aliada\build.py: ai_move, ai_conv, ai_free...). Un modelo externo no puede decidir jugada a jugada.
 - Se puede ejecutar código real del juego sobre el estado de un .SAV con unicorn (prueba_emulada.py, prueba_ia*.py).
 - PC: Ryzen 5 5600G, 47 GB RAM, RTX 5050. El límite es la cantidad de partidas, no el cálculo.
-- Según el usuario: no se pueden correr partidas simultáneas en la misma PC (revisado 16/11/2026: parece posible, ver PENDIENTE-banco-paralelo.md); un turno humano dura 5 a 10 minutos.
+- Según el usuario: no se pueden correr partidas simultáneas en la misma PC (medido el 16/11/2026: sí se puede, 6 a la vez rinden 5,6 veces una sola; el banco ya juega así desde el Monitor de IA 1.0.24, ver PENDIENTE-banco-paralelo.md); un turno humano dura 5 a 10 minutos.
   Confirmado por el usuario (13/10/2026): Darklord.exe original juega una partida con los 8 bandos en IA; sigue
   corriendo minimizado, con turnos indefinidos; hay una interrupción ("Interrupt Game" en DATA\War3.RES) que pausa
   y permite pasar cualquier bando a humano para revisar la partida. La tecla no está confirmada: en el exe, la

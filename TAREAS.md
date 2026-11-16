@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 231).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 232).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **231.** Banco de pruebas en paralelo (Monitor de IA 1.0.24, 16/11/2026). La próxima tanda (por ejemplo la **222**) se juega de a **6 partidas a la vez**, en las carpetas `E:\Warlords-TEST\Warlords3-1` a `-6`. 1) Abrir el Monitor de IA y actualizarlo (engranaje) a la **1.0.24**. 2) Armar la tanda como siempre (las guardadas siguen saliendo de `C:\Warlords3`, y el parche se instala ahí: antes de empezar, la tanda copia sola lo que cambió a las 6 carpetas). 3) Tienen que abrirse 6 ventanas del juego, una cada 3 segundos. Arriba, el Monitor dice «jugando 6 a la vez: 1.ª, 2.ª…» y muestra la tabla de una de ellas; la hora de fin estimada ya cuenta las 6. 4) Control: una tanda de 10 partidas tiene que tardar más o menos lo que antes tardaban 2. Mientras corre, no abras el juego en `C:\Warlords3`: no se cierra, pero el banco ya no lo usa. Anotar lo que no coincida.
 - [ ] **230.** Torneo especial, partida anulada y letras en el Visor (vista-aliada 1.0.232.0, herramientas 1.0.0.7 con Votación 1.1.9, Visor de historia 1.0.23.0; 15/11/2026). 1) Actualizador, opción **9** y herramientas, en las dos PC. 2) Partida en red, **Voting**: nueve renglones, los últimos **Special tournament** y **Void game**. 3) **Special tournament** SÍ: aparece la **T** azul con borde dorado en la esquina del mapa. 4) **Void game** SÍ: la **A** gris a su derecha. 5) Guardar, cerrar y abrir ese .SAV en el **Visor de historia** (se actualiza solo): se abre aunque la partida no terminó y junto al nombre se ven la T y la A, iguales que en el mapa. Control: una partida sin mociones no muestra letras y, si no terminó, el Visor no la abre. Anotar lo que no coincida.
 
 - [x] **229.** Marcas F, V y C y la moción Championship (vista-aliada 1.0.231.0, herramientas 1.0.0.6 con Votación 1.1.8; 15/11/2026). 1) Actualizador, opción **9** y herramientas, en las dos PC. 2) Partida en red con Nico, **Voting**: el submenú tiene ahora siete renglones, el último **Championship**. 3) **Early end**, los dos SÍ: aparece la **F** celeste en la esquina del mapa y la partida **sigue** (no se cierra). Después, uno escribe en el chat `acuerdo: <detalles>`: la partida pasa a la historia y el Visor la abre con ese texto. 4) **Anything goes** SÍ: la **V** a la derecha de la F. 5) **Championship** SÍ: Votación dice «MOTION: CHAMPIONSHIP» y aparece la **C** dorada a la derecha. 6) Guardar y volver a cargar: las letras siguen. Controles: Free vote no deja letra; con más NO que SÍ no aparece ninguna. Anotar lo que no coincida.
