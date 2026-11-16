@@ -23,8 +23,10 @@ Requiere: python con keystone y capstone (build.py), gh autenticado.
 param(
     [Parameter(Mandatory = $true)][string]$Id,
     [switch]$Prueba,
-    [string]$Juego = ((Get-Content (Join-Path $PSScriptRoot '..\juego_pruebas.py') | Select-String "^W3 = r'(.+)'").Matches[0].Groups[1].Value)
+    [string]$Juego = ''
 )
+# En PowerShell 5.1, $PSScriptRoot está vacío en los valores por defecto de param(): se calcula acá.
+if (-not $Juego) { $Juego = ((Get-Content (Join-Path $PSScriptRoot '..\juego_pruebas.py') | Select-String "^W3 = r'(.+)'").Matches[0].Groups[1].Value) }
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $Repo = 'elcoprofago/Warlords-updater'
