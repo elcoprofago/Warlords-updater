@@ -14,10 +14,11 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.52.0'
+VERSION = '1.0.53.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
+AVISO_RESET = 'Se borrarán también los registros de combates: Stats dejará de contarlos.'
 HISTORIAL = os.path.join(CARPETA, 'Simulador-Combate-historial.json')
 REPO = 'elcoprofago/Simulador-Combate'   # repo público donde se publican las releases del .exe (el fuente vive acá)
 EXE_REL = 'Simulador-Combate.exe'
@@ -712,6 +713,7 @@ class App(tk.Tk):
         if per not in contador.PERIODOS: per = c['periodo'] = 'manual'
         if per != 'manual' and c.get('clave', '') != contador.clave(per):   # empezó otro período: a cero
             c['valor'], c['clave'] = '0', contador.clave(per)
+            historial.borrar(HISTORIAL)   # el reset limpia los registros (se avisó al elegir el período)
         return c
 
     def pruebas(self):
@@ -755,11 +757,17 @@ class App(tk.Tk):
         per = ttk.Combobox(fc, values=nombres, state='readonly', width=16)
         per.set(contador.PERIODOS[self._contador().get('periodo', 'manual')])
         def cambiar(e=None):
+            nuevo = clave_de[per.get()]
+            if nuevo != 'manual' and not messagebox.askyesno(TITULO, f'Con «{per.get()}», al empezar cada período el contador '
+                    f'vuelve a cero y {AVISO_RESET[0].lower()}{AVISO_RESET[1:]}\n\n¿Seguir?', parent=v):
+                return per.set(contador.PERIODOS[self._contador().get('periodo', 'manual')])
             c = self._contador(); c['periodo'] = clave_de[per.get()]; c['clave'] = contador.clave(c['periodo'])
             self.guardar_cfg(); self.pintar_encabezado()
         per.bind('<<ComboboxSelected>>', cambiar); per.pack(side='left')
         def cero():
-            if messagebox.askyesno(TITULO, f'¿Poner en cero el contador de pruebas ({self.pruebas()})?', parent=v): self.contar_prueba(poner=0)
+            if messagebox.askyesno(TITULO, f'¿Poner en cero el contador de pruebas ({self.pruebas()})?\n\n{AVISO_RESET}',
+                                   icon='warning', parent=v):
+                self.contar_prueba(poner=0); historial.borrar(HISTORIAL)
         tk.Button(fc, text='Poner en cero', width=14, command=cero).pack(side='left', padx=(10, 0))
         tk.Label(fr, text='Fondo de los paneles', font=('Segoe UI', 10, 'bold')).pack(anchor='w', pady=(14, 0))
         tex = ttk.Combobox(fr, values=list(texturas.NOMBRES.values()), state='readonly', width=26)
@@ -1015,10 +1023,10 @@ class App(tk.Tk):
     def ver_historial(self):
         v = getattr(self, 'v_historial', None)
         if v is not None and v.winfo_exists(): v.destroy()
-        h = historial.cargar(HISTORIAL)
+        todos = historial.cargar(HISTORIAL); h = todos[:historial.MAXIMO]   # se muestran los últimos; Stats usa todos
         v = self.v_historial = tk.Toplevel(self); v.title(f'Historial de combates — VERSIÓN {VERSION}'); v.transient(self)
         fr = ttk.Frame(v, padding=10); fr.pack(fill='both', expand=True)
-        ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates (doble clic o Enter para ver la ficha; los repetidos, del mismo color)').pack(anchor='w')
+        ttk.Label(fr, text=f'Últimos {historial.MAXIMO} combates de {len(todos)} registrados; Stats los cuenta todos (doble clic o Enter para ver la ficha; los repetidos, del mismo color)').pack(anchor='w')
         # lista en un Text (no Treeview) para poder pintar ATACANTE y DEFENSOR cada uno con su color
         fl = ttk.Frame(fr); fl.pack(fill='both', expand=True, pady=6)
         t = self.t_historial = tk.Text(fl, width=50, height=11, wrap='none', cursor='arrow', font=('Segoe UI', 10),
@@ -1074,9 +1082,9 @@ class App(tk.Tk):
             if elegida['i'] is None: return messagebox.showinfo('Exportar ficha', 'No hay combates guardados.', parent=v)
             f = h[elegida['i']]
             self.exportar(imagenes.imagen_ficha(f, VERSION), f"Ficha-combate-{f['numero']:06d}", v)
-        ttk.Button(fb, text='Stats', command=lambda: self.ver_stats(h)).pack(side='left', padx=(12, 0))
+        ttk.Button(fb, text='Stats', command=lambda: self.ver_stats(todos)).pack(side='left', padx=(12, 0))
         ttk.Button(fb, text='Exportar ficha', command=exportar_ficha).pack(side='left', padx=(6, 0))
-        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(imagenes.imagen_torta(h, VERSION, self.nombres_juego()),
+        ttk.Button(fb, text='Exportar gráfica', command=lambda: self.exportar(imagenes.imagen_torta(todos, VERSION, self.nombres_juego()),
                    'Stats-formaciones', v)).pack(side='left', padx=(6, 0))
         ttk.Button(fb, text='Cerrar', command=v.destroy).pack(side='right')
 

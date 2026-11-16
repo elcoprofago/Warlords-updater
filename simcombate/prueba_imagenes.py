@@ -1,4 +1,4 @@
-"""Prueba del Historial (40 combates) y de las imágenes de Stats y ficha: python prueba_imagenes.py"""
+"""Prueba del Historial (sin tope; se muestran 40) y de las imágenes de Stats y ficha: python prueba_imagenes.py"""
 import sys, os, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import imagenes, historial, tempfile, os.path
@@ -13,7 +13,8 @@ imagenes.guardar(imagenes.imagen_ficha(h[2], 'X'), out + '/ficha.jpg')
 imagenes.imagen_torta([], 'X').save(out + '/vacia.png')
 r = os.path.join(tempfile.mkdtemp(), 'h.json')
 for i in range(50): historial.guardar(r, mk(i, L('A'), L('B'), 60))
-hh = historial.cargar(r); assert len(hh) == 40 and hh[0]['numero'] == 49, len(hh)
+hh = historial.cargar(r); assert len(hh) == 50 and hh[0]['numero'] == 49, len(hh)
+historial.borrar(r); assert historial.cargar(r) == []
 from types import SimpleNamespace as U
 N = imagenes.nombres_del_juego(({'a': U(nombre='Archers', archivo='archers'), 'b': U(nombre='Sun Priests', archivo='sunpr')}, {'c': U(nombre='Drakkar', archivo='drak')}))
 assert imagenes.sin_archivo('archers — Archers', N) == 'Archers' and imagenes.sin_archivo('Archers — archers', N) == 'Archers'

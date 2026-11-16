@@ -350,3 +350,4 @@ lo acepta como paso de montaña al 25 %). Cerrado.
 - 13/11/2026 (1.0.50.0): a la derecha del marco de INICIAR COMBATE / Historial, `elcoprofago@gmail.com` en dorado con la letra caligráfica del juego (FONTS\blacc_.ttf.ttf), directo sobre el mármol, sin recuadro.
 - 13/11/2026 (1.0.51.0): la luz de tope se separa 10 px del borde derecho del panel.
 - 16/11/2026 (1.0.52.0): el botón «Héroe…» abría una ventana en blanco (pedía el título del panel, que desde la 1.0.14.0 ya no es un recuadro con título); arreglado y probado en los dos lados con el juego de `E:\Warlords-TEST\Warlords3`.
+- 16/11/2026 (1.0.53.0): Stats contaba solo los 40 combates de la lista (el .json se recortaba a 40). Ahora el historial guarda todos desde el último reset; la lista sigue mostrando 40 y Stats y «Exportar gráfica» cuentan todos. Poner el contador en cero borra los registros, con advertencia; al elegir un reset por período se advierte que cada período nuevo los borrará.

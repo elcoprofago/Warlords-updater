@@ -88,7 +88,7 @@ def imagen_torta(h, version='', nombres=None):
     ancho_ley = max([medir.textlength(s, font=fb) for s in ley] + [300])
     D = 340; alto = max(D + 150, 110 + len(ley) * 26 + 60)
     im = Image.new('RGB', (int(D + 90 + ancho_ley + 40), alto), 'white'); d = ImageDraw.Draw(im)
-    d.text((20, 16), f'Mejor formación — {total} combates del Historial', font=ft, fill=NEGRO)
+    d.text((20, 16), f'Mejor formación — {total} combates registrados', font=ft, fill=NEGRO)
     if not total:
         d.text((20, 60), 'Todavía no hay combates guardados.', font=fn, fill=GRIS); return im
     d.text((20, 46), f'La mejor: {fo[0][0]}', font=fb, fill=AZUL)
