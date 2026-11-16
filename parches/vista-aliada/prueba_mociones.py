@@ -4,7 +4,7 @@
 # deshabilitado no. Recepción (0x4b6a16 real): la moción va a la línea de comandos de votacion.exe. Cierre (estado
 # "cerrado"): «Partida a prueba» pone la marca solo con SI de todos los humanos en juego. Controles: un humano vota NO;
 # un humano no votó; un bando de la computadora vota NO (no cuenta); votación libre; moción fuera de rango.
-# Guardado/carga del bloque 'MOCI', partida nueva, y la P en el mapa (0x4c2810).
+# Guardado/carga del bloque 'MOCI', partida nueva, y la P en el mapa (después del marco, 0x4c1b92).
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -233,12 +233,15 @@ def dibujo(flag, cargada=True):
     g.interceptar(0x4e4a90, lambda a: hoja, pop=4)
     g.interceptar(0x4dd3f0, lambda a: out.append(('cargar', a[0])) or 1)
     g.interceptar(0x4dd530, lambda a: out.append(('pegar', *a[:8])))
-    g.mu.reg_write(UC_X86_REG_ESI, 0x4444)
-    g.correr(0x4c2810, [0x7777, 100, 30, 0x108, 0x122], hasta=0x4c2816)
-    ok = g.mu.reg_read(UC_X86_REG_ESI) == 0x7777 and g.mu.reg_read(UC_X86_REG_ESP) == STACK - 8
+    g.mu.mem_write(0x53c393, b'')
+    for r, v in ((UC_X86_REG_ESI, 0x7777), (UC_X86_REG_EBX, 100), (UC_X86_REG_EBP, 30), (UC_X86_REG_ESP, STACK)):
+        g.mu.reg_write(r, v)
+    g.mu.emu_start(0x4c1b92, 0x4c1b9c, count=200000)
+    ok = (g.mu.reg_read(UC_X86_REG_ESI) == 0x7777 and g.mu.reg_read(UC_X86_REG_EBX) == 100
+          and g.mu.reg_read(UC_X86_REG_ESP) == STACK + 0x20 and not g.mu.reg_read(UC_X86_REG_EFLAGS) & 0x40)
     return out, ok
 o, ok = dibujo(1)
-ver('marcada: pega la hoja 34x40 en (x0+8, y0+8) y sigue con los avisos', (o[0][0], o[0][2:], ok), ('pegar', (0, 0, 34, 40, 0x7777, 108, 38), True))
+ver('marcada: pega la hoja 34x40 dentro del marco (x0+0x24+8, y0+0x54+8), después de los paneles', (o[0][0], o[0][2:], ok), ('pegar', (0, 0, 34, 40, 0x7777, 144, 122), True))
 o, ok = dibujo(1, cargada=False)
 ver('hoja sin cargar: la carga antes', ([x[0] for x in o], ok), (['cargar', 'pegar'], True))
 ver('control: sin marca no dibuja nada', dibujo(0), ([], True))

@@ -20603,13 +20603,25 @@ mo1_b:
 mo1_r:
     ret
 ''')
+# mo_pdraw: va después de los paneles del marco (0x4dd530 de 0x5a..0x5d y sus pares de 1024 y 1280), que se pegan
+# encima de lo que dibujan 0x4c2810 y 0x4c2aa0: por eso la P pegada con los avisos no se veía (15/11/2026). En los tres
+# modos: esi = superficie, ebx = x0, ebp = y0; las marcas van dentro del mapa, a la derecha del panel izquierdo (0x24)
+# y debajo del de arriba (0x54). Se llama en lugar de «add esp, 0x20; test byte [0x53c393], 8»: corre la dirección de
+# vuelta encima de los 0x20 bytes que quita y vuelve con las banderas del test para el je que sigue.
 mo_pdraw = place('mo_pdraw', f'''
+    push eax
+    mov eax, dword ptr [esp + 4]
+    mov dword ptr [esp + 0x24], eax
+    pop eax
+    add esp, 0x20
     test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA | MO_VALE}
     jz mp_go
     pushad
-    mov ebx, dword ptr [esp + 0x24]
-    movsx esi, word ptr [esp + 0x28]
-    movsx edi, word ptr [esp + 0x2c]
+    mov edi, ebp
+    add edi, 0x54
+    mov eax, ebx
+    mov ebx, esi
+    lea esi, [eax + 0x24]
     test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
     jz mp_v
     push {MOP_FILE}
@@ -20627,10 +20639,8 @@ mp_v:
 mp_end:
     popad
 mp_go:
-    push ebx
-    push esi
-    mov esi, dword ptr [esp + 0xc]
-    jmp 0x4c2816
+    test byte ptr [0x53c393], 8
+    ret
 ''')
 GO_GOLD = 137
 GO_K32 = place_data('go_k32', cstr_('KERNEL32.DLL'))
@@ -22405,7 +22415,8 @@ patch(0x4bd524, asm('sub eax, 0xb; cmp eax, 0xd; ja 0x4bd533', 0x4bd524), asm(f'
 # Mociones de votación (mo_*)
 patch(0x4bd180, asm('push ebx; mov ecx, 0x5032f8', 0x4bd180), asm(f'jmp {mo_entry:#x}; nop', 0x4bd180))
 patch(0x4bcb90, asm('sub esp, 8; mov eax, 0xffffffff', 0x4bcb90), asm(f'jmp {mo_norm:#x}; nop; nop; nop', 0x4bcb90))
-patch(0x4c2810, asm('push ebx; push esi; mov esi, dword ptr [esp + 0xc]', 0x4c2810), asm(f'jmp {mo_pdraw:#x}; nop', 0x4c2810))
+for _a in (0x4c1b92, 0x4c1d42, 0x4c1ef2):
+    patch(_a, asm('add esp, 0x20; test byte ptr [0x53c393], 8', _a), asm(f'call {mo_pdraw:#x}; nop; nop; nop; nop; nop', _a))
 patch(0x46f341, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x46f341), asm(f'jmp {tl_setinit:#x}', 0x46f341))
 assert rel(0x46f34b, 4) == bytes.fromhex('5d5f5e5b')
 assert rel(0x46e889, 9) == bytes.fromhex('8b6e048d45ff83f85f')
