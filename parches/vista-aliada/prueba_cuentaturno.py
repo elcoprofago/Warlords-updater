@@ -11,7 +11,7 @@ DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-TEXT = b'Votacion en curso: partida en pausa\0'
+TEXT = b'Voting in progress: game paused\0'
 PZ_ON = BASE + img.index(TEXT) + len(TEXT)
 GETTICK = 0x5a97f8
 STUB, STACK = 0x300000, 0x1f0000

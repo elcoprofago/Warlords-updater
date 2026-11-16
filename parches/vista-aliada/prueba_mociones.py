@@ -19,8 +19,12 @@ VOTE_HOT = 0x1a
 k = img.index(b'MOCI' + bytes(4))
 MO_FLAGS = BASE + k + 4
 MO_ON, MO_CUR = BASE + k - 32, BASE + k - 28
-OPCMD = BASE + img.index(b'votacion.exe" --operador --mocion 0\0')
-SPCMD = BASE + img.index(b'votacion.exe" --espectador 00000000 --mocion 0\0')
+OPCMD = BASE + img.index(b'votacion.exe" --operador --mocion 0 --bando 0\0')
+SPCMD = BASE + img.index(b'votacion.exe" --espectador 00000000 --mocion 0 --bando 0\0')
+FINTXT = b'Early end approved by vote\0'
+ACUP = BASE + img.index(FINTXT) + len(FINTXT)
+HI_ACU = struct.unpack('<I', img[ACUP - BASE:ACUP - BASE + 4])[0]
+SIDE_ALIVE, SIDE_MACHINE, PV = SIDE_ON + 1, 0x536b33, 0x5643c8
 
 mal = 0
 def ver(nombre, r, esperado):
@@ -83,8 +87,10 @@ class Juego:
     def flags(self): return rd(self.mu, MO_FLAGS)
 
 # ---------------------------------------------------------------- submenú
-def menu(clics, machine=0):
+def menu(clics, machine=0, humanos=(0, 1), muertos=()):
     g = Juego(machine)
+    g.bandos(humanos)
+    for s in humanos: g.mu.mem_write(SIDE_ALIVE + SIDE * s, b'\0' if s in muertos else b'\1')
     g.interceptar(0x4d7d70, lambda a: g.log.append(('cerrar',)))
     g.interceptar(0x4dd3b0, lambda a: g.log.append(('red', a[0], bytes(g.mu.mem_read(a[1], a[2])))))
     g.interceptar(0x408a00, lambda a: g.log.append(('chat',)))
@@ -101,25 +107,42 @@ g, r = menu([VOTE_HOT])
 ver('«Votacion» abre el diálogo 134 con los manejadores del menú', r, [('cerrar',), ('abrir', 134, '0x4bcc60'), ('dibujar', 1)])
 ver('  queda en modo mociones', g.mu.mem_read(MO_ON, 1)[0], 1)
 g, r = menu([VOTE_HOT, 0xc])
-ver('«Partida a prueba»: cierra y manda abrir con moción 1', r[3:], [('cerrar',), ('red', 0x2a0, struct.pack('<II', 0, 1))])
+ver('«Partida a prueba»: cierra y manda abrir con moción 1', r[3:], [('cerrar',), ('red', 0x2a0, struct.pack('<III', 0, 1, 0))])
 ver('  y sale del modo mociones', g.mu.mem_read(MO_ON, 1)[0], 0)
 g, r = menu([VOTE_HOT, 0xb])
-ver('«Votacion libre»: moción 0', r[3:], [('cerrar',), ('red', 0x2a0, struct.pack('<II', 0, 0))])
-g, r = menu([VOTE_HOT, VOTE_HOT])
-ver('control: «Finalizacion» (todavía deshabilitada) no hace nada', r[3:], [])
+ver('«Votacion libre»: moción 0', r[3:], [('cerrar',), ('red', 0x2a0, struct.pack('<III', 0, 0, 0))])
+for hot, n, nombre in ((VOTE_HOT, 2, 'Finalizacion'), (0xe, 4, 'Vale todo'), (0xf, 5, 'Enganche')):
+    g, r = menu([VOTE_HOT, hot])
+    ver(f'«{nombre}»: moción {n}', r[3:], [('cerrar',), ('red', 0x2a0, struct.pack('<III', 0, n, 0))])
+ABRIR = [('cerrar',), ('abrir', 134, '0x4bcc60'), ('dibujar', 1)]
+g, r = menu([VOTE_HOT, 0xd], humanos=(0, 3, 5), muertos=(5,))
+ver('«Descalificacion»: cierra y reabre el submenú con los colores', r[3:], ABRIR)
+ver('  en modo colores', g.mu.mem_read(MO_ON, 1)[0], 2)
+g, r = menu([VOTE_HOT, 0xd, 0xd], humanos=(0, 3, 5), muertos=(5,))
+ver('  Rojo (humano vivo): moción 3, bando 3', r[6:], [('cerrar',), ('red', 0x2a0, struct.pack('<III', 0, 3, 3))])
+ver('  y sale del modo', g.mu.mem_read(MO_ON, 1)[0], 0)
+g, r = menu([VOTE_HOT, 0xd, 0xf], humanos=(0, 3, 5), muertos=(5,))
+ver('  control: Azul (humano muerto) deshabilitado', r[6:], [])
+g, r = menu([VOTE_HOT, 0xd, 0xc], humanos=(0, 3, 5), muertos=(5,))
+ver('  control: Amarillo (no juega) deshabilitado', r[6:], [])
+g, r = menu([VOTE_HOT, 0xd, VOTE_HOT], humanos=(0, 3))
+ver('  control: en colores, Naranja (no juega) no manda', r[6:], [])
 g, r = menu([VOTE_HOT, 0xc], machine=2)
 ver('control: otra máquina no manda (solo cierra)', r[3:], [('cerrar',)])
 # ---------------------------------------------------------------- recepción y cierre
 VOT = lambda fase, marcas, res=0: f'VOT ab12cd34 {fase} 0 {res} {marcas}'.encode()
-def votacion(mocion, marcas, humanos=(0, 1), compu=(), carga=None, remitente=0):
+def votacion(mocion, marcas, humanos=(0, 1), compu=(), carga=None, remitente=0, bando=0, todo=False):
     g = Juego(3)
     g.interceptar(0x4dd3b0, lambda a: None)
+    acu = []
+    g.interceptar(HI_ACU, lambda a: acu.append(cstr(g.mu, a[0])))
     g.bandos(humanos, compu)
-    g.paquete(0x2a0, carga if carga is not None else struct.pack('<II', 0, mocion), remitente)
-    cmd = (cstr(g.mu, OPCMD)[-1], cstr(g.mu, SPCMD)[-1])
+    g.paquete(0x2a0, carga if carga is not None else struct.pack('<III', 0, mocion, bando), remitente)
+    op, sp = cstr(g.mu, OPCMD), cstr(g.mu, SPCMD)
+    cmd = (op[-11], op[-1], sp[-11], sp[-1]) if todo else (op[-11], sp[-11])
     g.paquete(0x2a1, struct.pack('<I', 0) + VOT('libre', marcas))
     g.paquete(0x2a1, struct.pack('<I', 0) + VOT('cerrado', marcas))
-    return cmd, g.flags()
+    return (cmd, g.flags(), acu) if todo else (cmd, g.flags())
 
 print('-- moción a votacion.exe y marca P')
 ver('P, los dos humanos SI: --mocion 1 y marca', votacion(1, 'ss------'), (('1', '1'), 1))
@@ -129,6 +152,46 @@ ver('bando de la computadora NO: no cuenta', votacion(1, 'ssn-----', compu=(2,))
 ver('control: votación libre con todos SI no marca', votacion(0, 'ss------'), (('0', '0'), 0))
 ver('control: moción fuera de rango = libre', votacion(77, 'ss------'), (('0', '0'), 0))
 ver('control: bando humano fuera de juego no cuenta', votacion(1, 's-------', humanos=(0,)), (('1', '1'), 1))
+
+print('-- mociones por mayoría (SI > NO, humanos y virtuales)')
+F = 'Early end approved by vote'
+ver('Finalizacion 2 SI 1 NO: acuerdo (hi_acu)', votacion(2, 'ssn-----', compu=(2,), todo=True), (('2', '0', '2', '0'), 0, [F]))
+ver('control: Finalizacion empate', votacion(2, 'sn------', todo=True), (('2', '0', '2', '0'), 0, []))
+ver('control: Finalizacion más NO', votacion(2, 'snn-----', compu=(2,), todo=True), (('2', '0', '2', '0'), 0, []))
+ver('Descalificacion de Rojo aprobada: bits 8-11 = 4', votacion(3, 'ss-n-s--', humanos=(0, 1, 3), compu=(5,), bando=3, todo=True), (('3', '3', '3', '3'), 0x400, []))
+ver('control: Descalificacion rechazada', votacion(3, 'sn-n----', humanos=(0, 1, 3), bando=3, todo=True), (('3', '3', '3', '3'), 0, []))
+ver('control: Descalificacion con bando 9 = votación libre', votacion(3, 'ss------', bando=9, todo=True), (('0', '1', '0', '1'), 0, []))
+ver('Vale todo aprobada: bit 2', votacion(4, 'ss------'), (('4', '4'), 2))
+ver('control: Vale todo rechazada', votacion(4, 'nn------'), (('4', '4'), 0))
+ver('Enganche aprobado: bit 0x1000', votacion(5, 'ssn-----', compu=(2,)), (('5', '5'), 0x1000))
+ver('control: Partida a prueba sigue pidiendo unanimidad humana', votacion(1, 'snss----', compu=(2, 3)), (('1', '1'), 0))
+
+print('-- fin de ronda (mo_round desde 0x4988d0)')
+def ronda(flags, humanos, compu=(), muertos=(), maq=None, pv=None, ret=0x498c1d):
+    g = Juego()
+    g.bandos(humanos, compu)
+    for s in list(humanos) + list(compu):
+        g.mu.mem_write(SIDE_ALIVE + SIDE * s, b'\0' if s in muertos else b'\1')
+        g.mu.mem_write(SIDE_MACHINE + SIDE * s, bytes([(maq or {}).get(s, s if s in humanos else 0)]))
+    g.mu.mem_write(MO_FLAGS, struct.pack('<I', flags))
+    g.interceptar(0x440840, lambda a: g.mu.mem_write(PV, struct.pack('<8h', *(pv or [0] * 8))))
+    g.mu.mem_write(STACK, struct.pack('<I', ret)); g.mu.reg_write(UC_X86_REG_ESP, STACK)
+    g.mu.emu_start(0x4988d0, 0x4988d5, count=20000)
+    assert g.mu.reg_read(UC_X86_REG_EIP) == 0x4988d5
+    est = []
+    for s in range(8):
+        h = struct.unpack('<h', g.mu.mem_read(SIDE_HUMAN + SIDE * s, 2))[0]
+        est.append(('H' if h == -1 else 'C' if h == 2 else '.') + format(g.mu.mem_read(SIDE_MACHINE + SIDE * s, 1)[0], 'x'))
+    return ' '.join(est), g.flags()
+ver('Descalificacion de Rojo: pasa al sistema (2, máquina ff)', ronda(0x401, (0, 3)), ('H0 .0 .0 Cff .0 .0 .0 .0', 1))
+ver('control: partida nueva (otra dirección) no aplica', ronda(0x401, (0, 3), ret=0x42de68), ('H0 .0 .0 H3 .0 .0 .0 .0', 0x401))
+ver('control: Rojo ya no es humano', ronda(0x400, (0,), compu=(3,)), ('H0 .0 .0 .0 .0 .0 .0 .0', 0))
+ver('Enganche: el humano muerto toma el sistema vivo con menos puntos', ronda(0x1000, (0, 1), compu=(2, 4, 6), muertos=(1,), pv=[9, 0, 50, 0, 20, 0, 30, 0]), ('H0 C1 .0 .0 H1 .0 .0 .0', 0))
+ver('control: el más débil está muerto, toma el vivo siguiente', ronda(0x1000, (0, 1), compu=(2, 4, 6), muertos=(1, 4), pv=[9, 0, 50, 0, 20, 0, 30, 0]), ('H0 C1 .0 .0 .0 .0 H1 .0', 0))
+ver('control: su PC tiene otro bando humano vivo, no engancha', ronda(0x1000, (0, 1, 5), compu=(2,), muertos=(1,), maq={5: 1}, pv=[9, 0, 5, 0, 0, 0, 0, 0]), ('H0 H1 .0 .0 .0 H1 .0 .0', 0))
+ver('control: sin eliminado no pasa nada', ronda(0x1000, (0, 1), compu=(2,)), ('H0 H1 .0 .0 .0 .0 .0 .0', 0))
+ver('control: sin sistema vivo no pasa nada', ronda(0x1000, (0, 1), compu=(2,), muertos=(1, 2)), ('H0 H1 .0 .0 .0 .0 .0 .0', 0))
+ver('control: sin mociones pendientes, Vale todo intacto', ronda(2, (0, 1), muertos=(1,)), ('H0 H1 .0 .0 .0 .0 .0 .0', 2))
 
 # ---------------------------------------------------------------- .SAV
 print('-- guardado y carga')

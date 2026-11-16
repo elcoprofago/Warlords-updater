@@ -24,10 +24,10 @@ VOTE_TXT, VOTE_HOT, COIN = 0x19, 0x1a, 97
 
 # Datos de tl_*: "Votacion\0" + nombre del juego + variables (place_data no alinea).
 GAME = b'Warlords III Era de Alianzas\0'
-k = img.index(b'Votacion\0' + GAME)
-TL_VARS = BASE + k + 9 + len(GAME)
+k = img.index(b'Voting\0' + GAME)
+TL_VARS = BASE + k + len(b'Voting\0') + len(GAME)
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = TL_VARS, TL_VARS + 4, TL_VARS + 8, TL_VARS + 0xc
-TL_BUF = TL_VARS + 16 + 4 + 8 + 260
+TL_BUF = TL_VARS + 16 + 4 + 12 + 260
 ERR = [BASE + img.index(f'No se pudo abrir Herramientas\\{n}.exe\0'.encode()) for n in ('votacion', 'sorteo')]
 DC_ERR = BASE + img.index(b'No se pudo abrir Herramientas\\DarkCompare.exe\0')
 DC_BTN, DC_FILE = 75, 167
@@ -92,7 +92,7 @@ def menu(flag, hover, machine=0):
 # Chat Mode (texto 2) sale gris (0x56) sin red, como en el original; resaltado (0xf) con el puntero encima.
 print('-- menú de partida: texto y color de "Votacion"')
 ver('anfitrión, puntero sobre Votacion', menu(1, VOTE_HOT),
-    [('color', 2, 0x56), ('texto', VOTE_TXT, 'Votacion'), ('color', VOTE_TXT, 0xf), ('refresco',)])
+    [('color', 2, 0x56), ('texto', VOTE_TXT, 'Voting'), ('color', VOTE_TXT, 0xf), ('refresco',)])
 ver('anfitrión, sin texto (mover el puntero)', menu(0, VOTE_HOT), [('color', 2, 0x56), ('color', VOTE_TXT, 0xf), ('refresco',)])
 ver('control: puntero sobre Chat Mode', menu(0, 0xc), [('color', 2, 0xf), ('color', VOTE_TXT, 0x5c), ('refresco',)])
 ver('control: otra máquina, puntero sobre Votacion', menu(0, VOTE_HOT, 3),
@@ -163,7 +163,7 @@ def prep_clic(cid, machine=0):
 print('-- preparación')
 ver('anfitrión: moneda visible', prep_init(0), [('mostrar', COIN, 0), ('refresco',)])
 ver('otra máquina: moneda deshabilitada', prep_init(2), [('mostrar', COIN, 2), ('refresco',)])
-ver('anfitrión: clic en la moneda', prep_clic(COIN), [('red', 0x2a0, struct.pack('<II', 1, 0))])
+ver('anfitrión: clic en la moneda', prep_clic(COIN), [('red', 0x2a0, struct.pack('<III', 1, 0, 0))])
 ver('control: otra máquina, clic en la moneda', prep_clic(COIN, 2), [])
 ver('control: control 98', prep_clic(98), [])
 mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 80)); mu.reg_write(UC_X86_REG_ESI, PKT)
@@ -277,7 +277,7 @@ H = 'Herramientas\\'
 print('-- función ociosa')
 w, red, po, ps, _ = ociosa(0, {H + 'votacion.op': b'v1 auto 1 0 s-------', H + 'votacion.ver': b'viejo'}, abrir=(1, 0))
 ver('anfitrión abre Votación como operador', [x for x in w.log if x[0] == 'proceso'],
-    [('proceso', H + 'votacion.exe', f'"{H}votacion.exe" --operador --mocion 0', 0)])
+    [('proceso', H + 'votacion.exe', f'"{H}votacion.exe" --operador --mocion 0 --bando 0', 0)])
 ver('  y cierra los handles del proceso', [x for x in w.log if x[0] == 'cerrar'], [('cerrar', 0x501), ('cerrar', 0x502)])
 ver('  y no manda el .op viejo (lo borra antes de lanzar)', red, [])
 ver('  sin dejar .op, .env ni .ver viejo', sorted(w.fs), [])
@@ -370,7 +370,7 @@ ver('control: bando sin unidades: sin sello', sello(2, [-1, -2], set()), ([('sel
 ver('control: jugador fuera de rango: sin sello ni armcheck', sello(9, [0], set()), ([('sello', 0x1c, 2), ('titulo',)], []))
 
 # ---------------------------------------------------------------- pausa manual: recepción
-_t = b'Votacion en curso: partida en pausa\0'
+_t = b'Voting in progress: game paused\0'
 PZ_ON = BASE + img.index(_t) + len(_t)
 PP_RECV = 0x4b6a22 + 6 + struct.unpack_from('<i', img, 0x4b6a22 + 2 - BASE)[0]
 def pp_recv(tipo, dato, antes, hasta=0x4b85bb):
@@ -424,7 +424,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: ocho más (165 a 172; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 la P de partida a prueba)', (len(fn), len(fo)), (173, 165))
+ver('archivos: nueve más (165 a 173; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 la P de partida a prueba, 173 la V de vale todo)', (len(fn), len(fo)), (174, 165))
 def dialogos(path):
     d = open(path, 'rb').read(); o = 8
     while True:

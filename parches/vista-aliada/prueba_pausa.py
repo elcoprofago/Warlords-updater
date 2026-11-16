@@ -16,7 +16,7 @@ SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 STACK, RET, STUBS, PKT, MSG = 0x1f0000, 0x100, 0x300000, 0x150000, 0x160000
 MACHINE, LIMIT, TURN_END, GRACE_END, GAMECLK = 0x5899fc, 0x53c38f, 0x4ff7a8, 0x5885cc, 0x5032f8
 MSG_TXT, MSG_END = 0x5885e8, 0x5885d8
-TEXT = b'Votacion en curso: partida en pausa\0'
+TEXT = b'Voting in progress: game paused\0'
 PZ_VARS = BASE + img.index(TEXT) + len(TEXT)
 PZ_ON, PZ_ARM = PZ_VARS, PZ_VARS + 1
 _c = img.index(b'VOT - cerrado') - 4
@@ -194,13 +194,13 @@ g = Juego(); g.turno(); mu = g.mu
 mu.mem_write(MSG_TXT, b'Your turn has ended\0'); wr(mu, MSG_END, g.t + 2000)
 g.abrir(); g.segundo()
 ver('en pausa: el aviso en el renglón libre, el del juego intacto', g.renglones(),
-    [('Your turn has ended', 1000), ('Votacion en curso: partida en pausa', 5000)])
+    [('Your turn has ended', 1000), ('Voting in progress: game paused', 5000)])
 for s in range(20): g.segundo()
 ver('  20 s después sigue uno solo, con el vencimiento estirado', [r for r in g.renglones() if r[0].startswith('Vot')],
-    [('Votacion en curso: partida en pausa', 5000)])
+    [('Voting in progress: game paused', 5000)])
 g.estado(VOT('cerrado')); g.segundo()
 ver('  "cerrado": el aviso vence ya', [r for r in g.renglones() if r[0].startswith('Vot')],
-    [('Votacion en curso: partida en pausa', 0)])
+    [('Voting in progress: game paused', 0)])
 
 # ---------------------------------------------------------------- teclado y mouse
 print('-- despacho de mensajes')
@@ -253,8 +253,8 @@ for m in (0, 2):
     g = pc_red(m); g.paquete(0x2a5, struct.pack('<I', 1))
     ver(f'PC {m}: al recibir la pausa no guarda dentro de la recepción', [x for x in g.log if x[0] == 'guardar'], [])
     g.segundo(); g.segundo()
-    ver(f'  y guarda una sola vez Clan_7_pausa en la ociosa', [x for x in g.log if x[0] == 'guardar'],
-        [('guardar', 'Clan_7_pausa', 0)])
+    ver(f'  y guarda una sola vez Clan_7_pause en la ociosa', [x for x in g.log if x[0] == 'guardar'],
+        [('guardar', 'Clan_7_pause', 0)])
 g = pc_red(0, red=0); g.paquete(0x2a5, struct.pack('<I', 1)); g.segundo()
 ver('control: fuera de red no guarda', [x for x in g.log if x[0] == 'guardar'], [])
 g = pc_red(0); g.segundo()

@@ -28,7 +28,7 @@ CLEAR = 0x4988d0 + 5 + struct.unpack_from('<i', img, 0x4988d1 - BASE)[0]
 assert img[CLEAR - BASE:CLEAR - BASE + 2] == b'\xc7\x05'
 VT_N = struct.unpack_from('<I', img, CLEAR + 2 - BASE)[0]; VT_TAB = VT_N + 4
 VT_MAX = 8
-PZ_ARM = BASE + img.index(b'Votacion en curso: partida en pausa\0') + 36 + 1
+PZ_ARM = BASE + img.index(b'Voting in progress: game paused\0') + len(b'Voting in progress: game paused\0') + 1
 
 mal = 0
 def ver(nombre, r, esperado):
@@ -220,11 +220,11 @@ ver('  ronda 4 en curso, sin votaciones', [len(r) for _, r in inf], [2, 4, 3, 0]
 print('-- el renglón')
 av, orig = Juego(), Juego(ORIG)
 ver('votación de un bando: su escudo y el texto, igual que un suceso común de ese bando', [
-    av.renglon(rec(0x13, p, 0, b'', (5, 3, 0))) == orig.renglon(rec(0, p, 0, b'Nombre'))[:1] + [('texto', 120, 200, 'Resultados votacion: 5 por el SI, 3 por el NO')]
+    av.renglon(rec(0x13, p, 0, b'', (5, 3, 0))) == orig.renglon(rec(0, p, 0, b'Nombre'))[:1] + [('texto', 120, 200, 'Voting results: 5 YES, 3 NO')]
     for p in range(8)], [True] * 8)
 ver('  (el escudo del bando 5)', av.renglon(rec(0x13, 5, 0, b'', (5, 3, 0)))[0], ('escudo', 0x69 + 5, 100, 200))
 ver('votación sin bando (8, de un .SAV de 1.0.18.0): el texto, sin escudo, donde va el texto de los demás', av.renglon(VOTO(5, 3)),
-    [('texto', 120, 200, 'Resultados votacion: 5 por el SI, 3 por el NO')])
+    [('texto', 120, 200, 'Voting results: 5 YES, 3 NO')])
 ver('  con 0 y 8', av.renglon(VOTO(0, 8))[0][3], 'Resultados votacion: 0 por el SI, 8 por el NO')
 ver('control: bando fuera de rango (-1, 9): sin escudo', [[d[0] for d in av.renglon(rec(0x13, p, 0, b'', (1, 1, 0)))] for p in (-1, 9)],
     [['texto'], ['texto']])

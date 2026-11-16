@@ -45,7 +45,16 @@ Aclaración del usuario: hoy la cuenta solo se activa mientras se consultan los 
 «Partida a prueba» por unanimidad de humanos → bloque 'MOCI' en el .SAV y P en el mapa con `RUINS\prueba.pcx`),
 herramientas 1.0.0.4 (Votación 1.1.5 muestra la moción) y Visor de historia 1.0.22.0 (no abre partidas sin .FIN ni
 marca P). Pruebas: prueba_mociones.py y prueba_botones.py (MAL 0). Falta publicar vista-aliada y herramientas después de
-la tanda 170, y la prueba del usuario (TAREAS 225). Siguen las etapas 2 a 4.
+la tanda 170, y la prueba del usuario (TAREAS 225).
+**Etapas 2 a 4 hechas en vista-aliada 1.0.227.0** (herramientas 1.0.0.5 con Votación 1.1.7): aprobación por más SÍ que
+NO según Votación (humanos + votos virtuales), salvo «Partida a prueba» (unanimidad humana). Early end termina como
+acuerdo (hi_acu) en todas las PC; Disqualification (submenú de colores, solo humanos vivos, `--bando N`) y Re-entry
+(humano eliminado → bando de la computadora vivo con menos puntos, 0x440840/0x5643c8) se aplican en mo_round al final
+de la ronda; Anything goes es una declaración (bandera en 'MOCI', V con `RUINS\valetodo.pcx`). Paquete TL_OPEN de 12
+bytes. prueba_mociones.py y prueba_botones.py: MAL 0. Prueba del usuario: TAREAS 226.
+**Textos en inglés (pedido 15/11):** menú, mociones, colores, avisos de pausa y votación, Lighthouse, Compare, Game
+over, y Votación. Faltan: las órdenes por chat (el analizador depende de 'atac'/'mand'), los textos del Visor de
+historia, y revisar si los PCX del juego tienen texto en castellano.
 En el menú de comandos, un submenú (como el de Build) con mociones predeterminadas; elegir una abre la Votación
 ya cargada con esa moción, y al cerrarse con resultado afirmativo el programa aplica la acción sola:
 1. Partida «a prueba» → pone la marca P (y habilita el Visor en curso).

@@ -117,16 +117,16 @@ def titulo(nombres=('GetDateFormatA', 'GetLocalTime', 'GetLongPathNameA'), modul
     assert mu.reg_read(UC_X86_REG_EIP) == 0x482c39 and mu.reg_read(UC_X86_REG_ESP) == STACK
     return out
 print('-- título')
-_ok = [('modulo', 'KERNEL32.DLL'), ('llamada', 'GetLocalTime'), ('texto', 1, 'Partida finalizada 8/11/2026'),
+_ok = [('modulo', 'KERNEL32.DLL'), ('llamada', 'GetLocalTime'), ('texto', 1, 'Game over 8/11/2026'),
        ('color', 1, GOLD, 0, 0)]
 ver('con GetLocalTime: fecha d/m/aaaa, dorado', titulo(), _ok)
-ver('otra fecha (un dígito y dos)', titulo(fecha=(2027, 1, 31))[2], ('texto', 1, 'Partida finalizada 31/1/2027'))
+ver('otra fecha (un dígito y dos)', titulo(fecha=(2027, 1, 31))[2], ('texto', 1, 'Game over 31/1/2027'))
 ver('control: GetLocalTime no exportada: sin fecha', titulo(nombres=('GetLocalTimeX', 'GetLocalTim')),
-    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Partida finalizada'), ('color', 1, GOLD, 0, 0)])
+    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Game over'), ('color', 1, GOLD, 0, 0)])
 ver('control: sin KERNEL32: sin fecha', titulo(modulo=False),
-    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Partida finalizada'), ('color', 1, GOLD, 0, 0)])
+    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Game over'), ('color', 1, GOLD, 0, 0)])
 ver('control: GetLocalTime reenviada: no la llama, sin fecha', titulo(forward=True),
-    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Partida finalizada'), ('color', 1, GOLD, 0, 0)])
+    [('modulo', 'KERNEL32.DLL'), ('texto', 1, 'Game over'), ('color', 1, GOLD, 0, 0)])
 
 # ---------------------------------------------------------------- podio
 X0, Y0 = 52, 92
@@ -174,7 +174,7 @@ _r = podio([(0, 1, 30, 5, 100, 1), (3, 2, 20, 4, 50, 1), (5, 3, 10, 1, 7, 1)],
            [(0, 1), (0, 1), (0, 0), (3, 1), (5, 1), (5, 1), (5, 1), (6, 1)], [(0, 3), (3, 0)])
 ver('encabezado: Armas entre PV y Ciudades, columnas corridas', [x for x in _r if x[2] == 5],
     [('izq', 30, 5, 'SIDE'), ('col', 0x9c, 5, 'VPs'), ('col', 0xe4, 5, 'CITIES'), ('col', 0x108, 5, 'GOLD'),
-     ('col', 0xc0, 5, 'Armas')])
+     ('col', 0xc0, 5, 'Armies')])
 ver('armas: vivos de cada color (muertos y de otro color no)', [x[3] for x in _r if x[0] == 'col' and x[1] == 0xc0][1:],
     ['2', '1', '3'])
 ver('valores en las columnas nuevas (fila 1)', [x for x in _r if x[2] == 0x23 and x[0] == 'col'],
@@ -183,13 +183,13 @@ ver('valores en las columnas nuevas (fila 1)', [x for x in _r if x[2] == 0x23 an
 ver('marca de alianza solo en los aliados mutuos en juego (0 y 3)', [x for x in _r if x[0] == 'img'],
     [('img', 0x69, 30, 0x23), ('img', GO_IMG, 0x80, 0x23), ('img', 0x69 + 3, 30, 0x41),
      ('img', GO_IMG, 0x80, 0x41), ('img', 0x69 + 5, 30, 0x5f)])
-ver('pie centrado con el nombre de la partida', _r[-1], ('col', 123, 262, 'corresponde a la partida "NA_052"'))
+ver('pie centrado con el nombre de la partida', _r[-1], ('col', 123, 262, 'belongs to the game "NA_052"'))
 _img = lambda r: [x[1] for x in r if x[0] == 'img']
 _b = [(0, 1, 30, 5, 100, 1), (3, 2, 20, 4, 50, 1)]
 ver('control: alianza de un solo lado: sin marca', _img(podio(_b, [], [(0, 3)])), [0x69, 0x69 + 3])
 ver('control: aliado eliminado: sin marca', _img(podio(_b, [], [(0, 4), (4, 0)])), [0x69, 0x69 + 3])
 ver('control: Diplomacia desactivada: sin marca', _img(podio(_b, [], [(0, 3), (3, 0)], diplo=False)), [0x69, 0x69 + 3])
-ver('control: partida sin nombre: sin pie', [x for x in podio(_b, [], [], nombre='') if 'corresponde' in str(x)], [])
+ver('control: partida sin nombre: sin pie', [x for x in podio(_b, [], [], nombre='') if 'belongs to' in str(x)], [])
 
 # ---------------------------------------------------------------- RES
 def tablas(path):

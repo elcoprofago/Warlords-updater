@@ -1014,7 +1014,7 @@ TEXTS = [  # (grupo, índice, texto nuevo, texto original de Sagetext.tex)
     (0x168, 2, 'Build /Rebuild - Repair', 'Build City/Site'),   # botón de la torre (pedido del usuario, 12/11/2026)
     # Menú del disquete (pedido del usuario, 8/11/2026): Chat Mode y EMail Statistics no se usaban. En la línea de
     # Chat va "Pausa" (ver Pausa manual); EMail queda sin texto y fuera del menú (diálogo 35, más abajo).
-    (0x164, 1, 'Pausa', 'Chat Mode'),
+    (0x164, 1, 'Pause', 'Chat Mode'),
     (0x164, 10, '', 'EMail Statistics'),
 ]
 strs = {}
@@ -10912,12 +10912,12 @@ SORTEO_X, SORTEO_Y, SORTEO_W, SORTEO_H = 567, 409, 64, 60   # abajo a la derecha
 GETTICK, CREATEPROC, CLOSEH, MOVEF, DELF = 0x5a97f8, 0x5a97d0, 0x5a97d8, 0x5a97e4, 0x5a97c0
 CREATEF, READF, WRITEF, CREATETH, MSGBOX, STRLEN = 0x5a9810, 0x5a9814, 0x5a9818, 0x5a97ec, 0x5a9c30, 0x5a9b98
 SIDE, SIDE_ON, SIDE_HUMAN, SIDE_MACHINE = 0x1f8, 0x536b30, 0x536c12, 0x536b33
-tl_voting = place_data('tl_voting', cstr_('Votacion'))
+tl_voting = place_data('tl_voting', cstr_('Voting'))
 tl_caption = place_data('tl_caption', cstr_(GAME))
 tl_vars = place_data('tl_vars', bytes(16))   # +0 tick, +4 ocupado, +8 abrir[2], +0xc estado[2]
 TL_TICK, TL_BUSY, TL_PEND_OPEN, TL_PEND_STATE = tl_vars, tl_vars + 4, tl_vars + 8, tl_vars + 0xc
 tl_n = place_data('tl_n', bytes(4))
-tl_openpkt = place_data('tl_openpkt', bytes(8))   # herramienta, moción (MO_*; solo cuenta en la Votación)
+tl_openpkt = place_data('tl_openpkt', bytes(12))  # herramienta, moción (MO_*), bando (Descalificación; solo Votación)
 tl_pkt = place_data('tl_pkt', bytes(4 + 256))
 tl_buf = place_data('tl_buf', bytes(256 * len(TOOLS)))   # último estado recibido, por herramienta
 tl_si = place_data('tl_si', struct.pack('<I', 68) + bytes(64))   # STARTUPINFOA
@@ -10927,15 +10927,17 @@ for t, n in enumerate(TOOLS):
     for ext in ('ver', 'vtmp', 'op', 'env'):
         tl_path[t, ext] = place_data(f'tl_{n}_{ext}', cstr_(f'Herramientas\\{n}.{ext}'))
     tl_path[t, 'exe'] = place_data(f'tl_{n}_exe', cstr_(f'Herramientas\\{n}.exe'))
-    mo = ' --mocion 0' if t == 0 else ''   # la Votación recibe la moción (MO_*): la cifra se escribe al recibir TL_OPEN
+    mo = ' --mocion 0 --bando 0' if t == 0 else ''   # la Votación recibe la moción (MO_*) y el bando: cifras de TL_OPEN
     op = cstr_(f'"Herramientas\\{n}.exe" --operador{mo}')
     tl_path[t, 'op_cmd'] = place_data(f'tl_{n}_opcmd', op)
     sp = cstr_(f'"Herramientas\\{n}.exe" --espectador 00000000{mo}')
     tl_path[t, 'sp_cmd'] = place_data(f'tl_{n}_spcmd', sp)
     tl_path[t, 'mask'] = tl_path[t, 'sp_cmd'] + sp.index(b'00000000')   # carácter s: '1' si el bando s es humano de esta PC
     if t == 0:
-        tl_path[t, 'op_mo'] = tl_path[t, 'op_cmd'] + len(op) - 2
-        tl_path[t, 'sp_mo'] = tl_path[t, 'sp_cmd'] + len(sp) - 2
+        tl_path[t, 'op_mo'] = tl_path[t, 'op_cmd'] + op.index(b'--mocion ') + 9
+        tl_path[t, 'sp_mo'] = tl_path[t, 'sp_cmd'] + sp.index(b'--mocion ') + 9
+        tl_path[t, 'op_bd'] = tl_path[t, 'op_cmd'] + op.index(b'--bando ') + 8
+        tl_path[t, 'sp_bd'] = tl_path[t, 'sp_cmd'] + sp.index(b'--bando ') + 8
     tl_path[t, 'err'] = place_data(f'tl_{n}_err', cstr_(f'No se pudo abrir Herramientas\\{n}.exe'))
 
 # ---- Mociones de votación (mo_*; PENDIENTE-pedidos-15nov.md, D2). «Votacion» del menú de partida abre un submenú
@@ -10945,10 +10947,27 @@ for t, n in enumerate(TOOLS):
 # mismos datos (mo_apply), así no desincroniza. MO_EN: renglones habilitados (las mociones sin acción todavía, en gris).
 # Moción 1, «Partida a prueba»: con el SI de todos los humanos en juego, bit MO_PRUEBA de MO_FLAGS: la P en el mapa
 # (mo_pdraw) y el Visor de historia abre la partida aunque no haya terminado. MO_FLAGS va en el .SAV ('MOCI', dword).
-MO_ROWS = ['Votacion libre', 'Partida a prueba', 'Finalizacion', 'Descalificacion', 'Vale todo', 'Enganche']
-MO_ENABLED = [1, 1, 0, 0, 0, 0]
-MO_LIBRE, MO_P = 0, 1
-MO_PRUEBA = 1
+# Las demás se aprueban con más SI que NO (los votos humanos que carga el anfitrión y los virtuales de los bandos del
+# sistema, como los cuenta la Votación; pedido del usuario, 15/11/2026):
+# 2 «Finalizacion»: la partida termina como un acuerdo (hi_acu: pasa a HISTORY con su .FIN, el Visor la abre).
+# 3 «Descalificacion»: elegir la moción reabre el submenú (MO_ON = 2) con los 8 colores (habilitados los humanos vivos);
+#   el bando elegido viaja en el tercer dword de TL_OPEN (MO_TGT, --bando N a votacion.exe). Aprobada, queda anotada en
+#   MO_FLAGS (bits 8-11 = bando + 1) y al cerrarse la ronda (mo_round, en 0x4988d0, el mismo punto en todas las PC y sin
+#   nadie a mitad de un turno) el bando pasa al sistema como lo hace el juego cuando un jugador se desconecta (0x4c3205:
+#   +0xe2 = 2, máquina 0xff).
+# 4 «Vale todo»: bit MO_VALE de MO_FLAGS. No rigen los acuerdos del Reglamento del Clan (juego sin consejos, beneficio
+#   del más débil, ultimátum de ataque en la vuelta previa...; el programa no los hace cumplir): es una declaración, a la
+#   vista con una V en el mapa (mo_pdraw) y en el .SAV.
+# 5 «Enganche»: aprobada, bit MO_ENGP; al cerrarse la ronda, el humano eliminado (bando en la partida, muerto, humano, y
+#   su PC sin otro bando vivo) toma el bando del sistema vivo con menos puntos (0x440840 → 0x5643c8): +0xe2 = -1 y la
+#   máquina del eliminado. Sin eliminado o sin bando del sistema vivo, no pasa nada.
+# Textos a la vista en inglés (pedido del usuario, 15/11/2026: el juego se va a distribuir; otros idiomas, con un
+# parche aparte). En los comentarios siguen los nombres en castellano.
+MO_ROWS = ['Free vote', 'Test game', 'Early end', 'Disqualification', 'Anything goes', 'Re-entry']
+MO_ENABLED = [1, 1, 1, 1, 1, 1]
+MO_LIBRE, MO_P, MO_FIN, MO_DESC, MO_VT, MO_ENG = range(6)
+MO_PRUEBA, MO_VALE, MO_DMASK, MO_ENGP = 1, 2, 0xf00, 0x1000
+MO_COLS = ['White', 'Yellow', 'Orange', 'Red', 'Green', 'Blue', 'Light Blue', 'Black']
 MO_DLG = 134                 # siguiente id de la tabla de diálogos, después de BM_DLG (ver table_add, más abajo)
 MO_RES = 139                 # siguiente id de los recursos de diálogo, después de BM_RES
 # Renglones del menú de partida de arriba abajo (MENU del diálogo 35, más abajo): textos y zonas de clic.
@@ -10957,12 +10976,22 @@ MO_HOT = [0xb, 0xc, VOTE_HOT, 0xd, 0xe, 0xf, 0x10, 0x11, 0x12, 0x13, 0x18, 0x14]
 MO_NROW = len(MO_TXT)
 mo_vars = place_data('mo_vars', bytes(32))
 MO_ON, MO_CUR, MO_MARKS = mo_vars, mo_vars + 4, mo_vars + 8    # MO_MARKS: las 8 marcas s/n/- del último estado
+MO_TGT = mo_vars + 16                                          # bando de la Descalificación en curso
 mo_save = place_data('mo_save', b'MOCI' + bytes(4))           # tal cual se escribe al final del .SAV
 MO_FLAGS = mo_save + 4
 mo_magic = place_data('mo_magic', bytes(4))
-mo_en = place_data('mo_en', bytes(MO_ENABLED + [0] * (MO_NROW - len(MO_ENABLED))))
-mo_strs = place_data('mo_strs', struct.pack(f'<{MO_NROW}I', *([place_data(f'mo_s{i}', cstr_(t)) for i, t in enumerate(MO_ROWS)]
-                                                              + [place_data('mo_empty', b'\0')] * (MO_NROW - len(MO_ROWS)))))
+# mo_en/mo_strs: los renglones del submenú abierto; mo_en1/mo_strs1, los de las mociones (mo_open los copia).
+_mo_empty = place_data('mo_empty', b'\0')
+_mo_s1 = struct.pack(f'<{MO_NROW}I', *([place_data(f'mo_s{i}', cstr_(t)) for i, t in enumerate(MO_ROWS)]
+                                       + [_mo_empty] * (MO_NROW - len(MO_ROWS))))
+_mo_e1 = bytes(MO_ENABLED + [0] * (MO_NROW - len(MO_ENABLED)))
+mo_en1 = place_data('mo_en1', _mo_e1)
+mo_strs1 = place_data('mo_strs1', _mo_s1)
+mo_cols = place_data('mo_cols', struct.pack('<8I', *[place_data(f'mo_c{i}', cstr_(t)) for i, t in enumerate(MO_COLS)]))
+mo_en = place_data('mo_en', _mo_e1)
+mo_strs = place_data('mo_strs', _mo_s1)
+mo_fintxt = place_data('mo_fintxt', cstr_('Early end approved by vote'))
+mo_acup = place_data('mo_acup', bytes(4))   # puntero a hi_acu (definido más abajo; se llena al definirlo)
 mo_txt = place_data('mo_txt', struct.pack(f'<{MO_NROW}I', *MO_TXT))
 mo_hot = place_data('mo_hot', struct.pack(f'<{MO_NROW}I', *MO_HOT))
 
@@ -10975,7 +11004,7 @@ mo_hot = place_data('mo_hot', struct.pack(f'<{MO_NROW}I', *MO_HOT))
 # partida por minutos ([0x5032f8+0x4c], -1 si no hay); el despacho de mensajes descarta teclas y botones del mouse
 # (no se deshabilita la ventana: al cerrarse la Votación, Windows no le devolvería el foco a una ventana deshabilitada);
 # y se mantiene un aviso en pantalla con 0x4c2790 (4 renglones de 64 bytes en 0x5885e8, vencimiento en 0x5885d8).
-PZ_TEXT = 'Votacion en curso: partida en pausa'
+PZ_TEXT = 'Voting in progress: game paused'
 PZ_WATCH = 60000
 TURN_END, GRACE_END, GAMECLK, MSG_TXT, MSG_END = 0x4ff7a8, 0x5885cc, 0x5032f8, 0x5885e8, 0x5885d8
 DISPATCH = 0x5a9c5c   # DispatchMessageA
@@ -10986,7 +11015,7 @@ PZ_ON, PZ_ARM, PZ_LAST, PZ_SEEN = pz_vars, pz_vars + 1, pz_vars + 4, pz_vars + 8
 # Pausa manual más abajo). Cada una se arma y se suelta por su lado; la partida sigue cuando no queda ninguna.
 PZ_VOTO, PZ_MANUAL = 1, 2
 # Aviso en pantalla de la pausa manual; pz_find busca el que corresponde (pz_cur), no siempre el de la Votación.
-PP_TEXT = 'Partida en pausa: Espacio o Esc reanuda'
+PP_TEXT = 'Game paused: Space or Esc resumes'
 pp_text = place_data('pp_text', cstr_(PP_TEXT))
 pz_cur = place_data('pz_cur', struct.pack('<I', pz_text))
 PP_PKT = 0x2a5                                       # carga: 1 pausar, 0 reanudar (dword)
@@ -11228,7 +11257,7 @@ pf_found:
     ret
 ''')
 
-pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pausa'))
+pp_fmt = place_data('pp_fmt', cstr_('%s_%d_pause'))
 pp_name = place_data('pp_name', bytes(0x80))
 # Desde 1.0.225.0 (15/11/2026: la partida guardada en la pausa no se podía cargar en red, "no todos los jugadores
 # pueden unirse", porque solo la PC que pidió la pausa tenía el archivo) guarda cada PC al recibir PP_PKT 1 (el eco
@@ -11527,7 +11556,7 @@ vt_save = place_data('vt_save', b'VOTA' + bytes(4 + VT_MAX * 0x1c))   # tal cual
 VT_N, VT_TAB = vt_save + 4, vt_save + 8
 vt_vars = place_data('vt_vars', bytes(0x20))   # +0 pendiente, +4 reinicios, +8 SI, +0xa NO, +0xc 'VOTA' leído, +0x10 sesión
 VT_HAVE, VT_RES, VT_SI, VT_NO, VT_MAGIC, VT_SES = (vt_vars + o for o in (0, 4, 8, 0xa, 0xc, 0x10))
-vt_fmt = place_data('vt_fmt', cstr_('Resultados votacion: %d por el SI, %d por el NO'))
+vt_fmt = place_data('vt_fmt', cstr_('Voting results: %d YES, %d NO'))
 vt_owner = place_data('vt_owner', struct.pack('<I', VT_NOBODY))   # el bando que abrió la Votación en curso
 
 # Llegó la orden de abrir la Votación: la abre el anfitrión (máquina 0), así que el bando que la pidió es el primero
@@ -11594,13 +11623,48 @@ VT_SKIP = lambda l: f'''
     jne {l}
 '''
 # La Votación se cerró con votos (antes de anotarlos): aplicar la moción en curso. «Partida a prueba»: todo bando en
-# juego y humano tiene que haber votado SI (las marcas de MO_MARKS, en el orden de los bandos). Conserva los registros.
+# juego y humano tiene que haber votado SI (las marcas de MO_MARKS, en el orden de los bandos). Las demás: más SI que
+# NO (VT_SI, VT_NO). Conserva los registros.
 mo_apply = place('mo_apply', f'''
     pushad
     cmp byte ptr [{VT_HAVE:#x}], 0
     je ma_end
-    cmp dword ptr [{MO_CUR:#x}], {MO_P}
+    mov eax, dword ptr [{MO_CUR:#x}]
+    cmp eax, {MO_P}
+    je ma_p
+    test eax, eax
+    jz ma_end
+    mov cx, word ptr [{VT_SI:#x}]
+    cmp cx, word ptr [{VT_NO:#x}]
+    jbe ma_end
+    cmp eax, {MO_FIN}
+    jne ma_3
+    push {mo_fintxt:#x}
+    call dword ptr [{mo_acup:#x}]
+    add esp, 4
+    jmp ma_end
+ma_3:
+    cmp eax, {MO_DESC}
+    jne ma_4
+    mov eax, dword ptr [{MO_TGT:#x}]
+    cmp eax, 8
+    jae ma_end
+    inc eax
+    shl eax, 8
+    and dword ptr [{MO_FLAGS:#x}], {~MO_DMASK & 0xffffffff:#x}
+    or dword ptr [{MO_FLAGS:#x}], eax
+    jmp ma_end
+ma_4:
+    cmp eax, {MO_VT}
+    jne ma_5
+    or dword ptr [{MO_FLAGS:#x}], {MO_VALE}
+    jmp ma_end
+ma_5:
+    cmp eax, {MO_ENG}
     jne ma_end
+    or dword ptr [{MO_FLAGS:#x}], {MO_ENGP}
+    jmp ma_end
+ma_p:
     xor ecx, ecx
     xor edx, edx
 ma_l:
@@ -11722,8 +11786,104 @@ vs_end:
     ret
 ''')
 
-# Vaciado de la tabla de sucesos (0x4988d0: partida nueva y fin de ronda): también la de votaciones.
+# Mociones pendientes al cerrarse la ronda (mo_round, desde vt_clear; ver MO_ROWS): la Descalificación (bits MO_DMASK
+# = bando + 1) pasa el bando al sistema si sigue siendo humano y en la partida; el Enganche (MO_ENGP) le da al humano
+# eliminado el bando del sistema vivo con menos puntos. Conserva los registros.
+SIDE_ALIVE = SIDE_ON + 1
+mo_round = place('mo_round', f'''
+    pushad
+    mov eax, dword ptr [{MO_FLAGS:#x}]
+    and eax, {MO_DMASK:#x}
+    jz mr_eng
+    and dword ptr [{MO_FLAGS:#x}], {~MO_DMASK & 0xffffffff:#x}
+    shr eax, 8
+    dec eax
+    imul ebx, eax, {SIDE:#x}
+    cmp byte ptr [ebx + {SIDE_ON:#x}], 0
+    je mr_eng
+    cmp word ptr [ebx + {SIDE_HUMAN:#x}], -1
+    jne mr_eng
+    mov word ptr [ebx + {SIDE_HUMAN:#x}], 2
+    mov byte ptr [ebx + {SIDE_MACHINE:#x}], 0xff
+mr_eng:
+    test dword ptr [{MO_FLAGS:#x}], {MO_ENGP:#x}
+    jz mr_end
+    and dword ptr [{MO_FLAGS:#x}], {~MO_ENGP & 0xffffffff:#x}
+    xor ecx, ecx
+me_l:
+    imul ebx, ecx, {SIDE:#x}
+    cmp byte ptr [ebx + {SIDE_ON:#x}], 0
+    je me_n
+    cmp byte ptr [ebx + {SIDE_ALIVE:#x}], 0
+    jne me_n
+    cmp word ptr [ebx + {SIDE_HUMAN:#x}], -1
+    jne me_n
+    mov dl, byte ptr [ebx + {SIDE_MACHINE:#x}]
+    xor esi, esi
+mq_l:
+    imul edi, esi, {SIDE:#x}
+    cmp byte ptr [edi + {SIDE_ON:#x}], 0
+    je mq_n
+    cmp byte ptr [edi + {SIDE_ALIVE:#x}], 0
+    je mq_n
+    cmp word ptr [edi + {SIDE_HUMAN:#x}], -1
+    jne mq_n
+    cmp byte ptr [edi + {SIDE_MACHINE:#x}], dl
+    je me_n
+mq_n:
+    inc esi
+    cmp esi, 8
+    jb mq_l
+    jmp me_found
+me_n:
+    inc ecx
+    cmp ecx, 8
+    jb me_l
+    jmp mr_end
+me_found:
+    push ecx
+    push edx
+    call 0x440840
+    pop edx
+    pop ecx
+    or ebp, -1
+    mov edi, 0x7fffffff
+    xor esi, esi
+mp_l:
+    imul eax, esi, {SIDE:#x}
+    cmp byte ptr [eax + {SIDE_ON:#x}], 0
+    je mp_n
+    cmp byte ptr [eax + {SIDE_ALIVE:#x}], 0
+    je mp_n
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    je mp_n
+    movsx eax, word ptr [esi*2 + 0x5643c8]
+    cmp eax, edi
+    jge mp_n
+    mov edi, eax
+    mov ebp, esi
+mp_n:
+    inc esi
+    cmp esi, 8
+    jb mp_l
+    test ebp, ebp
+    js mr_end
+    imul eax, ebp, {SIDE:#x}
+    mov word ptr [eax + {SIDE_HUMAN:#x}], -1
+    mov byte ptr [eax + {SIDE_MACHINE:#x}], dl
+    imul eax, ecx, {SIDE:#x}
+    mov word ptr [eax + {SIDE_HUMAN:#x}], 2
+mr_end:
+    popad
+    ret
+''')
+# Vaciado de la tabla de sucesos (0x4988d0: partida nueva y fin de ronda): también la de votaciones, y las mociones
+# pendientes (mo_round) solo en el fin de ronda (llamada desde 0x498c18, dentro de 0x4989d0), no en la partida nueva.
 vt_clear = place('vt_clear', f'''
+    cmp dword ptr [esp], 0x498c1d
+    jne vc_nr
+    call {mo_round:#x}
+vc_nr:
     mov dword ptr [{VT_N:#x}], 0
     push ebx
     push esi
@@ -15036,7 +15196,7 @@ tl_sendopen = place('tl_sendopen', f'''
     jnz tso_end
     mov eax, dword ptr [esp + 4]
     mov dword ptr [{tl_openpkt:#x}], eax
-    push 8
+    push 12
     push {tl_openpkt:#x}
     push {TL_OPEN:#x}
     call 0x4dd3b0
@@ -15054,6 +15214,18 @@ mo_recv = place('mo_recv', f'''
     jb mr_set
     xor eax, eax
 mr_set:
+    mov ecx, dword ptr [esi + 0x14]
+    cmp eax, {MO_DESC}
+    jne mr_bd
+    cmp ecx, 8
+    jb mr_bd
+    xor eax, eax
+mr_bd:
+    and ecx, 7
+    mov dword ptr [{MO_TGT:#x}], ecx
+    add cl, 0x30
+    mov byte ptr [{tl_path[0, 'op_bd']:#x}], cl
+    mov byte ptr [{tl_path[0, 'sp_bd']:#x}], cl
     mov dword ptr [{MO_CUR:#x}], eax
     add al, 0x30
     mov byte ptr [{tl_path[0, 'op_mo']:#x}], al
@@ -15381,9 +15553,9 @@ mo_norm = place('mo_norm', f'''
     mov eax, 0xffffffff
     jmp 0x4bcb98
 ''')
-# mo_open: copia de 0x4bcb90 (abrir el menú de partida) en -1, -1 con el diálogo MO_DLG y MO_ON = 1.
-mo_open = place('mo_open', f'''
-    mov byte ptr [{MO_ON:#x}], 1
+# mo_open: copia de 0x4bcb90 (abrir el menú de partida) en -1, -1 con el diálogo MO_DLG y MO_ON = 1 (mociones, de
+# mo_en1/mo_strs1); mo_open2: MO_ON = 2, los 8 colores para la Descalificación (habilitados los humanos vivos).
+mo_body = place('mo_body', f'''
     sub esp, 8
     mov eax, 0xffffffff
     mov dword ptr [esp + 4], eax
@@ -15423,7 +15595,50 @@ mo_open = place('mo_open', f'''
     add esp, 8
     ret
 ''')
+mo_open = place('mo_open', f'''
+    pushad
+    cld
+    mov esi, {mo_en1:#x}
+    mov edi, {mo_en:#x}
+    mov ecx, {MO_NROW}
+    rep movsb
+    mov esi, {mo_strs1:#x}
+    mov edi, {mo_strs:#x}
+    mov ecx, {MO_NROW * 4}
+    rep movsb
+    popad
+    mov byte ptr [{MO_ON:#x}], 1
+    jmp {mo_body:#x}
+''')
+mo_open2 = place('mo_open2', f'''
+    pushad
+    mov byte ptr [{MO_ON:#x}], 2
+    xor ecx, ecx
+mo2_l:
+    mov eax, {_mo_empty:#x}
+    xor edx, edx
+    cmp ecx, 8
+    jae mo2_set
+    mov eax, dword ptr [ecx*4 + {mo_cols:#x}]
+    imul ebx, ecx, {SIDE:#x}
+    cmp byte ptr [ebx + {SIDE_ON:#x}], 0
+    je mo2_set
+    cmp byte ptr [ebx + {SIDE_ON + 1:#x}], 0
+    je mo2_set
+    cmp word ptr [ebx + {SIDE_HUMAN:#x}], -1
+    jne mo2_set
+    inc edx
+mo2_set:
+    mov dword ptr [ecx*4 + {mo_strs:#x}], eax
+    mov byte ptr [ecx + {mo_en:#x}], dl
+    inc ecx
+    cmp ecx, {MO_NROW}
+    jb mo2_l
+    popad
+    jmp {mo_body:#x}
+''')
 # Clic en el submenú (eax = zona): si el renglón está habilitado, cierra y manda abrir la Votación con esa moción.
+# «Descalificacion» reabre el submenú con los colores (mo_open2); ahí, el color elegido va de bando con la moción.
 mo_click = place('mo_click', f'''
     xor ecx, ecx
 mc_l:
@@ -15436,7 +15651,21 @@ mc_l:
 mc_f:
     cmp byte ptr [ecx + {mo_en:#x}], 0
     je mc_r
+    cmp byte ptr [{MO_ON:#x}], 2
+    je mc_tgt
+    cmp ecx, {MO_DESC}
+    je mc_desc
     mov dword ptr [{tl_openpkt + 4:#x}], ecx
+    mov dword ptr [{tl_openpkt + 8:#x}], 0
+    jmp mc_send
+mc_desc:
+    mov ecx, 0x588bd0
+    call 0x4d7d70
+    jmp {mo_open2:#x}
+mc_tgt:
+    mov dword ptr [{tl_openpkt + 4:#x}], {MO_DESC}
+    mov dword ptr [{tl_openpkt + 8:#x}], ecx
+mc_send:
     mov byte ptr [{MO_ON:#x}], 0
     mov ecx, 0x588bd0
     call 0x4d7d70
@@ -15709,7 +15938,7 @@ dc_click = place('dc_click', f'''
 BK_TXT, BK_HOT = 0x11, 0x12        # el diálogo 93 tiene los controles 1 a 0x10
 FINDWIN, POSTMSG = 0x5a9c68, 0x5a9c70
 DC_CLOSE_TITLE = 'DarkCompare.Juego.Cerrar'   # contrato con DarkCompare (Program.TituloCierre)
-bk_text = place_data('bk_text', cstr_('Comparador'))
+bk_text = place_data('bk_text', cstr_('Compare'))
 dc_ctitle = place_data('dc_ctitle', cstr_(DC_CLOSE_TITLE))
 dc_close = place('dc_close', f'''
     pushad
@@ -18074,7 +18303,7 @@ BM_PASO = 18                 # como el menú de la ciudad (captura del usuario, 
 BM_Y0 = 80                   # bloque de 8 centrado donde el menú de órdenes reparte los suyos (53..233): 143 - 3,5 * 18
 bm_vars = place_data('bm_vars', bytes(32))
 BM_ON, BM_EN, BM_SAVE = bm_vars, bm_vars + 1, bm_vars + 16      # BM_EN: 13 bytes, uno por renglón; BM_SAVE: 12 bytes
-BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Faro', 'Stone Wall', 'Repair Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
+BM_ROWS = ['Rebuild City/Site', 'Road', 'Bridge', 'Port', 'Watchtower', 'Lighthouse', 'Stone Wall', 'Repair Wall']   # la trampa volvió al menú de órdenes (9/11/2026)
 BM_TXT = [0x15] + list(range(1, 11)) + [TR_TXT, BD_TXT]          # renglones de arriba abajo (ORD del diálogo 34)
 BM_HOT = [0x16] + list(range(0xb, 0x15)) + [TR_HOT, BD_HOT]
 bm_empty = place_data('bm_empty', b'\0')
@@ -20297,6 +20526,7 @@ hc_out:
     popad
     ret
 ''')
+caves['mo_acup'] = struct.pack('<I', hi_acu) + caves['mo_acup'][4:]   # mo_apply (Finalización)
 hi_gofin = place('hi_gofin', f'''
     call {hi_fin:#x}
     call {hi_wpod:#x}
@@ -20335,37 +20565,60 @@ GO_FILE = SEAL_FILE + 1
 # los avisos (0x4c2810(superficie, x0, y0, ...), x0 y0 = origen del mapa en la pantalla).
 MOP_FILE = GO_FILE + 1
 MOP_W, MOP_H, MOP_M = 34, 40, 8
-mo_pdraw = place('mo_pdraw', f'''
-    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
-    jz mp_go
-    pushad
-    push {MOP_FILE}
+# Vale todo (MO_VALE): hoja MOV_FILE = RUINS\valetodo.pcx con una V (roja con borde amarillo), a la derecha de la P.
+MOV_FILE = MOP_FILE + 1
+# mo_one(dx, hoja): pega la hoja en (x0 + dx, y0 + MOP_M); ebx = superficie, esi = x0, edi = y0 (mo_pdraw).
+mo_one = place('mo_one', f'''
+    mov ebp, dword ptr [esp + 8]
+    push ebp
     mov ecx, 0x58cf78
     call 0x4e4a90
     test eax, eax
-    jz mp_end
+    jz mo1_r
     cmp dword ptr [eax + 8], 0
-    jne mp_blit
-    push {MOP_FILE}
+    jne mo1_b
+    push ebp
     call 0x4dd3f0
     add esp, 4
     test eax, eax
-    jz mp_end
-mp_blit:
-    movsx eax, word ptr [esp + 0x2c]
-    add eax, {MOP_M}
+    jz mo1_r
+mo1_b:
+    lea eax, [edi + {MOP_M}]
     push eax
-    movsx eax, word ptr [esp + 0x2c]
-    add eax, {MOP_M}
+    mov eax, esi
+    add eax, dword ptr [esp + 8]
     push eax
-    push dword ptr [esp + 0x2c]
+    push ebx
     push {MOP_H}
     push {MOP_W}
     push 0
     push 0
-    push {MOP_FILE}
+    push ebp
     call 0x4dd530
     add esp, 0x20
+mo1_r:
+    ret
+''')
+mo_pdraw = place('mo_pdraw', f'''
+    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA | MO_VALE}
+    jz mp_go
+    pushad
+    mov ebx, dword ptr [esp + 0x24]
+    movsx esi, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
+    jz mp_v
+    push {MOP_FILE}
+    push {MOP_M}
+    call {mo_one:#x}
+    add esp, 8
+mp_v:
+    test byte ptr [{MO_FLAGS:#x}], {MO_VALE}
+    jz mp_end
+    push {MOV_FILE}
+    push {MOP_M + MOP_W + 4}
+    call {mo_one:#x}
+    add esp, 8
 mp_end:
     popad
 mp_go:
@@ -20379,11 +20632,11 @@ GO_K32 = place_data('go_k32', cstr_('KERNEL32.DLL'))
 GO_GLTN = place_data('go_gltn', cstr_('GetLocalTime'))
 GO_GLT = place_data('go_glt', bytes(4))
 GO_ST = place_data('go_st', bytes(16))
-GO_T0 = place_data('go_t0', cstr_('Partida finalizada'))
-GO_TFMT = place_data('go_tfmt', cstr_('Partida finalizada %d/%d/%d'))
+GO_T0 = place_data('go_t0', cstr_('Game over'))
+GO_TFMT = place_data('go_tfmt', cstr_('Game over %d/%d/%d'))
 GO_TBUF = place_data('go_tbuf', bytes(48))
-GO_ARMAS = place_data('go_armas', cstr_('Armas'))
-GO_PFMT = place_data('go_pfmt', cstr_('corresponde a la partida "%s"'))
+GO_ARMAS = place_data('go_armas', cstr_('Armies'))
+GO_PFMT = place_data('go_pfmt', cstr_('belongs to the game "%s"'))
 GO_PBUF = place_data('go_pbuf', bytes(128))
 GETMOD, STRNCMP = 0x5a984c, 0x5a9bf0
 go_resolve = place('go_resolve', f'''
@@ -22679,6 +22932,23 @@ for _y in range(MOP_H):
         if _v >= 192: mop_hoja.putpixel((_x, _y), _verde)
         elif _v >= 64: mop_hoja.putpixel((_x, _y), _rojo)
 pcx = io.BytesIO(); mop_hoja.save(pcx, 'PCX'); MOP_PCX = pcx.getvalue()
+# Hoja MOV_FILE = RUINS\valetodo.pcx (Vale todo): la V en Arial Bold, roja con borde amarillo, como la P.
+struct.pack_into('<I', henge, 0, MOV_FILE)
+setstr(henge, 4, 32, 'valetodo')
+table_add(res, 2, MOV_FILE, bytes(henge))
+_amar = _cerca((255, 220, 0))
+_m = Image.new('L', (MOP_W, MOP_H), 0); _md = ImageDraw.Draw(_m)
+_bb = _md.textbbox((0, 0), 'V', font=_fnt, stroke_width=3)
+_org = ((MOP_W - (_bb[2] - _bb[0])) // 2 - _bb[0], (MOP_H - (_bb[3] - _bb[1])) // 2 - _bb[1])
+_md.text(_org, 'V', font=_fnt, fill=255, stroke_width=3, stroke_fill=128)
+assert _m.getbbox() and _m.getbbox()[0] >= 0 and _m.getbbox()[2] <= MOP_W and _m.getbbox()[3] <= MOP_H
+mov_hoja = Image.new('P', (MOP_W, MOP_H), 11); mov_hoja.putpalette(_pal)
+for _y in range(MOP_H):
+    for _x in range(MOP_W):
+        _v = _m.getpixel((_x, _y))
+        if _v >= 192: mov_hoja.putpixel((_x, _y), _rojo)
+        elif _v >= 64: mov_hoja.putpixel((_x, _y), _amar)
+pcx = io.BytesIO(); mov_hoja.save(pcx, 'PCX'); MOV_PCX = pcx.getvalue()
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -23155,6 +23425,7 @@ NUEVOS[os.path.join('RUINS', 'aviso.pcx')] = PZ_PCX
 NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
 NUEVOS[os.path.join('RUINS', 'prueba.pcx')] = MOP_PCX
+NUEVOS[os.path.join('RUINS', 'valetodo.pcx')] = MOV_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

@@ -286,7 +286,7 @@ oculto). El anfitrión lo opera; los demás lo ven como espectadores, con sus ba
 herramientas (Actualizador, opción 9 o 12); si falta, el juego lo avisa.</p>
 
 <h2>Comparador de armas</h2>
-<figure style="float:right;margin:0 0 2mm 5mm"><img src="img/comparador_icono.png" style="width:20mm"><figcaption>Botón Comparador</figcaption></figure>
+<figure style="float:right;margin:0 0 2mm 5mm"><img src="img/comparador_icono.png" style="width:20mm"><figcaption>Botón Comparador (Compare)</figcaption></figure>
 <p>En <i>Edit Side</i>, arriba a la izquierda junto a <i>Armies</i>, un botón con el ícono de DarkCompare abre el
 comparador de armas sobre los ejércitos de la carpeta del juego. Es local: cada jugador lo abre en su PC, en cualquier
 momento, y no afecta a los demás. Si ya está abierto, trae su ventana al frente.</p>
@@ -589,37 +589,54 @@ precedido de un punto (<code>.n</code>, de 1 a 8; se escribe con la tecla <kbd>.
 <!-- ============================================================ X -->
 <h1><span class="num">Capítulo XI</span>La Votación</h1>
 <h2>Abrirla</h2>
-<p>En el menú de la partida hay una línea nueva, <b>Votacion</b>. La usa el anfitrión: el programa Votación se abre en
+<p>En el menú de la partida hay una línea nueva, <b>Voting</b>. La usa el anfitrión: el programa Votación se abre en
 todas las PC, el anfitrión como operador y los demás como espectadores.</p>
 <h2>Pausa mientras se vota</h2>
 <ul>
   <li>Mientras la votación está abierta, la partida queda <b>en pausa</b> en todas las PC: se detiene el reloj del
   turno y del fin de partida, y el juego ignora teclado y mouse. En pantalla aparece un cartel sobre un <b>papiro</b> (el mismo de los cuadros de
-  información) con el aviso <i>«Votacion en curso: partida en pausa»</i>.</li>
+  información) con el aviso <i>«Voting in progress: game paused»</i>.</li>
   <li>Si el programa deja de responder durante 60 segundos, la partida se reanuda sola.</li>
   <li>Los turnos de la computadora siguen corriendo.</li>
-  <li>La línea <b>Pausa</b> del menú de partida (antes <i>Chat Mode</i>) pone la partida en pausa a pedido de cualquier
+  <li>La línea <b>Pause</b> del menú de partida (antes <i>Chat Mode</i>) pone la partida en pausa a pedido de cualquier
   jugador. En una partida en red, <b>todas las PC</b> guardan en ese momento la misma partida, con el nombre
-  <i>«&lt;partida&gt;_&lt;turno&gt;_pausa»</i> (carpeta NETSAVES): así se puede volver a cargar en red desde ese punto,
+  <i>«&lt;partida&gt;_&lt;turno&gt;_pause»</i> (carpeta NETSAVES): así se puede volver a cargar en red desde ese punto,
   porque cada jugador tiene el mismo archivo.</li>
 </ul>
 <h2>El resultado en el Events Report</h2>
 <p>Al cerrar o reiniciar una votación con al menos un voto, el resultado (SÍ y NO, con el escudo del bando que la abrió)
 queda en el <i>Events Report</i> de la ronda y se guarda con la partida.</p>
 <h2>Mociones de votación</h2>
-<p>Desde la versión 1.0.226.0, la línea <b>Votacion</b> abre un submenú con <b>mociones</b>: votaciones con una
+<p>Desde la versión 1.0.226.0, la línea <b>Voting</b> abre un submenú con <b>mociones</b>: votaciones con una
 acción ya definida, que el juego aplica solo si la votación se cierra con resultado afirmativo. La Votación se abre en
-todas las PC con la moción escrita en el título y en un cartel de la columna derecha (Votación 1.1.5 o posterior).
+todas las PC con la moción escrita en el título y en un cartel de la columna derecha (Votación 1.1.7 o posterior).
 <span class="estado e-pr">en prueba</span></p>
+<p><b>Cuándo se aprueba.</b> «Partida a prueba» necesita el SÍ de todos los humanos. Las demás mociones se aprueban,
+desde la versión 1.0.227.0, con <b>más SÍ que NO</b>, tal como los cuenta el programa Votación: los votos de los
+humanos, que carga el anfitrión, más los votos virtuales (al azar) de los bandos de la computadora. Con empate no se
+aprueba.</p>
 <ul>
-  <li><b>Votacion libre</b>: la votación de siempre, sin acción.</li>
-  <li><b>Partida a prueba</b>: marca la partida «a prueba». Se aprueba solo si <b>todos</b> los jugadores humanos que
-  siguen en juego votan SÍ (los bandos de la computadora no cuentan). La marca se guarda con la partida y el mapa
-  muestra una <b>P</b> verde con borde rojo en la esquina superior izquierda. Una partida marcada se puede abrir en el
-  Visor de historia aunque no haya terminado.</li>
-  <li><b>Finalizacion</b>, <b>Descalificacion</b>, <b>Vale todo</b> y <b>Enganche</b> aparecen en gris: llegan en
-  próximas versiones.</li>
+  <li><b>Free vote</b> (votación libre): la votación de siempre, sin acción.</li>
+  <li><b>Test game</b> (partida a prueba): marca la partida «a prueba». Se aprueba solo si <b>todos</b> los jugadores
+  humanos que siguen en juego votan SÍ (los bandos de la computadora no cuentan). La marca se guarda con la partida y
+  el mapa muestra una <b>P</b> verde con borde rojo en la esquina superior izquierda. Una partida marcada se puede abrir
+  en el Visor de historia aunque no haya terminado.</li>
+  <li><b>Early end</b> (finalización anticipada): aprobada, la partida termina en ese momento en todas las PC, como un
+  acuerdo de paz: pasa a la historia (carpeta HISTORY) y el Visor de historia la abre.</li>
+  <li><b>Disqualification</b> (descalificación): al elegirla, el submenú muestra los ocho colores; solo se pueden elegir
+  los bandos humanos que siguen vivos. La Votación muestra el color en la moción (por ejemplo
+  <i>«Disqualification: Red»</i>). Aprobada, al terminar la ronda ese bando pasa a la computadora, igual que cuando un
+  jugador se desconecta.</li>
+  <li><b>Anything goes</b> (vale todo): aprobada, desde ese momento <b>no rigen los acuerdos del Reglamento del
+  Clan</b> (juego sin consejos, beneficio del más débil, ultimátum de ataque en la vuelta previa, etc.). El juego no
+  hace cumplir esas reglas: la moción es una declaración, que se guarda con la partida y se ve en el mapa con una
+  <b>V</b> roja con borde amarillo al lado de la P.</li>
+  <li><b>Re-entry</b> (enganche): aprobada, al terminar la ronda el jugador humano eliminado toma el bando de la
+  computadora que sigue vivo con <b>menos puntos</b>. Si no hay un humano eliminado, o no queda ningún bando de la
+  computadora vivo, no pasa nada.</li>
 </ul>
+<p>Los cambios de dueño (descalificación y enganche) esperan al final de la ronda para que ningún bando cambie de manos
+a mitad de un turno, y se aplican igual en todas las PC.</p>
 
 <!-- ============================================================ XI -->
 <h1><span class="num">Capítulo XII</span>Mapas al azar e ítems</h1>
@@ -768,7 +785,7 @@ todos. Las 25 reglas están en el capítulo IX.</div>
 <h2>Votación</h2>
 <ul>
   <li>Programa de votación SÍ/NO para decisiones durante la partida.</li>
-  <li>Desde el juego lo abre el anfitrión con la línea <i>Votacion</i> del menú de partida; los demás votan desde sus PC
+  <li>Desde el juego lo abre el anfitrión con la línea <i>Voting</i> del menú de partida; los demás votan desde sus PC
   y la partida queda en pausa mientras dura, con el cartel del papiro a la vista (capítulo XI).</li>
 </ul>
 <figure class="captura"><img src="img/capturas/votacion.png" style="width:110mm"><figcaption>Votación</figcaption></figure>
@@ -834,7 +851,7 @@ el campo, y quien las defiende pelea con ventaja.</p>
 obra. Cada una cuesta la mitad de fundar una ciudad.</p>
 <ul>
   <li><b>Torre de vigía.</b> Despeja la niebla a 4 casillas para su dueño y sus aliados.</li>
-  <li><b>Faro.</b> Igual, a 6 casillas; necesita agua en una de las cuatro casillas vecinas. De noche proyecta un haz
+  <li><b>Faro</b> (<i>Lighthouse</i> en el menú). Igual, a 6 casillas; necesita agua en una de las cuatro casillas vecinas. De noche proyecta un haz
   de luz giratorio (capítulo VIII).</li>
   <li><b>Empalizada y muro de piedra.</b> Cierran el paso. Un bloque de muro enemigo se ataca como una casilla con
   ejércitos: lo defienden 24 arqueros del dueño y cae cuando mueren los 24. El dueño lo repara (renglón 7 de
@@ -893,8 +910,9 @@ saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decid
 <tr><td>Sembrar una trampa</td><td>Grupo con bono Trap en la casilla → menú de órdenes → <i>Build Trap</i></td></tr>
 <tr><td>Ver un pozo o trampa</td><td>Mouse encima (lupa) y botón derecho</td></tr>
 <tr><td>Ordenar a un aliado de la IA</td><td>Chat: <code>#n ataca CIUDAD</code>, <code>#n ataca a BANDO</code>, <code>#n mandame refuerzos</code></td></tr>
-<tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Votacion</i> → moción</td></tr>
-<tr><td>Marcar la partida «a prueba»</td><td>Anfitrión: <i>Votacion</i> → <i>Partida a prueba</i>; todos los humanos votan SÍ</td></tr>
+<tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Voting</i> → moción</td></tr>
+<tr><td>Marcar la partida «a prueba»</td><td>Anfitrión: <i>Voting</i> → <i>Test game</i>; todos los humanos votan SÍ</td></tr>
+<tr><td>Terminar, descalificar, vale todo, enganche</td><td>Anfitrión: <i>Voting</i> → <i>Early end</i>, <i>Disqualification</i> (y el color), <i>Anything goes</i> o <i>Re-entry</i>; más SÍ que NO</td></tr>
 <tr><td>Sortear bandos</td><td>Anfitrión: botón Sorteo junto a <i>Chat</i>, en la preparación</td></tr>
 <tr><td>Comparar armas</td><td><i>Edit Side</i> → botón DarkCompare</td></tr>
 <tr><td>Jugar con día y noche</td><td><i>Customize Options</i> → <i>Day/Night</i></td></tr>
@@ -942,7 +960,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <tr><td>Army List con las 25 reglas</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Órdenes por chat a la IA</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Votación, Sorteo y pausa</td><td><span class="estado e-pr">en prueba</span> en otras PC del clan</td></tr>
-<tr><td>Mociones de votación (Partida a prueba, marca P, Visor)</td><td><span class="estado e-pr">en prueba</span></td></tr>
+<tr><td>Mociones de votación (las seis, marcas P y V, Visor)</td><td><span class="estado e-pr">en prueba</span></td></tr>
 <tr><td>IA: economía (reserva, freno de producción, pilas sueltas, repliegue)</td><td><span class="estado e-pr">en prueba</span> en partidas del clan; confirmada en el banco</td></tr>
 <tr><td>IA de alianzas</td><td><span class="estado e-pr">en prueba</span> (series A/B)</td></tr>
 <tr><td>Pozos y trampas en red (misma tabla en todas las PC)</td><td><span class="estado e-dev">en desarrollo</span></td></tr>
@@ -975,6 +993,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.227.0</td><td>15/11/2026</td><td>Las demás mociones de votación: <i>Early end</i> (la partida termina como un acuerdo), <i>Disqualification</i> (con el color elegido; el bando pasa a la computadora al terminar la ronda), <i>Anything goes</i> (no rige el Reglamento del Clan; V en el mapa) y <i>Re-entry</i> (el humano eliminado toma el bando de la computadora con menos puntos al terminar la ronda). Se aprueban con más SÍ que NO, contando los votos virtuales. Los textos del juego que estaban en castellano pasan al inglés (Voting, Pause, Lighthouse, Compare, Game over, avisos de pausa y resultado de la votación), porque el juego se va a distribuir; las órdenes por chat siguen en castellano. Requiere Votación 1.1.7 (paquete herramientas 1.0.0.5).</td></tr>
 <tr><td>1.0.226.0</td><td>15/11/2026</td><td>Mociones de votación: la línea <i>Votacion</i> abre un submenú con
 mociones. «Partida a prueba», aprobada por todos los humanos, marca la partida (se guarda con ella), el mapa muestra
 una P verde con borde rojo arriba a la izquierda y el Visor de historia la abre aunque no haya terminado. Las demás
