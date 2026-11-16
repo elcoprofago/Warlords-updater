@@ -31,7 +31,7 @@ que le dan un valor al azar. Arreglo: que las vacías pesen cero. Reprogramarlo 
 `parches\vista-aliada\build.py`, primero solo para los colores en prueba; tanda; si mejora, pasa al ranking.
 No copiar nada del plugin. Ojo: el Code Patch también toca 0x45EC40 (misiones), que nosotros usamos.
 
-**Hecho en vista-aliada 1.0.223.0 (15/11/2026), falta la tanda (TAREAS 221).** Lo medido en Darklord.exe:
+**Hecho en vista-aliada 1.0.223.0 (15/11/2026); tandas 170-172 hechas, resultado abajo.** Lo medido en Darklord.exe:
 - 0x492c40(unidad, efecto, costo) pesa una habilidad o efecto (tabla de saltos por id 1..52). Un id fuera de la tabla
   (el 0, casilla vacía) cae al caso por defecto: azar(1,6) × azar(1,6). Después todo se multiplica por azar(40,80)/100
   y se divide por costo + 3.
@@ -43,6 +43,12 @@ No copiar nada del plugin. Ojo: el Code Patch también toca 0x45EC40 (misiones),
   IA.INI; efecto lleno, color original y sin IA.INI dan lo mismo que el original).
 - Límite: la tanda no registra qué hechizos se lanzan; se juzga por victorias y puestos. Si no se ve nada, sumar un
   evento de hechizo lanzado antes de descartarlo.
+- **Resultado (16/11/2026), tandas 170, 171 y 172 (28 partidas completas; en la 172 dos partidas no arrancaron,
+  0 turnos, «colgada»):** puesto medio prueba 3,25 contra original 3,41; primeros puestos 16 contra 15; PV iguales
+  (6,9); ciudades 4,9 contra 5,4. Referencia sin el arreglo (tandas 168-169, 1.0.221.0): prueba 3,33 contra 3,26.
+  Mejora de unas 0,2 posiciones, dentro de lo que varía una tanda a otra (la 171 y la 172 dieron resultados opuestos
+  entre sí) y con menos ciudades: **no es un avance confirmado, queda solo en la IA de prueba** y no pasa al
+  ranking. Para decidir hace falta el evento de hechizo lanzado (ver si cambia qué se lanza) antes de más tandas.
 
 ## Descartado
 Combate ácido/relámpago, diplomacia, misiones, ingresos y vida de héroes del Code Patch: cambian el juego entre
