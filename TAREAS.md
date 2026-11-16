@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 237).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 238).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -14,6 +14,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **237.** Faro sobre el bosque, más realista (vista-aliada 1.0.235.0, 16/11/2026; respuesta a tu comentario sobre la 236). 1) Actualizador, opción **9**. 2) Mirar el mismo faro: sobre el bosque de la casilla de arriba asoman solo la cúpula y la linterna (y en una torre, las almenas); la base con la puerta queda entre los árboles. Anotar lo que no coincida.
 - [ ] **236.** Cúpula del faro sobre el bosque (vista-aliada 1.0.234.0, 16/11/2026). 1) Actualizador, opción **9**. 2) Cargar NA_159 (o cualquier partida con un faro o torre que tenga bosque en la casilla de arriba) y mirar la obra: la cúpula del faro tiene que verse entera, encima de los árboles, también después de mover un grupo cerca y de desplazar el mapa. Control: el bosque del resto del mapa se ve igual que antes. Anotar lo que no coincida.
 - [ ] **234.** Simulador de combate 1.0.52.0 (16/11/2026). Abrilo y actualizalo (engranaje) a la **1.0.52.0**. Cargá el juego y apretá «Héroe…» del atacante y del defensor: tiene que abrirse la ventana con clase, nivel, habilidades, ítems y magias (antes quedaba en blanco). Elegí algo, «Aceptar», y debajo del botón tiene que decir la clase y el nivel. Anotar lo que no ande.
 - [ ] **235.** Simulador de combate 1.0.53.0 (16/11/2026). Actualizalo (engranaje) a la **1.0.53.0**. 1) Corré más de 40 combates: la lista del Historial sigue mostrando 40 y arriba dice cuántos hay registrados; «Stats» tiene que decir en el título ese total, no 40. 2) En el engranaje, «Poner en cero»: el aviso tiene que decir que se borrarán los registros; aceptá y abrí el Historial: vacío. 3) Elegí «Reset diario»: tiene que advertir lo mismo; si respondés «No», queda en el período anterior. Anotar lo que no ande.

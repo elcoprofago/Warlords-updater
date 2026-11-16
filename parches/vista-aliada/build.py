@@ -14770,8 +14770,9 @@ po_draw2 = place('po_draw2', f'''
 ''')
 # Cúpula del faro tapada por el bosque (pedido 15/11/2026, NA_159): la 3.ª pasada (0x459fb0) pinta, en las celdas con el
 # bit 0x20 de +1, el borde del bosque que se derrama sobre la casilla vecina (hojas 0x73..0x7a), después de ob_draw. Si
-# esa casilla es la de arriba del faro, el borde tapa la cúpula. po_draw3: tras ese borde, la celda vuelve a pintar sus
-# piezas de obras (ob_draw), como en la 2.ª pasada. Pila de la 3.ª pasada: [esp+0x14] columna, [esp+0x16] fila;
+# esa casilla es la de arriba del faro, el borde tapa la cúpula. po_draw3: tras ese borde, si la casilla de abajo tiene
+# torre o faro, pinta solo la pieza de arriba (p = 1: cúpula, linterna, almenas), sin sombra ni base (pedido del usuario,
+# 16/11/2026: repintar la obra entera la dejaba demasiado encima del bosque). Pila de la 3.ª pasada: [esp+0x14] columna, [esp+0x16] fila;
 # di = x, bx = y en pantalla.
 po_draw3 = place('po_draw3', f'''
     call 0x4dd530
@@ -14785,7 +14786,28 @@ po_draw3 = place('po_draw3', f'''
     mov word ptr [{po_cx + 2:#x}], ax
     mov word ptr [{po_cx + 4:#x}], di
     mov word ptr [{po_cx + 6:#x}], bx
-    call {ob_draw:#x}
+    movsx eax, word ptr [{po_cx:#x}]
+    movsx edx, word ptr [{po_cx + 2:#x}]
+    inc edx
+    call {ob_at:#x}
+    mov ebx, eax
+    test ebx, ebx
+    jz pd3_out
+    movzx ecx, byte ptr [ebx + 4]
+    sub ecx, {OB_TORRE}
+    cmp ecx, 1
+    ja pd3_out
+    movzx ecx, byte ptr [ecx + {od_base:#x}]
+    mov byte ptr [{od_vars:#x}], 1
+    mov byte ptr [{od_vars + 5:#x}], 0
+    call {od_put:#x}
+    mov ecx, {FL_K['torre']}
+    cmp byte ptr [ebx + 4], {OB_TORRE}
+    je pd3_fl
+    mov ecx, {FL_K['faro']}
+pd3_fl:
+    call {fl_obra:#x}
+pd3_out:
     popad
     jmp 0x459ffd
 ''')
