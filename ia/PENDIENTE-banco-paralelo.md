@@ -19,11 +19,19 @@ partidas simultáneas»): eso venía de una suposición, no de una medición.
 3. Reparto de partidas (`plan`/`correr`), grabación en `datos.db` y el Monitor de IA suponen una partida por vez:
    repartir entre carpetas y grabar sin chocar (una sola escritura a la base por vez).
 
-## Próximo paso (con la tanda actual terminada)
-Prueba de pocos minutos, sin tanda corriendo:
-- ¿el juego abre una segunda copia (en otra carpeta)?
-- ¿se frena cuando su ventana no está al frente?
-- con 6 a la vez, ¿cada partida va a la misma velocidad que sola?
+## Prueba de varias copias (16/11/2026): el juego las admite
+Sin tanda corriendo, `Tanda_Scarpart` con IA original en todos los colores, 4 minutos cada medición, desde las
+carpetas de `E:\Warlords-TEST` (mismo DarklordAV.exe que `C:\Warlords3`, md5 comparado):
+- 1 sola (Warlords3-1): 21 turnos.
+- 6 a la vez (Warlords3-1 a -6): 16, 25, 23, 19, 17, 18 turnos = 118 en total, **5,6 veces lo de una sola**.
+  Cada partida va en promedio al 94 % de la velocidad de una sola.
+- Las 6 abrieron, el botón «Single Player» se apretó en todas por su PID, y ninguna se frenó por no tener la
+  ventana al frente.
+- No se probó con más de 6 (hay 6 carpetas). Hoy no hace falta: 6 ya multiplica por 5,6.
+
+## Próximo paso
+Adaptar `ia\tanda.py` (puntos 2 y 3 de arriba) para repartir una tanda entre las 6 carpetas, junto con el cambio a
+una sola ruta configurable del punto «Orden de carpetas».
 
 ## Orden de carpetas (pedido del usuario, 16/11/2026)
 Cuando se confirme que el juego admite varias copias: en C: queda solo `C:\Warlords` (ranking). Todas las carpetas
