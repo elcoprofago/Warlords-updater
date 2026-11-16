@@ -20225,6 +20225,72 @@ im_out:
     ret
 ''')
 
+# Banco de pruebas (ia\tanda.py): con [Tanda] VentanaX=<x> y VentanaY=<y> en DATA\IA.INI, el lanzador (0x478f82) se
+# crea en esa posición de pantalla, en vez de centrarse en la pantalla principal con GetSystemMetrics: así no tapa la
+# pantalla de trabajo al abrirse cada partida (pedido del usuario, 16/11/2026). La ventana de juego no: la crea MFC y
+# DirectDraw (SetCooperativeLevel 0x11 en 0x4ed961) la estira siempre sobre la pantalla principal; a esa la mueve
+# tanda.py apenas aparece. Sin IA.INI o sin esas claves, igual que el original.
+IA_VBUF = place_data('ia_vbuf', bytes(16))
+IA_VKX = place_data('ia_vkx', cstr_('VentanaX'))
+IA_VKY = place_data('ia_vky', cstr_('VentanaY'))
+# ia_vnum(clave): eax = número entero (con signo) de [Tanda] <clave> de IA.INI, edx = 1 si la clave está; si no, edx = 0.
+ia_vnum = place('ia_vnum', f"""
+    push esi
+    push {IA_PATH:#x}
+    push 16
+    push {IA_VBUF:#x}
+    push {IA_EMPTY:#x}
+    push dword ptr [esp + 0x18]
+    push {IA_TSEC:#x}
+    call dword ptr [{GETPROF:#x}]
+    xor edx, edx
+    test eax, eax
+    jz vn_out
+    mov esi, {IA_VBUF:#x}
+    xor eax, eax
+    xor ecx, ecx
+    cmp byte ptr [esi], 0x2d
+    jne vn_dig
+    inc ecx
+    inc esi
+vn_dig:
+    movzx edx, byte ptr [esi]
+    sub edx, 0x30
+    cmp edx, 9
+    ja vn_end
+    imul eax, eax, 10
+    add eax, edx
+    inc esi
+    jmp vn_dig
+vn_end:
+    test ecx, ecx
+    jz vn_pos
+    neg eax
+vn_pos:
+    mov edx, 1
+vn_out:
+    pop esi
+    ret 4
+""")
+# En lugar de call [CreateWindowExA]: con las dos claves, reemplaza x ([esp+0x14] del llamado) e y ([esp+0x18]).
+ia_ventana = place('ia_ventana', f"""
+    pushad
+    push {IA_VKX:#x}
+    call {ia_vnum:#x}
+    test edx, edx
+    jz iv_go
+    mov ebx, eax
+    push {IA_VKY:#x}
+    call {ia_vnum:#x}
+    test edx, edx
+    jz iv_go
+    mov dword ptr [esp + 0x34], ebx
+    mov dword ptr [esp + 0x38], eax
+iv_go:
+    popad
+    jmp dword ptr [0x5a9c38]
+""")
+
 # Game Over (0x482d77): en 0x482fd6 ya están el orden y los puestos. [ebp-0xe] cantidad de bandos en juego; por
 # puesto k: [ebp-0x24+2k] color, [ebp-0x5c+2k] puesto (-1 = empatado con el anterior), [ebp-0x3c+2k] PV,
 # [ebp-0x4c+2k] ciudades, [ebp-0x7c+4k] oro (ia/puntos-de-victoria.md). Con IA.INI (ia_on) agrega a DATA\IA_FIN.CSV
@@ -22341,6 +22407,7 @@ patch(0x4699fe, bytes.fromhex('8a90320100000256038890320100002a560d889032010000'
 patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
 patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
+patch(0x478f82, bytes.fromhex('ff15389c5a00'), asm(f'call {ia_ventana:#x}; nop', 0x478f82))   # lanzador en [Tanda] VentanaX/Y
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
 # OnIdle (0x4ecef0): sin el foco ([0x501280] = 0, lo pone OnActivate 0x4ed400) el original no llama al tick 0x4dea40,

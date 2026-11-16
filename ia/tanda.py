@@ -447,6 +447,11 @@ def escribir_ini(prueba, guardada, c=None):
             f.write(f'Color{c}={"prueba" if c in prueba else "original"}\n')
         if guardada:
             f.write(f'[Tanda]\nPartida={guardada}\n')
+            # vista-aliada 1.0.238.0 (ia_ventana): el juego crea sus ventanas en esa posición, directo en el monitor
+            # del banco, sin pasar por la pantalla principal. En la principal no hace falta: el juego ya se centra ahí.
+            _, x, y, _, _, principal = monitor_configurado()
+            if not principal:
+                f.write(f'VentanaX={x}\nVentanaY={y}\n')
 
 
 def cerrar_juego(proc=None):
@@ -577,6 +582,7 @@ def jugar(db, tid, n, p, a, carp=None):
         print(f'[{ahora()}] partida {n + 1}{lugar}: {p["guardada"]}, colores con IA de prueba {p["prueba"]} '
               f'({asign})', flush=True)
     escribir_ini(set(p['prueba']), ROTADA if origen else p['guardada'], carp)
+    antes = user32.GetForegroundWindow()   # lo que el usuario tenía en uso: se le devuelve el foco (ver abajo)
     proc = subprocess.Popen([os.path.join(carp.d, EXE)], cwd=carp.d)
     mon = monitor_configurado()
     for _ in range(30):   # la ventana tarda en aparecer: hasta 15 s
@@ -584,7 +590,22 @@ def jugar(db, tid, n, p, a, carp=None):
         if ventana_del_juego(proc.pid):
             break
     apretar_un_jugador(proc.pid)
+    # La ventana de juego (clase Afx...) aparece un momento después del clic, estirada sobre la pantalla principal
+    # (DirectDraw): se la mira cada 20 ms y se la lleva apenas aparece, para que no tape la pantalla de trabajo.
+    # Antes se la movía recién en la primera vuelta de abajo, 5 s después (16/11/2026).
+    for _ in range(750):
+        v = ventana_del_juego(proc.pid)
+        if v:
+            n = ctypes.create_unicode_buffer(16); user32.GetClassNameW(v[0], n, 16)
+            if n.value.startswith('Afx'):
+                break
+        time.sleep(0.02)
     llevar_al_monitor(proc.pid, mon)
+    # La ventana de juego se queda con el foco al aparecer: se le devuelve a lo que estaba en uso (el juego sigue
+    # jugando sin foco, ia_tload). Medido el 16/11/2026: queda unos 0,3 s en la pantalla principal, antes 5 s.
+    fg = user32.GetForegroundWindow(); pid = wintypes.DWORD(); user32.GetWindowThreadProcessId(fg, ctypes.byref(pid))
+    if antes and pid.value == proc.pid:
+        user32.SetForegroundWindow(antes)
     t0 = ultimo_cambio = time.time(); tam = -1; estado = None
     while estado is None:
         time.sleep(5)
