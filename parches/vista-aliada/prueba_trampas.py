@@ -1,15 +1,17 @@
 # Prueba de juguete de construir trampas (tr_* de build.py, parte 7 de PENDIENTE-pozos-y-trampas.md), en unicorn.
-# Uso: python prueba_trampas.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_trampas.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Menú: br_menu (desde su entrada) llama a tr_check, que deja TR_FLAG; el grupo de juguete está en 0x56ea94.
 # Diálogo: br_rebtxt con TR_MARK; tr_send arma TR_PKT (0x4dd3b0 de mentira) o sigue a 0x4b9ce0 si no es la trampa.
 # Red: tr_recv (desde 0x4b6a22) con un paquete de juguete; 0x43fd60, 0x4057a0 y el redibujo de mentira.
 # Controles: héroe con "Trap", sin el bono, ocupada por un pozo, tabla llena, no es su
 # turno; en la red: otra máquina, sin oro, tabla llena, bando de la computadora.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 PO_MAX, PO_REC = 64, 8
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))

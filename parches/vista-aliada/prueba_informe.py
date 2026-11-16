@@ -1,5 +1,5 @@
 # Prueba de juguete del +1 de la torre o el faro en el informe de la unidad (ui_tower de build.py, en 0x45e77b del
-# caso de la fuerza violeta 0x45e771), en unicorn. Uso: python prueba_informe.py [carpeta]   (por defecto C:\Warlords3)
+# caso de la fuerza violeta 0x45e771), en unicorn. Uso: python prueba_informe.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3)
 import os, sys
 _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_caminos.py'), encoding='utf-8').read()
 exec(_src[:_src.index("print('-- menú")])

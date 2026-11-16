@@ -1,17 +1,19 @@
 # Prueba de juguete del resultado de la votación en el Events Report (vt_* de build.py) sobre el exe parcheado y el
 # original, en unicorn.
-# Uso: python prueba_votoinforme.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_votoinforme.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Los estados de la Votación entran por la recepción real (0x4b6a16); el fin de ronda (0x4989d0), el informe
 # (0x499450) y el renglón (0x4b4110) corren enteros con el archivo de mentira (HISTORY.DAT en un dict) y el dibujo
 # interceptado; guardar y cargar, desde la última escritura y la última lectura del .SAV (0x439c84, 0x439fda).
 # Controles: sin votaciones, HISTORY.DAT y el informe son idénticos byte a byte a los del Darklord.exe original; los
 # sucesos comunes se dibujan igual que en el original; no se anota nada sin orden de abrir, con Sorteo, de otro
 # remitente, sin votos, con el cierre de emergencia, ni un "cerrado" repetido; un .SAV viejo o roto carga la tabla vacía.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, re, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET, STUBS, PKT, HEAP, FRAME = 0x1f0000, 0x100, 0x300000, 0x150000, 0x2000000, 0x1e0000
 TABLE, NCITIES, SIDES, SPRINTF, OPTS = 0x572788, 0x537e2a, 0x536b30, 0x5a9bec, 0x4fae68
 SIDE = 0x1f8   # bando i: activo en SIDES + SIDE*i, máquina en +3, humano (-1) en +0xe2

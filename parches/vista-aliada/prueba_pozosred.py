@@ -1,24 +1,26 @@
 # Prueba de juguete de la parte 6 de pozos (red): la tabla de pozos viaja en la transferencia inicial y entra en la
 # suma de sincronía (po_nsend, po_nrecv, po_nrecvd, po_nsum de build.py), en unicorn, sobre el exe parcheado y el
 # original.
-# Uso: python prueba_pozosred.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_pozosred.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Envío: desde 0x4aa299 (detrás del bloque 8) con 0x4aa2c0 y 0x4baf20 de mentira: sale el bloque 9 con la tabla.
 # Recepción: el 0x4aa340 real con los paquetes que armaría 0x4aa2c0 (de a 0x100 bytes): la tabla llega entera en dos
 # paquetes y po_map queda rearmado. Controles: los bloques 5 (ruinas) y 8 siguen yendo a su lugar, antes y después;
 # el original pega un bloque 9 detrás del anterior (por eso hacía falta atenderlo).
 # Suma: 0x4aa520 con la tabla vacía da lo mismo que el original; cambiar un byte de la tabla o la cantidad la cambia.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 MAPW, MAPH, MAPSH = 0x503e00, 0x503e02, 0x503e06
 PO_MAX, PO_REC, PO_MAPSZ = 64, 8, 0x32000 // 10
 
 def cargar(nombre):
     ruta = os.path.join(DIR, nombre)
-    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(r'C:\Warlords3', nombre))
+    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(W3, nombre))
     return pe, pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
 AV, ORIG = cargar('DarklordAV.exe'), cargar('Darklord.exe')
 _, BASE, img = AV

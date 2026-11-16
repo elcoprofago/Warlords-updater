@@ -8,6 +8,8 @@
 # en (x, y - z), de atrás (norte) hacia adelante (sur), así lo de adelante tapa lo de atrás. La cara de frente (la
 # vecina sur es más baja) lleva la textura; la de arriba, más clara; los costados, más oscuros (luz del oeste).
 # Muro de piedra: la piedra y las almenas de la ruina grande del juego (RUINS\ruin_lrg.PCX, pedido del usuario).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import math, random
 from PIL import Image
 
@@ -96,7 +98,7 @@ def _calzada(gx, gy):
     # Calzada de arriba del muro: el piso de losas de las ciudades del juego (cit_flr.PCX de TERRAIN/DATA), con sus
     # colores (pedido del 10/11/2026; antes, el camino de tierra pasado a gris).
     if not _CALZ:
-        _CALZ.append(Image.open(r'C:/Warlords3/TERRAIN/DATA/cit_flr.PCX').convert('RGB'))
+        _CALZ.append(Image.open(W3 + r'/TERRAIN/DATA/cit_flr.PCX').convert('RGB'))
     im = _CALZ[0]
     # Baldosas de 24 con borde de 1: se toma el interior de 22 de cada una, sin la cuadrícula de sus bordes. En
     # perspectiva (pedido del 10/11/2026: «tal cual no, dale perspectiva»): piso visto en ángulo, con las losas más

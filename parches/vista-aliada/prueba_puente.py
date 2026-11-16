@@ -1,15 +1,17 @@
 # Prueba de juguete de los restos del puente derribado (br_vfill en 0x45846d y br_vdraw en 0x459a9f) sobre el exe
 # parcheado, en unicorn.
-# Uso: python prueba_puente.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_puente.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Copia: corre de 0x45846d a 0x45847f con una casilla del mapa y una celda de la vista, y mira [celda] y [celda+0xe].
 # Dibujo: corre de 0x459a9f a 0x459af5 con 0x4dd530 interceptada, y mira cada llamada (hoja, origen, tamaño, destino).
 # Controles: camino y puente entero (el dibujo de siempre, entero), agua sin el bit, el bit en tierra, celda con
 # estructura que no es camino, pieza que no es de puente, y los registros que el lazo del juego sigue usando.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 STACK, CELDA = 0x1f0000, 0x130000

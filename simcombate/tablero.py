@@ -14,7 +14,7 @@ from combate import VentanaCombate, pcx            # noqa: E402
 import contador, historial, imagenes, texturas     # noqa: E402
 from PIL import Image, ImageTk                     # noqa: E402
 
-VERSION = '1.0.51.0'
+VERSION = '1.0.52.0'
 TITULO = f'SIMULADOR DE COMBATE — VERSIÓN {VERSION}'
 CARPETA = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
 CONFIG = os.path.join(CARPETA, 'Simulador-Combate.ini')
@@ -320,7 +320,7 @@ class Panel(ttk.Frame):
     """Un lado: 8 casilleros, barco, héroe y Factor total, con los colores de su bando."""
     def __init__(self, app, padre, titulo):
         super().__init__(padre, padding=6)
-        self.app = app; self.heroe = None; b = BANDOS[titulo]
+        self.app = app; self.heroe = None; self.titulo = titulo; b = BANDOS[titulo]
         st = ttk.Style(self); est = f'{titulo}.TLabel'
         st.configure(est, foreground=b['letra'], font=('Segoe UI', 9, 'bold'))
         ttk.Label(self, text='N.º', style=est).grid(row=0, column=0); ttk.Label(self, text='Arma', style=est).grid(row=0, column=1, sticky='w')
@@ -444,7 +444,7 @@ class Panel(ttk.Frame):
 class SubpanelHeroe(tk.Toplevel):
     def __init__(self, panel):
         super().__init__(panel); self.panel = panel; sim = panel.app.sim
-        self.title(f'Héroe del {panel["text"].lower()}'); self.transient(panel.winfo_toplevel()); self.grab_set()
+        self.title(f'Héroe del {panel.titulo.lower()}'); self.transient(panel.winfo_toplevel()); self.grab_set()
         h = panel.heroe or dict(clase=next(iter(sim.clases)), nivel=1, elecciones=[], items=[], hechizos=[])
         self.cls = {f'{c.nombre} ({k})': k for k, c in sim.clases.items()}
         ttk.Label(self, text='Clase').grid(row=0, column=0, sticky='w', padx=6)

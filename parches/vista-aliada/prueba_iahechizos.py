@@ -4,6 +4,8 @@
 # (0x4deb20) va guionado: devuelve siempre el máximo pedido, así un vacío original vale 6 * 6 = 36 antes del ajuste.
 # Controles que deben quedar como el original: efecto lleno, color original, sin IA.INI.
 # Uso: python prueba_iahechizos.py [DarklordAV.exe] [Darklord.exe]
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
 from unicorn.x86_const import *
@@ -11,8 +13,8 @@ from unicorn.x86_const import *
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 SITE = 0x49b7ed
 
 def target(img, base):

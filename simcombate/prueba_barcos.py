@@ -1,13 +1,15 @@
 # Prueba de los barcos (etapa 2 de PENDIENTE-simulador-combate.md).
-# Uso: python prueba_barcos.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_barcos.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 3 gnollcav contra 3 gnollcav embarcados en cada barco del ARMY (ranura 15 del bando), 4000 peleas: tiene que dar lo
 # mismo que contra 3 gnollcav en tierra con fuerza min(5, barco) y vidas min(2, barco). Lo mismo con el atacante
 # embarcado. Controles: en tierra sin embarcar, el barco no cambia nada; en un puente (agua con camino), tampoco.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct
 from motor import Motor
 from datos import armas
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 A = armas(os.path.join(os.path.dirname(EXE), 'ARMY')); por = {a.archivo.lower(): a for a in A}
 m = Motor(EXE, SAV); N = 4000; AX, AY, DX, DY = 50, 40, 51, 40
 gnoll = por['gnollcav']

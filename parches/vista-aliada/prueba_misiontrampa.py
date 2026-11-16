@@ -1,6 +1,6 @@
 # Prueba de juguete de la misión dura «escoltar al equipo que desarma una trampa» (qt_*) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_misiontrampa.py [DarklordAV.exe] [Darklord.exe]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Mapa de 64x64 de tierra; el héroe del jugador 1 (humano) está en (5,5). Con Q = 0 la distancia de rey válida es 2..23.
 # Trampas (x, y, tipo, estado, máscara de quién la vio, dueño):
 #   T0 (10,5)  dist 5,  enemiga, vista por UI, entera   -> candidata
@@ -13,6 +13,8 @@
 #   P7 (7,7)   un pozo visto, no una trampa             -> no
 #   T8 (20,20) dist 15, enemiga, vista, entera          -> candidata
 # El azar (0x4deb20) va guionado. Donde no hay trampas que dar, todo se compara contra el Darklord.exe original.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, re, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -20,8 +22,8 @@ from unicorn.x86_const import *
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 PO_MAX, PO_REC, PO_TRAMPA, PO_POZO, QT, TR_USOS = 64, 8, 2, 0, 13, 2
 PO_SAVE = AV[0] + AV[1].index(b'POZO' + bytes(4 + PO_MAX * PO_REC)); PO_N, PO_TAB = PO_SAVE + 4, PO_SAVE + 8
 k = AV[1].index(bytes.fromhex('6031db0fb683'))                 # po_fall: pushad; xor ebx, ebx; movzx eax, byte [ebx + po_pend]

@@ -1,13 +1,15 @@
 # Prueba de juguete del tope "Landing" (landcap) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_landcap.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_landcap.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Stubs: 0x4411b0 (ejércitos en la casilla) y 0x49e770; termina en 0x49e4ae (pasa) o 0x49e4dd con código 4 (bloquea).
 # Al bloquear, lchit (dirección leída de landcap) tiene que quedar en 1 si el grupo se embarcaba y en 2 si estaba
 # embarcado; al pasar, sin tocar.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, re, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 

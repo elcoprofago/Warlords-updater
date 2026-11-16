@@ -15,15 +15,17 @@
 # anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
 # Botón del Comparador (ícono de DarkCompare en Edit Side): cada PC abre su Herramientas\DarkCompare.exe; su dibujo es
 # SETS\Fantasy\darkcomp.pcx.
-# Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; crea DATA\ si falta)
+# Uso: python build.py [carpeta_salida]   (por defecto E:\Warlords-TEST\Warlords3; crea DATA\ si falta)
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import struct, sys, os, math
 import keystone, capstone
 
-SRC_EXE = r'C:\Warlords3\Darklord.exe'
-SRC_RES = r'C:\Warlords3\DATA\War3.RES'
-OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+SRC_EXE = W3 + r'\Darklord.exe'
+SRC_RES = W3 + r'\DATA\War3.RES'
+OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 if OUT_DIR.startswith('-'):
-    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto C:\\Warlords3)')
+    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto E:\\Warlords-TEST\\Warlords3)')
 OUT_EXE = os.path.join(OUT_DIR, 'DarklordAV.exe')
 OUT_RES = os.path.join(OUT_DIR, 'DATA', 'WAR3AV.RES')
 RES_NAME = b'DATA\\WAR3AV.RES'
@@ -66,7 +68,7 @@ DIPLO = 0x55ee4c    # [DIPLO + a*56 + b]: 0 aliados, 1 paz, 2 guerra
 REDRAW = 0x4a2170
 
 # Ciudades compartidas: bit 0x01 del byte 25 del bloque de opciones (0x53c38c, 0x2a bytes). Ese byte no lo lee
-# ningún código, vale 0 en los 28 .SAV y en todos los OPT*.DAT/OPTIONS.* de C:\Warlords3, y viaja con el bloque
+# ningún código, vale 0 en los 28 .SAV y en todos los OPT*.DAT/OPTIONS.* de E:\Warlords-TEST\Warlords3, y viaja con el bloque
 # entero (diálogo 0x503d00, partida guardada, red 0x4b8f00). El bit 0x40 de OPT NO sirve: viene puesto en
 # OPTIONS.NET, OPTIONSFILE y 14 de las 28 partidas.
 SHOPT = 0x53c38c + 25
@@ -13746,10 +13748,10 @@ od_vars = place_data('od_vars', bytes(8))   # +0 pieza, +1 capa base, +2..+3 má
 # la fila 0 quedan de antes, sin uso.
 import obras_img
 from PIL import Image as _I
-po_pal = _I.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]   # el mismo que más abajo (hoja PO_FILE)
-po_usar = sorted(set(_I.open(r'C:\Warlords3\TERRAIN\DATA\cit_anim.PCX').tobytes())
-                 | set(_I.open(r'C:\Warlords3\RUINS\cave.PCX').tobytes()) - {11, 101})
-_rl = _I.open(os.path.join(r'C:\Warlords3\RUINS', 'ruin_lrg.PCX'))
+po_pal = _I.open(W3 + r'\RUINS\cave.PCX').getpalette()[:768]   # el mismo que más abajo (hoja PO_FILE)
+po_usar = sorted(set(_I.open(W3 + r'\TERRAIN\DATA\cit_anim.PCX').tobytes())
+                 | set(_I.open(W3 + r'\RUINS\cave.PCX').tobytes()) - {11, 101})
+_rl = _I.open(os.path.join(W3 + r'\RUINS', 'ruin_lrg.PCX'))
 assert _rl.getpalette()[:768] == po_pal
 _rl = _rl.crop((1, 1, 88, 89))
 _od_usar = sorted(set(po_usar) | set(_rl.tobytes()) - {11, 101})
@@ -20120,7 +20122,7 @@ IA_TSEC = place_data('ia_tsec', cstr_('Tanda'))
 IA_TKEY = place_data('ia_tkey', cstr_('Partida'))
 IA_TNAME = place_data('ia_tname', bytes(64))
 # Archivos que instaló una versión anterior del parche y ya no van (un bono renombrado o quitado): en el arranque,
-# antes del menú, DeleteFileA ([0x5a97c0]) los borra de C:\Warlords3, así todas las PC quedan con los mismos bonos
+# antes del menú, DeleteFileA ([0x5a97c0]) los borra de E:\Warlords-TEST\Warlords3, así todas las PC quedan con los mismos bonos
 # en el editor aunque el Actualizador no borre nada. Si no están, DeleteFileA falla sin más.
 OBSOLETOS = (r'TERRAIN\SUBTYPE\camo.STT', r'TERRAIN\SUBTYPE\nighmare.STT', r'TERRAIN\SUBTYPE\bridge.STT', r'SETS\Fantasy\dlg_bm.pcx')
 # dlg_bm.pcx: el marco bajo del menú de construir, que solo instaló la 1.0.161.0
@@ -21710,7 +21712,7 @@ dm_out:
 CAMO = b'camouflg'
 camstr = place_data('camstr', CAMO + b'\0')
 # El nombre de antes de 1.0.88.0 sigue valiendo: lo traen los .ARM y las partidas que ya tenían el bono (en
-# C:\Warlords3, ARMY\Zappers.ARM; el usuario lo vio en red el 30/10/2026: los Zappers no se camuflaban).
+# E:\Warlords-TEST\Warlords3, ARMY\Zappers.ARM; el usuario lo vio en red el 30/10/2026: los Zappers no se camuflaban).
 CAMO_VIEJO = b'camo'
 camold = place_data('camold', CAMO_VIEJO + b'\0')
 def cam_table():
@@ -22820,14 +22822,14 @@ table_add(res, 2, RAM_FILE, bytes(ram))
 # puntero encima, con el contorno; deshabilitado, oscurecido. Los colores salen de la paleta de BUTT_STD.PCX (la misma
 # de la pantalla de preparación), solo entre los que ya usan BUTT_STD y SetupScr.
 from PIL import Image, ImageFilter, ImageFont, ImageDraw
-SRC_BUTT = r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX'
+SRC_BUTT = W3 + r'\SETS\Fantasy\BUTT_STD.PCX'
 butt = Image.open(SRC_BUTT)
 assert butt.mode == 'P' and butt.size == (472, 224)
 pal = butt.getpalette()[:768]
-assert Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getpalette()[:768] == pal
+assert Image.open(W3 + r'\PICTS\SetupScr.pcx').getpalette()[:768] == pal
 assert butt.getpixel((272, 0)) == 11 and pal[33:36] == [255, 0, 255]   # fondo transparente de los botones 32x33
 assert butt.getpixel((436 + 8, 20 + 3)) == 71                          # el aro naranja de la moneda apretada
-usables = sorted((set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())) - {11})
+usables = sorted((set(butt.getdata()) | set(Image.open(W3 + r'\PICTS\SetupScr.pcx').getdata())) - {11})
 def cercano(rgb, _memo={}):
     if rgb not in _memo:
         _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
@@ -22863,7 +22865,7 @@ table_add(res, 2, SORTEO_FILE, bytes(butt_std))
 # Hoja DC_FILE = SETS\Fantasy\darkcomp.pcx: el botón del Comparador en Edit Side, igual que el de Sorteo, con el ícono
 # de DarkCompare (comparador_icono.png: el de 256x256 de su assets\strella.ico, reducido a 62x62). Edit Side (fondo
 # DLG_BIG.PCX) tiene la misma paleta que BUTT_STD.
-assert Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768] == pal
+assert Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768] == pal
 DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H)
 struct.pack_into('<I', butt_std, 0, DC_FILE)
 setstr(butt_std, 4, 32, 'darkcomp')
@@ -22890,9 +22892,9 @@ assert PZ_FILE == PO_FILE + 1
 struct.pack_into('<I', henge, 0, PZ_FILE)
 setstr(henge, 4, 32, 'aviso')
 table_add(res, 2, PZ_FILE, bytes(henge))
-_help = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_HELP.PCX')
+_help = Image.open(W3 + r'\SETS\Fantasy\DLG_HELP.PCX')
 assert _help.size == (250, 150) and _help.getpixel((0, 0)) == 11
-assert _help.getpalette()[:768] == Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
+assert _help.getpalette()[:768] == Image.open(W3 + r'\RUINS\henge.PCX').getpalette()[:768]
 assert _help.getpalette()[3 * PZ_INK:3 * PZ_INK + 3] == [47, 27, 7] and _help.getpalette()[3 * PZ_SHADOW:3 * PZ_SHADOW + 3] == [239, 231, 171]
 _e = round(45 * PZ_H / 150)
 pz_hoja = Image.new('P', (PZ_W, PZ_H), 11); pz_hoja.putpalette(_help.getpalette())
@@ -22906,9 +22908,9 @@ pcx = io.BytesIO(); pz_hoja.save(pcx, 'PCX'); PZ_PCX = pcx.getvalue()
 # centro.png en el medio, imágenes del usuario) se lleva a 54 x 54 centrado. Army List se ve con la paleta del mapa, y BUTT_STD tiene la de la preparación: solo se usan los colores
 # que valen igual en las dos y que ya usan sus hojas (BUTT_STD, SetupScr, DLG_BIG, DLG_HELP).
 assert SEAL_FILE == PZ_FILE + 1
-_pal_mapa = Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
-_usados = set(butt.getdata()) | set(Image.open(r'C:\Warlords3\PICTS\SetupScr.pcx').getdata())
-for _f in ('DLG_BIG', 'DLG_HELP'): _usados |= set(Image.open(rf'C:\Warlords3\SETS\Fantasy\{_f}.PCX').getdata())
+_pal_mapa = Image.open(W3 + r'\RUINS\henge.PCX').getpalette()[:768]
+_usados = set(butt.getdata()) | set(Image.open(W3 + r'\PICTS\SetupScr.pcx').getdata())
+for _f in ('DLG_BIG', 'DLG_HELP'): _usados |= set(Image.open(W3 + rf'\SETS\Fantasy\{_f}.PCX').getdata())
 _seal_cols = sorted(i for i in _usados - {11} if pal[3 * i:3 * i + 3] == _pal_mapa[3 * i:3 * i + 3])
 assert len(_seal_cols) > 64
 _seal_memo = {}
@@ -22929,7 +22931,7 @@ for fila in (0, 1, 3):
 # Cuadro deshabilitado (fila 2): el pedazo de DLG_BIG que queda debajo del botón, no transparente. El cambio de estado
 # (0x4d9b70) solo marca el control para redibujar, sin repintar el fondo del diálogo: con un cuadro transparente, al
 # pasar de un bando con sello a uno sin sello la medalla anterior quedaba pintada (aviso del usuario, 8/11/2026).
-_dlg_big = Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX')
+_dlg_big = Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX')
 _fondo_sello = _dlg_big.crop((SEAL_X, SEAL_Y, SEAL_X + SEAL_W, SEAL_Y + SEAL_H))
 assert 11 not in set(_fondo_sello.getdata())
 seal_hoja.paste(_fondo_sello, (0, 2 * SEAL_H))
@@ -22945,7 +22947,7 @@ assert _t == 0x13 and res[_p + 0x20] == 2
 res[_p + 0x20] = 1
 o4, _ = table(res, 4)
 assert struct.unpack_from('<8i', res, o4 + 20 + 0xae * 32) == (0xae, 56, 1, 0, 212, 0, 24, 21)
-_picts = Image.open(r'C:\Warlords3\PICTS\picts.pcx')
+_picts = Image.open(W3 + r'\PICTS\picts.pcx')
 _ali = _picts.crop((212, 0, 236, 21)).resize((GO_W, GO_H), Image.NEAREST)
 go_hoja = Image.new('P', (GO_W, GO_H), 11); go_hoja.putpalette(_picts.getpalette()); go_hoja.paste(_ali, (0, 0))
 pcx = io.BytesIO(); go_hoja.save(pcx, 'PCX'); GO_PCX = pcx.getvalue()
@@ -22968,7 +22970,7 @@ table_add(res, 6, MO_DLG, struct.pack('<8i', MO_DLG, _d20[1], MO_RES, *_d20[3:])
 struct.pack_into('<I', henge, 0, MOP_FILE)
 setstr(henge, 4, 32, 'prueba')
 table_add(res, 2, MOP_FILE, bytes(henge))
-_pal = Image.open(r'C:\Warlords3\RUINS\henge.PCX').getpalette()[:768]
+_pal = Image.open(W3 + r'\RUINS\henge.PCX').getpalette()[:768]
 def _cerca(rgb):
     return min((i for i in range(256) if i != 11), key=lambda i: sum((_pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
 _verde, _rojo = _cerca((144, 238, 144)), _cerca((220, 0, 0))
@@ -23049,10 +23051,10 @@ for _va in (0x446bff, 0x446c33, 0x446d03, 0x446d37):
 LIGHTNING = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'sonidos', 'Lightning.wav'), 'rb').read()
 BURST = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'sonidos', 'Burst.wav'), 'rb').read()
 PICTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts')
-po_pal = Image.open(r'C:\Warlords3\RUINS\cave.PCX').getpalette()[:768]
-cit = Image.open(r'C:\Warlords3\TERRAIN\DATA\cit_anim.PCX')
+po_pal = Image.open(W3 + r'\RUINS\cave.PCX').getpalette()[:768]
+cit = Image.open(W3 + r'\TERRAIN\DATA\cit_anim.PCX')
 assert cit.size == (384, 192) and cit.getpalette()[:768] == po_pal
-po_usar = sorted(set(cit.tobytes()) | set(Image.open(r'C:\Warlords3\RUINS\cave.PCX').tobytes()) - {11, 101})
+po_usar = sorted(set(cit.tobytes()) | set(Image.open(W3 + r'\RUINS\cave.PCX').tobytes()) - {11, 101})
 _po_memo = {}
 def po_color(rgb):
     if rgb not in _po_memo:
@@ -23073,7 +23075,7 @@ def po_dibujo(nombre, caja=None, fondo=(11, 101)):   # fondo: índices transpare
     else: pts = [(x, y) for x in range(im.width) for y in range(im.height) if not fondo(im.convert('RGB').getpixel((x, y)))]
     return po_cuadro(im.convert('RGB'), pts)
 def cuadro_ruina(tipo, columna):
-    im = Image.open(rf'C:\Warlords3\RUINS\{tipo}.PCX')
+    im = Image.open(W3 + rf'\RUINS\{tipo}.PCX')
     x0 = 1 + columna * 0x57
     c = im.crop((x0, 1, x0 + 87, 89))
     return po_cuadro(c.convert('RGB'), [(x, y) for x in range(87) for y in range(88) if c.getpixel((x, y)) not in (11, 101)])
@@ -23286,7 +23288,7 @@ def muro(empal=False):
     return po_cuadro(im, [(x, y) for x in range(48) for y in range(48) if px[x, y] != (255, 0, 255)])
 po_hoja = Image.new('P', (48 * PO_FRAMES, FL_SY + 144), 11); po_hoja.putpalette(po_pal)
 assert FL_SY == 48 * (1 + (OD_CAPAS + OD_PORFILA - 1) // OD_PORFILA) and 32 * 32 <= 48 * PO_FRAMES
-_flsrc = Image.open(r'C:\Warlords3\CITY\STDCAST0.PCX')
+_flsrc = Image.open(W3 + r'\CITY\STDCAST0.PCX')
 assert _flsrc.getpalette()[:768] == po_pal
 for _b in range(8):
     for _f in range(4):
@@ -23321,7 +23323,7 @@ pcx = io.BytesIO(); po_hoja.save(pcx, 'PCX'); PO_PCX = pcx.getvalue()
 TITULO = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'titulo.pcx')).convert('RGB')
 TIT_H, TIT_X, TIT_Y, TIT_W = 65, 322, 1, (254, 254, 254)
 STARTUP = [(1, 'startup', 'startav', (0, 0)), (138, 'startup1', 'startav1', (80, 60)), (139, 'startup2', 'startav2', (192, 144))]
-fondos = {n: Image.open(os.path.join(r'C:\Warlords3\PICTS', n + '.pcx')) for _, n, _, _ in STARTUP}
+fondos = {n: Image.open(os.path.join(W3 + r'\PICTS', n + '.pcx')) for _, n, _, _ in STARTUP}
 st_pal = fondos['startup'].getpalette()[:768]
 assert all(f.mode == 'P' and f.getpalette()[:768] == st_pal for f in fondos.values())
 def st_difs(n, ox, oy):   # píxeles del marco de 640 que difieren en el fondo n corrido (ox,oy)

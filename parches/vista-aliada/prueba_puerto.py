@@ -1,15 +1,17 @@
 # Prueba de juguete del paso G de PENDIENTE-construcciones.md (ciudad propia -> puerto), en unicorn.
-# Uso: python prueba_puerto.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_puerto.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Mapa: x >= 30 agua. Ciudad 0 «Delingor» del bando 2 en (28, 10) (casillas 28..29, 10..11): el puerto va a (30, 10),
 # la primera casilla de agua libre del anillo. Ciudad 1 del bando 2 en (5, 5). Ya hay 3 sitios.
 # Menú: bd_check sin constructor. Rotación: bd_pick (destino 5). Costo, texto, envío. Red: bd_recv con PW 0x8000|ciudad.
 # Controles: ciudad ajena, última ciudad, sin agua, 50 sitios, sin oro, x, y que no es la del puerto, una ciudad arrasada
 # común sigue estando en el mapa y sigue siendo meta 9 de la IA.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))
 BASE, img = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
@@ -274,7 +276,7 @@ ver('vuelve a 0x4a9886 con 0xc bytes menos de pila', g.mu.reg_read(UC_X86_REG_ES
 ver_txt = next(l.split('|')[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'parches.txt'),
                                               encoding='latin1') if l.startswith('vista-aliada|'))
 ver('valores 8-10 vacíos', textos, [(8, ''), (9, ''), (10, '')])
-_r = open(r'C:\Warlords3\DATA\WAR3AV.RES', 'rb').read(); _o = 8
+_r = open(W3 + r'\DATA\WAR3AV.RES', 'rb').read(); _o = 8
 while struct.unpack_from('<II', _r, _o)[:2] != (7, 94): _o += 20 + struct.unpack_from('<I', _r, _o + 16)[0]
 _p = _o + 20; _col = {}
 for _ in range(struct.unpack_from('<I', _r, _o + 8)[0]):

@@ -1,10 +1,12 @@
 # Prueba de juguete de la habilidad "Bridge +N" (código 34, gancho bridgeab) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_bonopuente.py [DarklordAV.exe] [Darklord.exe] [partida.SAV]
-#      (por defecto los de C:\Warlords3 y Saves\Aliados03.SAV; armar antes con build.py)
+#      (por defecto los de E:\Warlords-TEST\Warlords3 y Saves\Aliados03.SAV; armar antes con build.py)
 # Se corre el comparador de terreno del bono (0x467b33 .. 0x467d1f) con casillas reales de la partida (tabla de
 # terrenos incluida) y el bono de combate y la habilidad de la unidad en un registro armado a mano. Esperado: la
 # habilidad 34 suma su valor (al bono de combate, si también coincide) solo en un puente en pie y no para héroes;
 # cualquier otra habilidad, o la 34 fuera de un puente, da lo mismo que el exe original, registros y pila incluidos.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -12,9 +14,9 @@ from unicorn.x86_const import *
 def load(path):
     pe = pefile.PE(path); base = pe.OPTIONAL_HEADER.ImageBase
     return base, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-NEW = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-OLD = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
-sav = open(sys.argv[3] if len(sys.argv) > 3 else r'C:\Warlords3\Saves\Aliados03.SAV', 'rb').read()
+NEW = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+OLD = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
+sav = open(sys.argv[3] if len(sys.argv) > 3 else W3 + r'\Saves\Aliados03.SAV', 'rb').read()
 
 TERR = sav[0x320a7:0x320a7 + 32 * 0x58]     # tabla de terrenos (0x535ef8; las capas 0x536790 son la 25 en adelante)
 assert TERR[:7] == b'plains\0' and TERR[0x58:0x58 + 6] == b'water\0', 'la tabla de terrenos no está donde se espera'

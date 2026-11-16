@@ -3,11 +3,13 @@
 # (CopyFileA, CreateFileA, ReadFile, SetFilePointer, WriteFile, CloseHandle, _findfirst/_findnext/_findclose) sobre
 # archivos en memoria y la tirada 0x4deb20 en Python.
 # Uso: python prueba_items_azar.py [DarklordAV.exe]
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, random, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
 pe = pefile.PE(EXE); img = pe.get_memory_mapped_image()
 def rva(va): return va - 0x400000
 assert img[rva(0x4ca0b7)] == 0xe8 and img[rva(0x4ca0bc)] == 0x90, 'el CopyFileA de 0x4ca0b7 no está parcheado'
@@ -82,8 +84,8 @@ def caso(titulo, cond):
     print(('OK   ' if cond else 'FALLA'), titulo)
     if not cond: fallas.append(titulo)
 
-orig = open(r'C:\Warlords3\RANDOM\Grass\Item2.dat', 'rb').read()      # con 8 especiales
-largo = open(r'C:\Warlords3\RANDOM\Grass\Item1.dat', 'rb').read()     # 446 bytes: el resto se conserva
+orig = open(W3 + r'\RANDOM\Grass\Item2.dat', 'rb').read()      # con 8 especiales
+largo = open(W3 + r'\RANDOM\Grass\Item1.dat', 'rb').read()     # 446 bytes: el resto se conserva
 esp = [n for n in nombres(orig)[32:] if n]
 VUELO = ['bootfly', 'potfly', 'FlyShoot', 'GAUNTFLY', 'xfLyz']
 todos = ['pers%03d' % i for i in range(300)] + ['BOOTSPEE', 'ringpowr'] + [e.upper() for e in esp]

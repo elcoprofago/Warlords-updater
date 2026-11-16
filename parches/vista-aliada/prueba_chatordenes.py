@@ -4,12 +4,14 @@
 # Se llama a la barra de chat original (0x409170) con el texto, con stubs: 0x4dd3a0 (máquina de esta PC), 0x4dd3b0
 # (difusión: se anota el paquete) y 0x4ba990 (chat nativo: se anota bando, máquinas destino y texto). La recepción se
 # prueba entrando al despachador parcheado (el «ja» de 0x4b6a22) con un paquete armado, hasta 0x4b85bb.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-sav = open(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Border_Alianzas.SAV', 'rb').read()
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+sav = open(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Border_Alianzas.SAV', 'rb').read()
 CITIES, DIPLO, SIDE = 0x537e2c, 0x55ee4c, 0x1f8
 SIDE_ON, SIDE_HUMAN, SIDE_MACHINE, SIDE_NAME = 0x536b30, 0x536c12, 0x536b33, 0x536b34
 

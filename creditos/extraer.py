@@ -3,8 +3,10 @@ r"""Extrae el listado de créditos de Warlords III: Darklords Rising.
 Lee DATA\Credits.txt (créditos del juego) y eddata\Credits.txt (los del
 editor, que difieren) de la instalación, y escribe creditos.json y LISTADO.md.
 
-Uso:  python extraer.py [carpeta_del_juego]   (por defecto C:\Warlords3)
+Uso:  python extraer.py [carpeta_del_juego]   (por defecto E:\Warlords-TEST\Warlords3)
 """
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import json, re, sys
 from pathlib import Path
 
@@ -144,7 +146,7 @@ def escribir_listado(d):
 
 
 def main():
-    juego = Path(sys.argv[1] if len(sys.argv) > 1 else r"C:\Warlords3")
+    juego = Path(sys.argv[1] if len(sys.argv) > 1 else W3)
     print(f"EXTRAER CREDITOS - VERSION {VERSION}")
     personas, alias = {}, {}
     leer(juego / "DATA" / "Credits.txt", "juego", personas, alias)

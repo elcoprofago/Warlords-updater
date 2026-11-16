@@ -1,6 +1,6 @@
 import re
 # Prueba de juguete de torres y faros (ob_* de build.py, etapa A de PENDIENTE-construcciones.md), en unicorn.
-# Uso: python prueba_obras.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_obras.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Reusa el banco de prueba_caminos.py (mapa: x >= 30 agua; columna x = 10 camino). Prueba bd_pick (posiciones 6 y 7),
 # el precio (br_cost con 0x4000), bd_recv (cobra y anota el registro) y sus controles.
 import os, sys

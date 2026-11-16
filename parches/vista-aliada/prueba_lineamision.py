@@ -1,9 +1,11 @@
 # Prueba de juguete de qb_line: la línea naranja del mapa hasta el objetivo de una misión (0x414090, caso del tipo 10
 # en 0x41424a) con un puente como objetivo, en unicorn.
 # Uso: python prueba_lineamision.py [DarklordAV.exe] [Darklord.exe]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Corre desde 0x41424a hasta 0x41426a, donde la función ya tiene en di la x y en ax la y del destino y apiló 0x48.
 # Puente: la casilla de su código (0x2000 + y*128 + x), sin leer la tabla de sitios. Sitio: igual al original.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_MEM_READ
 from unicorn.x86_const import *
@@ -11,8 +13,8 @@ from unicorn.x86_const import *
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 QUEST, STACK, END = 0x100000, 0x200000, 0x41426a
 SITES = [(12, 34), (40, 7), (63, 63)]
 

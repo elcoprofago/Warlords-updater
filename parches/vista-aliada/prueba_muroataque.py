@@ -1,5 +1,5 @@
 # Prueba de juguete del ataque al muro (wl_war, wv_step, wv_pre, wv_stat, wv_post de build.py; PENDIENTE-faros-muros,
-# punto 2b), en unicorn. Uso: python prueba_muroataque.py [carpeta]   (por defecto C:\Warlords3)
+# punto 2b), en unicorn. Uso: python prueba_muroataque.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3)
 # Reusa el banco de prueba_caminos.py. Cada función se corre sola, con las llamadas al juego interceptadas.
 import os, sys
 _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_caminos.py'), encoding='utf-8').read()

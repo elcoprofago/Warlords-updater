@@ -33,7 +33,7 @@ carpetas de `E:\Warlords-TEST` (mismo DarklordAV.exe que `C:\Warlords3`, md5 com
 `ia\tanda.py` resuelve los puntos 1 a 3:
 - Las partidas se reparten entre las carpetas de `[Carpetas] paralelas` de `tanda.ini` (separadas por coma); sin esa
   línea, las `E:\Warlords-TEST\Warlords3-1` a `-6` que existan; sin ninguna, se juega en `JUEGO` como antes.
-  `[Carpetas] juego` cambia `JUEGO` (por defecto `C:\Warlords3`).
+  `[Carpetas] juego` cambia `JUEGO` (por defecto la de `juego_pruebas.py`).
 - `JUEGO` sigue siendo el origen: ahí instala `build.py` y ahí están las guardadas. Antes de cada tanda (y al
   retomar), `sincronizar` copia a cada carpeta lo que cambió (`robocopy /MIR /XJ`, sin tocar IA.INI, los CSV ni
   IA_ROTADA.SAV) y verifica que el exe quedó igual; si no, la tanda no arranca.
@@ -54,9 +54,19 @@ Probado en caliente con una base aparte (no `datos.db`):
 
 Prueba con una tanda real: `TAREAS.md` 231.
 
-## Próximo paso
-El punto «Orden de carpetas»: las menciones a `C:\Warlords3` del repo pasan a una sola ruta configurable, y
-`JUEGO` (el origen del banco) pasa a `E:\Warlords-TEST`. Después, retirar `C:\Warlords3` es decisión del usuario.
+## Hecho: orden de carpetas (16/11/2026)
+- `C:\Warlords3` se copió a `E:\Warlords-TEST\Warlords3` (robocopy /E /XJ, código 1; 6010 archivos y 583,7 MB en
+  los dos lados).
+- La ruta del juego de pruebas vive solo en `juego_pruebas.py` (raíz del repo, `W3`). La importan `ia\tanda.py`
+  (origen del banco), los `build.py` de los parches, las pruebas, `heroes25.py`, `creditos\extraer.py`,
+  `manual\build_manual.py`; los `tools\publicar-*.ps1` la leen de ese archivo. 72 archivos cambiados; el Monitor
+  de IA se compila con la raíz del repo en `--paths`.
+- No cambian (son de la PC de cada jugador, no del banco): el `C:\Warlords3` por defecto del Actualizador
+  (`juego.txt` lo cambia) y `JUEGO0` del Simulador de combate.
+- Configuración local (fuera de git) del Visor de historia y del Simulador: pasada a E:.
+- Pruebas `prueba_*.py` (60) corridas antes y después del cambio: mismos resultados. La copia tenía el `WAR3AV.RES` de la 1.0.232.0 (`prueba_puerto` lo detectó); se reinstaló vista-aliada 1.0.233.0 con `build.py`, que ya instala en E:, y volvió a dar bien.
+- Monitor de IA 1.0.25: el mismo banco, con el origen en E:.
+- Retirar `C:\Warlords3`: decisión del usuario, `TAREAS.md` 233.
 
 ## Orden de carpetas (pedido del usuario, 16/11/2026)
 Cuando se confirme que el juego admite varias copias: en C: queda solo `C:\Warlords` (ranking). Todas las carpetas

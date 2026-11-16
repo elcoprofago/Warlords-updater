@@ -1,15 +1,17 @@
 # Prueba de juguete de las mociones de votación (mo_* de build.py) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_mociones.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_mociones.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Submenú: «Votacion» abre el diálogo de mociones; un renglón habilitado manda TL_OPEN con la moción, uno
 # deshabilitado no. Recepción (0x4b6a16 real): la moción va a la línea de comandos de votacion.exe. Cierre (estado
 # "cerrado"): «Partida a prueba» pone la marca solo con SI de todos los humanos en juego. Controles: un humano vota NO;
 # un humano no votó; un bando de la computadora vota NO (no cuenta); votación libre; moción fuera de rango.
 # Guardado/carga del bloque 'MOCI', partida nueva, y la P en el mapa (después del marco, 0x4c1b92).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

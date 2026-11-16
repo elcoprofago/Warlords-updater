@@ -1,15 +1,17 @@
 # Prueba de juguete del combate visto por el atacado (cv_chk de build.py) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_combatevisto.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_combatevisto.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Corre desde 0x469f5c (después de la batalla) hasta la rama del atacante (0x469f65) o la del que no ataca (0x469fa9),
 # con la ventana de combate (0x405a10) interceptada: anota sus argumentos y gasta azar del juego.
 # Casos: el atacado en su PC ve la ventana con los mismos argumentos que el original le pasa al atacante y el azar queda
 # como estaba; controles: el atacante sigue por su rama sin cambios; una sola PC; defensor de la computadora; defensor
 # humano de otra PC; defensor que no es el jugador de esta PC; registros intactos al seguir.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

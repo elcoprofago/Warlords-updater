@@ -1,14 +1,16 @@
 # Prueba de la etapa 2, hechizos, de PENDIENTE-simulador-combate.md.
-# Uso: python prueba_hechizos.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_hechizos.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 1. Todos los .SPL se lanzan con la rutina del juego (0x48f300) sin fallar.
 # 2. 0x409e40 del juego cuenta lo que dice el .SPL, por 1 en nivel 1-5, 2 en 6-8 y 3 en 9-10.
 # 3. En batalla: cada hechizo con efectos de combate cambia el % del héroe solo; control: el mismo hechizo lanzado
 #    por un héroe de otra pila (que no pelea) da lo mismo que sin hechizo.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys
 from motor import Motor
 from datos import hechizos, HABILIDADES
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 mal = 0
 def ver(c, msg):
     global mal; mal += not c; print('OK  ' if c else 'MAL ', msg)

@@ -1,5 +1,5 @@
 # Prueba del tablero: «Invertir» cambia de lado todo lo ingresado y «Ordenar por NOMBRE COMÚN» reordena las listas
-# conservando lo elegido; arrastrar una fila la lleva a otra posición. Uso: python prueba_tablero.py (abre la ventana unos segundos; usa C:\Warlords3)
+# conservando lo elegido; arrastrar una fila la lleva a otra posición. Uso: python prueba_tablero.py (abre la ventana unos segundos; usa E:\Warlords-TEST\Warlords3)
 import os, tempfile
 import tablero
 tablero.CONFIG = os.path.join(tempfile.gettempdir(), 'prueba-simcombate.ini')   # no tocar el .ini real

@@ -1,16 +1,18 @@
 # Prueba de juguete de la lupa y el botón derecho sobre pozos, remolinos y trampas (po_look, po_find, po_cur,
 # po_curclr y po_info de build.py), en unicorn, sobre el exe parcheado y el original.
-# Uso: python prueba_lupa.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_lupa.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Decodificador: corre desde 0x473d32 (sin grupo elegido, con la casilla, la ciudad y la ruina / el sitio en su marco)
 # hasta la vuelta, y devuelve el código (0x14 = lupa del cuadro de ruinas, 3 = nada). Acción: 0x473e80 con ese
 # código, con 0x4a2170, 0x4a4980 (cuadro de ruinas) y 0x4c7a10 (cuadro de información) de mentira.
 # Controles: la casilla vacía devuelve 3 y la ruina de verdad sigue abriendo su cuadro después de una lupa de pozo;
 # el original devuelve 3 sobre el pozo.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, re, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 MAPW, MAPH, MAPSH = 0x503e00, 0x503e02, 0x503e06
 PO_MAX, PO_REC = 64, 8
@@ -20,9 +22,9 @@ AGUA = 1
 
 def cargar(nombre):
     ruta = os.path.join(DIR, nombre)
-    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(r'C:\Warlords3', nombre))
+    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(W3, nombre))
     return pe, pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
-AV, ORIG = cargar('DarklordAV.exe'), cargar(r'C:\Warlords3\Darklord.exe')
+AV, ORIG = cargar('DarklordAV.exe'), cargar(W3 + r'\Darklord.exe')
 _, BASE, img = AV
 PO_SAVE = BASE + img.index(b'POZO' + bytes(4 + PO_MAX * PO_REC)); PO_N, PO_TAB = PO_SAVE + 4, PO_SAVE + 8
 PO_MAP = PO_SAVE + 8 + PO_MAX * PO_REC + 4

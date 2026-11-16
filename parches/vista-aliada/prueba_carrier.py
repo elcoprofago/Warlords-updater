@@ -1,14 +1,16 @@
 # Prueba de juguete del transporte doble ("Carrier") sobre el exe parcheado, en unicorn: formar (crlink, 0x49d05d),
 # seguir (crfollow, 0x49cdc7, con la dirección anotada en crface), defensa conjunta (crdef, 0x464c3d), "Landing"
 # anulado en una mitad (landchk) y dibujo de la popa con la hoja animada del grupo (crdraw, 0x459d0d).
-# Uso: python prueba_carrier.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_carrier.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Corre el código real del juego salvo 0x485e30, 0x49c960 y 0x49d450, que se reemplazan por un ret que anota la
 # llamada. Cada caso lleva controles que no se tienen que tocar: un ejército propio lejos y uno ajeno al lado.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)

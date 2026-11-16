@@ -1,5 +1,5 @@
 # Prueba de juguete del pintado de la noche (dn_pre / dn_post) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_dianoche.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_dianoche.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Mapa de 30x30 de tierra con una ciudad 2x2 en (10,10), una ruina en (20,5), un sitio en (8,22), un puente en
 # (5,20)-(6,20) y un ejército de quien mira en (15,17). Controles que no deben dar luz: un camino de tierra en (22,17),
 # un puente derribado en (22,12) y un ejército enemigo en (24,8). La vista es de 20x15 desde (5,5).
@@ -9,11 +9,13 @@
 # Minimapa (dn_mini, en 0x4114ef) de 100x125: cada fila de píxeles se recolorea (0x4ede30, stub) en tramos de igual
 # nivel, con el nivel de la casilla del mapa entero; no toca la grilla de la vista; de día no pinta, y el cambio
 # entre día y noche marca el minimapa para rearmar.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, math, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 def jmp_target(va):

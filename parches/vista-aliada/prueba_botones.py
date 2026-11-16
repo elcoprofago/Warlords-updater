@@ -1,6 +1,6 @@
 # Prueba de juguete de los botones de Votación, Sorteo y Comparador (tl_* y dc_* de build.py) sobre el exe y el RES
 # parcheados, en unicorn.
-# Uso: python prueba_botones.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_botones.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Menú: corre el armado del menú de partida (0x4bd180) y su despachador (0x4bd520) con las llamadas de dibujo, cierre
 # y red interceptadas. Preparación: el final de la inicialización (0x46f341) y el clic (0x46e889). Red: la recepción
 # (0x4b6a16) con paquetes armados a mano. Ociosa: 0x4dea40 con las funciones de Windows simuladas sobre un sistema de
@@ -9,12 +9,14 @@
 # Controles: Chat Mode y otro ítem del menú, otro control de la preparación, otra máquina, otro remitente, otro tipo de
 # paquete, herramienta fuera de rango, el reloj sin cumplir, .ver trabado, otros controles de Edit Side y el RES
 # original sin los registros.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from PIL import Image
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
@@ -399,7 +401,7 @@ def recs(path, did):
         t, i = struct.unpack_from('<II', d, p); out[i] = d[p:p + 4 + SZ[t]]; p += 4 + SZ[t]
     assert p == o + 20 + h[4]
     return out
-NUEVO, ORIG = os.path.join(DIR, 'DATA', 'WAR3AV.RES'), r'C:\Warlords3\DATA\War3.RES'
+NUEVO, ORIG = os.path.join(DIR, 'DATA', 'WAR3AV.RES'), W3 + r'\DATA\War3.RES'
 print('-- RES')
 n35, o35 = recs(NUEVO, 35), recs(ORIG, 35)
 ver('menú: 26 registros (24 + 2)', (len(n35), len(o35)), (26, 24))
@@ -465,7 +467,7 @@ ver('control: registros originales de Army List intactos', all(n111[i] == o111[i
 se = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sello.pcx'))
 ver('sello.pcx: 4 cuadros de 56x56; el deshabilitado (3.º) = fondo de DLG_BIG bajo el botón (tapa el sello anterior)',
     (se.size, list(se.crop((0, 112, 56, 168)).getdata()) ==
-     list(Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').crop((532, 52, 588, 108)).getdata())),
+     list(Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').crop((532, 52, 588, 108)).getdata())),
     ((56, 224), True))
 ver('sello.pcx: normal, apretado y puntero encima iguales y con dibujo',
     [list(se.crop((0, 56 * k, 56, 56 * k + 56)).getdata()) == list(se.crop((0, 0, 56, 56)).getdata()) for k in (1, 3)]
@@ -486,7 +488,7 @@ hoja = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'sorteo.pcx'))
 ver('sorteo.pcx: esquinas transparentes (11), centro dibujado', [hoja.getpixel((x, 60 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 59), (32, 30))],
     [True, True, False] * 4)
 ver('sorteo.pcx: 4 cuadros de 64x60, misma paleta que BUTT_STD', (hoja.mode, hoja.size, hoja.getpalette()[:768]),
-    ('P', (64, 240), Image.open(r'C:\Warlords3\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
+    ('P', (64, 240), Image.open(W3 + r'\SETS\Fantasy\BUTT_STD.PCX').getpalette()[:768]))
 ver('archivo 167: darkcomp en SETS\\Fantasy', (struct.unpack_from('<I', fn[DC_FILE])[0], fn[DC_FILE][4:13],
     struct.unpack_from('<6I', fn[DC_FILE], 36)), (DC_FILE, b'darkcomp\0', (16, 1, 0, 0, 0, 0)))
 n86, o86 = recs(NUEVO, 86), recs(ORIG, 86)
@@ -501,7 +503,7 @@ dc = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'darkcomp.pcx'))
 ver('darkcomp.pcx: esquinas transparentes (11), centro dibujado',
     [dc.getpixel((x, 64 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 63), (32, 32))], [True, True, False] * 4)
 ver('darkcomp.pcx: 4 cuadros de 64x64, paleta de DLG_BIG (fondo de Edit Side)', (dc.mode, dc.size, dc.getpalette()[:768]),
-    ('P', (64, 256), Image.open(r'C:\Warlords3\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
+    ('P', (64, 256), Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
 ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 3)

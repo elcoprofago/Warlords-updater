@@ -1,15 +1,17 @@
 # Prueba de juguete de construir caminos (bd_* de build.py, paso C.1 de PENDIENTE-construcciones.md), en unicorn.
-# Uso: python prueba_caminos.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_caminos.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Menú: br_menu -> tr_check -> bd_check, que deja BD_FLAG. Costo: 0x4b65e0(BD_MARK, jugador) con br_cost.
 # Diálogo: br_rebtxt con BD_MARK; tr_send arma BD_PKT. Red: bd_recv (desde 0x4b6a22) con un paquete de juguete.
 # Mapa de juguete: x >= 30 agua; (20..22, *) montaña; (25, *) colinas; columna x = 10 camino de la hoja 0.
 # Paso C.2: montaña vecina (bd_pick rota N, E, S, O con cada clic). Controles: sin el bono, héroe, "build" como bono de combate, agua, montaña, ya hay camino, ciudad, edificio, no
 # es su turno; en la red: otra máquina, sin oro, bando de la computadora, casilla no apta.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))
 BASE, img = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())

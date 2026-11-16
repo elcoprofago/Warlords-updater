@@ -1,13 +1,15 @@
 # Prueba de juguete de derribar y reconstruir puentes sobre el exe parcheado, en unicorn.
-# Uso: python prueba_puentes.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_puentes.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Mapa de 20x20 de tierra con un puente horizontal (5,5)-(6,5), otro vertical (12,8)-(12,9) y, como controles, una
 # casilla de agua con edificio y estructura 1 (no es puente) en (15,15) y agua sin puente en (16,15).
 # Las funciones del juego que se llaman (avisos, oro, ahogar, redibujar) son stubs que anotan sus argumentos.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 

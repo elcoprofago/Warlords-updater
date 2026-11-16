@@ -1,11 +1,13 @@
 # Prueba de juguete del camuflaje (bono de movimiento "camouflg"; cam_blit, vía crdraw en 0x459d0d) sobre el exe
 # parcheado, en unicorn. Usa el banco de prueba_dianoche.py (mapa, vista y dn_pre para poner la noche).
-# Uso: python prueba_camuflaje.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_camuflaje.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Cada caso dibuja el ejército quieto de una celda (2ª pasada vía crdraw y 3ª pasada, globito, vía cam_blit3) y
 # compara: la copia (0x4dd530, stub) con los mismos argumentos; o de noche, si todas las unidades del bando en la casilla
 # tienen "camouflg", en su lugar el recoloreo (0x4ee3c0, stub) con esos argumentos y la tabla al 30 % (comparada con el
 # mismo cálculo en Python). Y el Army Report (0x414d50): de noche no muestra el ejército camuflado ajeno.
 # Controles: grupo mixto, grupo con héroe, unidades de otro bando en la misma casilla, de día, sin la opción.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_dianoche.py'), encoding='utf-8').read()
 exec(src.split('\nb = Bench()')[0])
@@ -19,7 +21,7 @@ BLIT3 = call_target(0x45a267)
 assert all(call_target(va) == BLIT3 for va in SITES3)
 TYPES = 0x53c410
 
-pal = open(r'C:\Warlords3\war3.pal', 'rb').read()
+pal = open(W3 + r'\war3.pal', 'rb').read()
 rgb = [tuple(pal[3 * i:3 * i + 3]) for i in range(256)]
 cand = [10] + [i for i in range(16, 245) if i != 187]
 CAM = bytearray(range(256))

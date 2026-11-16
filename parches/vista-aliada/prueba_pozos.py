@@ -1,5 +1,5 @@
 # Prueba de juguete de pozos, remolinos y trampas (po_* de build.py) sobre el exe parcheado y el original, en unicorn.
-# Uso: python prueba_pozos.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_pozos.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Parte 1, datos + SAV: guardar y cargar corren desde la última escritura y la última lectura del .SAV (0x439c84,
 # 0x439fda) con el archivo de mentira (un dict).
 # Parte 2, generación: po_gen (desde 0x4a1961) con un mapa de juguete y el dado en Python; po_start (desde 0x42ddc1).
@@ -11,20 +11,22 @@
 # mentira. Remolino de 3x3 (22/10/2026): cada casilla de agua pinta su pieza de los remolinos de ella y sus vecinas.
 # Controles: la tabla de la Votación sigue igual delante; un .SAV viejo (sin VOTA, o con VOTA y sin POZO), roto o con
 # otra marca carga la tabla vacía; un registro fuera del mapa no se marca en po_map; el original carga el .SAV nuevo.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, re, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET, FRAME, OPTS = 0x1f0000, 0x100, 0x1e0000, 0x4fae68
 MAPW, MAPH, MAPSH = 0x503e00, 0x503e02, 0x503e06
 PO_MAX, PO_REC, PO_MAPSZ, VT_MAX = 64, 8, 0x32000 // 10, 8
 SPRINTF = 0x1f8000   # dirección de mentira para [0x5a9bec]
 
 def cargar(nombre):
-    # el original se lee de C:\Warlords3 si la carpeta armada no lo tiene
+    # el original se lee de E:\Warlords-TEST\Warlords3 si la carpeta armada no lo tiene
     ruta = os.path.join(DIR, nombre)
-    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(r'C:\Warlords3', nombre))
+    pe = pefile.PE(ruta if os.path.exists(ruta) else os.path.join(W3, nombre))
     return pe, pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
 AV, ORIG = cargar('DarklordAV.exe'), cargar('Darklord.exe')
 _, BASE, img = AV

@@ -1,12 +1,14 @@
 # Prueba del terreno (etapa 2 de PENDIENTE-simulador-combate.md).
-# Uso: python prueba_terreno.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_terreno.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 3 armas con bono de combate contra 3 gnollcav, 10 000 peleas por caso: el % tiene que subir solo en el terreno de su
 # bono (en la casilla del defensor, o en la del atacante si el juego mira esa) y quedar igual en los demás (control).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys
 from motor import Motor
 from datos import armas
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 A = [a for a in armas(os.path.join(os.path.dirname(EXE), 'ARMY')) if not a.barco]
 m = Motor(EXE, SAV); N = 10000; AX, AY, DX, DY = 50, 40, 51, 40
 mal = 0

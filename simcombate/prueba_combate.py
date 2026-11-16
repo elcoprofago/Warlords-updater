@@ -1,12 +1,14 @@
 # Prueba de la ventana de combate (etapa 4 de PENDIENTE-simulador-combate.md): hay ícono para cada arma, barco y
 # clase de héroe; la repetición de la ventana tacha las mismas unidades, en el mismo orden, que motor.muertes; y
 # deja con vida exactamente a las del lado ganador que no cayeron.
-# Uso: python prueba_combate.py [carpeta del juego] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_combate.py [carpeta del juego] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, random
 import tkinter as tk
 from escenario import Simulador
 from combate import VentanaCombate, icono
-JUEGO = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+JUEGO = sys.argv[1] if len(sys.argv) > 1 else W3
 SAV = sys.argv[2] if len(sys.argv) > 2 else os.path.join(JUEGO, 'SAVES', 'Tanda_Kor.SAV')
 s = Simulador(JUEGO, SAV); mal = 0
 def ver(c, msg):

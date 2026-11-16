@@ -1,13 +1,15 @@
 # Prueba de juguete: la IA derriba puentes por criterio propio (ai_brraze en 0x4c4d3a) y el caso "Raze Site" del
 # evaluador de misiones lee bien la casilla de un puente (qb_ailoc3 en 0x435d53), en unicorn.
 # Uso: python prueba_iarazea.py [DarklordAV.exe] [Darklord.exe] [casos al azar]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Mapa de 64x64 de tierra con el puente P (20,10)-(21,10). La pila del jugador 2 (computadora) termina un movimiento de
 # 0x4c4a10 (se entra en 0x4c4d3a con el destino en [esp+0x38]/[esp+0x3c]) con el líder (ejército 1) donde diga el caso.
 # La decisión se compara contra un modelo en Python de la cuenta de 0x41f4b0 llevada al puente (ver ai_brraze en
 # build.py); la distancia (0x4974a0) y la hostilidad (0x49c1c0) corren de verdad. El azar (0x4deb20), el aviso a la
 # misión (0x461a60), la orden de red (0x4b9550) y la pausa (0x4275b0) van guionados y se anotan. También el criterio
 # de defensa (ai_brdef, modelo defense): ciudad propia de un lado, ejército en guerra del otro.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, math, random, struct, pefile
 from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE, UC_HOOK_MEM_READ_UNMAPPED
 from unicorn.x86_const import *
@@ -16,8 +18,8 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_32
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 NRAND = int(sys.argv[3]) if len(sys.argv) > 3 else 3000
 # ia_on: el primer cmp byte ptr [ia_on], 0 (80 3d) de ai_brraze, al que salta el call de 0x4c4d3a; ia_mode son los 8
 # bytes anteriores (place_data seguidos).

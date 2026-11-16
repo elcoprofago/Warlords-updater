@@ -1,17 +1,19 @@
 # Prueba de juguete de la ventana de fin de partida (go_* de build.py) sobre el exe y el RES parcheados, en unicorn.
-# Uso: python prueba_fin.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_fin.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Título: corre 0x482c1d -> 0x482c39 con GetModuleHandleA devolviendo una KERNEL32 de mentira (tabla de exportaciones
 # armada a mano) y GetLocalTime simulada. Podio: corre la tabla desde 0x482fdc (después de hi_gofin) hasta 0x483264
 # con un marco de 0x482d77 armado a mano y las llamadas de dibujo interceptadas.
 # Controles: sin KERNEL32 o con GetLocalTime reenviada (va sin fecha), bando sin aliados, aliado eliminado, alianza de
 # un solo lado, Diplomacia desactivada, ejércitos muertos o de otro color, partida sin nombre (sin pie) y el RES
 # original (título en la fuente 2, sin la hoja de la alianza).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from PIL import Image
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

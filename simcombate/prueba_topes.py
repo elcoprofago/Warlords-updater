@@ -1,13 +1,15 @@
 # Prueba de los topes de pila del simulador (escenario.Simulador.tope).
-# Uso: python prueba_topes.py [carpeta del juego] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_topes.py [carpeta del juego] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # Ciudad: el defensor entra con 32 (4 casillas de 8) y la ficha del juego los lleva a los 32; el atacante, 8.
 # Barco "Landing": 5 (6 con "Carrier"); barco "Carrier" de defensor: convoy de 3 pilas (24). Campo abierto: 8.
 # Voladores ("fly"): pila de 6; en la ciudad, en casillas de 6; el juego los marca con el bit 2 de +0xe0 del tipo.
 # Controles: 9 en campo abierto se rechaza; 33 en la ciudad se rechaza; más defensores en la ciudad bajan el %.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct
 from escenario import Simulador, Error
 from motor import FICHA, FSZ
-J = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+J = sys.argv[1] if len(sys.argv) > 1 else W3
 S = Simulador(J, sys.argv[2] if len(sys.argv) > 2 else os.path.join(J, 'SAVES', 'Tanda_Kor.SAV'))
 mal = 0
 def ver(c, msg):

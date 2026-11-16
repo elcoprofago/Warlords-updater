@@ -4,7 +4,8 @@
 # 1) BLOQUEA: cambios en parches/<ID>/ sin cambiar la VERSION de <ID> en parches/parches.txt
 #    en el mismo commit. El actualizador decide "hay version nueva" por ese numero; si el codigo
 #    cambia y el numero no, los jugadores que ya lo tienen nunca ven la actualizacion.
-#    No cuentan los *.md ni los prueba*.py (no cambian lo que se publica).
+#    No cuentan los *.md ni los prueba*.py (no cambian lo que se publica), ni un cambio cuyas lineas
+#    nombran solo la carpeta del juego de pruebas (W3/Warlords3/juego_pruebas): mudarla no cambia el parche.
 # 2) RECUERDA (no bloquea): un cambio en source/ no le llega a nadie hasta recompilar
 #    el exe con tools/compilar-actualizador.ps1 y
 #    publicarlo; git no puede verificar ese paso.
@@ -36,6 +37,12 @@ fallo=0
 ids=$(printf '%s\n' "$staged" | grep -v -e '\.md$' -e '/prueba[^/]*\.py$' |
       sed -n 's#^parches/\([^/]*\)/.*#\1#p' | sort -u)
 for id in $ids; do
+    # Excepcion: si toda linea cambiada de parches/<ID>/ nombra solo la carpeta del juego de pruebas
+    # (juego_pruebas.py: W3, Warlords3), cambia donde se instala o de donde se lee, no lo que se publica.
+    if [ -z "$(git diff --cached -U0 -- "parches/$id/" ':!*.md' ':!*/prueba*.py' | grep '^[+-]' |
+               grep -v -e '^+++' -e '^---' | grep -v -e 'W3' -e 'Warlords3' -e 'juego_pruebas')" ]; then
+        continue
+    fi
     antes=$(git show HEAD:parches/parches.txt 2>/dev/null | version_de "$id")
     ahora=$(git show :parches/parches.txt 2>/dev/null | version_de "$id")
     if [ -z "$ahora" ]; then

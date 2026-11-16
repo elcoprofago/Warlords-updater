@@ -12,13 +12,15 @@
 #    grupo se parte hasta que entra; los que bajan quedan libres o en una pila nueva de la IA; la lista del marco (la
 #    que recibe 0x4c4da0) es la del grupo nuevo; controles: humano, lchit 2, código 1, grupo de 1;
 #  - convoyes (ai_conv): la orden de ir a la casilla vecina solo con todas las condiciones; un control por condición.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, collections, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
 PREV = sys.argv[1]
-NEW = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\DarklordAV.exe'
-sav = open(sys.argv[3] if len(sys.argv) > 3 else r'C:\Warlords3\Saves\Aliados03.SAV', 'rb').read()
+NEW = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\DarklordAV.exe'
+sav = open(sys.argv[3] if len(sys.argv) > 3 else W3 + r'\Saves\Aliados03.SAV', 'rb').read()
 P, STK = 2, 17
 REC = lambda p: 0x53c410 + (p * 16 + 15) * 0xfc
 GRP = 0x56ea90 + P * 0x4f0

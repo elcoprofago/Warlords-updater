@@ -2,7 +2,7 @@
 # el exe parcheado, en unicorn, con el buscador de caminos real (0x485e30) y la partida Aliados03 (jugador 2, ejército
 # 17, como en las pruebas de Landing).
 # Uso: python prueba_cabotaje.py [DarklordAV.exe] [Darklord.exe] [partida.SAV]
-#      (por defecto los de C:\Warlords3 y Saves\Aliados03.SAV; armar antes con build.py)
+#      (por defecto los de E:\Warlords-TEST\Warlords3 y Saves\Aliados03.SAV; armar antes con build.py)
 # Esperado:
 #  - la tabla de distancias a tierra (CABD) es la de un recorrido en anchura independiente, en todo el mapa, y el
 #    armado del grafo (0x4a4f90) vuelve con los registros que preserva intactos;
@@ -14,13 +14,15 @@
 #    queda limitado;
 #  - "Landing": desde agua se desembarca en un paso hacia la tierra vecina en las 8 direcciones (salvo montaña sin
 #    camino), y solo hacia tierra.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, re, collections, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-NEW = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-OLD = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe'
-sav = open(sys.argv[3] if len(sys.argv) > 3 else r'C:\Warlords3\Saves\Aliados03.SAV', 'rb').read()
+NEW = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+OLD = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe'
+sav = open(sys.argv[3] if len(sys.argv) > 3 else W3 + r'\Saves\Aliados03.SAV', 'rb').read()
 P, STK = 2, 17
 REC = lambda p: 0x53c410 + (p * 16 + 15) * 0xfc      # registro del barco (ranura 15) del bando p
 GRP = 0x56ea90 + P * 0x4f0

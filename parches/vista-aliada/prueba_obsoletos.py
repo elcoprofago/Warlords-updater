@@ -1,12 +1,14 @@
 # Prueba de juguete del borrado de archivos obsoletos (ia_menu, llamada en 0x452c3b) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_obsoletos.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_obsoletos.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # DeleteFileA ([0x5a97c0]), el menú (0x4aab10) y GetPrivateProfileString (sin tanda: devuelve 0) son stubs que anotan
 # lo que reciben. Tiene que borrar exactamente los tres obsoletos, antes del menú, con la pila y los registros intactos.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 assert img[0x452c3b - BASE] == 0xe8

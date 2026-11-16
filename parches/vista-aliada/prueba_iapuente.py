@@ -1,10 +1,12 @@
 # Prueba de juguete: la IA cumple la misión "derribar un puente" (ai_brq en 0x40d450, ai_brname en 0x40d963), en unicorn.
 # Uso: python prueba_iapuente.py [DarklordAV.exe] [Darklord.exe]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Mapa de 64x64 de tierra con el puente P (20,10)-(21,10). El héroe (ejército 1) es del jugador 2, de la computadora,
 # con la misión tipo 10 sobre P. Lo que el original hace con un sitio se compara contra Darklord.exe: tiene que dar
 # exactamente lo mismo. El movimiento (0x40d2b0), el ataque (0x40e400), la orden de red (0x4b9550), el cambio de
 # grupo (0x40d230) y la pausa (0x4275b0) van guionados y se anotan; el aviso a la misión (0x461a60) corre de verdad.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -13,8 +15,8 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_32
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 
 W = H = 64; SHIFT = 8; LAND, WATER, MOUNT = 2, 3, 5
 AI, ENEMY = 2, 3

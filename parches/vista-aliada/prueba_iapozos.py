@@ -2,13 +2,15 @@
 # (0x4a5c40), un pozo, remolino o trampa activa que el jugador del camino ve es intransitable, salvo la ruta expresa
 # de un humano a esa misma casilla. Corre en unicorn el tramo de un vecino desde 0x4a5d34 (di = x, bx = y) y mira a
 # dónde salta: 0x4a5d40 = la casilla sigue en el camino, 0x4a5e31 = se descarta.
-# Uso: python prueba_iapozos.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_iapozos.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Controles: el exe original pasa siempre; el registro con los registros que preserva sale igual.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK = 0x1f0000
 MAPW, MAPH, MAPSH = 0x503e00, 0x503e02, 0x503e06
 PO_MAX, PO_REC = 64, 8

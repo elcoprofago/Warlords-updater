@@ -1,5 +1,5 @@
 # Arma Herramientas\votacion.exe y Herramientas\sorteo.exe, los programas que abren los botones "Votacion" y
-# "Draw Lots" de vista-aliada (DarklordAV.exe los lanza desde C:\Warlords3 con --operador / --espectador).
+# "Draw Lots" de vista-aliada (DarklordAV.exe los lanza desde E:\Warlords-TEST\Warlords3 con --operador / --espectador).
 # No los compila: copia el dist\<programa>.exe de los repos Votacion y Sorteo (hermanos de este repo), y se niega si
 #   - la VERSION del programa no es la que fija PROGRAMAS: una version nueva de un programa obliga a cambiar este
 #     archivo, y hooks\pre-commit obliga entonces a subir la VERSION de herramientas en parches.txt (si no, los
@@ -8,8 +8,10 @@
 #   - el .exe es anterior al ultimo commit que toco el programa: se commiteo algo que no se compilo (compilar.ps1).
 # votacion.ini (la pantalla elegida en cada PC) no va: el programa usa la principal si falta, y asi el actualizador
 # no pisa la de nadie.
-# Uso: python build.py [carpeta_salida]   (por defecto C:\Warlords3; W3_REPOS cambia la carpeta de los repos, para
+# Uso: python build.py [carpeta_salida]   (por defecto E:\Warlords-TEST\Warlords3; W3_REPOS cambia la carpeta de los repos, para
 #      probar)
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, re, shutil, subprocess, sys
 from datetime import datetime
 
@@ -19,9 +21,9 @@ PROGRAMAS = {
     'sorteo': ('Sorteo', 'sorteo.py', '1.1.4', ['sorteo.py', 'assets', 'sorteo.spec']),
 }
 
-OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 if OUT_DIR.startswith('-'):
-    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto C:\\Warlords3)')
+    sys.exit('Uso: python build.py [carpeta_salida]   (por defecto E:\\Warlords-TEST\\Warlords3)')
 REPOS = os.environ.get('W3_REPOS') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 

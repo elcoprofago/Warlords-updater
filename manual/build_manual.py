@@ -1,13 +1,15 @@
 # Arma el Manual de uso en PDF: saca las ilustraciones de los archivos del juego y del repo, y convierte
 # manual.html a Manual-Era-de-Alianzas.pdf con Edge sin ventana (--print-to-pdf).
 # Uso: python manual\build_manual.py
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, subprocess, sys
 from PIL import Image
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(AQUI)
 IMG = os.path.join(AQUI, 'img')
-POZOS = r'C:\Warlords3\RUINS\pozos.pcx'
+POZOS = W3 + r'\RUINS\pozos.pcx'
 EDGE = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
 CUADRO = 48
 REMO0 = 13   # PO_REMO0 de parches\vista-aliada\build.py: 4 fases x 9 piezas

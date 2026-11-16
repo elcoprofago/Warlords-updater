@@ -1,5 +1,5 @@
 <#
-Arma el zip de una carpeta del juego desde C:\Warlords3 y lo publica en la release "Actualizador" de GitHub,
+Arma el zip de una carpeta del juego desde E:\Warlords-TEST\Warlords3 y lo publica en la release "Actualizador" de GitHub,
 de donde lo bajan las opciones 1 a 5 del actualizador (Paquete en source\Actualizador\Actualizador.cs, que lo
 descomprime encima de la carpeta del juego sin borrar nada).
 
@@ -9,7 +9,7 @@ descomprime encima de la carpeta del juego sin borrar nada).
 
 Pasos:
   1. Baja el zip publicado (el mas grande, ARMY, pesa unos 36 MB) y le saca el SHA-256 a cada archivo.
-  2. Junta solo los archivos sueltos de C:\Warlords3\<CARPETA>: ninguna subcarpeta (Nuevos, back, BMP,
+  2. Junta solo los archivos sueltos de E:\Warlords-TEST\Warlords3\<CARPETA>: ninguna subcarpeta (Nuevos, back, BMP,
      error...), que el juego no lee. Tampoco .TMP ni .lnk.
   3. Compara con lo publicado: que cambia, que se agrega y que dejaria de repartirse. Esto ultimo corta la
      publicacion salvo que se acepte con -Quitar (por archivo) o este en una subcarpeta: una PC
@@ -25,7 +25,7 @@ param(
     [Parameter(Mandatory = $true)][ValidateSet('ARMY', 'SPELL', 'HERO', 'ESCEN', 'ITEMS')][string]$Carpeta,
     [switch]$Prueba,
     [string[]]$Quitar = @(),
-    [string]$Juego = 'C:\Warlords3'
+    [string]$Juego = ((Get-Content (Join-Path $PSScriptRoot '..\juego_pruebas.py') | Select-String "^W3 = r'(.+)'").Matches[0].Groups[1].Value)
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'

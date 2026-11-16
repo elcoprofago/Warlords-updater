@@ -1,15 +1,17 @@
 # Prueba de la etapa 2, héroes, de PENDIENTE-simulador-combate.md.
-# Uso: python prueba_heroes.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_heroes.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 1. Las clases que la partida tiene cargadas son copia exacta de su .HER.
 # 2. Un héroe nuevo de nivel 1 tiene la fuerza, vidas y movimiento de su clase; cada elección la aplica la rutina del
 #    juego (0x48efa0) y cambia lo que dice el .HER; no se puede gastar más puntos que los del nivel.
 # 3. Un héroe sintético pelea igual que un héroe real de la partida con el mismo registro (misma batalla, misma semilla).
 # 4. En batalla: sumar un héroe al atacante sube su %; un héroe más fuerte lo sube más (control).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, glob, struct
 from motor import Motor, CLASE0, CLREC, HEROE0, HREC, UNIT0, UREC
 from datos import HABILIDADES
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 HERO = os.path.join(os.path.dirname(EXE), 'HERO')
 mal = 0
 def ver(c, msg):

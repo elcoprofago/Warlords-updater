@@ -6,12 +6,14 @@
 # 0x40d2b0 (mover la pila: se anota el destino). Los eventos se leen de lo que ia_evt manda a fprintf.
 # Esperado: los casos del Definition of done del spec (refugio 1a/1b, salidas 3a/3b, req. 5, casos límite; sin
 # refuerzo de ciudades aliadas desde 1.0.38.0), la regla del héroe y la defensa de ciudades aliadas (1.0.39.0) y los controles: con la IA original y sin IA.INI no cambia nada.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-sav = open(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Border_Alianzas.SAV', 'rb').read()
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+sav = open(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Border_Alianzas.SAV', 'rb').read()
 CITIES, DIPLO = 0x537e2c, 0x55ee4c
 EQ = ((0, 1, 3, 5), (2, 4, 6, 7))
 P = 2                      # color con la IA de prueba (equipo 2467); su pila 0 tiene dos ejércitos

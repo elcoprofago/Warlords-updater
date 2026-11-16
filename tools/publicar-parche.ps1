@@ -10,7 +10,7 @@ Pasos:
   2. Exige rama main, sin cambios sin commitear, el commit ya subido a GitHub y que no exista
      la etiqueta parche-<ID>-v<VERSION> (lo publicado tiene que corresponder a un commit).
   3. Recompila con parches\<ID>\build.py en dist\<ID> y exige que el resultado sea identico,
-     archivo por archivo, a lo instalado en C:\Warlords3: se publica lo que se probo jugando.
+     archivo por archivo, a lo instalado en E:\Warlords-TEST\Warlords3: se publica lo que se probo jugando.
   4. Arma dist\PARCHE-<ID>-v<VERSION>.zip (reproducible: fecha del commit en cada entrada) y su SHA-256.
   5. Baja el PARCHES.txt publicado, exige que la VERSION sea mayor que la publicada y reescribe
      solo la linea de <ID> (las de los demas parches quedan como estaban).
@@ -23,7 +23,7 @@ Requiere: python con keystone y capstone (build.py), gh autenticado.
 param(
     [Parameter(Mandatory = $true)][string]$Id,
     [switch]$Prueba,
-    [string]$Juego = 'C:\Warlords3'
+    [string]$Juego = ((Get-Content (Join-Path $PSScriptRoot '..\juego_pruebas.py') | Select-String "^W3 = r'(.+)'").Matches[0].Groups[1].Value)
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'

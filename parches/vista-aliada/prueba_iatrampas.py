@@ -1,16 +1,18 @@
 # Prueba de juguete de la IA que siembra trampas (tr_ai de build.py, paso 5.3 de ia\PENDIENTE-ia-innovaciones.md),
-# en unicorn. Uso: python prueba_iatrampas.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# en unicorn. Uso: python prueba_iatrampas.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # tr_ai se encuentra desde el parche de 0x40cc3f (call tr_me; tr_me empieza con call tr_ai). Se interceptan
 # 0x4974a0 (distancia: la de rey), 0x497a90 (enemigo visible más cercano: lo fija el caso), 0x4b65e0 (costo),
 # 0x4dd3b0 (red) e ia_evt. reccomb y pg_ok corren de verdad.
 # Controles: sin el bono, héroe con el bono, casilla de ciudad, lejos de ciudad propia, ciudad propia muerta o de
 # otro, enemigo lejos, casilla ocupada, tabla llena, sin oro (con y sin la reserva), ya sembró este turno, bando
 # humano, sin IA.INI, color con la IA original.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
 PO_MAX, PO_REC = 64, 8
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))

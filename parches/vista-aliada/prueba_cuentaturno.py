@@ -1,13 +1,15 @@
 # Prueba de juguete de la cuenta regresiva del turno en el mapa (cr_tick de build.py) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_cuentaturno.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_cuentaturno.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Entra a 0x4c1074 (el control del reloj del mapa con ms que quedan en ecx) y anota los sonidos (0x4465e0) y los
 # cursores (0x4ddfa0). Controles: con más de 5 s no suena; en otra PC (no es su turno) no suena; en pausa no suena;
 # el número del cursor es el de los segundos; el original sigue en 0x4c1079 con esi = 1000.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

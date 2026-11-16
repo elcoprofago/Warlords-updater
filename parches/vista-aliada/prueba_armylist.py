@@ -1,13 +1,15 @@
 # Prueba de juguete del renglón de habilidades del Army List (armab, 0x4a2c24) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_armylist.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# Uso: python prueba_armylist.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Corre desde 0x4a2c1a (texto ya armado en el búfer del marco) hasta la entrada de armrow, y mira el texto que le llega.
 # Controles: unidad sin bonos, renglón que no es unidad, nombre parecido ("Landings"), texto que no entra, y los bytes
 # del marco que siguen al búfer, que no se tienen que tocar.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)

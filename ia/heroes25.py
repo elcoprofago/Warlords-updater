@@ -1,6 +1,6 @@
 """Héroes del 25th Anniversary Project en el banco de pruebas (ia\\PENDIENTE-ideas-moddb.md, Paso 2).
 
-    python ia\\heroes25.py estado      qué héroes y hechizos hay en C:\\Warlords3
+    python ia\\heroes25.py estado      qué héroes y hechizos hay en E:\\Warlords-TEST\\Warlords3
     python ia\\heroes25.py 25th        pone los 15 héroes del 25th y los hechizos propios que piden
     python ia\\heroes25.py original    vuelve a los héroes de HERO\\back y quita esos hechizos
 
@@ -9,13 +9,15 @@ con casilleros que apuntan a nada. Las tropas que esos hechizos invocan ya exist
 usuario de los héroes originales: este script solo la lee. Solo se quitan los hechizos idénticos a los del 25th.
 --juego <carpeta> cambia la carpeta (para la prueba en una carpeta de juguete).
 """
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os
 import re
 import shutil
 import sys
 
 MOD = r'F:\source\repos\Mods\25th Anniversary Project'
-JUEGO = r'C:\Warlords3'
+JUEGO = W3
 
 
 def leer(p):

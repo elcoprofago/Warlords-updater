@@ -8,9 +8,11 @@
 # - Habilidad especial de Edit Army Data: "Giantslayer +N" (código 34, sin efecto en el juego original) pasa a
 #   llamarse "Bridge +N", la habilidad que DarklordAV.exe suma en un puente en pie.
 # El código va en el sobrante de .text (0x46ce8d..0x46d000, ceros en el archivo); se agranda su VirtualSize.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import struct, keystone
 
-SRC = r'C:\Warlords3\war3ed_ssg.exe'
+SRC = W3 + r'\war3ed_ssg.exe'
 BASE = 0x400000
 SEND = 0x48fad0      # SendMessageA (importación)
 FILL = 0x428d60      # llena el combo con los subtipos; cdecl, devuelve la cantidad

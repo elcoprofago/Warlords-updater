@@ -1,6 +1,6 @@
 # Prueba de juguete de la misión de héroe "derribar un puente" sobre el exe parcheado, en unicorn.
 # Uso: python prueba_misionpuente.py [DarklordAV.exe] [Darklord.exe]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Mapa de 64x64 de tierra; el héroe del jugador 1 (humano, o de la computadora: recibe lo mismo) está en (5,5). Con Q = 0 la distancia de rey válida para
 # el objetivo es 14..34. Puentes (código canónico = la casilla de menor y*128+x):
 #   B5 (25,30)-(26,30) dist 25, dueña C1 enemiga                                   -> candidato
@@ -13,6 +13,8 @@
 # La ciudad dueña de un puente (br_city) sigue la regla de 0x440f60 para un sitio; se compara contra la original.
 # El azar (0x4deb20) va guionado: elige el tipo 10 en la tabla de Average y después el candidato pedido.
 # Lo que no tiene puentes se compara contra el Darklord.exe original: tiene que dar exactamente lo mismo.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -20,8 +22,8 @@ from unicorn.x86_const import *
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 
 W = H = 64; SHIFT = 8; WATER, LAND = 3, 2
 UI, ENEMY, PEACE = 1, 3, 4

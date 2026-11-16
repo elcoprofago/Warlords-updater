@@ -3,11 +3,13 @@
 # y una unidad del color 5. Con IA.INI (ia_on = 1) tiene que llamar a ia_evt(44, 5, 712, 3, puntaje) y seguir a
 # 0x4ba210 con la pila y los registros intactos. Control: sin IA.INI no anota nada y también sigue a 0x4ba210.
 # Uso: python prueba_hechizolanzado.py [DarklordAV.exe]
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
 BASE, IMG = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 SITE = 0x49b883

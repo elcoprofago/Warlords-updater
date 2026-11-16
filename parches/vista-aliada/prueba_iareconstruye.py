@@ -6,13 +6,15 @@
 #   una ciudad sigue por el código original.
 # - Los nombres de los textos de la meta 9 (0x40ce24, 0x41f30c).
 # Uso: python prueba_iareconstruye.py [DarklordAV.exe] [Darklord.exe] [casos al azar]
-#      (por defecto C:\Warlords3\DarklordAV.exe y el original C:\Warlords3\Darklord.exe; armar antes con build.py)
+#      (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y el original E:\Warlords-TEST\Warlords3\Darklord.exe; armar antes con build.py)
 # Corren de verdad: br_* y ai_brs, la distancia entre ciudades (0x4974a0), la hostilidad (0x49c1c0), el costo de
 # reconstruir (0x4b65e0 con br_cost) y el mapa de caminos de la IA (0x4a65d0, sobre una grilla del banco). Van
 # guionados y se anotan: la legalidad de la ciudad (0x41e580), el enemigo más cercano (0x497a90), las oportunidades
 # (0x41d640, 0x41ec20), el azar (0x4deb20), el descuento (0x4057a0), el generador de nombres (0x4374a0), sprintf
 # ([0x5a9bec]), el registro (0x427520), la pausa (0x4275b0), el movimiento (0x4973f0, 0x40d2b0), la orden de red
 # (0x4b9ce0) y el fin de la pila (0x40d230).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, math, random, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
@@ -21,8 +23,8 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_32
 def load(path):
     pe = pefile.PE(path)
     return pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image()), (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
-AV = load(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe')
-ORIG = load(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\Darklord.exe')
+AV = load(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe')
+ORIG = load(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\Darklord.exe')
 NRAND = int(sys.argv[3]) if len(sys.argv) > 3 else 600
 # ia_on: el primer cmp byte ptr [ia_on], 0 (80 3d) de ai_brraze, al que salta el call de 0x4c4d3a; ia_mode son los 8
 # bytes anteriores; ia_evtb, el del evento 1 de ai_brraze (lo mismo que prueba_iarazea.py).

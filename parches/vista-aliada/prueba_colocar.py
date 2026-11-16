@@ -1,6 +1,6 @@
 # Prueba de juguete de colocar obras con vista previa (pv_* de build.py, pedido del 9/11/2026 en
 # PENDIENTE-construcciones.md), en unicorn.
-# Uso: python prueba_colocar.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_colocar.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Reusa el banco de prueba_caminos.py (mapa: x >= 30 agua; columna x = 10 camino). Prueba pv_eval (alcance, tipos,
 # precio, fantasma y redibujo), ob_at (el fantasma solo mientras se dibuja), pv_dec (cursor al pasar, paquete al hacer
 # clic) y bm_norm (el clic derecho termina el modo), con sus controles.

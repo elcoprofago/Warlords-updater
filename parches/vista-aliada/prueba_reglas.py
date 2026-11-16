@@ -1,10 +1,12 @@
 # Prueba del chequeo del Army List contra DarklordsValidator real (reglas 1-25).
-# Uso: python prueba_reglas.py [cantidad de casos sintéticos, 20000 por defecto] [carpeta ARMY, C:\Warlords3\ARMY]
+# Uso: python prueba_reglas.py [cantidad de casos sintéticos, 20000 por defecto] [carpeta ARMY, E:\Warlords-TEST\Warlords3\ARMY]
 #   Arma el parche en una carpeta temporal (build.py), emula su rutina armeval (unicorn) y la compara, unidad por
 #   unidad, con RulesEngine.Validate del validador (..\..\..\DarklordsValidator, compilado acá con dotnet) y con
 #   reglas_ref.validar. Primero sobre los .ARM reales, después sobre casos sintéticos con valores alrededor de cada
 #   umbral y textos raros en Move Bonus y Combat Bonus (mayúsculas, espacios, bytes de control y > 0x7f).
 #   Requiere pefile, unicorn, keystone, capstone y el SDK de .NET 8.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, ast, glob, random, shutil, struct, subprocess, tempfile
 import pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
@@ -14,7 +16,7 @@ sys.path.insert(0, AQUI)
 import reglas_ref as RR
 
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
-ARMY = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\ARMY'
+ARMY = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\ARMY'
 VALIDADOR = os.path.normpath(os.path.join(AQUI, '..', '..', '..', 'DarklordsValidator', 'DarklordsValidator.csproj'))
 TMP = tempfile.mkdtemp(prefix='prueba_reglas_')
 

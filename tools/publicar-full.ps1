@@ -1,5 +1,5 @@
 ﻿<#
-Arma Warlords3_FULL.zip desde C:\Warlords3 y lo publica en la release "Actualizador" de GitHub, de
+Arma Warlords3_FULL.zip desde E:\Warlords-TEST\Warlords3 y lo publica en la release "Actualizador" de GitHub, de
 donde lo baja la opcion 6 (ACTUALIZAR TODO EL JUEGO) del actualizador.
 
   .\tools\publicar-full.ps1           # arma, compara, pregunta y publica
@@ -7,7 +7,7 @@ donde lo baja la opcion 6 (ACTUALIZAR TODO EL JUEGO) del actualizador.
 
 Pasos:
   1. Lee la lista del zip publicado (solo su indice, por HTTP con rangos: no baja los 450 MB).
-  2. Junta los archivos de C:\Warlords3 dejando afuera lo propio de quien lo arma (ver Incluir):
+  2. Junta los archivos de E:\Warlords-TEST\Warlords3 dejando afuera lo propio de quien lo arma (ver Incluir):
      lo mismo que la opcion 6 no pisa (NoPisar en source\Actualizador\Actualizador.cs), mas Saves.
      De PGS y SCENARIO van solo los archivos que ya trae el zip publicado (los de fabrica).
      Suma los de iniciales\ (originales de GOG que una PC limpia necesita), tomados de ahi y no de la PC.
@@ -24,7 +24,7 @@ Requiere: gh autenticado.
 param(
     [switch]$Prueba,
     [string[]]$QuitarIgual = @(),   # lo que el zip nuevo deja afuera a sabiendas: no se pregunta (sesiones sin teclado)
-    [string]$Juego = 'C:\Warlords3'
+    [string]$Juego = ((Get-Content (Join-Path $PSScriptRoot '..\juego_pruebas.py') | Select-String "^W3 = r'(.+)'").Matches[0].Groups[1].Value)
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -142,7 +142,7 @@ function Obsoletos($buildPy) {
     if (-not $l) { return @() }
     @([regex]::Matches($l.Line, "r?'([^']+)'") | ForEach-Object { $_.Groups[1].Value })
 }
-# Un resto de version anterior en C:\Warlords3 viajaria a todas las PC con la opcion 6.
+# Un resto de version anterior en E:\Warlords-TEST\Warlords3 viajaria a todas las PC con la opcion 6.
 $restos = @(Get-ChildItem parches -Directory | ForEach-Object { Obsoletos (Join-Path $_.FullName 'build.py') } |
     Where-Object { $nuevo.Contains($_) })
 if ($restos) { Falla "quedan archivos obsoletos en ${base}: $($restos -join ', '). Borralos (o abri DarklordAV.exe una vez) y volve a publicar." }
@@ -188,7 +188,7 @@ Write-Host ("  {0} archivos, {1:N0} MB, SHA-256 {2}" -f $dentro.Count, ((Get-Ite
 # ---------------------------------------------------------------- 5. FULL.txt
 # Formato que lee LeerCompleto (source\Actualizador\Actualizador.cs): SHA-256 del zip y despues ID|VERSION
 # La version de cada parche se comprueba por contenido, no por <Juego>\PARCHES\<ID>.txt: publicar-parche.ps1
-# instala en C:\Warlords3 sin escribir esa anotacion. Cada archivo del parche que va en el zip tiene que ser
+# instala en E:\Warlords-TEST\Warlords3 sin escribir esa anotacion. Cada archivo del parche que va en el zip tiene que ser
 # igual al del zip del parche publicado (lista y SHA de PARCHES.txt de la release).
 $lineasFull = @("# Warlords3_FULL.zip: SHA-256 y version de cada parche que trae (tools\publicar-full.ps1)", $sha)
 $verif = Join-Path $raiz 'dist\verificacion'

@@ -20,6 +20,8 @@
 #   python ia\tanda.py nueva --partidas 6 --guardadas Tanda_Scarpart,Tanda_Borderlands,Tanda_Kor
 #   python ia\tanda.py seguir            (retoma la última tanda sin terminar)
 #   python ia\informe.py [tanda]          (informe de la tanda)
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import argparse, configparser, csv, ctypes, json, os, sqlite3, subprocess, sys, threading, time
 from ctypes import wintypes
 
@@ -34,7 +36,7 @@ def _config():
     return c
 
 
-JUEGO = _config().get('Carpetas', 'juego', fallback=r'C:\Warlords3')
+JUEGO = _config().get('Carpetas', 'juego', fallback=W3)
 EXE = 'DarklordAV.exe'
 # Etapa 3 (alianzas, vista-aliada 1.0.33.0) sumó diplomacia por turno y eventos (puentes, convoyes, refugios).
 NOMBRES_CSV = ('IA.CSV', 'IA_BAT.CSV', 'IA_FIN.CSV', 'IA_DIP.CSV', 'IA_EVT.CSV', 'IA_VIC.CSV')
@@ -130,7 +132,7 @@ create table if not exists resultado (partida integer, color integer, ia integer
 
 
 # Versión del parche con que juega la IA de prueba. Una tanda se juega entera con el mismo DarklordAV.exe: el número
-# de vista-aliada sale de parches\parches.txt del repo (build.py instala sin tocar C:\Warlords3\PARCHES), y la huella
+# de vista-aliada sale de parches\parches.txt del repo (build.py instala sin tocar E:\Warlords-TEST\Warlords3\PARCHES), y la huella
 # del exe distingue dos compilaciones con el mismo número.
 PARCHES_TXT = os.path.join(os.path.dirname(BASE), 'parches', 'parches.txt')
 

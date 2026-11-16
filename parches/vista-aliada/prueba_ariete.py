@@ -1,15 +1,17 @@
 # Prueba de juguete del retrato del ariete en el diálogo de arrasar un puente, sobre el exe y el RES parcheados, en
 # unicorn.
-# Uso: python prueba_ariete.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_ariete.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Dibujo: corre 0x4954d0 (dibujo de los ítems del diálogo) con 0x4bbf20 interceptada y mira qué imagen pide.
 # RES: corre el lector de registros del juego (0x4ed760) con la búsqueda (0x4dfdf0) y la lectura (0x4dfd20) del archivo
 # sobre WAR3AV.RES, y mira el archivo y la imagen nuevos, los de siempre y los que no existen.
 # Controles: ciudad, sitio, otro ítem del diálogo, registros vecinos sin cambios y el RES original (sin las entradas).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
@@ -86,8 +88,8 @@ ver('control: otro ítem', dibujo(5, 1, BR_CODE + 9), [])
 
 print('-- RES')
 NUEVO = os.path.join(DIR, 'DATA', 'WAR3AV.RES')
-ORIG = r'C:\Warlords3\DATA\War3.RES'
-ver('el juego tiene ARMY\\orcs_ram.pcx', os.path.isfile(r'C:\Warlords3\ARMY\orcs_ram.pcx'), True)
+ORIG = W3 + r'\DATA\War3.RES'
+ver('el juego tiene ARMY\\orcs_ram.pcx', os.path.isfile(W3 + r'\ARMY\orcs_ram.pcx'), True)
 def archivo(res, n):
     r = registro(res, 2, n, 60)
     return r and (struct.unpack_from('<I', r)[0], r[4:36].split(b'\0')[0].decode(), struct.unpack_from('<6I', r, 36))

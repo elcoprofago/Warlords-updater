@@ -1,14 +1,16 @@
 # Prueba de la etapa 2 (datos) de PENDIENTE-simulador-combate.md.
-# Uso: python prueba_datos.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_datos.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 1. Todos los .ARM del ARMY se leen; los tipos que la partida ya tiene cargados coinciden campo a campo con su .ARM
 #    (salvo los .ARM modificados después de grabarse la partida: la partida guarda su propia copia del tipo).
 # 2. Un .ARM cargado en una ranura libre pelea igual que el mismo tipo ya cargado por el juego (control: un arma
 #    más fuerte en esa ranura tiene que mover el %).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct
 from motor import Motor, TIPOS, TREC
 from datos import armas, Arma
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 ARMY = os.path.join(os.path.dirname(EXE), 'ARMY')
 mal = 0
 def ver(c, msg):

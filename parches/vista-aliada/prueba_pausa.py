@@ -1,15 +1,17 @@
 # Prueba de juguete de la pausa mientras se vota (pz_* de build.py) sobre el exe parcheado, en unicorn.
-# Uso: python prueba_pausa.py [carpeta]   (por defecto C:\Warlords3; armarla antes con build.py)
+# Uso: python prueba_pausa.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Una línea de tiempo simulada (GetTickCount y timeGetTime dan el mismo reloj): empieza un turno con límite de 1 minuto
 # (0x4c0f70), y cada segundo corre la función ociosa (0x4dea40) y el control del reloj del bucle principal (0x4c0fe0),
 # con lo que este llama al vencer interceptado. Los paquetes de red entran por la recepción real (0x4b6a16).
 # Controles: sin votación el turno vence como en el original; abrir Sorteo no pausa; un estado sin orden de abrir no
 # pausa; otro remitente; sin pausa el despacho deja pasar los clics; un mensaje del juego en pantalla no se toca.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff

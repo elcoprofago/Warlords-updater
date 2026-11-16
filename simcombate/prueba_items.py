@@ -1,14 +1,16 @@
 # Prueba de la etapa 2, ítems, de PENDIENTE-simulador-combate.md.
-# Uso: python prueba_items.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_items.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 1. Los ítems de la partida están donde dice motor.ITEM0: 0x409fb0 del juego cuenta +3 Gold per City en Grak.
 # 2. Un ítem dado con Motor.dar_item lo cuenta el juego igual.
 # 3. En batalla: cada ítem con una habilidad de combate cambia el % del héroe solo; control: el mismo ítem en el suelo
 #    (estado 3) da lo mismo que sin ítem.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys
 from motor import Motor, ITEM0, IREC
 from datos import items, HABILIDADES
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 mal = 0
 def ver(c, msg):
     global mal; mal += not c; print('OK  ' if c else 'MAL ', msg)

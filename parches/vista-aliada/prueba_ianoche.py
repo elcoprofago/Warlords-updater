@@ -1,13 +1,15 @@
 # Prueba de juguete de la pila de noche que espera de día (nt_wait de build.py, paso 5.4 de
-# ia\PENDIENTE-ia-innovaciones.md), en unicorn. Uso: python prueba_ianoche.py [carpeta]   (por defecto C:\Warlords3)
+# ia\PENDIENTE-ia-innovaciones.md), en unicorn. Uso: python prueba_ianoche.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3)
 # nt_wait se encuentra desde ai_ally (el call en al_orig, entre el push del registro de la pila y el test eax, eax).
 # Controles que tienen que dar «no espera»: sin Day/Night, de noche, sin amenaza, blanco débil (menos de la mitad),
 # mitad justa de ejércitos de noche, ejércitos muertos que no cuentan, héroe (cuenta en el total, nunca de noche).
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 SHOPT, RONDA, TIPOS, EJ = 0x53c3a5, 0x503328, 0x53c410, 0x54fe00
 pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))
 BASE, img = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())

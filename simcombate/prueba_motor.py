@@ -1,13 +1,15 @@
 # Prueba del motor (etapa 1 de PENDIENTE-simulador-combate.md).
-# Uso: python prueba_motor.py [DarklordAV.exe] [partida.SAV]   (por defecto C:\Warlords3 y SAVES\Tanda_Kor.SAV)
+# Uso: python prueba_motor.py [DarklordAV.exe] [partida.SAV]   (por defecto E:\Warlords-TEST\Warlords3 y SAVES\Tanda_Kor.SAV)
 # 1. Control contra el juego: 0x464a10 (probabilidades del propio exe) y el motor con las rutinas sueltas dan las mismas
 #    victorias para cada semilla.
 # 2. Cantidad de ciudades: la misma batalla 10 000 veces con el defensor dueño de todas las ciudades y de una sola
 #    (y lo mismo con el atacante). Control: una unidad más del atacante tiene que mover el %.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, time
 from motor import Motor
-EXE = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'
-SAV = sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\SAVES\Tanda_Kor.SAV'
+EXE = sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'
+SAV = sys.argv[2] if len(sys.argv) > 2 else W3 + r'\SAVES\Tanda_Kor.SAV'
 m = Motor(EXE, SAV)
 AX, AY, DX, DY = 50, 40, 51, 40
 mal = 0

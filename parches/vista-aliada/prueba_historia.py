@@ -1,7 +1,7 @@
 # Prueba de hi_mover / hi_fin / hi_gofin / hi_govic / hi_auto (partidas terminadas a HISTORY\), con el código
 # parcheado real emulado sobre una carpeta de juguete (PENDIENTE-partidas-terminadas.md). También HISTORY\<nombre>.FIN
 # (cómo terminó: podio, victoria aliada o «acuerdo: <texto>» del chat, parte B).
-# Uso: python prueba_historia.py C:\Warlords3\DarklordAV.exe   (las rutinas se ubican por los parches del exe)
+# Uso: python prueba_historia.py E:\Warlords-TEST\Warlords3\DarklordAV.exe   (las rutinas se ubican por los parches del exe)
 # Las funciones de Windows y de la biblioteca de C (sprintf, CopyFileA, DeleteFileA, CreateDirectoryA, _stricmp) y el
 # autoguardado 0x4397f0 se reemplazan por equivalentes en Python sobre una carpeta temporal.
 import os, re, shutil, struct, sys, tempfile

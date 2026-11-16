@@ -1,14 +1,16 @@
 # Prueba de juguete del efecto noche de las clases monster, demon y undead (nm_kind, nm_unit en 0x46787d, nm_grp en 0x46907c) sobre el exe parcheado,
-# en unicorn. Uso: python prueba_nightmare.py [DarklordAV.exe]   (por defecto C:\Warlords3\DarklordAV.exe; armarlo antes con build.py)
+# en unicorn. Uso: python prueba_nightmare.py [DarklordAV.exe]   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe; armarlo antes con build.py)
 # Arma registros de tipo en la tabla 0x53c410 y compara el resultado con el mismo cálculo en Python: el sorteo de la
 # noche (FNV-1a de la vuelta y los nombres), la lista de opciones de cada unidad (fuerza, hits, bono si tiene uno,
 # habilidad si tiene una que cuente) y el +2 en la ficha (+3, +4) o en una copia del registro (+0xdf, +0xe8).
 # Controles: de día, sin la opción, otra clase (orc, dragon), habilidad que no cuenta, y el registro real intacto.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 def jmp_target(va):

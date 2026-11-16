@@ -1,15 +1,17 @@
 # Prueba de juguete de war3ed_av.exe (editor_av.py), en unicorn.
-# Uso: python prueba_editor.py [carpeta]   (por defecto C:\Warlords3; la que se le pasó a build.py)
+# Uso: python prueba_editor.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; la que se le pasó a build.py)
 # Las llamadas que llenaban los combos de bonos de Edit Army Data y Edit Hero Data se corren con un combo de mentira:
 # 0x428d60 (llenar con los subtipos) y SendMessageA se reemplazan por versiones en Python sobre una lista.
 # Esperado: movimiento sin bridge ni trap; combate sin landing, carrier, cabotage ni bridge (sin distinguir
 # mayúsculas); el resto, incluidos trap en combate y landing en movimiento, queda. Control: los subtipos de Edit
 # Terrain siguen llamando a 0x428d60 y la entrada 14 de habilidades dice "Bridge +N".
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-DIR = sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3'
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 pe = pefile.PE(os.path.join(DIR, 'war3ed_av.exe'))
 img = pe.get_memory_mapped_image()
 SUBTIPOS = ['bridge', 'Cabotage', 'carrier', 'LANDING', 'trap', 'water', 'woods', 'bridges', 'fly']

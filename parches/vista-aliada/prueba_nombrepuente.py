@@ -1,17 +1,19 @@
 # Prueba de juguete de los nombres de puentes (br_name) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_nombrepuente.py [DarklordAV.exe] [BRIDNAME.TXT]
-#   (por defecto C:\Warlords3\DarklordAV.exe y C:\Warlords3\DATA\BRIDNAME.TXT; armarlos antes con build.py)
+#   (por defecto E:\Warlords-TEST\Warlords3\DarklordAV.exe y E:\Warlords-TEST\Warlords3\DATA\BRIDNAME.TXT; armarlos antes con build.py)
 # Corre todo lo del juego: br_name, el generador de nombres 0x4374a0, su azar 0x4deb20 y los métodos de archivo
 # (abrir, leer línea, rebobinar, cerrar). Solo se simulan las llamadas a Windows y a la biblioteca de C que hay
 # debajo: CreateFileA, ReadFile, SetFilePointer, CloseHandle, sscanf y _stricmp, sobre archivos en memoria.
 # Mapa de 40x40 de tierra con tres puentes: horizontal (5,5)-(6,5), vertical (12,8)-(12,9) y uno de cuatro
 # casillas (20,30)-(23,30); el de (12,8) se prueba también derribado.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
+from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import sys, struct, re, pefile, capstone
 from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
 from unicorn.x86_const import *
 
-pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else r'C:\Warlords3\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
-GRAMMAR = open(sys.argv[2] if len(sys.argv) > 2 else r'C:\Warlords3\DATA\BRIDNAME.TXT', 'rb').read()
+pe = pefile.PE(sys.argv[1] if len(sys.argv) > 1 else W3 + r'\DarklordAV.exe'); BASE = pe.OPTIONAL_HEADER.ImageBase
+GRAMMAR = open(sys.argv[2] if len(sys.argv) > 2 else W3 + r'\DATA\BRIDNAME.TXT', 'rb').read()
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 IMPORTS = {i.name.decode(): i.address for e in pe.DIRECTORY_ENTRY_IMPORT for i in e.imports if i.name}
