@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.25'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.26'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -29,6 +29,39 @@ def juego_abierto():
 # Círculo de consumo (CPU de toda la PC), con las imágenes y los cortes de semáforo de USBagent
 # (tools/usbagent-hub/Controls/PerfCircle.xaml.cs): <30 % / 30-69 % / >=70 %, tres imágenes por franja.
 ASSETS = os.path.join(getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__))), 'assets')
+
+
+class Cpu:
+    """Uso de CPU como lo muestra el Administrador de tareas: el contador «% Processor Utility» de Windows, que
+    cuenta también la frecuencia a la que anda el procesador (con turbo puede pasar de 100: se topa en 100). El tiempo
+    ocupado de los hilos (psutil.cpu_percent) daba unos 15 puntos menos con el banco en paralelo (60 % contra 75 %,
+    16/11/2026) y el semáforo no llegaba al rojo con el procesador casi lleno. Si el contador no está, usa psutil."""
+    def __init__(self):
+        self.q = None
+        try:
+            import ctypes
+            from ctypes import wintypes
+            pdh = ctypes.WinDLL('pdh')
+            q, c = wintypes.HANDLE(), wintypes.HANDLE()
+            if pdh.PdhOpenQueryW(None, None, ctypes.byref(q)) or pdh.PdhAddEnglishCounterW(
+                    q, r'\Processor Information(_Total)\% Processor Utility', None, ctypes.byref(c)) or \
+                    pdh.PdhCollectQueryData(q):
+                return
+            self.pdh, self.q, self.c, self.ct = pdh, q, c, ctypes
+        except Exception:
+            self.q = None
+
+    def leer(self):
+        if self.q is not None:
+            ct = self.ct
+
+            class Valor(ct.Structure):
+                _fields_ = [('estado', ct.c_ulong), ('relleno', ct.c_ulong), ('v', ct.c_double)]
+            v = Valor()
+            if not self.pdh.PdhCollectQueryData(self.q) and \
+                    not self.pdh.PdhGetFormattedCounterValue(self.c, 0x200 | 0x8000, None, ct.byref(v)):
+                return min(100.0, max(0.0, v.v))
+        return psutil.cpu_percent()
 
 
 class Medidor:
@@ -281,6 +314,7 @@ class Monitor(tk.Tk):
         self.b_susp = self.icono(fs, self.imgs_susp['on' if self.suspender else 'off'], cursor='hand2')
         self.b_susp.pack(); self.b_susp.bind('<Button-1>', lambda e: self.alternar_suspension())
         Ayuda(self.b_susp, 'modo sleep')
+        self.medir_cpu = Cpu()
         self.cpu = Medidor(self, semaforos, 'CPU'); self.cpu.caja.pack(side='left', padx=8)
         self.luz = Luz(self, semaforos); self.luz.caja.pack(side='left', padx=8)
         Ayuda(self.luz.l_img, 'roja: partida pausada, esperando una acción tuya o tanda detenida')
@@ -793,7 +827,7 @@ class Monitor(tk.Tk):
         self.encender(self.b_cortar, self.corriendo())
         self.dibujar_barras()
         self.dibujar_reloj()
-        self.cpu.poner(psutil.cpu_percent())
+        self.cpu.poner(self.medir_cpu.leer())
         self.luz.poner(*self.parada)
         self.after(2000, self.refrescar)
 

@@ -74,3 +74,11 @@ de prueba, incluida la que hoy es `C:\Warlords3`, pasan a `E:\Warlords-TEST`. Ho
 .cs, .ini) nombran `C:\Warlords3` (tanda.py, build.py de los parches, pruebas, publicar-parche.ps1, Visor, opción 9
 del Actualizador): cambiarlos todos a una sola ruta configurable en el mismo commit, y recién después retirar
 `C:\Warlords3` (borrarla es decisión del usuario, regla global 1).
+
+## Medición de CPU y tope de partidas (16/11/2026)
+Con 6 partidas a la vez (PC de 6 núcleos / 12 hilos, 47 GB): CPU 70-80 % según el Administrador de tareas, 52 MB por
+partida. El semáforo del Monitor usaba psutil.cpu_percent (tiempo ocupado de los hilos: 54-62 %) y no llegaba al
+rojo; desde el Monitor 1.0.26 lee «% Processor Utility» (PdhAddEnglishCounterW, el mismo número del Administrador de
+tareas; psutil queda de respaldo). Probado en caliente: 66-71 % contra 65 % del contador de Windows por WMI.
+**Próximo paso:** después de la serie de la TAREAS 232, crear `Warlords3-7` y `-8` y correr una tanda con 8. Se
+compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el procesador ya estaría saturado.
