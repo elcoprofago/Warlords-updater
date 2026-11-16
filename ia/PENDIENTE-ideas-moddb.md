@@ -1,6 +1,6 @@
 # Ideas tomadas de los parches públicos de ModDB (15/11/2026)
 
-Parches analizados en `F:\source\repos\Mods` (ver `propuesta\ESTRATEGIA-negociacion.md`). Regla del usuario: de
+Parches analizados en `F:\source\repos\Mods` (ver `F:\source\repos\negocio-warlords\ESTRATEGIA-negociacion.md`). Regla del usuario: de
 ellos se incorpora solo lo que se demuestre que mejora el nuestro, con código y datos propios.
 
 ## Paso 1 — Héroes: movimiento más caro (a cargo del usuario, TAREAS 220)
