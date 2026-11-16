@@ -13,7 +13,7 @@
 # prueba en la otra juegan con la original), así cada color ocupa cada IA la misma cantidad de veces en el total.
 #
 # En paralelo (ia\PENDIENTE-banco-paralelo.md): las partidas se reparten entre las carpetas de [Carpetas] paralelas
-# de tanda.ini (por defecto E:\Warlords-TEST\Warlords3-1 a -6), una partida por carpeta a la vez. Antes de cada
+# de tanda.ini (por defecto E:\Warlords-TEST\Warlords3-1 a -8), una partida por carpeta a la vez. Antes de cada
 # tanda se sincronizan con JUEGO (donde build.py instala el parche y viven las guardadas). Sin carpetas, juega en JUEGO.
 #
 # Uso:
@@ -63,7 +63,7 @@ def carpetas_paralelas():
     E:\\Warlords-TEST\\Warlords3-N que existan; si no hay ninguna, solo JUEGO."""
     v = _config().get('Carpetas', 'paralelas', fallback=None)
     ds = [x.strip() for x in v.split(',') if x.strip()] if v is not None else \
-        [rf'E:\Warlords-TEST\Warlords3-{i}' for i in range(1, 7)]
+        [rf'E:\Warlords-TEST\Warlords3-{i}' for i in range(1, 9)]
     ds = [d for d in ds if os.path.isdir(d) and os.path.normcase(d) != os.path.normcase(JUEGO)]
     return [Carpeta(d) for d in ds] or [PRINCIPAL]
 
