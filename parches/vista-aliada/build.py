@@ -19666,6 +19666,38 @@ hs_w = place('hs_w', f'''
 hs_orig:
     jmp 0x492c40
 ''')
+# hs_ev: evento 44, hechizo que la IA lanza (Paso 3, para ver si hs_w cambia lo que se lanza). Reemplaza en 0x49b883 el
+# call 0x4ba210(unidad, hechizo elegido, 0); si = índice del elegido en la lista del héroe, cuyo puntaje está en
+# [esp + 0x88 + 2 si] del llamador. x = efecto 1 * 100 + efecto 2 (ids), y = costo, n = puntaje. Solo con IA.INI.
+HS_EVT = 44
+hs_ev = place('hs_ev', f'''
+    cmp byte ptr [{IA_ON:#x}], 0
+    je hv_go
+    pushad
+    mov edi, dword ptr [esp + 0x28]
+    movsx ecx, si
+    movsx eax, word ptr [esp + ecx*2 + 0xb8]
+    push eax
+    movsx eax, word ptr [edi + 0x90]
+    push eax
+    movsx eax, word ptr [edi + 0x96]
+    imul eax, eax, 100
+    movsx edx, word ptr [edi + 0xa6]
+    add eax, edx
+    push eax
+    movsx eax, word ptr [esp + 0x30]
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    push eax
+    push {HS_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    popad
+hv_go:
+    jmp 0x4ba210
+''')
 
 # ---- La IA repara sus muros (PENDIENTE-faros-muros, «Reparar»; pedido del 10/11/2026). ai_wrep(ebx = jugador), al
 # empezar el turno de un bando de la computadora (+0xe2 != -1), en todas las PC (ia_turn corre en cada una): cada bloque
@@ -22496,6 +22528,7 @@ patch(0x473d32, asm('test bp, bp; jl 0x473d76', 0x473d32), asm(f'jmp {po_curclr:
 patch(0x473dc8, asm('mov ax, word ptr [esp + 0x38]', 0x473dc8), asm(f'jmp {po_cur:#x}', 0x473dc8))
 patch(0x4741d9, asm('call 0x4a2170', 0x4741d9), asm(f'jmp {po_info:#x}', 0x4741d9))
 patch(0x49b7ed, asm('call 0x492c40', 0x49b7ed), asm(f'call {hs_w:#x}', 0x49b7ed))   # hechizos: vacíos valen 0
+patch(0x49b883, asm('call 0x4ba210', 0x49b883), asm(f'call {hs_ev:#x}', 0x49b883))   # hechizo lanzado (evento 44)
 for _a in (0x4c2880, 0x4c28d0):
     patch(_a, asm('call 0x4dd1c0', _a), asm(f'call {pz_scroll:#x}', _a))
 assert rel(0x43a010, 5) == asm('call 0x446060', 0x43a010)

@@ -84,6 +84,7 @@ def main(tid=None):
     innovaciones(db, validas)
     candidatos(db, validas)
     defensa(db, validas)
+    hechizos(db, validas, cuenta)
     perfiles(db, validas)
 
 
@@ -122,6 +123,31 @@ def candidatos(db, validas):
     print('\nPuentes junto a una pila de la IA que no se derribaron (evento 21), por motivo')
     for ia, n, k in sorted(filas):
         print(f'{IAS.get(ia, ia):28} {DIAG.get(n, n):45} {k:6}')
+
+
+def hechizos(db, validas, cuenta):
+    """Evento 44 (desde 1.0.233.0, solo en tandas): hechizo que lanza la IA (ia\\PENDIENTE-ideas-moddb.md, Paso 3).
+    x = efecto 1 * 100 + efecto 2, y = costo, n = puntaje con que lo eligió. Por IA: cuántos lanza por color, puntaje
+    medio, cuántos son de un solo efecto (los que el error del original inflaba) y los más lanzados."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, x, y, n from evento where partida in ({q}) and tipo = 44', validas).fetchall()
+    if not filas:
+        return
+    por = defaultdict(list)
+    for ia, x, y, n in filas:
+        por[ia].append((x, y, n))
+    print('\nHechizos lanzados (evento 44; un efecto = el segundo casillero vacío)')
+    print(f'{"IA":28} {"lanzados":>8} {"por color":>9} {"puntaje":>7} {"un efecto":>9}  más lanzados (efectos/costo: veces)')
+    for ia in sorted(por):
+        v = por[ia]
+        uno = sum(1 for x, _, _ in v if x % 100 == 0)
+        top = defaultdict(int)
+        for x, y, _ in v:
+            top[(x // 100, x % 100, y)] += 1
+        t = ', '.join(f'{a}+{b}/{c}: {k}' if b else f'{a}/{c}: {k}'
+                      for (a, b, c), k in sorted(top.items(), key=lambda e: -e[1])[:5])
+        print(f'{IAS.get(ia, ia):28} {len(v):8} {len(v) / max(cuenta.get(ia, 1), 1):9.1f} '
+              f'{sum(n for _, _, n in v) / len(v):7.0f} {100 * uno / len(v):8.0f}%  {t}')
 
 
 DEFNO = {1: 'ejército encima al llegar', 2: 'ya no había amenaza al llegar'}

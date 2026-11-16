@@ -55,6 +55,15 @@ No copiar nada del plugin. Ojo: el Code Patch también toca 0x45EC40 (misiones),
   entre sí) y con menos ciudades: **no es un avance confirmado, queda solo en la IA de prueba** y no pasa al
   ranking. Para decidir hace falta el evento de hechizo lanzado (ver si cambia qué se lanza) antes de más tandas.
 
+- **Evento de hechizo lanzado (vista-aliada 1.0.233.0, 16/11/2026; TAREAS 232).** `hs_ev` reemplaza en 0x49b883 el
+  call 0x4ba210(unidad, hechizo elegido, 0) y anota el evento 44 (solo con IA.INI): x = efecto 1 * 100 + efecto 2,
+  y = costo, n = puntaje con que lo eligió (el del elegido está en [esp + 0x88 + 2 si] del llamador). El juego no
+  cambia. `parchesista-aliada\prueba_hechizolanzado.py` → TODO OK (con IA.INI anota (44, 5, 712, 3, 437) y deja
+  pila y registros intactos; control sin IA.INI no anota). `ia\informe.py` suma la sección «Hechizos lanzados» por
+  IA: cuántos, puntaje medio, % de un solo efecto y los más lanzados. **Próximo paso:** con la tanda, ver si la IA de
+  prueba lanza otros hechizos que la original (menos de un solo efecto inflados). Si no cambia nada, el arreglo no
+  tiene efecto real y se descarta; si cambia y no empeora puestos, pasa al ranking.
+
 ## Descartado
 Combate ácido/relámpago, diplomacia, misiones, ingresos y vida de héroes del Code Patch: cambian el juego entre
 humanos y no se probaron en multijugador.
