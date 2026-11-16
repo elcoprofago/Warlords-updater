@@ -1,0 +1,25 @@
+# Banco de pruebas en paralelo: varias partidas a la vez
+
+Pedido del usuario (16/11/2026). Corrige lo anotado en `PENDIENTE-entrenamiento-ia.md` («no se pueden correr
+partidas simultáneas»): eso venía de una suposición, no de una medición.
+
+## Medido (16/11/2026, sobre una partida de tanda en curso)
+- DarklordAV usa un solo núcleo al 100 %; la PC tiene 12. Hoy el banco usa 1/12 de la máquina.
+- 52 MB de memoria por partida, 18 GB libres: la memoria no limita.
+- El juego corre en ventana: pueden convivir varias.
+- Estimación: 6 a 10 partidas a la vez.
+
+## Qué lo impide hoy (`ia\tanda.py`)
+1. Una sola carpeta, `C:\Warlords3` (`JUEGO`): ahí se escribe qué partida cargar (IA.INI, guardada rotada) y el
+   juego deja sus registros (IA.CSV, eventos, IA_FIN.CSV). Dos partidas ahí se pisan.
+   Plan: una carpeta de juego por partida simultánea (`C:\Warlords3-1`, `-2`, …). Son copias de trabajo del banco,
+   no respaldos; por la regla global 11 se hacen recién con el visto bueno del usuario.
+2. `cerrar_juego()` cierra el juego por nombre: mataría todas. Cerrar cada una por su PID.
+3. Reparto de partidas (`plan`/`correr`), grabación en `datos.db` y el Monitor de IA suponen una partida por vez:
+   repartir entre carpetas y grabar sin chocar (una sola escritura a la base por vez).
+
+## Próximo paso (con la tanda actual terminada)
+Prueba de pocos minutos, sin tanda corriendo:
+- ¿el juego abre una segunda copia (en otra carpeta)?
+- ¿se frena cuando su ventana no está al frente?
+- con 6 a la vez, ¿cada partida va a la misma velocidad que sola?
