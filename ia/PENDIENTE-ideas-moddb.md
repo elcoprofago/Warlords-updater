@@ -24,6 +24,11 @@ estado` cambia entre los dos juegos y verifica byte a byte lo que quedó (probad
 - Límite: el banco no registra niveles ni habilidades compradas, solo héroes vivos por turno. Se juzga por héroes vivos
   al final, ciudades, puestos y largo de partida; si eso no alcanza, sumar el registro de las habilidades (+0x3fc).
 - Si mejora, para el ranking hay que publicar también los 42 hechizos (paquete SPELL), no solo HERO.
+- **Resultado (16/11/2026), tanda 173 (10 partidas completas, 1.0.232.0, héroes del 25th) contra 171-172 (18 partidas,
+  misma versión, héroes originales), todos los colores juntos:** PV por color 7,0 contra 7,0; ciudades 5,2 contra 5,2;
+  ejércitos 21,5 contra 20,6; héroes vivos al final 0,45 contra 0,42 por color; todas las partidas al tope de 30 turnos.
+  **Sin mejora medible: no se publica HERO ni SPELL.** `C:\Warlords3` volvió a los héroes originales
+  (`ia\heroes25.py original` → OK). Si se retoma, sumar antes el registro de habilidades compradas (+0x3fc).
 
 ## Paso 3 — Error de la IA al elegir hechizos (Claude)
 Descripción pública del Code Patch 1.q10: al pesar un hechizo, la IA suma también las casillas de efecto vacías,
