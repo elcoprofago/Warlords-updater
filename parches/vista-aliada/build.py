@@ -19754,9 +19754,9 @@ hs_ev = place('hs_ev', f'''
     push eax
     movsx eax, word ptr [edi + 0x90]
     push eax
-    movsx eax, word ptr [edi + 0x96]
+    movsx eax, word ptr [edi + 0x92]
     imul eax, eax, 100
-    movsx edx, word ptr [edi + 0xa6]
+    movsx edx, word ptr [edi + 0xa2]
     add eax, edx
     push eax
     movsx eax, word ptr [esp + 0x30]

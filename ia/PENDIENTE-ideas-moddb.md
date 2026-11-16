@@ -64,6 +64,17 @@ No copiar nada del plugin. Ojo: el Code Patch también toca 0x45EC40 (misiones),
   prueba lanza otros hechizos que la original (menos de un solo efecto inflados). Si no cambia nada, el arreglo no
   tiene efecto real y se descarta; si cambia y no empeora puestos, pasa al ranking.
 
+- **Resultado (16/11/2026), serie 174-176 (30 partidas completas, 1.0.236.0, banco en paralelo): no se adopta.**
+  La computadora casi no lanza hechizos: 9 en 30 partidas (4 la original, 5 la de prueba; 0,04 por color y
+  partida). El arreglo baja el puntaje con que elige (8 contra 16, el azar de las casillas vacías ya no suma),
+  pero con tan pocos hechizos no puede mover el resultado: la diferencia de PV entre prueba y original va de 0 a
+  +1,4 de tanda en tanda tanto con el arreglo (170-176) como sin él (168-169), por las demás destrezas de la IA de
+  prueba. Queda como está (solo en la IA de prueba, inofensivo) y no pasa al ranking. Si algún día interesa que la
+  IA use la magia, el problema es otro: que casi no lanza (ver 0x49b8b0, que solo recorre héroes con hechizos).
+- Error del registro: hasta 1.0.236.0 el evento 44 leía los efectos en +0x96/+0xa6 (4 bytes corridos: x salió 0
+  en todos). Corregido en `build.py` (+0x92/+0xa2, probado con `prueba_hechizolanzado.py` → TODO OK); sale con la
+  próxima versión de vista-aliada. El conteo, el costo y el puntaje eran correctos.
+
 ## Descartado
 Combate ácido/relámpago, diplomacia, misiones, ingresos y vida de héroes del Code Patch: cambian el juego entre
 humanos y no se probaron en multijugador.

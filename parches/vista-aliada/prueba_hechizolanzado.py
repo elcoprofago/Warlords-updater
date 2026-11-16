@@ -33,7 +33,7 @@ def run(ia_on):
     unit, si, score = 9, 2, 437
     mu.mem_write(0x54fe50 + unit * 0x1c + 0xe, struct.pack('<H', 5 << 5))
     sp = bytearray(0x200)
-    struct.pack_into('<h', sp, 0x90, 3); struct.pack_into('<h', sp, 0x96, 7); struct.pack_into('<h', sp, 0xa6, 12)
+    struct.pack_into('<h', sp, 0x90, 3); struct.pack_into("<h", sp, 0x92, 7); struct.pack_into("<h", sp, 0xa2, 12)
     mu.mem_write(SP, bytes(sp))
     frame = STK + 0x80000            # esp del llamador antes de empujar los argumentos
     mu.mem_write(frame + 0x88 + 2 * si, struct.pack('<h', score))
