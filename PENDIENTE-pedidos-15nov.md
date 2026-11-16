@@ -19,6 +19,8 @@ Recibidos mientras corría la tanda 170. Cada parte es independiente; se trabaja
    derrama sobre la casilla vecina después de las obras; po_draw3 repinta las obras de esa casilla (prueba_faro_bosque.py,
    MAL 0). Prueba del usuario: TAREAS 236. 1.0.235.0: repintar la obra entera la dejaba
    demasiado encima; ahora solo la pieza de arriba (cúpula, linterna, almenas), sin sombra (TAREAS 237).
+   1.0.236.0: el borde del bosque de la propia casilla cortaba el cuerpo en línea recta; ahora se repinta el cuerpo sin el
+   pie (capas OD_ALTO, borde irregular de copas) (TAREAS 238).
    **Bosque tapa la cúpula del faro (NA_159).** La cúpula debe dibujarse siempre encima del bosque.
    Ver `PENDIENTE-faros-muros.md` (orden de dibujo del faro).
 

@@ -2,7 +2,7 @@
 # derrama sobre una casilla vecina se pinta después de las obras; po_draw3 vuelve a pintar encima solo la pieza de arriba
 # (p = 1, cuerpo sin sombra) de la torre o el faro de la casilla de abajo.
 # Uso: python prueba_faro_bosque.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
-# Controles: sin borde no pinta nada; obra en la misma casilla (no abajo) o muro abajo: solo el borde.
+# En su propia casilla, el cuerpo sin el pie (capas OD_ALTO). Controles: sin borde no pinta nada; muro: solo el borde.
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
 from juego_pruebas import W3
 import os, sys, struct, pefile
@@ -16,7 +16,7 @@ J = 0x459ff5
 assert img[J - BASE] == 0xe9, 'falta el salto a po_draw3'
 PD3 = J + 5 + struct.unpack_from('<i', img, J - BASE + 1)[0]
 calls = []
-for k in range(0, 0x90):
+for k in range(0, 0x100):
     if img[PD3 - BASE + k] == 0xe8:
         t = PD3 + k + 5 + struct.unpack_from('<i', img, PD3 - BASE + k + 1)[0]
         if t != 0x4dd530 and BASE <= t < BASE + SIZE and t not in calls: calls.append(t)
@@ -69,7 +69,10 @@ ver('faro abajo: borde, solo la pieza de arriba (capa 1, p 1, cuerpo) en x 144, 
     correr(True, (13, 25)), [('borde',), ('pieza', 1, 1, 0, (13, 24, 144, 192)), ('bandera',), FIN])
 ver('torre abajo: capa 0', correr(True, (13, 25), 4)[1][:2], ('pieza', 0))
 ver('control: sin borde, nada', correr(False, (13, 25)), [FIN])
-ver('control: faro en la misma casilla, solo el borde', correr(True, (13, 24)), [('borde',), FIN])
+ver('faro en la misma casilla: su cuerpo sin el pie (capa OD_ALTO + 1, p 4), sin bandera',
+    correr(True, (13, 24)), [('borde',), ('pieza', 110, 4, 0, (13, 24, 144, 192)), FIN])
+ver('torre en la misma casilla: capa OD_ALTO', correr(True, (13, 24), 4)[1][:3], ('pieza', 109, 4))
 ver('control: muro abajo, solo el borde', correr(True, (13, 25), 7), [('borde',), FIN])
+ver('control: muro en la casilla, solo el borde', correr(True, (13, 24), 7), [('borde',), FIN])
 print('MAL', mal)
 sys.exit(1 if mal else 0)

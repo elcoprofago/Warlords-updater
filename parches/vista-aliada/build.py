@@ -13725,7 +13725,8 @@ OD_PORFILA = 5
 # la capa OD_DANO: la del nivel n (1..3) de la capa c en OD_DANO + (n - 1) * len(DM_CAPAS) + DM_CAPAS.index(c).
 DM_CAPAS = list(range(11, 22)) + list(range(42, 46)) + list(range(48, 52))
 OD_DANO = 52
-OD_CAPAS = OD_DANO + 3 * len(DM_CAPAS)
+OD_ALTO = OD_DANO + 3 * len(DM_CAPAS)   # capas OD_ALTO (torre) y + 1 (faro): solo su casilla, sin el pie que tapan los
+OD_CAPAS = OD_ALTO + 2                  # árboles (po_draw3, sobre el borde del bosque)
 OD_SOMBRA = 22              # capas 22..41: solo la sombra de las capas 0..19 (ob_draw las pinta antes que los cuerpos)
 OD_PDIAG = 42               # capas 42..45: puerta en un muro diagonal (d = 1 cerrada, abierta; d = 3 cerrada, abierta)
 OD_SDIAG = 46               # capas 46, 47: su sombra (d = 1, 3)
@@ -13819,6 +13820,19 @@ def _dm_ajena(c):          # brazo d = c - 12 del muro: la torre de la vecina en
     return frozenset((x + 48 * dx, y + 48 * dy) for x, y in _dm_torre)
 for _L in (1, 2, 3):
     od_capas += [_dm_capa(od_capas[c], _L, 1000 * _L + c, _dm_ajena(c)) for c in DM_CAPAS]
+# Torre y faro entre árboles (pedido del usuario, 16/11/2026): sobre el borde del bosque de su casilla se repinta el
+# cuerpo salvo el pie, cortado por una línea irregular de copas (semilla fija: igual en todas las PC).
+def _od_alto(im, semilla):
+    r = _rnd.Random(semilla); out = im.copy(); out.paste(11, (0, 0) + im.size)
+    cuerpo = im.crop((48, 48, 96, 96)); px = cuerpo.load()
+    filas = [y for y in range(48) if any(px[x, y] != 11 for x in range(48))]
+    pie = max(filas) if filas else 47
+    h = r.randint(10, 13)
+    for x in range(48):
+        if x % 3 == 0: h = max(7, min(16, h + r.randint(-3, 3)))
+        for y in range(max(0, pie - h), 48): px[x, y] = 11
+    out.paste(cuerpo, (48, 48)); return out
+od_capas += [_od_alto(od_capas[OD_BASE[t]], 77 + t) for t in (OB_TORRE, OB_FARO)]
 assert len(od_capas) == OD_CAPAS and OD_PUERTA == 20 and OD_BASE[OB_MURO] == 11 and OD_BASE[OB_EMPAL] == 2
 _full = bytearray(len(caves['od_full']))
 for L, im in enumerate(od_capas):
@@ -14786,6 +14800,21 @@ po_draw3 = place('po_draw3', f'''
     mov word ptr [{po_cx + 2:#x}], ax
     mov word ptr [{po_cx + 4:#x}], di
     mov word ptr [{po_cx + 6:#x}], bx
+    movsx eax, word ptr [{po_cx:#x}]
+    movsx edx, word ptr [{po_cx + 2:#x}]
+    call {ob_at:#x}
+    mov ebx, eax
+    test ebx, ebx
+    jz pd3_arr
+    movzx ecx, byte ptr [ebx + 4]
+    sub ecx, {OB_TORRE}
+    cmp ecx, 1
+    ja pd3_arr
+    add ecx, {OD_ALTO}
+    mov byte ptr [{od_vars:#x}], 4
+    mov byte ptr [{od_vars + 5:#x}], 0
+    call {od_put:#x}
+pd3_arr:
     movsx eax, word ptr [{po_cx:#x}]
     movsx edx, word ptr [{po_cx + 2:#x}]
     inc edx
