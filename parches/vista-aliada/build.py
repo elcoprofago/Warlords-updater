@@ -11684,6 +11684,7 @@ ma_n:
     jz ma_end
     or byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
 ma_end:
+    mov byte ptr [0x569588 + 0x1a4], 1
     popad
     ret
 ''')
@@ -12131,6 +12132,7 @@ obl_end:
     je mol_end
     mov dword ptr [{MO_FLAGS:#x}], 0
 mol_end:
+    mov byte ptr [0x569588 + 0x1a4], 1
     popad
     ret
 ''')
@@ -23479,6 +23481,17 @@ try:
 except KeyError: pass
 _blk = bytearray(res[_o:_o + 20 + _h[4]])
 struct.pack_into('<I', _blk, 4, MO_RES)
+# Renglones con el interlineado de los menús (BM_PASO; captura del usuario, 15/11/2026: copiados del 35 quedaban
+# encimados): renglón i en MO_Y0 + i * BM_PASO, centrados donde el 35 reparte los suyos (46..222); los que no llevan
+# moción, fuera del diálogo (y = 400).
+MO_Y0 = 134 - (len(MO_ROWS) - 1) * BM_PASO // 2
+_r = {i: p - _o for i, (p, t) in records(res, 35).items()}
+for _i, (_tx, _ht) in enumerate(zip(MO_TXT, MO_HOT)):
+    _ty = struct.unpack_from('<i', _blk, _r[_tx] + 0xc)[0]
+    _hy = struct.unpack_from('<i', _blk, _r[_ht] + 0xc)[0]
+    _ny = MO_Y0 + _i * BM_PASO if _i < len(MO_ROWS) else 400
+    struct.pack_into('<i', _blk, _r[_tx] + 0xc, _ny)
+    struct.pack_into('<i', _blk, _r[_ht] + 0xc, _ny + _hy - _ty)
 res += _blk
 assert find_dialog(res, MO_RES)[0] == len(res) - len(_blk)
 open(OUT_RES, 'wb').write(res)
