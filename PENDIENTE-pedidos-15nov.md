@@ -18,6 +18,18 @@ Recibidos mientras corría la tanda 170. Cada parte es independiente; se trabaja
 3. **Bosque tapa la cúpula del faro (NA_159).** La cúpula debe dibujarse siempre encima del bosque.
    Ver `PENDIENTE-faros-muros.md` (orden de dibujo del faro).
 
+### Averiguado el 16/11/2026 (sin cambios en el código todavía)
+- **A1.** No hay .SAV del turno 17: el más cercano es `C:\Warlords\NETSAVES\NA_159_23_pausa.SAV` (ruina sin
+  explorar). Comparando con NA_159_30, la ruina del turno 29 es **Lororia Ruins (24,124)**, contenido 4. El cuelgue es
+  en la PC remota y no se reproduce con una sola PC. Sin Nico: cargar NA_159_23_pausa, llevar al héroe del turno 17 a
+  Lororia y ver dónde aparecen los aliados (¿casilla vecina con pozo, trampa, muro o puente?). Con Nico: repetirlo
+  con Darklord.exe sin parche (regla 4).
+- **A3.** Orden de dibujo de la vista (0x459790): la 1.ª pasada pinta terreno (bosque incluido), ruina, obras
+  (po_draw) y sitio; la 2.ª pinta ejércitos quietos y en 0x459d54 po_draw2 llama a ob_draw, que repinta faro y torre
+  desde las 9 celdas vecinas. Ambas pintan solo celdas sucias (+6 & 0x20) salvo redibujo completo. Leído así, el
+  bosque no debería tapar la cúpula: falta una captura o la ubicación del faro tapado en NA_159 para ver qué pieza falla.
+- **A2.** Sin empezar.
+
 ## B. Guardado al pausar
 **Hecho en vista-aliada 1.0.225.0.** El guardado ya existía, pero solo en la PC que pedía la pausa, y al cargarlo en red
 el juego decía «no todos los jugadores pueden unirse». Ahora cada PC guarda al recibir el aviso de pausa (PP_PKT 1, con
