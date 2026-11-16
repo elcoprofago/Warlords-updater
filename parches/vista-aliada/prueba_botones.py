@@ -424,7 +424,7 @@ def archivos(path):
         o += 20 + h[4]
     return [d[o + 20 + 60 * i:o + 80 + 60 * i] for i in range(h[2])]
 fn, fo = archivos(NUEVO), archivos(ORIG)
-ver('archivos: nueve más (165 a 173; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 la P de partida a prueba, 173 la V de vale todo)', (len(fn), len(fo)), (174, 165))
+ver('archivos: once más (165 a 175; 168 pozos, 169 aviso, 170 sello, 171 alianza, 172 la P de partida a prueba, 173 la V de vale todo, 174 la F de final anticipado, 175 la C de campeonato)', (len(fn), len(fo)), (176, 165))
 def dialogos(path):
     d = open(path, 'rb').read(); o = 8
     while True:

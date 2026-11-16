@@ -21,9 +21,6 @@ MO_FLAGS = BASE + k + 4
 MO_ON, MO_CUR = BASE + k - 32, BASE + k - 28
 OPCMD = BASE + img.index(b'votacion.exe" --operador --mocion 0 --bando 0\0')
 SPCMD = BASE + img.index(b'votacion.exe" --espectador 00000000 --mocion 0 --bando 0\0')
-FINTXT = b'Early end approved by vote\0'
-ACUP = BASE + img.index(FINTXT) + len(FINTXT)
-HI_ACU = struct.unpack('<I', img[ACUP - BASE:ACUP - BASE + 4])[0]
 SIDE_ALIVE, SIDE_MACHINE, PV = SIDE_ON + 1, 0x536b33, 0x5643c8
 
 mal = 0
@@ -135,7 +132,6 @@ def votacion(mocion, marcas, humanos=(0, 1), compu=(), carga=None, remitente=0, 
     g = Juego(3)
     g.interceptar(0x4dd3b0, lambda a: None)
     acu = []
-    g.interceptar(HI_ACU, lambda a: acu.append(cstr(g.mu, a[0])))
     g.bandos(humanos, compu)
     g.paquete(0x2a0, carga if carga is not None else struct.pack('<III', 0, mocion, bando), remitente)
     op, sp = cstr(g.mu, OPCMD), cstr(g.mu, SPCMD)
@@ -154,10 +150,12 @@ ver('control: moción fuera de rango = libre', votacion(77, 'ss------'), (('0', 
 ver('control: bando humano fuera de juego no cuenta', votacion(1, 's-------', humanos=(0,)), (('1', '1'), 1))
 
 print('-- mociones por mayoría (SI > NO, humanos y virtuales)')
-F = 'Early end approved by vote'
-ver('Finalizacion 2 SI 1 NO: acuerdo (hi_acu)', votacion(2, 'ssn-----', compu=(2,), todo=True), (('2', '0', '2', '0'), 0, [F]))
+ver('Finalizacion 2 SI 1 NO: marca F (bit 4), sin cerrar la partida', votacion(2, 'ssn-----', compu=(2,), todo=True), (('2', '0', '2', '0'), 4, []))
 ver('control: Finalizacion empate', votacion(2, 'sn------', todo=True), (('2', '0', '2', '0'), 0, []))
 ver('control: Finalizacion más NO', votacion(2, 'snn-----', compu=(2,), todo=True), (('2', '0', '2', '0'), 0, []))
+ver('Campeonato aprobado: marca C (bit 8)', votacion(6, 'ss------'), (('6', '6'), 8))
+ver('control: Campeonato rechazado', votacion(6, 'sn------'), (('6', '6'), 0))
+ver('control: moción 7 (fuera de rango) = libre', votacion(7, 'ss------'), (('0', '0'), 0))
 ver('Descalificacion de Rojo aprobada: bits 8-11 = 4', votacion(3, 'ss-n-s--', humanos=(0, 1, 3), compu=(5,), bando=3, todo=True), (('3', '3', '3', '3'), 0x400, []))
 ver('control: Descalificacion rechazada', votacion(3, 'sn-n----', humanos=(0, 1, 3), bando=3, todo=True), (('3', '3', '3', '3'), 0, []))
 ver('control: Descalificacion con bando 9 = votación libre', votacion(3, 'ss------', bando=9, todo=True), (('0', '1', '0', '1'), 0, []))
@@ -233,18 +231,24 @@ def dibujo(flag, cargada=True):
     g.interceptar(0x4e4a90, lambda a: hoja, pop=4)
     g.interceptar(0x4dd3f0, lambda a: out.append(('cargar', a[0])) or 1)
     g.interceptar(0x4dd530, lambda a: out.append(('pegar', *a[:8])))
-    g.mu.mem_write(0x53c393, b'')
+    g.mu.mem_write(0x53c393, b'\x08')
     for r, v in ((UC_X86_REG_ESI, 0x7777), (UC_X86_REG_EBX, 100), (UC_X86_REG_EBP, 30), (UC_X86_REG_ESP, STACK)):
         g.mu.reg_write(r, v)
     g.mu.emu_start(0x4c1b92, 0x4c1b9c, count=200000)
     ok = (g.mu.reg_read(UC_X86_REG_ESI) == 0x7777 and g.mu.reg_read(UC_X86_REG_EBX) == 100
           and g.mu.reg_read(UC_X86_REG_ESP) == STACK + 0x20 and not g.mu.reg_read(UC_X86_REG_EFLAGS) & 0x40)
     return out, ok
+MOP = 172
 o, ok = dibujo(1)
 ver('marcada: pega la hoja 34x40 dentro del marco (x0+0x24+8, y0+0x54+8), después de los paneles', (o[0][0], o[0][2:], ok), ('pegar', (0, 0, 34, 40, 0x7777, 144, 122), True))
 o, ok = dibujo(1, cargada=False)
 ver('hoja sin cargar: la carga antes', ([x[0] for x in o], ok), (['cargar', 'pegar'], True))
+o, ok = dibujo(15)
+ver('las cuatro marcas: P, F, V, C de izquierda a derecha', ([(x[1], x[7]) for x in o], ok), ([(MOP, 144), (MOP + 2, 182), (MOP + 1, 220), (MOP + 3, 258)], True))
+o, ok = dibujo(4)
+ver('solo F: en el primer lugar', ([(x[1], x[7]) for x in o], ok), ([(MOP + 2, 144)], True))
 ver('control: sin marca no dibuja nada', dibujo(0), ([], True))
+ver('control: solo Descalificación y Enganche pendientes, sin letra', dibujo(0x1400), ([], True))
 
 print('MAL', mal)
 sys.exit(1 if mal else 0)

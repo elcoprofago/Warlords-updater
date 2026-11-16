@@ -609,20 +609,21 @@ queda en el <i>Events Report</i> de la ronda y se guarda con la partida.</p>
 <h2>Mociones de votación</h2>
 <p>Desde la versión 1.0.226.0, la línea <b>Voting</b> abre un submenú con <b>mociones</b>: votaciones con una
 acción ya definida, que el juego aplica solo si la votación se cierra con resultado afirmativo. La Votación se abre en
-todas las PC con la moción escrita en el título y en un cartel de la columna derecha (Votación 1.1.7 o posterior).
+todas las PC con la moción escrita en el título y en un cartel de la columna derecha (Votación 1.1.8 o posterior).
 <span class="estado e-pr">en prueba</span></p>
 <p><b>Cuándo se aprueba.</b> «Partida a prueba» necesita el SÍ de todos los humanos. Las demás mociones se aprueban,
 desde la versión 1.0.227.0, con <b>más SÍ que NO</b>, tal como los cuenta el programa Votación: los votos de los
 humanos, que carga el anfitrión, más los votos virtuales (al azar) de los bandos de la computadora. Con empate no se
 aprueba.</p>
 <ul>
-  <li><b>Free vote</b> (votación libre): la votación de siempre, sin acción.</li>
+  <li><b>Free vote</b> (votación libre): la votación de siempre, para cualquier otra disputa; no deja marca.</li>
   <li><b>Test game</b> (partida a prueba): marca la partida «a prueba». Se aprueba solo si <b>todos</b> los jugadores
   humanos que siguen en juego votan SÍ (los bandos de la computadora no cuentan). La marca se guarda con la partida y
   el mapa muestra una <b>P</b> verde con borde rojo en la esquina superior izquierda. Una partida marcada se puede abrir
   en el Visor de historia aunque no haya terminado.</li>
-  <li><b>Early end</b> (finalización anticipada): aprobada, la partida termina en ese momento en todas las PC, como un
-  acuerdo de paz: pasa a la historia (carpeta HISTORY) y el Visor de historia la abre.</li>
+  <li><b>Early end</b> (final anticipado): aprobada, el mapa muestra una <b>F</b> celeste con borde blanco. La
+  partida no se cierra sola: los detalles del final los deja un jugador en el chat con <b>«acuerdo: »</b> y el texto
+  (por ejemplo, el reparto acordado); eso la pasa a la historia (carpeta HISTORY) y el Visor de historia la abre.</li>
   <li><b>Disqualification</b> (descalificación): al elegirla, el submenú muestra los ocho colores; solo se pueden elegir
   los bandos humanos que siguen vivos. La Votación muestra el color en la moción (por ejemplo
   <i>«Disqualification: Red»</i>). Aprobada, al terminar la ronda ese bando pasa a la computadora, igual que cuando un
@@ -634,8 +635,14 @@ aprueba.</p>
   todas las marcas van en esa esquina, y si hay dos a la vez, la segunda sigue a la derecha de la primera.</li>
   <li><b>Re-entry</b> (enganche): aprobada, al terminar la ronda el jugador humano eliminado toma el bando de la
   computadora que sigue vivo con <b>menos puntos</b>. Si no hay un humano eliminado, o no queda ningún bando de la
-  computadora vivo, no pasa nada.</li>
+  computadora vivo, no pasa nada. El anfitrión puede además pasar un bando a humano a mano, como siempre.</li>
+  <li><b>Championship</b> (campeonato): aprobada, la partida queda marcada como de campeonato, con una <b>C</b> dorada
+  con borde azul en el mapa. Es una declaración: el juego no cambia nada más.</li>
 </ul>
+<p><b>Las marcas en el mapa.</b> Van en la esquina superior izquierda del mapa, dentro del marco, en este orden de
+izquierda a derecha: <b>P</b> (a prueba), <b>F</b> (final anticipado), <b>V</b> (vale todo) y <b>C</b> (campeonato).
+Se guardan con la partida. Las mociones que no dejan marca (Free vote, Disqualification, Re-entry) se ven en el
+<i>Events Report</i> y en el Visor de historia.</p>
 <p>Los cambios de dueño (descalificación y enganche) esperan al final de la ronda para que ningún bando cambie de manos
 a mitad de un turno, y se aplican igual en todas las PC.</p>
 
@@ -913,7 +920,7 @@ saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decid
 <tr><td>Ordenar a un aliado de la IA</td><td>Chat: <code>#n ataca CIUDAD</code>, <code>#n ataca a BANDO</code>, <code>#n mandame refuerzos</code></td></tr>
 <tr><td>Votar</td><td>Anfitrión: menú de partida → <i>Voting</i> → moción</td></tr>
 <tr><td>Marcar la partida «a prueba»</td><td>Anfitrión: <i>Voting</i> → <i>Test game</i>; todos los humanos votan SÍ</td></tr>
-<tr><td>Terminar, descalificar, vale todo, enganche</td><td>Anfitrión: <i>Voting</i> → <i>Early end</i>, <i>Disqualification</i> (y el color), <i>Anything goes</i> o <i>Re-entry</i>; más SÍ que NO</td></tr>
+<tr><td>Final anticipado, descalificar, vale todo, enganche, campeonato</td><td>Anfitrión: <i>Voting</i> → <i>Early end</i> (F; los detalles con «acuerdo:» en el chat), <i>Disqualification</i> (y el color), <i>Anything goes</i> (V), <i>Re-entry</i> o <i>Championship</i> (C); más SÍ que NO</td></tr>
 <tr><td>Sortear bandos</td><td>Anfitrión: botón Sorteo junto a <i>Chat</i>, en la preparación</td></tr>
 <tr><td>Comparar armas</td><td><i>Edit Side</i> → botón DarkCompare</td></tr>
 <tr><td>Jugar con día y noche</td><td><i>Customize Options</i> → <i>Day/Night</i></td></tr>
@@ -994,6 +1001,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
 <tr><th style="width:18%">Versión</th><th style="width:14%">Fecha</th><th>Qué cambió</th></tr>
+<tr><td>1.0.231.0</td><td>15/11/2026</td><td>Marcas por letra en la esquina del mapa: <b>F</b> de <i>Early end</i>, que ya no cierra la partida sola (los detalles van con «acuerdo:» en el chat), y <b>C</b> de la moción nueva <i>Championship</i> (campeonato), además de la P y la V. Orden: P, F, V, C. Votación 1.1.8 muestra «Championship».</td></tr>
 <tr><td>1.0.230.0</td><td>15/11/2026</td><td>La P de <i>Test game</i> y la V de <i>Anything goes</i> no se veían: el juego pintaba el marco del mapa encima. Ahora se dibujan después del marco, en la esquina superior izquierda del mapa visible.</td></tr>
 <tr><td>1.0.229.0</td><td>15/11/2026</td><td>El submenú de mociones de votación usa el interlineado de los demás menús (los renglones salían encimados). Al aprobarse una moción con marca, o al cargar una partida marcada, el mapa se redibuja entero para que la P o la V aparezcan enseguida.</td></tr>
 <tr><td>1.0.228.0</td><td>15/11/2026</td><td>La V de <i>Anything goes</i> va en la esquina superior izquierda del mapa, el lugar de toda marca, también sin la P: es otra moción, sin relación con <i>Test game</i>. Si hay dos marcas a la vez, la segunda sigue a la derecha.</td></tr>

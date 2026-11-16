@@ -10949,7 +10949,9 @@ for t, n in enumerate(TOOLS):
 # (mo_pdraw) y el Visor de historia abre la partida aunque no haya terminado. MO_FLAGS va en el .SAV ('MOCI', dword).
 # Las demás se aprueban con más SI que NO (los votos humanos que carga el anfitrión y los virtuales de los bandos del
 # sistema, como los cuenta la Votación; pedido del usuario, 15/11/2026):
-# 2 «Finalizacion»: la partida termina como un acuerdo (hi_acu: pasa a HISTORY con su .FIN, el Visor la abre).
+# 2 «Finalizacion»: bit MO_FINAL de MO_FLAGS, a la vista con una F en el mapa. No cierra la partida: los detalles del
+#   final los deja un jugador en el chat con «acuerdo: <texto>» (hi_acu), que la pasa a HISTORY (pedido del usuario,
+#   15/11/2026: las mociones no siempre se cumplen solas; el pase a humano, por ejemplo, lo hace el anfitrión).
 # 3 «Descalificacion»: elegir la moción reabre el submenú (MO_ON = 2) con los 8 colores (habilitados los humanos vivos);
 #   el bando elegido viaja en el tercer dword de TL_OPEN (MO_TGT, --bando N a votacion.exe). Aprobada, queda anotada en
 #   MO_FLAGS (bits 8-11 = bando + 1) y al cerrarse la ronda (mo_round, en 0x4988d0, el mismo punto en todas las PC y sin
@@ -10961,12 +10963,14 @@ for t, n in enumerate(TOOLS):
 # 5 «Enganche»: aprobada, bit MO_ENGP; al cerrarse la ronda, el humano eliminado (bando en la partida, muerto, humano, y
 #   su PC sin otro bando vivo) toma el bando del sistema vivo con menos puntos (0x440840 → 0x5643c8): +0xe2 = -1 y la
 #   máquina del eliminado. Sin eliminado o sin bando del sistema vivo, no pasa nada.
+# 6 «Campeonato»: bit MO_CAMP de MO_FLAGS, a la vista con una C en el mapa (partida de campeonato).
+# Marcas en el mapa (mo_pdraw), de izquierda a derecha: P, F, V, C. La votación libre no lleva marca.
 # Textos a la vista en inglés (pedido del usuario, 15/11/2026: el juego se va a distribuir; otros idiomas, con un
 # parche aparte). En los comentarios siguen los nombres en castellano.
-MO_ROWS = ['Free vote', 'Test game', 'Early end', 'Disqualification', 'Anything goes', 'Re-entry']
-MO_ENABLED = [1, 1, 1, 1, 1, 1]
-MO_LIBRE, MO_P, MO_FIN, MO_DESC, MO_VT, MO_ENG = range(6)
-MO_PRUEBA, MO_VALE, MO_DMASK, MO_ENGP = 1, 2, 0xf00, 0x1000
+MO_ROWS = ['Free vote', 'Test game', 'Early end', 'Disqualification', 'Anything goes', 'Re-entry', 'Championship']
+MO_ENABLED = [1] * len(MO_ROWS)
+MO_LIBRE, MO_P, MO_FIN, MO_DESC, MO_VT, MO_ENG, MO_CAMPN = range(7)
+MO_PRUEBA, MO_VALE, MO_FINAL, MO_CAMP, MO_DMASK, MO_ENGP = 1, 2, 4, 8, 0xf00, 0x1000
 MO_COLS = ['White', 'Yellow', 'Orange', 'Red', 'Green', 'Blue', 'Light Blue', 'Black']
 MO_DLG = 134                 # siguiente id de la tabla de diálogos, después de BM_DLG (ver table_add, más abajo)
 MO_RES = 139                 # siguiente id de los recursos de diálogo, después de BM_RES
@@ -10990,8 +10994,6 @@ mo_strs1 = place_data('mo_strs1', _mo_s1)
 mo_cols = place_data('mo_cols', struct.pack('<8I', *[place_data(f'mo_c{i}', cstr_(t)) for i, t in enumerate(MO_COLS)]))
 mo_en = place_data('mo_en', _mo_e1)
 mo_strs = place_data('mo_strs', _mo_s1)
-mo_fintxt = place_data('mo_fintxt', cstr_('Early end approved by vote'))
-mo_acup = place_data('mo_acup', bytes(4))   # puntero a hi_acu (definido más abajo; se llena al definirlo)
 mo_txt = place_data('mo_txt', struct.pack(f'<{MO_NROW}I', *MO_TXT))
 mo_hot = place_data('mo_hot', struct.pack(f'<{MO_NROW}I', *MO_HOT))
 
@@ -11639,9 +11641,7 @@ mo_apply = place('mo_apply', f'''
     jbe ma_end
     cmp eax, {MO_FIN}
     jne ma_3
-    push {mo_fintxt:#x}
-    call dword ptr [{mo_acup:#x}]
-    add esp, 4
+    or dword ptr [{MO_FLAGS:#x}], {MO_FINAL}
     jmp ma_end
 ma_3:
     cmp eax, {MO_DESC}
@@ -11660,6 +11660,11 @@ ma_4:
     or dword ptr [{MO_FLAGS:#x}], {MO_VALE}
     jmp ma_end
 ma_5:
+    cmp eax, {MO_CAMPN}
+    jne ma_6
+    or dword ptr [{MO_FLAGS:#x}], {MO_CAMP}
+    jmp ma_end
+ma_6:
     cmp eax, {MO_ENG}
     jne ma_end
     or dword ptr [{MO_FLAGS:#x}], {MO_ENGP}
@@ -20528,7 +20533,6 @@ hc_out:
     popad
     ret
 ''')
-caves['mo_acup'] = struct.pack('<I', hi_acu) + caves['mo_acup'][4:]   # mo_apply (Finalización)
 hi_gofin = place('hi_gofin', f'''
     call {hi_fin:#x}
     call {hi_wpod:#x}
@@ -20571,6 +20575,10 @@ MOP_W, MOP_H, MOP_M = 34, 40, 8
 # relación con la P: las marcas visibles van todas en el mismo lugar, la esquina superior izquierda del mapa (pedido del
 # usuario, 15/11/2026); si hay dos a la vez, la segunda sigue a la derecha para no taparse.
 MOV_FILE = MOP_FILE + 1
+# Final anticipado (MO_FINAL): RUINSinal.pcx con una F; Campeonato (MO_CAMP): RUINS\campeon.pcx con una C.
+MOF_FILE = MOV_FILE + 1
+MOC_FILE = MOF_FILE + 1
+MO_MARCAS_BITS = MO_PRUEBA | MO_FINAL | MO_VALE | MO_CAMP
 # mo_one(dx, hoja): pega la hoja en (x0 + dx, y0 + MOP_M); ebx = superficie, esi = x0, edi = y0 (mo_pdraw).
 mo_one = place('mo_one', f'''
     mov ebp, dword ptr [esp + 8]
@@ -20614,7 +20622,7 @@ mo_pdraw = place('mo_pdraw', f'''
     mov dword ptr [esp + 0x24], eax
     pop eax
     add esp, 0x20
-    test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA | MO_VALE}
+    test byte ptr [{MO_FLAGS:#x}], {MO_MARCAS_BITS}
     jz mp_go
     pushad
     mov edi, ebp
@@ -20623,19 +20631,37 @@ mo_pdraw = place('mo_pdraw', f'''
     mov ebx, esi
     lea esi, [eax + 0x24]
     test byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
-    jz mp_v
+    jz mp_0
     push {MOP_FILE}
     push {MOP_M}
     call {mo_one:#x}
     add esp, 8
     add esi, {MOP_W + 4}
-mp_v:
+mp_0:
+    test byte ptr [{MO_FLAGS:#x}], {MO_FINAL}
+    jz mp_1
+    push {MOF_FILE}
+    push {MOP_M}
+    call {mo_one:#x}
+    add esp, 8
+    add esi, {MOP_W + 4}
+mp_1:
     test byte ptr [{MO_FLAGS:#x}], {MO_VALE}
-    jz mp_end
+    jz mp_2
     push {MOV_FILE}
     push {MOP_M}
     call {mo_one:#x}
     add esp, 8
+    add esi, {MOP_W + 4}
+mp_2:
+    test byte ptr [{MO_FLAGS:#x}], {MO_CAMP}
+    jz mp_3
+    push {MOC_FILE}
+    push {MOP_M}
+    call {mo_one:#x}
+    add esp, 8
+    add esi, {MOP_W + 4}
+mp_3:
 mp_end:
     popad
 mp_go:
@@ -22965,6 +22991,27 @@ for _y in range(MOP_H):
         if _v >= 192: mov_hoja.putpixel((_x, _y), _rojo)
         elif _v >= 64: mov_hoja.putpixel((_x, _y), _amar)
 pcx = io.BytesIO(); mov_hoja.save(pcx, 'PCX'); MOV_PCX = pcx.getvalue()
+# Hojas MOF_FILE = RUINSinal.pcx (F, azul claro con borde blanco) y MOC_FILE = RUINS\campeon.pcx (C, dorada con
+# borde azul oscuro), como la P y la V.
+def _letra(fid, nombre, letra, relleno, borde):
+    struct.pack_into('<I', henge, 0, fid)
+    setstr(henge, 4, 32, nombre)
+    table_add(res, 2, fid, bytes(henge))
+    m = Image.new('L', (MOP_W, MOP_H), 0); md = ImageDraw.Draw(m)
+    bb = md.textbbox((0, 0), letra, font=_fnt, stroke_width=3)
+    org = ((MOP_W - (bb[2] - bb[0])) // 2 - bb[0], (MOP_H - (bb[3] - bb[1])) // 2 - bb[1])
+    md.text(org, letra, font=_fnt, fill=255, stroke_width=3, stroke_fill=128)
+    assert m.getbbox() and m.getbbox()[0] >= 0 and m.getbbox()[2] <= MOP_W and m.getbbox()[3] <= MOP_H
+    h = Image.new('P', (MOP_W, MOP_H), 11); h.putpalette(_pal)
+    cr, cb = _cerca(relleno), _cerca(borde)
+    for y in range(MOP_H):
+        for x in range(MOP_W):
+            v = m.getpixel((x, y))
+            if v >= 192: h.putpixel((x, y), cr)
+            elif v >= 64: h.putpixel((x, y), cb)
+    out = io.BytesIO(); h.save(out, 'PCX'); return out.getvalue()
+MOF_PCX = _letra(MOF_FILE, 'final', 'F', (120, 200, 255), (255, 255, 255))
+MOC_PCX = _letra(MOC_FILE, 'campeon', 'C', (255, 200, 0), (0, 0, 140))
 # Sonido PO_SND = FX\Burst.wav (sonidos\Burst.wav del repo, el que sumó el usuario), con los campos de Dispel (55; el 14 en +36
 # es la carpeta FX). La tabla de sonidos (tipo 3, registros de 52) la carga entera 0x4ec490 al arrancar: cada registro
 # es un buffer de la lista 0x5a6f50, buscado por el id (+0).
@@ -23442,6 +23489,8 @@ NUEVOS[os.path.join('SETS', 'Fantasy', 'sello.pcx')] = SEAL_PCX
 NUEVOS[os.path.join('PICTS', 'alianza.pcx')] = GO_PCX
 NUEVOS[os.path.join('RUINS', 'prueba.pcx')] = MOP_PCX
 NUEVOS[os.path.join('RUINS', 'valetodo.pcx')] = MOV_PCX
+NUEVOS[os.path.join('RUINS', 'final.pcx')] = MOF_PCX
+NUEVOS[os.path.join('RUINS', 'campeon.pcx')] = MOC_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)

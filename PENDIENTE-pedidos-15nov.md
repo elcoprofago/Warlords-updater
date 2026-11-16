@@ -52,6 +52,11 @@ acuerdo (hi_acu) en todas las PC; Disqualification (submenú de colores, solo hu
 (humano eliminado → bando de la computadora vivo con menos puntos, 0x440840/0x5643c8) se aplican en mo_round al final
 de la ronda; Anything goes es una declaración (bandera en 'MOCI', V con `RUINS\valetodo.pcx`). Paquete TL_OPEN de 12
 bytes. prueba_mociones.py y prueba_botones.py: MAL 0. Prueba del usuario: TAREAS 226.
+**Marcas por letra, vista-aliada 1.0.231.0** (pedido 15/11; herramientas 1.0.0.6 con Votación 1.1.8): las mociones no
+siempre se cumplen solas (el pase a humano lo hace el anfitrión a mano), así que se ven con letras en la esquina del
+mapa, después del marco (mo_pdraw en 0x4c1b92/0x4c1d42/0x4c1ef2): P (bit 1), F de Early end (bit 4, ya no llama a
+hi_acu: los detalles van con «acuerdo:» en el chat), V (bit 2) y C de la moción nueva 6 «Championship» (bit 8).
+Free vote no lleva letra. Prueba del usuario: TAREAS 229.
 **Textos en inglés (pedido 15/11):** menú, mociones, colores, avisos de pausa y votación, Lighthouse, Compare, Game
 over, y Votación. Faltan: las órdenes por chat (el analizador depende de 'atac'/'mand'), los textos del Visor de
 historia, y revisar si los PCX del juego tienen texto en castellano.
