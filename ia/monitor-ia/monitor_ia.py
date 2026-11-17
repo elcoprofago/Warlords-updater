@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.30'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.31'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -408,7 +408,19 @@ class Monitor(tk.Tk):
         cb.bind('<<ComboboxSelected>>', lambda e: self.guardar_monitor(cb.current()))
         cb.grid(row=1, column=1, sticky='w', **pad)
 
-        caja, p = self.panel(self, 'Partida en curso'); caja.pack(fill='x', **pad)
+        caja, p = self.panel(self, 'Partidas en curso'); caja.pack(fill='x', **pad)
+        # Banco en paralelo: una fila por partida que se está jugando; la elegida con un clic se detalla abajo.
+        self.sel = None
+        lc = ('n', 'mapa', 'carpeta', 'turno', 'batallas', 'quieta')
+        self.lista = ttk.Treeview(p, columns=lc, show='headings', height=4, selectmode='browse')
+        for k, t, a in zip(lc, ('Partida', 'Mapa', 'Carpeta', 'Turno', 'Batallas', 'Sin cambios'),
+                           (70, 170, 110, 60, 70, 90)):
+            self.lista.heading(k, text=t); self.lista.column(k, width=a, anchor='center')
+        self.lista.tag_configure('parada', background='#ffe0e0', foreground='#c62828')
+        self.lista.bind('<<TreeviewSelect>>', lambda e: self.lista.selection() and setattr(
+            self, 'sel', int(self.lista.selection()[0])))
+        self.lista.pack(fill='x', **pad)
+        self.rotulo(p, text='Clic en una partida para ver su detalle:', font=('Segoe UI', 8)).pack(anchor='w', padx=8)
         self.info = tk.Text(p, height=5, font=('Segoe UI', 10), bg='#f4f8ff', relief='flat', wrap='word',
                             padx=8, pady=6, cursor='arrow')
         for tag, kw in (('titulo', dict(font=('Segoe UI', 13, 'bold'), foreground='#123c7a')),
@@ -875,6 +887,26 @@ class Monitor(tk.Tk):
                 grupos.append([i, i, (v, e)])
         return actual, ' · '.join(f'{a}{"–" + str(b) if b != a else ""}: {rotulo(*ve)}' for a, b, ve in grupos)
 
+    def llenar_lista(self, jugando, elegida):
+        """Una fila por partida en juego: turno, batallas y hace cuánto no escribe sus CSV (parada si > PAUSA_SEG)."""
+        a_seg = lambda f: time.mktime(time.strptime(f, '%Y-%m-%d %H:%M:%S'))
+        filas = []
+        for p in jugando:
+            c = tanda.carpeta_de(p[7])
+            turno = max((r[0] for r in tanda.leer(c.t, len(tanda.COL_T))), default=0)
+            bats = len(tanda.leer_batallas(c.b))
+            csvs = [os.path.getmtime(r) for r in (c.t, c.b, c.dip, c.e) if os.path.exists(r)]
+            quieta = time.time() - max(csvs + [a_seg(p[3])])
+            filas.append((str(p[0]), (f'{p[0] + 1}.ª', p[1].removeprefix('Tanda_'), os.path.basename(c.d or '') or '—',
+                                      turno, bats, f'{quieta / 60:.0f} min' if quieta >= 60 else f'{quieta:.0f} s'),
+                          ('parada',) if quieta > PAUSA_SEG else ()))
+        self.lista.delete(*self.lista.get_children())
+        for iid, val, tags in filas:
+            self.lista.insert('', 'end', iid=iid, values=val, tags=tags)
+        self.lista.configure(height=max(1, min(8, len(filas))))
+        if elegida and self.lista.exists(str(elegida[0])):
+            self.lista.selection_set(str(elegida[0]))
+
     def mostrar(self):
         import sqlite3
         self.externa = False
@@ -900,7 +932,8 @@ class Monitor(tk.Tk):
         validas = [p for p in parts if p[5] != 'cortada']
         # En paralelo (ia\PENDIENTE-banco-paralelo.md) hay varias a la vez: se muestra la que empezó primero.
         jugando = [p for p in parts if p[5] == 'jugando']
-        en_curso = jugando[0] if jugando else None
+        en_curso = next((p for p in jugando if p[0] == self.sel), jugando[0] if jugando else None)
+        self.llenar_lista(jugando, en_curso)
         hechas = [p for p in validas if p[5] != 'jugando']
         self.externa = bool(en_curso) and not self.corriendo() and juego_abierto()
         estado = ('terminada' if term else 'corriendo' if self.corriendo() else
@@ -938,6 +971,7 @@ class Monitor(tk.Tk):
             self.l_cuelgue.pack_forget()
             self.tabla.delete(*self.tabla.get_children())
             return
+        self.sel = en_curso[0]
         n, guardada, asig, ini = en_curso[:4]
         c = tanda.carpeta_de(en_curso[7])
         filas = tanda.leer(c.t, len(tanda.COL_T))

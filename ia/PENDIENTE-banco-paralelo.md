@@ -143,3 +143,7 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
 - Arreglo: renombradas a `clase` y `dueno`. Probado con una tanda de 8 contra una base de prueba: 8 partidas «tope»
   con 4 turnos, 192 filas de turno con partida entera, tanda terminada.
 - La 179 no se retoma (además el juego cambió a 1.0.241.0): TAREAS 244, tanda nueva.
+- Borrados con autorización del usuario (17/11/2026) los 3931 turnos huérfanos.
+- Monitor 1.0.31 (el usuario: el panel de una sola partida quedó obsoleto con el banco en paralelo): «Partidas en
+  curso» lista todas las que se juegan (partida, mapa, carpeta, turno, batallas, sin cambios; roja si parada) y el
+  detalle de abajo es de la elegida con un clic (si no, la primera). Probado con 8 a la vez contra base de prueba.
