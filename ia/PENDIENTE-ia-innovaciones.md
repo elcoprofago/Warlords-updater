@@ -585,4 +585,25 @@ Hecho (17/11/2026, vista-aliada 1.0.244.0):
   `prueba_muroataque.py` (3 casos y 3 controles del 46; 2 casos y 9 controles del 47). informe.py: tabla «Muros».
 - Paso 3: tarea 249.
 
+Resultado de la tanda 183 (17/11/2026, 16 partidas sobre Tanda_hex_MU_control, IA original, todas «ok», 30 turnos):
+- **La IA casi no ataca el muro**: 1 solo ataque a un bloque en 16 partidas (verde, turno 30, 1 arquero muerto; el
+  bloque no cayó). Ningún bloque cayó.
+- **No se congela ni lo rodea: se queda pegada al muro y asalta la ciudad.** 190 turnos con pilas junto a un muro
+  enemigo (negro 106, amarillo 39, blanco 23, azul 22), casi todo alrededor de Red Main, desde el turno 17-27 hasta
+  el final. El anillo deja abierta la casilla de costa, así que la ciudad sigue siendo alcanzable y la IA la ataca.
+- **El muro protege mucho**: las capitales amuralladas perdieron 8 de 37 asaltos (Red 6 de 27, Blue 2 de 9, White
+  0 de 1); las sin muro, 55 de 76 (Black 27 de 33, Green 22 de 25, Yellow 6 de 18). El primer asalto a una
+  amurallada llegó en los turnos 20-23; a una sin muro, en los 13-17.
+- **Ataques desangrantes contra el muro**: negro asaltó Red Main 8 contra 1 y perdió una y otra vez (partida
+  1546: 3 veces; 1547: 4; 1558: 3). Es el mismo error de los ataques perdidos (eventos 45), pero contra una ciudad
+  amurallada, donde la regla de 1.0.242.0 no actúa porque solo mira campo abierto.
+- Rojo y azul igual terminaron últimos (PV 2,9 y 6,1): el muro les da tiempo, no les cambia la partida (el muro
+  está solo en la capital; perdieron el resto de las ciudades).
+
+Conclusión: la hipótesis («la ignora») no se cumple porque el anillo no cierra la ciudad: queda la costa. Lo que
+hace la IA es insistir contra la ciudad amurallada sin abrir brecha. Próximo paso posible: (a) que la IA no repita
+un asalto perdido contra una ciudad amurallada (como los ataques en campo abierto), o (b) que ataque un bloque de
+muro como meta para abrir brecha. Antes de elegir, una tanda con el anillo cerrado del todo (un mapa donde la
+capital no tenga costa) mostraría qué hace cuando no hay ningún camino.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
