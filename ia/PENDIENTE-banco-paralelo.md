@@ -91,3 +91,19 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
 - En curso: TAREAS 241, tanda de 16 en Borderlands_NO con Monitor 1.0.27 y vista-aliada 1.0.238.0, para probar que las ventanas no tapen la pantalla principal ni quiten el foco. Al terminar: revisar el informe (minutos por partida, colgadas) y lo que el usuario anote en la 241.
 - No queda ningún experimento de IA preparado. Próximo paso: elegir el siguiente de ia\PENDIENTE-ia-innovaciones.md (objetivo: oportunidades y riesgos de las innovaciones, memoria objetivo-ia-innovaciones) y correrlo en una sola tanda de 24 o 32 partidas (múltiplos de 8).
 - Opcional: probar 10 carpetas (crear Warlords3-9 y -10, [Carpetas] paralelas en tanda.ini) y ver si cada partida se alarga.
+
+## Tanda 178 fallida (16/11/2026, investigada el 17/11)
+- 32 registros, todos 0 turnos y «cortada»: son las mismas 8 partidas (n 0-7), arrancadas 4 veces (21:16, 22:54,
+  23:25, 23:36) y cortadas a mano a los 98, 31 y 11 min. La última ronda quedó «jugando» (se cerró a la fuerza).
+  Ningún IA.CSV en 98 min, y aun así nunca saltó «colgada» (10 min): el hilo de cada partida quedó trabado antes
+  de su vuelta de control, no solo el juego.
+- Es la primera tanda con vista-aliada 1.0.238.0 + Monitor 1.0.27 (commit d8e83c7); la 177 (1.0.237.0, misma
+  guardada, 8 a la vez) anduvo. Cambios de d8e83c7 que pueden explicarlo (sin verificar todavía):
+  1. La ventana de juego se mueve a los 20 ms de aparecer (antes a los 5 s), mientras DirectDraw todavía inicia
+     el modo exclusivo/pantalla completa (SetCooperativeLevel 0x11): si el juego se traba ahí, el SetWindowPos de
+     tanda.py (sincrónico entre procesos) espera para siempre y la detección de cuelgue no corre.
+  2. El juego nunca tiene el foco (se devuelve enseguida): si la carga de la guardada lo necesita, no arranca.
+  3. El lanzador nace en VentanaX/Y (ia_ventana): el código del parche se revisó y está bien armado.
+- Próximo paso: reproducir con 1 partida en Warlords3-1 (abrir, mirar 2 min IsHungAppWindow e IA.CSV) para
+  distinguir 1 de 2. Haga falta o no, SetWindowPos de llevar_al_monitor debe llevar SWP_ASYNCWINDOWPOS (0x4000) para
+  que una ventana trabada no frene la detección de cuelgue.
