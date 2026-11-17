@@ -501,4 +501,14 @@ cuenta como último puesto. Las cifras de puesto de 6.1 (176-180) se calcularon 
 
 **Próximo:** 6.1 pendiente (guardadas Tanda_* de otros mapas) y el punto menor de los puentes del evento 21.
 
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 6 (guardadas de otros mapas)".
+### Paso 6.1, otros mapas (17/11/2026, en curso)
+
+Guardadas: Tanda_Scarpart y Tanda_Kor (sin alianzas, sin Day/Night; las mismas de las tandas 1-165). No se arman
+versiones _NO: noche.py cambia clases de unidades para medir la noche y eso no es lo que se mide acá. Tanda: TAREAS 247,
+64 partidas con 1.0.243.0 (ap_gate ya activo en los colores en prueba).
+Al volver: `python ia\informe.py <tanda>` y por guardada (Scarpart / Kor por separado): intervalo de PV y puesto,
+eventos 45, perdidos por 100 ataques. Sirve para dos cosas: (1) ver si ap_gate también gana fuera de Borderlands
+(ya está en el ranking; si en estos mapas sale «original mejor», se revisa AP_K); (2) comparar el desvío por partida
+con el de Borderlands (~5,5 PV): si es parecido, el ±1,35 PV con 64 partidas vale como vara general.
+
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 6.1 en otros mapas (tarea 247)".
