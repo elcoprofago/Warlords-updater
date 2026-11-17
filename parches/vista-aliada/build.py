@@ -19972,6 +19972,80 @@ aw_out:
     popad
     ret
 ''')
+# ai_wobs (ebx = jugador), al empezar el turno, después de ai_wrep: evento 47 por cada bloque de muro en pie de un bando en
+# guerra con un bando de la computadora (wl_war) que tiene al lado (8 vecinas) una casilla ocupada por ese bando: x, y =
+# bloque, n = cuántas de esas casillas. Es donde quedaron sus pilas el turno anterior; junto con el evento 46 distingue
+# «ataca», «rodea» y «se queda parada al lado» (paso 5.5 de ia\PENDIENTE-ia-innovaciones). Solo con IA.INI (ia_evt).
+# Preserva todo.
+WO_EVT = 47
+ai_wobs = place('ai_wobs', f'''
+    pushad
+    cmp ebx, 8
+    jae wo_out
+    cmp byte ptr [{IA_ON:#x}], 0
+    je wo_out
+    imul eax, ebx, {SIDE:#x}
+    cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
+    je wo_out
+    xor esi, esi
+wo_loop:
+    cmp esi, dword ptr [{OB_N:#x}]
+    jae wo_out
+    lea edi, [esi*8 + {OB_TAB:#x}]
+    movsx eax, word ptr [edi]
+    movsx edx, word ptr [edi + 2]
+    mov ecx, ebx
+    call {wl_war:#x}
+    jz wo_next
+    xor ebp, ebp
+    push esi
+    xor esi, esi
+wo_nb:
+    cmp esi, 4
+    je wo_nbn
+    mov eax, esi
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    movsx ecx, word ptr [edi]
+    lea ecx, [ecx + edx - 1]
+    movsx edx, word ptr [edi + 2]
+    lea edx, [edx + eax - 1]
+    mov eax, ecx
+    call {br_tile:#x}
+    test eax, eax
+    jz wo_nbn
+    movzx eax, word ptr [eax]
+    test ax, 0x8000
+    jz wo_nbn
+    and eax, 0x3c00
+    shr eax, 10
+    cmp eax, ebx
+    jne wo_nbn
+    inc ebp
+wo_nbn:
+    inc esi
+    cmp esi, 9
+    jb wo_nb
+    pop esi
+    test ebp, ebp
+    jz wo_next
+    push ebp
+    movsx eax, word ptr [edi + 2]
+    push eax
+    movsx eax, word ptr [edi]
+    push eax
+    push ebx
+    push {WO_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+wo_next:
+    inc esi
+    jmp wo_loop
+wo_out:
+    popad
+    ret
+''')
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
     pushad
@@ -19981,6 +20055,7 @@ ia_turn = place('ia_turn', f'''
     jae it_out
     call {tr_turn:#x}
     call {ai_wrep:#x}
+    call {ai_wobs:#x}
     cmp byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0
     je it_ord
     dec byte ptr [ebx*8 + {OR_TAB + 1:#x}]
@@ -20244,6 +20319,9 @@ ib_out:
 ''')
 
 
+# Paso 5.5 de ia\PENDIENTE-ia-innovaciones: evento 46, un bando de la computadora atacó un bloque de muro (x, y = bloque,
+# n = arqueros virtuales muertos en esa batalla, + 100 si el bloque cayó). Solo con IA.INI (ia_evt).
+WM_EVT = 46
 # wv_post(ficha, resultado), en lugar de ia_bat en 0x469f54: después del resultado cuenta los arqueros virtuales
 # muertos (sin el bit vivo), da de baja a los vivos (0x46c470), suma los muertos al bloque y, con WV_MAX, lo derriba;
 # rehace la ocupación del mapa (0x441290).
@@ -20278,6 +20356,16 @@ wq_done:
     mov dword ptr [{WV_REC:#x}], 0
     movzx eax, byte ptr [ebp + 7]
     add eax, ebx
+    mov edx, ebx
+    cmp eax, {WV_MAX}
+    jb wq_n
+    add edx, 100
+wq_n:
+    push edx
+    movsx edx, word ptr [ebp + 2]
+    push edx
+    movsx edx, word ptr [ebp]
+    push edx
     cmp eax, {WV_MAX}
     jb wq_set
     lea eax, [ebp - {OB_TAB:#x}]
@@ -20291,6 +20379,21 @@ wq_set:
 wq_occ:
     call 0x441290
     call {REDRAW:#x}
+    cmp byte ptr [{IA_ON:#x}], 0
+    je wq_ev
+    mov eax, dword ptr [esp + 0x30]
+    movsx eax, byte ptr [eax]
+    cmp eax, 8
+    jae wq_ev
+    imul ecx, eax, {SIDE:#x}
+    cmp word ptr [ecx + {SIDE_HUMAN:#x}], -1
+    je wq_ev
+    push eax
+    push {WM_EVT}
+    call {ia_evt:#x}
+    add esp, 8
+wq_ev:
+    add esp, 12
 wq_out:
     popad
     ret

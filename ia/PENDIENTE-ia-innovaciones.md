@@ -574,4 +574,15 @@ Plan:
    caídos, pilas quietas junto a un muro, y capitales con muro contra sin muro (cuándo cayeron, cuántas veces se las
    atacó). Con eso se decide si hace falta enseñarle algo a la IA (atacar un bloque como meta, o abrir brecha) antes
    de pensar en que construya.
+Hecho (17/11/2026, vista-aliada 1.0.244.0):
+- Paso 1: `python ia\muros.py Tanda_hex_control` escribió `Tanda_hex_MU_control.SAV` (en `E:\Warlords-TEST\Warlords3\SAVES`):
+  30 bloques en las capitales de 3 de los 6 colores activos (0, 3 y 5; los 1, 4 y 7 son el control). White Main
+  (122,79) 8 de 12, Red Main (33,21) 11, Blue Main (93,21) 11: lo que falta es costa, así que por tierra las tres
+  quedan cerradas. Verificado releyendo el archivo; falta verlo cargado en el juego (tarea 249).
+- Paso 2: eventos **46** (wv_post: la computadora atacó un bloque; n = arqueros muertos, + 100 si cayó) y **47**
+  (ai_wobs al empezar el turno: pilas de la IA en las 8 casillas vecinas de un muro enemigo en pie; n = cuántas
+  casillas). El 45 ya era «ataque no dado» (1.0.242.0). Solo con IA.INI y bandos de la computadora. Probado en
+  `prueba_muroataque.py` (3 casos y 3 controles del 46; 2 casos y 9 controles del 47). informe.py: tabla «Muros».
+- Paso 3: tarea 249.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».

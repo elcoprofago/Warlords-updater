@@ -326,5 +326,58 @@ ver('control: bloque caído (24): no se repara', wrep(muertos=24)[:2], (24, []))
 ver('control: torre (tipo 4) con +7: nada', wrep(tipo=4)[:2], (12, []))
 ver('control: muro de otro bando: nada', wrep(p=5)[:2], (12, []))
 
+print('-- eventos 46 y 47: la IA frente a un muro enemigo (paso 5.5 de ia/PENDIENTE-ia-innovaciones, 17/11/2026)')
+_k = img.index(b'\x6a\x2e\xe8', WV_POST - BASE); assert _k < WV_POST - BASE + 0x200
+IA_EVT = dest(BASE + _k + 2)
+assert img[IA_EVT - BASE:IA_EVT - BASE + 2] == b'\x80\x3d'; IA_ON = d32(IA_EVT + 2)
+FICHA = 0x180000
+def post_ev(atac=5, humano=False, ia_on=1, muertos=0, vivos=(), n=24):
+    g = juego(muertos=muertos); mu = g.mu
+    mu.mem_write(IA_ON, bytes([ia_on]))
+    if not humano: mu.mem_write(0x536c12 + atac * 0x1f8, struct.pack('<h', 2))
+    mu.mem_write(FICHA, bytes([atac, 2]))
+    ids = list(range(100, 100 + n))
+    for i in ids:
+        mu.mem_write(0x54fe63 + i * 0x1c, bytes([0x40 if i in vivos else 0]))
+    mu.mem_write(WV_REC, struct.pack('<II', OB_TAB, n)); mu.mem_write(WV_IDS, struct.pack(f'<{n}h', *ids))
+    ev = []
+    for a in (IA_BAT, 0x46c470, 0x4a4f20, OB_FOGME, 0x441290, REDRAW):
+        g.interceptar(a, lambda _: None)
+    g.interceptar(IA_EVT, lambda a: ev.append(tuple(struct.unpack('<i', struct.pack('<I', v))[0] for v in a[:5])))
+    g.correr(WV_POST, RET, struct.pack('<III', RET, FICHA, 0), [(UC_X86_REG_ESI, 0x777)])
+    return ev, mu.reg_read(UC_X86_REG_ESI) == 0x777
+ver('46: la computadora mata 10 de 24 (bloque en pie)', post_ev(vivos=range(110, 124)), ([(46, 5, 5, 7, 10)], True))
+ver('46: ya 20 muertos, mueren 4: cae, n = 4 + 100', post_ev(muertos=20, n=4)[0], [(46, 5, 5, 7, 104)])
+ver('46: ninguno muere: n = 0', post_ev(vivos=range(100, 124))[0], [(46, 5, 5, 7, 0)])
+ver('control 46: ataca un humano: nada', post_ev(humano=True)[0], [])
+ver('control 46: sin IA.INI: nada', post_ev(ia_on=0)[0], [])
+ver('control 46: batalla sin muro: nada', (lambda: (lambda g: (g.mu.mem_write(IA_ON, b'\1'), g.mu.mem_write(FICHA, b'\5\2'),
+    g.mu.mem_write(0x536c12 + 5 * 0x1f8, struct.pack('<h', 2)), g.interceptar(IA_BAT, lambda _: None),
+    (ev := []), g.interceptar(IA_EVT, lambda a: ev.append(a[0])),
+    g.correr(WV_POST, RET, struct.pack('<III', RET, FICHA, 0)), ev)[-1])(juego()))(), [])
+
+AI_WOBS = llamadas(dest(0x4223ad), 4)[3]
+def wobs(p=5, humano=False, ia_on=1, ej=((6, 8),), dueño_ej=None, guerra=True, muertos=0, tipo=7, muro_de=2):
+    g = juego(dueño=muro_de, muertos=muertos, tipo=tipo, guerra=guerra); mu = g.mu
+    mu.mem_write(IA_ON, bytes([ia_on]))
+    if not humano: mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', 2))
+    for x, y in ej:
+        mu.mem_write(casilla(x, y), struct.pack('<H', 0x8000 | (p if dueño_ej is None else dueño_ej) << 10))
+    ev = []
+    g.interceptar(IA_EVT, lambda a: ev.append(tuple(a[:5])))
+    g.correr(AI_WOBS, RET, struct.pack('<I', RET), [(UC_X86_REG_EBX, p), (UC_X86_REG_ESI, 0x777)])
+    return ev, mu.reg_read(UC_X86_REG_ESI) == 0x777
+ver('47: pila de la computadora en diagonal del muro enemigo: n = 1, preserva', wobs(), ([(47, 5, 5, 7, 1)], True))
+ver('47: tres casillas vecinas ocupadas: n = 3', wobs(ej=((4, 6), (6, 7), (5, 8)))[0], [(47, 5, 5, 7, 3)])
+ver('control 47: a 2 casillas: nada', wobs(ej=((7, 7),))[0], [])
+ver('control 47: la pila vecina es de otro bando: nada', wobs(dueño_ej=3)[0], [])
+ver('control 47: bando humano: nada', wobs(humano=True)[0], [])
+ver('control 47: sin IA.INI: nada', wobs(ia_on=0)[0], [])
+ver('control 47: en paz con el dueño: nada', wobs(guerra=False)[0], [])
+ver('control 47: el muro es propio: nada', wobs(muro_de=5)[0], [])
+ver('control 47: bloque caído (24): nada', wobs(muertos=24)[0], [])
+ver('control 47: torre enemiga (tipo 4): nada', wobs(tipo=4)[0], [])
+ver('control 47: sin nadie al lado: nada', wobs(ej=())[0], [])
+
 print('MAL:', mal)
 sys.exit(1 if mal else 0)

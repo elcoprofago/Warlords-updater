@@ -84,6 +84,7 @@ def main(tid=None):
     alianzas(db, desde, validas, cuenta)
     innovaciones(db, validas)
     candidatos(db, validas)
+    muros(db, validas)
     defensa(db, validas)
     hechizos(db, validas, cuenta)
     perfiles(db, validas)
@@ -130,6 +131,27 @@ def innovaciones(db, validas):
     print(f'{"IA":28} {"color":>5} {"vistas":>6} {"muertos":>7} {"ocultas":>7} {"muertos":>7} {"puentes":>7} {"defensa":>7}')
     for (ia, color), e in sorted(c.items()):
         print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (6, 7, 7, 7, 7, 7))))
+
+
+def muros(db, validas):
+    """Eventos 46 y 47 (paso 5.5 de ia\\PENDIENTE-ia-innovaciones.md, solo en tandas): 46 = la IA atacó un bloque de
+    muro (n = arqueros muertos, + 100 si el bloque cayó); 47 = turno en que la IA tenía pilas junto a un muro enemigo
+    (n = casillas vecinas ocupadas). Muestra si la IA ataca el muro, lo rodea o se queda frente a él."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, color, tipo, n from evento where partida in ({q}) and tipo in (46, 47)',
+                       validas).fetchall()
+    if not filas:
+        print('\nMuros: la tanda no registró ataques a murallas ni pilas junto a ellas.')
+        return
+    c = defaultdict(lambda: [0] * 4)   # ataques, bloques caídos, turnos junto al muro, pilas-casilla junto al muro
+    for ia, color, tipo, n in filas:
+        e = c[ia, color]
+        if tipo == 46: e[0] += 1; e[1] += n >= 100
+        else: e[2] += 1; e[3] += n
+    print('\nMuros (ataques a bloques de muralla y turnos con pilas junto a un muro enemigo)')
+    print(f'{"IA":28} {"color":>5} {"ataques":>7} {"caídos":>6} {"turnos":>6} {"vecinas":>7}')
+    for (ia, color), e in sorted(c.items()):
+        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 6, 6, 7))))
 
 
 DIAG = {1: 'ejército encima', 2: 'en el camino de la pila', 3: 'IA original (sin defensa)',
