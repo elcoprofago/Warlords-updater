@@ -541,7 +541,7 @@ Sacando esos, los puentes que de verdad quedan en pie son parecidos o menos en l
 | 181 | 44 | 101 | 71 | 30 |
 | 182 | 3 | 26 | 21 | 5 |
 
-`ia\informe.py` (y el Monitor de IA 1.0.34, que lo lleva adentro) muestra ahora esos casos en una fila aparte,
+`ia\informe.py` (y el Monitor de IA 1.0.34, que lo lleva adentro; desde la 1.0.35 con el botón «Ver el informe de una tanda…») muestra ahora esos casos en una fila aparte,
 «en el camino de la pila (lo derribó ese turno)». El parche no cambia.
 
 **Próximo:** no queda nada abierto de este pendiente. Lo que siga en la IA sale de una idea nueva.

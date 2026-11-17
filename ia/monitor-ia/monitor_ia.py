@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.34'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.35'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -382,6 +382,8 @@ class Monitor(tk.Tk):
         self.rotulo(fila, text='Estadísticas:').grid(row=2, column=0, sticky='w')
         ttk.Button(fila, text='Exportar PDF de un mapa…', width=34,
                    command=self.exportar_pdf).grid(row=2, column=1, sticky='w', padx=6, pady=2)
+        ttk.Button(fila, text='Ver el informe de una tanda…', width=34,
+                   command=self.ver_informe).grid(row=3, column=1, sticky='w', padx=6, pady=2)
         caja, c = self.panel(self, 'Controles'); caja.pack(fill='x', **pad)
         c = self.caja(c); c.pack(anchor='w')
         self.v_mudo = tk.BooleanVar(value=True)
@@ -511,6 +513,26 @@ class Monitor(tk.Tk):
             self.guardadas = [todas[i] for i in lb.curselection()]
             self.rotular_guardadas(); v.destroy()
         ttk.Button(bf, text='Aceptar', command=aceptar).pack(side='right')
+
+    def ver_informe(self):
+        # El informe se imprime solo al terminar de jugar una tanda; con esto se vuelve a ver el de cualquiera
+        # (por ejemplo, después de una versión que cambia el informe). Va a la bitácora, como el de fin de tanda.
+        from tkinter import simpledialog
+        try:
+            ult = sqlite3.connect(tanda.DB).execute('select max(id) from tanda').fetchone()[0]
+        except sqlite3.Error:
+            ult = None
+        if not ult:
+            messagebox.showinfo('Informe', 'Todavía no hay tandas.', parent=self); return
+        tid = simpledialog.askinteger('Informe', f'Número de tanda (la última es la {ult}):', parent=self,
+                                      initialvalue=ult, minvalue=1, maxvalue=ult)
+        if tid is None:
+            return
+        print(f'\n--- Informe de la tanda {tid} ---')
+        try:
+            informe.main(tid)
+        except SystemExit as e:
+            print(e)
 
     def exportar_pdf(self):
         """Cuadro de posiciones de un mapa (ia\\exportar.py), en PDF, para la página del Clan."""
