@@ -370,10 +370,12 @@ def llevar_al_monitor(pid, m):
     if x <= cx < x + an and y <= cy < y + al and r.right - r.left <= an and r.bottom - r.top <= al:
         return
     w, hh = r.right - r.left, r.bottom - r.top
+    # SWP_ASYNCWINDOWPOS (0x4000): si el juego está trabado, SetWindowPos sin esa marca espera para siempre y el hilo
+    # de la partida nunca llega a dar «colgada» (tanda 178, 16/11/2026: 98 min sin aviso).
     if w > an or hh > al:   # la ventana de juego toma el tamaño del monitor donde arrancó: se le da el del elegido
-        user32.SetWindowPos(h, None, x, y, an, al, 0x0004 | 0x0010)   # SWP_NOZORDER | SWP_NOACTIVATE
+        user32.SetWindowPos(h, None, x, y, an, al, 0x0004 | 0x0010 | 0x4000)   # SWP_NOZORDER | SWP_NOACTIVATE
     else:
-        user32.SetWindowPos(h, None, x + (an - w) // 2, y + (al - hh) // 2, 0, 0, 0x0001 | 0x0004 | 0x0010)
+        user32.SetWindowPos(h, None, x + (an - w) // 2, y + (al - hh) // 2, 0, 0, 0x0001 | 0x0004 | 0x0010 | 0x4000)
 
 
 def silenciar(pid, mudo=True):

@@ -20352,10 +20352,22 @@ ia_bg = place('ia_bg', f'''
 # en Humano, todos los humanos pasan a Computadora y se termina el turno como lo hace el botón (0x415d84: 0x4d7d70 sobre
 # 0x588bd0 y 0x4221a0(0)).
 IA_TDONE = place_data('ia_tdone', bytes(1))
+# Además (1.0.239.0): si el juego nunca tuvo el foco (tanda.py se lo devuelve al usuario apenas aparece), la
+# activación de la aplicación (0x4ed480: [0x501280] = 1 y 0x4de090(0), despausar) no ocurre nunca y la partida queda
+# pausada desde el arranque, sin jugar un turno (tanda 178, 16/11/2026). Con [Tanda], la primera vuelta la hace acá.
 ia_tload = place('ia_tload', f'''
     call 0x4dea40
     cmp byte ptr [{IA_TNAME:#x}], 0
     je it_out
+    cmp byte ptr [0x501280], 0
+    jne it_act
+    mov ecx, dword ptr [0x589814]
+    test ecx, ecx
+    jz it_act
+    mov byte ptr [0x501280], 1
+    push 0
+    call 0x4de090
+it_act:
     cmp byte ptr [{IA_TDONE:#x}], 0
     jne it_out
     pushad

@@ -104,6 +104,11 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
      tanda.py (sincrónico entre procesos) espera para siempre y la detección de cuelgue no corre.
   2. El juego nunca tiene el foco (se devuelve enseguida): si la carga de la guardada lo necesita, no arranca.
   3. El lanzador nace en VentanaX/Y (ia_ventana): el código del parche se revisó y está bien armado.
-- Próximo paso: reproducir con 1 partida en Warlords3-1 (abrir, mirar 2 min IsHungAppWindow e IA.CSV) para
-  distinguir 1 de 2. Haga falta o no, SetWindowPos de llevar_al_monitor debe llevar SWP_ASYNCWINDOWPOS (0x4000) para
-  que una ventana trabada no frene la detección de cuelgue.
+- **Causa (17/11/2026, reproducida con 1 partida en Warlords3-1):** la 2. Mover la ventana a los 20 ms no afecta
+  (con foco, IA.CSV crece igual). Sin foco nunca, el juego no pasa por la activación (0x4ed480: [0x501280] = 1 y
+  despausa con 0x4de090(0)) y queda pausado desde el arranque: la ventana responde (IsHungAppWindow 0) pero IA.CSV
+  se queda en el encabezado (52 bytes). Por qué no saltó «colgada»: queda sin explicar del todo; de paso,
+  `llevar_al_monitor` usa SWP_ASYNCWINDOWPOS para que una ventana trabada no frene al hilo de la partida.
+- **Arreglo:** vista-aliada 1.0.239.0, `ia_tload`: con [Tanda], si [0x501280] = 0 hace la activación una vez
+  (marca el foco y despausa). Probado igual que la 178 (mover a los 20 ms y devolver foco): IA.CSV 364 → 2161 bytes
+  en 60 s. Monitor de IA 1.0.28 con el tanda.py nuevo. Prueba real: TAREAS 242.
