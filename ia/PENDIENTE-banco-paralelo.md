@@ -125,3 +125,10 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
   principal, como el original. `llevar_al_monitor` de tanda.py queda como respaldo.
 - De paso: `place`/`place_data` se niegan a un nombre repetido (un dato y una rutina con el mismo nombre se pisaban
   y el juego se caía).
+- 1.0.241.0 (pedido del usuario): con PANTALLA.INI el lanzador se centra en la pantalla elegida (`mn_lanz`, en el
+  CreateWindowExA 0x478f82; con [Tanda] VentanaX/Y sigue mandando ia_ventana). Probado: lanzador en
+  (2132,184,2732,584) con Monitor=2; con 7 y sin archivo, (660,340) como el original; el banco juega igual.
+- Conocido, sin arreglar (el usuario lo considera aceptable, 17/11/2026): en la pantalla no principal el puntero
+  del juego se ve corrido y el de Windows queda además en la principal. Si hiciera falta: GetCursorPos (0x5a9c..)
+  devuelve coordenadas de pantalla y el juego las usa como si su ventana estuviera en (0,0) a 640x480; habría que
+  pasarlas a la ventana (restar dmPosition y escalar 640/ancho, 480/alto) y limitar el mouse a esa pantalla.

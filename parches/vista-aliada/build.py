@@ -20418,8 +20418,11 @@ mq_out:
     ret 12
 """)
 # mn_mover: lleva la ventana principal (MN_HWND), con el tamaño de esa pantalla (dmPelsWidth/Height), al origen de \\.\DISPLAY<MN_WANT>.
-mn_mover = place('mn_mover', f"""
+MN_DMOK = place_data('mn_dmok', bytes(4))   # 1 si mn_dm pudo leer la pantalla
+# mn_dm: resuelve SetWindowPos y EnumDisplaySettingsA (una vez) y llena MN_DM con \\.\DISPLAY<MN_WANT>.
+mn_dm = place('mn_dmfill', f"""
     pushad
+    mov dword ptr [{MN_DMOK:#x}], 0
     cmp dword ptr [{MN_SWP:#x}], 0
     jne mm_res
     push 13
@@ -20459,6 +20462,16 @@ mm_uno:
     call dword ptr [{MN_EDS:#x}]
     test eax, eax
     jz mm_out
+    mov dword ptr [{MN_DMOK:#x}], 1
+mm_out:
+    popad
+    ret
+""")
+mn_mover = place('mn_mover', f"""
+    pushad
+    call {mn_dm:#x}
+    cmp dword ptr [{MN_DMOK:#x}], 0
+    je mv_out
     push 0x14
     push dword ptr [{MN_DM + 112:#x}]
     push dword ptr [{MN_DM + 108:#x}]
@@ -20467,7 +20480,7 @@ mm_uno:
     push 0
     push dword ptr [{MN_HWND:#x}]
     call dword ptr [{MN_SWP:#x}]
-mm_out:
+mv_out:
     popad
     ret
 """)
@@ -20551,6 +20564,53 @@ mp_pop:
     popad
 mp_out:
     ret
+""")
+
+# mn_lanz (en lugar de ia_ventana, en el CreateWindowExA del lanzador 0x478f82): con [Tanda] VentanaX/Y manda
+# ia_ventana (el banco); si no, con [Pantalla] Monitor=N en PANTALLA.INI el lanzador se centra en esa pantalla.
+# Tras el pushad: [esp+0x34] x, [esp+0x38] y, [esp+0x3c] ancho, [esp+0x40] alto.
+mn_lanz = place('mn_lanz', f"""
+    pushad
+    push {IA_VKX:#x}
+    call {ia_vnum:#x}
+    test edx, edx
+    jnz ml_iv
+    push {MN_PATH:#x}
+    push {MN_KEY:#x}
+    push {MN_SEC:#x}
+    call {mn_prof:#x}
+    test edx, edx
+    jz ml_out
+    test eax, eax
+    jle ml_out
+    cmp eax, 64
+    jg ml_out
+    mov dword ptr [{MN_WANT:#x}], eax
+    call {mn_dm:#x}
+    cmp dword ptr [{MN_DMOK:#x}], 0
+    je ml_out
+    mov eax, dword ptr [{MN_DM + 108:#x}]
+    sub eax, dword ptr [esp + 0x3c]
+    jge ml_x
+    xor eax, eax
+ml_x:
+    sar eax, 1
+    add eax, dword ptr [{MN_DM + 44:#x}]
+    mov dword ptr [esp + 0x34], eax
+    mov eax, dword ptr [{MN_DM + 112:#x}]
+    sub eax, dword ptr [esp + 0x40]
+    jge ml_y
+    xor eax, eax
+ml_y:
+    sar eax, 1
+    add eax, dword ptr [{MN_DM + 48:#x}]
+    mov dword ptr [esp + 0x38], eax
+ml_out:
+    popad
+    jmp dword ptr [0x5a9c38]
+ml_iv:
+    popad
+    jmp {ia_ventana:#x}
 """)
 
 # Game Over (0x482d77): en 0x482fd6 ya están el orden y los puestos. [ebp-0xe] cantidad de bandos en juego; por
@@ -22682,7 +22742,7 @@ patch(0x4699fe, bytes.fromhex('8a90320100000256038890320100002a560d889032010000'
 patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
 patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
-patch(0x478f82, bytes.fromhex('ff15389c5a00'), asm(f'call {ia_ventana:#x}; nop', 0x478f82))   # lanzador en [Tanda] VentanaX/Y
+patch(0x478f82, bytes.fromhex('ff15389c5a00'), asm(f'call {mn_lanz:#x}; nop', 0x478f82))   # lanzador en [Tanda] VentanaX/Y o en el monitor elegido
 patch(0x4ed91f, asm('call 0x4f48c4', 0x4ed91f), asm(f'call {mn_create:#x}', 0x4ed91f))   # DirectDraw en el monitor elegido
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
