@@ -545,3 +545,33 @@ Sacando esos, los puentes que de verdad quedan en pie son parecidos o menos en l
 «en el camino de la pila (lo derribó ese turno)». El parche no cambia.
 
 **Próximo:** no queda nada abierto de este pendiente. Lo que siga en la IA sale de una idea nueva.
+
+## Paso 5.5: qué hace la IA frente a un muro enemigo (propuesta del usuario, 17/11/2026)
+
+Pregunta: ante una muralla, ¿la IA la ataca, la rodea o se congela? Va antes de que la IA construya muros (y mucho
+antes de que los repare por iniciativa propia). Hoy se miden solo lo que ya hace la IA original, sin tocarla.
+
+Lo que dice el código (sin verificar en partida):
+- `po_pf`: un bloque de muro enemigo en pie no se atraviesa; solo puede ser **destino** del camino (wl_war, en
+  guerra). Las metas de la IA son ciudades, pilas, ruinas: nunca un bloque de muro. Hipótesis: la IA rodea el muro
+  si hay paso, y si una ciudad queda encerrada no le encuentra camino y la descarta (ni ataca ni se congela: la
+  ignora). Si alguna batalla contra un muro aparece, sería de una pila con meta en otra cosa.
+- `wv_post` ya llama `ia_bat`, así que una batalla contra un muro queda en IA.CSV, pero sin marca de «muro».
+- La IA no construye muros: ninguna guardada de tanda tiene. Las guardadas terminan en bloques opcionales
+  (VOTA, POZO, OBRA de 528 bytes: 'OBRA', cantidad, 64 x 8 bytes, 8 de pausas); las Tanda_hex_* terminan en POZO,
+  las de Borderlands/Kor/Scarpart en VOTA. Registro de un bloque: x, y (palabras), +4 tipo 7, +6 dueño, +7 muertos.
+
+Plan:
+1. **Guardada** `ia\muros.py <guardada>` → `<guardada>_MU.SAV`: anillo de 12 bloques de muro de piedra alrededor de
+   la capital de 4 de los 8 colores (48 de 64 registros); los otros 4 son el control dentro de la misma partida.
+   Solo casillas de tierra libres (sin agua, puente, ruina, sitio ni otra ciudad); si falta alguna, el anillo queda
+   abierto y se anota. Verificar releyendo el archivo y cargándola una vez en el juego (los muros a la vista).
+2. **Registro** (vista-aliada, como los eventos 21-27): evento nuevo en `wv_post` cuando ataca la computadora
+   (x, y = bloque, n = arqueros muertos en esa batalla + 100 si el bloque cayó); y uno por turno y color cuando una
+   pila de la IA termina a 1 casilla de un muro enemigo sin atacarlo (para distinguir «rodea» de «se queda ahí»).
+   informe.py: tabla «Muros» por color y por IA.
+3. **Tanda** sobre la guardada _MU con la IA original en todos los colores (_control): ataques a muros, bloques
+   caídos, pilas quietas junto a un muro, y capitales con muro contra sin muro (cuándo cayeron, cuántas veces se las
+   atacó). Con eso se decide si hace falta enseñarle algo a la IA (atacar un bloque como meta, o abrir brecha) antes
+   de pensar en que construya.
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
