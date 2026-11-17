@@ -96,7 +96,9 @@ def ruido(db, validas):
     dpv, dpu = [], []
     for pid in validas:
         d = {ia: (pv, pu) for ia, pv, pu in db.execute(
-            'select ia, avg(pv), avg(puesto) from resultado where partida=? group by ia', (pid,))}
+            # eliminado (puesto vacío) = último puesto; si no, el promedio lo ignora y favorece a quien pierde colores
+            'select ia, avg(pv), avg(coalesce(puesto, (select count(*) from resultado where partida=?))) '
+            'from resultado where partida=? group by ia', (pid, pid))}
         if 0 in d and 1 in d:
             dpv.append(d[1][0] - d[0][0]); dpu.append(d[1][1] - d[0][1])
     if len(dpv) < 2:

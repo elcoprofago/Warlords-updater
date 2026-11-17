@@ -691,6 +691,9 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
   de un aliado; un héroe perseguido por una misión de asesinato busca refugio; las pilas defienden las ciudades aliadas
   amenazadas cuando las propias no lo están.</li>
   <li><b>Órdenes del humano:</b> obedece las órdenes por chat del capítulo X.</li>
+  <li><b>Ataques perdidos:</b> desde la versión 1.0.243.0 no ataca en campo abierto con un grupo de menos de la mitad
+  de la fuerza de los enemigos de la casilla, porque esos ataques se pierden casi siempre (3-4 % de victorias). En
+  ciudades ataca como antes. En 64 partidas del banco la IA con esta mejora ganó 37 contra 22 de la original.</li>
 </ul>
 <h2>Lo que todavía no hace</h2>
 <ul>
@@ -1018,6 +1021,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.243.0</td><td>17/11/2026</td><td>La mejora de los ataques perdidos (versión 1.0.242.0) pasa a las partidas normales y del ranking: la computadora no ataca en campo abierto con un grupo de menos de la mitad de la fuerza del enemigo. El banco la confirmó en 64 partidas (más puntos de victoria y 37 partidas ganadas contra 22).</td></tr>
 <tr><td>1.0.242.0</td><td>17/11/2026</td><td>IA en prueba: la computadora no ataca en campo abierto con un grupo de menos de la mitad de la fuerza del enemigo (esos ataques se perdían casi siempre). En ciudades ataca como antes. Por ahora solo en los bandos que el banco de simulación pone en «IA de prueba»; en las partidas normales no cambia nada.</td></tr>
 <tr><td>1.0.241.0</td><td>17/11/2026</td><td>Con <code>PANTALLA.INI</code>, también la ventana de inicio se abre en el monitor elegido, centrada.</td></tr>
 <tr><td>1.0.240.0</td><td>17/11/2026</td><td>Elegir de antemano en qué monitor arranca el juego: archivo <code>DATA\PANTALLA.INI</code> con <code>[Pantalla]</code> y <code>Monitor=2</code> (capítulo «Arrancar el juego»). Sin ese archivo, igual que antes.</td></tr>

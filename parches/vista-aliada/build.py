@@ -16911,7 +16911,8 @@ nw_out:
 # 170-180 (Borderlands_NO), en campo abierto el atacante con menos de la mitad de la fuerza del defensor (fuerza *
 # vida) gana 3-4 %, y la IA de prueba hacía 119 de esos ataques contra 70 de la original. ap_gate reemplaza el call
 # 0x4648d0(p, x, y) de 0x4c4de7: el paso de ataque de 0x4c4a10 (caso 2, 0x4c4da0), por donde pasa todo ataque del
-# grupo que se mueve. Con IA.INI (ia_on), ia_mode = prueba y bando de la computadora (0x536c12 != -1), si la casilla
+# grupo que se mueve. En un bando de la computadora (0x536c12 != -1) sin IA.INI (ranking, desde 1.0.243.0: tanda 181,
+# 64 partidas, PV +1,77 con intervalo +0,33 a +3,22) o con IA.INI e ia_mode = prueba, si la casilla
 # no es de una ciudad (0x440be0 = -1) y la fuerza del grupo que se mueve (0x56ea94 + p*0x4f0, cantidad en +0x14) por
 # AP_K es menor que la de los ejércitos vivos ajenos de la casilla, no da la orden y devuelve 0 (0x4c4da0 lo toma como
 # ataque no dado, igual que una orden rechazada). En ciudades no corta: los defensores neutrales y el bono de la ciudad
@@ -16923,9 +16924,10 @@ ap_gate = place('ap_gate', f'''
     cmp ebx, 8
     jae ag_go
     cmp byte ptr [{IA_ON:#x}], 0
-    je ag_go
+    je ag_ia
     cmp byte ptr [ebx + {IA_MODE:#x}], 1
     jne ag_go
+ag_ia:
     imul eax, ebx, 0x1f8
     cmp word ptr [eax + 0x536c12], -1
     je ag_go

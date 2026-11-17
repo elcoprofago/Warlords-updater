@@ -478,4 +478,27 @@ Regresiones iaxxx: sin cambios.
 45, perdidos por 100 ataques, y el intervalo de PV y puesto. Si gana igual o más y no baja el PV, ap_gate pasa al
 ranking (sin IA.INI) y se anota en TAREAS actualizar C:\Warlords.
 
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 6.2 (tarea 245)".
+### Paso 6.2 (d), hecho (17/11/2026): ap_gate pasa al ranking (vista-aliada 1.0.243.0)
+
+Tanda 181: 64 partidas Tanda_Borderlands_NO con 1.0.242.0, todas «ok», ninguna cortada.
+
+| | original | prueba |
+|---|---|---|
+| PV medio por color | 6,1 | 7,8 |
+| partidas ganadas | 22 | 37 |
+| ataques / perdidos | 2773 / 311 | 3215 / 338 |
+| perdidos por 100 ataques | 11,2 | 10,5 (en la 180: 13,9 contra 10,1) |
+| ataques evitados (evento 45) | — | 154 |
+
+Prueba − original por partida: PV +1,77 (+0,33 a +3,22), **prueba mejor**; puesto medio −0,48 (−1,02 a +0,05),
+dentro del ruido. Gana más y no baja el PV: según la regla del repo, ap_gate queda activo sin IA.INI desde 1.0.243.0
+(en bando de la computadora; con IA.INI sigue solo en los colores en prueba). Prueba `prueba_iaataque.py`: 16 casos
+OK, incluidos «sin IA.INI corta» y los controles sin IA.INI (humano, ciudad). TAREAS 246: actualizar C:\Warlords.
+
+`ia\informe.py`: un color eliminado tiene puesto vacío. El cálculo del paso 6.1 lo ignoraba (sesgo a favor de la IA
+que pierde colores) y se caía cuando una IA perdía todos los suyos en una partida (pasó en la 181). Ahora el eliminado
+cuenta como último puesto. Las cifras de puesto de 6.1 (176-180) se calcularon con el sesgo viejo.
+
+**Próximo:** 6.1 pendiente (guardadas Tanda_* de otros mapas) y el punto menor de los puentes del evento 21.
+
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 6 (guardadas de otros mapas)".
