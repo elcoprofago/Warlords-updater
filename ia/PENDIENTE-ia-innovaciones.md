@@ -424,3 +424,34 @@ Tampoco se programa la contraparte (evitar pelear de noche contra pilas de noche
 esquivarlo tampoco. Paso 5.4 cerrado.
 Con esto el orden del paso 5 queda completo (5.1 a 5.4). De la tabla del relevamiento solo queda sin IA «build»
 (construir caminos), que es tema de PENDIENTE-construcciones.md.
+
+## Paso 6: medir con el banco rápido y cortar los ataques perdidos (plan acordado con el usuario, 17/11/2026)
+
+Contexto: con el banco en paralelo (8 partidas a la vez, Monitor de IA 1.0.31) 16 partidas tardan ~34 min (tanda
+180). Los pasos 5.4 (noche) y los hechizos se descartaron con 20-30 partidas por quedar «dentro del ruido»; ahora se
+pueden juntar ~64 partidas en 2,5 h. Toda la IA de prueba ya juega en el ranking (sin IA.INI, desde 1.0.218.0),
+salvo nt_wait y hs_w; C:\Warlords tiene el mismo exe que las pruebas (1.0.241.0, verificado 17/11/2026).
+
+**6.1 Medir el ruido.** Con las tandas 176, 177 y 180 (Borderlands_NO, 1.0.236-1.0.241, misma IA) más una serie de
+4 tandas de 16: cuánto varía entre tandas la diferencia de PV y de puesto medio prueba − original sin cambiar nada.
+Sumar a `ia\informe.py` (o a un informe de serie) el intervalo de esa diferencia, para que cada destreza se juzgue
+contra ese número. Sumar 2-3 guardadas Tanda_* de otros mapas a la serie (todas las recientes son Borderlands_NO).
+
+**6.2 Ataques perdidos.** La IA de prueba gana más (180: 8 contra 6 partidas, PV 7,3 contra 6,4) pero pierde más
+ejércitos, y en 2 de 3 tandas también más por ataque:
+
+| Tanda | perdidos prueba / original | por 100 ataques prueba / original |
+|---|---|---|
+| 176 | 62 / 49 | 12,7 / 10,4 |
+| 177 | 90 / 74 | 12,0 / 12,3 |
+| 180 | 112 / 70 | 13,9 / 10,1 |
+
+Pasos: (a) registrar cada batalla atacando con la fuerza de ambas pilas (ver qué guarda hoy IA_BAT / leer_batallas;
+si falta la fuerza, evento nuevo solo con IA.INI); (b) con una serie, la curva desventaja → % ganado; (c) en la IA
+de prueba, no atacar por debajo del umbral donde casi siempre pierde; (d) serie de ~64 partidas; si gana igual o
+más y no baja el PV, pasa al ranking (regla del repo).
+
+**Menor, para mirar de paso:** en la 180 la prueba dejó sin derribar 25 puentes «en el camino de la pila» (evento
+21) contra 10 de la original: ver si es descuido o que los usa más.
+
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 6".
