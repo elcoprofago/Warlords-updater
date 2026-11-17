@@ -529,4 +529,19 @@ es neutro, como corresponde a una regla que actúa poco. No se toca AP_K.
 Borderlands: con 64 partidas, ±1,5 a ±1,6 PV (no ±1,35). Una destreza que gane menos de ~1,5 PV por partida
 necesita más de 64 partidas para distinguirse del ruido.
 
-**Próximo:** el punto menor de los puentes del evento 21 (26 en la prueba en la 182: «en el camino de la pila»).
+### Punto menor de los puentes del evento 21, hecho (17/11/2026, Monitor de IA 1.0.34)
+
+No es descuido: es un artefacto del registro. La pila de la prueba que va a derribar un puente (paso 4 D) deja el
+evento 21 n = 2 al llegar a la cabecera y lo derriba **en el mismo turno** (evento 1 n = 101, mismo color y puente).
+Sacando esos, los puentes que de verdad quedan en pie son parecidos o menos en la prueba:
+
+| Tanda | Original | Prueba, total | Prueba, derribado ese turno | Prueba, quedó en pie |
+|---|---|---|---|---|
+| 180 | 10 | 25 | 17 | 8 |
+| 181 | 44 | 101 | 71 | 30 |
+| 182 | 3 | 26 | 21 | 5 |
+
+`ia\informe.py` (y el Monitor de IA 1.0.34, que lo lleva adentro) muestra ahora esos casos en una fila aparte,
+«en el camino de la pila (lo derribó ese turno)». El parche no cambia.
+
+**Próximo:** no queda nada abierto de este pendiente. Lo que siga en la IA sale de una idea nueva.

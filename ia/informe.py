@@ -138,15 +138,18 @@ DIAG = {1: 'ejército encima', 2: 'en el camino de la pila', 3: 'IA original (si
 
 def candidatos(db, validas):
     """Evento 21 (desde 1.0.103.0, solo en tandas): cada vez que una pila de la IA terminó junto a un puente entero y
-    no lo derribó, por qué. Sirve para ver qué condición de ai_brdef no se cumple nunca."""
+    no lo derribó, por qué. Sirve para ver qué condición de ai_brdef no se cumple nunca. Aparte, «lo derribó ese turno»:
+    la pila de la prueba que iba a derribarlo (paso 4 D) deja el evento 21 al llegar y lo derriba en el mismo turno
+    (evento 1, n = 101, mismo color y puente); no es un puente que quedó en pie (tandas 180-182, 7 de cada 10)."""
     q = ','.join('?' * len(validas))
-    filas = db.execute(f'select ia, n, count(*) from evento where partida in ({q}) and tipo = 21 group by ia, n',
-                       validas).fetchall()
+    filas = db.execute(f'select ia, n, exists(select 1 from evento b where b.partida = e.partida and b.tipo = 1 and '
+                       f'b.n = 101 and b.color = e.color and b.x = e.x and b.y = e.y and b.turno = e.turno), count(*) '
+                       f'from evento e where partida in ({q}) and tipo = 21 group by 1, 2, 3', validas).fetchall()
     if not filas:
         return
     print('\nPuentes junto a una pila de la IA que no se derribaron (evento 21), por motivo')
-    for ia, n, k in sorted(filas):
-        print(f'{IAS.get(ia, ia):28} {DIAG.get(n, n):45} {k:6}')
+    for ia, n, luego, k in sorted(filas):
+        print(f'{IAS.get(ia, ia):28} {DIAG.get(n, n) + (" (lo derribó ese turno)" if luego else ""):45} {k:6}')
 
 
 def hechizos(db, validas, cuenta):

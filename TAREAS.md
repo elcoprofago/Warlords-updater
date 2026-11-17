@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 248).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 249).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-0. **Tarea 246** (actualizar C:\Warlords a 1.0.243.0) y **tarea 247** (serie de 64 en Scarpart y Kor).
+0. **Tarea 248** (Monitor de IA 1.0.34).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -15,6 +15,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **248.** Monitor de IA **1.0.34** (17/11/2026). 1) Abrir el Monitor de IA y «Actualizar» (engranaje): tiene que decir **VERSIÓN 1.0.34**. 2) Abrir el informe de la tanda **182**: en «Puentes junto a una pila de la IA que no se derribaron» la prueba tiene dos filas, «en el camino de la pila» con **5** y «en el camino de la pila (lo derribó ese turno)» con **21**. Antes era una sola fila con 26: la mayoría eran puentes que la IA fue a derribar y derribó en ese mismo turno. Anotar lo que no coincida.
 - [x] **247.** Serie del banco en otros mapas (vista-aliada **1.0.243.0**, Monitor de IA **1.0.33**, 17/11/2026). 1) Abrir el Monitor de IA: tiene que decir **VERSIÓN 1.0.33**. 2) Lanzar una tanda **nueva**: en el botón de las guardadas elegir **Tanda_Scarpart** y **Tanda_Kor** (las dos, con Ctrl+clic) y en «Partidas:» poner **64**. 3) Dejarla terminar (unas 2,5 horas). 4) Anotar acá el número de tanda y si alguna partida quedó «cortada». El análisis lo hago yo. **Hecha 17/11/2026:** tanda 182, las 64 partidas «ok», sin cortes. Resultado: en ningún mapa la IA original sale mejor; la regla nueva queda en el ranking (detalle en ia\PENDIENTE-ia-innovaciones.md).
 - [x] **246.** Actualizar el juego del ranking (vista-aliada **1.0.243.0**, 17/11/2026). En `C:\Warlords`, Actualizador, opción **9**: vista-aliada en **1.0.243.0** o posterior. Desde esta versión la computadora no ataca en campo abierto con menos de la mitad de la fuerza del enemigo también en las partidas normales. Nada que probar aparte: anotar si algo raro aparece en la próxima partida. Monitor de IA: al abrirlo tiene que decir **VERSIÓN 1.0.33** (si no, «Actualizar»); el informe de la tanda 181 tiene que mostrarse sin error.
 - [x] **245.** Serie larga del banco (vista-aliada **1.0.242.0**, 17/11/2026). 1) Abrir el Monitor de IA: tiene que decir **VERSIÓN 1.0.32** (si no, «Actualizar»). 2) Lanzar una tanda **nueva** con la guardada **Tanda_Borderlands_NO** y en «Partidas:» poner **64**. 3) Dejarla terminar (unas 2,5 horas). 4) Anotar acá el número de tanda y si alguna partida quedó «cortada». El análisis lo hago yo. **Hecha 17/11/2026:** tanda 181, las 64 partidas «ok», sin cortes. Resultado: la IA de prueba ganó 37 contra 22 y sacó más PV; la mejora pasó al ranking en 1.0.243.0 (tarea 246).
