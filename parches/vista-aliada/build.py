@@ -16907,6 +16907,113 @@ nw_out:
     pop ebx
     ret
 ''')
+# ---- Ataques perdidos (paso 6.2 de ia\PENDIENTE-ia-innovaciones.md, 17/11/2026). Con las batallas de las tandas
+# 170-180 (Borderlands_NO), en campo abierto el atacante con menos de la mitad de la fuerza del defensor (fuerza *
+# vida) gana 3-4 %, y la IA de prueba hacía 119 de esos ataques contra 70 de la original. ap_gate reemplaza el call
+# 0x4648d0(p, x, y) de 0x4c4de7: el paso de ataque de 0x4c4a10 (caso 2, 0x4c4da0), por donde pasa todo ataque del
+# grupo que se mueve. Con IA.INI (ia_on), ia_mode = prueba y bando de la computadora (0x536c12 != -1), si la casilla
+# no es de una ciudad (0x440be0 = -1) y la fuerza del grupo que se mueve (0x56ea94 + p*0x4f0, cantidad en +0x14) por
+# AP_K es menor que la de los ejércitos vivos ajenos de la casilla, no da la orden y devuelve 0 (0x4c4da0 lo toma como
+# ataque no dado, igual que una orden rechazada). En ciudades no corta: los defensores neutrales y el bono de la ciudad
+# no se miden así. Evento 45: x, y = casilla, n = fuerza del grupo * 1000 + defensores (topes 999).
+AP_EVT, AP_K = 45, 2
+ap_gate = place('ap_gate', f'''
+    pushad
+    movsx ebx, word ptr [esp + 0x24]
+    cmp ebx, 8
+    jae ag_go
+    cmp byte ptr [{IA_ON:#x}], 0
+    je ag_go
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne ag_go
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je ag_go
+    movsx esi, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    push edi
+    push esi
+    call 0x440be0
+    add esp, 8
+    test ax, ax
+    jge ag_go
+    xor ebp, ebp
+    mov ecx, 1
+ag_dl:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge ag_dend
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz ag_dnx
+    cmp si, word ptr [edx + 0x54fe52]
+    jne ag_dnx
+    cmp di, word ptr [edx + 0x54fe54]
+    jne ag_dnx
+    movzx eax, word ptr [edx + 0x54fe5e]
+    shr eax, 5
+    and eax, 15
+    cmp eax, ebx
+    je ag_dnx
+    mov eax, ecx
+    call {al_str:#x}
+    add ebp, eax
+ag_dnx:
+    inc ecx
+    jmp ag_dl
+ag_dend:
+    test ebp, ebp
+    jz ag_go
+    imul edx, ebx, 0x4f0
+    movsx ecx, word ptr [edx + 0x56eaa8]
+    cmp ecx, 8
+    jbe ag_cn
+    mov ecx, 8
+ag_cn:
+    push 0
+ag_al:
+    dec ecx
+    js ag_aend
+    movsx eax, word ptr [edx + ecx*2 + 0x56ea94]
+    test eax, eax
+    jle ag_al
+    push edx
+    imul edx, eax, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    pop edx
+    jz ag_al
+    call {al_str:#x}
+    add dword ptr [esp], eax
+    jmp ag_al
+ag_aend:
+    pop eax
+    imul ecx, eax, {AP_K}
+    cmp ecx, ebp
+    jge ag_go
+    cmp eax, 999
+    jbe ag_ca
+    mov eax, 999
+ag_ca:
+    imul eax, eax, 1000
+    cmp ebp, 999
+    jbe ag_cd
+    mov ebp, 999
+ag_cd:
+    add eax, ebp
+    push eax
+    push edi
+    push esi
+    push ebx
+    push {AP_EVT}
+    call {ia_evt:#x}
+    add esp, 20
+    popad
+    xor eax, eax
+    ret
+ag_go:
+    popad
+    jmp 0x4648d0
+''')
 # ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
 L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
     L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT, L_OK = (4 * (i + 1) for i in range(24))
@@ -22899,6 +23006,7 @@ patch(0x435d53, rel(0x435d53, 0x435d79 - 0x435d53), asm(f'jmp {qb_ailoc3:#x}', 0
 assert rel(0x4c4d41, 2) == bytes.fromhex('8bc8')   # mov ecx, eax
 patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_brraze:#x}', 0x4c4d3a))
 patch(0x4c4bce, asm('call 0x49c4b0', 0x4c4bce), asm(f'call {ai_move:#x}', 0x4c4bce))
+patch(0x4c4de7, asm('call 0x4648d0', 0x4c4de7), asm(f'call {ap_gate:#x}', 0x4c4de7))   # paso 6.2: ataques perdidos
 # La IA reconstruye puentes (meta 9: ai_brrebev, ai_brreb, ai_brname9*)
 patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm(f'jmp {ai_brrebev:#x}', 0x41e4eb))
 # Puerto nuevo: la ciudad convertida (+0xdd) no está en ninguna casilla ni es reconstruible (pt_*)

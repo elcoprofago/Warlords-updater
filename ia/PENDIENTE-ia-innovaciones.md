@@ -454,4 +454,28 @@ más y no baja el PV, pasa al ranking (regla del repo).
 **Menor, para mirar de paso:** en la 180 la prueba dejó sin derribar 25 puentes «en el camino de la pila» (evento
 21) contra 10 de la original: ver si es descuido o que los usa más.
 
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 6".
+### Paso 6.1 y 6.2, hecho (17/11/2026, vista-aliada 1.0.242.0)
+
+**6.1.** `ia\informe.py` imprime ahora «Prueba - original, partida por partida» con el intervalo del 95 %
+(1,96·sd/√n) de PV y puesto medio y el veredicto (dentro del ruido / prueba mejor / original mejor). El desvío por
+partida es ~5,5 PV y ~1,65 puestos: ±2,7 PV con 16 partidas, ±1,35 con 64. Resultados: 180 sola (16): PV +0,86
+(-1,59 a +3,31), dentro del ruido. 176-180 (41): PV +1,33 (-0,36 a +3,02); puesto -0,47 (-0,92 a -0,02), prueba
+mejor. 170-180 (99): todo dentro del ruido. Las guardadas de otros mapas siguen pendientes.
+
+**6.2 (a, b).** No hizo falta evento nuevo: la tabla batalla ya tiene los ejércitos por ranura y la fuerza×vida de
+cada ranura sale de la guardada. Curva en campo abierto (tandas 170-180, ambas IA): ataque/defensa < 0,5 → gana 3-4 %;
+0,5-0,8 → 24-29 %; 0,8-1,2 → 59 %; 1,2-2 → 82-83 %; ≥ 2 → 94-100 %. La prueba dio 119 ataques en campo abierto por
+debajo de 0,5 contra 70 de la original: de ahí salen las pérdidas de más. En ciudades la curva no sirve (los
+neutrales no están en esa tabla): quedan fuera.
+
+**6.2 (c).** `ap_gate` en build.py, en el call de 0x4c4de7 (la orden de atacar del movimiento de grupo): solo con
+IA.INI y color en prueba de la computadora, fuera de ciudad, si la fuerza del grupo (suma de fuerza×vida de sus
+vivos) es menos de la mitad de la de los enemigos vivos de la casilla, no ataca y registra el evento 45
+(n = grupo·1000 + defensores). Prueba unicorn `parchesista-aliada\prueba_iaataque.py`: 13 casos, TODO OK.
+Regresiones iaxxx: sin cambios.
+
+**6.2 (d), próximo:** serie de 64 partidas Tanda_Borderlands_NO con 1.0.242.0 (TAREAS 245). Mirar: cuántos eventos
+45, perdidos por 100 ataques, y el intervalo de PV y puesto. Si gana igual o más y no baja el PV, ap_gate pasa al
+ranking (sin IA.INI) y se anota en TAREAS actualizar C:\Warlords.
+
+Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 6.2 (tarea 245)".

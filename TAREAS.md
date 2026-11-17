@@ -1,12 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 245).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 246).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
+0. **Tarea 245** (serie de 64 partidas del banco).
 1. Con la notebook: **Puente 10** (net.ini) y **Puente 11** («Anfitrión» con la partida vieja abierta).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
@@ -14,6 +15,7 @@ Sorteo están acá (tarea 18).
 
 # Pendientes
 
+- [ ] **245.** Serie larga del banco (vista-aliada **1.0.242.0**, 17/11/2026). 1) Abrir el Monitor de IA y pulsar «Actualizar» si ofrece versión nueva. 2) Lanzar una tanda **nueva** con la guardada **Tanda_Borderlands_NO** y en «Partidas:» poner **64**. 3) Dejarla terminar (unas 2,5 horas). 4) Anotar acá el número de tanda y si alguna partida quedó «cortada». El análisis lo hago yo.
 - [x] **244.** Nueva tanda del banco (Monitor de IA **1.0.31**, 17/11/2026). La tanda 179 no se puede retomar (cambió el juego a 1.0.241.0, y además quedó mal grabada): empezá una **nueva**. 1) Abrir el Monitor de IA: tiene que decir **VERSIÓN 1.0.31** (si no, «Actualizar»). 2) Lanzar una tanda nueva de 16 partidas como siempre. 3) Al terminar la primera partida la tanda tiene que seguir sola con las demás (antes se cortaba ahí). El panel ahora se llama **«Partidas en curso»**: una fila por cada partida que se está jugando (turno, batallas, hace cuánto no avanza; en rojo si está parada). Con un clic en una fila, abajo se ve el detalle de esa partida. Al terminar, la Bitácora dice de cada partida «tope, N turnos». Anotar si alguna queda «cortada» con 0 turnos. **Hecha 17/11/2026:** tanda 180, las 16 partidas «ok» con 30 turnos cada una, sin cortes; el panel «Partidas en curso» funcionó.
 - [x] **243.** Elegir el monitor donde arranca el juego (vista-aliada 1.0.241.0, 17/11/2026; tu pedido). 1) Actualizador, opción **9**: vista-aliada en **1.0.241.0** o posterior. 2) En la carpeta `DATA` del juego crear `PANTALLA.INI` (con el Bloc de notas) con dos renglones: `[Pantalla]` y `Monitor=2`. 3) Abrir `DarklordAV.exe`: la ventanita de inicio tiene que abrirse centrada en la segunda pantalla; al empezar una partida, el juego la ocupa entera. El puntero corrido y duplicado es conocido (no lo arreglo, según lo que dijiste). 4) Control: cambiar a `Monitor=1`, o borrar el archivo: el juego vuelve a la principal, como siempre. Ya lo probé en esta PC con 2, con 7 (no existe: va a la principal) y sin archivo. Anotar lo que no coincida. Para el banco no hace falta nada: lo usa solo desde el Monitor de IA **1.0.29** (hacé la 242 con la 1.0.29).
 - [x] **242.** Las partidas del banco vuelven a jugar (vista-aliada 1.0.239.0 y Monitor de IA 1.0.28, 17/11/2026). La tanda 178 no jugó ni un turno: al devolverle el foco a tu ventana apenas abría, el juego quedaba pausado desde el arranque (reproducido y corregido en una partida sola). 1) Monitor de IA, engranaje, a la **1.0.28**. 2) Nueva tanda: **Ninguna**, solo **Borderlands_NO** (sin «control»), Partidas: **16**. 3) En la tabla del Monitor, a los 2 o 3 minutos las 8 partidas tienen que mostrar turnos subiendo; si alguna queda en 0 más de 5 minutos, aparece el aviso rojo de posible cuelgue (ahora sí funciona aunque el juego esté trabado). Control: la pantalla principal sigue sin taparse y sin perder el foco, como en la 241. Avisame cuando termine; el análisis lo hago yo.

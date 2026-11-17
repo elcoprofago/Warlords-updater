@@ -114,7 +114,8 @@ EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo parti
            28: 'deserción por falta de oro', 29: 'saldo del turno (x ingreso, y mantenimiento, n oro)',
            30: 'cambio de oro (x quien lo hizo, y cantidad, n oro antes)',
            43: 'pila de noche que espera de día (n = amenaza * 1000 + fuerza)',
-           44: 'hechizo lanzado (x efecto 1 * 100 + efecto 2, y costo, n puntaje)'}
+           44: 'hechizo lanzado (x efecto 1 * 100 + efecto 2, y costo, n puntaje)',
+           45: 'ataque no dado: grupo con menos de la mitad (n = grupo * 1000 + defensores)'}
 POZOS_EV = (18, 19, 20)   # n = muertos + 100 si el que cayó ya lo veía (error evitable)
 
 ESQUEMA = f'''

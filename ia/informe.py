@@ -79,6 +79,7 @@ def main(tid=None):
         print(f'{IAS.get(ia, ia):28} {c:7} {s["pv"] / c:6.1f} {s["ciudades"] / c:8.1f} {s["oro"] / c:7.0f} '
               f'{s["ejercitos"] / c:7.1f} {gana[ia]:7} {comp_otra[ia] + comp_misma[ia]:9} {ataques[ia]:7} '
               f'{perdidos[ia]:8} {desang[ia]:8}')
+    ruido(db, validas)
     print('\nTurnos sin progreso: los registra la destreza 1 (todavía no implementada).')
     alianzas(db, desde, validas, cuenta)
     innovaciones(db, validas)
@@ -86,6 +87,27 @@ def main(tid=None):
     defensa(db, validas)
     hechizos(db, validas, cuenta)
     perfiles(db, validas)
+
+
+def ruido(db, validas):
+    """Paso 6.1 (ia\\PENDIENTE-ia-innovaciones.md): diferencia prueba − original de PV y puesto medio, partida por
+    partida, con su intervalo del 95 % (± 1,96 × desvío / √partidas). Si el intervalo cruza el 0, la diferencia es del
+    tamaño del ruido: la destreza no se juzga ganadora ni perdedora con esas partidas."""
+    dpv, dpu = [], []
+    for pid in validas:
+        d = {ia: (pv, pu) for ia, pv, pu in db.execute(
+            'select ia, avg(pv), avg(puesto) from resultado where partida=? group by ia', (pid,))}
+        if 0 in d and 1 in d:
+            dpv.append(d[1][0] - d[0][0]); dpu.append(d[1][1] - d[0][1])
+    if len(dpv) < 2:
+        return
+    n = len(dpv)
+    print(f'\nPrueba - original, partida por partida ({n} partidas con las dos IA; intervalo del 95 %):')
+    for nombre, v, mejor in (('PV', dpv, 'más'), ('puesto medio', dpu, 'menos')):
+        m = sum(v) / n; sd = (sum((x - m) ** 2 for x in v) / (n - 1)) ** 0.5; h = 1.96 * sd / n ** 0.5
+        veredicto = 'dentro del ruido' if m - h <= 0 <= m + h else ('prueba mejor' if (m > 0) == (mejor == 'más')
+                                                                     else 'original mejor')
+        print(f'  {nombre:13} {m:+6.2f}  ({m - h:+.2f} a {m + h:+.2f})  {veredicto}')
 
 
 def innovaciones(db, validas):
