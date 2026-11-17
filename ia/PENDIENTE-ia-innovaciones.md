@@ -501,7 +501,7 @@ cuenta como último puesto. Las cifras de puesto de 6.1 (176-180) se calcularon 
 
 **Próximo:** 6.1 pendiente (guardadas Tanda_* de otros mapas) y el punto menor de los puentes del evento 21.
 
-### Paso 6.1, otros mapas (17/11/2026, en curso)
+### Paso 6.1, otros mapas (17/11/2026, hecho: tanda 182)
 
 Guardadas: Tanda_Scarpart y Tanda_Kor (sin alianzas, sin Day/Night; las mismas de las tandas 1-165). No se arman
 versiones _NO: noche.py cambia clases de unidades para medir la noche y eso no es lo que se mide acá. Tanda: TAREAS 247,
@@ -511,4 +511,22 @@ eventos 45, perdidos por 100 ataques. Sirve para dos cosas: (1) ver si ap_gate t
 (ya está en el ranking; si en estos mapas sale «original mejor», se revisa AP_K); (2) comparar el desvío por partida
 con el de Borderlands (~5,5 PV): si es parecido, el ±1,35 PV con 64 partidas vale como vara general.
 
-Frase para retomar: "Seguimos con ia\PENDIENTE-ia-innovaciones.md, resultado del paso 6.1 en otros mapas (tarea 247)".
+**Resultado, tanda 182** (64 partidas «ok», 32 por mapa, 1.0.243.0):
+
+| Mapa | PV prueba - original (95 %) | Puesto (95 %) | Ganadas P / O | Eventos 45 | Desvío PV por partida |
+|---|---|---|---|---|---|
+| Kor (32) | +1,65 (-0,60 a +3,90) | -0,23 (-0,98 a +0,53) | 20 / 11 | 99 | 6,50 |
+| Scarpart (32) | -0,39 (-2,56 a +1,78) | +0,04 (-0,68 a +0,76) | 17 / 13 | 13 | 6,27 |
+| Los dos (64) | +0,63 (-0,94 a +2,20) | -0,09 (-0,61 a +0,43) | 37 / 24 | 112 | — |
+| Borderlands_NO, tanda 181 (64) | +1,77 (+0,33 a +3,22) | -0,48 (-1,02 a +0,05) | 37 / 22 | 154 | 5,89 |
+
+Perdidos por 100 ataques (182): original 10,4, prueba 9,4.
+
+(1) **ap_gate se queda en el ranking.** En ningún mapa sale «original mejor». En Kor va en la misma dirección que
+Borderlands (y gana 20 a 11); en Scarpart la regla casi no se dispara (13 eventos 45 en 32 partidas) y el resultado
+es neutro, como corresponde a una regla que actúa poco. No se toca AP_K.
+(2) **El desvío por partida es parecido** (6,3-6,5 contra 5,9): la vara vale como general, un poco más ancha fuera de
+Borderlands: con 64 partidas, ±1,5 a ±1,6 PV (no ±1,35). Una destreza que gane menos de ~1,5 PV por partida
+necesita más de 64 partidas para distinguirse del ruido.
+
+**Próximo:** el punto menor de los puentes del evento 21 (26 en la prueba en la 182: «en el camino de la pila»).
