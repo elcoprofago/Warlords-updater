@@ -602,15 +602,15 @@ def jugar(db, tid, n, p, a, carp=None):
     for _ in range(750):
         v = ventana_del_juego(proc.pid)
         if v:
-            n = ctypes.create_unicode_buffer(16); user32.GetClassNameW(v[0], n, 16)
-            if n.value.startswith('Afx'):
+            clase = ctypes.create_unicode_buffer(16); user32.GetClassNameW(v[0], clase, 16)
+            if clase.value.startswith('Afx'):   # no usar n: es el número de partida (tanda 179)
                 break
         time.sleep(0.02)
     llevar_al_monitor(proc.pid, mon)
     # La ventana de juego se queda con el foco al aparecer: se le devuelve a lo que estaba en uso (el juego sigue
     # jugando sin foco, ia_tload). Medido el 16/11/2026: queda unos 0,3 s en la pantalla principal, antes 5 s.
-    fg = user32.GetForegroundWindow(); pid = wintypes.DWORD(); user32.GetWindowThreadProcessId(fg, ctypes.byref(pid))
-    if antes and pid.value == proc.pid:
+    fg = user32.GetForegroundWindow(); dueno = wintypes.DWORD(); user32.GetWindowThreadProcessId(fg, ctypes.byref(dueno))
+    if antes and dueno.value == proc.pid:   # no usar pid: es la partida en la base (tanda 179)
         user32.SetForegroundWindow(antes)
     t0 = ultimo_cambio = time.time(); tam = -1; estado = None
     while estado is None:

@@ -132,3 +132,14 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
   del juego se ve corrido y el de Windows queda además en la principal. Si hiciera falta: GetCursorPos (0x5a9c..)
   devuelve coordenadas de pantalla y el juego las usa como si su ventana estuviera en (0,0) a 640x480; habría que
   pasarlas a la ventana (restar dmPosition y escalar 640/ancho, 480/alto) y limitar el mouse a esa pantalla.
+
+## Tanda 179 cortada (17/11/2026, Monitor de IA 1.0.30)
+- Causa: desde el Monitor 1.0.27 (d8e83c7), en `jugar` de tanda.py dos variables locales pisaban otras: `n` (número
+  de partida) se usaba para el nombre de clase de ventana y `pid` (partida en la base) para el dueño de la ventana con
+  el foco. Al terminar la primera partida el print fallaba (TypeError) y abortaba toda la tanda; `importar` grababa
+  los turnos con un DWORD de Windows en vez del id de partida. Las partidas quedaban «cortada» con 0 turnos.
+- Afectó la 179 y muy probablemente la 178. En datos.db quedan 3931 filas de `turno` con partida = blob (un pid de
+  Windows, sin forma de ligarlo a una partida): inservibles, NO se borran sin autorización del usuario.
+- Arreglo: renombradas a `clase` y `dueno`. Probado con una tanda de 8 contra una base de prueba: 8 partidas «tope»
+  con 4 turnos, 192 filas de turno con partida entera, tanda terminada.
+- La 179 no se retoma (además el juego cambió a 1.0.241.0): TAREAS 244, tanda nueva.
