@@ -451,9 +451,13 @@ def escribir_ini(prueba, guardada, c=None):
             f.write(f'[Tanda]\nPartida={guardada}\n')
             # vista-aliada 1.0.238.0 (ia_ventana): el juego crea sus ventanas en esa posición, directo en el monitor
             # del banco, sin pasar por la pantalla principal. En la principal no hace falta: el juego ya se centra ahí.
-            _, x, y, _, _, principal = monitor_configurado()
+            nombre, x, y, _, _, principal = monitor_configurado()
             if not principal:
                 f.write(f'VentanaX={x}\nVentanaY={y}\n')
+                # vista-aliada 1.0.240.0 (mn_create): el juego crea DirectDraw en \\.\DISPLAYN, así la ventana de
+                # juego nace en ese monitor y no pasa por la pantalla principal.
+                if nombre.upper().rsplit('DISPLAY', 1)[-1].isdigit():
+                    f.write(f'Monitor={int(nombre.upper().rsplit("DISPLAY", 1)[-1])}\n')
 
 
 def cerrar_juego(proc=None):

@@ -112,3 +112,16 @@ compara minutos por partida contra 6: si baja, quedan 8; si no, 6. Con 10 el pro
 - **Arreglo:** vista-aliada 1.0.239.0, `ia_tload`: con [Tanda], si [0x501280] = 0 hace la activación una vez
   (marca el foco y despausa). Probado igual que la 178 (mover a los 20 ms y devolver foco): IA.CSV 364 → 2161 bytes
   en 60 s. Monitor de IA 1.0.28 con el tanda.py nuevo. Prueba real: TAREAS 242.
+
+## Monitor elegido desde el juego (17/11/2026, vista-aliada 1.0.240.0, Monitor de IA 1.0.29)
+- Pedido del usuario: elegir de antemano, con una configuración sencilla, en qué monitor arranca el juego.
+- `DATA\PANTALLA.INI` `[Pantalla] Monitor=N` (jugadores) o `[Tanda] Monitor=N` en IA.INI (lo escribe `escribir_ini`
+  cuando el monitor del banco no es el principal; manda sobre PANTALLA.INI). El juego crea DirectDraw con el GUID de
+  `\\.\DISPLAYN` ({67685558+N-3106-11D0-B971-00AA00342F9F}), mueve la ventana oculta a esa pantalla y, como Windows
+  la vuelve a llevar a la principal al mostrarla (emulación de pantalla completa a 640x480x8), la mueve otra vez
+  apenas está visible (`mn_post`, desde OnIdle).
+- Probado en Warlords3-1: con [Tanda] Monitor=2 la ventana queda en (1920,0,2944,768) e IA.CSV crece (364 → 1212
+  bytes en 40 s) sin que tanda.py la mueva; PANTALLA.INI con 2 → pantalla 2; con 7 (no existe) y sin archivo →
+  principal, como el original. `llevar_al_monitor` de tanda.py queda como respaldo.
+- De paso: `place`/`place_data` se niegan a un nombre repetido (un dato y una rutina con el mismo nombre se pisaban
+  y el juego se caía).

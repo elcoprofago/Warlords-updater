@@ -117,6 +117,7 @@ ALLIES += ALLIES_TAIL
 
 caves = {}
 def place(name, src):
+    assert name not in caves, f'cueva repetida: {name}'   # un nombre repetido pisa la anterior en silencio (17/11/2026)
     addr = CAVE + sum(len(b) for b in caves.values())
     addr = (addr + 15) & ~15
     pad = addr - (CAVE + sum(len(b) for b in caves.values()))
@@ -994,6 +995,7 @@ fg_mine:
 # busca la ventana con FindWindow por clase y título, MPlay los usa como nombre de la aplicación) y las líneas de
 # marca registrada del producto original (grupo 0xec).
 def place_data(name, data):
+    assert name not in caves, f'cueva repetida: {name}'
     addr = CAVE + sum(len(b) for b in caves.values())
     caves[name] = bytes(data)
     return addr
@@ -20291,6 +20293,266 @@ iv_go:
     jmp dword ptr [0x5a9c38]
 """)
 
+# Monitor donde arranca el juego (pedido del usuario, 17/11/2026: «no puede ser que no se pueda elegir de antemano»).
+# El original crea DirectDraw con DirectDrawCreate(NULL) (0x4ed91f): siempre la pantalla principal, y el modo
+# exclusivo a pantalla completa (SetCooperativeLevel 0x11, 0x4ed961) lleva la ventana ahí. Con [Pantalla] Monitor=N
+# en DATA\PANTALLA.INI (un jugador) o [Tanda] Monitor=N en DATA\IA.INI (el banco; manda si está), el juego crea
+# DirectDraw con el GUID del dispositivo \\.\DISPLAYN (el nombre que Windows da a cada pantalla): DirectDraw pone el
+# modo de video y la ventana en ese monitor. El GUID de \\.\DISPLAYN es {67685558+N-3106-11D0-B971-00AA00342F9F}
+# (el que devuelve DirectDrawEnumerateExA, comprobado en 32 y 64 bits el 17/11/2026); no se enumera porque dentro
+# del juego DirectDrawEnumerateExA solo informa la pantalla principal (una sola llamada, "display"), a diferencia
+# de un programa de prueba. Si DirectDrawCreate con ese GUID falla (N inexistente: DDERR_INVALIDDIRECTDRAWGUID), se
+# repite con NULL como el original; sin configuración o N = 0, igual que el original.
+MN_PATH = place_data('mn_path', cstr_(r'.\DATA\PANTALLA.INI'))
+MN_SEC = place_data('mn_sec', cstr_('Pantalla'))
+MN_KEY = place_data('mn_key', cstr_('Monitor'))
+MN_GUID = place_data('mn_guid', bytes(4) + bytes.fromhex('0631d011b97100aa00342f9f'))   # Data1 se completa con N
+MN_WANT = place_data('mn_want', bytes(4))    # N pedido (0 = ninguno)
+MN_FOUND = place_data('mn_found', bytes(4))  # 1 si DirectDraw se creó en ese monitor
+MN_HR = place_data('mn_hr', bytes(4))        # resultado de DirectDrawCreate con el GUID (diagnóstico)
+MN_HWND = place_data('mn_hwnd', bytes(4))    # ventana principal del juego (la que recibe DirectDraw)
+# mn_prof(sección, clave, archivo): eax = número entero (con signo) de esa clave, edx = 1 si está; si no, edx = 0.
+mn_prof = place('mn_prof', f"""
+    push esi
+    push dword ptr [esp + 0x10]
+    push 16
+    push {IA_VBUF:#x}
+    push {IA_EMPTY:#x}
+    push dword ptr [esp + 0x1c]
+    push dword ptr [esp + 0x1c]
+    call dword ptr [{GETPROF:#x}]
+    xor edx, edx
+    test eax, eax
+    jz mp_out
+    mov esi, {IA_VBUF:#x}
+    xor eax, eax
+    xor ecx, ecx
+    cmp byte ptr [esi], 0x2d
+    jne mp_dig
+    inc ecx
+    inc esi
+mp_dig:
+    movzx edx, byte ptr [esi]
+    sub edx, 0x30
+    cmp edx, 9
+    ja mp_end
+    imul eax, eax, 10
+    add eax, edx
+    inc esi
+    jmp mp_dig
+mp_end:
+    test ecx, ecx
+    jz mp_pos
+    neg eax
+mp_pos:
+    mov edx, 1
+mp_out:
+    pop esi
+    ret 12
+""")
+# Con DirectDraw ya en ese monitor, la ventana principal igual quedaba en la principal: el juego la crea oculta y de
+# tamaño 0 en (0,0) y DirectDraw la recibe así. Apenas creado DirectDraw se la lleva, con el tamaño de esa pantalla,
+# al origen de \\.\DISPLAYN, que informa EnumDisplaySettingsA (dmPosition); al mostrarla, Windows igual la lleva a la
+# principal (ver mn_post), y por eso se la vuelve a mover una vez visible. Ni SetWindowPos ni EnumDisplaySettingsA están
+# importadas: se buscan una vez en las exportaciones de USER32.DLL (mn_proc, como go_resolve).
+MN_U32 = place_data('mn_u32', cstr_('USER32.DLL'))
+MN_SWPN = place_data('mn_swpn', cstr_('SetWindowPos'))            # 13 bytes con el 0
+MN_EDSN = place_data('mn_edsn', cstr_('EnumDisplaySettingsA'))    # 21 bytes con el 0
+MN_SWP = place_data('mn_swp', bytes(4))
+MN_EDS = place_data('mn_eds', bytes(4))
+MN_DEV = place_data('mn_dev', cstr_(r'\\.\DISPLAY') + bytes(4))   # + N (hasta 2 cifras) + 0
+MN_DM = place_data('mn_dm', bytes(160))                           # DEVMODEA (156 bytes)
+# mn_proc(módulo, nombre, largo con el 0): eax = dirección de esa exportación, o 0. Conserva los demás registros.
+mn_proc = place('mn_proc', f"""
+    push ebx
+    push esi
+    push edi
+    push ebp
+    push dword ptr [esp + 0x14]
+    call dword ptr [0x5a984c]
+    test eax, eax
+    jz mq_out
+    mov ebx, eax
+    mov eax, dword ptr [ebx + 0x3c]
+    mov ebp, dword ptr [ebx + eax + 0x78]
+    mov esi, ebp
+    add esi, ebx
+    xor edi, edi
+mq_loop:
+    cmp edi, dword ptr [esi + 0x18]
+    jae mq_cero
+    mov eax, dword ptr [esi + 0x20]
+    add eax, ebx
+    mov eax, dword ptr [eax + edi*4]
+    add eax, ebx
+    push dword ptr [esp + 0x1c]
+    push dword ptr [esp + 0x1c]
+    push eax
+    call dword ptr [0x5a9bf0]
+    add esp, 0xc
+    test eax, eax
+    jz mq_found
+    inc edi
+    jmp mq_loop
+mq_found:
+    mov eax, dword ptr [esi + 0x24]
+    add eax, ebx
+    movzx eax, word ptr [eax + edi*2]
+    mov edx, dword ptr [esi + 0x1c]
+    add edx, ebx
+    mov eax, dword ptr [edx + eax*4]
+    mov edx, eax
+    sub edx, ebp
+    mov ecx, dword ptr [ebx + 0x3c]
+    cmp edx, dword ptr [ebx + ecx + 0x7c]
+    jb mq_cero
+    add eax, ebx
+    jmp mq_out
+mq_cero:
+    xor eax, eax
+mq_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret 12
+""")
+# mn_mover: lleva la ventana principal (MN_HWND), con el tamaño de esa pantalla (dmPelsWidth/Height), al origen de \\.\DISPLAY<MN_WANT>.
+mn_mover = place('mn_mover', f"""
+    pushad
+    cmp dword ptr [{MN_SWP:#x}], 0
+    jne mm_res
+    push 13
+    push {MN_SWPN:#x}
+    push {MN_U32:#x}
+    call {mn_proc:#x}
+    mov dword ptr [{MN_SWP:#x}], eax
+    push 21
+    push {MN_EDSN:#x}
+    push {MN_U32:#x}
+    call {mn_proc:#x}
+    mov dword ptr [{MN_EDS:#x}], eax
+mm_res:
+    cmp dword ptr [{MN_SWP:#x}], 0
+    je mm_out
+    cmp dword ptr [{MN_EDS:#x}], 0
+    je mm_out
+    mov eax, dword ptr [{MN_WANT:#x}]
+    mov edi, {MN_DEV + 11:#x}
+    cmp eax, 10
+    jb mm_uno
+    xor edx, edx
+    mov ecx, 10
+    div ecx
+    add al, 0x30
+    mov byte ptr [edi], al
+    inc edi
+    mov eax, edx
+mm_uno:
+    add al, 0x30
+    mov byte ptr [edi], al
+    mov byte ptr [edi + 1], 0
+    mov dword ptr [{MN_DM + 36:#x}], 156
+    push {MN_DM:#x}
+    push -1
+    push {MN_DEV:#x}
+    call dword ptr [{MN_EDS:#x}]
+    test eax, eax
+    jz mm_out
+    push 0x14
+    push dword ptr [{MN_DM + 112:#x}]
+    push dword ptr [{MN_DM + 108:#x}]
+    push dword ptr [{MN_DM + 48:#x}]
+    push dword ptr [{MN_DM + 44:#x}]
+    push 0
+    push dword ptr [{MN_HWND:#x}]
+    call dword ptr [{MN_SWP:#x}]
+mm_out:
+    popad
+    ret
+""")
+# En lugar de call DirectDrawCreate (0x4ed91f), con sus mismos argumentos ([esp+4] lpGUID = NULL, [esp+8] lplpDD,
+# [esp+0xc] pUnkOuter) y su misma convención (stdcall, ret 0xc). esi = objeto del juego; [esi+0x14] = su ventana.
+mn_create = place('mn_create', f"""
+    pushad
+    mov eax, dword ptr [esi + 0x14]
+    mov dword ptr [{MN_HWND:#x}], eax
+    mov dword ptr [{MN_FOUND:#x}], 0
+    mov dword ptr [{MN_WANT:#x}], 0
+    push {IA_PATH:#x}
+    push {MN_KEY:#x}
+    push {IA_TSEC:#x}
+    call {mn_prof:#x}
+    test edx, edx
+    jnz mc_have
+    push {MN_PATH:#x}
+    push {MN_KEY:#x}
+    push {MN_SEC:#x}
+    call {mn_prof:#x}
+    test edx, edx
+    jz mc_orig
+mc_have:
+    test eax, eax
+    jle mc_orig
+    cmp eax, 64
+    jg mc_orig
+    mov dword ptr [{MN_WANT:#x}], eax
+    add eax, 0x67685558
+    mov dword ptr [{MN_GUID:#x}], eax
+    push dword ptr [esp + 0x2c]
+    push dword ptr [esp + 0x2c]
+    push {MN_GUID:#x}
+    call dword ptr [0x5a9740]
+    mov dword ptr [{MN_HR:#x}], eax
+    test eax, eax
+    jnz mc_orig
+    mov dword ptr [{MN_FOUND:#x}], 1
+    call {mn_mover:#x}
+    popad
+    xor eax, eax
+    ret 0xc
+mc_orig:
+    popad
+    jmp dword ptr [0x5a9740]
+""")
+
+# mn_post (desde OnIdle, en ia_tload): Windows 10 muestra el juego a 640x480x8 como ventana maximizada (emulación de
+# pantalla completa) y al mostrarla la lleva a la pantalla principal, aunque DirectDraw ya esté en la elegida y la
+# ventana oculta se haya movido antes (prueba 17/11/2026: oculta en (1920,0,2944,768), visible en (0,0,1920,1080)).
+# Apenas la ventana está visible, se la vuelve a llevar a la pantalla elegida, una sola vez.
+MN_IWVN = place_data('mn_iwvn', cstr_('IsWindowVisible'))
+MN_IWV = place_data('mn_iwvp', bytes(4))
+MN_POST = place_data('mn_postf', bytes(4))
+mn_post = place('mn_post', f"""
+    cmp dword ptr [{MN_FOUND:#x}], 1
+    jne mp_out
+    cmp dword ptr [{MN_POST:#x}], 0
+    jne mp_out
+    pushad
+    cmp dword ptr [{MN_IWV:#x}], 0
+    jne mp_res
+    push 16
+    push {MN_IWVN:#x}
+    push {MN_U32:#x}
+    call {mn_proc:#x}
+    mov dword ptr [{MN_IWV:#x}], eax
+    test eax, eax
+    jnz mp_res
+    mov dword ptr [{MN_POST:#x}], 1
+    jmp mp_pop
+mp_res:
+    push dword ptr [{MN_HWND:#x}]
+    call dword ptr [{MN_IWV:#x}]
+    test eax, eax
+    jz mp_pop
+    mov dword ptr [{MN_POST:#x}], 1
+    call {mn_mover:#x}
+mp_pop:
+    popad
+mp_out:
+    ret
+""")
+
 # Game Over (0x482d77): en 0x482fd6 ya están el orden y los puestos. [ebp-0xe] cantidad de bandos en juego; por
 # puesto k: [ebp-0x24+2k] color, [ebp-0x5c+2k] puesto (-1 = empatado con el anterior), [ebp-0x3c+2k] PV,
 # [ebp-0x4c+2k] ciudades, [ebp-0x7c+4k] oro (ia/puntos-de-victoria.md). Con IA.INI (ia_on) agrega a DATA\IA_FIN.CSV
@@ -20357,6 +20619,7 @@ IA_TDONE = place_data('ia_tdone', bytes(1))
 # pausada desde el arranque, sin jugar un turno (tanda 178, 16/11/2026). Con [Tanda], la primera vuelta la hace acá.
 ia_tload = place('ia_tload', f'''
     call 0x4dea40
+    call {mn_post:#x}
     cmp byte ptr [{IA_TNAME:#x}], 0
     je it_out
     cmp byte ptr [0x501280], 0
@@ -22420,6 +22683,7 @@ patch(0x4660d1, rel(0x4660d1, 8), asm(f'jmp {wv_stat:#x}', 0x4660d1))
 patch(0x49e434, rel(0x49e434, 9), asm(f'jmp {wv_step:#x}', 0x49e434))
 patch(0x452c3b, asm('call 0x4aab10', 0x452c3b), asm(f'call {ia_menu:#x}', 0x452c3b))
 patch(0x478f82, bytes.fromhex('ff15389c5a00'), asm(f'call {ia_ventana:#x}; nop', 0x478f82))   # lanzador en [Tanda] VentanaX/Y
+patch(0x4ed91f, asm('call 0x4f48c4', 0x4ed91f), asm(f'call {mn_create:#x}', 0x4ed91f))   # DirectDraw en el monitor elegido
 patch(0x42237a, asm('mov word ptr [0x537ce8], di', 0x42237a), asm(f'jmp {ia_compu:#x}', 0x42237a))
 patch(0x4ecf10, asm('call 0x4dea40', 0x4ecf10), asm(f'call {ia_tload:#x}', 0x4ecf10))
 # OnIdle (0x4ecef0): sin el foco ([0x501280] = 0, lo pone OnActivate 0x4ed400) el original no llama al tick 0x4dea40,

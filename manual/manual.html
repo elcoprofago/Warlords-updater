@@ -261,6 +261,15 @@ de los menús es el del juego original.</p>
 seleccionar. El juego original solo lo hacía bien con teclado de Estados Unidos; el parche lo arregla para cualquier
 teclado. Las demás teclas rápidas se cambian en <code>keys.w3</code>: la primera palabra de cada renglón es la tecla;
 no hay que cambiar el orden de los renglones ni las cinco líneas del encabezado. Los grupos (1-9) no se pueden cambiar.</p>
+<p><b>En qué monitor arranca.</b> Con más de una pantalla, el juego arranca en la principal. Para que arranque en
+otra, crear en la carpeta <code>DATA</code> del juego un archivo de texto <code>PANTALLA.INI</code> con estos dos
+renglones:</p>
+<pre>[Pantalla]
+Monitor=2</pre>
+<p>El número es el que Windows le da a cada pantalla (Configuración → Sistema → Pantalla → «Identificar»). La
+ventana de inicio («Un jugador», «Red»…) sigue abriéndose en la principal; el juego, al empezar la partida, va a la
+pantalla elegida y la ocupa entera. Si el número no existe, o con <code>Monitor=0</code>, o sin el archivo, el juego
+arranca en la principal como siempre.</p>
 
 <h2>Opciones nuevas de la partida</h2>
 <p>En <i>Customize Options</i> aparecen tres casillas nuevas:</p>
@@ -1008,6 +1017,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.240.0</td><td>17/11/2026</td><td>Elegir de antemano en qué monitor arranca el juego: archivo <code>DATA\PANTALLA.INI</code> con <code>[Pantalla]</code> y <code>Monitor=2</code> (capítulo «Arrancar el juego»). Sin ese archivo, igual que antes.</td></tr>
 <tr><td>1.0.239.0</td><td>17/11/2026</td><td>Solo para el banco de pruebas de la IA: las partidas juegan aunque nunca hayan tenido el foco (antes quedaban pausadas desde el arranque, sin jugar un turno). El juego no cambia.</td></tr>
 <tr><td>1.0.238.0</td><td>16/11/2026</td><td>Solo para el banco de pruebas de la IA: la ventana de inicio de cada partida se abre directo en el monitor del banco y no tapa la pantalla principal. El juego no cambia.</td></tr>
 <tr><td>1.0.237.0</td><td>16/11/2026</td><td>Solo para el banco de pruebas de la IA: el registro de hechizos lanzados anota bien qué efectos tiene cada hechizo. El juego no cambia.</td></tr>
