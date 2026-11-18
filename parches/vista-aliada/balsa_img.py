@@ -85,9 +85,8 @@ def balsa(cel, d, verde=False, centro=(24, 24), escala=1.0):
     vela = [(bx - w * 0.5, top), (bx + w * 0.5, top), (bx + w * 0.5 + lado * 1.2 * S * escala, top + h),
             (bx - w * 0.5 + lado * 1.2 * S * escala, top + h)]
     dr.line([(bx - w * 0.6, top), (bx + w * 0.6, top)], fill=MADERA_OSC + (255,), width=int(1.2 * S * escala))
-    if verde:
-        dr.polygon(vela, fill=(15, 255, 0, 255))
-    else:
+    # la vela no se marca en verde: el verde de la máscara es el contorno de selección, no el color del bando
+    if True:
         dr.polygon(vela, fill=VELA + (255,), outline=VELA_OSC + (255,))
         # remiendo y costura: tela precaria
         px0 = bx - w * 0.15; py0 = top + h * 0.45
