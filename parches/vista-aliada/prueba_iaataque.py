@@ -112,5 +112,37 @@ ver('control: ciudad, original, 5 %: asalta y anota n = 5', caso(G2, D3, ciudad=
 ver('control: ciudad sin IA.INI (ranking), 5 %: asalta, sin evento', caso(G2, D3, ciudad=3, pct=5, ia_on=0, evt=True), ('orden', None))
 ver('control: ciudad, humano, 5 %: asalta, sin evento', caso(G2, D3, ciudad=3, pct=5, control=-1, evt=True), ('orden', None))
 ver('control: campo abierto con 5 % y fuerza suficiente: asalta (rige la fuerza)', caso(G2 * 2, D3, pct=5, evt=True), ('orden', None))
+print('-- asaltos por 0x4c50c8 (tanda 184: por ahí pasan los asaltos a ciudades), desde el sitio real 0x4c50c5..0x4c50cd')
+c2 = img[0x4c50c8 - BASE:0x4c50c8 - BASE + 5]
+assert c2[0] == 0xe8 and 0x4c50cd + struct.unpack('<i', c2[1:])[0] != 0x4648d0, 'el call de 0x4c50c8 no está parcheado'
+def caso2(pct, ciudad=3, ia_on=1, modo=1, control=0):
+    mu = Uc(UC_ARCH_X86, UC_MODE_32)
+    mu.mem_map(0, 0x800000)
+    mu.mem_write(BASE, img)
+    mu.mem_write(IA_ON, bytes([ia_on])); mu.mem_write(IA_MODE + P, bytes([modo]))
+    mu.mem_write(CTRL + P * 0x1f8, struct.pack('<h', control))
+    mu.mem_write(0x440be0, b'\xb8' + struct.pack('<i', ciudad) + b'\xc3')
+    mu.mem_write(0x4648d0, b'\xb8\x01\x00\x00\x00\xc3')
+    mu.mem_write(EVT, b'\xc3')
+    ll = {'orden': 0, 'evt': None}
+    def hook(mu, addr, size, _):
+        if addr == 0x4648d0: ll['orden'] += 1
+        if addr == EVT: ll['evt'] = struct.unpack('<5i', mu.mem_read(mu.reg_read(UC_X86_REG_ESP) + 4, 20))
+    mu.hook_add(UC_HOOK_CODE, hook, begin=0x4648d0, end=0x4648d0)
+    mu.hook_add(UC_HOOK_CODE, hook, begin=EVT, end=EVT)
+    sp = STK - 0x40
+    mu.mem_write(sp, bytes(0x40)); mu.mem_write(sp + 0x10, struct.pack('<h', pct))   # [esp + 0x10] = % (0x4c50a6)
+    mu.reg_write(UC_X86_REG_ESP, sp)
+    mu.reg_write(UC_X86_REG_EAX, 0xabcd0000 | P); mu.reg_write(UC_X86_REG_ESI, X); mu.reg_write(UC_X86_REG_EDI, Y)
+    mu.emu_start(0x4c50c5, 0x4c50cd, count=200000)
+    assert mu.reg_read(UC_X86_REG_ESP) == sp - 12 and (mu.reg_read(UC_X86_REG_ESI), mu.reg_read(UC_X86_REG_EDI)) == (X, Y)
+    return ('orden' if ll['orden'] else 'corta', ll['evt'], mu.reg_read(UC_X86_REG_EAX) & 0xffff)
+ver('0x4c50c8: ciudad, prueba, 29 %: no asalta', caso2(29), ('corta', (48, P, X, Y, 1029), 0))
+ver('0x4c50c8: ciudad, prueba, 0 %: no asalta', caso2(0), ('corta', (48, P, X, Y, 1000), 0))
+ver('0x4c50c8: borde 30 %: asalta', caso2(30), ('orden', (48, P, X, Y, 30), 1))
+ver('0x4c50c8: control: original 5 %: asalta y anota', caso2(5, modo=0), ('orden', (48, P, X, Y, 5), 1))
+ver('0x4c50c8: control: ranking 5 %: asalta, sin evento', caso2(5, ia_on=0), ('orden', None, 1))
+ver('0x4c50c8: control: humano 5 %: asalta, sin evento', caso2(5, control=-1), ('orden', None, 1))
+ver('0x4c50c8: control: no es ciudad, 5 %: asalta, sin evento', caso2(5, ciudad=-1), ('orden', None, 1))
 print('TODO OK' if not mal else f'{mal} MAL')
 sys.exit(1 if mal else 0)

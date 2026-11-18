@@ -17051,6 +17051,55 @@ ag_go:
     popad
     jmp 0x4648d0
 ''')
+# Tanda 184 (TAREAS 250): ningún evento 48 en 1389 batallas en ciudades. Los asaltos a ciudades no pasan por
+# 0x4c4de7, sino por la llamada gemela de 0x4c50c8 (otro paso de 0x4c4a10: busca la casilla vecina con 0x4974a0,
+# calcula el % con 0x497390 en 0x4c50a1 y lo guarda en [esp + 0x10] antes de los 3 push; dentro de pushad queda en
+# [esp + 0x40]). ac_gate2 aplica ahí la misma regla de ciudades de ap_gate; fuera de una ciudad no toca nada.
+ac_gate2 = place('ac_gate2', f'''
+    pushad
+    movsx ebx, word ptr [esp + 0x24]
+    cmp ebx, 8
+    jae a2_go
+    imul eax, ebx, 0x1f8
+    cmp word ptr [eax + 0x536c12], -1
+    je a2_go
+    cmp byte ptr [{IA_ON:#x}], 0
+    je a2_go
+    movsx esi, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    push edi
+    push esi
+    call 0x440be0
+    add esp, 8
+    test ax, ax
+    jl a2_go
+    movsx ebp, word ptr [esp + 0x40]
+    xor ecx, ecx
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne a2_log
+    cmp ebp, {AP_PCT}
+    jge a2_log
+    mov ecx, 1000
+a2_log:
+    push ecx
+    lea eax, [ebp + ecx]
+    push eax
+    push edi
+    push esi
+    push ebx
+    push {AC_EVT}
+    call {ia_evt:#x}
+    add esp, 20
+    pop ecx
+    test ecx, ecx
+    jz a2_go
+    popad
+    xor eax, eax
+    ret
+a2_go:
+    popad
+    jmp 0x4648d0
+''')
 # ai_ally(pila, arg): en lugar de 0x40c990 en 0x40edf1. Locales [ebp - n].
 L_P, L_S, L_REC, L_LEAD, L_STR, L_LX, L_LY, L_E, L_HUNT, L_NEAR, L_ENT, L_MAP, L_BEST, L_BSC, L_MOT, L_CNT, \
     L_CRIT, L_CX, L_CY, L_MOV, L_T1, L_T2, L_OWNT, L_OK = (4 * (i + 1) for i in range(24))
@@ -23147,6 +23196,7 @@ assert rel(0x4c4d41, 2) == bytes.fromhex('8bc8')   # mov ecx, eax
 patch(0x4c4d3a, asm('movsx eax, word ptr [0x4fb0ec]', 0x4c4d3a), asm(f'call {ai_brraze:#x}', 0x4c4d3a))
 patch(0x4c4bce, asm('call 0x49c4b0', 0x4c4bce), asm(f'call {ai_move:#x}', 0x4c4bce))
 patch(0x4c4de7, asm('call 0x4648d0', 0x4c4de7), asm(f'call {ap_gate:#x}', 0x4c4de7))   # paso 6.2: ataques perdidos
+patch(0x4c50c8, asm('call 0x4648d0', 0x4c50c8), asm(f'call {ac_gate2:#x}', 0x4c50c8))   # paso 5.5: asaltos a ciudades
 # La IA reconstruye puentes (meta 9: ai_brrebev, ai_brreb, ai_brname9*)
 patch(0x41e4eb, asm('cmp word ptr [esp + 0x1c], -1; je 0x41e563', 0x41e4eb), asm(f'jmp {ai_brrebev:#x}', 0x41e4eb))
 # Puerto nuevo: la ciudad convertida (+0xdd) no está en ninguna casilla ni es reconstruible (pt_*)

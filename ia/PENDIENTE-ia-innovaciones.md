@@ -652,4 +652,16 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
 - Medición: TAREAS 250, tanda sobre **Tanda_hex_MU** (copia de Tanda_hex_MU_control sin «_control», para que el
   banco reparta la IA de prueba en la mitad de los colores).
 
+### Resultado de la tanda 184 (TAREAS 250, Tanda_hex_MU, revisado 17/11/2026) y corrección (vista-aliada 1.0.246.0)
+
+- 16 partidas «ok». **Ningún evento 48** en 1401 batallas, 1389 de ellas en casillas de ciudad: la regla de la
+  1.0.245.0 no actuó nunca. Los asaltos a ciudades no pasan por 0x4c4de7, sino por la llamada gemela 0x4c50c8 (otro
+  paso de 0x4c4a10, que calcula el % en 0x4c50a1 y lo guarda en la pila). La prueba emulada no lo vio porque llamaba
+  directo al gancho. Corregido en 1.0.246.0 con ac_gate2 en 0x4c50c8, probado ahora desde el sitio real de la llamada
+  (0x4c50c5 a 0x4c50cd), con la posición del % tomada del código del juego.
+- Lo que sí mide la 184: con muros y mitad de colores en prueba (regla de campo abierto de 1.0.242.0 activa), PV
+  prueba − original −1,08 (−4,82 a +2,66), dentro del ruido. Pilas junto a un muro enemigo: original 160 turnos,
+  prueba 16.
+- Próximo: TAREAS 251, la misma tanda con la 1.0.246.0.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
