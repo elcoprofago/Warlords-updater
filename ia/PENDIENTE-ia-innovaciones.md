@@ -690,4 +690,17 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   partida de la IA de prueba (5,4), asaltos no dados (ahora solo 0–19 %), PV prueba − original (−0,83). Si los
   perdidos no suben y el PV no empeora, la regla pasa al ranking (sin IA.INI).
 
+### Resultado de la tanda 186 (TAREAS 258, AP_PCT = 20, 64 partidas, revisado 18/11/2026)
+
+- 63 «ok» y 1 colgada (n.º 23, turno 1, sin datos). La regla cortó 179 asaltos (0–19 %) y dejó pasar los de 20–29 %:
+  la prueba ganó 5 de 17 (29 %); la original, 17 de 43 (40 %, como en la 185).
+- Comparada con la 185 (corte 30 %), por partida, IA de prueba: ataques 36,6 → 37,5; perdidos 5,4 → 5,6;
+  desangrantes 5 → 9 (en total). PV prueba − original −0,83 → **−0,80** (−2,32 a +0,73); puesto +0,20 → +0,13.
+  Todo dentro del ruido: entre 20 y 30 no hay diferencia medible.
+- Balance de la regla (184 sin efecto → 185/186): perdidos de la prueba 6,1 → 5,4–5,6 por partida (−10 %), sin
+  cambio en PV. Es un ahorro de pérdidas, no una mejora de resultado; no se pasa al ranking por sí sola. Queda
+  AP_PCT = 20 en la IA de prueba.
+- Próximo: punto 3 (abrir brecha por el bloque de muro más débil). Si con ese punto el PV de la prueba sube, las dos
+  pasan juntas al ranking.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
