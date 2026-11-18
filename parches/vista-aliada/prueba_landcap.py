@@ -22,7 +22,7 @@ P = 1; GRP = P * 0x4f0; X, Y = 5, 6; SHIFT = 8
 WATER, LAND = 3, 2
 
 def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building=False, bridge=False,
-        noembark=(), carrier=False):
+        noembark=(), carrier=False, raft=False):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(BASE, SIZE); mu.mem_write(BASE, img[:SIZE])
     mu.mem_map(0x100000, 0x10000)
@@ -40,7 +40,7 @@ def run(count, occ, embarked=False, mode=0, landing=True, dest='water', building
     mu.mem_write(GRP + 0x56eab0, bytes(1 if i in noembark else 0 for i in range(8)))
     boat = 0x53c410 + (P * 16 + 15) * 0xfc + 0xb2
     mu.mem_write(boat, b'Ice\0\0\0\0\0\0' + ((b'LANDING\0\0') if landing else b'Bridge\0\0\0')
-                 + (b'CARRIER\0\0' if carrier else b'\0' * 9))
+                 + (b'CARRIER\0\0' if carrier else b'\0' * 9) + (b'RAFT\0\0\0\0\0' if raft else b'Raftx\0\0\0\0'))
     esp = 0x108000
     mu.mem_write(esp, b'\0' * 0x40)
     mu.mem_write(LCHIT, b'\xaa')
@@ -86,6 +86,15 @@ casos = [
     # "Carrier" solo: sin tope propio (rige el del bando)
     ('carrier solo: 4 + 4',              dict(count=4, occ=4, embarked=True, landing=False, carrier=True), 'PASA'),
     ('carrier solo: 8 embarcan',         dict(count=8, occ=0, landing=False, carrier=True), 'PASA'),
+    # "Raft" (balsa): tope de 3, con o sin "Landing" y "Carrier" ("Raftx" en los demás casos: control)
+    ('raft: 4 embarcan',                 dict(count=4, occ=0, landing=False, raft=True), 'BLOQ'),
+    ('raft: 3 embarcan',                 dict(count=3, occ=0, landing=False, raft=True), 'PASA'),
+    ('raft: 2 + 2 propios',              dict(count=2, occ=2, landing=False, raft=True), 'BLOQ'),
+    ('raft: 1 + 2 propios',              dict(count=1, occ=2, landing=False, raft=True), 'PASA'),
+    ('raft: embarcados 2 + 2',           dict(count=2, occ=2, embarked=True, landing=False, raft=True), 'BLOQ'),
+    ('raft+landing+carrier: 4 embarcan', dict(count=4, occ=0, carrier=True, raft=True), 'BLOQ'),
+    ('raft: 4 vuelan',                   dict(count=4, occ=0, mode=2, landing=False, raft=True), 'PASA'),
+    ('raft: 4 a transbordo',             dict(count=4, occ=0, dest='port', landing=False, raft=True), 'PASA'),
 ]
 mal = 0
 for nombre, kw, esperado in casos:

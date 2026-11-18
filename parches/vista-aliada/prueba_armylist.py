@@ -68,6 +68,11 @@ casos = [
     (dict(bonos=('Landings',), texto=NOSPEC), NOSPEC),                                          # control: nombre parecido
     (dict(bonos=('Landing',), texto=NOSPEC, slot=16), NOSPEC),                                  # control: no es unidad
     (dict(bonos=('Landing',), texto=NOSPEC, slot=15, jugador=7), 'Landing'),                    # barco, último bando
+    (dict(bonos=('RAFT',), texto=NOSPEC), 'Raft'),                                              # balsa
+    (dict(bonos=('raft', 'Cabotage', 'Carrier', 'Landing'), texto=NOSPEC), 'Landing, Carrier, Cabotage, Raft'),
+    (dict(bonos=('Raft', 'Landing'), texto='A' * 64, habil=1), 'A' * 64 + ', Landing, Raft'),
+    (dict(bonos=('Raft', 'Landing'), texto='A' * 65, habil=1), 'A' * 65),                       # control: no entra
+    (dict(bonos=('Rafts',), texto=NOSPEC), NOSPEC),                                             # control: nombre parecido
 ]
 mal = 0
 for kw, esperado in casos:

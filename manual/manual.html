@@ -111,7 +111,7 @@ figcaption { font-size: 8.8pt; font-style: italic; color: #6a5a40; margin-top: 1
   <li><span>IV.</span>Alianzas
     <ol><li>Vista aliada compartida · Niebla compartida · Ciudades compartidas · Refugio · Victoria aliada</li></ol></li>
   <li><span>V.</span>Guerra en el agua
-    <ol><li>Desembarco libre (Landing) · Convoyes (Carrier) · Cabotaje (Cabotage) · Puertos arrasados</li></ol></li>
+    <ol><li>Desembarco libre (Landing) · Convoyes (Carrier) · Cabotaje (Cabotage) · Balsas (Raft) · Puertos arrasados</li></ol></li>
   <li><span>VI.</span>Puentes
     <ol><li>Derribar · Reconstruir · Habilidad Bridge +N · Misión «derribar un puente»</li></ol></li>
   <li><span>VII.</span>Pozos, remolinos y trampas
@@ -175,6 +175,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Vista aliada compartida</td><td>Los aliados mutuos ven el mapa que explora cada uno, también con niebla.</td><td>IV</td></tr>
 <tr><td>Ciudades compartidas</td><td>Las tropas aliadas entran y se refugian en las ciudades del socio; banderas de los socios en las torres.</td><td>IV</td></tr>
 <tr><td>Landing, Carrier, Cabotage</td><td>Barcos que desembarcan en cualquier costa, convoyes de hasta 24 unidades y barcos costeros que cruzan ríos.</td><td>V</td></tr>
+<tr><td>Raft</td><td>Balsas precarias: zarpan y desembarcan en cualquier costa, con hasta 3 unidades y pegadas a tierra.</td><td>V</td></tr>
 <tr><td>Puentes</td><td>Derribarlos, reconstruirlos, pelear sobre ellos con el bono Bridge y misiones de héroe para volarlos.</td><td>VI</td></tr>
 <tr><td>Pozos, remolinos y trampas</td><td>Peligros ocultos que matan a quien los pisa; trampas y minas submarinas que construye el jugador.</td><td>VII</td></tr>
 <tr><td>Día y noche</td><td>Una vuelta de día y otra de noche: oscuridad con halos de luz, tropas camufladas y monstruos más fuertes de noche.</td><td>VIII</td></tr>
@@ -367,6 +368,20 @@ todo el bando. El Army List los muestra entre las habilidades de la unidad.</p>
   <li>A cambio, cruza <b>ríos y lagos angostos</b>.</li>
 </ul>
 
+<h2>Raft — balsas</h2>
+<p>Una balsa de troncos atados: el barco de un bando con el bono <i>Raft</i> no necesita puerto.</p>
+<ul>
+  <li><b>Zarpa desde cualquier costa</b>: un grupo en una casilla de tierra junto al agua se embarca de un paso, en
+  cualquiera de las 8 direcciones. Desde una montaña sin camino, no.</li>
+  <li><b>Desembarca en cualquier costa</b>, como con Landing.</li>
+  <li>Lleva <b>hasta 3 unidades</b> por casilla de agua. El tope lo fija el parche, no el editor.</li>
+  <li>No se aleja más de <b>1 casilla</b> de tierra, salvo para volver hacia ella: aún más pegada a la costa que
+  Cabotage.</li>
+  <li>El movimiento y la fuerza son los de su archivo <code>.ARM</code> (bajos: es una balsa precaria). Si el barco
+  tiene además Landing, Carrier o Cabotage, manda Raft: tope de 3, 1 casilla de la costa y sin convoyes.</li>
+  <li>La IA también puede usarla: su buscador de caminos sabe zarpar y desembarcar en la costa con ella.</li>
+</ul>
+
 <h2>Puertos arrasados</h2>
 <p>En el original, un puerto arrasado seguía sirviendo para embarcar. Ahora no: hay que reconstruirlo para volver a
 usarlo.</p>
@@ -378,6 +393,7 @@ usarlo.</p>
 <tr><td>Landing + Carrier</td><td>6 (convoy de hasta 3 barcos)</td><td>20</td><td>Costa; en convoy, solo puertos</td></tr>
 <tr><td>Carrier</td><td>Tope del bando (convoy de hasta 3)</td><td>24</td><td>Solo en puertos</td></tr>
 <tr><td>Cabotage</td><td>Tope del bando</td><td>El del barco</td><td>Solo en puertos; no se aleja de la costa</td></tr>
+<tr><td>Raft (con o sin los demás)</td><td>3</td><td>El del barco</td><td>Cualquier costa; zarpa de cualquier costa; 1 casilla de tierra</td></tr>
 </table>
 
 <!-- ============================================================ VI -->
@@ -546,6 +562,7 @@ máximo <b>6 ejércitos</b>. Las pilas de más de 6 de partidas viejas no se par
 <tr><td>Landing</td><td>Move Bonus del barco</td><td>Desembarco libre (cap. V)</td></tr>
 <tr><td>Carrier</td><td>Move Bonus del barco</td><td>Convoyes (cap. V)</td></tr>
 <tr><td>Cabotage</td><td>Move Bonus del barco</td><td>Navegación costera (cap. V)</td></tr>
+<tr><td>Raft</td><td>Move Bonus del barco</td><td>Balsa: zarpa de cualquier costa (cap. V)</td></tr>
 <tr><td>Trap</td><td>Combat Bonus</td><td>Construir trampas (cap. VII)</td></tr>
 <tr><td>Camouflg</td><td>Move Bonus</td><td>Camuflaje de noche (cap. VIII)</td></tr>
 <tr><td>Bridge +N</td><td>Habilidad especial</td><td>+N de fuerza sobre puentes en pie (cap. VI)</td></tr>
@@ -579,7 +596,7 @@ List lo refleje.</div>
 
 <h2>El editor war3ed_av</h2>
 <p>El parche instala <code>war3ed_av.exe</code>, una versión del editor del juego cuyas listas desplegables ya ofrecen
-los bonos nuevos (<i>landing</i>, <i>carrier</i>, <i>cabotage</i>, <i>trap</i>, <i>camouflg</i>) y la habilidad <i>Bridge</i>, sin tener que
+los bonos nuevos (<i>landing</i>, <i>carrier</i>, <i>cabotage</i>, <i>raft</i>, <i>trap</i>, <i>camouflg</i>) y la habilidad <i>Bridge</i>, sin tener que
 escribirlos a mano.</p>
 
 <!-- ============================================================ X -->
@@ -963,7 +980,7 @@ saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decid
 <tr><td><code>war3ed_av.exe</code></td><td>El editor con los bonos nuevos</td></tr>
 <tr><td><code>DATA\WAR3AV.RES</code></td><td>Diálogos, textos, sonidos y dibujos del parche</td></tr>
 <tr><td><code>DATA\BRIDNAME.TXT</code></td><td>Nombres de los puentes</td></tr>
-<tr><td><code>TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT, trap.STT, camouflg.STT</code></td><td>Los bonos nuevos, para el editor</td></tr>
+<tr><td><code>TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT, raft.STT, trap.STT, camouflg.STT</code></td><td>Los bonos nuevos, para el editor</td></tr>
 <tr><td><code>SETS\Fantasy\sorteo.pcx, darkcomp.pcx</code></td><td>Botones de Sorteo y Comparador</td></tr>
 <tr><td><code>PICTS\startav.pcx, startav1.pcx, startav2.pcx</code></td><td>Menú principal con el logotipo, en tres resoluciones</td></tr>
 <tr><td><code>RUINS\pozos.pcx</code></td><td>Dibujos de pozos, remolinos, trampas y tumbas</td></tr>
@@ -982,6 +999,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <tr><th>Función</th><th style="width:22%">Estado</th></tr>
 <tr><td>Vista aliada, niebla y ciudades compartidas</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Landing, Carrier, Cabotage</td><td><span class="estado e-ok">probado</span></td></tr>
+<tr><td>Raft (balsas)</td><td><span class="estado e-pr">en prueba</span></td></tr>
 <tr><td>Puentes: derribar, reconstruir, misión</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Habilidad Bridge +N</td><td><span class="estado e-ok">probado</span></td></tr>
 <tr><td>Pozos, remolinos, trampas, lupa</td><td><span class="estado e-ok">probado</span></td></tr>
@@ -1026,6 +1044,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.250.0</td><td>18/11/2026</td><td>Bono de movimiento nuevo <i>Raft</i> (balsas): el barco de un bando con Raft zarpa y desembarca en cualquier costa, lleva hasta 3 unidades y no se aleja más de 1 casilla de tierra. Movimiento y fuerza, los del <code>.ARM</code>. Dibujo de la balsa (ARMY\balsa.PCX) con su estela.</td></tr>
 <tr><td>1.0.249.0</td><td>18/11/2026</td><td>Pedidos del clan: ya no se siembran trampas dentro de una ciudad, y se puede sembrar sobre el agujero de una trampa ajena que ya explotó al menos una vez (la nueva la reemplaza), como ya se podía sobre una gastada.</td></tr>
 <tr><td>1.0.248.0</td><td>18/11/2026</td><td>Al derribar un puente, las trampas sembradas sobre él caen al agua y desaparecen. Antes quedaban como minas submarinas donde estaba el puente (pedido del clan).</td></tr>
 <tr><td>1.0.247.0</td><td>18/11/2026</td><td>Solo para la IA de prueba del banco: el corte para no asaltar una ciudad baja del 30 % al 20 % de probabilidad de victoria. En 64 partidas, los asaltos de entre 20 % y 29 % se ganaron casi la mitad de las veces. Las partidas normales y las del ranking no cambian.</td></tr>

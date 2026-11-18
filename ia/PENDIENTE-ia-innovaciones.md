@@ -225,6 +225,7 @@ habilidad +0xe6) y su byte de opciones (0x53c3a5, & 2 = día/noche).
 |---|---|---|
 | Landing (desembarco) | Sí, sola: su mapa de distancias y sus caminos usan el mismo buscador. ai_move parte el grupo que no entra (evento 3) | Ningún bando |
 | Cabotage | Sí, solo: el buscador quita las casillas lejos de la costa | Barcos de los 8 bandos en Border_Alianzas y Scar_Alianzas |
+| Raft (1.0.250.0) | Sí, sola: el buscador agrega los pasos costa↔agua y quita lo lejos de tierra; ai_move parte el grupo al tope de 3 | Solo pruebas emuladas (prueba_balsa.py); falta un barco con Raft en un mapa del banco |
 | Carrier (convoy) | Código hecho (ai_conv, evento 2), pero **0 eventos 2 y 0 eventos 3 en 648 partidas** | **Ningún bando**: nunca se midió. El usuario vio el 19/10 que la IA lo maneja mal |
 | Bridge +N | Pasivo (suma si la batalla cae en un puente); la IA no busca pelear ahí | Ningún bando |
 | Trap (construir trampa) | No («La IA no la usa», build.py) | 12 unidades en las guardadas hex |

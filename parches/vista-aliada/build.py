@@ -1,5 +1,5 @@
 # Arma DarklordAV.exe y DATA\WAR3AV.RES a partir de los originales (que solo se leen), los subtipos de terreno
-# TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT y trap.STT, y el dibujo del botón de Sorteo
+# TERRAIN\SUBTYPE\landing.STT, carrier.STT, cabotage.STT, raft.STT y trap.STT, y el dibujo del botón de Sorteo
 # SETS\Fantasy\sorteo.pcx, y el editor war3ed_av.exe (editor_av.py).
 # Topes de un barco según sus bonos de movimiento: stack en agua de 5 con "Landing" y de 6 con "Landing" y "Carrier"
 # (LANDCAP); pasos de 12, 20 y 24 con "Landing", "Landing" y "Carrier", y "Carrier" (MVCAP).
@@ -10,6 +10,8 @@
 # puente en pie.
 # Cabotaje: el barco de un bando con el bono de movimiento "Cabotage" no se aleja más de 2 casillas de la costa
 # (salvo para acercarse); cruza ríos y lagos angostos.
+# Balsa: el barco de un bando con el bono de movimiento "Raft" zarpa y desembarca en cualquier costa, lleva hasta 3
+# unidades y no se aleja más de 1 casilla de tierra.
 # Vista aliada compartida: bit 0x80 de [0x53c38e] (opciones de partida).
 # Botones de Votación ("Votacion" en el menú de partida) y Sorteo (ícono del programa en la preparación): el
 # anfitrión abre Herramientas\votacion.exe / sorteo.exe en todas las PC y su estado viaja por red a los espectadores.
@@ -2330,18 +2332,68 @@ boatcarr = place('boatcarr', boatbon_src('boatcarr', carrstr))
 CABOTAGE = b'cabotage'
 cabstr = place_data('cabstr', CABOTAGE + b'\0')
 boatcab = place('boatcab', boatbon_src('boatcab', cabstr))   # ver Cabotaje, más abajo
+# Balsa (bono de movimiento "Raft"): el barco de un bando con "Raft" es una balsa precaria. Zarpa desde cualquier costa
+# (un grupo en tierra no montañosa sube a la balsa en un paso hacia el agua pura vecina, sin puerto: livexp/livback),
+# desembarca en cualquier costa como con "Landing" (landchk), lleva a lo sumo RAFTCAP unidades (landcap, boatcap) y no
+# se aleja más de RAFT_N casillas de tierra (el filtro de Cabotaje, cabfilt, con su propio tope). Con "Raft" no rigen
+# "Landing" ni "Cabotage" aunque estén escritos: manda la balsa. Los pasos son los del .ARM (sin tope por código).
+RAFT = b'raft'
+raftstr = place_data('raftstr', RAFT + b'\0')
+boatraft = place('boatraft', boatbon_src('boatraft', raftstr))
+RAFTCAP = 3
+RAFT_N = 1
+# eax = jugador (0..7) -> eax = tope del stack embarcado: RAFTCAP con "Raft", LANDCAP + "Carrier" con "Landing", 0 sin
+# ninguno de los dos. Preserva el resto.
+boatcap = place('boatcap', f'''
+    push edx
+    mov edx, eax
+    call {boatraft:#x}
+    test eax, eax
+    jz bcap_l
+    mov eax, RAFTCAP_
+    jmp bcap_o
+bcap_l:
+    mov eax, edx
+    call {boatland:#x}
+    test eax, eax
+    jz bcap_o
+    mov eax, edx
+    call {boatcarr:#x}
+    add eax, LANDCAP_
+bcap_o:
+    pop edx
+    ret
+'''.replace('RAFTCAP_', str(RAFTCAP)).replace('LANDCAP_', '5'))
+# ZF=0 si el barco del bando del jugador que pide el camino ([0x58715c]) tiene "Raft". Preserva todo salvo los flags.
+raftchk = place('raftchk', f'''
+    pushad
+    movsx eax, word ptr [0x58715c]
+    cmp eax, 8
+    jae raftchk_no
+    call {boatraft:#x}
+    test eax, eax
+    jz raftchk_no
+    or eax, 1
+    popad
+    ret
+raftchk_no:
+    xor eax, eax
+    popad
+    ret
+''')
 
 # Army List: el renglón de habilidades de una unidad (texto en [esp+8] al llegar a 0x4a2c24, búfer de 0x50 bytes del
 # marco de 0x4a2560) nombra también los bonos de movimiento "Landing", "Carrier" y "Cabotage" de su registro: reemplazan
 # "No Special Abilities" (palabra de habilidades +0xe6 en 0) o se agregan con ", " si entran en el búfer. Después sigue armrow.
+# También "Raft" (bit 3).
 recbon = place('recbon', boatbon_src('recbon', None, rec=True))
-AB_NAMES = ('Landing', 'Carrier', 'Cabotage')   # bits 0, 1 y 2 del índice en AB_TAB
-AB_TXT = [place_data(f'ab_txt{k}', cstr_(', '.join(n for b, n in enumerate(AB_NAMES) if k >> b & 1))) for k in range(1, 8)]
+AB_NAMES = ('Landing', 'Carrier', 'Cabotage', 'Raft')   # bits 0 a 3 del índice en AB_TAB
+AB_TXT = [place_data(f'ab_txt{k}', cstr_(', '.join(n for b, n in enumerate(AB_NAMES) if k >> b & 1))) for k in range(1, 16)]
 AB_TAB = place_data('ab_tab', b''.join(a.to_bytes(4, 'little') for a in [0] + AB_TXT))
 AB_SEP = place_data('ab_sep', cstr_(', '))
 # Largo máximo del texto previo para que entren ', ' + AB_TXT[k] y el 0 final (por índice, para no cortar de más).
 AB_LIM = place_data('ab_lim', bytes([0] + [0x50 - 1 - len(', ' + ', '.join(n for b, n in enumerate(AB_NAMES) if k >> b & 1))
-                                        for k in range(1, 8)]))
+                                        for k in range(1, 16)]))
 armab = place('armab', f'''
     pushad
     mov eax, dword ptr [esp + 0xa0]
@@ -2367,6 +2419,10 @@ armab = place('armab', f'''
     mov edx, {cabstr:#x}
     call {recbon:#x}
     lea ebp, [ebp + eax*4]
+    mov eax, ebx
+    mov edx, {raftstr:#x}
+    call {recbon:#x}
+    lea ebp, [ebp + eax*8]
     test ebp, ebp
     jz ab_out
     mov edi, dword ptr [esp + 0x28]
@@ -2703,6 +2759,11 @@ landchk = place('landchk', f'''
     cmp eax, 8
     jae landchk_no
     imul edx, eax, 0x4f0
+    push eax
+    call {boatraft:#x}
+    test eax, eax
+    pop eax
+    jnz landchk_yes
     call {boatland:#x}
     test eax, eax
     jz landchk_no
@@ -2910,9 +2971,17 @@ cabfilt = place('cabfilt', f'''
     movsx eax, word ptr [0x58715c]
     cmp eax, 8
     jae cabf_out
+    mov edi, eax
+    call {boatraft:#x}
+    mov ch, {RAFT_N}
+    test eax, eax
+    jnz cabf_go
+    mov eax, edi
     call {boatcab:#x}
+    mov ch, {CAB_N}
     test eax, eax
     jz cabf_out
+cabf_go:
     xor edi, edi
 cabf_loop:
     test byte ptr [edi + 0x4fe678], bl
@@ -2930,7 +2999,7 @@ cabf_dir:
     cmp byte ptr [edx + 0x582158], 0x80
     jne cabf_next
     mov cl, byte ptr [edx + {CABD:#x}]
-    cmp cl, {CAB_N}
+    cmp cl, ch
     jbe cabf_next
     cmp cl, byte ptr [eax + {CABD:#x}]
     jb cabf_next
@@ -2962,7 +3031,7 @@ livexp = place('livexp', f'''
     add eax, ecx
     mov cl, byte ptr [eax + 0x573158]
     cmp byte ptr [eax + 0x582158], 0x80
-    jne livexp_end
+    jne livexp_raft
     call {landchk:#x}
     jz livexp_end
     push ebx
@@ -2999,6 +3068,43 @@ livexp_next:
     pop edi
     pop esi
     pop ebx
+    jmp livexp_end
+livexp_raft:
+    test byte ptr [eax + 0x582158], 0x40
+    jz livexp_end
+    call {raftchk:#x}
+    jz livexp_end
+    push ebx
+    push esi
+    push edi
+    push ebp
+    movsx ebp, word ptr [esp + 0x28]
+    movsx edi, word ptr [esp + 0x2c]
+    mov edx, eax
+    call {mtnchk:#x}
+    jz livexp_rout
+    mov bl, byte ptr [eax + 0x578158]
+    xor esi, esi
+livexp_rloop:
+    test byte ptr [esi + 0x4fe678], bl
+    jz livexp_rnext
+    movsx edx, word ptr [esi*2 + 0x4fe658]
+    imul edx, edx, 0xa0
+    movsx edi, word ptr [esi*2 + 0x4fe640]
+    add edx, edi
+    add edx, eax
+    cmp byte ptr [edx + 0x582158], 0x80
+    jne livexp_rnext
+    or cl, byte ptr [esi + 0x4fe678]
+livexp_rnext:
+    inc esi
+    cmp esi, 8
+    jb livexp_rloop
+livexp_rout:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
 livexp_end:
     call {cabfwd:#x}
     jmp 0x4a5c79
@@ -3011,7 +3117,7 @@ livback = place('livback', f'''
     lea esi, [ecx + edx]
     mov cl, byte ptr [esi + 0x573158]
     test byte ptr [esi + 0x582158], 0x40
-    jz livback_end
+    jz livback_raft
     call {landchk:#x}
     jz livback_end
     push ebp
@@ -3041,6 +3147,45 @@ livback_next:
     jb livback_loop
     pop eax
     pop ebx
+    jmp livback_end
+livback_raft:
+    cmp byte ptr [esi + 0x582158], 0x80
+    jne livback_end
+    call {raftchk:#x}
+    jz livback_end
+    push eax
+    push ebx
+    push ebp
+    push edi
+    mov bl, byte ptr [esi + 0x578158]
+    xor eax, eax
+livback_rloop:
+    test byte ptr [eax + 0x4fe678], bl
+    jz livback_rnext
+    movsx ebp, word ptr [eax*2 + 0x4fe658]
+    movsx edi, word ptr [eax*2 + 0x4fe640]
+    imul edx, ebp, 0xa0
+    add edx, edi
+    add edx, esi
+    test byte ptr [edx + 0x582158], 0x40
+    jz livback_rnext
+    push ecx
+    movsx ecx, word ptr [esp + 0x32]
+    add ebp, ecx
+    movsx ecx, word ptr [esp + 0x34]
+    add edi, ecx
+    pop ecx
+    call {mtnchk:#x}
+    jz livback_rnext
+    or cl, byte ptr [eax + 0x4fe678]
+livback_rnext:
+    inc eax
+    cmp eax, 8
+    jb livback_rloop
+    pop edi
+    pop ebp
+    pop ebx
+    pop eax
 livback_end:
     push eax
     mov eax, esi
@@ -3062,6 +3207,7 @@ livback_end:
 # nadie más lo escribe salvo ai_move, que lo pone en 0 antes de mover: así distingue este 4 del tope del bando.
 LANDCAP = 5
 LANDCAP_LC = 6
+assert LANDCAP == 5                  # boatcap lo tiene escrito (se arma antes)
 assert LANDCAP_LC == LANDCAP + 1     # el código suma boatcarr (0 o 1) a LANDCAP
 lchit = place_data('lchit', bytes(4))
 landcap = place('landcap', f'''
@@ -3071,7 +3217,7 @@ landcap = place('landcap', f'''
     cmp word ptr [ebx + 0x56eaac], 2
     je lc_pass
     mov eax, ebp
-    call {boatland:#x}
+    call {boatcap:#x}
     test eax, eax
     jz lc_pass
     lea eax, [edi + edi*4]
@@ -3120,8 +3266,7 @@ lc_emb:
 lc_count:
     add ecx, edx
     mov eax, ebp
-    call {boatcarr:#x}
-    add eax, {LANDCAP}
+    call {boatcap:#x}
     cmp ecx, eax
     jle lc_pass
     mov al, 1
@@ -9551,8 +9696,7 @@ am_try:
     test eax, eax
     jnz am_dec
     mov eax, ebx
-    call {boatcarr:#x}
-    add eax, {LANDCAP}
+    call {boatcap:#x}
     jmp am_clamp
 am_dec:
     dec eax
@@ -24235,7 +24379,7 @@ def stt(nombre, largo):
     b += struct.pack('<IIB', 0, 1, 0x34)
     assert len(b) == 0x29
     return b
-STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('trap', 'Trap'), ('camouflg', 'Camouflage'), ('build', 'Build'))}
+STTS = {os.path.join('TERRAIN', 'SUBTYPE', n + '.STT'): stt(n, l) for n, l in (('landing', 'Landing'), ('carrier', 'Carrier'), ('cabotage', 'Cabotage'), ('raft', 'Raft'), ('trap', 'Trap'), ('camouflg', 'Camouflage'), ('build', 'Build'))}
 # DATA\BRIDNAME.TXT: gramática de los nombres de puentes (br_name), en el formato de RANDOM\<set>\cityname.txt que
 # lee 0x4374a0: en [RULES], "porcentaje [A] [B] [C] [D]" (toma la primera regla cuyo porcentaje supera la tirada de
 # 1 a 100) y cada [SECCIÓN] da una entrada al azar; se pegan tal cual, con sus espacios. Sílabas de cityname.txt.
