@@ -33,7 +33,7 @@
 
 ## Opción 17 del Actualizador (1.0.22.0, 18/11/2026)
 
-«VIDEO PARA PLACAS VIEJAS»: 1 instala (baja cnc-ddraw 7.1.0.0 de GitHub, verifica su SHA-256, renombra el
+«RENDER DE VIDEO» (1.0.23.0; en la 1.0.22.0 se llamaba «VIDEO PARA PLACAS VIEJAS»): 1 instala (baja cnc-ddraw 7.1.0.0 de GitHub, verifica su SHA-256, renombra el
 `ddraw.dll` de dxcfg a `ddraw.dll.dxcfg`, pone el de cnc-ddraw y escribe el `ddraw.ini` de arriba); 2 vuelve al
 original. Mientras exista `ddraw.dll.dxcfg`, la opción 6 no pisa `ddraw.dll`. Es a elección: no se instala sola.
 Probado en una carpeta de prueba: instalar, opción 6 sin pisarlo, deshacer y opción 6 normal.

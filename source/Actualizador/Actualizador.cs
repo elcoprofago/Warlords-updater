@@ -177,7 +177,7 @@ namespace Actualizador
             Opcion(14, "TAILSCALE", "→ conexión de respaldo para jugar en red");
             Opcion(15, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
             Opcion(16, "DIAGNÓSTICO DE VIDEO", "→ informe en el Escritorio, para mandar");
-            Opcion(17, "VIDEO PARA PLACAS VIEJAS", "→ si el mapa oculto se llena de tropas; se puede deshacer");
+            Opcion(17, "RENDER DE VIDEO", "→ problemas de video en placas viejas");
             Opcion(18, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
@@ -463,7 +463,7 @@ namespace Actualizador
             }
         }
 
-        // ------------------------------------------------------------------ 17 VIDEO PARA PLACAS VIEJAS
+        // ------------------------------------------------------------------ 17 RENDER DE VIDEO
         // En placas viejas o integradas (Intel HD 3000) el ddraw.dll de dxcfg deja las casillas ocultas llenas de
         // tropas. cnc-ddraw (codigo abierto, github.com/FunkyFr3sh/cnc-ddraw) con el renderer GDI dibuja con Windows
         // y no usa la placa. El ddraw.dll de dxcfg queda como ddraw.dll.dxcfg para volver atras; mientras exista, la
@@ -484,7 +484,7 @@ namespace Actualizador
             {
                 t.Limpiar();
                 t.EscribirLinea();
-                Encabezado("VIDEO PARA PLACAS VIEJAS", "");
+                Encabezado("RENDER DE VIDEO", "");
                 Linea("Para PC con placa de video vieja o integrada, donde las casillas ocultas del mapa", Paleta.Texto);
                 Linea("se llenan de tropas. Cambia el programa de video del juego por cnc-ddraw (dibuja con", Paleta.Texto);
                 Linea("Windows, no con la placa). Si en tu PC el mapa se ve bien, no hace falta.", Paleta.Texto);

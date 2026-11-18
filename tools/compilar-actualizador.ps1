@@ -65,7 +65,7 @@ if ($p.ExitCode) { Falla "el exe termino con codigo $($p.ExitCode) (probado en $
 if (-not (Test-Path -LiteralPath $transcripcion)) { Falla "el exe no dejo la transcripcion (probado en $prueba)" }
 $texto = Get-Content -Raw -Encoding UTF8 $transcripcion
 if ($texto -notmatch [regex]::Escape("v$version")) { Falla "la pantalla no muestra v$version (ver $transcripcion)" }
-foreach ($op in 'ACTUALIZAR TODO EL JUEGO', 'DARKCOMPARE', 'CREAR ACCESOS DIRECTOS AL ESCRITORIO', 'JUGAR EN RED', 'TAILSCALE', 'SORTEO', 'DE VIDEO', 'PLACAS VIEJAS', 'SALIR') {
+foreach ($op in 'ACTUALIZAR TODO EL JUEGO', 'DARKCOMPARE', 'CREAR ACCESOS DIRECTOS AL ESCRITORIO', 'JUGAR EN RED', 'TAILSCALE', 'SORTEO', 'DE VIDEO', 'RENDER DE VIDEO', 'SALIR') {
     if ($texto -notmatch [regex]::Escape($op)) { Falla "el menu no muestra '$op' (ver $transcripcion)" }
 }
 $sobrantes = @(Get-ChildItem -LiteralPath $prueba | Where-Object { $_.Name -notin 'A.exe', 'pantalla.txt' })
