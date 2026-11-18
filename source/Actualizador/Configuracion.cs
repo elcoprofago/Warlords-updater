@@ -81,10 +81,18 @@ namespace Actualizador
                 return ex.Message;
             }
             progreso?.Report("Abriendo la versión " + v + "...");
-            Process.Start(new ProcessStartInfo(destino, "--reemplaza \"" + actual + "\"")
-                          { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(destino) });
+            var psi = new ProcessStartInfo(destino, "--reemplaza \"" + actual + "\"")
+                      { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(destino) };
+            foreach (var prueba in new[] { "W3_PRUEBA_ACTUALIZAR", "W3_VERSION_FINGIDA", "W3_TRANSCRIPCION", "W3_ENTRADA" })
+                psi.EnvironmentVariables.Remove(prueba);
+            Process.Start(psi);
             return null;
         }
+
+        static Task borrado = Task.CompletedTask;
+
+        /// <summary>Al cerrar: si el borrado del exe viejo sigue en curso, lo espera (hasta 30 s).</summary>
+        public static void EsperarBorrado() => borrado.Wait(30000);
 
         /// <summary>Al arrancar con --reemplaza: borra el exe viejo cuando su proceso termina.</summary>
         public static void BorrarViejo(string[] args)
@@ -94,7 +102,7 @@ namespace Actualizador
             var viejo = args[i + 1];
             if (string.Equals(Path.GetFullPath(viejo), Application.ExecutablePath, StringComparison.OrdinalIgnoreCase)) return;
             if (!Path.GetFileName(viejo).StartsWith("Actualizador", StringComparison.OrdinalIgnoreCase)) return;
-            Task.Run(() =>
+            borrado = Task.Run(() =>
             {
                 for (int n = 0; n < 60 && File.Exists(viejo); n++)
                 {

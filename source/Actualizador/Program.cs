@@ -40,7 +40,7 @@ namespace Actualizador
             var guion = Environment.GetEnvironmentVariable("W3_ENTRADA");
             term = new Terminal(normal, negrita, guion?.Split('|')) { Dock = DockStyle.Fill, Guionado = guion != null };
             Controls.Add(term);
-            Text = "Actualizador de Warlords III · v" + Actualizador.Version;
+            Text = "Actualizador de Warlords III · VERSIÓN " + Actualizador.Version;
             BackColor = Paleta.Fondo;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             StartPosition = FormStartPosition.CenterScreen;
@@ -135,6 +135,7 @@ namespace Actualizador
             var transcripcion = Environment.GetEnvironmentVariable("W3_TRANSCRIPCION");
             if (transcripcion != null) File.WriteAllText(transcripcion, term.Texto);
             base.OnFormClosed(e);
+            Configuracion.EsperarBorrado();
             Environment.Exit(0);   // corta descargas en curso
         }
 
