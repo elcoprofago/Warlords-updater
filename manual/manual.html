@@ -472,7 +472,9 @@ sembrar trampas:</p>
   no caen.</li>
   <li><b>Apilar:</b> parado sobre su propia trampa activa, el dueño puede sembrar otra encima (también en el agua).
   Como mucho <b>dos por casilla</b>: la casilla explota hasta cuatro veces, una por paso, y la lupa dice «Two stacked
-  mines». Sembrar no la hace explotar. <b>En una ciudad</b> no se apila: la trampa explota una sola vez. Las trampas no impiden que la ciudad siga produciendo: las unidades nuevas aparecen sobre la casilla de la trampa sin hacerla explotar.</li>
+  mines». Sembrar no la hace explotar.</li>
+  <li><b>Ciudades:</b> desde la versión 1.0.249.0 no se siembran trampas dentro de una ciudad. Las que ya estaban sembradas en partidas empezadas siguen ahí y explotan una sola vez.</li>
+  <li><b>Sobre un agujero:</b> se puede sembrar una trampa nueva sobre el agujero de una trampa gastada, de cualquier jugador, o sobre una trampa ajena que ya explotó al menos una vez: la nueva reemplaza a la vieja, es tuya y queda oculta.</li>
   <li><b>El dueño también cae</b> si vuelve a pisarla.</li>
   <li><b>Mina submarina:</b> sembrada en el agua, hunde barcos como un remolino y no deja rastro al explotar.</li>
 </ul>
@@ -1024,6 +1026,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.249.0</td><td>18/11/2026</td><td>Pedidos del clan: ya no se siembran trampas dentro de una ciudad, y se puede sembrar sobre el agujero de una trampa ajena que ya explotó al menos una vez (la nueva la reemplaza), como ya se podía sobre una gastada.</td></tr>
 <tr><td>1.0.248.0</td><td>18/11/2026</td><td>Al derribar un puente, las trampas sembradas sobre él caen al agua y desaparecen. Antes quedaban como minas submarinas donde estaba el puente (pedido del clan).</td></tr>
 <tr><td>1.0.247.0</td><td>18/11/2026</td><td>Solo para la IA de prueba del banco: el corte para no asaltar una ciudad baja del 30 % al 20 % de probabilidad de victoria. En 64 partidas, los asaltos de entre 20 % y 29 % se ganaron casi la mitad de las veces. Las partidas normales y las del ranking no cambian.</td></tr>
 <tr><td>1.0.246.0</td><td>17/11/2026</td><td>Solo para la IA de prueba del banco: la regla de la 1.0.245.0 (no asaltar una ciudad con menos del 30 % de probabilidad de victoria) no llegaba a usarse, porque los asaltos a ciudades pasan por otro punto del código. Ahora sí se aplica. Las partidas normales y las del ranking no cambian.</td></tr>

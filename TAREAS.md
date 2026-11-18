@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 260).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 261).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -15,6 +15,7 @@ Sorteo están acá (tarea 18).
 # Pendientes
 
 - [x] **253.** Botón de configuración del Actualizador (v1.0.20.0, 18/11/2026; tu pedido). 1) Bajar `Actualizador-v.1.0.20.0.exe` de https://github.com/elcoprofago/Warlords-updater/releases/tag/Ejecutable y abrirlo: arriba a la derecha está el engranaje. 2) Clic: se abre «CONFIGURACIÓN · VERSIÓN 1.0.20.0» con los créditos abajo. 3) «Buscar actualización»: tiene que decir «Tienes la última versión». Cuando publique la próxima, el mismo botón va a ofrecer «Descargar e instalar»: la nueva se abre sola y el exe viejo desaparece de la carpeta. Anotar lo que no coincida.
+- [ ] **260.** Trampas: ciudades y agujeros (vista-aliada **1.0.249.0**, 18/11/2026). En `E:\Warlords-TEST\Warlords3` (ya instalado): 1) con un grupo con «Trap» dentro de una ciudad, el menú de órdenes **no** debe ofrecer «Build Trap». 2) Hacer que un grupo de otro color pise una trampa tuya una vez (queda el agujero con humo): con ese grupo, ahora sí debe poder sembrar ahí; la trampa nueva es suya. 3) Control: sobre una trampa ajena que nunca explotó, no se puede. Para el ranking, actualizar `C:\Warlords` (opción 9).
 - [ ] **259.** Trampas en un puente derribado (vista-aliada **1.0.248.0**, 18/11/2026). En `E:\Warlords-TEST\Warlords3` (ya instalado): sembrar una trampa sobre un puente, poner otro grupo en una casilla vecina y derribar el puente (menú de órdenes → arrasar). La trampa tiene que desaparecer: no debe verse una mina submarina ahí ni explotar un barco que pase. Control: una trampa en tierra al lado del puente sigue en su lugar. Para el ranking, actualizar `C:\Warlords` (opción 9).
 - [ ] **258.** Repetir la 251 con el corte en 20 % (vista-aliada **1.0.247.0**, 18/11/2026). Ya está instalado en `E:\Warlords-TEST\Warlords3`. 1) En el Monitor de IA, tanda **nueva**: **Ninguna**, marcá solo **Tanda_hex_MU** (sin «control»), Partidas: **64** (como la 185, para poder compararlas). 2) Anotar acá el número de tanda y si alguna partida quedó «cortada». El análisis lo hago yo.
 - [ ] **257.** PC de Nico: arreglar las casillas ocultas llenas de tropas (18/11/2026). 1) En su PC, abrir el Actualizador y actualizarlo a la 1.0.23.0 (engranaje → «Buscar actualización», o bajar `Actualizador-v.1.0.23.0.exe` de https://github.com/elcoprofago/Warlords-updater/releases/tag/Ejecutable). 2) Opción **17, RENDER DE VIDEO** → **1, INSTALAR** (tiene que decir «cnc-ddraw instalado»). 3) Jugar como siempre, con mapa oculto: anotar si la basura desapareció, si el cursor apunta bien y si el juego anda más lento. **Volver atrás:** opción 17 → 2.

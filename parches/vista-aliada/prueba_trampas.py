@@ -109,14 +109,15 @@ ver('control: solo un héroe con "Trap" (ranura 0x10)', menu([(0x10, 'Trap', [])
 ver('control: "Traps" no es "Trap"', menu([(3, 'Traps', [])])[0], 0)
 ver('casilla con camino: se puede (pedido del 22/10/2026)', menu([(3, 'Trap', [])], x=10)[0], 1)
 ver('puente (agua con camino): se puede (pedido del 22/10/2026)', menu([(3, 'Trap', [])], x=31, y=3)[0], 1)
-ver('ruina, ciudad y agua: se puede (pedido del 22/10/2026: en cualquier lugar)',
-    [menu([(3, 'Trap', [])], x=x, y=y)[0] for x, y in ((14, 14), (12, 12), (33, 7))], [1, 1, 1])
+ver('ruina y agua sí; ciudad no (pedido del clan, 18/11/2026)',
+    [menu([(3, 'Trap', [])], x=x, y=y)[0] for x, y in ((14, 14), (12, 12), (33, 7))], [1, 0, 1])
 ver('control: ya hay un pozo ahí', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 0, 0, 0xff)])[0], 0)
 ver('trampa propia detonada una vez (sigue activa): se apila', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 0)])[0], 1)
-ver('control: detonada una vez, de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 1)])[0], 0)
+ver('detonada una vez, de otro: se reemplaza (pedido del clan, 18/11/2026)', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 1, 0xff, 1)])[0], 1)
+ver('control: activa sin detonar, de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 0xff, 1)])[0], 0)
 ver('gastada (pedido del 9/11/2026): se vuelve a sembrar', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 3, 0xff, 0)])[0], 1)
 ver('  gastada de otro bando, también', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 2, 0xff, 1)])[0], 1)
-ver('  gastada en una ciudad, también', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 2, 0xff, 1)], urb=[(5, 7)])[0], 1)
+ver('  gastada en una ciudad: no (sin trampas en ciudades, 18/11/2026)', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 2, 0xff, 1)], urb=[(5, 7)])[0], 0)
 ver('  gastada con la tabla llena, también', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 2, 0xff, 1)] + [(1, 1, 0, 0, 0, 0xff)] * (PO_MAX - 1))[0], 1)
 ver('control: un pozo (no trampa) sigue sin admitir trampa', menu([(3, 'Trap', [])], regs=[(5, 7, 0, 2, 0xff, 0xff)])[0], 0)
 ver('control: tabla llena', menu([(3, 'Trap', [])], regs=[(1, 1, 0, 0, 0, 0xff)] * PO_MAX)[0], 0)
@@ -129,7 +130,7 @@ ver('control: ya es doble (tope 2)', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 8, 
 ver('control: trampa de otro', menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 1)])[0], 0)
 ver('ciudad: no se apila (pedido del 4/11/2026: una sola trampa por casilla de ciudad)',
     menu([(3, 'Trap', [])], regs=[(5, 7, 2, 0, 1, 0)], urb=[(5, 7)])[0], 0)
-ver('  pero sembrar la primera en una ciudad, sí', menu([(3, 'Trap', [])], urb=[(5, 7)])[0], 1)
+ver('  ni sembrar la primera en una ciudad', menu([(3, 'Trap', [])], urb=[(5, 7)])[0], 0)
 ver('control: un pozo en otra casilla no molesta', menu([(3, 'Trap', [])], regs=[(6, 7, 0, 0, 0, 0xff)])[0], 1)
 
 print('-- diálogo: texto y envío')
@@ -202,6 +203,8 @@ ver('  gastada de otro bando (con TR_RECIEN): pasa a ser del que siembra',
     recibir(regs=[(5, 7, 2, 0x82, 0xff, 3)], todo=True), ([(5, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
 ver('control: gastada pero sin oro', recibir(oro=TRAMPA - 1, regs=[(5, 7, 2, 2, 0xff, 3)], todo=True), ([(5, 7, 2, 2, 0xff, 3)], []))
 ver('control: trampa de otro bando', recibir(regs=[(5, 7, 2, 0, 0xff, 3)], todo=True)[1], [])
+ver('de otro bando, detonada una vez: la nueva la reemplaza', recibir(regs=[(5, 7, 2, 1, 0xff, 3)], todo=True), ([(5, 7, 2, 0, 4, 2)], [(2, -TRAMPA)]))
+ver('ciudad: se rechaza (pedido del clan, 18/11/2026)', recibir(x=12, y=12)[:2], NADA[:2])
 ver('control: sin oro', recibir(oro=TRAMPA - 1, regs=[(5, 7, 2, 0, 4, 2)], todo=True), ([(5, 7, 2, 0, 4, 2)], []))
 ver('control: otro paquete sigue a or_recv sin tocar nada', recibir(tipo=0x2a2)[:2], NADA[:2])
 

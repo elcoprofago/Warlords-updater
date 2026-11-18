@@ -18475,6 +18475,19 @@ tr_menutxt = place_data('tr_menutxt', cstr_('Build Trap'))
 # ese bando en la casilla si se le puede poner otra encima (activa y todavía no doble), 0 si no. Preserva el resto.
 # Desde 1.0.146.0 (pedido del usuario, 9/11/2026) también devuelve una trampa gastada, de cualquier bando y en
 # cualquier casilla (ciudad incluida): tr_recv la vuelve a armar como trampa nueva del que siembra (+5 = 0, solo su bit).
+# Desde 1.0.249.0 (pedido del clan, 18/11/2026) también devuelve una trampa ajena que ya explotó al menos una vez (el
+# agujero con humo que todavía tiene una explosión): tr_recv la reemplaza por la nueva, como a una gastada.
+# tr_inurb: esi = x, edi = y -> ZF = 0 si la casilla es de una ciudad (po_urb con el registro de mentira po_fxy).
+# Desde 1.0.249.0 no se siembran trampas en ciudades (pedido del clan, 18/11/2026). Preserva todo menos eflags.
+tr_inurb = place('tr_inurb', f'''
+    push eax
+    mov word ptr [{po_fxy:#x}], si
+    mov word ptr [{po_fxy + 2:#x}], di
+    mov eax, {po_fxy:#x}
+    call {po_urb:#x}
+    pop eax
+    ret
+''')
 tr_stk = place('tr_stk', f'''
     push ecx
     xor eax, eax
@@ -18504,7 +18517,7 @@ tr_stk = place('tr_stk', f'''
     jae tsk_out
     movzx ecx, byte ptr [eax + 7]
     cmp ecx, ebx
-    jne tsk_no
+    jne tsk_ajena
     call {po_urb:#x}
     jnz tsk_no
     mov cl, byte ptr [eax + 5]
@@ -18516,6 +18529,13 @@ tr_stk = place('tr_stk', f'''
 tsk_no:
     xor eax, eax
 tsk_out:
+    pop ecx
+    ret
+tsk_ajena:
+    mov cl, byte ptr [eax + 5]
+    and cl, {TR_CUENTA}
+    jnz tsk_out
+    xor eax, eax
     pop ecx
     ret
 ''')
@@ -18559,6 +18579,8 @@ tr_check = place('tr_check', f'''
     jae tk_out
     mov esi, edi
     mov edi, ebp
+    call {tr_inurb:#x}
+    jnz tk_out
     call {tr_stk:#x}
     test eax, eax
     jnz tk_ok
@@ -19407,6 +19429,8 @@ tr_recv = place('tr_recv', f'''
 tv_any:
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
+    call {tr_inurb:#x}
+    jnz tv_x
     call {tr_stk:#x}
     push eax
     test eax, eax
@@ -19441,6 +19465,8 @@ tv_pay:
     and al, {TR_CUENTA}
     cmp al, {TR_USOS}
     jae tv_re
+    cmp byte ptr [edx + 7], bl
+    jne tv_re
     or byte ptr [edx + 5], {TR_DOBLE}
     jmp tv_x
 tv_re:

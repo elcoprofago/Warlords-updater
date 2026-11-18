@@ -578,3 +578,14 @@ después de `br_drown`, llama a `br_untrap(n)` (por el puntero `br_untrap_ptr`, 
 abajo en build.py): quita de la tabla toda trampa (también doble) en las casillas de `br_xy` y rearma po_map. Corre en
 todas las PC. Pozos y remolinos no se tocan. Prueba: prueba_puentetrampa.py (controles: trampa fuera del puente, pozo
 sobre el puente, puente sin casillas). Falta verlo en el juego: tarea 259.
+
+## 1.0.249.0 (18/11/2026): pedidos del clan
+1. **Sin trampas en ciudades.** `tr_inurb` (po_urb con el registro de mentira po_fxy) corta en tr_check (no aparece
+   «Build Trap») y en tr_recv (no cobra ni siembra), también sobre una gastada. Las ya sembradas en partidas empezadas
+   quedan (siguen explotando una sola vez). La IA ya sembraba solo fuera de ciudades.
+2. **Sembrar sobre trampas detonadas.** Sobre una gastada ya se podía (1.0.146.0). Lo que faltaba: el agujero con humo de
+   una trampa **ajena que explotó una vez** y le queda otra; `tr_stk` la devuelve (cuenta >= 1, otro dueño) y tr_recv la
+   rearma como nueva del que siembra (también si era doble: la de abajo se pierde). Una ajena sin detonar sigue sin
+   permitir sembrar. La propia detonada una vez sigue apilándose.
+- Pruebas: prueba_trampas.py (ciudad en menú y red, ajena detonada, control: ajena sin detonar). Falta verlo en el
+  juego: tarea 260.
