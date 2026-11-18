@@ -147,6 +147,11 @@ def celda(img, ox, oy, d, f, verde=False):
     sube = (0, 1, 0, -1)[f] * S // 2
     cel = cel.transform(cel.size, Image.AFFINE, (1, 0, 0, 0, 1, -sube))
     pegar(img, ox, oy, cel)
+    if verde:                       # contorno verde de selección alrededor de la balsa, como el casco de warship
+        px = img.load()
+        borde = [(x, y) for y in range(1, 47) for x in range(1, 47) if px[ox + x, oy + y] == FONDO
+                 and any(px[ox + x + a, oy + y + b] not in (FONDO, VERDE) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
+        for x, y in borde: px[ox + x, oy + y] = VERDE
     estela(img, ox, oy, d, f)
 
 
