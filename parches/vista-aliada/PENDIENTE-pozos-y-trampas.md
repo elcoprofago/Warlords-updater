@@ -571,3 +571,10 @@ ciudad, tope 2); el usuario dice que no pudo poner dos: falta saber en qué caso
 NA_157 tenía la tabla con sus 64 lugares ocupados (49 trampas, muchas gastadas). Con la tabla llena, una trampa
 nueva toma el lugar de la primera trampa gastada (sin doble) de la tabla; ese agujero gastado desaparece del mapa.
 El formato del .SAV no cambia. Pruebas: prueba_trampas.py (tabla llena con gastada en otro lado; control: doble).
+
+## 1.0.248.0 (18/11/2026): trampas de un puente derribado
+Pedido del clan: «las trampas puestas en el puente, si este es atacado y destruido, caen al agua». `br_razeapply`,
+después de `br_drown`, llama a `br_untrap(n)` (por el puntero `br_untrap_ptr`, porque la tabla de trampas se define más
+abajo en build.py): quita de la tabla toda trampa (también doble) en las casillas de `br_xy` y rearma po_map. Corre en
+todas las PC. Pozos y remolinos no se tocan. Prueba: prueba_puentetrampa.py (controles: trampa fuera del puente, pozo
+sobre el puente, puente sin casillas). Falta verlo en el juego: tarea 259.

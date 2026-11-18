@@ -1,0 +1,57 @@
+# Prueba de juguete: al derribar un puente, sus trampas caen al agua (br_untrap de build.py, pedido del clan 18/11/2026).
+# Uso: python prueba_puentetrampa.py [carpeta]   (por defecto la del juego de pruebas)
+# Controles que deben sobrevivir: trampa fuera del puente, pozo (no trampa) sobre el puente, puente con 0 casillas.
+import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
+from juego_pruebas import W3
+import os, sys, re, struct, pefile
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
+from unicorn.x86_const import UC_X86_REG_ESP
+
+DIR = sys.argv[1] if len(sys.argv) > 1 else W3
+STACK, RET = 0x1f0000, 0x100
+PO_MAX, PO_REC = 64, 8
+pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe'))
+BASE, img = pe.OPTIONAL_HEADER.ImageBase, bytes(pe.get_memory_mapped_image())
+def d32(va): return struct.unpack_from('<I', img, va - BASE)[0]
+PO_SAVE = BASE + img.index(b'POZO' + bytes(4 + PO_MAX * PO_REC)); PO_N, PO_TAB = PO_SAVE + 4, PO_SAVE + 8
+PO_MAP = PO_SAVE + 8 + PO_MAX * PO_REC + 4
+# en br_razeapply: call br_drown; add esp, 8; push esi; call [br_untrap_ptr]; add esp, 4
+m = [x.start() for x in re.finditer(rb'\x83\xc4\x08\x56\xff\x15(.{4})\x83\xc4\x04', img, re.S)]
+assert len(m) == 1, m
+BR_UNTRAP = d32(d32(BASE + m[0] + 6))
+cod = img[BR_UNTRAP - BASE:BR_UNTRAP - BASE + 0x80]
+BR_XY = struct.unpack_from('<I', cod, cod.index(b'\x3b\x14\x8d') + 3)[0]
+
+mal = 0
+def ver(nombre, r, esperado):
+    global mal
+    ok = r == esperado; mal += not ok
+    print('OK ' if ok else 'MAL', nombre, '->', r)
+
+def correr(regs, puente):
+    mu = Uc(UC_ARCH_X86, UC_MODE_32)
+    size = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
+    mu.mem_map(BASE, size); mu.mem_write(BASE, img[:size])
+    mu.mem_map(0, 0x1000); mu.mem_map(0x100000, 0x100000)
+    mu.mem_write(0x503e00, struct.pack('<hh', 40, 30)); mu.mem_write(0x503e06, b'\6')
+    mu.mem_write(PO_N, struct.pack('<i', len(regs)))
+    for i, r in enumerate(regs): mu.mem_write(PO_TAB + PO_REC * i, struct.pack('<hhBBBB', *r))
+    for i, (x, y) in enumerate(puente): mu.mem_write(BR_XY + 4 * i, struct.pack('<hh', x, y))
+    mu.mem_write(STACK, struct.pack('<II', RET, len(puente))); mu.reg_write(UC_X86_REG_ESP, STACK)
+    mu.emu_start(BR_UNTRAP, RET, count=2000000)
+    n = struct.unpack('<i', mu.mem_read(PO_N, 4))[0]
+    t = sorted(struct.unpack('<hhBBBB', mu.mem_read(PO_TAB + PO_REC * i, PO_REC)) for i in range(n))
+    mapa = {(x, y): mu.mem_read(PO_MAP + (y << 6) + x, 1)[0] for x in range(40) for y in range(30)}
+    return t, {k for k, v in mapa.items() if v}
+
+T = 2
+puente = [(10, 5), (10, 6), (10, 7)]
+regs = [(10, 5, T, 0, 1, 0), (3, 3, T, 0, 2, 1), (10, 6, 0, 0, 0, 0), (10, 7, T, 0x08, 1, 0), (20, 20, T, 0, 4, 2)]
+t, m2 = correr(regs, puente)
+ver('quedan la trampa de afuera, el pozo y la del (20,20)', t, sorted([regs[1], regs[2], regs[4]]))
+ver('po_map rearmado', m2, {(3, 3), (10, 6), (20, 20)})
+t, m2 = correr(regs, [])
+ver('puente vacío: no toca nada', t, sorted(regs))
+t, m2 = correr([(10, 5, T, 0, 1, 0)], puente)
+ver('única trampa sobre el puente', t, [])
+print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)

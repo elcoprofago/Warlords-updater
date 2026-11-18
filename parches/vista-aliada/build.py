@@ -6824,6 +6824,8 @@ ws_pass:
     xor eax, eax
     jmp 0x49e467
 ''')
+# br_untrap_ptr: dirección de br_untrap (se define más abajo, con la tabla de trampas); se completa al definirla.
+br_untrap_ptr = place_data('br_untrap_ptr', bytes(4))
 # Aplicación de arrasar (0x4d5e30(código, jugador), en todas las máquinas de la partida). Para un puente: vuelve a
 # comprobar que está entero y sin ejércitos ajenos (si no, no hace nada), lo derriba, ahoga a los propios de encima,
 # refresca la vista y da el aviso "Razed!" / "<nombre> is in ruins!" del original al jugador humano que arrasó.
@@ -6873,6 +6875,9 @@ bra2_tile:
     push esi
     call {br_drown:#x}
     add esp, 8
+    push esi
+    call dword ptr [{br_untrap_ptr:#x}]
+    add esp, 4
     call {br_mapview:#x}
     pop ebp
     pop ebx
@@ -12339,6 +12344,43 @@ pmr_no:
     test esp, esp
     ret
 ''')
+# br_untrap(n) cdecl: las trampas sobre las n casillas de br_xy (el puente que se acaba de derribar) caen al agua: se
+# quitan de la tabla (el último registro pasa a su lugar) y se rearma po_map. Pedido del clan (18/11/2026): sin esto,
+# la trampa quedaba como mina submarina donde estaba el puente. Corre en todas las PC (br_razeapply). Preserva todo.
+br_untrap = place('br_untrap', f'''
+    pushad
+    mov ebp, dword ptr [esp + 0x24]
+    mov ebx, dword ptr [{PO_N:#x}]
+bu_loop:
+    dec ebx
+    js bu_end
+    lea esi, [ebx*8 + {PO_TAB:#x}]
+    cmp byte ptr [esi + 4], {PO_TRAMPA}
+    jne bu_loop
+    mov edx, dword ptr [esi]
+    mov ecx, ebp
+bu_j:
+    dec ecx
+    js bu_loop
+    cmp edx, dword ptr [ecx*4 + {br_xy:#x}]
+    jne bu_j
+    mov eax, dword ptr [{PO_N:#x}]
+    dec eax
+    mov dword ptr [{PO_N:#x}], eax
+    lea edi, [eax*8 + {PO_TAB:#x}]
+    mov ecx, dword ptr [edi]
+    mov dword ptr [esi], ecx
+    mov ecx, dword ptr [edi + 4]
+    mov dword ptr [esi + 4], ecx
+    mov dword ptr [edi], 0
+    mov dword ptr [edi + 4], 0
+    jmp bu_loop
+bu_end:
+    call {po_rebuild:#x}
+    popad
+    ret
+''')
+caves['br_untrap_ptr'] = struct.pack('<I', br_untrap) + caves['br_untrap_ptr'][4:]   # conserva el relleno de alineación
 # po_wet: eax = registro -> ZF = 1 si su casilla es agua sin puente (mina submarina, pedido del usuario, 22/10/2026).
 # Preserva todo.
 po_wet = place('po_wet', f'''
