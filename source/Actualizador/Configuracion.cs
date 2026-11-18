@@ -127,7 +127,7 @@ namespace Actualizador
             MaximizeBox = MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(440, 190);
-            BackColor = Paleta.Fondo;
+            BackColor = Color.FromArgb(0x26, 0x22, 0x3A);   // violeta oscuro: se distingue del fondo de la terminal
             ForeColor = Paleta.Texto;
             Font = new Font("Segoe UI", 10f);
 
@@ -139,15 +139,17 @@ namespace Actualizador
             buscar = new Button
             {
                 Text = "Buscar actualización", Location = new Point(16, 66), Size = new Size(200, 32),
-                FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(40, 44, 52), ForeColor = Paleta.Texto,
+                FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(0x3A, 0x33, 0x58), ForeColor = Paleta.Texto,
             };
+            buscar.FlatAppearance.BorderColor = Paleta.Violeta;
+            buscar.FlatAppearance.MouseOverBackColor = Color.FromArgb(0x4A, 0x41, 0x70);
             buscar.Click += async (s, e) => await Pulsar();
             Controls.Add(buscar);
             estado = new Label { Location = new Point(16, 106), Size = new Size(408, 44), ForeColor = Paleta.Tenue };
             Controls.Add(estado);
             Controls.Add(new Label
             {
-                Text = Configuracion.Creditos, Location = new Point(16, 160), Size = new Size(408, 20),
+                Text = Configuracion.Creditos, UseMnemonic = false, Location = new Point(16, 160), Size = new Size(408, 20),
                 ForeColor = Paleta.Tenue, Font = new Font("Segoe UI", 8.5f),
             });
         }
