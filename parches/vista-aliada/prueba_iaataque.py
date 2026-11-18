@@ -4,7 +4,8 @@
 # atacar) e ia_evt se reemplazan por stubs que anotan si se llamaron.
 # Casos que tienen que cortar (devuelve 0, evento 45, sin orden): grupo con menos de la mitad de la fuerza. Controles
 # que tienen que dar la orden: mitad justa, ciudad, sin IA.INI, color en original, humano, defensores propios, muertos
-# o en otra casilla.
+# o en otra casilla. Asaltos a ciudades (paso 5.5, 17/11/2026): con IA.INI y prueba, % de victoria (si) menor que
+# AP_PCT no asalta (evento 48, n = % + 1000); controles: borde, original (solo anota), ranking, humano, campo abierto.
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
 from juego_pruebas import W3  # carpeta del juego de pruebas: se cambia solo ahi
 import os, sys, struct, pefile, capstone
@@ -40,7 +41,7 @@ def ej(mu, e, dueno, fuerza, vida, x, y, vivo=True, ranura=0):
     mu.mem_write(EJ + e * 0x1c + 0x5e, struct.pack('<H', ranura | dueno << 5 | fuerza << 9 | vida << 13))
     mu.mem_write(EJ + e * 0x1c + 0x63, bytes([0x40 if vivo else 0]))
 
-def caso(grupo, defensores, ciudad=-1, ia_on=1, modo=1, control=0):
+def caso(grupo, defensores, ciudad=-1, ia_on=1, modo=1, control=0, pct=0x2222, evt=False):
     # grupo: lista de (fuerza, vida, vivo) del bando P; defensores: (dueño, fuerza, vida, x, y, vivo)
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     mu.mem_map(0, 0x800000)
@@ -71,12 +72,14 @@ def caso(grupo, defensores, ciudad=-1, ia_on=1, modo=1, control=0):
     for v in (Y, X, P, RET):
         sp -= 4; mu.mem_write(sp, struct.pack('<I', v))
     mu.reg_write(UC_X86_REG_ESP, sp)
-    mu.reg_write(UC_X86_REG_EBX, 0x1111); mu.reg_write(UC_X86_REG_ESI, 0x2222); mu.reg_write(UC_X86_REG_EDI, 0x3333)
+    mu.reg_write(UC_X86_REG_EBX, 0x1111); mu.reg_write(UC_X86_REG_ESI, pct); mu.reg_write(UC_X86_REG_EDI, 0x3333)
     mu.reg_write(UC_X86_REG_EBP, 0x4444); mu.reg_write(UC_X86_REG_EAX, 0x5555)
     mu.emu_start(AP, RET, count=200000)
     assert (mu.reg_read(UC_X86_REG_EBX), mu.reg_read(UC_X86_REG_ESI), mu.reg_read(UC_X86_REG_EDI),
-            mu.reg_read(UC_X86_REG_EBP)) == (0x1111, 0x2222, 0x3333, 0x4444), 'registros no preservados'
+            mu.reg_read(UC_X86_REG_EBP)) == (0x1111, pct, 0x3333, 0x4444), 'registros no preservados'
     assert mu.reg_read(UC_X86_REG_ESP) == sp + 4
+    if evt:
+        return ('orden' if llamadas['orden'] else 'corta', llamadas['evt'])
     return 'orden' if llamadas['orden'] else ('corta', llamadas['evt'], mu.reg_read(UC_X86_REG_EAX))
 
 G2 = [(3, 2, True)] * 2                      # 12
@@ -100,5 +103,14 @@ ver('control: defensores en otra casilla', caso(G2, [(5, 5, 3, X + 1, Y, True)] 
 ver('muerto del grupo no suma: 6 contra 15', caso([(3, 2, True), (7, 7, False)], [(5, 5, 3, X, Y, True)]),
     ('corta', (45, P, X, Y, 6015), 0))
 ver('control: el mismo vivo suma (55 contra 15)', caso([(3, 2, True), (7, 7, True)], [(5, 5, 3, X, Y, True)]), 'orden')
+print('-- asaltos a ciudades: % de victoria que ya calculó la IA (0x497390, en si), evento 48, AP_PCT = 30')
+ver('ciudad, prueba, 29 %: no asalta, n = 1029', caso(G2, D3, ciudad=3, pct=29, evt=True), ('corta', (48, P, X, Y, 1029)))
+ver('ciudad, prueba, 0 % (8 contra 1 amurallada): no asalta', caso(G2, D3, ciudad=3, pct=0, evt=True), ('corta', (48, P, X, Y, 1000)))
+ver('borde: ciudad, prueba, 30 %: asalta, n = 30', caso(G2, D3, ciudad=3, pct=30, evt=True), ('orden', (48, P, X, Y, 30)))
+ver('ciudad, prueba, 80 %: asalta aunque la fuerza sea menor', caso(G2, D3, ciudad=3, pct=80, evt=True), ('orden', (48, P, X, Y, 80)))
+ver('control: ciudad, original, 5 %: asalta y anota n = 5', caso(G2, D3, ciudad=3, pct=5, modo=0, evt=True), ('orden', (48, P, X, Y, 5)))
+ver('control: ciudad sin IA.INI (ranking), 5 %: asalta, sin evento', caso(G2, D3, ciudad=3, pct=5, ia_on=0, evt=True), ('orden', None))
+ver('control: ciudad, humano, 5 %: asalta, sin evento', caso(G2, D3, ciudad=3, pct=5, control=-1, evt=True), ('orden', None))
+ver('control: campo abierto con 5 % y fuerza suficiente: asalta (rige la fuerza)', caso(G2 * 2, D3, pct=5, evt=True), ('orden', None))
 print('TODO OK' if not mal else f'{mal} MAL')
 sys.exit(1 if mal else 0)

@@ -117,7 +117,8 @@ EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo parti
            44: 'hechizo lanzado (x efecto 1 * 100 + efecto 2, y costo, n puntaje)',
            45: 'ataque no dado: grupo con menos de la mitad (n = grupo * 1000 + defensores)',
            46: 'ataque a un bloque de muro (n = arqueros muertos + 100 si cayó)',
-           47: 'pilas junto a un muro enemigo (n = casillas vecinas ocupadas)'}
+           47: 'pilas junto a un muro enemigo (n = casillas vecinas ocupadas)',
+           48: 'asalto a ciudad evaluado (n = % de victoria + 1000 si no se dio)'}
 POZOS_EV = (18, 19, 20)   # n = muertos + 100 si el que cayó ya lo veía (error evitable)
 
 ESQUEMA = f'''

@@ -85,6 +85,7 @@ def main(tid=None):
     innovaciones(db, validas)
     candidatos(db, validas)
     muros(db, validas)
+    asaltos(db, validas)
     defensa(db, validas)
     hechizos(db, validas, cuenta)
     perfiles(db, validas)
@@ -152,6 +153,30 @@ def muros(db, validas):
     print(f'{"IA":28} {"color":>5} {"ataques":>7} {"caídos":>6} {"turnos":>6} {"vecinas":>7}')
     for (ia, color), e in sorted(c.items()):
         print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 6, 6, 7))))
+
+
+def asaltos(db, validas):
+    """Evento 48 (paso 5.5 de ia\\PENDIENTE-ia-innovaciones.md, punto 2, solo en tandas): cada asalto a una ciudad que
+    la computadora estuvo por dar, con el % de victoria que calculó (0x497390); + 1000 si la IA de prueba no lo dio
+    (menos de AP_PCT). Por IA y tramo de %: cuántos, cuántos no se dieron y, de los dados, cuántos ganó (batalla del
+    mismo turno, atacante y casilla). Sirve para calibrar AP_PCT."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select e.ia, e.n, (select max(b.resultado) from batalla b where b.partida = e.partida and '
+                       f'b.turno = e.turno and b.atacante = e.color and b.x = e.x and b.y = e.y) '
+                       f'from evento e where e.partida in ({q}) and e.tipo = 48', validas).fetchall()
+    if not filas:
+        return
+    c = defaultdict(lambda: [0] * 4)   # evaluados, no dados, dados con batalla, ganados
+    for ia, n, res in filas:
+        e = c[ia, min(n % 1000, 100) // 10 * 10]
+        e[0] += 1
+        if n >= 1000: e[1] += 1
+        elif res is not None: e[2] += 1; e[3] += res == 1
+    print('\nAsaltos a ciudades (evento 48: % de victoria que calculó la IA antes de asaltar)')
+    print(f'{"IA":28} {"%":>7} {"asaltos":>7} {"no dados":>8} {"con bat.":>8} {"ganados":>7}')
+    for (ia, t), e in sorted(c.items()):
+        r = f'{t:3}-{min(t + 9, 100):3}'
+        print(f'{IAS.get(ia, ia):28} {r:>7} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 8, 8, 7))))
 
 
 DIAG = {1: 'ejército encima', 2: 'en el camino de la pila', 3: 'IA original (sin defensa)',

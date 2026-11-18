@@ -16917,17 +16917,21 @@ nw_out:
 # AP_K es menor que la de los ejércitos vivos ajenos de la casilla, no da la orden y devuelve 0 (0x4c4da0 lo toma como
 # ataque no dado, igual que una orden rechazada). En ciudades no corta: los defensores neutrales y el bono de la ciudad
 # no se miden así. Evento 45: x, y = casilla, n = fuerza del grupo * 1000 + defensores (topes 999).
+#
+# Asaltos a ciudades (paso 5.5 de ia\PENDIENTE-ia-innovaciones.md, punto 2 del usuario, 17/11/2026): justo antes,
+# 0x4c4dca llama a 0x497390(x, y), que simula 40 veces la batalla con la ficha real (0x464ac0: bonos del muro, de la
+# ciudad y de los defensores incluidos) y devuelve el % de victorias en si; la IA original lo calcula y solo lo escribe
+# en su registro. Si la casilla es de una ciudad, con IA.INI e ia_mode = prueba, y ese % es menor que AP_PCT, no da
+# la orden (tanda 183: negro asaltó 8 contra 1 la capital roja amurallada y perdió 3 y 4 veces seguidas). Con IA.INI,
+# evento 48 en todo asalto a ciudad de la computadora (también la original, para calibrar AP_PCT): x, y = casilla,
+# n = % + 1000 si no lo dio. Sin IA.INI (ranking) no cambia nada hasta que una tanda lo confirme.
 AP_EVT, AP_K = 45, 2
+AC_EVT, AP_PCT = 48, 30
 ap_gate = place('ap_gate', f'''
     pushad
     movsx ebx, word ptr [esp + 0x24]
     cmp ebx, 8
     jae ag_go
-    cmp byte ptr [{IA_ON:#x}], 0
-    je ag_ia
-    cmp byte ptr [ebx + {IA_MODE:#x}], 1
-    jne ag_go
-ag_ia:
     imul eax, ebx, 0x1f8
     cmp word ptr [eax + 0x536c12], -1
     je ag_go
@@ -16938,7 +16942,38 @@ ag_ia:
     call 0x440be0
     add esp, 8
     test ax, ax
-    jge ag_go
+    jl ag_field
+    cmp byte ptr [{IA_ON:#x}], 0
+    je ag_go
+    movsx ebp, word ptr [esp + 4]
+    xor ecx, ecx
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne ag_clog
+    cmp ebp, {AP_PCT}
+    jge ag_clog
+    mov ecx, 1000
+ag_clog:
+    push ecx
+    lea eax, [ebp + ecx]
+    push eax
+    push edi
+    push esi
+    push ebx
+    push {AC_EVT}
+    call {ia_evt:#x}
+    add esp, 20
+    pop ecx
+    test ecx, ecx
+    jz ag_go
+    popad
+    xor eax, eax
+    ret
+ag_field:
+    cmp byte ptr [{IA_ON:#x}], 0
+    je ag_ia
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne ag_go
+ag_ia:
     xor ebp, ebp
     mov ecx, 1
 ag_dl:

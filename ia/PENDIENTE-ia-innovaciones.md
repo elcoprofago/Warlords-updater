@@ -630,4 +630,26 @@ Análisis del usuario y plan (17/11/2026):
 Orden propuesto: primero la 2 (evita las pérdidas que ya se ven en la tanda 183), después la 3. Las dos se prueban
 con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
 
+### Paso 5.5, punto 2, hecho el código (17/11/2026, vista-aliada 1.0.245.0)
+
+- En ap_gate (0x4c4de7, build.py), cuando la meta del ataque es una ciudad (0x440be0 ≥ 0): la IA original ya
+  calcula su probabilidad de victoria (0x497390: 4 × 10 batallas simuladas con la ficha real, que suma el bonus del
+  muro y de la ciudad) y solo la escribía en su registro. Ahora la IA **de prueba** no asalta si ese número es menor
+  que **AP_PCT = 30 %**. Con eso no hace falta calcular nada nuevo ni consumir azar extra.
+- Evento **48** (con IA.INI, todos los bandos de la computadora): asalto evaluado, n = % de victoria, + 1000 si no se
+  dio. Tabla nueva del informe, «Asaltos a ciudades»: asaltos por IA y tramo de 10 %, cuántos no se dieron, cuántos
+  terminaron en batalla y cuántos ganó el atacante. Sirve para calibrar AP_PCT: si en el tramo 30–39 % la original
+  pierde casi siempre, se sube.
+- Sin IA.INI (ranking) no cambia nada hasta que una tanda lo confirme.
+- **Excepción del sondeo: no implementada.** No encontré el bit del Combat Advisor en las opciones (el candidato,
+  [0x53c390] & 2, está apagado en todas las guardadas del banco y del ranking, así que no se puede confirmar). Además,
+  la IA calcula con los datos verdaderos de la guarnición, oculta o no: hoy nunca le falta la información. Si se quiere
+  el sondeo, primero hay que identificar ese bit (una guardada con el Combat Advisor encendido y otra apagado).
+- Bloques de muro sueltos (no ciudades): siguen con la regla de fuerza de campo abierto; el punto 3 los trata aparte.
+- Pruebas emuladas: prueba_iaataque (8 casos nuevos: 29 % corta, 0 % corta, 30 y 80 % asaltan, original y ranking
+  sin cambio, humano sin cambio, campo abierto igual que antes), prueba_muroataque, prueba_obras, prueba_iatrampas,
+  prueba_iarazea: todo OK.
+- Medición: TAREAS 250, tanda sobre **Tanda_hex_MU** (copia de Tanda_hex_MU_control sin «_control», para que el
+  banco reparta la IA de prueba en la mitad de los colores).
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
