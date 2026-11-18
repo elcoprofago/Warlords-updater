@@ -137,22 +137,24 @@ def innovaciones(db, validas):
 def muros(db, validas):
     """Eventos 46 y 47 (paso 5.5 de ia\\PENDIENTE-ia-innovaciones.md, solo en tandas): 46 = la IA atacó un bloque de
     muro (n = arqueros muertos, + 100 si el bloque cayó); 47 = turno en que la IA tenía pilas junto a un muro enemigo
-    (n = casillas vecinas ocupadas). Muestra si la IA ataca el muro, lo rodea o se queda frente a él."""
+    (n = casillas vecinas ocupadas); 49 = la IA de prueba desistió de asaltar una ciudad y atacó en cambio el bloque
+    vecino más dañado (brecha, 1.0.252.0). Muestra si la IA ataca el muro, lo rodea o se queda frente a él."""
     q = ','.join('?' * len(validas))
-    filas = db.execute(f'select ia, color, tipo, n from evento where partida in ({q}) and tipo in (46, 47)',
+    filas = db.execute(f'select ia, color, tipo, n from evento where partida in ({q}) and tipo in (46, 47, 49)',
                        validas).fetchall()
     if not filas:
         print('\nMuros: la tanda no registró ataques a murallas ni pilas junto a ellas.')
         return
-    c = defaultdict(lambda: [0] * 4)   # ataques, bloques caídos, turnos junto al muro, pilas-casilla junto al muro
+    c = defaultdict(lambda: [0] * 5)   # ataques, bloques caídos, turnos junto al muro, pilas-casilla, brechas
     for ia, color, tipo, n in filas:
         e = c[ia, color]
         if tipo == 46: e[0] += 1; e[1] += n >= 100
-        else: e[2] += 1; e[3] += n
+        elif tipo == 47: e[2] += 1; e[3] += n
+        else: e[4] += 1
     print('\nMuros (ataques a bloques de muralla y turnos con pilas junto a un muro enemigo)')
-    print(f'{"IA":28} {"color":>5} {"ataques":>7} {"caídos":>6} {"turnos":>6} {"vecinas":>7}')
+    print(f'{"IA":28} {"color":>5} {"ataques":>7} {"caídos":>6} {"turnos":>6} {"vecinas":>7} {"brechas":>7}')
     for (ia, color), e in sorted(c.items()):
-        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 6, 6, 7))))
+        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 6, 6, 7, 7))))
 
 
 def asaltos(db, validas):

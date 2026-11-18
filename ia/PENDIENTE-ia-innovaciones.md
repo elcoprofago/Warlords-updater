@@ -703,4 +703,21 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
 - Próximo: punto 3 (abrir brecha por el bloque de muro más débil). Si con ese punto el PV de la prueba sube, las dos
   pasan juntas al ranking.
 
+### Paso 5.5, punto 3: abrir brecha por el bloque más débil (18/11/2026, vista-aliada 1.0.252.0)
+
+- build.py, ab_brk y ab_cut: cuando la IA de prueba desiste de un asalto a una ciudad (% < AP_PCT, en ap_gate o
+  ac_gate2), si el grupo que se mueve (posición del primer ejército del grupo) tiene en sus 8 vecinas un bloque de muro
+  en pie de un bando en guerra con ella (wl_war), da la orden de atacar ese bloque (0x4648d0) en vez de quedarse
+  quieta. Elige el de más arqueros muertos (+7): así insiste en el mismo hasta que cae (24) y abre paso.
+- Evento **49**: x, y = bloque, n = arqueros muertos antes del ataque. La batalla misma sigue en el evento 46.
+  informe.py: columna «brechas» en la tabla «Muros».
+- Sin IA.INI (ranking) no actúa, porque el corte de ciudades tampoco. Bloques que no son vecinos del grupo: no se
+  buscan (no cambia el camino; la IA solo abre brecha donde ya llegó).
+- Pruebas emuladas: prueba_muroataque desde el sitio real 0x4c50c5 (3 casos: un bloque, dos bloques eligiendo el más
+  dañado, primer lugar del grupo vacío; 6 controles: bloque a 2 casillas, propio, caído, en paz, 50 %, IA original);
+  prueba_iaataque, prueba_obras, prueba_iatrampas, prueba_iarazea: todo OK.
+- Medición: TAREAS 262, la misma tanda que la 185 y la 186 (Tanda_hex_MU, 64 partidas). Comparar: eventos 49 y
+  bloques caídos de la prueba, asaltos ganados a capitales amuralladas, perdidos por partida (5,6 en la 186) y PV
+  prueba − original (−0,80). Si el PV sube, la regla de asaltos y la brecha pasan juntas al ranking.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».

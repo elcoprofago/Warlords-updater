@@ -17111,6 +17111,109 @@ nw_out:
 # la orden (tanda 183: negro asaltó 8 contra 1 la capital roja amurallada y perdió 3 y 4 veces seguidas). Con IA.INI,
 # evento 48 en todo asalto a ciudad de la computadora (también la original, para calibrar AP_PCT): x, y = casilla,
 # n = % + 1000 si no lo dio. Sin IA.INI (ranking) no cambia nada hasta que una tanda lo confirme.
+# Abrir brecha (paso 5.5 de ia\PENDIENTE-ia-innovaciones.md, punto 3 del usuario, 18/11/2026): cuando la IA de prueba
+# desiste de un asalto a una ciudad (% < AP_PCT, en ap_gate o ac_gate2), si el grupo que se mueve tiene en sus 8 vecinas
+# un bloque de muro en pie de un bando en guerra con ella (wl_war), ataca ese bloque en lugar de quedarse quieta: el de
+# más arqueros muertos (+7), así insiste en el mismo hasta derribarlo y abre el paso. Evento 49: x, y = bloque, n =
+# arqueros muertos antes del ataque. Sin IA.INI (ranking) no actúa, porque el corte de ciudades tampoco.
+# ab_brk: ebx = jugador -> eax = registro del bloque elegido, o 0 (con ZF). Preserva el resto.
+AB_EVT = 49
+ab_brk = place('ab_brk', f'''
+    push ecx
+    push edx
+    push esi
+    push edi
+    push ebp
+    imul edx, ebx, 0x4f0
+    movsx ecx, word ptr [edx + 0x56eaa8]
+    cmp ecx, 8
+    jbe abk_cn
+    mov ecx, 8
+abk_cn:
+    xor esi, esi
+abk_g:
+    cmp esi, ecx
+    jge abk_none
+    movsx eax, word ptr [edx + esi*2 + 0x56ea94]
+    inc esi
+    test eax, eax
+    jle abk_g
+    imul eax, eax, 0x1c
+    movsx esi, word ptr [eax + 0x54fe52]
+    movsx edi, word ptr [eax + 0x54fe54]
+    xor ebp, ebp
+    xor ecx, ecx
+abk_nb:
+    cmp ecx, 4
+    je abk_nx
+    push ecx
+    mov eax, ecx
+    xor edx, edx
+    mov ecx, 3
+    div ecx
+    lea ecx, [esi + edx - 1]
+    lea edx, [edi + eax - 1]
+    mov eax, ecx
+    mov ecx, ebx
+    call {wl_war:#x}
+    pop ecx
+    jz abk_nx
+    test ebp, ebp
+    jz abk_take
+    mov dl, byte ptr [eax + 7]
+    cmp dl, byte ptr [ebp + 7]
+    jbe abk_nx
+abk_take:
+    mov ebp, eax
+abk_nx:
+    inc ecx
+    cmp ecx, 9
+    jb abk_nb
+    mov eax, ebp
+    jmp abk_out
+abk_none:
+    xor eax, eax
+abk_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    test eax, eax
+    ret
+''')
+# ab_cut: se entra con jmp desde ap_gate o ac_gate2, con su pushad en la pila (p en [esp + 0x24]) y ebx = jugador, cuando
+# el asalto no se da. Con un bloque para atacar (ab_brk) da esa orden (0x4648d0(p, x, y)) y devuelve lo que devuelve;
+# si no, 0 (asalto no dado), como antes.
+ab_cut = place('ab_cut', f'''
+    call {ab_brk:#x}
+    jz abc_no
+    mov ebp, eax
+    movzx ecx, byte ptr [ebp + 7]
+    push ecx
+    movsx eax, word ptr [ebp + 2]
+    push eax
+    movsx eax, word ptr [ebp]
+    push eax
+    push ebx
+    push {AB_EVT}
+    call {ia_evt:#x}
+    add esp, 20
+    movsx eax, word ptr [ebp + 2]
+    push eax
+    movsx eax, word ptr [ebp]
+    push eax
+    push ebx
+    call 0x4648d0
+    add esp, 12
+    mov dword ptr [esp + 0x1c], eax
+    popad
+    ret
+abc_no:
+    popad
+    xor eax, eax
+    ret
+''')
 AP_EVT, AP_K = 45, 2
 AC_EVT, AP_PCT = 48, 20   # 30 hasta 1.0.246.0; la tanda 185 mostró que en 20–29 % la original gana 43 %
 ap_gate = place('ap_gate', f'''
@@ -17151,9 +17254,7 @@ ag_clog:
     pop ecx
     test ecx, ecx
     jz ag_go
-    popad
-    xor eax, eax
-    ret
+    jmp {ab_cut:#x}
 ag_field:
     cmp byte ptr [{IA_ON:#x}], 0
     je ag_ia
@@ -17279,9 +17380,7 @@ a2_log:
     pop ecx
     test ecx, ecx
     jz a2_go
-    popad
-    xor eax, eax
-    ret
+    jmp {ab_cut:#x}
 a2_go:
     popad
     jmp 0x4648d0

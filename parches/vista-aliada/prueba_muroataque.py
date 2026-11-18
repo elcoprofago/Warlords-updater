@@ -1,7 +1,7 @@
 # Prueba de juguete del ataque al muro (wl_war, wv_step, wv_pre, wv_stat, wv_post de build.py; PENDIENTE-faros-muros,
 # punto 2b), en unicorn. Uso: python prueba_muroataque.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3)
 # Reusa el banco de prueba_caminos.py. Cada función se corre sola, con las llamadas al juego interceptadas.
-import os, sys
+import os, sys, capstone
 _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_caminos.py'), encoding='utf-8').read()
 exec(_src[:_src.index("print('-- menú")])
 
@@ -378,6 +378,45 @@ ver('control 47: el muro es propio: nada', wobs(muro_de=5)[0], [])
 ver('control 47: bloque caído (24): nada', wobs(muertos=24)[0], [])
 ver('control 47: torre enemiga (tipo 4): nada', wobs(tipo=4)[0], [])
 ver('control 47: sin nadie al lado: nada', wobs(ej=())[0], [])
+
+print('-- brecha (paso 5.5, punto 3, 1.0.252.0): asalto a ciudad cortado por AP_PCT -> ataca el bloque vecino más dañado')
+AC2 = dest(0x4c50c8)
+_ins = list(capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32).disasm(img[AC2 - BASE:AC2 - BASE + 0x100], AC2))
+IA_MODE = next(int(i.op_str.split('+ ')[1].split(']')[0], 16) for i in _ins
+               if i.mnemonic == 'cmp' and i.op_str.startswith('byte ptr [ebx + '))
+AB_CUT = next(int(i.op_str, 16) for i in _ins if i.mnemonic == 'jmp' and i.op_str.startswith('0x') and
+              int(i.op_str, 16) not in (0x4648d0,) and not AC2 <= int(i.op_str, 16) < AC2 + 0x100)
+CX, CY, GP = 9, 9, 40
+def brecha(muros=((5, 7, 0),), grupo=(6, 8), pct=10, modo=1, guerra=True, dueño=2, p=5, huecos=0):
+    g = juego(dueño=dueño, guerra=guerra); mu = g.mu
+    mu.mem_write(OB_N, struct.pack('<I', len(muros))); mu.mem_write(OB_MAP, bytes(64 * 64))
+    for i, (x, y, m) in enumerate(muros):
+        mu.mem_write(OB_TAB + 8 * i, struct.pack('<hhBBBB', x, y, 7, 3, dueño, m))
+        mu.mem_write(OB_MAP + (y << 6) + x, bytes([i + 1]))
+    mu.mem_write(IA_ON, b'\1'); mu.mem_write(IA_MODE + p, bytes([modo]))
+    mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', 2))
+    g_ = p * 0x4f0 + 0x56ea94
+    mu.mem_write(g_, struct.pack('<h', 0) * huecos + struct.pack('<h', GP)); mu.mem_write(g_ + 0x14, struct.pack('<h', huecos + 1))
+    mu.mem_write(GP * 0x1c + 0x54fe52, struct.pack('<hh', *grupo))
+    ev, orden = [], []
+    g.interceptar(0x440be0, lambda a: 3)
+    g.interceptar(0x4648d0, lambda a: (orden.append(tuple(v & 0xffff for v in a[:3])), 7)[1])
+    g.interceptar(IA_EVT, lambda a: ev.append(tuple(a[:5])))
+    pila = bytearray(0x40); pila[0x10:0x12] = struct.pack('<h', pct)
+    g.correr(0x4c50c5, 0x4c50cd, bytes(pila), [(UC_X86_REG_EAX, p), (UC_X86_REG_ESI, CX), (UC_X86_REG_EDI, CY)])
+    return ev, orden, mu.reg_read(UC_X86_REG_EAX) & 0xffff
+print('ac_gate2', hex(AC2), 'ab_cut', hex(AB_CUT))
+ver('muro enemigo en diagonal del grupo: 48 cortado, 49 y orden al bloque', brecha(),
+    ([(48, 5, CX, CY, 1010), (49, 5, 5, 7, 0)], [(5, 5, 7)], 7))
+ver('dos bloques: el más dañado (10 muertos contra 3)', brecha(muros=((5, 7, 3), (7, 7, 10))),
+    ([(48, 5, CX, CY, 1010), (49, 5, 7, 7, 10)], [(5, 7, 7)], 7))
+ver('el primero del grupo vacío: toma el siguiente', brecha(huecos=1)[1], [(5, 5, 7)])
+ver('control: bloque a 2 casillas: corta, sin orden', brecha(grupo=(7, 9)), ([(48, 5, CX, CY, 1010)], [], 0))
+ver('control: muro propio: corta', brecha(dueño=5), ([(48, 5, CX, CY, 1010)], [], 0))
+ver('control: bloque caído (24): corta', brecha(muros=((5, 7, 24),)), ([(48, 5, CX, CY, 1010)], [], 0))
+ver('control: en paz con el dueño: corta', brecha(guerra=False), ([(48, 5, CX, CY, 1010)], [], 0))
+ver('control: 50 %: asalta la ciudad', brecha(pct=50), ([(48, 5, CX, CY, 50)], [(5, CX, CY)], 7))
+ver('control: IA original 10 %: asalta la ciudad', brecha(modo=0), ([(48, 5, CX, CY, 10)], [(5, CX, CY)], 7))
 
 print('MAL:', mal)
 sys.exit(1 if mal else 0)
