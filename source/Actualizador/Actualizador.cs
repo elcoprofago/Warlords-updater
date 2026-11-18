@@ -433,48 +433,31 @@ namespace Actualizador
         }
 
         // ------------------------------------------------------------------ 16 DIAGNOSTICO DE VIDEO
-        // Corre tools\diagnostico-video\DiagnosticoVideo.bat (va dentro del exe) desde una copia temporal. Solo
-        // lee: placa y driver de video, resolucion y escala, ddraw.dll y sus .ini, modos de compatibilidad. Deja
-        // diagnostico-video-<equipo>.txt en el Escritorio. Para fallas de dibujo que pasan en unas PC y no en otras.
+        // Ver Diagnostico.cs: junta los datos, deja diagnostico-video-<equipo>.txt en el Escritorio y lo manda
+        // por correo. Para fallas de dibujo que pasan en unas PC y no en otras.
 
         async Task DiagnosticoVideo()
         {
             Titulo("DIAGNÓSTICO DE VIDEO");
-            var bat = Path.Combine(temporal, "DiagnosticoVideo.bat");
-            try
-            {
-                using (var s = typeof(Actualizador).Assembly.GetManifestResourceStream("DiagnosticoVideo.bat"))
-                using (var f = File.Create(bat))
-                    s.CopyTo(f);
-            }
-            catch (Exception ex)
-            {
-                Error("No se pudo preparar el diagnóstico: " + ex.Message);
-                return;
-            }
             Info("Juntando datos de la PC (no cambia nada)...");
-            var psi = new ProcessStartInfo("cmd.exe", "/c \"\"" + bat + "\"\"")
+            string informe;
+            try { informe = await Task.Run(() => Diagnostico.Informe(juego)); }
+            catch (Exception ex) { Error("No se pudo hacer el diagnóstico: " + ex.Message); return; }
+            foreach (var l in informe.Replace("\r", "").TrimEnd().Split('\n')) t.EscribirLinea("  " + l, Paleta.Texto);
+            t.EscribirLinea();
+            var archivo = Path.Combine(escritorio, "diagnostico-video-" + Environment.MachineName + ".txt");
+            try { File.WriteAllText(archivo, informe, new System.Text.UTF8Encoding(true)); Ok("Informe guardado en " + archivo); }
+            catch (Exception ex) { Error("No se pudo guardar el informe: " + ex.Message); }
+            Info("Enviándolo por correo a " + Diagnostico.Correo + "...");
+            string error;
+            try { error = await Diagnostico.Enviar(informe); }
+            catch (Exception ex) { error = ex.Message; }
+            if (error == null) Ok("Enviado. No hace falta hacer nada más.");
+            else
             {
-                UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true,
-            };
-            try
-            {
-                using (var p = Process.Start(psi))
-                {
-                    p.StandardInput.Close();   // la pausa final del .bat sigue sola
-                    var salida = await Task.Run(() => p.StandardOutput.ReadToEnd());
-                    await Task.Run(() => p.WaitForExit());
-                    foreach (var l in salida.Replace("\r", "").Split('\n'))
-                    {
-                        if (l.StartsWith("Presione") || l.StartsWith("Press")) continue;
-                        if (l.StartsWith("Listo.")) Ok(l);
-                        else t.EscribirLinea("  " + l, Paleta.Texto);
-                    }
-                }
+                Error("No se pudo enviar: " + error);
+                Aviso("Manda a mano el archivo del Escritorio a " + Diagnostico.Correo + ".");
             }
-            catch (Exception ex) { Error("No se pudo correr el diagnóstico: " + ex.Message); }
-            finally { Borrar(bat); }
         }
 
         // ------------------------------------------------------------------ 14 TAILSCALE
