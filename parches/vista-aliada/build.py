@@ -16926,7 +16926,7 @@ nw_out:
 # evento 48 en todo asalto a ciudad de la computadora (también la original, para calibrar AP_PCT): x, y = casilla,
 # n = % + 1000 si no lo dio. Sin IA.INI (ranking) no cambia nada hasta que una tanda lo confirme.
 AP_EVT, AP_K = 45, 2
-AC_EVT, AP_PCT = 48, 30
+AC_EVT, AP_PCT = 48, 20   # 30 hasta 1.0.246.0; la tanda 185 mostró que en 20–29 % la original gana 43 %
 ap_gate = place('ap_gate', f'''
     pushad
     movsx ebx, word ptr [esp + 0x24]

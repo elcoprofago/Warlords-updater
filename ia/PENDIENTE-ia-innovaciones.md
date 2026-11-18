@@ -681,4 +681,12 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   perdidos siguen abajo y el PV no empeora, pasa al ranking (sin IA.INI). Hasta entonces queda solo en la IA de
   prueba.
 
+### AP_PCT a 20 (18/11/2026, vista-aliada 1.0.247.0)
+
+- build.py: AP_PCT = 20 (antes 30). prueba_iaataque con los bordes nuevos (19 % corta, 20 % asalta, en 0x4c4de7 y
+  0x4c50c8); prueba_muroataque, prueba_obras, prueba_iatrampas, prueba_iarazea: todo OK.
+- Medición: TAREAS 258, la misma tanda que la 185 (Tanda_hex_MU, 64 partidas). Comparar con la 185: perdidos por
+  partida de la IA de prueba (5,4), asaltos no dados (ahora solo 0–19 %), PV prueba − original (−0,83). Si los
+  perdidos no suben y el PV no empeora, la regla pasa al ranking (sin IA.INI).
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
