@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
@@ -12,8 +12,9 @@ namespace Actualizador
     static class Program
     {
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            Configuracion.BorrarViejo(args);
             try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | (SecurityProtocolType)12288; }
             catch (NotSupportedException) { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; }
             Application.EnableVisualStyles();
@@ -49,6 +50,31 @@ namespace Actualizador
             if (Width > area.Width) Width = area.Width;
             MinimumSize = new Size(480, 320);
 
+            // engranaje arriba a la derecha: actualizar el Actualizador y creditos
+            Icon cfg = null;
+            try
+            {
+                using (var r = typeof(Ventana).Assembly.GetManifestResourceStream("cfg.ico"))
+                    cfg = new Icon(r, 32, 32);
+            }
+            catch { }
+            var engranaje = new Button
+            {
+                Size = new Size(40, 40), FlatStyle = FlatStyle.Flat, BackColor = Paleta.Fondo, Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right, TabStop = false,
+                Image = cfg?.ToBitmap(), Text = cfg == null ? "⚙" : "",
+            };
+            engranaje.FlatAppearance.BorderSize = 0;
+            engranaje.Location = new Point(ClientSize.Width - engranaje.Width - 22, 6);
+            new ToolTip().SetToolTip(engranaje, "Configuración: buscar actualización");
+            engranaje.Click += (s, e) =>
+            {
+                using (var v = new VentanaConfiguracion(cfg ?? Icon)) v.ShowDialog(this);
+                term.Focus();
+            };
+            Controls.Add(engranaje);
+            engranaje.BringToFront();
+
             var captura = Environment.GetEnvironmentVariable("W3_CAPTURA");
             if (captura != null)
                 term.EsperandoEntrada += (s, e) =>
@@ -77,6 +103,19 @@ namespace Actualizador
         protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            if (Environment.GetEnvironmentVariable("W3_PRUEBA_ACTUALIZAR") == "1")
+            {
+                // prueba: buscar e instalar sin preguntar; el resultado queda en la transcripcion
+                var v = await Configuracion.Publicada();
+                term.EscribirLinea("prueba: publicada " + v + ", propia " + Configuracion.Propia, Paleta.Texto);
+                if (v != null && v > Configuracion.Propia)
+                {
+                    var error = await Configuracion.Instalar(v, null);
+                    term.EscribirLinea("prueba: " + (error ?? "instalada"), Paleta.Texto);
+                }
+                Close();
+                return;
+            }
             term.Focus();
             try
             {
