@@ -592,8 +592,12 @@ Resultado de la tanda 183 (17/11/2026, 16 partidas sobre Tanda_hex_MU_control, I
   enemigo (negro 106, amarillo 39, blanco 23, azul 22), casi todo alrededor de Red Main, desde el turno 17-27 hasta
   el final. El anillo deja abierta la casilla de costa, así que la ciudad sigue siendo alcanzable y la IA la ataca.
 - **El muro protege mucho**: las capitales amuralladas perdieron 8 de 37 asaltos (Red 6 de 27, Blue 2 de 9, White
-  0 de 1); las sin muro, 55 de 76 (Black 27 de 33, Green 22 de 25, Yellow 6 de 18). El primer asalto a una
-  amurallada llegó en los turnos 20-23; a una sin muro, en los 13-17.
+  0 de 1); las sin muro, 55 de 76 (Black 27 de 33, Green 22 de 25, Yellow 6 de 18). (Corregido: el «primer asalto en los
+  turnos 20-23 contra 13-17» que se dijo al principio era el más temprano de todas las partidas, no el típico. La
+  mediana por partida da Red 24 y Blue 27 con muro, contra 21,5 y 24,5 en las tandas de control sin muro 79, 80
+  y 166; pero Yellow, sin muro, también se atrasó, de 20,5 a 24,5. La demora no es propia del muro. Lo que sí cambia
+  es cuántas veces se las ataca: White, amurallada y casi sin costa, fue atacada en 1 de 16 partidas, contra 16 de 17
+  en el control.)
 - **Ataques desangrantes contra el muro**: negro asaltó Red Main 8 contra 1 y perdió una y otra vez (partida
   1546: 3 veces; 1547: 4; 1558: 3). Es el mismo error de los ataques perdidos (eventos 45), pero contra una ciudad
   amurallada, donde la regla de 1.0.242.0 no actúa porque solo mira campo abierto.
@@ -605,5 +609,25 @@ hace la IA es insistir contra la ciudad amurallada sin abrir brecha. Próximo pa
 un asalto perdido contra una ciudad amurallada (como los ataques en campo abierto), o (b) que ataque un bloque de
 muro como meta para abrir brecha. Antes de elegir, una tanda con el anillo cerrado del todo (un mapa donde la
 capital no tenga costa) mostraría qué hace cuando no hay ningún camino.
+
+Análisis del usuario y plan (17/11/2026):
+1. ¿La IA «ve» el muro y junta más fuerza antes de atacar? Los datos no lo muestran. La demora del primer asalto
+   también aparece en una capital sin muro, y la fuerza media de los asaltos cambia poco (Red 6,6 contra 5,7; Blue
+   6,7 contra 5,2). En el código, la IA original no conoce los muros. Lo único que los muros cambian para ella es el
+   camino (po_pf no los atraviesa): una ciudad con menos accesos queda más lejos o sin camino, y por eso se la ataca
+   menos (White).
+2. **Regla de relación de fuerzas también ante ciudades y muros** (pedido del usuario): antes de asaltar una ciudad,
+   o un bloque de muro, comparar la fuerza propia con la defensa contando el bonus del muro, y desistir si no
+   alcanza. Excepción, el **ataque de sondeo**: cuando la guarnición no está a la vista y el Combat Advisor está
+   apagado. Antes de programarla, averiguar si la IA original ve de verdad las pilas ocultas (si las ve, nunca le
+   falta información y la excepción no se usaría). Y como mínimo, no repetir un asalto perdido con el mismo
+   atacante, la misma ciudad y la misma composición (negro, 8 contra 1, perdió 3 y 4 veces seguidas).
+3. **Abrir brecha por el bloque más débil** (pedido del usuario): cada bloque guarda sus arqueros muertos (+7 del
+   registro OBRA, 24 = caído), así que la IA puede elegir el bloque vecino con menos defensores vivos e insistir en
+   ese mismo hasta derribarlo.
+4. Atacar por la costa: no parece que la IA haya buscado la zona más débil. El buscador de caminos solo encontró la
+   única casilla abierta. El efecto es bueno, pero es del camino, no de una evaluación.
+Orden propuesto: primero la 2 (evita las pérdidas que ya se ven en la tanda 183), después la 3. Las dos se prueban
+con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
