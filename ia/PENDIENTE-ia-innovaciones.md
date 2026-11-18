@@ -670,7 +670,7 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   (238 en 0–9 %, 29 en 10–19 %, 17 en 20–29 %); de 30 % para arriba asaltó siempre.
 - Perdidos por partida, prueba: 6,1 en la 184 → 5,4 (−11 %); ataques casi iguales (37,6 → 36,6). Desangrantes: 5
   contra 25 de la original. Original sin cambio (10,2 → 9,6 perdidos por partida).
-- PV prueba − original −0,83 (−2,31 a +2,66 → −2,31 a +0,65), puesto +0,20 (−0,10 a +0,50): dentro del ruido, con un
+- PV prueba − original −0,83 (−2,31 a +0,65), puesto +0,20 (−0,10 a +0,50): dentro del ruido, con un
   intervalo 2,5 veces más angosto que el de la 184. Las diferencias de ciudades (10,6 contra 13,1), ejércitos (41,6
   contra 69,6) y oro (376 contra 184) ya estaban iguales en la 184: no las causa esta regla.
 - **Calibración del %** (asaltos de la original, que no corta, ganados sobre batallas): 0–9 % → 5 %; 10–19 % → 16 %;
