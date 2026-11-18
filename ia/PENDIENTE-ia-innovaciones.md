@@ -664,4 +664,21 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   prueba 16.
 - Próximo: TAREAS 251, la misma tanda con la 1.0.246.0.
 
+### Resultado de la tanda 185 (TAREAS 251, Tanda_hex_MU, 64 partidas, revisado 18/11/2026)
+
+- 64 partidas «ok». La regla de 1.0.246.0 **actúa**: la IA de prueba dejó de dar 284 asaltos con menos de 30 %
+  (238 en 0–9 %, 29 en 10–19 %, 17 en 20–29 %); de 30 % para arriba asaltó siempre.
+- Perdidos por partida, prueba: 6,1 en la 184 → 5,4 (−11 %); ataques casi iguales (37,6 → 36,6). Desangrantes: 5
+  contra 25 de la original. Original sin cambio (10,2 → 9,6 perdidos por partida).
+- PV prueba − original −0,83 (−2,31 a +2,66 → −2,31 a +0,65), puesto +0,20 (−0,10 a +0,50): dentro del ruido, con un
+  intervalo 2,5 veces más angosto que el de la 184. Las diferencias de ciudades (10,6 contra 13,1), ejércitos (41,6
+  contra 69,6) y oro (376 contra 184) ya estaban iguales en la 184: no las causa esta regla.
+- **Calibración del %** (asaltos de la original, que no corta, ganados sobre batallas): 0–9 % → 5 %; 10–19 % → 16 %;
+  **20–29 % → 43 %**; 30–39 % → 50 %; 50–59 % → 63 %; 90–99 % → 92 %. El cálculo del juego subestima en la franja
+  media: con AP_PCT = 30 la IA de prueba se priva de asaltos de 20–29 % que la original gana casi la mitad de las
+  veces. Por debajo de 20 % sí son pérdidas casi seguras.
+- Conclusión: la regla es correcta pero el corte está alto. Próximo paso: AP_PCT = 20 y repetir esta tanda; si los
+  perdidos siguen abajo y el PV no empeora, pasa al ranking (sin IA.INI). Hasta entonces queda solo en la IA de
+  prueba.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
