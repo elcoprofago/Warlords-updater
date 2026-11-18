@@ -74,10 +74,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 16).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 17).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 16.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 17.");
                     await Pausa();
                     continue;
                 }
@@ -108,7 +108,8 @@ namespace Actualizador
                         case "13": await JugarEnRed(); pausa = true; break;
                         case "14": await Tailscale(); pausa = true; break;
                         case "15": await AccesosDirectos(); pausa = false; break;
-                        case "16":
+                        case "16": await DiagnosticoVideo(); pausa = true; break;
+                        case "17":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -174,7 +175,8 @@ namespace Actualizador
             Opcion(13, "JUGAR EN RED", "→ " + Path.Combine(herramientas, "PuenteWarlords"));
             Opcion(14, "TAILSCALE", "→ conexión de respaldo para jugar en red");
             Opcion(15, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
-            Opcion(16, "SALIR", "", Paleta.Tenue);
+            Opcion(16, "DIAGNÓSTICO DE VIDEO", "→ informe en el Escritorio, para mandar");
+            Opcion(17, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -428,6 +430,51 @@ namespace Actualizador
             await DirectPlay();
             Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = true });
             Ok("Se abrió Puente Warlords.");
+        }
+
+        // ------------------------------------------------------------------ 16 DIAGNOSTICO DE VIDEO
+        // Corre tools\diagnostico-video\DiagnosticoVideo.bat (va dentro del exe) desde una copia temporal. Solo
+        // lee: placa y driver de video, resolucion y escala, ddraw.dll y sus .ini, modos de compatibilidad. Deja
+        // diagnostico-video-<equipo>.txt en el Escritorio. Para fallas de dibujo que pasan en unas PC y no en otras.
+
+        async Task DiagnosticoVideo()
+        {
+            Titulo("DIAGNÓSTICO DE VIDEO");
+            var bat = Path.Combine(temporal, "DiagnosticoVideo.bat");
+            try
+            {
+                using (var s = typeof(Actualizador).Assembly.GetManifestResourceStream("DiagnosticoVideo.bat"))
+                using (var f = File.Create(bat))
+                    s.CopyTo(f);
+            }
+            catch (Exception ex)
+            {
+                Error("No se pudo preparar el diagnóstico: " + ex.Message);
+                return;
+            }
+            Info("Juntando datos de la PC (no cambia nada)...");
+            var psi = new ProcessStartInfo("cmd.exe", "/c \"\"" + bat + "\"\"")
+            {
+                UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true,
+            };
+            try
+            {
+                using (var p = Process.Start(psi))
+                {
+                    p.StandardInput.Close();   // la pausa final del .bat sigue sola
+                    var salida = await Task.Run(() => p.StandardOutput.ReadToEnd());
+                    await Task.Run(() => p.WaitForExit());
+                    foreach (var l in salida.Replace("\r", "").Split('\n'))
+                    {
+                        if (l.StartsWith("Presione") || l.StartsWith("Press")) continue;
+                        if (l.StartsWith("Listo.")) Ok(l);
+                        else t.EscribirLinea("  " + l, Paleta.Texto);
+                    }
+                }
+            }
+            catch (Exception ex) { Error("No se pudo correr el diagnóstico: " + ex.Message); }
+            finally { Borrar(bat); }
         }
 
         // ------------------------------------------------------------------ 14 TAILSCALE
