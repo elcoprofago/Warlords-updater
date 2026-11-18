@@ -74,10 +74,10 @@ namespace Actualizador
                 var opciones = Separar(await t.LeerLinea(Paleta.Texto));
                 if (opciones.Count == 0) continue;
 
-                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 17).ToList();
+                var invalidas = opciones.Where(o => !int.TryParse(o, out int n) || n < 1 || n > 18).ToList();
                 if (invalidas.Count > 0)
                 {
-                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 17.");
+                    Error("Opción inválida: " + string.Join(" ", invalidas) + ". Elige números del 1 al 18.");
                     await Pausa();
                     continue;
                 }
@@ -109,7 +109,8 @@ namespace Actualizador
                         case "14": await Tailscale(); pausa = true; break;
                         case "15": await AccesosDirectos(); pausa = false; break;
                         case "16": await DiagnosticoVideo(); pausa = true; break;
-                        case "17":
+                        case "17": await VideoPlacasViejas(); pausa = false; break;
+                        case "18":
                             t.EscribirLinea();
                             Info("Saliendo...");
                             await Task.Delay(400);
@@ -176,7 +177,8 @@ namespace Actualizador
             Opcion(14, "TAILSCALE", "→ conexión de respaldo para jugar en red");
             Opcion(15, "CREAR ACCESOS DIRECTOS AL ESCRITORIO", "");
             Opcion(16, "DIAGNÓSTICO DE VIDEO", "→ informe en el Escritorio, para mandar");
-            Opcion(17, "SALIR", "", Paleta.Tenue);
+            Opcion(17, "VIDEO PARA PLACAS VIEJAS", "→ si el mapa oculto se llena de tropas; se puede deshacer");
+            Opcion(18, "SALIR", "", Paleta.Tenue);
             Cierre();
         }
 
@@ -230,7 +232,8 @@ namespace Actualizador
             var conservados = await Descomprimir(archivo, juego, null, dest =>
             {
                 var rel = dest.Substring(Path.GetFullPath(juego).TrimEnd('\\').Length + 1);
-                return NoPisar(rel) || (!pisarSaves && EnCarpeta(rel, "Saves"));
+                return NoPisar(rel) || (!pisarSaves && EnCarpeta(rel, "Saves"))
+                    || (rel.Equals("ddraw.dll", StringComparison.OrdinalIgnoreCase) && CncInstalado);   // opcion 17
             });
             if (fullZip == null) Borrar(archivo);
             if (conservados == null) return;
@@ -457,6 +460,103 @@ namespace Actualizador
             {
                 Error("No se pudo enviar: " + error);
                 Aviso("Manda a mano el archivo del Escritorio a " + Diagnostico.Correo + ".");
+            }
+        }
+
+        // ------------------------------------------------------------------ 17 VIDEO PARA PLACAS VIEJAS
+        // En placas viejas o integradas (Intel HD 3000) el ddraw.dll de dxcfg deja las casillas ocultas llenas de
+        // tropas. cnc-ddraw (codigo abierto, github.com/FunkyFr3sh/cnc-ddraw) con el renderer GDI dibuja con Windows
+        // y no usa la placa. El ddraw.dll de dxcfg queda como ddraw.dll.dxcfg para volver atras; mientras exista, la
+        // opcion 6 no pisa ddraw.dll. Ver PENDIENTE-video-cnc-ddraw.md.
+
+        const string CncUrl = "https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v7.1.0.0/cnc-ddraw.zip";
+        const string CncSha = "0b13ab89a64c9918189b1dadd449ef6ed3cb3b7b19cabd96d8adbd95505bb908";
+        // fullscreen con windowed: pantalla completa sin borde. fixchilds=0: sin esto cnc-ddraw no escala (Warlords
+        // usa ventanas hijas). hook_peekmessage y adjmouse=false: sin estas dos el cursor queda corrido.
+        const string CncIni = "[ddraw]\r\nwindowed=true\r\nfullscreen=true\r\nmaintas=false\r\nrenderer=gdi\r\n"
+                            + "adjmouse=false\r\nfixchilds=0\r\nhook_peekmessage=true\r\n";
+
+        bool CncInstalado => File.Exists(Path.Combine(juego, "ddraw.dll.dxcfg"));
+
+        async Task VideoPlacasViejas()
+        {
+            while (true)
+            {
+                t.Limpiar();
+                t.EscribirLinea();
+                Encabezado("VIDEO PARA PLACAS VIEJAS", "");
+                Linea("Para PC con placa de video vieja o integrada, donde las casillas ocultas del mapa", Paleta.Texto);
+                Linea("se llenan de tropas. Cambia el programa de video del juego por cnc-ddraw (dibuja con", Paleta.Texto);
+                Linea("Windows, no con la placa). Si en tu PC el mapa se ve bien, no hace falta.", Paleta.Texto);
+                if (CncInstalado) Linea("● Estado: instalado (cnc-ddraw).", Paleta.Verde);
+                else Linea("○ Estado: el programa de video original (dxcfg).", Paleta.Tenue);
+                Opcion(1, "INSTALAR", "→ " + juego);
+                Opcion(2, "VOLVER AL ORIGINAL", "deshace la opción 1");
+                Opcion(0, "VOLVER", "", Paleta.Tenue);
+                Cierre();
+                Prompt("video");
+                var sel = (await t.LeerLinea(Paleta.Texto)).Trim();
+                if (sel == "0" || sel == "") return;
+                if (sel == "1") await InstalarCnc();
+                else if (sel == "2") QuitarCnc();
+                else Error("Opción inválida.");
+                await Pausa("ENTER para continuar");
+            }
+        }
+
+        async Task InstalarCnc()
+        {
+            Titulo("INSTALAR cnc-ddraw");
+            string dll = Path.Combine(juego, "ddraw.dll"), original = dll + ".dxcfg", ini = Path.Combine(juego, "ddraw.ini");
+            if (!CncInstalado && !File.Exists(dll))
+            {
+                Error($"No está {dll}: instala primero el juego (opción 6).");
+                return;
+            }
+            var zip = Path.Combine(temporal, "cnc-ddraw.zip");
+            if (!await Bajar(new[] { CncUrl }, zip, mostrarArchivo: "cnc-ddraw 7.1.0.0")) return;
+            try
+            {
+                if (!await Verificar(zip, CncSha)) return;
+                var nuevo = Path.Combine(temporal, "ddraw.dll");
+                using (var z = ZipFile.OpenRead(zip))
+                {
+                    var e = z.GetEntry("ddraw.dll");
+                    if (e == null) { Error("El paquete de cnc-ddraw no trae ddraw.dll."); return; }
+                    e.ExtractToFile(nuevo, true);
+                }
+                if (!CncInstalado) File.Move(dll, original);   // el de dxcfg, para volver atras
+                File.Copy(nuevo, dll, true);
+                Borrar(nuevo);
+                File.WriteAllText(ini, CncIni);
+                Ok("cnc-ddraw instalado. Abre el juego como siempre; para deshacerlo, elige 2.");
+            }
+            catch (Exception ex)
+            {
+                Error("No se pudo instalar: " + ex.Message + " (¿está abierto el juego?)");
+            }
+            finally { Borrar(zip); }
+        }
+
+        void QuitarCnc()
+        {
+            Titulo("VOLVER AL ORIGINAL");
+            string dll = Path.Combine(juego, "ddraw.dll"), original = dll + ".dxcfg", ini = Path.Combine(juego, "ddraw.ini");
+            if (!CncInstalado)
+            {
+                Info("Ya tienes el programa de video original: no hay nada que deshacer.");
+                return;
+            }
+            try
+            {
+                if (File.Exists(dll)) File.Delete(dll);
+                File.Move(original, dll);
+                if (File.Exists(ini)) File.Delete(ini);
+                Ok("Listo: el juego vuelve a usar el programa de video original (dxcfg).");
+            }
+            catch (Exception ex)
+            {
+                Error("No se pudo deshacer: " + ex.Message + " (¿está abierto el juego?)");
             }
         }
 

@@ -55,7 +55,10 @@ La opción 14 (TAILSCALE) es la conexión de respaldo del Puente: si falta, baja
 (`https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe`), corre `tailscale up` y abre en el navegador el
 enlace de inicio de sesión, pide el enlace con que el dueño del servidor comparte su PC y espera a que el servidor
 conteste en el puerto 47800 de alguna dirección 100.64.0.0/10 del `servidor.txt` del Puente instalado. La 15 crea
-los accesos directos y la 16 sale.
+los accesos directos, la 16 hace el diagnóstico de video (solo lee) y la 17 (VIDEO PARA PLACAS VIEJAS) cambia
+`ddraw.dll` por el de cnc-ddraw 7.1.0.0 (bajado de GitHub y verificado por SHA-256) con el `ddraw.ini` probado; el
+original queda como `ddraw.dll.dxcfg` y mientras exista la opción 6 no pisa `ddraw.dll`. «Volver al original» lo
+deshace. La 18 sale.
 
 **Publicar un parche**
 

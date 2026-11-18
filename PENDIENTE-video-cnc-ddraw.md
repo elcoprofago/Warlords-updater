@@ -31,7 +31,14 @@
   cursor). La pantalla completa no se puede juzgar ahí: el juego se abre en el segundo monitor, que es 4:3. El banco
   quedó con su `ddraw.dll` original.
 
-## Próximo paso
+## Opción 17 del Actualizador (1.0.22.0, 18/11/2026)
+
+«VIDEO PARA PLACAS VIEJAS»: 1 instala (baja cnc-ddraw 7.1.0.0 de GitHub, verifica su SHA-256, renombra el
+`ddraw.dll` de dxcfg a `ddraw.dll.dxcfg`, pone el de cnc-ddraw y escribe el `ddraw.ini` de arriba); 2 vuelve al
+original. Mientras exista `ddraw.dll.dxcfg`, la opción 6 no pisa `ddraw.dll`. Es a elección: no se instala sola.
+Probado en una carpeta de prueba: instalar, opción 6 sin pisarlo, deshacer y opción 6 normal.
+
+## Próximo paso (anterior; el 2 quedó hecho con la opción 17)
 
 1. El informe de Nico (TAREAS 252): si su placa también es vieja o integrada, se confirma el patrón.
 2. Llevarlo a los jugadores sin tocar las PC que andan bien: una opción del Actualizador, o del parche, que instale
