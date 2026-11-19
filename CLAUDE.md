@@ -49,4 +49,5 @@ publicó como 1.0.268.0. Pedido del usuario: «Sí, agregá la regla».
   las unidades terrestres del dueño y sus aliados (por la puerta) y **todos los voladores**.
 - **MURO:** el terreno del escenario que no atraviesa nadie, ni por aire (terreno «Walls», clase 5; lo tiene Hexagon
   alrededor de los núcleos y en el borde, y quizás otros escenarios editados). Igual que las montañas altas.
+  Una casilla de muro con camino no es muro: es camino, y se pasa.
 - No mezclarlos: en notas, código y chat, «muralla» es lo que se construye y «muro» lo del escenario.

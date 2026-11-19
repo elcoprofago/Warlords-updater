@@ -115,8 +115,8 @@ predeterminadas.»*
         escenarios editados, quizás: la regla vale para cualquier mapa.
         Para 3.b, `pasos.vuelo()`: dónde entra un volador. Desde la reforma de otra sesión (build.py, «Montañas altas:
         tampoco por aire», 19/11/2026) ni el muro del escenario (clase 5) ni la montaña («Mountains», clase 4) se
-        sobrevuelan; el bosque profundo sí. La montaña con camino o puente se pasa; el muro, nunca, ni
-        con camino (MURO: no lo traspasa nadie; definición del usuario, 19/11/2026). Medido: Kor,
+        sobrevuelan; el bosque profundo sí. Con camino o puente, las dos se pasan: una casilla de muro
+        con camino no es muro, es camino (usuario, 19/11/2026; así lo hace el juego, 0x4a4f90). Medido: Kor,
         2712 casillas cerradas al vuelo (todas sus montañas); Hexagon, 5162 (su muro). Así, un paso entre montañas
         frena también a los voladores, salvo que lo rodeen por otro lado.
         Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
