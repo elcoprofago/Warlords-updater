@@ -11933,24 +11933,21 @@ opi_r:
 # dia (pedido del usuario) el dibujo sale de picts\star.pcx: se recorta a lo dibujado (fondo = 0, 32, 243, 244), se
 # reduce a OV_SW x OV_SW y cada celda cubierta al menos un 40% toma el color de paleta mas frecuente en ella.
 # ov_w: ancho de la cadena edx en la fuente del estilo actual (0x4e5930); deja eax = ancho y preserva lo demas.
-OV_SW, OV_MR = 7, 3
+OV_SW, OV_MR = 11, 3
 OV_TG = 3   # separacion extra entre el titulo y los renglones (pedido del usuario del 19/11/2026)
+# 1.0.265.0 (pedido del usuario del 19/11/2026): la estrella es la del juego, la rosa de cuatro puntas de la esfera
+# de mana (PICTS\PICTS.PCX, esfera grande en (291,31)): se toman tal cual sus pixeles de colores 102 a 106 en el
+# cuadro de 11x11 con esquina en (294,36), sin reducir ni recolorear.
 def _ov_star_asm():
     from PIL import Image as _I
-    im = _I.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts', 'star.pcx'))
-    px, (W, H) = im.load(), im.size
-    fg = lambda i: i not in (0, 32, 243, 244)
-    pts = [(x, y) for y in range(H) for x in range(W) if fg(px[x, y])]
-    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts) + 1
-    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts) + 1
+    im = _I.open(W3 + r'\PICTS\PICTS.PCX')
+    px = im.load()
     por_color = {}
     for j in range(OV_SW):
         for i in range(OV_SW):
-            c = [px[x, y] for x in range(x0 + (x1 - x0) * i // OV_SW, x0 + (x1 - x0) * (i + 1) // OV_SW)
-                 for y in range(y0 + (y1 - y0) * j // OV_SW, y0 + (y1 - y0) * (j + 1) // OV_SW)]
-            v = [k for k in c if fg(k)]
-            if c and len(v) >= 0.4 * len(c):
-                por_color.setdefault(max(sorted(set(v)), key=v.count), []).append((i, j))
+            k = px[294 + i, 36 + j]
+            if 102 <= k <= 106 and (4 <= i <= 6 or 4 <= j <= 6):   # sin el borde de la esfera
+                por_color.setdefault(k, []).append((i, j))
     out = ['    pushad', '    mov ebx, eax', '    mov ebp, edx', '    cld']
     for col, cel in sorted(por_color.items()):
         out += [f'    mov al, {col}', f'    mov edi, {OV_TAB:#x}', '    mov ecx, 256', '    rep stosb']
@@ -12133,7 +12130,7 @@ od_star:
     jnc od_ns
     mov eax, ebx
     sub eax, edx
-    lea edx, [ebp + 2]
+    lea edx, [ebp + {(11 - OV_SW) // 2}]
     call {ov_star:#x}
 od_ns:
     add esp, 4
