@@ -10098,6 +10098,15 @@ RBE_EVPROP = 27  # evento (paso 5.2): un puente queda como candidato de la meta 
 RBE_ARMIES, RBE_GOLD, RBE_HEAD, RBE_ENEMY, RBE_RAZE, RBE_GAIN, RBE_OK = range(1, 8)
 RBE_LAST = place_data('rbe_last', bytes(4))   # turno * 16 + jugador de la última pasada que anotó el evento 26
 EVF = EV_LOC + 0x20
+# La IA levanta MURALLA en un paso clave (punto 4 de ia\PENDIENTE-ia-muros.md, 19/11/2026). mw_ev y mw_go van después
+# de mp_pick (usan sus tablas); ai_brrebev y ai_brreb los llaman por este vector: [mw_vec] = mw_go, [mw_vec + 4] = mw_ev.
+# Código de la meta 9 para «ir a levantar MURALLA»: MPW_CODE (más allá de los puentes, BR_CODE + 160 * 128 = 0x7000).
+MW_VEC = place_data('mw_vec', bytes(8))
+MPW_CODE = 0x7000
+MPW_VAL = BRDV_VAL      # tan urgente como derribar un puente para defender: solo lo propone una pila con «build»
+MPW_DMAX = 30           # la pila no va más lejos que esto (distancia de rey) a levantar el bloque
+MPW_EVT, MPW_EVNO = 52, 53
+MPW_NOB, MPW_NOGOLD = 1, 2
 ai_brrebev = place('ai_brrebev', f'''
     pushad
     sub esp, {EV_LOC:#x}
@@ -10335,6 +10344,19 @@ rbe_end:
     popad
     jmp 0x41e563
 rbe_nodef:
+    push dword ptr [esp + {EV_SY:#x}]
+    push dword ptr [esp + {EV_SX + 4:#x}]
+    call dword ptr [{MW_VEC + 4:#x}]
+    add esp, 8
+    test eax, eax
+    jl rbe_nomw
+    mov word ptr [0x5032e6], ax
+    mov word ptr [0x5032e8], dx
+    mov word ptr [0x5032ea], {MPW_VAL}
+    add esp, {EV_LOC:#x}
+    popad
+    jmp 0x41e563
+rbe_nomw:
     movsx eax, word ptr [esp + {EVF + 0x1c:#x}]
     cmp eax, {BR_CODE:#x}
     jl rbe_city
@@ -10385,6 +10407,10 @@ rbe_city:
 # de volver a mirar que siga derribado, vacío y que el oro alcance. Pausa 0x4275b0 y fin de la pila (0x40d230), como
 # el original. Devuelve 0 siempre, como el original.
 ai_brreb = place('ai_brreb', f'''
+    cmp word ptr [esp + 4], {MPW_CODE:#x}
+    jl arb_nomw
+    jmp dword ptr [{MW_VEC:#x}]
+arb_nomw:
     cmp word ptr [esp + 4], {BR_CODE:#x}
     jge arb_bridge
     sub esp, 4
@@ -20669,6 +20695,8 @@ tr_me = place('tr_me', f'''
     jmp {me_set:#x}
 ''')
 # Recepción del camino (antes que tr_recv; paquete como el de la trampa: +6 máquina, +0xc bando, x, y).
+# Una obra de un bando de la computadora se acepta venga de la PC que venga solo si es MURALLA (punto 4 de
+# ia\PENDIENTE-ia-muros.md: mw_go la manda desde la PC que mueve a la IA); las demás obras de la IA, no (bv_ai).
 bd_recv = place('bd_recv', f'''
     cmp eax, {BD_PKT + 8:#x}
     jne {tr_recv:#x}
@@ -20680,11 +20708,12 @@ bd_recv = place('bd_recv', f'''
     cmp byte ptr [eax + {SIDE_ON:#x}], 0
     je bv_x
     cmp word ptr [eax + {SIDE_HUMAN:#x}], -1
-    jne bv_x
+    jne bv_ai
     movzx ecx, byte ptr [eax + {SIDE_MACHINE:#x}]
     movsx edx, word ptr [esi + 6]
     cmp ecx, edx
     jne bv_x
+bv_any:
     movzx ebp, word ptr [esi + 0x12]
     movsx edi, word ptr [esi + 0x10]
     movsx esi, word ptr [esi + 0xe]
@@ -20847,6 +20876,12 @@ bv_dok:
     call {ob_rebuild:#x}
     call {ob_fogme:#x}
     jmp bv_redo
+bv_ai:
+    mov ax, word ptr [esi + 0x12]
+    and ax, 0x40ff
+    cmp ax, {0x4000 | OB_MURO:#x}
+    je bv_any
+    jmp bv_x
 bv_xp:
     pop ecx
 bv_x:
@@ -22810,6 +22845,299 @@ pk_out:
 # Para las pruebas (ia\prueba_mp_scan.py): 'MPSYM' + direcciones.
 place_data('mp_sym', b'MPSYM\0\0\0' + struct.pack('<16I', mp_scan, mp_pick, mp_grid, mp_sep, MP_BSS, MP_G, MP_C,
                                                    MP_PAS, MP_TR, MP_PC, MP_ORD, MP_VAR, MP_OBJ, MP_E, MP_LAB, MP_K))
+
+# ---- Punto 4 de ia\PENDIENTE-ia-muros.md (19/11/2026): la IA va al paso de mp_obj[p] y levanta la MURALLA.
+# Va por la meta 9 del juego, como los puentes (ai_brrebev / ai_brreb): mw_ev propone «ir a levantar MURALLA»
+# (código MPW_CODE, valor MPW_VAL) a una pila con «build»; mw_go la lleva al primer bloque libre del tramo y, parada
+# ahí, manda la misma orden de red que el humano (BD_PKT con 0x4000 | dirección << 8 | OB_MURO), que bd_recv cobra y
+# pone en todas las PC. Un bloque por pila y por turno; mp_pick vuelve a elegir al empezar cada turno.
+# Por ahora solo los colores en prueba de una tanda (IA.INI, IA_MODE = 1): todavía no pasó por el banco (CLAUDE.md).
+MW_PW = place_data('mw_pw', bytes(4))
+# mw_hasb(p, x, y) cdecl -> eax = 1 si algún ejército vivo de p en (x, y) tiene «build». Preserva el resto.
+mw_hasb = place('mw_hasb', f'''
+    push ecx
+    push edx
+    push esi
+    mov esi, 1
+mh_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge mh_no
+    imul ecx, esi, 0x1c
+    test byte ptr [ecx + 0x54fe63], 0x40
+    jz mh_next
+    mov ax, word ptr [esp + 0x14]
+    cmp word ptr [ecx + 0x54fe52], ax
+    jne mh_next
+    mov ax, word ptr [esp + 0x18]
+    cmp word ptr [ecx + 0x54fe54], ax
+    jne mh_next
+    movzx eax, word ptr [ecx + 0x54fe5e]
+    mov edx, eax
+    and edx, 0x1f
+    cmp edx, 15
+    ja mh_next
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, dword ptr [esp + 0x10]
+    jne mh_next
+    shl eax, 4
+    add eax, edx
+    imul eax, eax, 0xfc
+    add eax, 0x53c410
+    mov edx, {buildstr:#x}
+    call {recbon:#x}
+    test eax, eax
+    jnz mh_si
+mh_next:
+    inc esi
+    jmp mh_loop
+mh_no:
+    xor eax, eax
+    jmp mh_out
+mh_si:
+    mov eax, 1
+mh_out:
+    pop esi
+    pop edx
+    pop ecx
+    ret
+''')
+# mw_tile (ebx = jugador): el primer bloque del tramo de mp_obj[p] donde todavía se puede levantar MURALLA (ob_okt).
+# -> eax = x (-1 si ninguno: sin objetivo o tramo ya cerrado), edx = y, ecx = BD_PW (tramo horizontal: dirección E;
+# vertical: N; ob_wmask le suma la opuesta y une los bloques vecinos). Preserva el resto.
+mw_tile = place('mw_tile', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov eax, dword ptr [ebx*4 + {MP_OBJ:#x}]
+    cmp eax, -1
+    je mwt_no
+    shr eax, 16
+    cmp eax, dword ptr [{MP_NT:#x}]
+    jae mwt_no
+    lea edx, [eax*8 + {MP_TR:#x}]
+    movzx esi, word ptr [edx]
+    movzx ebp, byte ptr [edx + 2]
+    mov edi, {MP_P}
+    mov ebx, {0x4000 | (3 << 8) | OB_MURO:#x}
+    cmp byte ptr [edx + 3], 0
+    je mwt_lp
+    mov edi, 1
+    mov ebx, {0x4000 | (1 << 8) | OB_MURO:#x}
+mwt_lp:
+    test ebp, ebp
+    jz mwt_no
+    mov eax, esi
+    call {mp_xy:#x}
+    mov ecx, {OB_MURO}
+    push eax
+    call {ob_okt:#x}
+    test eax, eax
+    pop eax
+    jnz mwt_si
+    add esi, edi
+    dec ebp
+    jmp mwt_lp
+mwt_no:
+    mov eax, -1
+    jmp mwt_out
+mwt_si:
+    mov ecx, ebx
+mwt_out:
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+# mw_ev(sx, sy) cdecl, desde ai_brrebev (meta 9, jugador [0x4fb0ec], pila en sx, sy): eax = MPW_CODE si la pila tiene
+# «build», el bando es de prueba en una tanda, hay bloque libre en el tramo de mp_obj[p], el oro alcanza para
+# AW_DIV x el precio del bloque y el bloque está a MPW_DMAX o menos (distancia de rey); edx = esa distancia (mínimo 1).
+# Si no, eax = -1. Preserva el resto.
+mw_ev = place('mw_ev', f'''
+    push ebx
+    push ecx
+    push esi
+    push edi
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae mwe_no
+    cmp byte ptr [{IA_ON:#x}], 0
+    je mwe_no
+    cmp byte ptr [ebx + {IA_MODE:#x}], 1
+    jne mwe_no
+    push dword ptr [esp + 0x18]
+    push dword ptr [esp + 0x18]
+    push ebx
+    call {mw_hasb:#x}
+    add esp, 0xc
+    test eax, eax
+    jz mwe_no
+    call {mw_tile:#x}
+    cmp eax, -1
+    je mwe_no
+    mov esi, eax
+    mov edi, edx
+    mov eax, {OB_FRAC}
+    mov ecx, ebx
+    call {bd_price:#x}
+    imul eax, eax, {AW_DIV}
+    imul ecx, ebx, {SIDE:#x}
+    cmp eax, dword ptr [ecx + 0x536c14]
+    jg mwe_no
+    mov eax, esi
+    sub eax, dword ptr [esp + 0x14]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    mov ecx, eax
+    mov eax, edi
+    sub eax, dword ptr [esp + 0x18]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    cmp eax, ecx
+    jge mwe_d
+    mov eax, ecx
+mwe_d:
+    cmp eax, {MPW_DMAX}
+    jg mwe_no
+    test eax, eax
+    jnz mwe_c
+    inc eax
+mwe_c:
+    mov edx, eax
+    mov eax, {MPW_CODE}
+    jmp mwe_out
+mwe_no:
+    mov eax, -1
+    xor edx, edx
+mwe_out:
+    pop edi
+    pop esi
+    pop ecx
+    pop ebx
+    ret
+''')
+# mw_go(código): la meta 9 con MPW_CODE (desde ai_brreb). Va al bloque de mw_tile (0x4973f0(7, 0, x, y) y
+# 0x40d2b0(x, y), como ai_brreb va a la cabecera de un puente) y, si el líder llega vivo, vuelve a mirar «build» y oro
+# y manda BD_PKT (bando, x, y, BD_PW): evento 52 (x, y, n = paso). Si no puede, evento 53 (n = MPW_NOB sin «build»,
+# MPW_NOGOLD sin oro). Pausa 0x4275b0 y fin de la pila (0x40d230), como ai_brreb. Devuelve 0, como el original.
+mw_go = place('mw_go', f'''
+    push ebx
+    push esi
+    push edi
+    push ebp
+    mov eax, dword ptr [0x5020d4]
+    movsx edi, word ptr [eax + 0xc]
+    imul edi, edi, 0x1c
+    movsx ebx, word ptr [0x4fb0ec]
+    cmp ebx, 8
+    jae mwg_clr
+    call {mw_tile:#x}
+    cmp eax, -1
+    je mwg_clr
+    mov esi, eax
+    mov ebp, edx
+    mov dword ptr [{MW_PW:#x}], ecx
+    cmp word ptr [edi + 0x54fe52], si
+    jne mwg_move
+    cmp word ptr [edi + 0x54fe54], bp
+    je mwg_here
+mwg_move:
+    push ebp
+    push esi
+    push 0
+    push 7
+    call 0x4973f0
+    add esp, 0x10
+    mov eax, dword ptr [0x5020d4]
+    mov word ptr [eax + 6], 9
+    mov word ptr [eax + 8], 0
+    push ebp
+    push esi
+    call 0x40d2b0
+    add esp, 8
+    test ax, ax
+    jz mwg_ret0
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz mwg_ret0
+    cmp word ptr [edi + 0x54fe52], si
+    jne mwg_ret0
+    cmp word ptr [edi + 0x54fe54], bp
+    jne mwg_ret0
+mwg_here:
+    push ebp
+    push esi
+    push ebx
+    call {mw_hasb:#x}
+    add esp, 0xc
+    mov ecx, {MPW_NOB}
+    test eax, eax
+    jz mwg_no
+    mov eax, {OB_FRAC}
+    mov ecx, ebx
+    call {bd_price:#x}
+    imul eax, eax, {AW_DIV}
+    imul ecx, ebx, {SIDE:#x}
+    cmp eax, dword ptr [ecx + 0x536c14]
+    mov ecx, {MPW_NOGOLD}
+    jg mwg_no
+    sub esp, 8
+    mov word ptr [esp], bx
+    mov word ptr [esp + 2], si
+    mov word ptr [esp + 4], bp
+    mov eax, dword ptr [{MW_PW:#x}]
+    mov word ptr [esp + 6], ax
+    mov eax, esp
+    push 8
+    push eax
+    push {BD_PKT:#x}
+    call 0x4dd3b0
+    add esp, 0x14
+    movzx eax, byte ptr [ebx*4 + {MP_OBJ:#x}]
+    push eax
+    push ebp
+    push esi
+    push ebx
+    push {MPW_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+    push 0x7d0
+    call 0x4275b0
+    add esp, 4
+    jmp mwg_end
+mwg_no:
+    push ecx
+    push ebp
+    push esi
+    push ebx
+    push {MPW_EVNO}
+    call {ia_evt:#x}
+    add esp, 0x14
+mwg_end:
+    mov eax, dword ptr [0x5020d4]
+    xor ecx, ecx
+    mov word ptr [eax + 6], cx
+    mov word ptr [eax + 8], cx
+    call 0x40d230
+    jmp mwg_ret0
+mwg_clr:
+    mov eax, dword ptr [0x5020d4]
+    xor ecx, ecx
+    mov word ptr [eax + 6], cx
+    mov word ptr [eax + 8], cx
+mwg_ret0:
+    xor eax, eax
+    pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    ret
+''')
+caves['mw_vec'] = struct.pack('<II', mw_go, mw_ev) + caves['mw_vec'][8:]   # conserva el relleno de alineación
 
 # ia_turn(p) cdecl, en lugar de turn en 0x4223ad: registra y sigue con turn. Preserva lo que turn recibe.
 ia_turn = place('ia_turn', f'''
@@ -26371,12 +26699,35 @@ def cercano(rgb, _memo={}):
 import io
 # Cuadros: 0 normal, 1 apretado, 2 deshabilitado, 3 puntero encima (el juego lo pone al entrar el puntero y lo
 # saca al salir, 0x4d8a5f / 0x4d8b34), como en BUTT_STD: 1 y 3 con aro naranja (vista-aliada 1.0.273.0).
-def hoja_boton(archivo, W, H, escalar=False):
+def hoja_boton(archivo, W, H, escalar=False, fondo=None):
+    # fondo = recorte W x H del fondo del diálogo donde va el botón: entonces el ícono se achica 4 píxeles y el aro va
+    # POR FUERA, en una franja de 2 píxeles que en los cuadros 0 y 2 lleva el fondo (así igual la tapa el redibujo).
     # Los cuatro cuadros (normal, apretado, deshabilitado, puntero encima) tienen EXACTAMENTE la misma zona opaca: el
     # juego redibuja un cuadro encima del otro y lo transparente (11) no tapa nada, así que un aro pintado afuera del
     # ícono quedaba pegado al volver al cuadro normal (1.0.271.0 y anteriores). El aro naranja va ahora por dentro: los
     # 2 píxeles del borde de la zona opaca; apretado = aro + ícono corrido 1 píxel (recortado a la misma zona).
     icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGBA')
+    if fondo is not None:
+        icono = icono.resize((W - 6, H - 6), Image.LANCZOS)
+        hoja = Image.new('P', (W, 4 * H), 11)
+        hoja.putpalette(butt.getpalette())
+        px = {(x + 3, y + 3): icono.getpixel((x, y))[:3] for y in range(icono.height) for x in range(icono.width)
+              if icono.getpixel((x, y))[3] >= 128}
+        cerca = lambda z: {(x + i, y + j) for x, y in z for i in (-1, 0, 1) for j in (-1, 0, 1)}
+        f1 = cerca(set(px)) - set(px)
+        f2 = cerca(set(px) | f1) - set(px) - f1
+        for fila in range(4):
+            y0 = fila * H
+            for (x, y) in px:
+                r, g, b_ = (px.get((x - 1, y - 1)) or px[(x, y)]) if fila == 1 else px[(x, y)]
+                if fila == 2: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
+                hoja.putpixel((x, y0 + y), cercano((r, g, b_)))
+            for banda, hover, apretado in ((f1, 71, 70), (f2, 72, 71)):
+                for (x, y) in banda:
+                    c = fondo.getpixel((x, y)) if fila in (0, 2) else (hover if fila == 3 else apretado)
+                    hoja.putpixel((x, y0 + y), c)
+        pcx = io.BytesIO(); hoja.save(pcx, 'PCX')
+        return pcx.getvalue()
     if escalar: icono = icono.resize((W - 2, H - 2), Image.LANCZOS)
     assert icono.size == (W - 2, H - 2)
     hoja = Image.new('P', (W, 4 * H), 11)
@@ -26414,7 +26765,8 @@ table_add(res, 2, SORTEO_FILE, bytes(butt_std))
 # de DarkCompare (comparador_icono.png: el de 256x256 de su assets\strella.ico, reducido a 62x62 y aquí a DC_W - 2). Edit Side (fondo
 # DLG_BIG.PCX) tiene la misma paleta que BUTT_STD.
 assert Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768] == pal
-DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H, escalar=True)
+DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H, escalar=True,
+                    fondo=Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').crop((DC_X, DC_Y, DC_X + DC_W, DC_Y + DC_H)))
 struct.pack_into('<I', butt_std, 0, DC_FILE)
 setstr(butt_std, 4, 32, 'darkcomp')
 table_add(res, 2, DC_FILE, bytes(butt_std))

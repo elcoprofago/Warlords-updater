@@ -119,7 +119,9 @@ EVENTOS = {1: 'puente derribado (criterio propio)', 2: 'convoy', 3: 'grupo parti
            46: 'ataque a un bloque de muro (n = arqueros muertos + 100 si cayó)',
            47: 'pilas junto a un muro enemigo (n = casillas vecinas ocupadas)',
            48: 'asalto a ciudad evaluado (n = % de victoria + 1000 si no se dio)',
-           51: 'paso que la IA decide cerrar con MURALLA (x, y primer bloque del tramo; n = amenaza * 100 + bloques)'}
+           51: 'paso que la IA decide cerrar con MURALLA (x, y primer bloque del tramo; n = amenaza * 100 + bloques)',
+           52: 'la IA levanta un bloque de MURALLA en el paso elegido (x, y del bloque; n = paso)',
+           53: 'la IA llega al paso y no puede levantar la MURALLA (n = 1 sin build, 2 sin oro)'}
 POZOS_EV = (18, 19, 20)   # n = muertos + 100 si el que cayó ya lo veía (error evitable)
 
 ESQUEMA = f'''
