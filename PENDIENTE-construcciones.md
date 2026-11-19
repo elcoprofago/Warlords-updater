@@ -373,7 +373,7 @@ ni otra obra; el faro, además, con agua en alguna de las 4 vecinas). Destinos n
 - 8 unidades: ya es el tope de una casilla; no hace falta nada.
 - Dibujo: cuadro propio en la hoja del parche (torre a partir de una ruina; faro propio).
 
-Hecha en vista-aliada 1.0.148.0 (9/11/2026): tipos 4 torre y 5 faro (tope 64 obras), precio 50 % de fundar una
+Hecha en vista-aliada 1.0.148.0 (9/11/2026): tipos 4 torre y 5 faro (tope 64 obras; 512 desde 1.0.263.0, 19/11/2026: .SAV con marca OBR2, ob_map de 2 bytes por casilla, los .SAV OBRA viejos se cargan), precio 50 % de fundar una
 ciudad (a confirmar, TAREAS 137); se construye en la casilla del líder y no sobre un camino. Prueba: `prueba_obras.py`.
 
 **Etapa B: murallas.** Muro de piedra = intransitable en el grafo de pasos salvo con camino; camino sobre muro =

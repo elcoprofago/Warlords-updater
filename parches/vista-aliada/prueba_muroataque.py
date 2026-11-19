@@ -5,7 +5,7 @@ import os, sys, capstone
 _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_caminos.py'), encoding='utf-8').read()
 exec(_src[:_src.index("print('-- menú")])
 
-_OB = b'OBRA' + bytes(4 + 64 * 8)
+_OB = b'OBR2' + bytes(4 + 512 * 8)
 assert img.count(_OB) == 1
 OB_N = BASE + img.index(_OB) + 4
 OB_TAB = OB_N + 4
@@ -22,8 +22,8 @@ WL_WAR = llamadas(WV_STEP, 2)[1]   # la primera es wl_cut (1.0.183.0)
 assert img[WV_PRE - BASE] == 0x60 and img[WV_PRE - BASE + 1:WV_PRE - BASE + 3] == b'\xc7\x05'
 WV_REC = d32(WV_PRE + 3); WV_N = WV_REC + 4; WV_IDS = WV_REC + 8
 OB_AT = llamadas(WL_WAR, 1)[0]
-_k = img.index(bytes.fromhex('0fb682'), OB_AT - BASE); assert _k < OB_AT - BASE + 0x30
-OB_MAP = d32(BASE + _k + 3)
+_k = img.index(bytes.fromhex('0fb70455'), OB_AT - BASE)   # ob_map de palabras desde 1.0.261.0; assert _k < OB_AT - BASE + 0x30
+OB_MAP = d32(BASE + _k + 4)
 IA_BAT, H470, OB_DEL, H4F20, OB_FOGME, H1290, REDRAW = llamadas(WV_POST, 7)
 assert (H470, H4F20, H1290) == (0x46c470, 0x4a4f20, 0x441290)
 
@@ -31,7 +31,7 @@ def juego(dueño=2, muertos=0, tipo=7, guerra=True, x=5, y=7, diplo=True):
     g = Juego(); mu = g.mu
     mu.mem_write(OB_N, struct.pack('<I', 1))
     mu.mem_write(OB_TAB, struct.pack('<hhBBBB', x, y, tipo, 3, dueño, muertos))
-    mu.mem_write(OB_MAP + (y << 6) + x, bytes([1]))
+    mu.mem_write(OB_MAP + 2 * ((y << 6) + x), struct.pack('<H', 1))
     for a in range(8):
         for b in range(8):
             mu.mem_write(DIPLO + a * 56 + b, bytes([0 if a == b else 2 if guerra else 1]))
@@ -76,10 +76,10 @@ print('-- wl_cut: muro en diagonal (murallas01_9.SAV, BUILD01_8.SAV, 10/11/2026)
 def diag(p, muros=((6, 6), (5, 7)), dueño=2, orig=(5, 6), dest=(6, 7)):
     g = juego(dueño=dueño); mu = g.mu
     mu.mem_write(OB_N, struct.pack('<I', len(muros)))
-    mu.mem_write(OB_MAP, bytes(64 * 64))
+    mu.mem_write(OB_MAP, bytes(2 * 64 * 64))
     for i, (x, y) in enumerate(muros):
         mu.mem_write(OB_TAB + 8 * i, struct.pack('<hhBBBB', x, y, 7, 3, dueño, 0))
-        mu.mem_write(OB_MAP + (y << 6) + x, bytes([i + 1]))
+        mu.mem_write(OB_MAP + 2 * ((y << 6) + x), struct.pack('<H', i + 1))
     mu.mem_write(p * 0x4f0 + 0x56ea94, struct.pack('<h', 40))
     mu.mem_write(40 * 0x1c + 0x54fe52, struct.pack('<hh', *orig))
     mu.mem_write(W, struct.pack('<H', 0))
@@ -389,10 +389,10 @@ AB_CUT = next(int(i.op_str, 16) for i in _ins if i.mnemonic == 'jmp' and i.op_st
 CX, CY, GP = 9, 9, 40
 def brecha(muros=((5, 7, 0),), grupo=(6, 8), pct=10, modo=1, guerra=True, dueño=2, p=5, huecos=0):
     g = juego(dueño=dueño, guerra=guerra); mu = g.mu
-    mu.mem_write(OB_N, struct.pack('<I', len(muros))); mu.mem_write(OB_MAP, bytes(64 * 64))
+    mu.mem_write(OB_N, struct.pack('<I', len(muros))); mu.mem_write(OB_MAP, bytes(2 * 64 * 64))
     for i, (x, y, m) in enumerate(muros):
         mu.mem_write(OB_TAB + 8 * i, struct.pack('<hhBBBB', x, y, 7, 3, dueño, m))
-        mu.mem_write(OB_MAP + (y << 6) + x, bytes([i + 1]))
+        mu.mem_write(OB_MAP + 2 * ((y << 6) + x), struct.pack('<H', i + 1))
     mu.mem_write(IA_ON, b'\1'); mu.mem_write(IA_MODE + p, bytes([modo]))
     mu.mem_write(0x536c12 + p * 0x1f8, struct.pack('<h', 2))
     g_ = p * 0x4f0 + 0x56ea94

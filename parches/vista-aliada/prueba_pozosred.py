@@ -73,7 +73,7 @@ def tabla(k):   # k registros de juguete dentro del mapa de 40 x 30
     return b''.join(struct.pack('<hhBBBB', i % 40, i // 40 + 1, i % 4, i & 3, 1 << (i % 8), i % 8) for i in range(k))
 
 # ---------------------------------------------------------------- envío
-OB_TAB = BASE + img.index(b'OBRA' + bytes(516)) + 8   # el bloque 10 (obras) sale detrás, vacío
+OB_TAB = BASE + img.index(b'OBR2' + bytes(4 + 512 * 8)) + 8   # el bloque 10 (obras) sale detrás, vacío
 def envio(n, k=None):
     g = Juego()
     enviados = []

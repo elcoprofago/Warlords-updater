@@ -22,7 +22,7 @@ def jmp_target(va):
     assert img[va - BASE] == 0xe9
     return va + 5 + struct.unpack_from('<i', img, va - BASE + 1)[0]
 DN_PRE, DN_POST, DN_MINI = jmp_target(0x459790), jmp_target(0x45aa6e), jmp_target(0x4114ef)
-_OB = b'OBRA' + bytes(4 + 64 * 8)
+_OB = b'OBR2' + bytes(4 + 512 * 8)
 assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4; OB_TAB = OB_N + 4
 assert img.count(b'FARO' + bytes(20)) == 1, 'falta fr_var'

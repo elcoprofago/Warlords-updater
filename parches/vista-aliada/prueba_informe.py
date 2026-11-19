@@ -4,7 +4,7 @@ import os, sys
 _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_caminos.py'), encoding='utf-8').read()
 exec(_src[:_src.index("print('-- menú")])
 
-_OB = b'OBRA' + bytes(4 + 64 * 8)
+_OB = b'OBR2' + bytes(4 + 512 * 8)
 assert img.count(_OB) == 1
 OB_N = BASE + img.index(_OB) + 4
 OB_TAB = OB_N + 4
@@ -16,15 +16,15 @@ def llamadas(va, n):
         else: k += 1
     return r
 OB_AT = llamadas(UI, 1)[0]
-_k = img.index(bytes.fromhex('0fb682'), OB_AT - BASE); assert _k < OB_AT - BASE + 0x30
-OB_MAP = d32(BASE + _k + 3)
+_k = img.index(bytes.fromhex('0fb70455'), OB_AT - BASE)   # ob_map de palabras desde 1.0.261.0; assert _k < OB_AT - BASE + 0x30
+OB_MAP = d32(BASE + _k + 4)
 
 def informe(obra=4, fuerza=1, base=1, heroe=False, x=5, y=7):
     g = Juego(); mu = g.mu
     if obra:
         mu.mem_write(OB_N, struct.pack('<I', 1))
         mu.mem_write(OB_TAB, struct.pack('<hhBBBB', x, y, obra, 0, 2, 0))
-        mu.mem_write(OB_MAP + (y << 6) + x, bytes([1]))
+        mu.mem_write(OB_MAP + 2 * ((y << 6) + x), struct.pack('<H', 1))
     A = 3
     mu.mem_write(0x54fe52 + A * 0x1c, struct.pack('<hh', x, y))
     mu.mem_write(0x54fe5e + A * 0x1c, struct.pack('<H', (fuerza << 9) | (0x10 if heroe else 0)))

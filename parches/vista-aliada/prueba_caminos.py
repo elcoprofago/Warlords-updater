@@ -91,12 +91,12 @@ class Juego:
 print('-- menú: bd_check desde br_menu')
 # Desde 1.0.154.0 el muro de piedra se puede construir sobre un camino: las pruebas de camino y puente sobre una
 # casilla con camino llenan la tabla de obras (lleno), así no se ofrece obra y siguen probando lo suyo.
-_OB = b'OBRA'
+_OB = b'OBR2' + bytes(4 + 512 * 8)   # tope de obras 512 desde 1.0.261.0 (antes 'OBRA' y 64)
 _OBN = BASE + img.index(_OB) + 4
 def lleno(prep=None):
     def f(g, *a):
         if prep: prep(g, *a)
-        g.mu.mem_write(_OBN, struct.pack('<I', 64))
+        g.mu.mem_write(_OBN, struct.pack('<I', 512))
     return f
 def menu(ejs, x=5, y=7, turno=0, p=0, prep=None):
     g = Juego(); mu = g.mu

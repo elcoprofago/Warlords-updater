@@ -117,7 +117,7 @@ VT_FIN = 0x21 + 8 + VT_MAX * 0x1c
 ver('guardado: lo del original, VOTA y después POZO, cantidad y tabla',
     (sav[:0x21] == b'PRINCIPIO' + OPC, sav[0x21:0x25], struct.unpack_from('<i', sav, 0x25)[0], sav[VT_FIN:VT_FIN + 4],
      struct.unpack_from('<i', sav, VT_FIN + 4)[0], sav[VT_FIN + 8 + PO_MAX * PO_REC:][:4], len(sav) - VT_FIN - 8),
-    (True, b'VOTA', 1, b'POZO', 3, b'OBRA', 2 * PO_MAX * PO_REC + 16))   # + 8 de las pausas usadas   # detrás va la tabla de obras (torres y faros)
+    (True, b'VOTA', 1, b'POZO', 3, b'OBR2', PO_MAX * PO_REC + 512 * 8 + 24))   # + 8 de las pausas usadas + 8 del bloque MOCI   # detrás va la tabla de obras (torres y faros)
 ver('  el original no escribe nada más', len(guardar(Juego(ORIG))), 0x21)
 MAPA = {(5, 7): 1, (39, 29): 2, (0, 0): 3}
 ver('cargado: la tabla vuelve y po_map se rearma', cargar_sav(Juego(), sav), (REGS, MAPA, True))
@@ -129,6 +129,20 @@ ver('control: tabla cortada: vacía', cargar_sav(Juego(), sav[:VT_FIN + 8 + PO_M
 ver('control: cantidad mayor que el tope: vacía',
     cargar_sav(Juego(), sav[:VT_FIN + 4] + struct.pack('<i', PO_MAX + 1) + sav[VT_FIN + 8:]), ([], {}, True))
 ver('control: VOTA cortada: tampoco lee POZO', cargar_sav(Juego(), sav[:0x30] + sav[VT_FIN:])[:2], ([], {}))
+# .SAV de antes de 1.0.263.0: 'OBRA' con 64 obras (después 'OBR2' con 512): se carga igual y lo que sigue queda alineado
+OB_N = BASE + img.index(b'OBR2' + bytes(4 + 512 * 8)) + 4
+k = VT_FIN + 8 + PO_MAX * PO_REC
+VIEJA = [(3, 4, 7, 1, 0, 0), (5, 6, 4, 0, 2, 1)]
+blq = b'OBRA' + struct.pack('<i', 2) + b''.join(struct.pack('<hhBBBB', *r) for r in VIEJA) + bytes(62 * 8)
+def obra_vieja(datos):
+    g = Juego(); cargar_sav(g, datos)
+    n = struct.unpack('<i', g.mu.mem_read(OB_N, 4))[0]
+    tab = [struct.unpack_from('<hhBBBB', g.mu.mem_read(OB_N + 4 + 8 * i, 8)) for i in range(n)]
+    return n, tab, struct.unpack('<ii', g.mu.mem_read(OB_N + 4 + 512 * 8, 8))
+ver('.SAV viejo con OBRA de 64: carga las obras y las pausas que siguen', obra_vieja(sav[:k] + blq + struct.pack('<ii', 7, 9)),
+    (2, VIEJA, (7, 9)))
+ver('control: OBRA con cantidad mayor que 64: vacía',
+    obra_vieja(sav[:k] + b'OBRA' + struct.pack('<i', 65) + blq[8:] + struct.pack('<ii', 7, 9))[0], 0)
 FUERA = [(40, 0, 0, 0, 0, 0xff), (0, 30, 0, 0, 0, 0xff), (-1, 2, 0, 0, 0, 0xff), (3, 4, 1, 0, 0, 0xff)]
 g = Juego(); g.poner(FUERA)
 ver('control: fuera del mapa no se marca (sí el de dentro)', cargar_sav(Juego(), guardar(g))[:2], (FUERA, {(3, 4): 4}))

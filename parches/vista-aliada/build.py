@@ -4381,14 +4381,15 @@ BD_PIECES = [1, 26, 25, 16, 27, 2, 8, 6, 24, 17, 1, 3, 9, 5, 4, 0]
 bd_piecetab = place_data('bd_piecetab', bytes(BD_PIECES))
 # ---- Obras (PENDIENTE-construcciones, parte 2, etapa A): torre de vigía y faro costero. Tabla propia, aparte de la
 # de pozos (llena en NA_157): OB_MAX registros de 8 bytes: x, y (palabras), +4 tipo (OB_TORRE u OB_FARO; mayor que
-# PO_REMOLINO, así pw_put la copia tal cual), +5 libre, +6 dueño (bando), +7 libre. ob_map: 1 byte por casilla =
-# registro + 1. En el .SAV va detrás de la tabla de pozos ('OBRA', cantidad, tabla); por red, el bloque OB_BLOQUE detrás
+# PO_REMOLINO, así pw_put la copia tal cual), +5 libre, +6 dueño (bando), +7 libre. ob_map: 1 palabra por casilla =
+# registro + 1 (un byte hasta 1.0.260.0, que no pasaba de 255 obras). En el .SAV va detrás de la tabla de pozos ('OBRA', cantidad, tabla); por red, el bloque OB_BLOQUE detrás
 # del de pozos, y entra en la suma de sincronía. Las construye un grupo con «build» en la casilla del líder (tierra sin
 # camino, ciudad, ruina, sitio, edificio ni otra obra; el faro, además, con agua en una de las 4 vecinas): posiciones
 # 6 y 7 de la rotación de bd_pick, BD_PW = 0x4000 | tipo, precio OB_FRAC veinteavos de fundar una ciudad. Despejan la
 # niebla a OB_VISTA casillas para su dueño y sus aliados (ob_fog), dan +1 a la fuerza de los defensores que no son
 # héroes (bridgeab) y pasan al bando que entra, si no es aliado del dueño (ob_step). La pila sigue siendo de 8.
-OB_MAX, OB_REC, OB_TORRE, OB_FARO = 64, 8, 4, 5
+OB_MAX, OB_REC, OB_TORRE, OB_FARO = 512, 8, 4, 5   # 64 hasta 1.0.260.0 (usuario, 19/11/2026: «por lo menos 256»)
+OB_MAX0 = 64                                   # tope de las guardadas viejas (bloque 'OBRA'); las nuevas van en 'OBR2'
 OB_EMPAL, OB_MURO = 6, 7                       # etapa B: empalizada y muro de piedra (mismo precio OB_FRAC)
 OB_MCAM = 5                                    # puerta (camino sobre un muro): 25 % de fundar una ciudad (usuario, 9/11)
 OB_FRAC = 10                                   # 50 % de fundar una ciudad (pedido sin precio; a confirmar, TAREAS 137)
@@ -4397,19 +4398,19 @@ OB_BLOQUE = 10
 OB_MAPSZ = 0x32000 // 10
 # Detrás de la tabla, PP_CNT: pausas manuales usadas por cada jugador (tope PP_MAX; parte 3 del pedido del 9/11/2026).
 PP_MAX = 3
-ob_save = place_data('ob_save', b'OBRA' + bytes(4 + OB_MAX * OB_REC + 8))
+ob_save = place_data('ob_save', b'OBR2' + bytes(4 + OB_MAX * OB_REC + 8))
 OB_SAVELEN = 8 + OB_MAX * OB_REC + 8
 OB_N, OB_TAB = ob_save + 4, ob_save + 8
 PP_CNT = OB_TAB + OB_MAX * OB_REC
 ob_magic = place_data('ob_magic', bytes(4))
-ob_map = place_data('ob_map', bytes(OB_MAPSZ))
+ob_map = place_data('ob_map', bytes(2 * OB_MAPSZ))
 ob_twtxt = place_data('ob_twtxt', cstr_('Building a watchtower'))
 ob_fatxt = place_data('ob_fatxt', cstr_('Building a lighthouse'))
 ob_mutxt = place_data('ob_mutxt', cstr_('Building a stone wall'))
 ob_rebuild = place('ob_rebuild', f'''
     pushad
     mov edi, {ob_map:#x}
-    mov ecx, {OB_MAPSZ // 4}
+    mov ecx, {OB_MAPSZ // 2}
     xor eax, eax
     rep stosd
     xor ebx, ebx
@@ -4428,7 +4429,7 @@ obr_loop:
     cmp edx, {OB_MAPSZ}
     jae obr_next
     lea eax, [ebx + 1]
-    mov byte ptr [edx + {ob_map:#x}], al
+    mov word ptr [edx*2 + {ob_map:#x}], ax
 obr_next:
     inc ebx
     jmp obr_loop
@@ -4464,7 +4465,7 @@ ob_at = place('ob_at', f'''
     add edx, eax
     cmp edx, {OB_MAPSZ}
     jae oba_no
-    movzx eax, byte ptr [edx + {ob_map:#x}]
+    movzx eax, word ptr [edx*2 + {ob_map:#x}]
     test eax, eax
     jz oba_no
     lea eax, [eax*8 + {OB_TAB - 8:#x}]
@@ -12988,15 +12989,24 @@ pol_end:
     call 0x4dfd20
     cmp eax, 4
     jne obl_end
+    mov edx, {4 + OB_MAX * OB_REC}
+    cmp dword ptr [{ob_magic:#x}], 0x3252424f
+    je obl_rd
+    mov edx, {4 + OB_MAX0 * OB_REC}
     cmp dword ptr [{ob_magic:#x}], 0x4152424f
     jne obl_end
-    push {4 + OB_MAX * OB_REC}
+obl_rd:
+    push edx
+    push edx
     push {OB_N:#x}
     lea ecx, [ebp - 0x120]
     call 0x4dfd20
-    cmp eax, {4 + OB_MAX * OB_REC}
+    pop edx
+    cmp eax, edx
     jne obl_bad
-    cmp dword ptr [{OB_N:#x}], {OB_MAX}
+    lea eax, [edx - 4]
+    shr eax, 3
+    cmp dword ptr [{OB_N:#x}], eax
     ja obl_bad
     push 8
     push {PP_CNT:#x}

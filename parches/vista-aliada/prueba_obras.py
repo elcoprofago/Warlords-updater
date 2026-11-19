@@ -8,7 +8,7 @@ _src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prueba_cam
 exec(_src[:_src.index("print('-- menú")])
 _a = _src.index('PKT = 0x150000'); exec(_src[_a:_src.index('g, c = recibir()', _a)])   # recibir()
 
-_OB = b'OBRA' + bytes(4 + 64 * 8)
+_OB = b'OBR2' + bytes(4 + 512 * 8)
 assert img.count(_OB) == 1, 'falta la tabla de obras (ob_save)'
 OB_N = BASE + img.index(_OB) + 4
 OB_TAB = OB_N + 4
@@ -31,7 +31,7 @@ ver('llanura lejos del agua: camino, torre, muro x 8 direcciones, camino', picks
     [(5, 7, 0), (5, 7, TORRE)] + [(5, 7, m) for m in MUROS] + [(5, 7, 0)])
 ver('a orillas del agua (x = 29): camino, torre, faro, muro x 8, camino', picks(29, 7, 12),
     [(29, 7, 0), (29, 7, TORRE), (29, 7, FARO)] + [(29, 7, m) for m in MUROS] + [(29, 7, 0)])
-ver('control: tabla llena: solo camino', picks(5, 7, 2, lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64))), [(5, 7, 0)] * 2)
+ver('control: tabla llena: solo camino', picks(5, 7, 2, lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 512))), [(5, 7, 0)] * 2)
 
 print('-- botonera de la torre: bd_pick filtrado por tipo (BD_CAT)')
 BD_CAT = BD_X + 13
@@ -91,7 +91,7 @@ ver('control: faro lejos del agua', obra(pw=FARO)[:2], ([], 0))
 ver('control: tipo 6 inexistente', obra(pw=0x4006)[:2], ([], 0))
 ver('control: agua', obra(x=33)[:2], ([], 0))
 ver('control: sobre camino', obra(x=10)[:2], ([], 0))
-ver('control: tabla llena', obra(prep=lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 64)))[:2], ([], 64))
+ver('control: tabla llena', obra(prep=lambda g: g.mu.mem_write(OB_N, struct.pack('<I', 512)))[:2], ([], 512))
 
 print('-- muro de piedra')
 def muro_y_camino(oro=1000, x=5):
@@ -170,7 +170,7 @@ ver('el dueño, destino su muro sin puerta: entra', puerta(2, camino=False, dest
 print('-- tope de 3 pausas manuales por jugador (pp_recv)')
 PP_RECV = dest(0x4b6a22, 2)
 _k = img.index(b'\x80\x0d', PP_RECV - BASE); PZ_ON = d32(BASE + _k + 2)
-PP_CNT = OB_TAB + 64 * 8
+PP_CNT = OB_TAB + 512 * 8
 def pausas(cargas, prep=None):
     g = Juego(); mu = g.mu
     if prep: prep(g)
