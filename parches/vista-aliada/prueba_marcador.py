@@ -26,7 +26,9 @@ OV_CALC = (OV_SHXY + 64 + 15) & ~15
 OV_KEY = tras(OV_CALC)
 OV_POLL = (img.index(struct.pack('<IIII', 0, 0x100, 0x7b, 1)) + BASE + 16 + 15) & ~15   # ov_poll va detrás de ov_fake
 OV_PIC = tras(OV_POLL)                 # ov_pic: carga la hoja y sigue a 0x4dd530
-OV_DRAW = tras(OV_PIC)
+OV_STAR = tras(OV_PIC)                 # ov_star (estrella con rectangulos), despues ov_w (medida del texto)
+OV_W = tras(OV_STAR)
+OV_DRAW = (img.index(b'\x5a\x59\xc3', OV_W - BASE) + BASE + 3 + 15) & ~15
 PK_GAK = BASE + img.index(b'GetAsyncKeyState\0') + 17
 SPRINTF = 0x5a9bec
 REPAINT = 0x569588 + 0x1a4
@@ -166,28 +168,33 @@ j.calls = []
 j.mu.mem_write(0x4ff7a4, b'\1')
 j.mu.reg_write(UC_X86_REG_ESI, 0x1234); j.mu.reg_write(UC_X86_REG_EBX, 1000); j.mu.reg_write(UC_X86_REG_EBP, 50)
 j.corre(OV_DRAW)
-X = 1000 + 0x21c - 66; Y = 50 + 0x56
+R = 1000 + 0x21c; Y = 50 + 0x56; TG = 3
+STAR = [(104, [(3, 0, 1, 1), (3, 6, 1, 1), (0, 3, 1, 1), (6, 3, 1, 1), (1, 1, 1, 1), (5, 1, 1, 1), (1, 5, 1, 1), (5, 5, 1, 1)]),
+        (102, [(3, 1, 1, 1), (3, 5, 1, 1), (1, 3, 1, 1), (5, 3, 1, 1)]), (101, [(2, 2, 3, 3)]), (100, [(3, 3, 1, 1)])]
+def estrella(x, y): return [('rect', 0x1234, x + dx, y + dy, w, h, c) for c, rr in STAR for dx, dy, w, h in rr]
 def barra(x, y, n, color): return [('rect', 0x1234, x + 3 * k, y, 2, 5, color) for k in range(n)]
-ver('dibujo: título en negrita (fuente 8) dorado; nombres (fuente 4) a la derecha de X; barras de rectángulos',
-    j.calls[:4 + 40 + 3], [
-    ('estilo', 8, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
-    ('estilo', 4, 100, 200), ('der', 0x1234, X, Y + 12, 'Lado0')]
-    + barra(X + 5, Y + 12 + 4, 20, 200) + barra(X + 4, Y + 12 + 3, 20, 100)
-    + [('estilo', 4, 103, 203), ('der', 0x1234, X, Y + 24, 'Lado3'),
-       ('pic', 56, 392, 0, 13, 13, 0x1234, X - 5 * 5 - 15, Y + 24 - 1)])
-ver('cuatro renglones y una estrella', len(j.calls), 1 + 2 + 2 * 4 + 2 * (20 + 10 + 6 + 2))
+# nombres y barras: lo mas largo a la derecha, 20 barras (64 px); a la izquierda 'Lado3' (25 px, 5 por letra) + estrella (9)
+X = R - 64 - 3; YR = Y + TG + 12
+ver('dibujo: pegado al margen (3 px), titulo centrado sobre los renglones, estrella chica a la izquierda del nombre',
+    j.calls[:5 + 40 + 2 + 14], [
+    ('estilo', 4, 0, 0), ('estilo', 8, 137, 0xa), ('der', 0x1234, X + (64 - 34 + 20) // 2, Y, 'Gold'),
+    ('estilo', 4, 100, 200), ('der', 0x1234, X, YR, 'Lado0')]
+    + barra(X + 5, YR + 4, 20, 200) + barra(X + 4, YR + 3, 20, 100)
+    + [('estilo', 4, 103, 203), ('der', 0x1234, X, YR + 12, 'Lado3')] + estrella(X - 34, YR + 12 + 2))
+ver('cuatro renglones y una estrella', len(j.calls), 3 + 2 * 4 + 2 * (20 + 10 + 6 + 2) + 14)
 ver('ov_draw preserva los registros', (j.mu.reg_read(UC_X86_REG_ESI), j.mu.reg_read(UC_X86_REG_EBX),
                                        j.mu.reg_read(UC_X86_REG_EBP)), (0x1234, 1000, 50))
 j.tecla(shift=True); j.tecla(shift=True); j.tecla(shift=True)
 j.calls = []
 j.corre(OV_DRAW)
-YS = Y + 15
-ver('escudos y numeros: escudo (hoja 7) a la izquierda de X, renglon de 15, estrella a su izquierda, numero', j.calls[:2 + 3 + 5], [
-    ('estilo', 8, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
+# escudos y numeros: a la derecha '900' (15 + 4); a la izquierda escudo (11) + estrella (9)
+X = R - 19 - 3; YS = Y + TG + 15
+ver('escudos y numeros: pegado al margen, titulo centrado, escudo a la izquierda de X, renglon de 15, estrella, numero',
+    j.calls[:3 + 3 + 2 + 14 + 1], [
+    ('estilo', 4, 0, 0), ('estilo', 8, 137, 0xa), ('der', 0x1234, X + (19 - 20 + 20) // 2, Y, 'Gold'),
     ('estilo', 4, 100, 200), ('pic', 7, 33, 1, 11, 14, 0x1234, X - 11, YS - 2), ('izq', 0x1234, X + 4, YS, '900'),
-    ('estilo', 4, 103, 203), ('pic', 7, 33, 38, 11, 14, 0x1234, X - 11, YS + 15 - 2),
-    ('pic', 56, 392, 0, 13, 13, 0x1234, X - 26, YS + 15 - 1), ('izq', 0x1234, X + 4, YS + 15, '450'),
-    ('estilo', 4, 105, 205)])
+    ('estilo', 4, 103, 203), ('pic', 7, 33, 38, 11, 14, 0x1234, X - 11, YS + 15 - 2)]
+    + estrella(X - 20, YS + 15 + 2) + [('izq', 0x1234, X + 4, YS + 15, '450')])
 j.tecla()
 j.calls = []
 j.corre(OV_DRAW)

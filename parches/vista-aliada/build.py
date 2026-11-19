@@ -11927,6 +11927,190 @@ opi_r:
     popad
     ret
 ''')
+# 1.0.262.0 (pedido del usuario del 19/11/2026: la estrella de 13x13 se veia muy grande): ov_star dibuja una estrella
+# de OV_SW x OV_SW con rectangulos (0x4ede30, como ov_segs) en los violetas de la imagen 160 (100 a 104 de la paleta),
+# en (eax, edx) de la superficie esi. ov_w: ancho de la cadena edx en la fuente del estilo actual (0x4e5930); deja
+# eax = ancho y preserva lo demas.
+OV_SW, OV_MR = 7, 3
+OV_TG = 3   # separacion extra entre el titulo y los renglones (pedido del usuario del 19/11/2026)
+ov_star = place('ov_star', f'''
+    pushad
+    mov ebx, eax
+    mov ebp, edx
+    cld
+    mov al, 104
+    mov edi, {OV_TAB:#x}
+    mov ecx, 256
+    rep stosb
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 0]
+    push eax
+    lea eax, [ebx + 3]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 6]
+    push eax
+    lea eax, [ebx + 3]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 3]
+    push eax
+    lea eax, [ebx + 0]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 3]
+    push eax
+    lea eax, [ebx + 6]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 1]
+    push eax
+    lea eax, [ebx + 1]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 1]
+    push eax
+    lea eax, [ebx + 5]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 5]
+    push eax
+    lea eax, [ebx + 1]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 5]
+    push eax
+    lea eax, [ebx + 5]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    mov al, 102
+    mov edi, {OV_TAB:#x}
+    mov ecx, 256
+    rep stosb
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 1]
+    push eax
+    lea eax, [ebx + 3]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 5]
+    push eax
+    lea eax, [ebx + 3]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 3]
+    push eax
+    lea eax, [ebx + 1]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 3]
+    push eax
+    lea eax, [ebx + 5]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    mov al, 101
+    mov edi, {OV_TAB:#x}
+    mov ecx, 256
+    rep stosb
+    push {OV_TAB:#x}
+    push 3
+    push 3
+    lea eax, [ebp + 2]
+    push eax
+    lea eax, [ebx + 2]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    mov al, 100
+    mov edi, {OV_TAB:#x}
+    mov ecx, 256
+    rep stosb
+    push {OV_TAB:#x}
+    push 1
+    push 1
+    lea eax, [ebp + 3]
+    push eax
+    lea eax, [ebx + 3]
+    push eax
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    popad
+    ret
+''')
+ov_w = place('ov_w', '''
+    push ecx
+    push edx
+    push -1
+    push edx
+    mov ecx, 0x58d0e8
+    call 0x4e5930
+    pop edx
+    pop ecx
+    ret
+''')
+# 1.0.262.0: antes de dibujar, ov_draw mide los renglones: a la derecha de X lo mas largo (barras, 3 px por tramo, o el
+# numero) y a la izquierda (nombre o escudo, mas la estrella). Pone X para que lo mas largo termine a OV_MR del borde
+# derecho del mapa (asi no queda lejos del margen con numeros o barras cortas) y centra el titulo sobre los renglones.
 ov_draw = place('ov_draw', f'''
     movzx eax, byte ptr [{OV_CUR:#x}]
     test eax, eax
@@ -11941,8 +12125,69 @@ od_go:
     xor eax, eax
 od_m:
     add ebx, dword ptr [eax*4 + {OV_RX:#x}]
-    sub ebx, {OV_DX}
     add ebp, {OV_Y}
+    push 1
+    push 0
+    push 0
+    push 0
+    push {OV_FONT}
+    call 0x4dd0f0
+    add esp, 0x14
+    push edi
+    push 0
+    push 0
+    xor edi, edi
+om_row:
+    movzx eax, byte ptr [{OV_CUR + 2:#x}]
+    cmp edi, eax
+    jae om_done
+    mov edx, edi
+    shl edx, 5
+    add edx, {OV_BAR:#x}
+    cmp byte ptr [edx], 0x7c
+    jne om_num
+    xor eax, eax
+om_cnt:
+    cmp byte ptr [edx + eax], 0x7c
+    jne om_cd
+    inc eax
+    jmp om_cnt
+om_cd:
+    lea eax, [eax + eax*2 + 4]
+    jmp om_r
+om_num:
+    call {ov_w:#x}
+    add eax, 4
+om_r:
+    cmp eax, dword ptr [esp + 4]
+    jle om_l
+    mov dword ptr [esp + 4], eax
+om_l:
+    mov eax, dword ptr [edi*4 + {OV_CUR + 4:#x}]
+    xor ecx, ecx
+    bt dword ptr [{OV_CUR + 36:#x}], eax
+    jnc om_ns
+    mov ecx, {OV_SW + 2}
+om_ns:
+    test byte ptr [{OV_CUR + 1:#x}], 2
+    jz om_name
+    add ecx, 11
+    jmp om_lc
+om_name:
+    imul edx, eax, 0x1f8
+    add edx, 0x536b34
+    call {ov_w:#x}
+    add ecx, eax
+om_lc:
+    cmp ecx, dword ptr [esp]
+    jle om_nx
+    mov dword ptr [esp], ecx
+om_nx:
+    inc edi
+    jmp om_row
+om_done:
+    sub ebx, dword ptr [esp + 4]
+    sub ebx, {OV_MR}
     push 1
     push 0
     push 0xa
@@ -11950,12 +12195,20 @@ od_m:
     push {OV_FTIT}
     call 0x4dd0f0
     add esp, 0x14
-    push edi
+    mov edx, dword ptr [esp + 8]
+    call {ov_w:#x}
+    add eax, dword ptr [esp + 4]
+    sub eax, dword ptr [esp]
+    sar eax, 1
+    add eax, ebx
+    push edx
     push ebp
-    push ebx
+    push eax
     push esi
     call 0x4dd200
     add esp, 0x10
+    add esp, 12
+    add ebp, {OV_TG}
     xor edi, edi
 od_row:
     movzx eax, byte ptr [{OV_CUR + 2:#x}]
@@ -11987,7 +12240,7 @@ od_dy:
     mov ecx, 0x58d0e8
     call 0x4e5930
     pop ecx
-    lea edx, [eax + 15]
+    lea edx, [eax + {OV_SW + 2}]
     push edx
     push ecx
     push ebp
@@ -12010,25 +12263,16 @@ od_esc:
     push 7
     call {ov_pic:#x}
     add esp, 0x20
-    push 26
+    push {11 + 2 + OV_SW}
 od_star:
     pop edx
     mov eax, dword ptr [edi*4 + {OV_CUR + 4:#x}]
     bt dword ptr [{OV_CUR + 36:#x}], eax
     jnc od_ns
-    lea eax, [ebp - 1]
-    push eax
     mov eax, ebx
     sub eax, edx
-    push eax
-    push esi
-    push 13
-    push 13
-    push 0
-    push 392
-    push 56
-    call {ov_pic:#x}
-    add esp, 0x20
+    lea edx, [ebp + 2]
+    call {ov_star:#x}
 od_ns:
     add esp, 4
     mov eax, edi
