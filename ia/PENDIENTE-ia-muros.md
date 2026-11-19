@@ -231,7 +231,7 @@ predeterminadas.»*
              empezado, cerrado, torre, MURALLA ajena en un paso con tramo libre y en uno sin tramo libre; control: las
              opciones de un bando sin obras en sus pasos no cambian; y la lectura de la tabla de obras de Tanda_hex_MU):
              TODO OK.
-        - **Cómo va a quedar en el juego (build.py), a escribir** (diseño, 19/11/2026):
+        - **Cómo quedó en el juego (build.py), escrito en vista-aliada 1.0.271.0** (diseño, 19/11/2026):
           - `mp_scan`, una vez por estado del mapa (se recalcula si cambian OB_N, los dueños o los tamaños de las
             ciudades; no cada turno). Igual en todas las PC: sin azar, mismo orden de recorrido.
             1. Grilla de un byte por casilla (OB_MAPSZ): tierra transitable (clase fuera de 1, 4 y 5, o camino),
@@ -261,6 +261,22 @@ predeterminadas.»*
           - Verificación: emulador (simcombate\motor.py, como `ia\prueba_movimiento.py`): mismos pasos y lados que
             `pasos.py` en los cuatro mapas, y misma elección que `cerrar_paso.py` en guardadas con MURALLAS y dueños
             distintos, con los controles del «Esquema de trabajo».
+          - **Hecho (19/11/2026, vista-aliada 1.0.271.0).** Diferencias con el diseño: las colas y las tablas no van
+            con malloc sino en una zona sin datos de la sección .avis (`MP_BSS_OFF`, el cargador la llena con ceros);
+            el caché compara la grilla entera (tierra, candidatas, costa/puerto, caminos, ciudades en pie y costos de movimiento), no
+            OB_N: una MURALLA no cambia los pasos y no hace recalcular. `mp_pick` corre para la computadora con o sin
+            IA.INI, pero solo decide: deja `mp_obj[p]` (paso | lado << 8 | tramo << 16, −1 si nada) y el evento 51;
+            la partida no cambia hasta el punto 4. Modelo en Python del recorrido del juego: `ia\mp_modelo.py`
+            (mismos pasos que `pasos.py` en 20 guardadas del banco).
+            **Prueba: `ia\prueba_mp_scan.py` → TODO OK** en Tanda_hex_perfiles, Borderlands, Kor, Scarpart, build_01,
+            roads02 y agua04, y en una variante «forzada» de cada una (Artificer, 5000 de oro y «build» en todos los
+            colores, para que haya quien elija): pasos, tramos, lados, costa/puerto, distancia y costo por bono de
+            cada ciudad iguales a Python; la elección de cada color igual a `cerrar_paso.py` (Borderlands forzada: 4,
+            6 y 7 eligen; Kor forzada: 0 y 7, uno por cada lado). Controles: sin Artificer/Engineer, sin oro, sin
+            «build» y tabla de obras llena → no elige; MURALLA propia en todo el tramo → ese paso no; MURALLA ajena o
+            un bloque propio (empezado) en otro paso con tramo libre → ese paso pasa adelante; caché: sin cambios no
+            recalcula. Lo del humano (+0xe2 = −1) está en `ia_turn` y no se emuló.
+            De paso, `cerrar_paso.py` ahora ignora las ciudades arrasadas (tamaño 0), como `pasos.py` y el juego.
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
    Una primera etapa más simple: construir solo donde el constructor ya está (junto a una ciudad propia), sin
@@ -272,6 +288,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py). 3.c decidido y prototipado (ia\cerrar_paso.py: se calcula en el juego; regla v1). Siguiente: escribir la regla en build.py (`mp_scan` / `mp_pick`, evento 51), verificada en el emulador contra cerrar_paso.py. Después, el punto 4 (mover al constructor y construir).
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py). 3.c hecho en el juego (vista-aliada 1.0.271.0: `mp_scan` / `mp_pick`, evento 51; verificado con ia\prueba_mp_scan.py contra cerrar_paso.py). Siguiente: el punto 4 (mover al constructor hacia el tramo de `mp_obj[p]` y construir), primero solo para los colores en prueba.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.c en el juego».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 4».

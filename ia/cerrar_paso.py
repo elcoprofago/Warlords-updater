@@ -137,7 +137,8 @@ def analizar(guardada, partida=None, turno=None, ob=None):
     agua = {p for p in clase if clase[p] == 1 and not camino[p]
             and not nom[casilla(d, *p)[0] & 0x1f][0].lower().startswith('lava')}
     puerto = {p for p in agua if casilla(d, *p)[1] & 0x40}
-    celdas = {c['i']: amenaza.celdas(c) for c in ciudades.leer(d)}
+    # solo ciudades en pie (tamaño > 0), como pasos.py y el juego (mp_scan): una arrasada no se defiende ni amenaza
+    celdas = {c['i']: amenaza.celdas(c) for c in ciudades.leer(d) if c['tam']}
     jugando = set(tanda.jugadores(d))
     perfil = {c: v for c, v in tanda.perfiles(guardada).items()}
     info = {c: amenaza.bando(d, c) for c in jugando}
