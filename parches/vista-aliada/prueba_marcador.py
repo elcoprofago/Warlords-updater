@@ -169,19 +169,26 @@ j.mu.mem_write(0x4ff7a4, b'\1')
 j.mu.reg_write(UC_X86_REG_ESI, 0x1234); j.mu.reg_write(UC_X86_REG_EBX, 1000); j.mu.reg_write(UC_X86_REG_EBP, 50)
 j.corre(OV_DRAW)
 R = 1000 + 0x21c; Y = 50 + 0x56; TG = 3
-STAR = [(104, [(3, 0, 1, 1), (3, 6, 1, 1), (0, 3, 1, 1), (6, 3, 1, 1), (1, 1, 1, 1), (5, 1, 1, 1), (1, 5, 1, 1), (5, 5, 1, 1)]),
-        (102, [(3, 1, 1, 1), (3, 5, 1, 1), (1, 3, 1, 1), (5, 3, 1, 1)]), (101, [(2, 2, 3, 3)]), (100, [(3, 3, 1, 1)])]
+STAR = [(99, [(5, 1, 1, 1), (3, 3, 1, 1)]),
+        (100, [(2, 1, 1, 1), (3, 2, 1, 1), (2, 3, 1, 1), (4, 3, 1, 1), (3, 4, 1, 1)]),
+        (101, [(1, 2, 1, 1), (2, 2, 1, 1), (4, 2, 1, 1), (5, 3, 1, 1), (2, 4, 1, 1), (4, 4, 1, 1), (5, 4, 1, 1)]),
+        (103, [(3, 1, 1, 1), (4, 1, 1, 1), (5, 2, 1, 1), (1, 3, 1, 1), (6, 3, 1, 1), (1, 4, 1, 1), (2, 5, 1, 1), (3, 5, 1, 1), (4, 5, 1, 1)]),
+        (104, [(3, 0, 1, 1), (0, 3, 1, 1), (3, 6, 1, 1)]),
+        (198, [(1, 1, 1, 1)]),
+        (199, [(5, 5, 1, 1)]),
+        (217, [(1, 5, 1, 1)])]   # picts\star.pcx reducida a 7x7 (1.0.264.0)
+NSTAR = sum(len(rr) for _, rr in STAR)
 def estrella(x, y): return [('rect', 0x1234, x + dx, y + dy, w, h, c) for c, rr in STAR for dx, dy, w, h in rr]
 def barra(x, y, n, color): return [('rect', 0x1234, x + 3 * k, y, 2, 5, color) for k in range(n)]
 # nombres y barras: lo mas largo a la derecha, 20 barras (64 px); a la izquierda 'Lado3' (25 px, 5 por letra) + estrella (9)
 X = R - 64 - 3; YR = Y + TG + 12
 ver('dibujo: pegado al margen (3 px), titulo centrado sobre los renglones, estrella chica a la izquierda del nombre',
-    j.calls[:5 + 40 + 2 + 14], [
+    j.calls[:5 + 40 + 2 + NSTAR], [
     ('estilo', 4, 0, 0), ('estilo', 8, 137, 0xa), ('der', 0x1234, X + (64 - 34 + 20) // 2, Y, 'Gold'),
     ('estilo', 4, 100, 200), ('der', 0x1234, X, YR, 'Lado0')]
     + barra(X + 5, YR + 4, 20, 200) + barra(X + 4, YR + 3, 20, 100)
     + [('estilo', 4, 103, 203), ('der', 0x1234, X, YR + 12, 'Lado3')] + estrella(X - 34, YR + 12 + 2))
-ver('cuatro renglones y una estrella', len(j.calls), 3 + 2 * 4 + 2 * (20 + 10 + 6 + 2) + 14)
+ver('cuatro renglones y una estrella', len(j.calls), 3 + 2 * 4 + 2 * (20 + 10 + 6 + 2) + NSTAR)
 ver('ov_draw preserva los registros', (j.mu.reg_read(UC_X86_REG_ESI), j.mu.reg_read(UC_X86_REG_EBX),
                                        j.mu.reg_read(UC_X86_REG_EBP)), (0x1234, 1000, 50))
 j.tecla(shift=True); j.tecla(shift=True); j.tecla(shift=True)
@@ -190,7 +197,7 @@ j.corre(OV_DRAW)
 # escudos y numeros: a la derecha '900' (15 + 4); a la izquierda escudo (11) + estrella (9)
 X = R - 19 - 3; YS = Y + TG + 15
 ver('escudos y numeros: pegado al margen, titulo centrado, escudo a la izquierda de X, renglon de 15, estrella, numero',
-    j.calls[:3 + 3 + 2 + 14 + 1], [
+    j.calls[:3 + 3 + 2 + NSTAR + 1], [
     ('estilo', 4, 0, 0), ('estilo', 8, 137, 0xa), ('der', 0x1234, X + (19 - 20 + 20) // 2, Y, 'Gold'),
     ('estilo', 4, 100, 200), ('pic', 7, 33, 1, 11, 14, 0x1234, X - 11, YS - 2), ('izq', 0x1234, X + 4, YS, '900'),
     ('estilo', 4, 103, 203), ('pic', 7, 33, 38, 11, 14, 0x1234, X - 11, YS + 15 - 2)]

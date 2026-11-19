@@ -11929,175 +11929,36 @@ opi_r:
     ret
 ''')
 # 1.0.262.0 (pedido del usuario del 19/11/2026: la estrella de 13x13 se veia muy grande): ov_star dibuja una estrella
-# de OV_SW x OV_SW con rectangulos (0x4ede30, como ov_segs) en los violetas de la imagen 160 (100 a 104 de la paleta),
-# en (eax, edx) de la superficie esi. ov_w: ancho de la cadena edx en la fuente del estilo actual (0x4e5930); deja
-# eax = ancho y preserva lo demas.
+# de OV_SW x OV_SW con rectangulos de 1x1 (0x4ede30, como ov_segs) en (eax, edx) de la superficie esi. Desde el mismo
+# dia (pedido del usuario) el dibujo sale de picts\star.pcx: se recorta a lo dibujado (fondo = 0, 32, 243, 244), se
+# reduce a OV_SW x OV_SW y cada celda cubierta al menos un 40% toma el color de paleta mas frecuente en ella.
+# ov_w: ancho de la cadena edx en la fuente del estilo actual (0x4e5930); deja eax = ancho y preserva lo demas.
 OV_SW, OV_MR = 7, 3
 OV_TG = 3   # separacion extra entre el titulo y los renglones (pedido del usuario del 19/11/2026)
-ov_star = place('ov_star', f'''
-    pushad
-    mov ebx, eax
-    mov ebp, edx
-    cld
-    mov al, 104
-    mov edi, {OV_TAB:#x}
-    mov ecx, 256
-    rep stosb
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 0]
-    push eax
-    lea eax, [ebx + 3]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 6]
-    push eax
-    lea eax, [ebx + 3]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 3]
-    push eax
-    lea eax, [ebx + 0]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 3]
-    push eax
-    lea eax, [ebx + 6]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 1]
-    push eax
-    lea eax, [ebx + 1]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 1]
-    push eax
-    lea eax, [ebx + 5]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 5]
-    push eax
-    lea eax, [ebx + 1]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 5]
-    push eax
-    lea eax, [ebx + 5]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    mov al, 102
-    mov edi, {OV_TAB:#x}
-    mov ecx, 256
-    rep stosb
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 1]
-    push eax
-    lea eax, [ebx + 3]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 5]
-    push eax
-    lea eax, [ebx + 3]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 3]
-    push eax
-    lea eax, [ebx + 1]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 3]
-    push eax
-    lea eax, [ebx + 5]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    mov al, 101
-    mov edi, {OV_TAB:#x}
-    mov ecx, 256
-    rep stosb
-    push {OV_TAB:#x}
-    push 3
-    push 3
-    lea eax, [ebp + 2]
-    push eax
-    lea eax, [ebx + 2]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    mov al, 100
-    mov edi, {OV_TAB:#x}
-    mov ecx, 256
-    rep stosb
-    push {OV_TAB:#x}
-    push 1
-    push 1
-    lea eax, [ebp + 3]
-    push eax
-    lea eax, [ebx + 3]
-    push eax
-    push esi
-    call 0x4ede30
-    add esp, 0x18
-    popad
-    ret
-''')
+def _ov_star_asm():
+    from PIL import Image as _I
+    im = _I.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'picts', 'star.pcx'))
+    px, (W, H) = im.load(), im.size
+    fg = lambda i: i not in (0, 32, 243, 244)
+    pts = [(x, y) for y in range(H) for x in range(W) if fg(px[x, y])]
+    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts) + 1
+    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts) + 1
+    por_color = {}
+    for j in range(OV_SW):
+        for i in range(OV_SW):
+            c = [px[x, y] for x in range(x0 + (x1 - x0) * i // OV_SW, x0 + (x1 - x0) * (i + 1) // OV_SW)
+                 for y in range(y0 + (y1 - y0) * j // OV_SW, y0 + (y1 - y0) * (j + 1) // OV_SW)]
+            v = [k for k in c if fg(k)]
+            if c and len(v) >= 0.4 * len(c):
+                por_color.setdefault(max(sorted(set(v)), key=v.count), []).append((i, j))
+    out = ['    pushad', '    mov ebx, eax', '    mov ebp, edx', '    cld']
+    for col, cel in sorted(por_color.items()):
+        out += [f'    mov al, {col}', f'    mov edi, {OV_TAB:#x}', '    mov ecx, 256', '    rep stosb']
+        for i, j in cel:
+            out += [f'    push {OV_TAB:#x}', '    push 1', '    push 1', f'    lea eax, [ebp + {j}]', '    push eax',
+                    f'    lea eax, [ebx + {i}]', '    push eax', '    push esi', '    call 0x4ede30', '    add esp, 0x18']
+    return '\n'.join(out + ['    popad', '    ret', ''])
+ov_star = place('ov_star', _ov_star_asm())
 ov_w = place('ov_w', '''
     push ecx
     push edx
