@@ -20988,7 +20988,10 @@ tt_end:
 # rf_turn: ebx = jugador que empieza su turno. Tope de la balsa (pedido del usuario, 19/11/2026): un grupo con "Raft"
 # no puede estar más de RAFT_VUELTAS vueltas en el agua; si no volvió a tierra, al empezar la vuelta siguiente se
 # hunde con todo lo embarcado. Cuenta en el byte +0x1b del ejército (libre con "Raft": boatcarr): 0x40 | vueltas.
-# Por cada ejército vivo del jugador: embarcado (bit 8 de +0x14) y ahogable (0x43c240) suma 1 vuelta; al llegar a
+# Por cada ejército vivo del jugador: embarcado (bit 8 de +0x14) y ahogable (0x43c240) suma 1 vuelta. 0x43c240 da
+# "no" a todo embarcado (0x43c2aa), así que la balsa nunca sumaba (1.0.266.0 a 1.0.275.0, visto por el usuario en la
+# TAREA 269): desde 1.0.276.0 el bit 8 se apaga durante la llamada y se repone, y la rutina mira solo terreno (agua)
+# y si vuela. Cuenta toda casilla de agua, también la pegada a la costa (la única que la balsa pisa). Al llegar a
 # RAFT_VUELTAS cae al agua con 0x485610(jugador, ejército, 1, 0, 1, 0), como en el puente derribado (br_drown: ahoga a
 # todos los de la casilla y da el aviso) y, en la PC del jugador ([0x560b20]), suena "splash" (0x4465e0(0x18, -1), el
 # sonido del ítem que cae al agua, 0x4076d0). En tierra la cuenta vuelve a 0. La vuelta en que zarpó es la primera:
@@ -21019,10 +21022,12 @@ rft_loop:
     and cl, 0xc0
     test byte ptr [edi + 0x54fe64], 8
     jz rft_land
+    and byte ptr [edi + 0x54fe64], 0xf7
     push esi
     push ebx
     call 0x43c240
     add esp, 8
+    or byte ptr [edi + 0x54fe64], 8
     test al, al
     jz rft_next
     mov al, byte ptr [edi + 0x54fe6b]

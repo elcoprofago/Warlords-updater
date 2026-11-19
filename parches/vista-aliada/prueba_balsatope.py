@@ -53,7 +53,10 @@ class Juego:
             mu.mem_write(ARM(i) + 0x13, bytes([0x40 if vivo else 0, 8 if emb else 0]))
             mu.mem_write(ARM(i) + 0x1b, bytes([byte]))
         s.hundidos, s.sonidos, s.voladores = [], [], set(voladores)
-        s.hook(0x43c240, lambda a: 0 if a[1] in s.voladores else 1)
+        # como el 0x43c240 real: "no" a todo embarcado (bit 8 de +0x14, 0x43c2aa) y a los voladores. Hasta 1.0.275.0 la
+        # prueba decía "sí" al embarcado y no vio que rf_turn nunca sumaba (TAREA 269).
+        s.hook(0x43c240, lambda a: 0 if (s.mu.mem_read(ARM(a[1] & 0xffff) + 0x14, 1)[0] & 8) or a[1] in s.voladores
+               else 1)
         s.hook(0x485610, s.hundir)
         s.hook(0x4465e0, lambda a: s.sonidos.append((a[0], struct.unpack('<i', struct.pack('<I', a[1]))[0])))
     def hook(s, addr, fn):

@@ -801,6 +801,10 @@ parte el grupo al tope de 3 (evento 3).
   común, más lento y de 3 lugares).
 - Nada que pasar al ranking: no hay código nuevo de la IA. Lo de la balsa es del escenario (qué barco lleva cada
   bando). Paso 5.6 cerrado; con él queda medido todo el relevamiento del paso 5.
+- Ojo (19/11/2026): la tanda 188 se jugó sin tope de vueltas real. El tope de 2 vueltas (1.0.266.0) nunca se
+  cumplió hasta 1.0.276.0: 0x43c240 da "no se ahoga" a todo embarcado y rf_turn no sumaba (lo vio el usuario en
+  TAREAS 269). Si la IA deja balsas más de 2 vueltas en el agua, ahora se le hunden: medirlo en la próxima tanda
+  con balsas (eventos de ahogados de grupos con Raft) antes de dar por buena la lectura de arriba.
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6 cerrado (tanda 188)».
 
