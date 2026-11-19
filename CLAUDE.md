@@ -42,3 +42,11 @@ esté compilando: esperar a que termine, no forzar.
 Caso que lo originó (19/11/2026): la estrella del marcador se iba a publicar como 1.0.266.0 mientras otra sesión
 publicaba 1.0.266.0 (balsas) y 1.0.267.0 (montañas); el ejecutable estuvo bloqueado por esa compilación. Se
 publicó como 1.0.268.0. Pedido del usuario: «Sí, agregá la regla».
+
+## Vocabulario: MURALLA y MURO (definido por el usuario, 19/11/2026)
+
+- **MURALLA:** la construcción del parche (obra OB_MURO, la que levanta una unidad con «build»). Solo la atraviesan
+  las unidades terrestres del dueño y sus aliados (por la puerta) y **todos los voladores**.
+- **MURO:** el terreno del escenario que no atraviesa nadie, ni por aire (terreno «Walls», clase 5; lo tiene Hexagon
+  alrededor de los núcleos y en el borde, y quizás otros escenarios editados). Igual que las montañas altas.
+- No mezclarlos: en notas, código y chat, «muralla» es lo que se construye y «muro» lo del escenario.

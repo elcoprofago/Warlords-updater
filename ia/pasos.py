@@ -1,9 +1,10 @@
 # Detecta pasos clave en el mapa de una guardada (ia\PENDIENTE-ia-muros.md, punto 3.a), sin tocar el juego.
-# Paso clave = tramo recto de 1 a 3 casillas de tierra donde se puede poner muro (muros.sirve) que, cerrado, corta
+# Paso clave = tramo recto de 1 a 3 casillas de tierra donde se puede poner muralla (muros.sirve) que, cerrado, corta
 # TODO camino por tierra entre dos zonas del mapa que tienen ciudades. Es el criterio del usuario (19/11/2026): un
-# camino entre montañas o costa, cerrado con un tramo corto de muro, en vez de un anillo alrededor de una ciudad.
+# camino entre montañas o costa, cerrado con un tramo corto de muralla, en vez de un anillo alrededor de una ciudad.
+# Vocabulario (CLAUDE.md): MURALLA = lo que se construye; MURO = terreno «Walls» del escenario.
 # Transitable por tierra: todo terreno salvo agua (clase 1) y montaña o bosque profundo («Forest», también clase 4)
-# sin camino, y los muros del escenario («Walls», clase 5: Hexagon los tiene alrededor de los núcleos y en el borde;
+# sin camino, y el MURO del escenario («Walls», clase 5: Hexagon lo tiene alrededor de los núcleos y en el borde;
 # intransitables siempre, también por aire, aunque tengan camino: pedido del usuario 19/11/2026); un puente (agua con
 # camino) y un camino de montaña sí (la misma regla del constructor y del desembarco, build.py 0x4a52c3).
 # Se mueve en 8 direcciones (como el juego), por eso solo valen tramos horizontales o verticales: uno en diagonal
@@ -36,9 +37,9 @@ def grilla(d):
 
 def vuelo(d, clase, camino):
     """Casillas donde un volador puede entrar (para el punto 3.b). Igual que el juego con vista-aliada (build.py,
-    «Montañas altas: tampoco por aire», pedido del usuario 19/11/2026): todo salvo los muros del escenario (clase 5) y
+    «Montañas altas: tampoco por aire», pedido del usuario 19/11/2026): todo salvo el MURO del escenario (clase 5) y
     la montaña sin camino ni puente (clase 4 cuyo nombre empieza con «moun»; el bosque profundo, también clase 4, sí
-    se sobrevuela). Los muros, siempre (pedido del usuario 19/11/2026)."""
+    se sobrevuela). El MURO, siempre: no lo traspasa nadie (definición del usuario 19/11/2026)."""
     nom = historia.terrenos(d)
     def alta(p):
         return clase[p] == 4 and nom[casilla(d, *p)[0] & 0x1f][0].lower().startswith('moun')
