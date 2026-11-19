@@ -59,6 +59,11 @@ predeterminadas.»*
      (habilidad 12) y le agrega **+6 con Artificer** (bit 0x80000 de +0xc0 del jugador) o **+2 con Engineer** (bit
      0x40000), tope 9; el precio baja un 10 % por punto. Sin héroes ingenieros: **Engineer 320, Artificer 160**.
      Las dos personalidades de la condición del usuario son justamente las que abaratan el muro.
+     Detalle del exe (0x4057a0), confirmado por el usuario el 19/11/2026: por cada héroe vivo del bando suma su
+     ingeniería propia (0x43feb0, habilidad 12: el Warmason la gana con misiones) más dos aportes que dependen de su
+     casilla (0x409e40 y 0x409fb0, también con 12; según el usuario, ítems con ingeniería). Toma el **mejor héroe**
+     (no suma héroes entre sí), le agrega la personalidad y corta en **9** (90 % de descuento). Vale para todas las
+     construcciones, trampas incluidas; se pierde si muere ese héroe.
      Sin identificar: `bd_price` además divide a la mitad si el campo +0xe2 del jugador (0x536c12) no vale -1; no
      se averiguó qué es.
    - **Oro de la computadora** (tabla `turno` de datos.db, tandas 169-188, colores vivos, 100.466 turnos-color):
