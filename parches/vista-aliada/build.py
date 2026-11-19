@@ -16703,7 +16703,10 @@ td_pause:
 # Borde naranja trabado (pedido del usuario, 19/11/2026): al soltar el botón el juego lo deja en el estado 3, «puntero
 # encima» (0x4d93ad; el cuarto cuadro, con el aro naranja), y ese estado solo se apaga cuando el mouse se mueve fuera
 # del botón dentro del juego. El clic abre un programa encima y el estado quedaba huérfano: el botón seguía con el aro.
-# Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero. Solo en el
+# Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero.
+# Eso solo no alcanzaba: el juego manda el clic (0x4d936f) ANTES de poner el estado 3 (0x4d939f, sobre el botón
+# apretado que guarda su rastreador del mouse, 0x588e28, en [+4] = 0x588e2c). Borrar ese puntero en el clic hace que
+# el juego saltee el estado 3 (19/11/2026, segunda vuelta). Solo en el
 # anfitrión: en las demás PC el botón está deshabilitado (estado 2) y así sigue.
 tl_setinit = place('tl_setinit', f'''
     call 0x4dd3a0
@@ -16729,6 +16732,7 @@ tl_setclick = place('tl_setclick', f'''
     call 0x4dd3a0
     test ax, ax
     jnz 0x46ed83
+    mov dword ptr [0x588e2c], 0
     push 0
     push {COIN}
     call 0x4dcec0
@@ -16893,6 +16897,7 @@ dc_click = place('dc_click', f'''
     cmp edx, {DC_BTN}
     jne 0x44db1c
     call {dc_run:#x}
+    mov dword ptr [0x588e2c], 0
     push 0
     push {DC_BTN}
     call 0x4dcec0

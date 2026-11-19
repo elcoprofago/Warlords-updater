@@ -272,6 +272,11 @@ hoja_boton(escalar=True). prueba_botones.py: los clics esperan el estado 0; la h
 De paso, la prueba de la función ociosa simula GetModuleHandleA (desde la 1.0.259.0 tl_idle lee F12 con ov_poll y la
 prueba se cortaba ahí, sin llegar a Edit Side). Prueba del usuario: TAREAS 271.
 
+**1.0.270.0 (19/11/2026): el arreglo de la 1.0.269.0 no alcanzaba** (el usuario lo probó: el aro seguía). En
+0x4d9050 el juego manda el evento de clic (0x4d936f) y recién después pone el estado 3 sobre el botón apretado que
+guarda su rastreador del mouse (0x588e28, [+4] = 0x588e2c; 0x4d9280..0x4d93bf). El estado 0 del clic quedaba pisado.
+Ahora tl_setclick y dc_click además ponen 0x588e2c en 0: el juego saltea el estado 3. Prueba del usuario: TAREAS 272.
+
 ## C. Pausa mientras se vota
 
 **Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la
