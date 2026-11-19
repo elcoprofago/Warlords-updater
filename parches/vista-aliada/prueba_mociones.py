@@ -169,6 +169,30 @@ ver('control: Vale todo rechazada', votacion(4, 'nn------'), (('4', '4'), 0))
 ver('Enganche aprobado: bit 0x1000', votacion(5, 'ssn-----', compu=(2,)), (('5', '5'), 0x1000))
 ver('control: Partida a prueba sigue pidiendo unanimidad humana', votacion(1, 'snss----', compu=(2, 3)), (('1', '1'), 0))
 
+print('-- segunda aprobación de la misma moción: quita la marca (19/11/2026)')
+def votaciones(seq, humanos=(0, 1), compu=(), cierres=1):
+    """Varias votaciones seguidas en la misma partida; cierres = estados «cerrado» repetidos de cada una."""
+    g = Juego(3)
+    g.interceptar(0x4dd3b0, lambda a: None)
+    g.bandos(humanos, compu)
+    out = []
+    for mocion, marcas in seq:
+        g.paquete(0x2a0, struct.pack('<III', 0, mocion, 0), 0)
+        g.paquete(0x2a1, struct.pack('<I', 0) + VOT('libre', marcas))
+        for _ in range(cierres): g.paquete(0x2a1, struct.pack('<I', 0) + VOT('cerrado', marcas))
+        out.append(g.flags())
+    return out
+ver('P aprobada dos veces: aparece y desaparece', votaciones([(1, 'ss------'), (1, 'ss------')]), [1, 0])
+ver('P tres veces: vuelve a aparecer', votaciones([(1, 'ss------')] * 3), [1, 0, 1])
+ver('control: segunda P rechazada, la P sigue', votaciones([(1, 'ss------'), (1, 'sn------')]), [1, 1])
+ver('control: el mismo cierre recibido dos veces no la quita', votaciones([(1, 'ss------')], cierres=2), [1])
+ver('C dos veces: aparece y desaparece', votaciones([(6, 'ss------'), (6, 'ss------')]), [8, 0])
+ver('F, V, T, A: cada una se quita con su segunda aprobación', votaciones([(2, 'ss------'), (4, 'ss------'), (7, 'ss------'),
+    (8, 'ss------'), (2, 'ss------'), (4, 'ss------'), (7, 'ss------'), (8, 'ss------')]),
+    [4, 6, 0x16, 0x36, 0x32, 0x30, 0x20, 0])
+ver('control: quitar C no toca la P', votaciones([(1, 'ss------'), (6, 'ss------'), (6, 'ss------')]), [1, 9, 1])
+ver('control: votación libre en el medio no cambia nada', votaciones([(6, 'ss------'), (0, 'ss------')]), [8, 8])
+
 print('-- fin de ronda (mo_round desde 0x4988d0)')
 def ronda(flags, humanos, compu=(), muertos=(), maq=None, pv=None, ret=0x498c1d):
     g = Juego()

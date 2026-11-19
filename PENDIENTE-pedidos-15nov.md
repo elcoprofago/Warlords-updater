@@ -114,3 +114,8 @@ submenú (dialogo de Build como modelo).
 - 1.0.232.0: mociones Special tournament (bit 0x10, T azul/dorado, RUINS	orneo.pcx) y Void game (bit 0x20, A gris/negro,
   RUINSnulada.pcx). Las mociones de solo bit van en MO_SOLOBIT y las letras en MO_MARCAS (agregar una nueva = una
   entrada en cada tabla + su hoja con _letra). Visor 1.0.23.0: letras junto al nombre (tabla MARCAS) y abre A como P.
+- 1.0.269.0 (pedido del usuario, 19/11/2026): una segunda aprobación de la misma moción con marca la **quita** (mo_apply
+  hace `xor` en vez de `or`, para P y para las de MO_SOLOBIT; Descalificación y Enganche no cambian). Para que un mismo
+  cierre no se aplique dos veces (vt_state llama a mo_apply en cada estado «cerrado» con votos), mo_apply pone MO_CUR
+  en 0 (libre) apenas lo lee. prueba_mociones.py: «segunda aprobación», con controles (segunda rechazada, cierre
+  repetido, otra marca intacta). Prueba del usuario: TAREAS 271.

@@ -263,6 +263,15 @@ En los programas (cada uno con `prueba_partida.py`, y probados compilados lanzá
 
 ---
 
+**1.0.269.0 (19/11/2026, pedido del usuario): borde naranja trabado en Sorteo y Comparador.** Al soltar un botón, el
+juego lo deja en el estado 3 («puntero encima», el cuadro con el aro naranja; 0x4d93ad) y lo apaga recién cuando el
+puntero sale del botón dentro del juego. Como el clic abre un programa encima, ese momento no llegaba y el aro quedaba.
+tl_setclick (solo anfitrión) y dc_click ahora lo vuelven al estado 0 con 0x4dcec0 y refrescan (0x4d7f60). El
+Comparador además pasó de 64×64 a 51×51 (−20 %, mismo centro: DC_X/DC_Y 46), con el ícono reescalado en
+hoja_boton(escalar=True). prueba_botones.py: los clics esperan el estado 0; la hoja darkcomp.pcx, 4 cuadros de 51×51.
+De paso, la prueba de la función ociosa simula GetModuleHandleA (desde la 1.0.259.0 tl_idle lee F12 con ov_poll y la
+prueba se cortaba ahí, sin llegar a Edit Side). Prueba del usuario: TAREAS 271.
+
 ## C. Pausa mientras se vota
 
 **Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la

@@ -443,6 +443,11 @@ pasa a la siguiente casilla o dirección de ese tipo (`BD_CAT` filtra la rotaci�
 Trap» salieron del menú del clic derecho. Falta: la empalizada (espera la batalla, etapa B). Prueba: tarea 142.
 Pendiente técnico: instalar en `C:\Warlords3`, correr todas las `prueba_*.py` y publicar (el juego estaba abierto).
 
+**vista-aliada 1.0.269.0 (19/11/2026), pedido del usuario:** la torrecita ahora cierra la barra del grupo antes de
+abrir el menú (bm_tower llama a 0x4d7d70, como cada caso de 0x41c8d0 y 0x4204a0). Antes la barra quedaba a la vista
+detrás del menú y de la ventanita de reconstruir. Verificado desensamblando bm_tower y las dos entradas de las tablas
+(0x41cb00, 0x4206a8); no hay prueba emulada de esta ruta. Prueba del usuario: TAREAS 271.
+
 **vista-aliada 1.0.154.0 (9/11/2026), pedido del usuario:** el muro de piedra se puede construir sobre un camino
 (no puente), y queda hecho puerta (`ob_okt`). Gráfico: muro de 16 de ancho y 32 de alto (como el frente de la ruina
 grande), almenas más grandes, y sin los píxeles casi blancos ni la hiedra verde de la textura (`_limpia` en

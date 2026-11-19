@@ -160,12 +160,16 @@ def prep_clic(cid, machine=0):
     mu.mem_write(PKT, struct.pack('<II', 3, cid))
     mu.reg_write(UC_X86_REG_ESI, PKT)
     interceptar(mu, 0x4dd3b0, 0, lambda mu, a: ('red', a[0], bytes(mu.mem_read(a[1], a[2]))), out)
+    interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('estado', a[0], a[1]), out)
+    interceptar(mu, 0x4d7f60, 0, lambda mu, a: ('refresco', hex(mu.reg_read(UC_X86_REG_ECX))), out)
     correr(mu, 0x46e889, [], hasta=0x46ed83, count=50)
     return out
 print('-- preparación')
 ver('anfitrión: moneda visible', prep_init(0), [('mostrar', COIN, 0), ('refresco',)])
 ver('otra máquina: moneda deshabilitada', prep_init(2), [('mostrar', COIN, 2), ('refresco',)])
-ver('anfitrión: clic en la moneda', prep_clic(COIN), [('red', 0x2a0, struct.pack('<III', 1, 0, 0))])
+# 19/11/2026: después de mandar la orden, el botón vuelve al estado 0 (sin el aro naranja del «puntero encima»).
+ver('anfitrión: clic en la moneda, y el botón vuelve a normal', prep_clic(COIN),
+    [('red', 0x2a0, struct.pack('<III', 1, 0, 0)), ('estado', COIN, 0), ('refresco', '0x588bd0')])
 ver('control: otra máquina, clic en la moneda', prep_clic(COIN, 2), [])
 ver('control: control 98', prep_clic(98), [])
 mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 80)); mu.reg_write(UC_X86_REG_ESI, PKT)
@@ -210,7 +214,9 @@ class Windows:
                'MoveFileA': (2, self.MoveFileA), 'CreateFileA': (7, self.CreateFileA), 'ReadFile': (5, self.ReadFile),
                'WriteFile': (5, self.WriteFile), 'CloseHandle': (1, self.CloseHandle),
                'CreateProcessA': (10, self.CreateProcessA), 'CreateThread': (6, self.CreateThread),
-               'MessageBoxA': (4, self.MessageBoxA), 'strlen': (0, self.strlen)}
+               'MessageBoxA': (4, self.MessageBoxA), 'strlen': (0, self.strlen),
+               # desde la 1.0.259.0 tl_idle lee F12 (ov_poll -> pk_resolve): sin USER32 no lee el teclado
+               'GetModuleHandleA': (1, lambda mu, a: 0)}
         for k, (nombre, (n, fn)) in enumerate(api.items()):
             stub = STUBS + 0x10 * k
             mu.mem_write(IMPORTS[nombre], struct.pack('<I', stub))
@@ -327,16 +333,19 @@ def es_init():
     return out
 def es_clic(cid, **kw):
     mu = maquina(2); w = Windows(mu, {}, 0, **kw)
+    interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('estado', a[0], a[1]), w.log)
+    interceptar(mu, 0x4d7f60, 0, lambda mu, a: ('refresco', hex(mu.reg_read(UC_X86_REG_ECX))), w.log)
     mu.mem_write(PKT, struct.pack('<II', 3, cid)); mu.reg_write(UC_X86_REG_ESI, PKT)
     correr(mu, 0x44d3e7, [], hasta=0x44db1c, count=100)
     return w.log
 print('-- Edit Side (cualquier máquina)')
 ver('al abrirse: Comparador visible', es_init(), [('mostrar', DC_BTN, 0), ('refresco', '0x588bd0')])
-ver('clic en el Comparador: lo abre y cierra los handles', es_clic(DC_BTN),
-    [('proceso', H + 'DarkCompare.exe', f'"{H}DarkCompare.exe" --juego', 0), ('cerrar', 0x501), ('cerrar', 0x502)])
+ver('clic en el Comparador: lo abre, cierra los handles y el botón vuelve a normal (19/11/2026)', es_clic(DC_BTN),
+    [('proceso', H + 'DarkCompare.exe', f'"{H}DarkCompare.exe" --juego', 0), ('cerrar', 0x501), ('cerrar', 0x502),
+     ('estado', DC_BTN, 0), ('refresco', '0x588bd0')])
 log = es_clic(DC_BTN, proceso_ok=False)
 ver('sin el programa: aviso en un hilo, que se cierra', [(x[0], x[2]) if x[0] == 'hilo' else x for x in log[1:]],
-    [('hilo', DC_ERR), ('cerrar', 0x601)])
+    [('hilo', DC_ERR), ('cerrar', 0x601), ('estado', DC_BTN, 0), ('refresco', '0x588bd0')])
 ver('control: control 80 (fuera de la tabla) no abre nada', es_clic(80), [])
 mu = maquina(); mu.mem_write(PKT, struct.pack('<II', 3, 3)); mu.reg_write(UC_X86_REG_ESI, PKT)
 mu.emu_start(0x44d3e7, 0, count=4)
@@ -493,7 +502,7 @@ ver('archivo 167: darkcomp en SETS\\Fantasy', (struct.unpack_from('<I', fn[DC_FI
     struct.unpack_from('<6I', fn[DC_FILE], 36)), (DC_FILE, b'darkcomp\0', (16, 1, 0, 0, 0, 0)))
 n86, o86 = recs(NUEVO, 86), recs(ORIG, 86)
 ver('Edit Side: un registro más, el 75', (len(n86), len(o86), sorted(set(n86) - set(o86))), (75, 74, [DC_BTN]))
-ver('Edit Side: botón del Comparador', struct.unpack_from('<11I', n86[DC_BTN], 0), (1, DC_BTN, 40, 40, 1, 1, DC_FILE, 0, 0, 64, 64))
+ver('Edit Side: botón del Comparador', struct.unpack_from('<11I', n86[DC_BTN], 0), (1, DC_BTN, 46, 46, 1, 1, DC_FILE, 0, 0, 51, 51))
 x0, y0, x1, y1 = rect(n86[DC_BTN])
 ver('Edit Side: dentro del diálogo (620x460) y sin tapar otro botón', (x1 <= 620 and y1 <= 460,
     [i for i, r in n86.items() if r[0] == 1 and i != DC_BTN and not (rect(r)[2] <= x0 or x1 <= rect(r)[0] or rect(r)[3] <= y0 or y1 <= rect(r)[1])]),
@@ -501,9 +510,9 @@ ver('Edit Side: dentro del diálogo (620x460) y sin tapar otro botón', (x1 <= 6
 ver('control: registros originales de Edit Side intactos', all(n86[i] == o86[i] for i in o86), True)
 dc = Image.open(os.path.join(DIR, 'SETS', 'Fantasy', 'darkcomp.pcx'))
 ver('darkcomp.pcx: esquinas transparentes (11), centro dibujado',
-    [dc.getpixel((x, 64 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (63, 63), (32, 32))], [True, True, False] * 4)
-ver('darkcomp.pcx: 4 cuadros de 64x64, paleta de DLG_BIG (fondo de Edit Side)', (dc.mode, dc.size, dc.getpalette()[:768]),
-    ('P', (64, 256), Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
+    [dc.getpixel((x, 51 * k + y)) == 11 for k in range(4) for x, y in ((0, 0), (50, 50), (25, 25))], [True, True, False] * 4)
+ver('darkcomp.pcx: 4 cuadros de 51x51 (64 menos un 20 %, 19/11/2026), paleta de DLG_BIG (fondo de Edit Side)', (dc.mode, dc.size, dc.getpalette()[:768]),
+    ('P', (51, 204), Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768]))
 ver('control: Chat intacto', n7[80], o7[80])
 ver('control: el original no tiene la moneda', COIN in o7, False)
 ver('control: diálogo 9 sigue con sus casillas nuevas', len(recs(NUEVO, 9)) - len(recs(ORIG, 9)), 3)

@@ -12430,9 +12430,13 @@ VT_SKIP = lambda l: f'''
 # La Votación se cerró con votos (antes de anotarlos): aplicar la moción en curso. «Partida a prueba»: todo bando en
 # juego y humano tiene que haber votado SI (las marcas de MO_MARKS, en el orden de los bandos). Las demás: más SI que
 # NO (VT_SI, VT_NO). Conserva los registros.
+# Mociones con marca (P, F, V, C, T, A): una segunda aprobación de la misma moción quita la marca (xor; pedido del
+# usuario, 19/11/2026: «si estaba la P, desaparece la P con la segunda votación afirmativa»). Para que un mismo cierre
+# no se aplique dos veces (un segundo estado «cerrado» con votos la volvería a invertir), MO_CUR vuelve a 0 (votación
+# libre) en cuanto se aplica.
 MO_BIT = '''    cmp eax, {m}
     jne ma_b{m}
-    or dword ptr [%#x], {b:#x}
+    xor dword ptr [%#x], {b:#x}
     jmp ma_end
 ma_b{m}:
 ''' % MO_FLAGS
@@ -12441,6 +12445,7 @@ mo_apply = place('mo_apply', f'''
     cmp byte ptr [{VT_HAVE:#x}], 0
     je ma_end
     mov eax, dword ptr [{MO_CUR:#x}]
+    mov dword ptr [{MO_CUR:#x}], 0
     cmp eax, {MO_P}
     je ma_p
     test eax, eax
@@ -12482,7 +12487,7 @@ ma_n:
     jb ma_l
     test edx, edx
     jz ma_end
-    or byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
+    xor byte ptr [{MO_FLAGS:#x}], {MO_PRUEBA}
 ma_end:
     mov byte ptr [0x569588 + 0x1a4], 1
     popad
@@ -16695,6 +16700,11 @@ td_pause:
 
 # Pantalla de preparación (diálogo 7): el botón de Sorteo se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
 # clic (ebp = control; los mayores que 96 caen en "ja 0x46ed83") manda abrir el Sorteo.
+# Borde naranja trabado (pedido del usuario, 19/11/2026): al soltar el botón el juego lo deja en el estado 3, «puntero
+# encima» (0x4d93ad; el cuarto cuadro, con el aro naranja), y ese estado solo se apaga cuando el mouse se mueve fuera
+# del botón dentro del juego. El clic abre un programa encima y el estado quedaba huérfano: el botón seguía con el aro.
+# Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero. Solo en el
+# anfitrión: en las demás PC el botón está deshabilitado (estado 2) y así sigue.
 tl_setinit = place('tl_setinit', f'''
     call 0x4dd3a0
     xor ecx, ecx
@@ -16716,6 +16726,15 @@ tl_setclick = place('tl_setclick', f'''
     push 1
     call {tl_sendopen:#x}
     add esp, 4
+    call 0x4dd3a0
+    test ax, ax
+    jnz 0x46ed83
+    push 0
+    push {COIN}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d7f60
     jmp 0x46ed83
 ''')
 
@@ -16726,7 +16745,8 @@ tl_setclick = place('tl_setclick', f'''
 # máquina; si ya está abierto, el propio programa trae su ventana al frente. Si no está, el aviso de las herramientas.
 DC_BTN = 75                  # Edit Side tiene los controles 1 a 74
 DC_FILE = SORTEO_FILE + 1    # hoja SETS\Fantasy\darkcomp.pcx con el dibujo del botón
-DC_X, DC_Y, DC_W, DC_H = 40, 40, 64, 64   # entre el marco y "REGULARS" (y 107), a la izquierda de "Armies"
+DC_X, DC_Y, DC_W, DC_H = 46, 46, 51, 51   # entre el marco y "REGULARS" (y 107), a la izquierda de "Armies"
+# 19/11/2026 (pedido del usuario): un 20 % más chico, de 64 a 51 (64 x 0,8 = 51,2), con el mismo centro (72, 72).
 dc_exe = place_data('dc_exe', cstr_('Herramientas\\DarkCompare.exe'))
 dc_cmd = place_data('dc_cmd', cstr_('"Herramientas\\DarkCompare.exe" --juego'))
 dc_err = place_data('dc_err', cstr_('No se pudo abrir Herramientas\\DarkCompare.exe'))
@@ -16867,11 +16887,18 @@ lc_orig:
 ''')
 
 # Clic en Edit Side (0x44d3a0; evento 3 en 0x44d3e7, edx = control; los que no están entre 2 y 73 caen en
-# "ja 0x44db1c", que devuelve 0 y deja el diálogo abierto).
+# "ja 0x44db1c", que devuelve 0 y deja el diálogo abierto). Después de abrir el programa, el botón vuelve al estado 0:
+# si no, quedaba con el aro naranja del estado «puntero encima» (ver tl_setclick, 19/11/2026).
 dc_click = place('dc_click', f'''
     cmp edx, {DC_BTN}
     jne 0x44db1c
     call {dc_run:#x}
+    push 0
+    push {DC_BTN}
+    call 0x4dcec0
+    add esp, 8
+    mov ecx, 0x588bd0
+    call 0x4d7f60
     jmp 0x44db1c
 ''')
 
@@ -20100,6 +20127,9 @@ bm_entry = place('bm_entry', f"""
     jmp 0x4b0137
 """)
 # Torrecita (casos de los botones; en la pila, esi y edi del manejador): abre el menú en modo construir.
+# Primero cierra la barra del grupo (0x4d7d70), como todos los demás botones de esa barra (0x41c8d0 y 0x4204a0 cierran
+# en cada caso): si no, la barra seguía a la vista detrás del menú y del diálogo de reconstruir (pedido del usuario,
+# 19/11/2026). Reconstruir (0x41ca5a) cierra a su vez el menú, que entonces es la ventana de arriba.
 # bm_open: copia de 0x4afc20 (abrir el menú de órdenes en -1, -1) con el diálogo BM_DLG en vez de 0x1f.
 bm_open = place('bm_open', f"""
     sub esp, 8
@@ -20143,6 +20173,8 @@ bm_open = place('bm_open', f"""
 """)
 bm_tower = place('bm_tower', f"""
     call {pv_off:#x}
+    mov ecx, 0x588bd0
+    call 0x4d7d70
     mov byte ptr [{BM_ON:#x}], 1
     call {bm_open:#x}
     pop edi
@@ -24771,8 +24803,9 @@ def cercano(rgb, _memo={}):
         _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _memo[rgb]
 import io
-def hoja_boton(archivo, W, H):
+def hoja_boton(archivo, W, H, escalar=False):
     icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGBA')
+    if escalar: icono = icono.resize((W - 2, H - 2), Image.LANCZOS)
     assert icono.size == (W - 2, H - 2)
     hoja = Image.new('P', (W, 4 * H), 11)
     hoja.putpalette(butt.getpalette())
@@ -24799,10 +24832,10 @@ setstr(butt_std, 4, 32, 'sorteo')
 table_add(res, 2, SORTEO_FILE, bytes(butt_std))
 
 # Hoja DC_FILE = SETS\Fantasy\darkcomp.pcx: el botón del Comparador en Edit Side, igual que el de Sorteo, con el ícono
-# de DarkCompare (comparador_icono.png: el de 256x256 de su assets\strella.ico, reducido a 62x62). Edit Side (fondo
+# de DarkCompare (comparador_icono.png: el de 256x256 de su assets\strella.ico, reducido a 62x62 y aquí a DC_W - 2). Edit Side (fondo
 # DLG_BIG.PCX) tiene la misma paleta que BUTT_STD.
 assert Image.open(W3 + r'\SETS\Fantasy\DLG_BIG.PCX').getpalette()[:768] == pal
-DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H)
+DC_PCX = hoja_boton('comparador_icono.png', DC_W, DC_H, escalar=True)
 struct.pack_into('<I', butt_std, 0, DC_FILE)
 setstr(butt_std, 4, 32, 'darkcomp')
 table_add(res, 2, DC_FILE, bytes(butt_std))
