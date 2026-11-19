@@ -16777,11 +16777,26 @@ dc_exe = place_data('dc_exe', cstr_('Herramientas\\DarkCompare.exe'))
 dc_cmd = place_data('dc_cmd', cstr_('"Herramientas\\DarkCompare.exe" --juego'))
 dc_err = place_data('dc_err', cstr_('No se pudo abrir Herramientas\\DarkCompare.exe'))
 
-# Alta de Edit Side (0x44dc00, fin en 0x44dd53): los controles nacen ocultos; mostrar el botón, habilitado.
+# Visor de miniaturas (vw_*, más abajo): casilla «View units» de Edit Side; vw_on guarda si está tildada (la
+# recuerda mientras el juego esté abierto; arranca destildada).
+VW_CHK = DC_BTN + 1
+vw_on = place_data('vw_on', bytes(4))
+
+# Alta de Edit Side (0x44dc00, fin en 0x44dd53): los controles nacen ocultos; mostrar el botón, habilitado, y la
+# casilla del visor con su valor.
 dc_init = place('dc_init', f'''
     push 0
     push {DC_BTN}
     call 0x4dcec0
+    add esp, 8
+    push 0
+    push {VW_CHK}
+    call 0x4dcec0
+    add esp, 8
+    movzx eax, byte ptr [{vw_on:#x}]
+    push eax
+    push {VW_CHK}
+    call 0x4dd000
     add esp, 8
     mov ecx, 0x588bd0
     call 0x4d7f60
@@ -16926,6 +16941,136 @@ dc_click = place('dc_click', f'''
     mov ecx, 0x588bd0
     call 0x4d7f60
     jmp 0x44db1c
+''')
+
+# ---------------------------------------------------------------- Visor de miniaturas (vw_*)
+# Pedido del usuario (19/11/2026): con la casilla «View units» de Edit Side tildada, el selector de unidades que abren
+# los botones «Change» (diálogo 0x52 = RES 87, 0x4027b0) muestra arriba a la derecha de la PANTALLA la figura de mapa
+# de la unidad elegida, al doble de tamaño y sobre fondo oscuro (no el magenta de la hoja, índice 11 = transparente).
+# - La figura: celda 48x48 en (1,161) de ARMY\<nombre>.PCX (la misma que usa DarkValidator); nombre = registro
+#   [0x5016d4] + fila [0x5016d0] * 48 (+0: nombre del archivo); cantidad de filas [0x5016e4]; clase [0x5016dc]
+#   (5 = héroes, que están en HERO\ con variantes f/m: no se muestran por ahora).
+# - Se dibuja en el pintado del selector (5.º callback, 0x402c40 era un ret; llamado con 2 en cada repintado, que
+#   0x402963 pide al cambiar de fila). Hoja temporal en blanco de VW_S x VW_S (como 0x4bbf20): marco de color
+#   VW_FRAME, interior VW_BG, la celda estirada al doble con Blt de DirectDraw (clave de color de la hoja, que la
+#   carga pone en el índice 11 porque el 4.º dato es 1), y la hoja temporal a la pantalla con 0x4e3c10.
+VW_S, VW_B = 100, 2                  # 2 de marco + 96 (48 x 2) + 2
+VW_FRAME, VW_BG = 199, 0             # gris azulado y negro de la paleta del juego
+VW_M = 8                             # margen desde el borde de la pantalla
+vw_img = place_data('vw_img', bytes(0x60))
+vw_tmp = place_data('vw_tmp', bytes(0x60))
+vw_fx = place_data('vw_fx', struct.pack('<I', 100) + bytes(96))
+vw_rall = place_data('vw_rall', struct.pack('<4i', 0, 0, VW_S, VW_S))
+vw_rin = place_data('vw_rin', struct.pack('<4i', VW_B, VW_B, VW_S - VW_B, VW_S - VW_B))
+vw_rsrc = place_data('vw_rsrc', struct.pack('<4i', 1, 161, 49, 209))
+vw_empty = place_data('vw_empty', b'\0')
+
+# Casilla tildada o destildada (evento 10 en 0x44da1c: [esi+4] = control, [esi+8] = valor nuevo); las 0x23 y 0x24
+# siguen como estaban, el resto caía en 0x44db1c.
+vw_check = place('vw_check', f'''
+    cmp eax, {VW_CHK}
+    jne 0x44db1c
+    mov cl, byte ptr [esi + 8]
+    mov byte ptr [{vw_on:#x}], cl
+    jmp 0x44db1c
+''')
+
+# Pintado del selector (cdecl: [esp+4] = evento). Todo se preserva.
+vw_paint = place('vw_paint', f'''
+    cmp dword ptr [esp + 4], 2
+    jne vw_ret
+    cmp byte ptr [{vw_on:#x}], 0
+    je vw_ret
+    cmp word ptr [0x5016dc], 5
+    je vw_ret
+    pushad
+    movsx eax, word ptr [0x5016d0]
+    test eax, eax
+    jl vw_out
+    movsx ecx, word ptr [0x5016e4]
+    cmp eax, ecx
+    jge vw_out
+    imul eax, eax, 48
+    add eax, dword ptr [0x5016d4]
+    mov esi, eax
+    mov ecx, {vw_img:#x}
+    call 0x4e3470
+    mov ecx, {vw_tmp:#x}
+    call 0x4e3470
+    push 0
+    push 0
+    push 0
+    push 1
+    push 2
+    push esi
+    push 0
+    mov ecx, {vw_img:#x}
+    call 0x4e34d0
+    push 0
+    mov ecx, {vw_img:#x}
+    call 0x4e3540
+    test ax, ax
+    jne vw_free
+    push 0
+    push {VW_S}
+    push {VW_S}
+    push 0
+    push 0
+    push {vw_empty:#x}
+    push 0
+    mov ecx, {vw_tmp:#x}
+    call 0x4e34d0
+    push 0
+    mov ecx, {vw_tmp:#x}
+    call 0x4e3540
+    test ax, ax
+    jne vw_free
+    mov ebx, dword ptr [{vw_tmp:#x} + 0x3c]
+    mov dword ptr [{vw_fx:#x} + 0x50], {VW_FRAME}
+    push {vw_fx:#x}
+    push 0x1000400
+    push 0
+    push 0
+    push {vw_rall:#x}
+    push ebx
+    mov eax, dword ptr [ebx]
+    call dword ptr [eax + 0x14]
+    mov dword ptr [{vw_fx:#x} + 0x50], {VW_BG}
+    push {vw_fx:#x}
+    push 0x1000400
+    push 0
+    push 0
+    push {vw_rin:#x}
+    push ebx
+    mov eax, dword ptr [ebx]
+    call dword ptr [eax + 0x14]
+    push 0
+    push 0x1008000
+    push {vw_rsrc:#x}
+    push dword ptr [{vw_img:#x} + 0x3c]
+    push {vw_rin:#x}
+    push ebx
+    mov eax, dword ptr [ebx]
+    call dword ptr [eax + 0x14]
+    push {VW_M}
+    movzx eax, word ptr [0x500be8]
+    sub eax, {VW_S + VW_M}
+    push eax
+    push {VW_S}
+    push {VW_S}
+    push 0
+    push 0
+    mov ecx, {vw_tmp:#x}
+    call 0x4e3c10
+vw_free:
+    mov ecx, {vw_img:#x}
+    call 0x4e34a0
+    mov ecx, {vw_tmp:#x}
+    call 0x4e34a0
+vw_out:
+    popad
+vw_ret:
+    ret
 ''')
 
 # ---- "Comparador" en el menú del libro (pedido del usuario, 8/11/2026): diálogo 0x58 (RES 93), debajo de "Side
@@ -26349,6 +26494,9 @@ patch(0x44dd53, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x44dd53), asm(f'jmp {dc
 assert rel(0x44dd5d, 2) == bytes.fromhex('5ec3')
 assert rel(0x44d3e7, 9) == bytes.fromhex('8b56048d42fe83f847')
 patch(0x44d3f0, asm('ja 0x44db1c', 0x44d3f0), asm(f'ja {dc_click:#x}', 0x44d3f0))
+# Visor de miniaturas: casilla VW_CHK de Edit Side y pintado del selector de unidades.
+patch(0x44da29, asm('jmp 0x44db1c', 0x44da29), asm(f'jmp {vw_check:#x}', 0x44da29))
+patch(0x40285c, asm('push 0x402c40', 0x40285c), asm(f'push {vw_paint:#x}', 0x40285c))
 # Menú del libro: "Comparador" (bk_*).
 patch(0x42bf2e, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x42bf2e), asm(f'jmp {bk_init:#x}', 0x42bf2e))
 patch(0x42c2ac, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x42c2ac), asm(f'jmp {bk_draw:#x}', 0x42c2ac))
@@ -26584,7 +26732,14 @@ struct.pack_into('<IIII', dcb, 4, DC_BTN, DC_X, DC_Y, 1)
 struct.pack_into('<5I', dcb, 0x18, DC_FILE, 0, 0, DC_W, DC_H)
 setstr(dcb, 0x30, 16, 'Compare')
 setstr(dcb, 0x40, 64, 'Compare army units (DarkCompare)')
-new_list[86] = [dcb]
+# Casilla del visor de miniaturas (VW_CHK), copia de «Mercenaries» (control 35), arriba a la derecha (hoy vacío).
+p, t = r86[35]; assert t == 5
+vwc = bytearray(res[p:p + 4 + SZ[5]])
+struct.pack_into('<III', vwc, 4, VW_CHK, 470, 46)
+setstr(vwc, 0x1c, 16, 'View units')
+setstr(vwc, 0x2c, 64, 'Show the map figure of the unit chosen in Change')
+setstr(vwc, 0x9c, 16, 'View units')
+new_list[86] = [dcb, vwc]
 
 # Diálogo 93 (menú del libro): "Comparador" (BK_TXT / BK_HOT), copias de Side Lists (texto 0xf en y 150, zona 0x10 5
 # píxeles más arriba) en el renglón libre de y 170, entre Side Lists y el de y 190.

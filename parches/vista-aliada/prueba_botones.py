@@ -328,6 +328,7 @@ ver('control: a los 100 ms no hace nada', reloj_corto(), ([], [], [1, 1]))
 def es_init():
     mu = maquina(2); out = []
     interceptar(mu, 0x4dcec0, 0, lambda mu, a: ('mostrar', a[0], a[1]), out)
+    interceptar(mu, 0x4dd000, 0, lambda mu, a: ('valor', a[0], a[1]), out)
     interceptar(mu, 0x4d7f60, 0, lambda mu, a: ('refresco', hex(mu.reg_read(UC_X86_REG_ECX))), out)
     correr(mu, 0x44dd53, [], hasta=0x44dd5d, count=50)
     return out
@@ -339,7 +340,8 @@ def es_clic(cid, **kw):
     correr(mu, 0x44d3e7, [], hasta=0x44db1c, count=100)
     return w.log
 print('-- Edit Side (cualquier máquina)')
-ver('al abrirse: Comparador visible', es_init(), [('mostrar', DC_BTN, 0), ('refresco', '0x588bd0')])
+ver('al abrirse: Comparador y casilla del visor (76, destildada) visibles', es_init(),
+    [('mostrar', DC_BTN, 0), ('mostrar', DC_BTN + 1, 0), ('valor', DC_BTN + 1, 0), ('refresco', '0x588bd0')])
 ver('clic en el Comparador: lo abre, cierra los handles y el botón vuelve a normal (19/11/2026)', es_clic(DC_BTN),
     [('proceso', H + 'DarkCompare.exe', f'"{H}DarkCompare.exe" --juego', 0), ('cerrar', 0x501), ('cerrar', 0x502),
      ('estado', DC_BTN, 0), ('refresco', '0x588bd0')])
@@ -501,7 +503,8 @@ ver('sorteo.pcx: 4 cuadros de 64x60, misma paleta que BUTT_STD', (hoja.mode, hoj
 ver('archivo 167: darkcomp en SETS\\Fantasy', (struct.unpack_from('<I', fn[DC_FILE])[0], fn[DC_FILE][4:13],
     struct.unpack_from('<6I', fn[DC_FILE], 36)), (DC_FILE, b'darkcomp\0', (16, 1, 0, 0, 0, 0)))
 n86, o86 = recs(NUEVO, 86), recs(ORIG, 86)
-ver('Edit Side: un registro más, el 75', (len(n86), len(o86), sorted(set(n86) - set(o86))), (75, 74, [DC_BTN]))
+ver('Edit Side: dos registros más, el 75 y el 76 (visor)', (len(n86), len(o86), sorted(set(n86) - set(o86))),
+    (76, 74, [DC_BTN, DC_BTN + 1]))
 ver('Edit Side: botón del Comparador', struct.unpack_from('<11I', n86[DC_BTN], 0), (1, DC_BTN, 46, 46, 1, 1, DC_FILE, 0, 0, 51, 51))
 x0, y0, x1, y1 = rect(n86[DC_BTN])
 ver('Edit Side: dentro del diálogo (620x460) y sin tapar otro botón', (x1 <= 620 and y1 <= 460,
