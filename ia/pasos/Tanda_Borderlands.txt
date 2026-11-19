@@ -1,0 +1,11 @@
+Tanda_Borderlands: 100x125, 50 ciudades, 10 pasos
+   1. ((89, 78),)  sin camino | 31 casillas, 1 ciudades: Gobort Town; 4793 casillas, 47 ciudades
+   2. ((90, 87), (90, 88), (90, 89))  camino | 42 casillas, 1 ciudades: Goblin Gate; 4780 casillas, 47 ciudades
+   3. ((67, 17),)  camino | 66 casillas, 1 ciudades: Nordheim; 4758 casillas, 47 ciudades
+   4. ((30, 71), (30, 72))  camino | 111 casillas, 1 ciudades: Sacrevir; 4712 casillas, 47 ciudades
+   5. ((84, 90), (85, 90), (86, 90))  sin camino | 144 casillas, 4 ciudades: Glabrug, Gobort Town, Goblin Gate, Gobgar; 4678 casillas, 44 ciudades
+   6. ((13, 83), (13, 84))  camino | 209 casillas, 2 ciudades: Drakenburg, Drakgard; 4614 casillas, 46 ciudades
+   7. ((81, 93), (81, 94), (81, 95))  camino | 256 casillas, 6 ciudades: Gobbrij, Glabrug, Bogrot, Gobort Town, Goblin Gate, Gobgar; 4566 casillas, 42 ciudades
+   8. ((34, 64), (35, 64), (36, 64))  camino | 306 casillas, 2 ciudades: Gnollhome, Gnolloc; 4516 casillas, 46 ciudades
+   9. ((28, 15),)  camino | 450 casillas, 3 ciudades: Werrit, Fleymark, Harrik; 4374 casillas, 45 ciudades
+  10. ((57, 44), (57, 45), (57, 46))  camino | 837 casillas, 7 ciudades: Trollbridge, Trollheim, Magrun, Blackpass, Werrit, Fleymark, Harrik; 3985 casillas, 41 ciudades

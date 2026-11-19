@@ -94,6 +94,17 @@ predeterminadas.»*
      a. Detectar pasos clave en los mapas del banco con un script (sin tocar el juego): casillas de tierra transitable
         cuyo cierre con 1-3 bloques corta todos los caminos por tierra entre dos zonas con ciudades. Mostrarlos al
         usuario sobre el mapa para confirmar que son los que él reconoce.
+        **Hecho (19/11/2026): `ia\pasos.py`.** Tierra transitable = todo salvo agua (clase 1) y montaña (clase 4) sin
+        camino, la regla del constructor. Busca tramos rectos de 1-3 casillas donde se puede poner muro que, cerrados,
+        dejan de un lado y del otro al menos una ciudad (y 12 casillas). Tramos que separan las mismas ciudades son un
+        solo paso (queda el más corto, mejor si cierra un camino). Dibujos y listas en `ia\pasos\`:
+        - Borderlands: 10 pasos (cabeceras de puente, caminos de montaña; p. ej. 10: 3 bloques en (57,44-46) aíslan
+          7 ciudades del noroeste; 7: 3 bloques aíslan las 6 de los goblins del sudeste).
+        - Scarpart: 6 (los de un bloque en caminos: 4 y 6 aíslan 2 y 4 ciudades; 1, 2, 3 y 5 en islas del sur/norte).
+        - Kor: 1 (3 bloques aíslan Erdarc y Bethem). El resto del mapa es abierto: no tiene pasos de 1-3 casillas.
+        - Hexagon: 6, uno por sector de color (11 ciudades cada uno), de 2-3 bloques junto al centro.
+        Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
+        que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
         (barcos con landing/raft, voladores).
      c. Recién ahí la regla de decisión dentro del juego.
@@ -108,6 +119,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). Siguiente: 3.a, detectar pasos clave en los mapas del banco con un script y mostrarlos al usuario.
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). Siguiente: 3.b.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.a».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.b».

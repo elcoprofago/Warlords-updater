@@ -1,0 +1,7 @@
+Tanda_Scarpart: 128x160, 73 ciudades, 6 pasos
+   1. ((87, 147),)  camino | 52 casillas, 3 ciudades: Hananthas, Khurtooth, Darilnakh; 176 casillas, 4 ciudades: Draling, Zhula, Dralrol, Khazalloch
+   2. ((55, 152),)  sin camino | 56 casillas, 2 ciudades: Draling, Zhula; 172 casillas, 5 ciudades: Hananthas, Khurtooth, Darilnakh, Dralrol, Khazalloch
+   3. ((113, 2), (113, 3))  sin camino | 64 casillas, 2 ciudades: Melilrak, Grulagon; 93 casillas, 3 ciudades: Grulintor, Drakdor, Jusorloch
+   4. ((39, 108),)  camino | 91 casillas, 2 ciudades: Gonleaf, Zanallock; 5300 casillas, 32 ciudades
+   5. ((64, 153),)  sin camino | 93 casillas, 3 ciudades: Draling, Zhula, Dralrol; 135 casillas, 4 ciudades: Hananthas, Khurtooth, Darilnakh, Khazalloch
+   6. ((98, 119),)  camino | 210 casillas, 4 ciudades: Zaragnol, Melorim, Morinheim, Ferangor; 5181 casillas, 30 ciudades

@@ -1,0 +1,7 @@
+Tanda_hex_perfiles: 128x160, 73 ciudades, 6 pasos
+   1. ((53, 76), (53, 77), (53, 78))  sin camino | 1837 casillas, 11 ciudades: Black Main, Black Gate, Black Secret, Black Door, Black Shopping, Black Ambassy, Black Haven, Black Chest, Black Outpost, Black Hole, Black Corner; 9470 casillas, 62 ciudades
+   2. ((73, 80), (73, 81), (73, 82))  sin camino | 1837 casillas, 11 ciudades: White Main, White Gate, White Secret, White Door, White Shopping, White Ambassy, White Haven, White Chest, White Outpost, White Hole, White Corner; 9470 casillas, 62 ciudades
+   3. ((60, 67), (61, 67))  sin camino | 1840 casillas, 11 ciudades: Red Gate, Red Main, Red Secret, Red Door, Red Shopping, Red Ambassy, Red Haven, Red Chest, Red Outpost, Red Hole, Red Corner; 9468 casillas, 62 ciudades
+   4. ((66, 89), (67, 89))  sin camino | 1849 casillas, 11 ciudades: Green Gate, Green Main, Green Secret, Green Shopping, Green Door, Green Ambassy, Green Haven, Green Chest, Green Outpost, Green Hole, Green Corner; 9459 casillas, 62 ciudades
+   5. ((71, 71), (71, 72))  sin camino | 1860 casillas, 11 ciudades: Blue Gate, Blue Main, Blue Secret, Blue Shopping, Blue Door, Blue Ambassy, Blue Haven, Blue Chest, Blue Outpost, Blue Hole, Blue Corner; 9448 casillas, 62 ciudades
+   6. ((56, 87), (56, 88))  sin camino | 1862 casillas, 11 ciudades: Yellow Gate, Yellow Main, Yellow Shopping, Yellow Secret, Yellow Door, Yellow Ambassy, Yellow Haven, Yellow Chest, Yellow Outpost, Yellow Hole, Yellow Corner; 9446 casillas, 62 ciudades
