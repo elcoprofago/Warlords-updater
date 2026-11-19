@@ -300,6 +300,11 @@ Lectura: la diferencia de los que construyen es la misma que la de los que no (�
 destrezas de la IA de prueba, no de la MURALLA. **La MURALLA no mostró mejora medible**: no pasa al ranking; queda
 solo para los colores en prueba. Aparte (no es de este tema): en Hexagon la IA de prueba termina con ~3 ciudades
 menos que la original aun sin construir; pierde menos ejércitos (165 vs 307), pero ese déficit merece su propio análisis.
+**Punto 5 (usuario, 19/11/2026): elegir bien el lugar.** *«Lo bueno, lo importante, es que dadas ciertas condiciones,
+construye murallas. Elegir mal o bien el lugar es el próximo desafío.»* Primer paso: con los eventos 51/52 de la tanda
+189 (y la guardada de cada partida), medir por cada MURALLA levantada si el paso daba a una ciudad que después fue
+atacada o perdida, si el enemigo la rodeó, y cuántos bloques quedaron sin cerrar el tramo; de ahí sale qué cambiar en
+la regla de `mp_pick` (ia\cerrar_paso.py).
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, tanda del punto 4».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 5».
