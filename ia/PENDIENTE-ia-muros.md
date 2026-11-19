@@ -245,7 +245,7 @@ predeterminadas.»*
             dueños y la diplomacia del momento (DIPLO, wl_war/fogally), barco (ranura 15: común, «landing», «raft»)
             y voladores (isfly), regla 5 con OB_TAB, y elección. Deja el objetivo del bando (`mp_obj[p]`: paso y
             lado) para el punto 4, y el evento 51 («paso que la IA decide cerrar»: x, y del primer bloque del tramo,
-            n = amenaza × 100 + bloques), que hay que sumar a EVENTOS en `ia	anda.py`.
+            n = amenaza × 100 + bloques), que hay que sumar a EVENTOS en `ia\tanda.py`.
           - Verificación: emulador (simcombate\motor.py, como `ia\prueba_movimiento.py`): mismos pasos y lados que
             `pasos.py` en los cuatro mapas, y misma elección que `cerrar_paso.py` en guardadas con MURALLAS y dueños
             distintos, con los controles del «Esquema de trabajo».
