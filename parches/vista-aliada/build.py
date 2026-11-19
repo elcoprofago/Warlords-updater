@@ -16701,9 +16701,9 @@ td_pause:
 # Pantalla de preparación (diálogo 7): el botón de Sorteo se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
 # clic (ebp = control; los mayores que 96 caen en "ja 0x46ed83") manda abrir el Sorteo.
 # Borde naranja trabado (pedido del usuario, 19/11/2026): al soltar el botón el juego lo deja en el estado 3, «puntero
-# encima» (0x4d93ad; el cuarto cuadro, con el aro naranja), y ese estado solo se apaga cuando el mouse se mueve fuera
+# encima» (0x4d93ad; el cuarto cuadro, hasta la 1.0.271.0 con aro naranja: ver hoja_boton), y ese estado solo se apaga cuando el mouse se mueve fuera
 # del botón dentro del juego. El clic abre un programa encima y el estado quedaba huérfano: el botón seguía con el aro.
-# Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero.
+# Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero. Solo en el
 # anfitrión: en las demás PC el botón está deshabilitado (estado 2) y así sigue.
 tl_setinit = place('tl_setinit', f'''
     call 0x4dd3a0

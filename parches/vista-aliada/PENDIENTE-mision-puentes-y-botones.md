@@ -277,6 +277,12 @@ prueba se cortaba ahí, sin llegar a Edit Side). Prueba del usuario: TAREAS 271.
 guarda su rastreador del mouse (0x588e28, [+4] = 0x588e2c; 0x4d9280..0x4d93bf). El estado 0 del clic quedaba pisado.
 Ahora tl_setclick y dc_click además ponen 0x588e2c en 0: el juego saltea el estado 3. Prueba del usuario: TAREAS 272.
 
+**1.0.272.0 (19/11/2026): la causa real.** El usuario aclaró que el borde quedaba con solo pasar el puntero, sin
+pulsar. El estado 3 es normal en el juego: queda puesto tras pasar el puntero o soltar el botón. Pero en BUTT_STD su
+cuadro es igual al normal, y en las hojas de Sorteo y Comparador (hoja_boton) el cuarto cuadro llevaba aro naranja.
+Ahora es igual al normal; el aro queda solo en el cuadro 1 (apretado). Se quitó el borrado de 0x588e2c de la 1.0.270.0
+(partía del diagnóstico equivocado); el estado 0 del clic de la 1.0.269.0 queda, no molesta.
+
 ## C. Pausa mientras se vota
 
 **Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la
