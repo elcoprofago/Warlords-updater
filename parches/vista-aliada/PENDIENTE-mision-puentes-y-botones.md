@@ -290,6 +290,11 @@ por fuera del ícono, quedaba en pantalla. hoja_boton ahora da a los cuatro cuad
 por dentro (los 2 píxeles del borde): hover = aro 72/71, apretado = aro 71/70 con el ícono corrido 1 píxel. BUTT_STD
 tiene aro en hover (cuadro 3) y apretado (cuadro 1). Prueba del usuario: TAREAS 274.
 
+**1.0.275.0 (19/11/2026).** Sorteo confirmado por el usuario. En el Comparador (ícono redondo con borde dorado) el aro por
+dentro tapaba el borde: ahora hoja_boton(fondo=...) achica el ícono 4 píxeles y pinta el aro por fuera, en una franja de
+2 píxeles que en los cuadros 0 y 2 lleva el recorte de DLG_BIG en (DC_X, DC_Y), así el redibujo la sigue tapando.
+(El código entró por error en el commit 58c23e7 de otra sesión; la 1.0.275.0 lo publica con sus registros.)
+
 ## C. Pausa mientras se vota
 
 **Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la
