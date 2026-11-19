@@ -42,6 +42,6 @@ Prueba 276: la casilla tapaba el título y la figura **nunca** apareció. No se 
 
 ## Queda abierto
 
-1. Si la figura queda pegada en pantalla al cerrar el selector (no hay repintado propio de esa zona): ver en la
+1. Visto por el usuario (19/11/2026): al destildar, el recuadro queda en pantalla con la última arma; «no molesta». Antes: si la figura queda pegada en pantalla al cerrar el selector (no hay repintado propio de esa zona): ver en la
    prueba 276; si pasa, guardar lo que había debajo y reponerlo al cerrar.
 2. Héroes: están en `HERO\` con variantes f/m (`Cavalief`/`Cavaliem`) y archivos `.HER`; no se muestran todavía.
