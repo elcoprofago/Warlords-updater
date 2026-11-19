@@ -787,4 +787,19 @@ parte el grupo al tope de 3 (evento 3).
   lo siguiente es ver si el problema está en las metas (la IA solo planea viajes por mar desde ciudades) y no en el
   camino.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6: terminó la tarea 264».
+### Resultado de la tanda 188 (TAREAS 264, balsa, 64 partidas, revisado 19/11/2026)
+
+- 64 «ok» (la 57, Tanda_Kor de control, terminó en el turno 27; ninguna colgada, tampoco en las _RF).
+- El juego tomó el bono: eventos 3 (grupo partido al embarcar) 0 en los dos controles, 275 en Kor_RF y 410 en
+  Scarpart_RF.
+- **La IA sabe usar la balsa.** Zarpadas (evento 50): Kor_RF 1046 desde la costa y 9 desde una ciudad; Scarpart_RF
+  1399 y 215. En total, el 89 % sale de una costa cualquiera, cosa que solo la balsa permite. Las dos IA lo hacen
+  igual (original 65-100 % por color, prueba 80-100 %): sale del buscador de caminos, no de una destreza de la IA de
+  prueba.
+- Efecto en la partida (PV medio por color, _RF contra su control): Scarpart 7,81 → 10,41 y ciudades 5,66 → 7,80
+  (la balsa abre ese mapa); Kor 5,22 → 4,80 y ciudades 4,04 → 3,64 (ahí cuesta un poco: la balsa reemplaza al barco
+  común, más lento y de 3 lugares).
+- Nada que pasar al ranking: no hay código nuevo de la IA. Lo de la balsa es del escenario (qué barco lleva cada
+  bando). Paso 5.6 cerrado; con él queda medido todo el relevamiento del paso 5.
+
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6 cerrado (tanda 188)».
