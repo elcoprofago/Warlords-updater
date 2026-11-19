@@ -11977,21 +11977,21 @@ opi_r:
 # dia (pedido del usuario) el dibujo sale de picts\star.pcx: se recorta a lo dibujado (fondo = 0, 32, 243, 244), se
 # reduce a OV_SW x OV_SW y cada celda cubierta al menos un 40% toma el color de paleta mas frecuente en ella.
 # ov_w: ancho de la cadena edx en la fuente del estilo actual (0x4e5930); deja eax = ancho y preserva lo demas.
-OV_SW, OV_MR = 11, 3
+OV_SW, OV_MR = 5, 3
+OV_SH = 7
 OV_TG = 3   # separacion extra entre el titulo y los renglones (pedido del usuario del 19/11/2026)
-# 1.0.265.0 (pedido del usuario del 19/11/2026): la estrella es la del juego, la rosa de cuatro puntas de la esfera
-# de mana (PICTS\PICTS.PCX, esfera grande en (291,31)): se toman tal cual sus pixeles de colores 102 a 106 en el
-# cuadro de 11x11 con esquina en (294,36), sin reducir ni recolorear.
+# 1.0.268.0 (pedido del usuario del 19/11/2026): la estrella es la de la botonera, la que se enciende junto al numero
+# de mana cuando hay ingresos: en SETS\Fantasy\MAINSCR.PCX son los pixeles de color 203 del cuadro de 5x7 con esquina
+# en (625,244). Se toma esa forma tal cual y se pinta encendida como en el juego: rosa (105) con el centro claro (106).
 def _ov_star_asm():
     from PIL import Image as _I
-    im = _I.open(W3 + r'\PICTS\PICTS.PCX')
-    px = im.load()
+    px = _I.open(W3 + r'\SETS\Fantasy\MAINSCR.PCX').load()
     por_color = {}
-    for j in range(OV_SW):
+    for j in range(OV_SH):
         for i in range(OV_SW):
-            k = px[294 + i, 36 + j]
-            if 102 <= k <= 106 and (4 <= i <= 6 or 4 <= j <= 6):   # sin el borde de la esfera
-                por_color.setdefault(k, []).append((i, j))
+            if px[625 + i, 244 + j] == 203:
+                por_color.setdefault(106 if (i, j) == (OV_SW // 2, OV_SH // 2) else 105, []).append((i, j))
+    assert sum(map(len, por_color.values())) == 15, por_color
     out = ['    pushad', '    mov ebx, eax', '    mov ebp, edx', '    cld']
     for col, cel in sorted(por_color.items()):
         out += [f'    mov al, {col}', f'    mov edi, {OV_TAB:#x}', '    mov ecx, 256', '    rep stosb']
@@ -12174,7 +12174,7 @@ od_star:
     jnc od_ns
     mov eax, ebx
     sub eax, edx
-    lea edx, [ebp + {(11 - OV_SW) // 2}]
+    lea edx, [ebp + {(11 - OV_SH) // 2}]
     call {ov_star:#x}
 od_ns:
     add esp, 4
