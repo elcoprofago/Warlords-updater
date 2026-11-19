@@ -110,7 +110,9 @@ predeterminadas.»*
         escenarios editados, quizás: la regla vale para cualquier mapa.
         Para 3.b, `pasos.vuelo()`: dónde entra un volador. Desde la reforma de otra sesión (build.py, «Montañas altas:
         tampoco por aire», 19/11/2026) ni los muros del escenario (clase 5) ni la montaña («Mountains», clase 4) se
-        sobrevuelan; el bosque profundo sí. Con camino o puente, las dos se pasan, como por tierra. Medido: Kor,
+        sobrevuelan; el bosque profundo sí. La montaña con camino o puente se pasa; los muros, nunca (corrección del
+        usuario, 19/11/2026: «una muralla es intransitable siempre, para todo bando, excepto aliados»; esa regla no se
+        toca). Medido: Kor,
         2712 casillas cerradas al vuelo (todas sus montañas); Hexagon, 5162 (sus muros). Así, un paso entre montañas
         frena también a los voladores, salvo que lo rodeen por otro lado.
         Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
