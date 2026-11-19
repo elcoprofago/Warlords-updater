@@ -20,7 +20,6 @@ import ciudades
 from muros import casilla, sirve, MAPA, TERRENOS
 from sin_ruinas import offset
 
-R = 7            # radio de la ventana del filtro local
 MIN_LADO = 12    # casillas mínimas de cada lado (descarta rincones)
 
 
@@ -74,6 +73,50 @@ def tramos(paso, ok):
                     yield tuple(seg)
 
 
+def separa(todo, seg):
+    """Búsqueda alternada desde las vecinas del tramo (la que va a usar el juego: punto 3.c de la nota de murallas): cada vecina
+    arranca su propio grupo; se expande siempre el grupo más chico; dos grupos que se tocan se unen. Si un grupo se
+    agota sin tocar a otro, el tramo separa: devuelve sus casillas (el lado chico). Si todos se unen, None. Cuesta
+    lo que mide el lado chico: en un tramo que no separa, los grupos se unen enseguida. Devuelve (lado, visitas)."""
+    sem = list(dict.fromkeys(q for x, y in seg for dx, dy in VEC for q in [(x + dx, y + dy)] if q in todo))
+    grupo, fr, tam, padre = {}, {}, {}, {}
+
+    def raiz(i):
+        while padre[i] != i:
+            i = padre[i]
+        return i
+    for k, p in enumerate(sem):
+        grupo[p], fr[k], tam[k], padre[k] = k, [p], 1, k
+    vis = 0
+    while True:
+        vivos = {raiz(k) for k in fr}
+        if len(vivos) < 2:
+            return None, vis
+        agotado = next((k for k in sorted(vivos) if not fr[k]), None)
+        if agotado is not None:
+            return {p for p, g in grupo.items() if raiz(g) == agotado}, vis
+        k = min(vivos, key=lambda k: (tam[k], k))
+        nuevo = []
+        for x, y in fr[k]:
+            for dx, dy in VEC:
+                q = (x + dx, y + dy)
+                if q not in todo:
+                    continue
+                vis += 1
+                g = grupo.get(q)
+                if g is None:
+                    grupo[q] = k
+                    nuevo.append(q)
+                    tam[k] += 1
+                elif raiz(g) != k:
+                    j = raiz(g)
+                    padre[j] = k
+                    tam[k] += tam[j]
+                    nuevo += fr[j]
+                    fr[j] = []
+        fr[k] = nuevo
+
+
 def detectar(d):
     w, h, paso, clase, camino = grilla(d)
     cs = [c for c in ciudades.leer(d) if c['tam']]
@@ -87,16 +130,13 @@ def detectar(d):
     comp_de = {p: k for k, c in enumerate(base) for p in c}
     hallados = []
     for seg in tramos(paso, ok):
-        cx, cy = seg[len(seg) // 2]
-        ven = {p for p in paso if abs(p[0] - cx) <= R and abs(p[1] - cy) <= R} - set(seg)
-        borde = [c for c in componentes(ven)
-                 if any(abs(p[0] - cx) == R or abs(p[1] - cy) == R for p in c)]
-        if len(borde) < 2:
-            continue
-        # comprobación global: sin el tramo, ¿quedan separadas zonas con ciudades?
         todo = base[comp_de[seg[0]]] - set(seg)
-        partes = componentes(todo)
-        con = [(len(p), sorted({celda_ciudad[q] for q in p if q in celda_ciudad})) for p in partes]
+        chico, _ = separa(todo, seg)
+        if not chico:
+            continue
+        # lado chico (el que se agotó) y el resto de esa masa de tierra: los dos con ciudades y MIN_LADO casillas
+        resto = todo - chico
+        con = [(len(p), sorted({celda_ciudad[q] for q in p if q in celda_ciudad})) for p in (chico, resto)]
         con = [c for c in con if c[0] >= MIN_LADO and c[1]]
         if len(con) >= 2:
             hallados.append((seg, con))

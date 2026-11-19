@@ -69,16 +69,17 @@ predeterminadas.»*
      casilla (0x409e40 y 0x409fb0, también con 12; según el usuario, ítems con ingeniería). Toma el **mejor héroe**
      (no suma héroes entre sí), le agrega la personalidad y corta en **9** (90 % de descuento). Vale para todas las
      construcciones, trampas incluidas; se pierde si muere ese héroe.
-     Sin identificar: `bd_price` además divide a la mitad si el campo +0xe2 del jugador (0x536c12) no vale -1; no
-     se averiguó qué es.
+     **La computadora paga la mitad** (identificado el 19/11/2026, punto 3.c): `bd_price` divide la base a la mitad
+     si el campo +0xe2 del jugador (0x536c12) no vale -1, y -1 es el humano. Para la IA, sin héroes ingenieros: **sin
+     personalidad 200, Engineer 160, Artificer 80** por bloque.
    - **Oro de la computadora** (tabla `turno` de datos.db, tandas 169-188, colores vivos, 100.466 turnos-color):
      mediana 168 (turnos 1-10), 189 (11-20), 170 (21-30); p90 362 / 412 / 410. Turnos con al menos 160: 55,6 %;
      320: 16,9 %; 400: 10,0 %; 640: 3,7 %; 800: 2,6 %.
    - **Propuesta de mínimo:** como `ai_wrep` (AW_DIV = 2), construir un bloque solo si el oro es al menos **el doble
-     de su precio**: Artificer 320 (se da en el 16,9 % de los turnos), Engineer 640 (3,7 %). Así el Artificer
-     construye seguido y el Engineer pocas veces, y ninguno se queda sin oro para sus tropas. Un anillo de 12 bloques
-     cuesta 1.920 con Artificer y 3.840 con Engineer: se arma de a un bloque por turno, empezando por el acceso más
-     amenazado.
+     de su precio**. Con el precio de la computadora (la mitad): **Artificer 160** (se da en el 55,6 % de los turnos),
+     **Engineer 320** (16,9 %). Así el Artificer construye seguido y el Engineer menos, y ninguno se queda sin oro
+     para sus tropas. (La primera versión de esta propuesta usaba el precio del humano, el doble: 320 y 640.) Un
+     tramo de 3 bloques cuesta 240 con Artificer y 480 con Engineer; se arma de a un bloque por turno.
 3. **Dónde (criterio del usuario, 19/11/2026).**
    - **Anillos alrededor de una ciudad: descartados** (*«lleva mucho trabajo, tiempo en turnos, costo y es solo para
      defender esa ciudad. Lo descarto de plano.»*). Única excepción: el bando en decadencia (pocas ciudades, a punto
@@ -175,6 +176,52 @@ predeterminadas.»*
         No cuenta héroes, objetos, el oro del enemigo ni las MURALLAS ya construidas: es el peor caso de un ejército
         recién producido. Tarda unos segundos por mapa.
      c. Recién ahí la regla de decisión dentro del juego.
+        **Decidido y prototipado (19/11/2026): `ia\cerrar_paso.py`** (la regla v1 en Python, con los datos que el
+        juego tiene a mano; lee una guardada y, con `partida turno`, los dueños, el oro y la diplomacia de ese turno
+        en datos.db; `--control` compara las simplificaciones con lo exacto).
+        - **Se calcula en el juego, no precalculado por mapa.** Así sirve en los mapas al azar, en los 9 escenarios
+          de ESCEN y en las campañas, y con las MURALLAS y los dueños del momento. El costo alcanza: `pasos.py` ahora
+          separa los lados con un recorrido alternado (el lado más chico se agota primero) en vez de la ventana de
+          7 casillas, con los mismos pasos y los mismos lados en los cuatro mapas (medido contra los JSON del commit
+          anterior). Medido: 1,1 millones de visitas de casilla en Borderlands y 3,0 en Hexagon para todos los tramos
+          juntos; 24 mil como máximo para un tramo. Se recalcula cuando cambia el mapa (obras, dueños), no cada turno.
+        - **La regla v1:**
+          1. Condiciones del bando: Artificer o Engineer; oro ≥ 2 × precio del bloque (160 / 320); y alguna unidad con
+             «build» que pueda producir.
+          2. Por cada paso no cerrado y cada lado D con ciudades propias: **amenaza** = por cada bando no aliado (en
+             guerra o en paz) con ciudades del otro lado y ninguna en D, sus ciudades de ese lado que **llegan al
+             paso en 4 turnos o menos** («3-4 jugadas»), × 2 si no puede rodear el paso, × 1 si puede (por agua o por
+             aire: vale menos, no nada).
+          3. Se descarta el paso si la ciudad propia más cercana está a más de 20 casillas (el constructor tendría
+             que cruzar medio mapa) o si no tiene amenaza.
+          4. Elige la mayor amenaza; a igualdad, la ciudad propia más cercana y después el tramo más corto.
+        - **Simplificaciones para el juego, medidas contra lo exacto de 3.b (`--control`):**
+          - Agua: barco común si los dos lados tienen puerto; «Landing», puerto de su lado y costa del nuestro;
+            «Raft», costa de los dos (sin mirar si es el mismo mar). En los cuatro mapas da lo mismo que amenaza.py.
+          - Turnos al paso: un solo recorrido hacia atrás desde el tramo con el costo de cada casilla (la grilla del
+            juego), uno por bono de terreno; turnos = techo(costo / movimiento). Contra `movimiento.turnos` (que pierde
+            lo que sobra de cada turno): igual en 352 de 358 ciudades enemigas, 1 turno de más en 6; cambia «dentro o
+            fuera de 4 turnos» en 3 (Borderlands al empezar y en la partida 1477, turno 15). Se equivoca siempre
+            hacia el lado prudente: cuenta como amenaza a alguien que tarda un turno más.
+          - Lava: el juego la marca como agua (clase 1); se distingue por el nombre del terreno («Lava», en
+            0x535f12 + terreno × 0x58), como hace amenaza.py.
+        - **Resultados:**
+          - En las guardadas del banco nadie construiría hoy: ningún bando tiene unidades con «build» (punto 1), y en
+            Borderlands, Kor y Scarpart ninguno tiene Artificer ni Engineer. Hacen falta las guardadas `_BD`.
+          - Borderlands, partida 1477, turno 15 (mirando solo la amenaza): el 7 tiene el paso 4 (amenaza 62, nadie lo
+            rodea, su ciudad a 4 casillas); el 3, el paso 8 (52, a 13); el 0, el 7 y el 5 (25-29, se rodean por agua);
+            el 6, el 10 y el 3. Con la caballería gnoll (24 de movimiento por camino) casi todo enemigo llega en 4
+            turnos: en un mapa chico y rápido el horizonte apenas recorta (68 → 62 en el paso 4 del 7).
+          - Hexagon: todo se rodea por aire (Descenders'); los pasos de sector quedan a 44-48 casillas de las
+            capitales (más de 20: lejos).
+          - Kor: amenaza 1-6, se rodea por agua.
+        - **Falta en la regla:** terminar lo empezado (un paso a medio cerrar va primero) y no volver a elegir un
+          paso ya cerrado; las dos cosas se ven en la tabla de obras (OB_MURO del bando en el tramo).
+        - **Cómo va a quedar en el juego (build.py), a escribir:** `mp_scan` (una vez por estado del mapa: grilla de
+          tierra, tramos candidatos donde `ob_okt(OB_MURO)` acepta o ya hay MURALLA, separación de lados, ciudades de
+          cada lado, costa y puertos, distancias) y `mp_pick(p)` en `ia_turn` (condiciones, amenaza, elección; deja el
+          objetivo del bando y el evento 51, «paso que la IA decide cerrar»: x, y del tramo, n = amenaza × 100 +
+          bloques). Igual en todas las PC (sin azar). Se verifica en el emulador contra `cerrar_paso.py`.
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
    Una primera etapa más simple: construir solo donde el constructor ya está (junto a una ciudad propia), sin
@@ -186,6 +233,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py: enemigos, distancia, turnos con ia\movimiento.py verificado contra el juego, rodeo por agua y por aire). Siguiente: 3.c, la regla de decisión dentro del juego (con qué datos de amenaza.py decide la IA cerrar un paso, y si se calcula en el juego o se deja precalculado por mapa).
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py). 3.c decidido y prototipado (ia\cerrar_paso.py: se calcula en el juego; regla v1). Siguiente: sumar a la regla «terminar lo empezado» y «paso ya cerrado», y escribirla en build.py (`mp_scan` / `mp_pick`, evento 51), verificada en el emulador contra cerrar_paso.py. Después, el punto 4 (mover al constructor y construir).
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.c».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.c en el juego».
