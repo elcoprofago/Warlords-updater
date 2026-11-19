@@ -59,6 +59,8 @@ predeterminadas.»*
      (habilidad 12) y le agrega **+6 con Artificer** (bit 0x80000 de +0xc0 del jugador) o **+2 con Engineer** (bit
      0x40000), tope 9; el precio baja un 10 % por punto. Sin héroes ingenieros: **Engineer 320, Artificer 160**.
      Las dos personalidades de la condición del usuario son justamente las que abaratan el muro.
+     Sin identificar: `bd_price` además divide a la mitad si el campo +0xe2 del jugador (0x536c12) no vale -1; no
+     se averiguó qué es.
    - **Oro de la computadora** (tabla `turno` de datos.db, tandas 169-188, colores vivos, 100.466 turnos-color):
      mediana 168 (turnos 1-10), 189 (11-20), 170 (21-30); p90 362 / 412 / 410. Turnos con al menos 160: 55,6 %;
      320: 16,9 %; 400: 10,0 %; 640: 3,7 %; 800: 2,6 %.
