@@ -85,6 +85,7 @@ def main(tid=None):
     innovaciones(db, validas)
     candidatos(db, validas)
     muros(db, validas)
+    balsa(db, validas)
     asaltos(db, validas)
     defensa(db, validas)
     hechizos(db, validas, cuenta)
@@ -155,6 +156,24 @@ def muros(db, validas):
     print(f'{"IA":28} {"color":>5} {"ataques":>7} {"caídos":>6} {"turnos":>6} {"vecinas":>7} {"brechas":>7}')
     for (ia, color), e in sorted(c.items()):
         print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:{w}}' for v, w in zip(e, (7, 6, 6, 7, 7))))
+
+
+def balsa(db, validas):
+    """Evento 50 (paso 5.6 de ia\\PENDIENTE-ia-innovaciones.md, solo en tandas): un grupo de la computadora con "Raft"
+    zarpó desde tierra; n = 0 desde una costa cualquiera (lo que solo la balsa permite), 1 desde una ciudad, 2 desde un
+    punto de transbordo. Si la IA sabe usar la balsa, los de costa tienen que ser una parte grande del total."""
+    q = ','.join('?' * len(validas))
+    filas = db.execute(f'select ia, color, n from evento where partida in ({q}) and tipo = 50', validas).fetchall()
+    if not filas:
+        print('\nBalsa: la tanda no registró zarpadas con "Raft".')
+        return
+    c = defaultdict(lambda: [0] * 3)   # costa, ciudad, transbordo
+    for ia, color, n in filas:
+        c[ia, color][n if n in (0, 1, 2) else 2] += 1
+    print('\nBalsa (zarpadas de grupos con "Raft", desde dónde)')
+    print(f'{"IA":28} {"color":>5} {"costa":>6} {"ciudad":>6} {"transb":>6} {"% costa":>7}')
+    for (ia, color), e in sorted(c.items()):
+        print(f'{IAS.get(ia, ia):28} {color:5} ' + ' '.join(f'{v:6}' for v in e) + f' {100 * e[0] / sum(e):7.0f}')
 
 
 def asaltos(db, validas):

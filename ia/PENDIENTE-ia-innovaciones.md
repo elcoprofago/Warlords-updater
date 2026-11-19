@@ -774,7 +774,17 @@ parte el grupo al tope de 3 (evento 3).
   que aparecer mucho más que en el control), PV y puesto por color, y si hay partidas colgadas que no aparecen en
   el control (caminos nuevos por la costa). Si los eventos 3 salen en 0, primero confirmar que el juego tomó el bono
   (la balsa a la vista en una partida cargada) antes de concluir nada.
-- Límite: no hay un evento propio de «zarpó desde una costa sin puerto»; el evento 3 solo cuenta grupos de más de 3.
-  Si la lectura no alcanza, se agrega ese evento.
+- Pedido del usuario (18/11/2026): no alcanza con saber si la IA usa la balsa; hay que saber si **sabe usarla**, es
+  decir, si sabe (o descubre) que puede zarpar desde cualquier costa y no solo desde un puerto. El evento 3 no lo
+  distingue. Por eso, **evento 50** (vista-aliada 1.0.256.0, rfsail en 0x49cdc7, antes de crfollow; solo con IA.INI y
+  bandos de la computadora): un grupo con «Raft» quedó embarcado viniendo de una casilla que no es agua. x, y = casilla
+  de salida; n = 0 costa cualquiera (lo que solo la balsa permite), 1 ciudad, 2 punto de transbordo. Prueba emulada
+  `prueba_balsazarpa.py`: 3 casos y 5 controles (sin IA.INI, humano, barco con Landing, grupo que desembarcó, grupo
+  que ya navegaba). informe.py: tabla «Balsa» por IA y color con el % desde la costa.
+- Lectura: si casi todas las zarpadas son n = 1 (ciudad), la IA usa la balsa como un barco común y no sabe lo que la
+  balsa le permite; si hay muchas n = 0, lo sabe. El camino de la IA lo arma el mismo buscador que agrega los pasos
+  costa-agua (livexp/livback), así que lo esperable es que sí; la tanda lo confirma o no. Si sale casi todo n = 1,
+  lo siguiente es ver si el problema está en las metas (la IA solo planea viajes por mar desde ciudades) y no en el
+  camino.
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6: terminó la tarea 264».

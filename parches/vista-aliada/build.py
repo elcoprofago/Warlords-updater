@@ -7349,7 +7349,9 @@ aibn_bridge:
 # ejército encima, 2 falta oro, 3 cabecera sin camino, 4 enemigo visible cerca, 5 lo volvería a derribar, 6 nada que
 # ganar al cruzar, 7 pasó todo), 27 un puente queda como candidato de la meta 9 (n = costo).
 # Economía (PENDIENTE-ia-economia, paso 1): 28 un ejército deserta por falta de oro (ds_evt; x, y = casilla del ejército,
-# n = oro del bando en ese momento). Lo hace 0x415910 al empezar el turno, con 20 % por ejército, si la bandera de
+# n = oro del bando en ese momento).
+# Balsa (paso 5.6, rfsail): 50 un grupo con "Raft" zarpó desde tierra (x, y = casilla de salida, n = 0 costa cualquiera,
+# 1 ciudad, 2 punto de transbordo). Lo hace 0x415910 al empezar el turno, con 20 % por ejército, si la bandera de
 # quiebra [0x536c1c + p * 0x1f8] quedó puesta (0x42244b: oro - mantenimiento + ingreso < 0).
 # Paso 2: 29 saldo del turno (ec_evt, en 0x422482, justo antes de que 0x4b9390 aplique ingreso - mantenimiento;
 # x = ingreso [0x5643f0 + 2p], y = mantenimiento [0x5643d8 + 2p], n = oro en ese momento). El oro de la tabla turno se
@@ -20731,6 +20733,70 @@ ib_out:
 ''')
 
 
+# Paso 5.6 de ia\PENDIENTE-ia-innovaciones: evento 50, un grupo de un bando de la computadora con "Raft" zarpó: pasó de
+# una casilla que no es agua (A = [0x572990], [0x572994], de donde salió) a quedar embarcado (grupo +0x1a & 8) en N.
+# x, y = A; n = 1 si A es una ciudad (0x440be0 >= 0), 2 si es un punto de transbordo (0x4a6610), 0 si es una costa
+# cualquiera: los 0 son los que solo la balsa permite. Solo con IA.INI (ia_evt). Enganche en 0x49cdc7 (el paso que
+# embarca/desembarca, código 0), antes de crfollow, con el mismo estado de entrada: esi = movimiento, [esi+2] = jugador.
+RF_EVT = 50
+rfsail = place('rfsail', f'''
+    pushad
+    cmp byte ptr [{IA_ON:#x}], 0
+    je rs_out
+    movsx ebp, byte ptr [esi + 2]
+    cmp ebp, 8
+    jae rs_out
+    imul ecx, ebp, {SIDE:#x}
+    cmp word ptr [ecx + {SIDE_HUMAN:#x}], -1
+    je rs_out
+    imul ebx, ebp, 0x4f0
+    test byte ptr [ebx + 0x56eaaa], 8
+    jz rs_out
+    mov eax, ebp
+    call {boatraft:#x}
+    test eax, eax
+    jz rs_out
+    movsx esi, word ptr [0x572990]
+    movsx edi, word ptr [0x572994]
+    lea eax, [edi + edi*4]
+    add eax, eax
+    mov cl, byte ptr [0x503e06]
+    shl eax, cl
+    lea ecx, [esi + esi*4]
+    lea eax, [eax + ecx*2 + 0x503e58]
+    movzx ecx, word ptr [eax]
+    and ecx, 0x1f
+    imul ecx, ecx, 0x58
+    cmp word ptr [ecx + 0x535f0c], 1
+    je rs_out
+    push edi
+    push esi
+    call 0x440be0
+    add esp, 8
+    mov edx, 1
+    test ax, ax
+    jns rs_ev
+    push edi
+    push esi
+    call 0x4a6610
+    add esp, 8
+    xor edx, edx
+    test ax, ax
+    jz rs_ev
+    mov edx, 2
+rs_ev:
+    push edx
+    push edi
+    push esi
+    push ebp
+    push {RF_EVT}
+    call {ia_evt:#x}
+    add esp, 0x14
+rs_out:
+    popad
+    jmp {crfollow:#x}
+''')
+
 # Paso 5.5 de ia\PENDIENTE-ia-innovaciones: evento 46, un bando de la computadora atacó un bloque de muro (x, y = bloque,
 # n = arqueros virtuales muertos en esa batalla, + 100 si el bloque cayó). Solo con IA.INI (ia_evt).
 WM_EVT = 46
@@ -23459,7 +23525,7 @@ patch(0x4a5328, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {cabgraph:#x}', 0x4
 assert rel(0x49d062, 2) == bytes.fromhex('6a05')
 patch(0x49d05d, asm('movsx ax, byte ptr [esi + 2]', 0x49d05d), asm(f'jmp {crlink:#x}', 0x49d05d))
 assert rel(0x49cdc2, 5) == asm('call 0x49db70', 0x49cdc2)
-patch(0x49cdc7, bytes.fromhex('83c414') + asm('mov cx, word ptr [esi + 6]', 0x49cdca), asm(f'jmp {crfollow:#x}', 0x49cdc7))
+patch(0x49cdc7, bytes.fromhex('83c414') + asm('mov cx, word ptr [esi + 6]', 0x49cdca), asm(f'jmp {rfsail:#x}', 0x49cdc7))
 assert rel(0x464c3d, 0x464c51 - 0x464c3d) == asm('lea eax, [esp + 0x30]; push eax; push edi; push esi; call 0x4411b0; '
                                                  'mov word ptr [esp + 0x1e], ax; add esp, 0xc', 0x464c3d)
 patch(0x464c3d, rel(0x464c3d, 0x464c51 - 0x464c3d), asm(f'jmp {crdef:#x}', 0x464c3d))
