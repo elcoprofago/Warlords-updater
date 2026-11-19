@@ -16701,7 +16701,7 @@ td_pause:
 # Pantalla de preparación (diálogo 7): el botón de Sorteo se muestra al iniciarla, deshabilitada fuera del anfitrión, y el
 # clic (ebp = control; los mayores que 96 caen en "ja 0x46ed83") manda abrir el Sorteo.
 # Borde naranja trabado (pedido del usuario, 19/11/2026): al soltar el botón el juego lo deja en el estado 3, «puntero
-# encima» (0x4d93ad; el cuarto cuadro, hasta la 1.0.271.0 con aro naranja: ver hoja_boton), y ese estado solo se apaga cuando el mouse se mueve fuera
+# encima» (0x4d93ad; el cuarto cuadro, con aro naranja por dentro: ver hoja_boton), y ese estado solo se apaga cuando el mouse se mueve fuera
 # del botón dentro del juego. El clic abre un programa encima y el estado quedaba huérfano: el botón seguía con el aro.
 # Ahora el clic lo vuelve al estado 0 (normal) con 0x4dcec0, como hace el juego al salir el puntero. Solo en el
 # anfitrión: en las demás PC el botón está deshabilitado (estado 2) y así sigue.
@@ -26369,27 +26369,37 @@ def cercano(rgb, _memo={}):
         _memo[rgb] = min(usables, key=lambda i: sum((pal[3 * i + k] - rgb[k]) ** 2 for k in range(3)))
     return _memo[rgb]
 import io
-# Cuadros: 0 normal, 1 apretado (corrido y con aro naranja), 2 deshabilitado, 3 el que el juego deja después de
-# pasar el puntero (o soltar el botón) hasta que se va de la pantalla. En BUTT_STD el 3 es igual al normal: con aro,
-# el botón quedaba marcado con solo pasarle el puntero (pedido del usuario, 19/11/2026; vista-aliada 1.0.272.0).
+# Cuadros: 0 normal, 1 apretado, 2 deshabilitado, 3 puntero encima (el juego lo pone al entrar el puntero y lo
+# saca al salir, 0x4d8a5f / 0x4d8b34), como en BUTT_STD: 1 y 3 con aro naranja (vista-aliada 1.0.273.0).
 def hoja_boton(archivo, W, H, escalar=False):
+    # Los cuatro cuadros (normal, apretado, deshabilitado, puntero encima) tienen EXACTAMENTE la misma zona opaca: el
+    # juego redibuja un cuadro encima del otro y lo transparente (11) no tapa nada, así que un aro pintado afuera del
+    # ícono quedaba pegado al volver al cuadro normal (1.0.271.0 y anteriores). El aro naranja va ahora por dentro: los
+    # 2 píxeles del borde de la zona opaca; apretado = aro + ícono corrido 1 píxel (recortado a la misma zona).
     icono = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), archivo)).convert('RGBA')
     if escalar: icono = icono.resize((W - 2, H - 2), Image.LANCZOS)
     assert icono.size == (W - 2, H - 2)
     hoja = Image.new('P', (W, 4 * H), 11)
     hoja.putpalette(butt.getpalette())
-    for fila, (dx, oscuro, aro) in enumerate(((1, False, False), (2, False, True), (1, True, False), (1, False, False))):
+    px = {(x + 1, y + 1): icono.getpixel((x, y))[:3] for y in range(icono.height) for x in range(icono.width)
+          if icono.getpixel((x, y))[3] >= 128}
+    zona = set(px)
+    borde1 = {q for q in zona if any((q[0] + i, q[1] + j) not in zona for i in (-1, 0, 1) for j in (-1, 0, 1))}
+    resto = zona - borde1
+    borde2 = {q for q in resto if any((q[0] + i, q[1] + j) not in resto for i in (-1, 0, 1) for j in (-1, 0, 1))}
+    for fila in range(4):
         y0 = fila * H
-        lleno = set()
-        for y in range(icono.height):
-            for x in range(icono.width):
-                r, g, b_, a_ = icono.getpixel((x, y))
-                if a_ < 128 or not (0 <= x + dx < W and 0 <= y + dx < H): continue
-                if oscuro: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
-                hoja.putpixel((x + dx, y0 + y + dx), cercano((r, g, b_))); lleno.add((x + dx, y + dx))
-        if aro:
-            for x, y in {(x + i, y + j) for x, y in lleno for i in (-1, 0, 1) for j in (-1, 0, 1)} - lleno:
-                if 0 <= x < W and 0 <= y < H: hoja.putpixel((x, y0 + y), 71)
+        for (x, y) in zona:
+            if fila == 1:
+                fuente = px.get((x - 1, y - 1)) or px[(x, y)]
+            else:
+                fuente = px[(x, y)]
+            r, g, b_ = fuente
+            if fila == 2: r, g, b_ = r * 3 // 10, g * 3 // 10, b_ * 3 // 10
+            c = cercano((r, g, b_))
+            if fila in (1, 3) and (x, y) in borde1: c = 72 if fila == 3 else 71
+            if fila in (1, 3) and (x, y) in borde2: c = 71 if fila == 3 else 70
+            hoja.putpixel((x, y0 + y), c)
     pcx = io.BytesIO(); hoja.save(pcx, 'PCX')
     return pcx.getvalue()
 SORTEO_PCX = hoja_boton('sorteo_icono.png', SORTEO_W, SORTEO_H)

@@ -283,6 +283,13 @@ cuadro es igual al normal, y en las hojas de Sorteo y Comparador (hoja_boton) el
 Ahora es igual al normal; el aro queda solo en el cuadro 1 (apretado). Se quitó el borrado de 0x588e2c de la 1.0.270.0
 (partía del diagnóstico equivocado); el estado 0 del clic de la 1.0.269.0 queda, no molesta.
 
+**1.0.273.0 (19/11/2026): la causa de fondo.** Con la 1.0.272.0 el botón ya no cambiaba al pasar el puntero, y el aro
+del cuadro apretado salía cortado. El juego sí apaga el estado 3 al salir el puntero (0x4d8b34, y 0x4d89f7 al pasar a
+otro control), pero redibuja el cuadro nuevo encima del viejo y lo transparente (color 11) no tapa nada: el aro, pintado
+por fuera del ícono, quedaba en pantalla. hoja_boton ahora da a los cuatro cuadros la misma zona opaca y pinta el aro
+por dentro (los 2 píxeles del borde): hover = aro 72/71, apretado = aro 71/70 con el ícono corrido 1 píxel. BUTT_STD
+tiene aro en hover (cuadro 3) y apretado (cuadro 1). Prueba del usuario: TAREAS 274.
+
 ## C. Pausa mientras se vota
 
 **Estado al 7/10/2026 (vista-aliada 1.0.17.0):** hecho y probado en emulación (`prueba_pausa.py`, 0 MAL). Falta la
