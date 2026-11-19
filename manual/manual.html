@@ -716,6 +716,9 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
   <li><b>Ataques perdidos:</b> desde la versión 1.0.243.0 no ataca en campo abierto con un grupo de menos de la mitad
   de la fuerza de los enemigos de la casilla, porque esos ataques se pierden casi siempre (3-4 % de victorias). En
   ciudades ataca como antes. En 64 partidas del banco la IA con esta mejora ganó 37 contra 22 de la original.</li>
+  <li><b>Asaltos a ciudades:</b> desde la versión 1.0.255.0 no asalta una ciudad (con muralla o sin ella) si su
+  probabilidad de victoria es menor de 20 %. Por debajo de ese número los asaltos se pierden casi siempre. En 128
+  partidas del banco perdió un 10 % menos de ejércitos, sin jugar peor.</li>
 </ul>
 <h2>Lo que todavía no hace</h2>
 <ul>
@@ -1044,6 +1047,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.255.0</td><td>18/11/2026</td><td>La regla de los asaltos a ciudades pasa a las partidas normales y del ranking: la computadora no asalta una ciudad si tiene menos de 20 % de probabilidad de ganar. Pierde un 10 % menos de ejércitos, sin jugar peor.</td></tr>
 <tr><td>1.0.254.0</td><td>18/11/2026</td><td>Solo para la IA de prueba del banco: se apaga el ataque al bloque de muralla de la 1.0.252.0. En 64 partidas perdió los 16 ataques, con 65 ejércitos muertos y ningún bloque derribado. Las partidas normales y las del ranking no cambian.</td></tr>
 <tr><td>1.0.253.0</td><td>18/11/2026</td><td>Dibujo de la balsa: la vela ya no se marca en la m&aacute;scara de selecci&oacute;n; al seleccionarla solo se ilumina el contorno, como en el barco de guerra. El juego no ti&ntilde;e las unidades con el color del bando: el bando se ve en la banderita con el n&uacute;mero.</td></tr>
 <tr><td>1.0.252.0</td><td>18/11/2026</td><td>Solo para la IA de prueba del banco: cuando desiste de asaltar una ciudad por baja probabilidad de victoria y tiene al lado un bloque de muralla enemigo, ataca el bloque más dañado para abrir brecha, en vez de quedarse quieta. Las partidas normales y las del ranking no cambian.</td></tr>

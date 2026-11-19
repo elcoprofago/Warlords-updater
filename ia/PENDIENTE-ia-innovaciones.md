@@ -735,4 +735,15 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   PV. Si se retoma la brecha, tendría que exigir juntar varias pilas contra el mismo bloque (un objetivo de grupo, no
   de una pila suelta), o atacar solo bloques ya muy dañados.
 
+### Regla de asaltos al ranking (18/11/2026, vista-aliada 1.0.255.0)
+
+- Corrección del criterio (usuario, 18/11/2026: «el ahorro de pérdidas ya es un buen resultado en general, para
+  cualquier partida»): una regla que ahorra pérdidas sin empeorar el PV es un avance genuino, aunque no suba el PV. En
+  las tandas 185-186, −10 % de ataques perdidos y PV sin cambio medible; la diferencia de PV entre las dos IA ya estaba
+  antes de la regla (ciudades, ejércitos y oro iguales desde la 184).
+- ap_gate y ac_gate2: sin IA.INI, todo bando de la computadora no asalta una ciudad con % < AP_PCT (20), sin evento.
+  Con IA.INI sigue igual (solo la prueba corta; evento 48 en todas). prueba_iaataque: ranking 5 % corta, 20 % asalta,
+  humano sin cambio, en los dos sitios.
+- TAREAS 263: actualizar C:\Warlords.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».

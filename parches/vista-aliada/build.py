@@ -17110,7 +17110,9 @@ nw_out:
 # en su registro. Si la casilla es de una ciudad, con IA.INI e ia_mode = prueba, y ese % es menor que AP_PCT, no da
 # la orden (tanda 183: negro asaltó 8 contra 1 la capital roja amurallada y perdió 3 y 4 veces seguidas). Con IA.INI,
 # evento 48 en todo asalto a ciudad de la computadora (también la original, para calibrar AP_PCT): x, y = casilla,
-# n = % + 1000 si no lo dio. Sin IA.INI (ranking) no cambia nada hasta que una tanda lo confirme.
+# n = % + 1000 si no lo dio. Sin IA.INI (ranking), desde 1.0.255.0 todo bando de la computadora aplica el mismo corte
+# (sin evento): tandas 185-186, −10 % de ataques perdidos sin empeorar el PV; pedido del usuario del 18/11/2026: «el ahorro
+# de pérdidas ya es un buen resultado en general».
 # Abrir brecha (paso 5.5 de ia\PENDIENTE-ia-innovaciones.md, punto 3 del usuario, 18/11/2026): cuando la IA de prueba
 # desiste de un asalto a una ciudad (% < AP_PCT, en ap_gate o ac_gate2), si el grupo que se mueve tiene en sus 8 vecinas
 # un bloque de muro en pie de un bando en guerra con ella (wl_war), ataca ese bloque en lugar de quedarse quieta: el de
@@ -17239,9 +17241,13 @@ ap_gate = place('ap_gate', f'''
     add esp, 8
     test ax, ax
     jl ag_field
-    cmp byte ptr [{IA_ON:#x}], 0
-    je ag_go
     movsx ebp, word ptr [esp + 4]
+    cmp byte ptr [{IA_ON:#x}], 0
+    jne ag_cia
+    cmp ebp, {AP_PCT}
+    jge ag_go
+    jmp {ab_cut:#x}
+ag_cia:
     xor ecx, ecx
     cmp byte ptr [ebx + {IA_MODE:#x}], 1
     jne ag_clog
@@ -17357,8 +17363,6 @@ ac_gate2 = place('ac_gate2', f'''
     imul eax, ebx, 0x1f8
     cmp word ptr [eax + 0x536c12], -1
     je a2_go
-    cmp byte ptr [{IA_ON:#x}], 0
-    je a2_go
     movsx esi, word ptr [esp + 0x28]
     movsx edi, word ptr [esp + 0x2c]
     push edi
@@ -17368,6 +17372,12 @@ ac_gate2 = place('ac_gate2', f'''
     test ax, ax
     jl a2_go
     movsx ebp, word ptr [esp + 0x40]
+    cmp byte ptr [{IA_ON:#x}], 0
+    jne a2_ia
+    cmp ebp, {AP_PCT}
+    jge a2_go
+    jmp {ab_cut:#x}
+a2_ia:
     xor ecx, ecx
     cmp byte ptr [ebx + {IA_MODE:#x}], 1
     jne a2_log
