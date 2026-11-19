@@ -22,7 +22,8 @@ def tras(a):   # rutina siguiente: después del «popad; ret» que cierra la ant
     i = img.index(b'\x61\xc3', a - BASE) + BASE + 2
     return (i + 15) & ~15
 OV_CALC = (OV_RX + 12 + 15) & ~15
-OV_KEY = tras(OV_CALC); OV_DRAW = tras(OV_KEY)
+OV_KEY = tras(OV_CALC)
+OV_DRAW = (img.index(bytes.fromhex('31c0c3'), OV_KEY - BASE) + BASE + 3 + 15) & ~15   # ov_key termina en «xor eax, eax; ret»
 PK_GAK = BASE + img.index(b'GetAsyncKeyState\0') + 17
 SPRINTF = 0x5a9bec
 REPAINT = 0x569588 + 0x1a4
@@ -91,7 +92,8 @@ class Juego:
     def tecla(self, vk=0x72, repetida=False, shift=False):
         self.shift = shift
         self.mu.mem_write(MSG, struct.pack('<IIII', 0, 0x100, vk, (1 << 30) if repetida else 1))
-        self.corre(OV_KEY, MSG)
+        self.corre(OV_KEY, 0, MSG)   # como desde pz_disp: [esp + 4] es la vuelta de pz_disp, el MSG va en [esp + 8]
+        return self.mu.reg_read(UC_X86_REG_EAX)
 
     def modo(self): return tuple(self.mu.mem_read(OV_MODE, 2))
     def tabla(self):
@@ -112,9 +114,9 @@ j.ejercitos([1, 1, 3, 5, 5, 5, 2, 2, 2, 2])
 
 j.corre(OV_CALC)
 ver('apagado: no calcula ni pide redibujo', (j.calc, j.repinta()), (0, 0))
-j.tecla(0x71)
-ver('otra tecla (F2) no cambia nada', j.modo(), (0, 0))
-j.tecla()
+ver('otra tecla (F2) sigue hacia el juego', j.tecla(0x71), 0)
+ver('y no cambia nada', j.modo(), (0, 0))
+ver('F3 no sigue hacia el juego', j.tecla(), 1)
 ver('F3: Winning', j.modo(), (1, 0))
 ver('pide redibujo', j.repinta(), 1)
 ver('Winning: 4 primeros vivos, de mayor a menor, barras escaladas al primero', j.tabla(),
@@ -124,7 +126,7 @@ ver('sin cambios no pide redibujo', j.repinta(), 0)
 j.lado(0, oro=900, ciudades=3, winning=11)
 j.corre(OV_CALC)
 ver('con un cambio sí', j.repinta(), 1)
-j.tecla(repetida=True)
+ver('la repetición tampoco sigue hacia el juego', j.tecla(repetida=True), 1)
 ver('la repetición de la tecla no avanza', j.modo(), (1, 0))
 j.tecla()
 ver('Armies (cuenta por dueño, sin el muerto)', j.tabla(),

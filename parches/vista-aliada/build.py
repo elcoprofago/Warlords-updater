@@ -11574,7 +11574,8 @@ ps_ink:
 # recalcula las ciudades de 0x4407d0; Armies como go_cuenta; Gold de la ficha del bando) y, si algo cambio, pide el
 # redibujo entero del mapa ([0x569588 + 0x1a4], como los avisos al vencer) para borrar lo viejo. ov_draw dibuja desde
 # mo_pdraw, despues de los paneles del marco. La tecla la lee ov_key al entrar a pz_disp (WM_KEYDOWN 0x72 sin la
-# repeticion, bit 30 de lParam), antes de la pausa, y la deja seguir hacia el juego.
+# repeticion, bit 30 de lParam), antes de la pausa. Desde 1.0.258.0 F3 no sigue hacia el juego (eax = 1 y pz_disp la
+# descarta): keys.w3 la tiene en Chat Mode, cuyo lugar ocupa la Pausa, y en red F3 la pedia.
 OV_BARMAX = 20
 OV_MODE = place_data('ov_mode', bytes(4))       # byte 0: 0 apagado, 1..4 Winning/Armies/Cities/Gold; byte 1: numeros
 OV_CUR = place_data('ov_cur', bytes(36))        # dword modo|num<<8|n<<16, 4 bandos, 4 valores
@@ -11732,14 +11733,16 @@ oc_out:
     popad
     ret
 ''')
+# ov_key se llama al entrar a pz_disp: el MSG esta en [esp + 8] (en [esp + 4] queda la vuelta de pz_disp; leer ahi
+# fue el error de 1.0.257.0, F3 no hacia nada). Devuelve eax = 1 si la tecla era F3 (pz_disp la descarta).
 ov_key = place('ov_key', f'''
-    mov eax, dword ptr [esp + 4]
+    mov eax, dword ptr [esp + 8]
     cmp dword ptr [eax + 4], 0x100
-    jne ok_out
+    jne ok_no
     cmp dword ptr [eax + 8], 0x72
-    jne ok_out
+    jne ok_no
     test byte ptr [eax + 0xf], 0x40
-    jnz ok_out
+    jnz ok_eat
     pushad
     cmp dword ptr [{pk_gak:#x}], 0
     jne ok_have
@@ -11766,7 +11769,11 @@ ok_now:
     call {ov_calc:#x}
     mov byte ptr [0x569588 + 0x1a4], 1
     popad
-ok_out:
+ok_eat:
+    mov eax, 1
+    ret
+ok_no:
+    xor eax, eax
     ret
 ''')
 # ov_draw (desde mo_pdraw, con esi = superficie, ebx = x0, ebp = y0). Preserva todo.
@@ -11845,6 +11852,8 @@ od_out:
 # del mouse (0x201..0x20e). El movimiento del mouse sí.
 pz_disp = place('pz_disp', f'''
     call {ov_key:#x}
+    test eax, eax
+    jnz pd_drop
     cmp byte ptr [{PZ_ON:#x}], 0
     je pd_pass
     mov eax, dword ptr [esp + 4]
@@ -24957,6 +24966,13 @@ NUEVOS[os.path.join('RUINS', 'anulada.pcx')] = MOA_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)
+# help.txt (la Ayuda del juego, F1): F3 ya no es Chat Mode sino el marcador en el mapa (1.0.258.0, pedido del usuario
+# del 18/11/2026). Sale del help.txt de la carpeta base cambiando solo esa linea; si ya estaba cambiada, queda igual.
+_help = open(os.path.join(W3, 'help.txt'), 'rb').read()
+_HELP_F3 = b'F3			- Scoreboard (again: next; SHIFT+F3: numbers)'
+_help = _help.replace(b'F3			- Chat Mode', _HELP_F3)
+assert _HELP_F3 in _help, 'help.txt sin la linea de F3'
+NUEVOS['help.txt'] = _help
 # Listas de ítems de los mapas al azar (random\Grass del repo, editadas por el usuario el 23/10/2026: sin los ítems
 # de vuelo). Con ri_go cuentan sobre todo sus 8 especiales; los 32 comunes valen en el Darklord.exe original.
 for _f in ('ITEM.DAT', 'Item0.dat', 'Item1.dat', 'Item2.dat'):
