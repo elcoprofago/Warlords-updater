@@ -1,6 +1,6 @@
 # Prueba de juguete del visor de miniaturas (vw_* de build.py) sobre el exe y el RES parcheados, en unicorn.
 # Uso: python prueba_visor.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
-# Casilla: el evento 10 de Edit Side (0x44da1c) con el control 76 guarda el valor en vw_on; las casillas 0x23/0x24
+# Casilla: el evento 10 de Edit Side (0x44da1c) con el control 76 guarda el valor en vw_on (tildada: dibuja el marco); las casillas 0x23/0x24
 # siguen yendo a lo suyo. Pintado: el 5.º callback del selector (el que 0x402862 empuja) con las funciones de hojas y
 # el Blt de DirectDraw interceptados: celda (1,161)-(49,209) de ARMY\<nombre> estirada a (2,2)-(98,98) con clave de
 # color, marco 199 y fondo 0, y la hoja a la pantalla en (ancho - 108, 8). RES: el registro 76 del diálogo 86.
@@ -33,7 +33,7 @@ VW_PAINT = u32(0x40285d)
 ver('el selector empuja otro pintado', VW_PAINT != 0x402c40 and VW_PAINT > 0x600000, True)
 cs = Cs(CS_ARCH_X86, CS_MODE_32)
 ins = list(cs.disasm(img[VW_PAINT - BASE:VW_PAINT - BASE + 40], VW_PAINT))
-VW_ON = int(ins[2].op_str.split('[')[1].split(']')[0], 16)   # cmp byte ptr [vw_on], 0
+VW_ON = int(ins[0].op_str.split('[')[1].split(']')[0], 16)   # cmp byte ptr [vw_on], 0
 
 def maquina():
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
@@ -91,8 +91,8 @@ def pintar(evento=2, on=1, clase=1, fila=1):
 
 ok, log = pintar()
 ver('pintado: registros preservados', ok, True)
-ver('pintado: hoja de la unidad', log[2], ('init', 'Dwarves', 2, 1, 0, 0))
-ver('pintado: hoja en blanco 100x100', log[4], ('init', '', 0, 0, 100, 100))
+ver('pintado: hoja en blanco 100x100', log[2], ('init', '', 0, 0, 100, 100))
+ver('pintado: hoja de la unidad', [x for x in log if x[0] == 'init'][1], ('init', 'Dwarves', 2, 1, 0, 0))
 blts = [x for x in log if x[0] == 'blt']
 ver('pintado: marco', blts[0], ('blt', True, (0, 0, 100, 100), 0, None, '0x1000400', 199))
 ver('pintado: fondo oscuro', blts[1], ('blt', True, (2, 2, 98, 98), 0, None, '0x1000400', 0))
@@ -101,10 +101,24 @@ ver('pintado: figura al doble con clave de color', blts[2], ('blt', True, (2, 2,
 ver('pintado: a la pantalla arriba a la derecha', [x for x in log if x[0] == 'pantalla'],
     [('pantalla', (0, 0, 100, 100, 800 - 108, 8))])
 ver('pintado: libera las dos hojas', log[-2:], [('free',), ('free',)])
-for nombre, kw in (('casilla destildada', dict(on=0)), ('otro evento', dict(evento=1)), ('héroes', dict(clase=5)),
-                   ('fila -1', dict(fila=-1)), ('fila fuera de la lista', dict(fila=3))):
+for nombre, kw in (('casilla destildada', dict(on=0)), ('otro evento', dict(evento=3)),
+                   ('casilla destildada, solo marco', dict(on=0, evento=1))):
     ok, log = pintar(**kw)
     ver(f'control {nombre}: nada', (ok, log), (True, []))
+for nombre, kw in (('evento 1 (casilla tildada)', dict(evento=1)), ('héroes', dict(clase=5)),
+                   ('fila -1', dict(fila=-1)), ('fila fuera de la lista', dict(fila=3))):
+    ok, log = pintar(**kw)
+    ver(f'{nombre}: solo el marco, sin figura', (ok, [x[0] for x in log], [x[-1] for x in log if x[0] == 'blt']),
+        (True, ['ctor', 'ctor', 'init', 'load', 'blt', 'blt', 'pantalla', 'free', 'free'], [199, 0]))
+
+# Tras el repintado al cambiar de fila (0x4029b1): pinta con evento 2 y sigue con el final original
+hook = img[0x4029b1 - BASE:0x4029b6 - BASE]
+ver('0x4029b1 salta al visor', hook[0] == 0xe9, True)
+VW_AFTER = 0x4029b6 + struct.unpack('<i', hook[1:5])[0]
+ain = list(cs.disasm(img[VW_AFTER - BASE:VW_AFTER - BASE + 30], VW_AFTER))
+ver('visor tras el repintado', [(i.mnemonic, i.op_str) for i in ain[:2]] + [(i.mnemonic, i.op_str) for i in ain[3:8]],
+    [('push', '2'), ('call', hex(VW_PAINT)), ('xor', 'ax, ax'), ('pop', 'edi'), ('pop', 'esi'),
+     ('add', 'esp, 0x60'), ('ret', '')])
 
 # Casilla: evento 10 de Edit Side
 def casilla(ctrl, valor):
@@ -113,15 +127,21 @@ def casilla(ctrl, valor):
     mu.mem_write(ev, struct.pack('<IIB', 10, ctrl, valor))
     mu.reg_write(UC_X86_REG_ESI, ev); mu.reg_write(UC_X86_REG_ESP, STACK)
     fin = []
+    marco = []
+    vf = [i for i in cs.disasm(bytes(mu.mem_read(u32(0x44da2a) + 0x44da2e, 40)), u32(0x44da2a) + 0x44da2e)
+          if i.mnemonic == 'call']
+    if vf:
+        a = int(vf[0].op_str, 16)
+        intercept(mu, a, 0, lambda mu, args: marco.append(1))
     for a in (0x44db1c, 0x44da2e, 0x44da3e):
         mu.hook_add(UC_HOOK_CODE, lambda mu, ad, s, _: (fin.append(ad), mu.emu_stop()), begin=a, end=a)
     mu.emu_start(0x44da1c, 0, count=100)
-    return fin[0], mu.mem_read(VW_ON, 1)[0]
-ver('casilla 76 tildada', casilla(VW_CHK, 1), (0x44db1c, 1))
-ver('casilla 76 destildada', casilla(VW_CHK, 0), (0x44db1c, 0))
-ver('control casilla 0x23', casilla(0x23, 1), (0x44da2e, 0))
-ver('control casilla 0x24', casilla(0x24, 1), (0x44da3e, 0))
-ver('control otro control', casilla(40, 1), (0x44db1c, 0))
+    return fin[0], mu.mem_read(VW_ON, 1)[0], len(marco)
+ver('casilla 76 tildada: dibuja el marco', casilla(VW_CHK, 1), (0x44db1c, 1, 1))
+ver('casilla 76 destildada', casilla(VW_CHK, 0), (0x44db1c, 0, 0))
+ver('control casilla 0x23', casilla(0x23, 1), (0x44da2e, 0, 0))
+ver('control casilla 0x24', casilla(0x24, 1), (0x44da3e, 0, 0))
+ver('control otro control', casilla(40, 1), (0x44db1c, 0, 0))
 
 # RES: registro 76 del diálogo 86
 SZ = {1: 0x80, 2: 0x9c, 3: 0x6c, 4: 0xac, 5: 0xa8, 6: 0xa0, 7: 0x1c, 8: 0x1c, 9: 0x1c, 0xa: 0x20,
@@ -138,7 +158,7 @@ def dlg(path, did):
     return out
 r = dlg(os.path.join(DIR, 'DATA', 'WAR3AV.RES'), 86)
 t, rec = r[VW_CHK]
-ver('RES: casilla 76', (t, struct.unpack_from('<2I', rec, 8), rec[0x1c:0x26]), (5, (470, 46), b'View units'))
+ver('RES: casilla 76', (t, struct.unpack_from('<2I', rec, 8), rec[0x1c:0x26]), (5, (520, 62), b'View units'))
 ver('control RES original sin el 76', VW_CHK in dlg(os.path.join(W3, 'DATA', 'War3.RES'), 86), False)
 ver('control exe original', struct.unpack_from('<I', open(os.path.join(W3, 'Darklord.exe'), 'rb').read(),
                                                 pefile.PE(os.path.join(W3, 'Darklord.exe')).get_offset_from_rva(0x285d))[0],

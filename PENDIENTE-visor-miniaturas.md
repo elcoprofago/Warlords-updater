@@ -30,6 +30,16 @@ un botón o casilla «ver unidades». Activado, abre arriba a la derecha de la p
   con clave de color) y la pasa a la pantalla con 0x4e3c10 en (ancho - 108, 8). Libera las dos hojas.
 - Prueba de juguete: `parches/vista-aliada/prueba_visor.py` (más los cambios en `prueba_botones.py`).
 
+## Corrección (vista-aliada 1.0.279.0, 19/11/2026) — prueba del usuario en TAREAS 277
+
+Prueba 276: la casilla tapaba el título y la figura **nunca** apareció. No se averiguó si el 5.º callback se llama con
+2 (no se encontró dónde lo llama el diálogo). Por eso ahora:
+- `vw_after` (salto en 0x4029b1, después del repintado 0x4d7f60 al cambiar de fila) llama a `vw_paint` con 2.
+- Tildar la casilla (`vw_check`) llama a `vw_frame` = `vw_paint` con 1: solo el recuadro, sin figura. Es también el
+  diagnóstico: si el recuadro no se ve, el problema está en la salida a pantalla (0x4e3c10), no en la carga del PCX.
+- Héroes / fila fuera de rango: recuadro vacío en vez de nada.
+- Casilla movida de (470,46) a (520,62).
+
 ## Queda abierto
 
 1. Si la figura queda pegada en pantalla al cerrar el selector (no hay repintado propio de esa zona): ver en la

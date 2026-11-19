@@ -16968,52 +16968,36 @@ vw_rin = place_data('vw_rin', struct.pack('<4i', VW_B, VW_B, VW_S - VW_B, VW_S -
 vw_rsrc = place_data('vw_rsrc', struct.pack('<4i', 1, 161, 49, 209))
 vw_empty = place_data('vw_empty', b'\0')
 
-# Casilla tildada o destildada (evento 10 en 0x44da1c: [esi+4] = control, [esi+8] = valor nuevo); las 0x23 y 0x24
-# siguen como estaban, el resto caía en 0x44db1c.
-vw_check = place('vw_check', f'''
-    cmp eax, {VW_CHK}
-    jne 0x44db1c
-    mov cl, byte ptr [esi + 8]
-    mov byte ptr [{vw_on:#x}], cl
-    jmp 0x44db1c
-''')
-
 # Pintado del selector (cdecl: [esp+4] = evento). Todo se preserva.
 vw_paint = place('vw_paint', f'''
-    cmp dword ptr [esp + 4], 2
-    jne vw_ret
     cmp byte ptr [{vw_on:#x}], 0
     je vw_ret
-    cmp word ptr [0x5016dc], 5
-    je vw_ret
+    cmp dword ptr [esp + 4], 1
+    je vw_nofig
+    cmp dword ptr [esp + 4], 2
+    jne vw_ret
     pushad
+    xor esi, esi
+    cmp word ptr [0x5016dc], 5
+    je vw_draw
     movsx eax, word ptr [0x5016d0]
     test eax, eax
-    jl vw_out
+    jl vw_draw
     movsx ecx, word ptr [0x5016e4]
     cmp eax, ecx
-    jge vw_out
+    jge vw_draw
     imul eax, eax, 48
     add eax, dword ptr [0x5016d4]
     mov esi, eax
+    jmp vw_draw
+vw_nofig:
+    pushad
+    xor esi, esi
+vw_draw:
     mov ecx, {vw_img:#x}
     call 0x4e3470
     mov ecx, {vw_tmp:#x}
     call 0x4e3470
-    push 0
-    push 0
-    push 0
-    push 1
-    push 2
-    push esi
-    push 0
-    mov ecx, {vw_img:#x}
-    call 0x4e34d0
-    push 0
-    mov ecx, {vw_img:#x}
-    call 0x4e3540
-    test ax, ax
-    jne vw_free
     push 0
     push {VW_S}
     push {VW_S}
@@ -17047,6 +17031,22 @@ vw_paint = place('vw_paint', f'''
     push ebx
     mov eax, dword ptr [ebx]
     call dword ptr [eax + 0x14]
+    test esi, esi
+    je vw_show
+    push 0
+    push 0
+    push 0
+    push 1
+    push 2
+    push esi
+    push 0
+    mov ecx, {vw_img:#x}
+    call 0x4e34d0
+    push 0
+    mov ecx, {vw_img:#x}
+    call 0x4e3540
+    test ax, ax
+    jne vw_show
     push 0
     push 0x1008000
     push {vw_rsrc:#x}
@@ -17055,6 +17055,7 @@ vw_paint = place('vw_paint', f'''
     push ebx
     mov eax, dword ptr [ebx]
     call dword ptr [eax + 0x14]
+vw_show:
     push {VW_M}
     movzx eax, word ptr [0x500be8]
     sub eax, {VW_S + VW_M}
@@ -17075,6 +17076,37 @@ vw_out:
 vw_ret:
     ret
 ''')
+# Entrada sin figura (solo el marco): al tildar la casilla en Edit Side. Y tras el repintado al cambiar de fila del
+# selector (0x4029b1), la figura otra vez, por si el repintado del diálogo la tapó.
+vw_frame = place('vw_frame', f'''
+    push 1
+    call {vw_paint:#x}
+    add esp, 4
+    ret
+''')
+vw_after = place('vw_after', f'''
+    push 2
+    call {vw_paint:#x}
+    add esp, 4
+    xor ax, ax
+    pop edi
+    pop esi
+    add esp, 0x60
+    ret
+''')
+# Casilla tildada o destildada (evento 10 en 0x44da1c: [esi+4] = control, [esi+8] = valor nuevo); las 0x23 y 0x24
+# siguen como estaban, el resto caía en 0x44db1c.
+vw_check = place('vw_check', f'''
+    cmp eax, {VW_CHK}
+    jne 0x44db1c
+    mov cl, byte ptr [esi + 8]
+    mov byte ptr [{vw_on:#x}], cl
+    test cl, cl
+    je 0x44db1c
+    call {vw_frame:#x}
+    jmp 0x44db1c
+''')
+
 
 # ---- "Comparador" en el menú del libro (pedido del usuario, 8/11/2026): diálogo 0x58 (RES 93), debajo de "Side
 # Lists", en el renglón libre de y 170 (texto BK_TXT, zona BK_HOT, ver más abajo). Abre lo mismo que el botón de Edit
@@ -26544,6 +26576,7 @@ assert rel(0x44d3e7, 9) == bytes.fromhex('8b56048d42fe83f847')
 patch(0x44d3f0, asm('ja 0x44db1c', 0x44d3f0), asm(f'ja {dc_click:#x}', 0x44d3f0))
 # Visor de miniaturas: casilla VW_CHK de Edit Side y pintado del selector de unidades.
 patch(0x44da29, asm('jmp 0x44db1c', 0x44da29), asm(f'jmp {vw_check:#x}', 0x44da29))
+patch(0x4029b1, bytes.fromhex('6633c05f5e'), asm(f'jmp {vw_after:#x}', 0x4029b1))
 patch(0x40285c, asm('push 0x402c40', 0x40285c), asm(f'push {vw_paint:#x}', 0x40285c))
 # Menú del libro: "Comparador" (bk_*).
 patch(0x42bf2e, asm('mov ecx, 0x588bd0; call 0x4d7f60', 0x42bf2e), asm(f'jmp {bk_init:#x}', 0x42bf2e))
@@ -26783,7 +26816,7 @@ setstr(dcb, 0x40, 64, 'Compare army units (DarkCompare)')
 # Casilla del visor de miniaturas (VW_CHK), copia de «Mercenaries» (control 35), arriba a la derecha (hoy vacío).
 p, t = r86[35]; assert t == 5
 vwc = bytearray(res[p:p + 4 + SZ[5]])
-struct.pack_into('<III', vwc, 4, VW_CHK, 470, 46)
+struct.pack_into('<III', vwc, 4, VW_CHK, 520, 62)
 setstr(vwc, 0x1c, 16, 'View units')
 setstr(vwc, 0x2c, 64, 'Show the map figure of the unit chosen in Change')
 setstr(vwc, 0x9c, 16, 'View units')
