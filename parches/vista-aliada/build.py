@@ -11587,7 +11587,13 @@ OV_FMT = place_data('ov_fmt', cstr_('%d'))
 OV_TITP = place_data('ov_titp', b''.join(struct.pack('<I', place_data(f'ov_t{i}', cstr_(t)))
                                          for i, t in enumerate(('Winning', 'Armies', 'Cities', 'Gold'))))
 OV_RX = place_data('ov_rx', struct.pack('<3I', 0x1ec, 0x21c, 0x30c))
-OV_DX, OV_Y, OV_DY = 74, 0x54 + 4, 14
+# 1.0.260.0 (pedido del usuario del 19/11/2026): letra mas chica (fuente OV_FONT, Arial 9), el titulo en negrita
+# (OV_FTIT, Arial 9 negrita, entrada nueva del RES: ver ov_bold), barras del alto de las minusculas (rectangulos de
+# OV_BW x OV_BH cada OV_BP, a OV_BY del renglon, con ov_segs) y el conjunto mas a la derecha y un poco mas arriba, sin
+# tocar el marco.
+OV_DX, OV_Y, OV_DY = 66, 0x54 + 2, 12
+OV_FONT, OV_FTIT = 4, 8
+OV_BW, OV_BH, OV_BP, OV_BY = 2, 5, 3, 3
 ov_calc = place('ov_calc', f'''
     cmp byte ptr [{OV_MODE:#x}], 0
     jne oc_go
@@ -11777,6 +11783,59 @@ ok_no:
     xor eax, eax
     ret
 ''')
+# ov_bold, en 0x4e4de3 (CreateFontA de 0x4e4dc0, [esp + 0x38] = tamaño de la fuente): con el bit 0x100 la crea en
+# negrita (peso 700) con el tamaño de los 8 bits de abajo; sin él, igual que el original (peso 0). Ver OV_FTIT.
+ov_bold = place('ov_bold', '''
+    mov si, word ptr [esp + 0x38]
+    xor eax, eax
+    test si, 0x100
+    jz ob_n
+    mov eax, 700
+ob_n:
+    and esi, 0xff
+    push 0
+    push eax
+    push 0
+    push 0
+    push 0
+    movsx eax, si
+    neg eax
+    push eax
+    jmp 0x4e4df8
+''')
+# ov_segs: barra de la cadena edx ('|' por tramo) como rectangulos del color al, corrida ecx px (la sombra), desde
+# x = ebx + 4, y = ebp + OV_BY, en la superficie esi. Pinta con 0x4ede30 (recoloreo de un rectangulo, la misma busqueda
+# de superficie que el texto) y una tabla con todo en ese color. Preserva todo.
+OV_TAB = place_data('ov_tab', bytes(256))
+ov_segs = place('ov_segs', f'''
+    pushad
+    mov edi, {OV_TAB:#x}
+    push ecx
+    mov ecx, 256
+    cld
+    rep stosb
+    pop ecx
+    lea ebx, [ebx + ecx + 4]
+    lea ebp, [ebp + ecx + {OV_BY}]
+    mov edi, edx
+os_lp:
+    cmp byte ptr [edi], 0x7c
+    jne os_out
+    push {OV_TAB:#x}
+    push {OV_BH}
+    push {OV_BW}
+    push ebp
+    push ebx
+    push esi
+    call 0x4ede30
+    add esp, 0x18
+    add ebx, {OV_BP}
+    inc edi
+    jmp os_lp
+os_out:
+    popad
+    ret
+''')
 # ov_draw (desde mo_pdraw, con esi = superficie, ebx = x0, ebp = y0). Preserva todo.
 # ov_poll (1.0.259.0, pedido del usuario del 18/11/2026: F3 seguia sin responder): lee F12 directo del teclado en cada
 # vuelta de la funcion ociosa (como pz_keys con la pausa) y, al bajar la tecla (no mientras sigue apretada), le pasa a
@@ -11829,7 +11888,7 @@ od_m:
     push 0
     push 0xa
     push 137
-    push 1
+    push {OV_FTIT}
     call 0x4dd0f0
     add esp, 0x14
     push edi
@@ -11852,7 +11911,7 @@ od_row:
     push eax
     movzx eax, word ptr [ecx + 0x536c1e]
     push eax
-    push 1
+    push {OV_FONT}
     call 0x4dd0f0
     add esp, 0x14
     mov ecx, dword ptr [esp]
@@ -11866,6 +11925,8 @@ od_row:
     mov eax, edi
     shl eax, 5
     add eax, {OV_BAR:#x}
+    cmp byte ptr [eax], 0x7c
+    je od_bars
     push eax
     push ebp
     lea eax, [ebx + 4]
@@ -11873,6 +11934,19 @@ od_row:
     push esi
     call 0x4dd180
     add esp, 0x10
+    jmp od_nx
+od_bars:
+    mov edx, eax
+    imul ecx, dword ptr [edi*4 + {OV_CUR + 4:#x}], 0x1f8
+    movzx eax, byte ptr [ecx + 0x536c20]
+    push ecx
+    mov ecx, 1
+    call {ov_segs:#x}
+    pop ecx
+    movzx eax, byte ptr [ecx + 0x536c1e]
+    xor ecx, ecx
+    call {ov_segs:#x}
+od_nx:
     inc edi
     jmp od_row
 od_out:
@@ -23838,6 +23912,10 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
 patch(0x4a5328, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {cabgraph:#x}', 0x4a5328))
+_ob = asm('mov si, word ptr [esp + 0x38]; push 0; movsx eax, si; neg eax; push 0; push 0; push 0; push 0; push eax',
+          0x4e4de3)
+assert rel(0x4e4de3, len(_ob)) == _ob and len(_ob) == 0x4e4df8 - 0x4e4de3
+patch(0x4e4de3, _ob, asm(f'jmp {ov_bold:#x}', 0x4e4de3) + bytes([0x90]) * (len(_ob) - 5))
 # Convoy (ver crlink, crfollow, crdef, crdraw).
 assert rel(0x49d062, 2) == bytes.fromhex('6a05')
 patch(0x49d05d, asm('movsx ax, byte ptr [esi + 2]', 0x49d05d), asm(f'jmp {crlink:#x}', 0x49d05d))
@@ -24424,6 +24502,13 @@ pcx = io.BytesIO(); seal_hoja.save(pcx, 'PCX'); SEAL_PCX = pcx.getvalue()
 struct.pack_into('<I', butt_std, 0, SEAL_FILE)
 setstr(butt_std, 4, 32, 'sello')
 table_add(res, 2, SEAL_FILE, bytes(butt_std))
+# Fuente OV_FTIT del marcador (1.0.260.0): Arial 9 negrita, entrada nueva de la tabla de fuentes (tipo 1; el juego
+# carga de la 1 a la última, hasta 9). El RES solo guarda nombre y tamaño: el bit 0x100 del tamaño pide negrita (ov_bold).
+_o1, _h1 = table(res, 1)
+assert _h1[2] == OV_FTIT and _h1[3] == 40
+assert struct.unpack_from('<I', res, _o1 + 20 + 4 * 40)[0] == 4 and res[_o1 + 20 + 4 * 40 + 4:_o1 + 20 + 4 * 40 + 10] == b'Arial' + bytes(1) and struct.unpack_from('<I', res, _o1 + 20 + 4 * 40 + 36)[0] == 9
+_f = bytearray(40); struct.pack_into('<I', _f, 0, OV_FTIT); _f[4:9] = b'Arial'; struct.pack_into('<I', _f, 36, 0x109)
+table_add(res, 1, OV_FTIT, bytes(_f))
 # Ventana de fin de partida (ver go_tit): el título (diálogo 46, control 1) pasa de la fuente 2 a la 1. Hoja GO_FILE =
 # PICTS\alianza.pcx con los campos de picts (56) y la imagen GO_IMG: el pergamino de alianza (imagen 0xae, picts en
 # (212,0), 24x21) achicada a GO_W x GO_H, con los mismos índices de color (11 = transparente).

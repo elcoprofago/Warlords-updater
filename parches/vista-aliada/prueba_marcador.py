@@ -84,6 +84,9 @@ class Juego:
             self.calls.append(('estilo', r(1), r(2), r(3))); ret()
         elif a in (0x4dd200, 0x4dd180):
             self.calls.append(('der' if a == 0x4dd200 else 'izq', r(1), r(2), r(3), self.s(r(4)))); ret()
+        elif a == 0x4ede30:   # recoloreo de un rectángulo (superficie, x, y, ancho, alto, tabla): el color de la tabla
+            t = bytes(mu.mem_read(r(6), 256))
+            self.calls.append(('rect', r(1), r(2), r(3), r(4), r(5), t[0] if t == t[:1] * 256 else None)); ret()
 
     def corre(self, a, *args):
         sp = STACK - 4 * len(args)
@@ -145,12 +148,15 @@ j.calls = []
 j.mu.mem_write(0x4ff7a4, b'\1')
 j.mu.reg_write(UC_X86_REG_ESI, 0x1234); j.mu.reg_write(UC_X86_REG_EBX, 1000); j.mu.reg_write(UC_X86_REG_EBP, 50)
 j.corre(OV_DRAW)
-X = 1000 + 0x21c - 74; Y = 50 + 0x58
-ver('dibujo: título en dorado, nombres a la derecha de X, barras desde X + 4, en sus colores', j.calls[:7], [
-    ('estilo', 1, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
-    ('estilo', 1, 100, 200), ('der', 0x1234, X, Y + 14, 'Lado0'), ('izq', 0x1234, X + 4, Y + 14, '|' * 20),
-    ('estilo', 1, 103, 203), ('der', 0x1234, X, Y + 28, 'Lado3')])
-ver('cuatro renglones', len(j.calls), 2 + 4 * 3)
+X = 1000 + 0x21c - 66; Y = 50 + 0x56
+def barra(x, y, n, color): return [('rect', 0x1234, x + 3 * k, y, 2, 5, color) for k in range(n)]
+ver('dibujo: título en negrita (fuente 8) dorado; nombres (fuente 4) a la derecha de X; barras de rectángulos',
+    j.calls[:4 + 40 + 2], [
+    ('estilo', 8, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
+    ('estilo', 4, 100, 200), ('der', 0x1234, X, Y + 12, 'Lado0')]
+    + barra(X + 5, Y + 12 + 4, 20, 200) + barra(X + 4, Y + 12 + 3, 20, 100)
+    + [('estilo', 4, 103, 203), ('der', 0x1234, X, Y + 24, 'Lado3')])
+ver('cuatro renglones', len(j.calls), 2 + 2 * 4 + 2 * (20 + 10 + 6 + 2))
 ver('ov_draw preserva los registros', (j.mu.reg_read(UC_X86_REG_ESI), j.mu.reg_read(UC_X86_REG_EBX),
                                        j.mu.reg_read(UC_X86_REG_EBP)), (0x1234, 1000, 50))
 j.tecla()
