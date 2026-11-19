@@ -803,3 +803,5 @@ parte el grupo al tope de 3 (evento 3).
   bando). Paso 5.6 cerrado; con él queda medido todo el relevamiento del paso 5.
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6 cerrado (tanda 188)».
+
+Siguiente tema (19/11/2026, pedido del usuario): la IA construye muros, en ia\PENDIENTE-ia-muros.md.
