@@ -74,8 +74,29 @@ predeterminadas.»*
      construye seguido y el Engineer pocas veces, y ninguno se queda sin oro para sus tropas. Un anillo de 12 bloques
      cuesta 1.920 con Artificer y 3.840 con Engineer: se arma de a un bloque por turno, empezando por el acceso más
      amenazado.
-3. **Dónde.** Propuesta: solo en la capital y en las ciudades amenazadas (pila enemiga en guerra a pocas casillas),
-   tapando primero los accesos por tierra (la tanda 183 mostró que lo que deja abierta la costa no la cierra).
+3. **Dónde (criterio del usuario, 19/11/2026).**
+   - **Anillos alrededor de una ciudad: descartados** (*«lleva mucho trabajo, tiempo en turnos, costo y es solo para
+     defender esa ciudad. Lo descarto de plano.»*). Única excepción: el bando en decadencia (pocas ciudades, a punto
+     de ser eliminado) y con reservas suficientes, que se juega todo a atrincherarse.
+   - **Lo que importa: pasos clave.** Detectar los pasos estrechos (un camino entre montañas o costa) y cerrarlos con
+     un tramo corto de muro: más efectivo y más barato.
+   - **Con visión de conjunto y anticipación** (3-4 jugadas, como en ajedrez): pensar como el enemigo. Por dónde se
+     acercaría a nuestras ciudades con sus propias capacidades, aprovechando nuestras debilidades. Distinguir el
+     enemigo más peligroso en potencia (también el que está en paz), no solo el declarado.
+   - **Mirar qué tiene cada enemigo:** barcos con «landing» o «raft» (el muro no frena un desembarco: alta
+     vulnerabilidad), unidades voladoras (el muro tampoco las frena), mucho oro, etc. Si el enemigo puede rodear
+     el paso por agua o por aire, cerrarlo vale menos.
+   - **Qué ve la IA (revisado en el código, 19/11/2026):** la IA del parche lee directamente la tabla de ejércitos
+     del juego (posición, tipo, bonos, dueño) y el oro de cada bando; no pasa por los reportes del jugador ni por la
+     niebla (al_thr no consulta la visibilidad). O sea, puede saber todo lo anterior. **Sin verificar:** si la IA
+     original del juego respeta el mapa oculto (anotado como pendiente en PENDIENTE-entrenamiento-ia.md).
+   - **Orden propuesto, de a uno y midiendo:**
+     a. Detectar pasos clave en los mapas del banco con un script (sin tocar el juego): casillas de tierra transitable
+        cuyo cierre con 1-3 bloques corta todos los caminos por tierra entre dos zonas con ciudades. Mostrarlos al
+        usuario sobre el mapa para confirmar que son los que él reconoce.
+     b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
+        (barcos con landing/raft, voladores).
+     c. Recién ahí la regla de decisión dentro del juego.
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
    Una primera etapa más simple: construir solo donde el constructor ya está (junto a una ciudad propia), sin
@@ -87,6 +108,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados (19/11/2026). Punto 3 (dónde): definir qué casillas tapa primero, midiendo por dónde llegan los ataques a las ciudades en las tandas ya corridas.
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). Siguiente: 3.a, detectar pasos clave en los mapas del banco con un script y mostrarlos al usuario.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.a».
