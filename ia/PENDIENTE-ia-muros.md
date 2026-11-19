@@ -37,12 +37,11 @@ predeterminadas.»*
    (`C:\Warlords\ARMY`) y en las guardadas del banco. Si ninguna lo tiene, armar guardadas `_BD` (como `balsa.py`:
    «build» en una ranura de los 8 bandos) para la tanda, con artificer/engineer en los colores que deben construir.
    **Medido (19/11/2026):**
-   - **.ARM con «build»: 10**, en `E:\Warlords-TEST\Warlords3\ARMY`, que es donde se editan las unidades y de donde
-     sale el paquete ARMY (`publicar-paquete.ps1`): Archers, Blade Runners, Dark Dwarves (FU_darkd), Drow Infantry,
-     Dwarf Sappers, Elven Sappers (FU_elfi), Gnomes sappers (FU_gnome), Royal Sappers (FU_rgrd), Scavens (MC_Scav)
-     y Red Scavens. En `C:\Warlords\ARMY` (ranking) solo 3 (Archers, Dwarf Sappers, Red Scavens): tiene copias más
-     viejas de las otras 7. **Error corregido (19/11/2026):** la primera medición miró solo `C:\Warlords` y dijo 3;
-     el usuario lo detectó. Las unidades se miden en `E:\Warlords-TEST\Warlords3`, no en el ranking.
+   - **.ARM con «build»: 10**, los mismos en `E:\Warlords-TEST\Warlords3\ARMY` y en `C:\Warlords\ARMY` (medido de
+     nuevo el 19/11/2026): Archers, Blade Runners, Dark Dwarves (FU_darkd), Drow Infantry (drowinf; la otra copia,
+     MC_DrowI, no lo tiene), Dwarf Sappers, Elven Sappers (FU_elfi), Gnomes sappers (FU_gnome), Royal Sappers
+     (FU_rgrd), Scavens (MC_Scav) y Red Scavens. Una medición anterior de la misma sesión leyó en C: solo 3; la
+     relectura da 10, con las fechas de los archivos sin cambiar (6 y 9/11). No se averiguó por qué difirió.
    - **Guardadas:** la guardada lleva su propia copia de cada unidad, no el .ARM. En las 28 de `C:\Warlords\SAVES`
      ninguna unidad tiene «build». En el banco (44) solo las de prueba de caminos y obras (`build_01/02`, `roads01/02`,
      `agua04`: Blade Runners y Red Scavens con build); ninguna de las `Tanda_*`. En `Tanda_hex_MU` los Red Scavens
