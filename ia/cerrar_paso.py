@@ -27,9 +27,11 @@
 #      cálculo exacto de amenaza.py y se informa si difieren.
 # 3. Se descartan los pasos cuya ciudad propia más cercana queda a más de MP_DIST casillas (el constructor tendría
 #    que cruzar medio mapa) y los que no tienen amenaza.
-# 4. Elige la mayor amenaza; a igualdad, la ciudad propia más cerca del paso y después el tramo más corto. Un paso
-#    que el bando (o un aliado) ya empezó a cerrar va primero (terminar lo empezado); uno ya cerrado del todo, o con
-#    una obra ajena en el tramo (donde no se puede construir), no se elige.
+# 4. Elige la mayor amenaza; a igualdad, la ciudad propia más cerca del paso y después el tramo más corto.
+# 5. Con la tabla de obras, mirando todos los tramos que cortan las mismas ciudades: un paso que el bando (o un
+#    aliado) ya empezó a cerrar va primero (terminar lo empezado); después, uno con MURALLA ajena (señal de que el paso
+#    importa: le sirve solo al enemigo, usuario 19/11/2026); uno ya cerrado del todo no se elige. Se construye en un
+#    tramo sin obras ajenas (encima no se puede), con preferencia por el empezado y por uno de nuestro lado.
 # Uso: python ia\cerrar_paso.py Tanda_Borderlands [partida turno] [--control]
 import os, sys, json, sqlite3, collections, heapq, struct
 
@@ -127,7 +129,7 @@ def analizar(guardada, partida=None, turno=None, ob=None):
     """ob: tabla de obras {(x, y): (tipo, dueño)} en lugar de la de la guardada (para las pruebas)."""
     d = open(os.path.join(tanda.JUEGO, 'SAVES', guardada + '.SAV'), 'rb').read()
     ob = obras(d) if ob is None else ob
-    w, h, tierra, clase, camino, cs, final = pasos.detectar(d)
+    w, h, tierra, clase, camino, cs, final, otros = pasos.detectar(d, todos=True)
     dueño, oro, ali = estado(d, guardada, partida, turno)
     base = componentes(tierra)
     comp_de = {p: k for k, c in enumerate(base) for p in c}
@@ -177,7 +179,8 @@ def analizar(guardada, partida=None, turno=None, ob=None):
             lados.append({'zona': zona, 'ids': ids, 'costa': bool(vec & agua), 'puerto': bool(vec & puerto),
                           'dist': amenaza.dist([q for t in seg for q in ((t[0] + dx, t[1] + dy) for dx, dy in VEC)
                                                 if q in zona], zona)})
-        pas.append({'n': n, 'tramo': seg, 'camino': any(camino[t] for t in seg), 'lados': lados})
+        pas.append({'n': n, 'tramo': seg, 'camino': any(camino[t] for t in seg), 'lados': lados,
+                    'otros': otros[n - 1]})
 
     out = {}
     for p in sorted(jugando):
@@ -188,11 +191,19 @@ def analizar(guardada, partida=None, turno=None, ob=None):
             r['eliminado'] = True
         amigos = {p} | ali[p]
         for P in pas:
-            # MURALLAS del bando o de sus aliados en el tramo: cerrado entero, no se elige; empezado, va primero.
-            # Una obra ajena (de otro bando, o una torre o un faro) en el tramo: ahí no se puede construir.
-            hechos = sum(ob.get(t, (0, 9))[0] == OB_MURO and ob[t][1] in amigos for t in P['tramo'])
-            if hechos == len(P['tramo']) or any(t in ob and not (ob[t][0] == OB_MURO and ob[t][1] in amigos)
-                                                  for t in P['tramo']):
+            # Regla 5, con todos los tramos que cortan las mismas ciudades (pasos.detectar(todos=True)):
+            # - uno cerrado entero con MURALLA del bando o de sus aliados: el paso está cerrado, no se elige;
+            # - MURALLA ajena (de un bando que no es aliado) en alguno: señal de que el paso importa (usuario,
+            #   19/11/2026: «le sirve solo al enemigo»; él pasa por la puerta y nosotros no): va antes que los demás;
+            # - se construye en un tramo sin obras ajenas (encima de una obra no se puede): primero el ya empezado,
+            #   después uno de nuestro lado, después el orden de pasos.py (el más corto, mejor con camino).
+            def propio(t):
+                return ob.get(t, (0, 9))[0] == OB_MURO and ob[t][1] in amigos
+            if any(all(propio(t) for t in tr) for tr in P['otros']):
+                continue
+            ajena = any(t in ob and ob[t][0] == OB_MURO and ob[t][1] not in amigos for tr in P['otros'] for t in tr)
+            libres = [tr for tr in P['otros'] if all(propio(t) or t not in ob for t in tr)]
+            if not libres:
                 continue
             for k, D in enumerate(P['lados']):
                 O = P['lados'][1 - k]
@@ -226,10 +237,13 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                     total += peso
                     enem.append((e, en_o, 'agua' if mar else '', 'aire' if aire else '', peso))
                 if total:
-                    r['opciones'].append({'paso': P['n'], 'tramo': P['tramo'], 'lado': 'chico' if k == 0 else 'grande',
+                    tr = min(libres, key=lambda tr: (-sum(map(propio, tr)), not all(t in D['zona'] for t in tr)
+                                                     and tr != P['tramo'], P['otros'].index(tr)))
+                    r['opciones'].append({'paso': P['n'], 'tramo': tr, 'lado': 'chico' if k == 0 else 'grande',
                                           'mias': len(mias), 'cerca': cerca, 'amenaza': total, 'enemigos': enem,
-                                          'lejos': cerca > MP_DIST, 'hechos': hechos})
-        r['opciones'].sort(key=lambda o: (o['lejos'], not o['hechos'], -o['amenaza'], o['cerca'], len(o['tramo'])))
+                                          'lejos': cerca > MP_DIST, 'hechos': sum(map(propio, tr)), 'ajena': ajena})
+        r['opciones'].sort(key=lambda o: (o['lejos'], not o['hechos'], not o['ajena'], -o['amenaza'], o['cerca'],
+                                          len(o['tramo'])))
         out[p] = r
     # control del agua simplificado contra el cálculo exacto de amenaza.py (solo con los dueños de la guardada)
     difiere = []
@@ -245,7 +259,8 @@ def analizar(guardada, partida=None, turno=None, ob=None):
 
 
 def empezado(o):
-    return f", empezado ({o['hechos']} de {len(o['tramo'])})" if o['hechos'] else ''
+    return ((f", empezado ({o['hechos']} de {len(o['tramo'])})" if o['hechos'] else '') +
+            (f", MURALLA ajena, se cierra en {list(o['tramo'])}" if o['ajena'] else ''))
 
 
 def informe(guardada, partida=None, turno=None):

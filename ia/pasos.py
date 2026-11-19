@@ -117,7 +117,10 @@ def separa(todo, seg):
         fr[k] = nuevo
 
 
-def detectar(d):
+def detectar(d, todos=False):
+    """Pasos del mapa. Con todos=True devuelve además, por cada paso de final, todos los tramos que cortan las
+    mismas ciudades (el elegido primero, después en el mismo orden de preferencia): sirven para cerrar el paso en otro
+    lugar si en el elegido hay una obra ajena (cerrar_paso.py)."""
     w, h, paso, clase, camino = grilla(d)
     cs = [c for c in ciudades.leer(d) if c['tam']]
     celda_ciudad = {}
@@ -142,15 +145,19 @@ def detectar(d):
             hallados.append((seg, con))
     # un paso por corte: tramos que separan las mismas ciudades son el mismo paso; queda el más corto, con
     # preferencia por el que cierra un camino (ahí pasa el enemigo) y, si no, el primero
-    por_corte = {}
+    por_corte, mismos = {}, {}
     for seg, con in hallados:
         chico = min(con, key=lambda c: c[0])
         clave = tuple(sorted(tuple(c[1]) for c in con))
         orden = (len(seg), not any(camino[p] for p in seg))
+        mismos.setdefault(clave, []).append((orden, seg))
         if clave not in por_corte or orden < por_corte[clave][0]:
-            por_corte[clave] = (orden, seg, con, chico)
-    final = [(v[1], v[2]) for v in sorted(por_corte.values(), key=lambda v: (v[3][0], v[1]))]
-    return w, h, paso, clase, camino, cs, final
+            por_corte[clave] = (orden, seg, con, chico, clave)
+    final = sorted(por_corte.values(), key=lambda v: (v[3][0], v[1]))
+    if todos:
+        otros = [[v[1]] + [sg for _, sg in sorted(mismos[v[4]], key=lambda o: o[0]) if sg != v[1]] for v in final]
+        return w, h, paso, clase, camino, cs, [(v[1], v[2]) for v in final], otros
+    return w, h, paso, clase, camino, cs, [(v[1], v[2]) for v in final]
 
 
 def dibujar(nombre, w, h, paso, clase, camino, cs, final, dst, bosque=()):

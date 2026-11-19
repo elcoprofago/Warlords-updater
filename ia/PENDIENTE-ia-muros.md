@@ -215,11 +215,22 @@ predeterminadas.»*
           - Hexagon: todo se rodea por aire (Descenders'); los pasos de sector quedan a 44-48 casillas de las
             capitales (más de 20: lejos).
           - Kor: amenaza 1-6, se rodea por agua.
-          5. Con la tabla de obras: un paso a medio cerrar con MURALLA del bando o de un aliado **va primero**
-             (terminar lo empezado); uno cerrado del todo, o con una obra ajena en el tramo (MURALLA de otro bando,
-             torre, faro: ahí no se puede construir), no se elige. Probado con `ia\prueba_cerrar_paso.py` (MURALLAS
-             puestas en memoria en Borderlands, partida 1477, turno 15; control: las opciones de un bando sin obras en
-             sus pasos no cambian; y la lectura de la tabla de obras de Tanda_hex_MU): TODO OK.
+          5. Con la tabla de obras, mirando todos los tramos que cortan las mismas ciudades (`pasos.detectar(d,
+             todos=True)`; el paso 8 de Borderlands tiene 2, otros hasta 61):
+             - un paso con algún tramo cerrado entero por MURALLA del bando o de un aliado **no se elige**;
+             - uno a medio cerrar (MURALLA propia o aliada en un tramo) **va primero**: terminar lo empezado, en ese
+               mismo tramo;
+             - **uno con MURALLA ajena (de un bando no aliado) va después de los empezados y antes que el resto**:
+               *«un paso con una muralla ajena le sirve solo al enemigo, con mayor razón, esa sería una señal de que
+               el paso en sí es importante»* (usuario, 19/11/2026; la primera versión de esta regla lo descartaba).
+             - Sobre una obra no se construye (MURALLA ajena, torre, faro): se cierra en otro tramo del mismo paso sin
+               obras ajenas, prefiriendo el que ya tiene bloques propios, después el que queda del lado propio. Si todos
+               los tramos tienen una obra ajena (el paso 6 de Borderlands: sus dos tramos comparten (13,83) y (13,84)),
+               no se puede cerrar y no se elige.
+             Probado con `ia\prueba_cerrar_paso.py` (obras puestas en memoria en Borderlands, partida 1477, turno 15:
+             empezado, cerrado, torre, MURALLA ajena en un paso con tramo libre y en uno sin tramo libre; control: las
+             opciones de un bando sin obras en sus pasos no cambian; y la lectura de la tabla de obras de Tanda_hex_MU):
+             TODO OK.
         - **Cómo va a quedar en el juego (build.py), a escribir** (diseño, 19/11/2026):
           - `mp_scan`, una vez por estado del mapa (se recalcula si cambian OB_N, los dueños o los tamaños de las
             ciudades; no cada turno). Igual en todas las PC: sin azar, mismo orden de recorrido.
@@ -236,7 +247,8 @@ predeterminadas.»*
                Antes de escribirlo, medir en Python que la cola FIFO por grupo da los mismos pasos que hoy.
             4. Lado chico y lado grande (= componente − chico − tramo): las dos con ≥ MIN_LADO casillas y ≥ 1
                ciudad. Máscara de ciudades de cada lado (80 bits), costa y puerto de cada lado. Pasos con las mismas
-               máscaras: queda el tramo más corto, mejor si tiene camino, a igualdad el primero.
+               máscaras: son un solo paso; el tramo principal es el más corto, mejor si tiene camino, a igualdad el
+               primero, pero **se guardan todos sus tramos** (la regla 5 elige uno sin obras ajenas).
             5. Por paso y lado: distancia en casillas desde el tramo (para MP_DIST) y, por bono de terreno (0-3), el
                costo hacia atrás desde el tramo con la grilla 0x57d158 del juego. Como los costos van de 1 a 9, alcanza
                una cola por cubos (Dial) en lugar de un montículo. Se guarda el mínimo por ciudad, no la grilla.
