@@ -1,7 +1,7 @@
 # Prueba de juguete: al derribar un puente, sus trampas caen al agua (br_untrap de build.py, pedido del clan 18/11/2026).
 # Uso: python prueba_puentetrampa.py [carpeta]   (por defecto la del juego de pruebas)
 # Controles que deben sobrevivir: trampa fuera del puente, pozo (no trampa) sobre el puente, puente con 0 casillas.
-# Sonido (1.0.266.0): la mina que cae suena "splash" (0x4465e0(0x18, -1)) solo en la PC ([0x560b20]) de su dueño o de
+# Sonido (1.0.266.0): la mina que cae suena "splash" (0x4465e0(0xd, -1); hasta 1.0.277.0 se usaba 0x18, que es Slayer) solo en la PC ([0x560b20]) de su dueño o de
 # quien la había descubierto; control: una mina ajena y no descubierta cae sin sonar, y sin minas que caigan no suena.
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
 from juego_pruebas import W3
@@ -61,7 +61,7 @@ t, m2 = correr(regs, [])
 ver('puente vacío: no toca nada', t, sorted(regs))
 t, m2 = correr([(10, 5, T, 0, 1, 0)], puente)
 ver('única trampa sobre el puente', t, [])
-SPL = [(0x18, -1)]
+SPL = [(0xd, -1)]   # splash: sonido lógico 0xd (recurso 24); hasta 1.0.277.0 era 0x18 = Slayer (TAREAS 269)
 for nombre, rr, local, esperado in (
         ('mina propia: suena', [(10, 5, T, 0, 0, 3)], 3, SPL),
         ('mina ajena descubierta por el local: suena', [(10, 5, T, 0, 1 << 3, 5)], 3, SPL),

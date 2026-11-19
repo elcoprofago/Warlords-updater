@@ -13177,7 +13177,10 @@ pmr_no:
 # br_untrap(n) cdecl: las trampas sobre las n casillas de br_xy (el puente que se acaba de derribar) caen al agua: se
 # quitan de la tabla (el último registro pasa a su lugar) y se rearma po_map. Pedido del clan (18/11/2026): sin esto,
 # la trampa quedaba como mina submarina donde estaba el puente. Corre en todas las PC (br_razeapply). Preserva todo.
-# Desde 1.0.266.0 (pedido del usuario, 19/11/2026) la mina que cae suena "splash" (0x4465e0(0x18, -1), el sonido del
+# Sonido lógico de 0x4465e0 para "splash" (recurso 24, FX\SPLASH.WAV): el caso 0xd. Hasta 1.0.276.0 se usaba 0x18, que
+# es el recurso 0x34 "Slayer" (lo oyó el usuario como fuego, TAREAS 269).
+SPLASH_SND = 0xd
+# Desde 1.0.266.0 (pedido del usuario, 19/11/2026) la mina que cae suena "splash" (0x4465e0(SPLASH_SND, -1), el sonido del
 # ítem que cae al agua) en la PC ([0x560b20]) de su dueño (+7) o de quien la había descubierto (máscara +6): a los
 # demás no les delata una mina que no veían.
 bu_snd = place_data('bu_snd', bytes(4))
@@ -13227,7 +13230,7 @@ bu_end:
     cmp byte ptr [{bu_snd:#x}], 0
     je bu_out
     push -1
-    push 0x18
+    push {SPLASH_SND}
     call 0x4465e0
     add esp, 8
 bu_out:
@@ -21191,6 +21194,30 @@ rft_cnt:
     jmp rft_next
 rft_sink:
     mov byte ptr [edi + 0x54fe6b], 0
+    mov ebp, dword ptr [edi + 0x54fe52]
+    mov ecx, 1
+rft_off:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge rft_drop
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz rft_offn
+    cmp dword ptr [edx + 0x54fe52], ebp
+    jne rft_offn
+    movzx eax, word ptr [edx + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    cmp eax, ebx
+    jne rft_offn
+    test byte ptr [edx + 0x54fe64], 8
+    jz rft_offn
+    and byte ptr [edx + 0x54fe64], 0xf7
+    mov byte ptr [edx + 0x54fe6b], 0x20
+rft_offn:
+    inc ecx
+    jmp rft_off
+rft_drop:
     push 0
     push 1
     push 0
@@ -21199,10 +21226,31 @@ rft_sink:
     push ebx
     call 0x485610
     add esp, 0x18
+    mov ecx, 1
+rft_on:
+    movsx eax, word ptr [0x54fe50]
+    cmp ecx, eax
+    jge rft_snd
+    imul edx, ecx, 0x1c
+    cmp byte ptr [edx + 0x54fe6b], 0x20
+    jne rft_onn
+    movzx eax, word ptr [edx + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    cmp eax, ebx
+    jne rft_onn
+    mov byte ptr [edx + 0x54fe6b], 0
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz rft_onn
+    or byte ptr [edx + 0x54fe64], 8
+rft_onn:
+    inc ecx
+    jmp rft_on
+rft_snd:
     cmp word ptr [0x560b20], bx
     jne rft_next
     push -1
-    push 0x18
+    push {SPLASH_SND}
     call 0x4465e0
     add esp, 8
     jmp rft_next

@@ -1,6 +1,6 @@
 # Prueba de juguete del tope de la balsa (rf_turn y boatcarr de build.py, 1.0.266.0; pedido del usuario, 19/11/2026):
 # un grupo con "Raft" no puede estar más de 2 vueltas en el agua; al empezar la tercera sin haber desembarcado se hunde
-# (0x485610(jugador, ejército, 1, 0, 1, 0)) y en la PC de su jugador suena "splash" (0x4465e0(0x18, -1)).
+# (0x485610(jugador, ejército, 1, 0, 1, 0)) y en la PC de su jugador suena "splash" (0x4465e0(0xd, -1); hasta 1.0.277.0 se usaba 0x18, que es Slayer).
 # Corre rf_turn del DarklordAV.exe armado en unicorn, con 0x43c240 (¿se ahoga?), 0x485610 y 0x4465e0 interceptados.
 # Controles que deben sobrevivir: bando sin "Raft" (con "Carrier"), ejército de otro jugador, ejército en tierra,
 # ejército embarcado que no se ahoga (volador), ejército con enlace de convoy (bit 0x80), ejército muerto.
@@ -65,11 +65,14 @@ class Juego:
             mu.reg_write(UC_X86_REG_EAX, (fn(args) or 0) & 0xffffffff)
             mu.reg_write(UC_X86_REG_ESP, sp + 4); mu.reg_write(UC_X86_REG_EIP, ret)
         s.mu.hook_add(UC_HOOK_CODE, g, begin=addr, end=addr)
-    def hundir(s, a):   # ahoga a todos los de la casilla, como el original
+    def hundir(s, a):   # como el original: ahoga a los de la casilla que 0x43c240 da por ahogables (no embarcados)
         s.hundidos.append(tuple(a[:6]))
         xy = s.mu.mem_read(ARM(a[1]) + 2, 4); n = struct.unpack('<h', s.mu.mem_read(0x54fe50, 2))[0]
         for i in range(1, n):
-            if s.mu.mem_read(ARM(i) + 2, 4) == xy: s.mu.mem_write(ARM(i) + 0x13, b'\0')
+            if (s.mu.mem_read(ARM(i) + 2, 4) == xy and not s.mu.mem_read(ARM(i) + 0x14, 1)[0] & 8
+                    and i not in s.voladores):
+                s.mu.mem_write(ARM(i) + 0x13, b'\0')
+    def bit8(s, i): return bool(s.mu.mem_read(ARM(i) + 0x14, 1)[0] & 8)
     def turno(s, p):
         mu = s.mu; mu.mem_write(STACK, struct.pack('<I', RET)); mu.reg_write(UC_X86_REG_ESP, STACK)
         mu.reg_write(UC_X86_REG_EBX, p); mu.emu_start(RF_TURN, RET, count=2000000)
@@ -84,10 +87,11 @@ class Juego:
 
 RAFT, CARR = b'Raft', b'Carrier'
 # 1 balsa de 0 en el agua; 2 otro ejército de 0 en la misma balsa; 3 de 0 en tierra; 4 de 0 volador sobre el agua;
-# 5 de 0 con enlace de convoy; 6 de 0 muerto en el agua; 7 de 1 en el agua (sin "Raft"); 8 de 2 en el agua (con "Carrier")
+# 5 de 0 con enlace de convoy; 6 de 0 muerto en el agua; 7 de 1 en el agua (sin "Raft"); 8 de 2 en el agua (con "Carrier");
+# 9 de 0 volador embarcado en la misma balsa (no se ahoga: tiene que seguir embarcado)
 EJ = [(0, 5, 5, 1, 1, 0), (0, 5, 5, 1, 1, 0), (0, 9, 9, 1, 0, 0), (0, 12, 3, 1, 1, 0), (0, 14, 3, 1, 1, 0x85),
-      (0, 16, 3, 0, 1, 0), (1, 20, 20, 1, 1, 0), (2, 22, 22, 1, 1, 0)]
-g = Juego({0: [RAFT], 2: [CARR]}, EJ, local=0, voladores={4})
+      (0, 16, 3, 0, 1, 0), (1, 20, 20, 1, 1, 0), (2, 22, 22, 1, 1, 0), (0, 5, 5, 1, 1, 0)]
+g = Juego({0: [RAFT], 2: [CARR]}, EJ, local=0, voladores={4, 9})
 g.turno(0)
 ver('vuelta 2: la balsa sigue a flote y cuenta 1', (g.vivo(1), g.byte(1), g.byte(2), g.hundidos, g.sonidos), (True, 0x41, 0x41, [], []))
 ver('vuelta 2: controles intactos', [g.byte(i) for i in (3, 4, 5, 6)], [0, 0, 0x85, 0])
@@ -95,7 +99,9 @@ for p in (1, 2): g.turno(p)
 ver('otros bandos sin "Raft": nada', ([g.byte(i) for i in (7, 8)], g.hundidos), ([0, 0], []))
 g.turno(0)
 ver('vuelta 3: se hunde con todo lo embarcado y suena splash', (g.vivo(1), g.vivo(2), g.hundidos, g.sonidos),
-    (False, False, [(0, 1, 1, 0, 1, 0)], [(0x18, -1)]))
+    (False, False, [(0, 1, 1, 0, 1, 0)], [(0xd, -1)]))
+ver('vuelta 3: el volador de la balsa sobrevive, sigue embarcado y sin marca', (g.vivo(9), g.bit8(9), g.byte(9)), (True, True, 0))
+ver('vuelta 3: los ahogados quedan sin marca', [g.byte(i) for i in (1, 2)], [0, 0])
 ver('vuelta 3: sobreviven tierra, volador y convoy', [g.vivo(i) for i in (3, 4, 5)], [True, True, True])
 for _ in range(3):
     for p in (1, 2): g.turno(p)
