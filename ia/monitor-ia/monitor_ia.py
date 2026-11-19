@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.35'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.36'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -786,6 +786,14 @@ class Monitor(tk.Tk):
         self.hilo = threading.Thread(target=self.trabajar, args=(a,), daemon=True)
         self.hilo.start()
 
+    def serie_de(self, tid):
+        """La serie solo si la tanda mostrada es suya y la corre este Monitor: una tanda lanzada desde afuera
+        (externa) no hereda el cronómetro de una serie anterior (1.0.36: marcaba 17 h desde la tanda de la noche)."""
+        s = self.serie
+        if not s or self.externa or tid is None or not s[2] <= tid < s[2] + s[1]:
+            return None
+        return s
+
     def trabajar(self, a):
         # Mantener la PC despierta mientras corre: si Windows suspende, la tanda se corta.
         ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)   # ES_CONTINUOUS | SYSTEM_REQUIRED
@@ -870,7 +878,7 @@ class Monitor(tk.Tk):
         mono, verde, naranja = ('Consolas', 7), '#6fd39a', '#f0a070'
         x0, x1 = 46, 136
         # Serie: T<tanda en curso>/<última de la serie>, siempre en verde.
-        h, n, t0 = self.serie or (None, None, None)
+        h, n, t0 = self.serie_de(self.tid) or (None, None, None)
         serie = ('Serie', h / n, f'T{self.tid}/{t0 + n - 1}', True) if n else ('Serie', None, '—', True)
         for i, (rot, frac, txt, lista) in enumerate([serie] + self.progreso):
             y = 9 + i * 16
@@ -975,7 +983,7 @@ class Monitor(tk.Tk):
         self.v_tanda2.set(txt)
         # Cronómetro: desde el inicio de la primera tanda de la serie (o de esta, si no hay serie) hasta ahora,
         # o hasta la última partida terminada si ya no corre.
-        t0 = self.serie[2] if self.serie else tid
+        t0 = self.serie[2] if self.serie_de(tid) else tid
         desde = db.execute('select inicio from tanda where id=?', (t0,)).fetchone()
         a_seg = lambda f: time.mktime(time.strptime(f, '%Y-%m-%d %H:%M:%S'))
         self.reloj_desde = a_seg(desde[0]) if desde and desde[0] else None
