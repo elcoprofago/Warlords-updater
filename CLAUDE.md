@@ -30,3 +30,15 @@ del ranking multijugador, salvo que sea imprescindible hacer más tandas de prue
   destreza que todavía necesita tandas (o que empeoró algo) queda solo para los colores en prueba, y su
   `PENDIENTE-*.md` dice por qué.
 - Recordar en `TAREAS.md` actualizar `C:\Warlords` cuando el cambio tiene que llegar a las partidas del ranking.
+
+## Antes de subir la versión de un parche, mirar si otra sesión ya la subió
+
+Puede haber varias sesiones trabajando a la vez en este repo y en el mismo parche. Antes de subir la VERSION en
+`parches/parches.txt`, releer ese archivo y `git log -3`: si otra sesión ya subió la versión, tomar la siguiente
+libre (y lo mismo para la fila del Apéndice E del Manual). Si `DarklordAV.exe` u otro archivo instalado en
+`E:\Warlords-TEST\Warlords3` aparece bloqueado sin que el juego esté abierto, lo más probable es que otra sesión
+esté compilando: esperar a que termine, no forzar.
+
+Caso que lo originó (19/11/2026): la estrella del marcador se iba a publicar como 1.0.266.0 mientras otra sesión
+publicaba 1.0.266.0 (balsas) y 1.0.267.0 (montañas); el ejecutable estuvo bloqueado por esa compilación. Se
+publicó como 1.0.268.0. Pedido del usuario: «Sí, agregá la regla».
