@@ -328,6 +328,18 @@ y midiendo:
      pasos que el enemigo alcanza antes.
   c. **Rodeo:** si el enemigo amenazante tiene voladores o barco para rodear, no construir (× 0), salvo bando en
      decadencia.
+**Antes de cambiar la regla (usuario, 19/11/2026):** *«habría que rehacerla en principio sin voladores, que son los
+que burlan las murallas. De otra forma no se puede saber qué tan efectivas son, ni estar seguros de que fueron "mal
+construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores; después, con.
+- Guardadas `Tanda_hex_control_BDSV` y `Tanda_hex_perfiles_BDSV` (`python ia\constructores.py --sin-voladores
+  Tanda_hex_control Tanda_hex_perfiles`): como las `_BD`, y además los Descenders' (ranura 10 de los bandos 0, 1, 3, 4,
+  5 y 7, los únicos voladores) pierden el bono «fly» y el bit 4 de +0xe0; quedan terrestres. Verificado al leer lo
+  escrito: voladores [1,1,0,1,1,1,0,1] → todos 0, «build» en las 16 ranuras igual que en `_BD`. Control: la `_BD`
+  rehecha sin la opción conserva los voladores. Sin voladores, `mp_pick` ya no ve rodeo por aire (× 2): la regla v1
+  se mide sin cambios. Queda el rodeo por agua (barco común de puerto a puerto).
+- Tanda (sin lanzar todavía: otra sesión estaba compilando vista-aliada): `python ia\tanda.py nueva --partidas 32
+  --guardadas Tanda_hex_control_BDSV,Tanda_hex_perfiles_BDSV`, y después `python ia\murallas_tanda.py <tanda>`,
+  comparando con la 189.
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
