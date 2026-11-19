@@ -2821,6 +2821,38 @@ mtnchk_ok:
     test esp, esp
     ret
 ''')
+# ---------------------------------------------------------------- Montañas altas: tampoco por aire
+# Pedido del usuario (19/11/2026): las montañas altas dejan de ser transitables aun para los voladores; las rodean.
+# El armado del grafo (0x4a4f90) da los enlaces de vuelo (0x578158) hacia toda casilla vecina salvo los muros
+# (clase 5 sin camino) y los de tierra (0x573158) salvo además la clase 4 sin camino. La clase 4 abarca montaña y
+# bosque profundo; solo la montaña («Mountains»: el nombre del tipo, 0x535f0c + tipo*0x58 - 0x36, empieza con
+# «moun» sin distinguir mayúsculas) pierde también el enlace de vuelo. Con camino o puente (flags & 0x30, cx = 1)
+# sigue pasándose, como por tierra. Salir de una montaña (un volador que ya estaba ahí) sigue permitido: el
+# enlace que se quita es el de entrada. En 0x4a52a9 (bp = clase, eax = tipo*11, cx = 1 si hay camino).
+MTN_NAME = 0x535f0c - 0x36
+mtnfly = place('mtnfly', f'''
+    cmp bp, 5
+    je mtnfly_wall
+    test cx, cx
+    jnz mtnfly_pass
+    cmp bp, 4
+    jne mtnfly_pass
+    push edx
+    mov edx, dword ptr [eax*8 + {MTN_NAME:#x}]
+    or edx, 0x20202020
+    cmp edx, 0x6e756f6d
+    pop edx
+    je mtnfly_skip
+mtnfly_pass:
+    push 0x4a52b4
+    ret
+mtnfly_wall:
+    test cx, cx
+    jnz mtnfly_pass
+mtnfly_skip:
+    push 0x4a52f6
+    ret
+''')
 # ---------------------------------------------------------------- Cabotaje (bono de movimiento "Cabotage")
 # El barco de un bando (ranura 15) con "Cabotage" navega pegado a la costa: no entra en una casilla de agua pura
 # (medio 0x80) a más de CAB_N casillas de tierra, salvo que se acerque a la costa (para que un barco que ya está mar
@@ -24252,6 +24284,7 @@ patch(0x4a5135, rel(0x4a5135, 0x4a5147 - 0x4a5135),
 patch(0x4a5c6a, rel(0x4a5c6a, 0x4a5c79 - 0x4a5c6a), asm(f'jmp {livexp:#x}', 0x4a5c6a))
 patch(0x4a6031, rel(0x4a6031, 0x4a6048 - 0x4a6031), asm(f'jmp {livback:#x}', 0x4a6031))
 patch(0x4a5328, bytes.fromhex('5d5f5e5b83c414c3'), asm(f'jmp {cabgraph:#x}', 0x4a5328))
+patch(0x4a52a9, rel(0x4a52a9, 0x4a52b4 - 0x4a52a9), asm(f'jmp {mtnfly:#x}', 0x4a52a9))   # montañas: ni por aire
 _ob = asm('mov si, word ptr [esp + 0x38]; push 0; movsx eax, si; neg eax; push 0; push 0; push 0; push 0; push eax',
           0x4e4de3)
 assert rel(0x4e4de3, len(_ob)) == _ob and len(_ob) == 0x4e4df8 - 0x4e4de3

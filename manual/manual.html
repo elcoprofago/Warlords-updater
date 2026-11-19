@@ -182,6 +182,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Marcador en el mapa</td><td><kbd>F12</kbd>: los cuatro primeros en Winning, Armies, Cities o Gold, en vivo sobre el mapa.</td><td>III</td></tr>
 <tr><td>Reglas del clan en el Army List</td><td>El juego marca las unidades que el DarklordsValidator rechazaría.</td><td>IX</td></tr>
 <tr><td>Pilas con voladores</td><td>Una pila con algún volador admite como máximo 6 ejércitos.</td><td>IX</td></tr>
+<tr><td>Montañas altas</td><td>Ya no se cruzan ni volando: los voladores las rodean, salvo por un camino de montaña.</td><td>IX</td></tr>
 <tr><td>Órdenes por chat</td><td>Escribir <code>.n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>X</td></tr>
 <tr><td>Votación, Sorteo, Comparador</td><td>Botones dentro del juego que abren las herramientas del clan en todas las PC.</td><td>III, XI</td></tr>
 <tr><td>Ítems en mapas al azar</td><td>Los ítems personalizados entran en el sorteo de las ruinas.</td><td>XII</td></tr>
@@ -560,6 +561,16 @@ noche, que vale en todos los combates de esa noche. No hay que asignar nada en e
 <h2>Pilas con voladores</h2>
 <p>Una pila que incluya al menos un volador (unidad voladora o héroe que vuela, por sí o por un objeto) admite como
 máximo <b>6 ejércitos</b>. Las pilas de más de 6 de partidas viejas no se parten: solo no pueden crecer.</p>
+
+<h2>Montañas altas: tampoco por aire</h2>
+<p>Las <b>montañas altas</b> (el terreno «Mountains» del mapa) ya no se cruzan <b>ni volando</b>: los voladores, igual
+que las tropas a pie, tienen que <b>rodearlas</b>. Se pasa solo por un <b>camino de montaña</b>, como siempre.</p>
+<ul>
+  <li>Las <b>colinas</b> y el <b>bosque profundo</b> no cambian: los voladores siguen pasando por encima.</li>
+  <li>Un volador que ya estaba sobre una montaña (en una partida guardada antes de esta versión) puede salir de
+  ella, pero no volver a entrar ni pasar a otra casilla de montaña.</li>
+  <li>La computadora usa la misma regla al planear sus movimientos: también rodea las montañas.</li>
+</ul>
 
 <h2>Bonos nuevos</h2>
 <table>
@@ -1053,6 +1064,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.267.0</td><td>19/11/2026</td><td>Montañas altas: ya no se cruzan ni volando. Los voladores las rodean, como las tropas a pie; un camino de montaña sigue sirviendo. Colinas y bosque profundo no cambian. La computadora también las rodea.</td></tr>
 <tr><td>1.0.266.0</td><td>19/11/2026</td><td>Balsas (Raft): aguantan 2 vueltas en el agua. Si al empezar la tercera no desembarcaron, se hunden con todo lo que llevan, con el sonido del ítem que cae al agua. Con Raft tampoco rige Carrier (sin convoyes, como ya decía este Manual). La mina que cae al agua al derribarse su puente suena igual, para su dueño o quien la había descubierto.</td></tr>
 <tr><td>1.0.265.0</td><td>19/11/2026</td><td>Marcador en el mapa: la estrella del bando con hechizos en juego es ahora la del propio juego, la rosa de cuatro puntas de la esfera de maná (PICTS.PCX), con sus píxeles originales (11 × 11, del alto del texto).</td></tr>
 <tr><td>1.0.264.0</td><td>19/11/2026</td><td>Marcador en el mapa: la estrella violeta del bando con hechizos en juego tiene un dibujo nuevo, hecho por el usuario (picts\star.pcx), reducido a 7 × 7.</td></tr>
