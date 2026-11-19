@@ -123,6 +123,34 @@ predeterminadas.»*
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
         (barcos con landing/raft, voladores).
+        **Hecho en parte (19/11/2026): `ia\amenaza.py`** (lee la guardada y `ia\pasos\<mapa>.json`, que ahora deja
+        `pasos.py`). Por paso y por lado: ciudades, dueños, costa y puertos; por cada bando con ciudades de un lado,
+        los enemigos con ciudades del otro (todo color fuera de su equipo, también los que están en paz: el criterio
+        del usuario de pensar en el enemigo potencial más peligroso), a cuántas casillas por tierra, y si rodean el
+        paso:
+        - Por agua, según el barco del bando (ranura 15, build.py): común, de puerto a puerto (puerto = casilla de
+          agua con el bit 0x4000; el grafo 0x4a4f90 une agua y tierra solo ahí); «Landing», de un puerto de su lado a
+          cualquier costa del nuestro, en el mismo mar; «Raft», de costa a costa sin alejarse más de 1 casilla de tierra.
+        - Por aire: la MURALLA no frena a los voladores. Cuenta si el bando puede producir voladores (tipo +0xe0 == 4,
+          el criterio de isfly) o ya los tiene, y si llegan volando (`pasos.vuelo`) a las ciudades del otro lado.
+        Resultados con las guardadas del banco (al empezar la partida: casi todas las ciudades son neutrales, así que
+        la mayoría de los pasos todavía no tiene enemigo de ningún lado; dentro del juego se mira con los dueños del
+        momento):
+        - Borderlands (sin voladores, barco común): el 4 encierra la capital de 7 sola, a 4 casillas del paso, sin
+          puertos: una MURALLA de 2 bloques la cierra por tierra a los otros 7 bandos y nadie la rodea. Es el mejor
+          caso de los cuatro mapas. El 3 y el 6 encierran la capital de 6 y la de 4, pero tienen puerto: se rodean de
+          puerto a puerto. El 10 (7 ciudades del noroeste, una de 6), igual. Los otros 6 encierran solo neutrales.
+        - Kor: el único paso encierra la capital de 7; se rodea de puerto a puerto (y en Tanda_Kor_RF, en balsa).
+          La MURALLA ahí solo demora.
+        - Scarpart (sin voladores): los 6 pasos encierran solo neutrales; el más cercano a una capital es el 5, a 3
+          casillas de la de 3. Sirven cuando alguien conquiste esas ciudades.
+        - Hexagon (equipos 01457 contra 3; todos pueden producir Descenders', voladores): los 6 pasos de sector se
+          rodean por agua y por aire. Los 6 de los núcleos (3 ciudades neutrales, rodeados de MURO, sin costa) solo
+          se entran por la abertura: una MURALLA ahí frena a todo terrestre; los voladores entran igual, porque
+          cruzan la abertura por encima.
+        **Falta:** los turnos. La distancia es en casillas; el costo de movimiento de cada terreno y los pasos de cada
+        unidad todavía no se ubicaron (el +0xdd de la copia del .ARM en la guardada no es el movimiento: casi siempre
+        0). Tampoco mira héroes que vuelan ni el oro de cada bando. Tarda ~1 min por mapa.
      c. Recién ahí la regla de decisión dentro del juego.
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
@@ -135,6 +163,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). Siguiente: 3.b.
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho en parte (ia\amenaza.py: enemigos, distancia en casillas, rodeo por agua y por aire). Siguiente: los turnos del 3.b (ubicar el costo de movimiento por terreno y los pasos de cada unidad) y después 3.c.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.b».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.b (turnos)».

@@ -10,8 +10,9 @@
 # camino) y un camino de montaña sí (la misma regla del constructor y del desembarco, build.py 0x4a52c3).
 # Se mueve en 8 direcciones (como el juego), por eso solo valen tramos horizontales o verticales: uno en diagonal
 # deja pasar en zigzag. No mira barcos ni voladores (eso es el punto 3.b), ni grupos que cruzan montañas.
-# Uso: python ia\pasos.py Tanda_hex_perfiles [más guardadas]  -> lista y dibuja <guardada>_pasos.png en ia\pasos\
-import os, struct, sys, collections
+# Uso: python ia\pasos.py Tanda_hex_perfiles [más guardadas]  -> lista y dibuja <guardada>_pasos.png en ia\pasos\,
+#      y deja <guardada>.json (tramos y ciudades de cada lado, por índice de ciudades.leer) para ia\amenaza.py.
+import os, struct, sys, collections, json
 
 import tanda
 import historia
@@ -146,6 +147,9 @@ if __name__ == '__main__':
             lados = '; '.join(f'{t} casillas, {len(cc)} ciudades' + (': ' + ', '.join(cs[i]['nombre'] for i in cc)
                               if len(cc) <= 12 else '') for t, cc in sorted(con))
             print(f'  {n:2}. {seg}  {"camino" if any(camino[p] for p in seg) else "sin camino"} | {lados}')
+        with open(os.path.join(salida, g + '.json'), 'w', encoding='utf-8') as f:
+            json.dump([{'tramo': seg, 'lados': [{'casillas': t, 'ciudades': [cs[i]['i'] for i in cc]} for t, cc in con]}
+                       for seg, con in final], f)
         nom = historia.terrenos(d)
         bosque = {p for p in clase if clase[p] == 4 and nom[casilla(d, *p)[0] & 0x1f][0] == 'Forest'}
         print(f'  ({len(bosque)} casillas de bosque profundo, intransitables salvo con camino)')
