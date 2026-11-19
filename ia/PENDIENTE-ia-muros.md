@@ -136,11 +136,11 @@ predeterminadas.»*
         Resultados con las guardadas del banco (al empezar la partida: casi todas las ciudades son neutrales, así que
         la mayoría de los pasos todavía no tiene enemigo de ningún lado; dentro del juego se mira con los dueños del
         momento):
-        - Borderlands (sin voladores, barco común): el 4 encierra la capital de 7 sola, a 4 casillas del paso, sin
-          puertos: una MURALLA de 2 bloques la cierra por tierra a los otros 7 bandos y nadie la rodea. Es el mejor
-          caso de los cuatro mapas. El 3 y el 6 encierran la capital de 6 y la de 4, pero tienen puerto: se rodean de
+        - Borderlands (sin voladores, barco común): el 4 encierra una sola ciudad, de 7 (las otras 3 de 7 quedan del otro lado), a 4
+          casillas del paso, sin puertos: una MURALLA de 2 bloques la cierra por tierra a los otros 7 bandos y nadie la rodea. Es el mejor
+          caso de los cuatro mapas. El 3 y el 6 encierran una ciudad de 6 y dos de 4, pero tienen puerto: se rodean de
           puerto a puerto. El 10 (7 ciudades del noroeste, una de 6), igual. Los otros 6 encierran solo neutrales.
-        - Kor: el único paso encierra la capital de 7; se rodea de puerto a puerto (y en Tanda_Kor_RF, en balsa).
+        - Kor: el único paso encierra una ciudad de 7 y una neutral; se rodea de puerto a puerto (y en Tanda_Kor_RF, en balsa).
           La MURALLA ahí solo demora.
         - Scarpart (sin voladores): los 6 pasos encierran solo neutrales; el más cercano a una capital es el 5, a 3
           casillas de la de 3. Sirven cuando alguien conquiste esas ciudades.
