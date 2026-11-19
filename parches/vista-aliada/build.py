@@ -11566,9 +11566,285 @@ ps_ink:
     jmp 0x4dd1c0
 ''')
 
+# ---- Marcador en el mapa (pedido del usuario, 18/11/2026, como el de Age of Empires): F3 lo prende y va pasando
+# Winning -> Armies -> Cities -> Gold -> apagado; SHIFT+F3 cambia barras <-> numeros. Arriba a la derecha del mapa, sin
+# caja ni fondo: el titulo en dorado y abajo los 4 bandos vivos que van primeros, de mayor a menor, cada uno en sus
+# colores (los del nombre en el fin de partida, +0xee y +0xf0): nombre alineado a la derecha y barra de '|' escalada al
+# primero (OV_BARMAX). ov_calc corre cada ~250 ms desde tl_idle: rehace los valores (Winning con 0x440840, que tambien
+# recalcula las ciudades de 0x4407d0; Armies como go_cuenta; Gold de la ficha del bando) y, si algo cambio, pide el
+# redibujo entero del mapa ([0x569588 + 0x1a4], como los avisos al vencer) para borrar lo viejo. ov_draw dibuja desde
+# mo_pdraw, despues de los paneles del marco. La tecla la lee ov_key al entrar a pz_disp (WM_KEYDOWN 0x72 sin la
+# repeticion, bit 30 de lParam), antes de la pausa, y la deja seguir hacia el juego.
+OV_BARMAX = 20
+OV_MODE = place_data('ov_mode', bytes(4))       # byte 0: 0 apagado, 1..4 Winning/Armies/Cities/Gold; byte 1: numeros
+OV_CUR = place_data('ov_cur', bytes(36))        # dword modo|num<<8|n<<16, 4 bandos, 4 valores
+OV_OLD = place_data('ov_old', bytes(36))
+OV_VAL = place_data('ov_val', bytes(32))
+OV_BAR = place_data('ov_bar', bytes(4 * 32))
+OV_FMT = place_data('ov_fmt', cstr_('%d'))
+OV_TITP = place_data('ov_titp', b''.join(struct.pack('<I', place_data(f'ov_t{i}', cstr_(t)))
+                                         for i, t in enumerate(('Winning', 'Armies', 'Cities', 'Gold'))))
+OV_RX = place_data('ov_rx', struct.pack('<3I', 0x1ec, 0x21c, 0x30c))
+OV_DX, OV_Y, OV_DY = 74, 0x54 + 4, 14
+ov_calc = place('ov_calc', f'''
+    cmp byte ptr [{OV_MODE:#x}], 0
+    jne oc_go
+    ret
+oc_go:
+    pushad
+    call 0x440840
+    xor ebx, ebx
+oc_side:
+    imul edi, ebx, 0x1f8
+    cmp byte ptr [edi + 0x536b30], 0
+    je oc_dead
+    cmp byte ptr [edi + 0x536b31], 0
+    je oc_dead
+    mov cl, byte ptr [{OV_MODE:#x}]
+    cmp cl, 1
+    jne oc_m2
+    movsx eax, word ptr [ebx*2 + 0x5643c8]
+    jmp oc_st
+oc_m2:
+    cmp cl, 2
+    jne oc_m3
+    xor eax, eax
+    mov ecx, 1
+oc_al:
+    movsx edx, word ptr [0x54fe50]
+    cmp ecx, edx
+    jge oc_st
+    imul edx, ecx, 0x1c
+    test byte ptr [edx + 0x54fe63], 0x40
+    jz oc_an
+    movzx esi, word ptr [edx + 0x54fe5e]
+    shr esi, 5
+    and esi, 0xf
+    cmp esi, ebx
+    jne oc_an
+    inc eax
+oc_an:
+    inc ecx
+    jmp oc_al
+oc_m3:
+    cmp cl, 3
+    jne oc_m4
+    movsx eax, word ptr [ebx*2 + 0x536b20]
+    jmp oc_st
+oc_m4:
+    mov eax, dword ptr [edi + 0x536c14]
+oc_st:
+    test eax, eax
+    jns oc_pos
+    xor eax, eax
+oc_pos:
+    mov dword ptr [ebx*4 + {OV_VAL:#x}], eax
+    jmp oc_next
+oc_dead:
+    mov dword ptr [ebx*4 + {OV_VAL:#x}], -1
+oc_next:
+    inc ebx
+    cmp ebx, 8
+    jb oc_side
+    xor ebp, ebp
+oc_pick:
+    cmp ebp, 4
+    jae oc_done
+    or edx, -1
+    or edi, -1
+    xor ebx, ebx
+oc_scan:
+    mov eax, dword ptr [ebx*4 + {OV_VAL:#x}]
+    cmp eax, edx
+    jle oc_sn
+    mov edx, eax
+    mov edi, ebx
+oc_sn:
+    inc ebx
+    cmp ebx, 8
+    jb oc_scan
+    test edi, edi
+    js oc_done
+    mov dword ptr [edi*4 + {OV_VAL:#x}], -1
+    mov dword ptr [ebp*4 + {OV_CUR + 4:#x}], edi
+    mov dword ptr [ebp*4 + {OV_CUR + 20:#x}], edx
+    inc ebp
+    jmp oc_pick
+oc_done:
+    movzx eax, word ptr [{OV_MODE:#x}]
+    mov ecx, ebp
+    shl ecx, 16
+    or eax, ecx
+    mov dword ptr [{OV_CUR:#x}], eax
+    xor ebx, ebx
+oc_bar:
+    cmp ebx, ebp
+    jae oc_cmp
+    mov edi, ebx
+    shl edi, 5
+    add edi, {OV_BAR:#x}
+    mov eax, dword ptr [ebx*4 + {OV_CUR + 20:#x}]
+    cmp byte ptr [{OV_MODE + 1:#x}], 0
+    je oc_lines
+    push eax
+    push {OV_FMT:#x}
+    push edi
+    call dword ptr [{SPRINTF:#x}]
+    add esp, 0xc
+    jmp oc_bn
+oc_lines:
+    mov ecx, dword ptr [{OV_CUR + 20:#x}]
+    test ecx, ecx
+    jz oc_nada
+    imul eax, eax, {OV_BARMAX}
+    xor edx, edx
+    div ecx
+    test eax, eax
+    jnz oc_fill
+    cmp dword ptr [ebx*4 + {OV_CUR + 20:#x}], 0
+    je oc_fill
+    inc eax
+    jmp oc_fill
+oc_nada:
+    xor eax, eax
+oc_fill:
+    mov ecx, eax
+    mov al, 0x7c
+    cld
+    rep stosb
+    mov byte ptr [edi], 0
+oc_bn:
+    inc ebx
+    jmp oc_bar
+oc_cmp:
+    cld
+    mov esi, {OV_CUR:#x}
+    mov edi, {OV_OLD:#x}
+    mov ecx, 9
+    repe cmpsd
+    je oc_out
+    mov esi, {OV_CUR:#x}
+    mov edi, {OV_OLD:#x}
+    mov ecx, 9
+    rep movsd dword ptr es:[edi], dword ptr [esi]
+    mov byte ptr [0x569588 + 0x1a4], 1
+oc_out:
+    popad
+    ret
+''')
+ov_key = place('ov_key', f'''
+    mov eax, dword ptr [esp + 4]
+    cmp dword ptr [eax + 4], 0x100
+    jne ok_out
+    cmp dword ptr [eax + 8], 0x72
+    jne ok_out
+    test byte ptr [eax + 0xf], 0x40
+    jnz ok_out
+    pushad
+    cmp dword ptr [{pk_gak:#x}], 0
+    jne ok_have
+    call {pk_resolve:#x}
+    cmp dword ptr [{pk_gak:#x}], 0
+    je ok_cycle
+ok_have:
+    push 0x10
+    call dword ptr [{pk_gak:#x}]
+    test ax, ax
+    jns ok_cycle
+    xor byte ptr [{OV_MODE + 1:#x}], 1
+    jmp ok_now
+ok_cycle:
+    mov al, byte ptr [{OV_MODE:#x}]
+    inc al
+    cmp al, 4
+    jbe ok_set
+    xor al, al
+ok_set:
+    mov byte ptr [{OV_MODE:#x}], al
+ok_now:
+    mov dword ptr [{OV_CUR:#x}], 0
+    call {ov_calc:#x}
+    mov byte ptr [0x569588 + 0x1a4], 1
+    popad
+ok_out:
+    ret
+''')
+# ov_draw (desde mo_pdraw, con esi = superficie, ebx = x0, ebp = y0). Preserva todo.
+ov_draw = place('ov_draw', f'''
+    movzx eax, byte ptr [{OV_CUR:#x}]
+    test eax, eax
+    jnz od_go
+    ret
+od_go:
+    pushad
+    mov edi, dword ptr [eax*4 + {OV_TITP - 4:#x}]
+    movzx eax, byte ptr [0x4ff7a4]
+    cmp eax, 2
+    jbe od_m
+    xor eax, eax
+od_m:
+    add ebx, dword ptr [eax*4 + {OV_RX:#x}]
+    sub ebx, {OV_DX}
+    add ebp, {OV_Y}
+    push 1
+    push 0
+    push 0xa
+    push 137
+    push 1
+    call 0x4dd0f0
+    add esp, 0x14
+    push edi
+    push ebp
+    push ebx
+    push esi
+    call 0x4dd200
+    add esp, 0x10
+    xor edi, edi
+od_row:
+    movzx eax, byte ptr [{OV_CUR + 2:#x}]
+    cmp edi, eax
+    jae od_out
+    add ebp, {OV_DY}
+    imul ecx, dword ptr [edi*4 + {OV_CUR + 4:#x}], 0x1f8
+    push ecx
+    push 1
+    push 0
+    movzx eax, word ptr [ecx + 0x536c20]
+    push eax
+    movzx eax, word ptr [ecx + 0x536c1e]
+    push eax
+    push 1
+    call 0x4dd0f0
+    add esp, 0x14
+    mov ecx, dword ptr [esp]
+    add ecx, 0x536b34
+    push ecx
+    push ebp
+    push ebx
+    push esi
+    call 0x4dd200
+    add esp, 0x14
+    mov eax, edi
+    shl eax, 5
+    add eax, {OV_BAR:#x}
+    push eax
+    push ebp
+    lea eax, [ebx + 4]
+    push eax
+    push esi
+    call 0x4dd180
+    add esp, 0x10
+    inc edi
+    jmp od_row
+od_out:
+    popad
+    ret
+''')
+
 # DispatchMessageA de los 6 bucles de mensajes del juego: en pausa no pasan teclas (0x100..0x109) ni botones y rueda
 # del mouse (0x201..0x20e). El movimiento del mouse sí.
 pz_disp = place('pz_disp', f'''
+    call {ov_key:#x}
     cmp byte ptr [{PZ_ON:#x}], 0
     je pd_pass
     mov eax, dword ptr [esp + 4]
@@ -15721,6 +15997,7 @@ tl_idle = place('tl_idle', f'''
     jb ti_done
     mov dword ptr [{TL_TICK:#x}], edx
     mov byte ptr [{TL_BUSY:#x}], 1
+    call {ov_calc:#x}
     {''.join(tl_tool(t) for t in range(len(TOOLS)))}
     {PZ_SLOW}
     mov byte ptr [{TL_BUSY:#x}], 0
@@ -21840,6 +22117,7 @@ mo_pdraw = place('mo_pdraw', f'''
 {''.join(MO_UNA.format(b=b_, f=f_, i=i_) for i_, (b_, f_) in enumerate(MO_MARCAS))}mp_end:
     popad
 mp_go:
+    call {ov_draw:#x}
     test byte ptr [0x53c393], 8
     ret
 ''')

@@ -179,6 +179,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Puentes</td><td>Derribarlos, reconstruirlos, pelear sobre ellos con el bono Bridge y misiones de héroe para volarlos.</td><td>VI</td></tr>
 <tr><td>Pozos, remolinos y trampas</td><td>Peligros ocultos que matan a quien los pisa; trampas y minas submarinas que construye el jugador.</td><td>VII</td></tr>
 <tr><td>Día y noche</td><td>Una vuelta de día y otra de noche: oscuridad con halos de luz, tropas camufladas y monstruos más fuertes de noche.</td><td>VIII</td></tr>
+<tr><td>Marcador en el mapa</td><td><kbd>F3</kbd>: los cuatro primeros en Winning, Armies, Cities o Gold, en vivo sobre el mapa.</td><td>III</td></tr>
 <tr><td>Reglas del clan en el Army List</td><td>El juego marca las unidades que el DarklordsValidator rechazaría.</td><td>IX</td></tr>
 <tr><td>Pilas con voladores</td><td>Una pila con algún volador admite como máximo 6 ejércitos.</td><td>IX</td></tr>
 <tr><td>Órdenes por chat</td><td>Escribir <code>.n ataca CIUDAD</code> a un aliado manejado por la computadora.</td><td>X</td></tr>
@@ -264,6 +265,7 @@ de los menús es el del juego original.</p>
 seleccionar. El juego original solo lo hacía bien con teclado de Estados Unidos; el parche lo arregla para cualquier
 teclado. Las demás teclas rápidas se cambian en <code>keys.w3</code>: la primera palabra de cada renglón es la tecla;
 no hay que cambiar el orden de los renglones ni las cinco líneas del encabezado. Los grupos (1-9) no se pueden cambiar.</p>
+<p><b>Marcador en el mapa.</b> <kbd>F3</kbd> muestra arriba a la derecha del mapa, sin recuadro, los cuatro bandos que van primeros en un informe, de mayor a menor, cada uno en su color y con una barra que se compara con la del primero. Cada <kbd>F3</kbd> pasa al informe siguiente: <i>Winning</i> (el mismo puntaje del <i>Winners Report</i>), <i>Armies</i> (ejércitos vivos), <i>Cities</i> (ciudades), <i>Gold</i> (oro) y apagado. SHIFT + <kbd>F3</kbd> cambia las barras por los números y viceversa. Se actualiza solo mientras se juega; los bandos eliminados no aparecen.</p>
 <p><b>En qué monitor arranca.</b> Con más de una pantalla, el juego arranca en la principal. Para que arranque en
 otra, crear en la carpeta <code>DATA</code> del juego un archivo de texto <code>PANTALLA.INI</code> con estos dos
 renglones:</p>
@@ -973,6 +975,7 @@ saquear o arrasar) se abre <b>solo en la PC del atacante</b>, que es quien decid
 <tr><td>Levantar torre, faro o muro</td><td>Grupo en la casilla → <i>Build</i></td></tr>
 <tr><td>Camuflar tropas de noche</td><td>Editor: Move Bonus <i>camouflg</i> en todas las unidades del grupo</td></tr>
 <tr><td>Pedir misión</td><td><kbd>Q</kbd> (Get Quest)</td></tr>
+<tr><td>Ver quién va primero (Winning, Armies, Cities, Gold)</td><td><kbd>F3</kbd> en el mapa (repetir para el siguiente); SHIFT + <kbd>F3</kbd>: barras o números</td></tr>
 </table>
 
 <h1><span class="num">Apéndice B</span>Archivos que instala el parche</h1>
@@ -1047,6 +1050,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.257.0</td><td>18/11/2026</td><td>Marcador en el mapa: <kbd>F3</kbd> muestra sobre el mapa los cuatro bandos que van primeros en <i>Winning</i>, <i>Armies</i>, <i>Cities</i> o <i>Gold</i>, de mayor a menor, en su color y con barras (SHIFT + <kbd>F3</kbd>: números). Ver el capítulo III.</td></tr>
 <tr><td>1.0.256.0</td><td>18/11/2026</td><td>Solo para el banco de simulación: un registro nuevo anota cada vez que un grupo de la computadora zarpa en balsa y desde dónde (una costa cualquiera, una ciudad o un punto de transbordo), para medir si la IA sabe que la balsa puede salir de cualquier costa. El juego no cambia.</td></tr>
 <tr><td>1.0.255.0</td><td>18/11/2026</td><td>La regla de los asaltos a ciudades pasa a las partidas normales y del ranking: la computadora no asalta una ciudad si tiene menos de 20 % de probabilidad de ganar. Pierde un 10 % menos de ejércitos, sin jugar peor.</td></tr>
 <tr><td>1.0.254.0</td><td>18/11/2026</td><td>Solo para la IA de prueba del banco: se apaga el ataque al bloque de muralla de la 1.0.252.0. En 64 partidas perdió los 16 ataques, con 65 ejércitos muertos y ningún bloque derribado. Las partidas normales y las del ranking no cambian.</td></tr>

@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 265).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 266).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,8 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+- [ ] **265.** Marcador en el mapa con F3 (vista-aliada **1.0.257.0**, 18/11/2026; tu pedido, como el de Age of Empires). Ya está instalado en `E:\Warlords-TEST\Warlords3`. 1) Abrir una partida con `DarklordAV.exe` y, en el mapa, apretar **F3** varias veces: arriba a la derecha tienen que aparecer, en orden, **Winning**, **Armies**, **Cities**, **Gold** y después nada; debajo, los 4 bandos que van primeros, cada uno en su color, con barras. 2) Apretar **SHIFT + F3**: las barras pasan a números (y otra vez, vuelven). 3) Jugar unos turnos y ver que cambia solo (por ejemplo, el oro al empezar el turno). 4) Probarlo en las tres resoluciones si podés (800, 1024, 1280). 5) Anotar acá: si se lee bien, si tapa algo, y si preferís **barras o números** (o los dos juntos), y si el nombre «Armies» está bien o preferís «Arms».
+
 - [ ] **264.** Tanda de la balsa (vista-aliada **1.0.256.0**, 18/11/2026; tu pedido: ver si la IA sabe zarpar desde cualquier costa). Ya está instalado en `E:\Warlords-TEST\Warlords3`. 1) En el Monitor de IA, tanda **nueva**: **Ninguna**, marcá **Tanda_Scarpart**, **Tanda_Scarpart_RF**, **Tanda_Kor** y **Tanda_Kor_RF** (las _RF tienen la balsa como barco de los 8 bandos; las otras son el control), Partidas: **64**. 2) Anotar acá el número de tanda y si alguna partida quedó «cortada». El análisis lo hago yo.
 
 - [ ] **263.** Actualizar el ranking con la regla de asaltos (vista-aliada **1.0.255.0**, 18/11/2026; tu pedido). Actualizador, opción **9** en `C:\Warlords`: vista-aliada en **1.0.255.0**. Desde ahora la computadora no asalta una ciudad si tiene menos de 20 % de probabilidad de ganar. No hay que probar nada más.
