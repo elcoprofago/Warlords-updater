@@ -30,7 +30,7 @@ def ver(nombre, r, esperado):
     ok = r == esperado; mal += not ok
     print('OK ' if ok else 'MAL', nombre, '->', r)
 
-def correr(regs, puente, local=0, sonidos=None):
+def correr(regs, puente, local=0, sonidos=None, turno=7):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     size = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
     mu.mem_map(BASE, size); mu.mem_write(BASE, img[:size])
@@ -39,7 +39,7 @@ def correr(regs, puente, local=0, sonidos=None):
     mu.mem_write(PO_N, struct.pack('<i', len(regs)))
     for i, r in enumerate(regs): mu.mem_write(PO_TAB + PO_REC * i, struct.pack('<hhBBBB', *r))
     for i, (x, y) in enumerate(puente): mu.mem_write(BR_XY + 4 * i, struct.pack('<hh', x, y))
-    mu.mem_write(0x560b20, struct.pack('<h', local))
+    mu.mem_write(0x560b20, struct.pack('<h', local)); mu.mem_write(0x537ce8, struct.pack('<h', turno))   # [0x537ce8] = quien derriba
     def snd(m, a, size, _):   # 0x4465e0(sonido, -1): se anota y vuelve
         sp = m.reg_read(UC_X86_REG_ESP); ret, s1, s2 = struct.unpack('<Iii', m.mem_read(sp, 12))
         (sonidos if sonidos is not None else []).append((s1, s2)); m.reg_write(UC_X86_REG_ESP, sp + 4); m.reg_write(UC_X86_REG_EIP, ret)
@@ -70,4 +70,7 @@ for nombre, rr, local, esperado in (
         ('mina fuera del puente: no suena', [(3, 3, T, 0, 0xff, 3)], 3, []),
         ('pozo sobre el puente: no suena', [(10, 5, 0, 0, 0xff, 3)], 3, [])):
     sn = []; correr(rr, puente, local, sn); ver(nombre, sn, esperado)
+# 1.0.280.0 (TAREA 269): en la PC de quien derriba el puente suena aunque la mina sea ajena y no descubierta
+sn = []; correr([(10, 5, T, 0, 1 << 2, 5)], puente, 3, sn, turno=3); ver('quien derriba oye la mina ajena', sn, SPL)
+sn = []; correr([(3, 3, T, 0, 0, 5)], puente, 3, sn, turno=3); ver('quien derriba, sin minas en el puente: no suena', sn, [])
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)

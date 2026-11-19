@@ -13182,7 +13182,8 @@ pmr_no:
 SPLASH_SND = 0xd
 # Desde 1.0.266.0 (pedido del usuario, 19/11/2026) la mina que cae suena "splash" (0x4465e0(SPLASH_SND, -1), el sonido del
 # ítem que cae al agua) en la PC ([0x560b20]) de su dueño (+7) o de quien la había descubierto (máscara +6): a los
-# demás no les delata una mina que no veían.
+# demás no les delata una mina que no veían. Desde 1.0.280.0 (TAREA 269: no se oía) suena también en la PC de quien
+# derriba el puente (el jugador en turno, [0x537ce8]), que es quien ve caer el puente y sus minas.
 bu_snd = place_data('bu_snd', bytes(4))
 br_untrap = place('br_untrap', f'''
     pushad
@@ -13205,6 +13206,8 @@ bu_j:
     movsx ecx, word ptr [0x560b20]
     cmp ecx, 8
     jae bu_rm
+    cmp cx, word ptr [0x537ce8]
+    je bu_hear
     movzx eax, byte ptr [esi + 7]
     cmp eax, ecx
     je bu_hear
