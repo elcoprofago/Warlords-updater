@@ -53,6 +53,20 @@ predeterminadas.»*
      bando. Base propuesta: `Tanda_hex_perfiles` (solo 4 y 7 cumplen la condición: los demás son el control natural
      dentro de la misma partida) o `Tanda_hex_MU` sin muros, quitando Artificer a la mitad de los colores.
 2. **El oro mínimo.** 12 bloques = 6 ciudades fundadas. Medir en el banco el oro de cada color a mitad de partida.
+   **Medido (19/11/2026):**
+   - **Precio de un bloque** (OB_FRAC = 10 veinteavos de fundar una ciudad, `BuildCity=800` en Default.rul): 400.
+     Verificado en el exe (0x4057a0, el ajuste que usa `bd_price`): suma la ingeniería del mejor héroe del bando
+     (habilidad 12) y le agrega **+6 con Artificer** (bit 0x80000 de +0xc0 del jugador) o **+2 con Engineer** (bit
+     0x40000), tope 9; el precio baja un 10 % por punto. Sin héroes ingenieros: **Engineer 320, Artificer 160**.
+     Las dos personalidades de la condición del usuario son justamente las que abaratan el muro.
+   - **Oro de la computadora** (tabla `turno` de datos.db, tandas 169-188, colores vivos, 100.466 turnos-color):
+     mediana 168 (turnos 1-10), 189 (11-20), 170 (21-30); p90 362 / 412 / 410. Turnos con al menos 160: 55,6 %;
+     320: 16,9 %; 400: 10,0 %; 640: 3,7 %; 800: 2,6 %.
+   - **Propuesta de mínimo:** como `ai_wrep` (AW_DIV = 2), construir un bloque solo si el oro es al menos **el doble
+     de su precio**: Artificer 320 (se da en el 16,9 % de los turnos), Engineer 640 (3,7 %). Así el Artificer
+     construye seguido y el Engineer pocas veces, y ninguno se queda sin oro para sus tropas. Un anillo de 12 bloques
+     cuesta 1.920 con Artificer y 3.840 con Engineer: se arma de a un bloque por turno, empezando por el acceso más
+     amenazado.
 3. **Dónde.** Propuesta: solo en la capital y en las ciudades amenazadas (pila enemiga en guerra a pocas casillas),
    tapando primero los accesos por tierra (la tanda 183 mostró que lo que deja abierta la costa no la cierra).
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
@@ -66,6 +80,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Punto 1 cerrado (19/11/2026). Punto 2 (oro mínimo): medir el oro de cada color a mitad de partida en las tandas ya corridas (evento 30), sin cambiar código.
+Puntos 1 y 2 cerrados (19/11/2026). Punto 3 (dónde): definir qué casillas tapa primero, midiendo por dónde llegan los ataques a las ciudades en las tandas ya corridas.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 2».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3».
