@@ -30,7 +30,7 @@ un botón o casilla «ver unidades». Activado, abre arriba a la derecha de la p
   con clave de color) y la pasa a la pantalla con 0x4e3c10 en (ancho - 108, 8). Libera las dos hojas.
 - Prueba de juguete: `parches/vista-aliada/prueba_visor.py` (más los cambios en `prueba_botones.py`).
 
-## Corrección (vista-aliada 1.0.279.0, 19/11/2026) — prueba del usuario en TAREAS 277
+## Corrección (vista-aliada 1.0.279.0, 19/11/2026) — probado por el usuario (TAREAS 277): se ven las miniaturas
 
 Prueba 276: la casilla tapaba el título y la figura **nunca** apareció. No se averiguó si el 5.º callback se llama con
 2 (no se encontró dónde lo llama el diálogo). Por eso ahora:
