@@ -746,4 +746,18 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   humano sin cambio, en los dos sitios.
 - TAREAS 263: actualizar C:\Warlords.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».
+### Paso 5.5, punto 4: ¿hay un lado más débil por donde atacar? (18/11/2026, sin cambio de código)
+
+- El bono del muro (wb_near, build.py) lo recibe el defensor de una casilla que es un bloque o que está a 1 casilla
+  de un bloque de su bando. Se midió en Tanda_hex_MU_control: las 12 casillas de las tres capitales amuralladas
+  tocan de 2 a 5 bloques cada una (White Main, con 8 de 12 bloques: 5, 5, 2 y 2; Red y Blue: 4 o 5). **No hay
+  ninguna casilla de la ciudad sin bono**: se la ataque por donde se la ataque, el muro defiende igual.
+- La costa abierta solo sirve para llegar, y eso ya lo resuelve el buscador de caminos (po_pf). Elegir un lado no
+  cambia la batalla, y el % de victoria que corta los asaltos (punto 2, 0x497390) ya incluye el bono. No hay nada
+  que enseñarle a la IA en este punto.
+- Lo único que haría variar el lado es un anillo dañado (bloques caídos). Eso depende de la brecha (punto 3,
+  apagada), y si se retoma se mira junto con ella.
+- **Paso 5.5 cerrado.** Lo que queda abierto: la brecha con varias pilas juntas (punto 3) y que la IA construya
+  muros (paso aparte).
+
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md» (próximo paso después del 5.5).
