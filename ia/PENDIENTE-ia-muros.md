@@ -123,7 +123,7 @@ predeterminadas.»*
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
         (barcos con landing/raft, voladores).
-        **Hecho en parte (19/11/2026): `ia\amenaza.py`** (lee la guardada y `ia\pasos\<mapa>.json`, que ahora deja
+        **Hecho (19/11/2026): `ia\amenaza.py`** (lee la guardada y `ia\pasos\<mapa>.json`, que ahora deja
         `pasos.py`). Por paso y por lado: ciudades, dueños, costa y puertos; por cada bando con ciudades de un lado,
         los enemigos con ciudades del otro (todo color fuera de su equipo, también los que están en paz: el criterio
         del usuario de pensar en el enemigo potencial más peligroso), a cuántas casillas por tierra, y si rodean el
@@ -148,9 +148,32 @@ predeterminadas.»*
           rodean por agua y por aire. Los 6 de los núcleos (3 ciudades neutrales, rodeados de MURO, sin costa) solo
           se entran por la abertura: una MURALLA ahí frena a todo terrestre; los voladores entran igual, porque
           cruzan la abertura por encima.
-        **Falta:** los turnos. La distancia es en casillas; el costo de movimiento de cada terreno y los pasos de cada
-        unidad todavía no se ubicaron (el +0xdd de la copia del .ARM en la guardada no es el movimiento: casi siempre
-        0). Tampoco mira héroes que vuelan ni el oro de cada bando. Tarda ~1 min por mapa.
+        **Turnos, hechos (19/11/2026): `ia\movimiento.py`**, verificado contra el código del juego con
+        `ia\prueba_movimiento.py` (corre DarklordAV.exe en el emulador de simcombate: TODO OK en los cuatro mapas).
+        - Costo de cada casilla (0x4a4f90): palabra +0x34 del registro de terreno (llanura 2, colinas 4-5, pantano 5,
+          desierto 3, lava 9); +1 con la capa de bosque; 1 en camino y en ciudad. La réplica coincide byte a byte con
+          la grilla del juego (65.960 casillas); el control (sin el +1 del bosque) falla en todas las casillas con
+          bosque, como debe.
+        - Costo de un paso (0x4a6490): con bono de terreno, las casillas de su clase que cuestan más de 2 bajan a 2.
+          Bit 1 del bono = segundo terreno del mapa (pantano en Hexagon y Borderlands, bosque en Kor y Scarpart),
+          bit 2 = colinas. El bono lo arma 0x486ab0: basta una unidad del grupo que lo tenga. 90.804 llamadas, 0
+          diferencias.
+        - El paso se da solo si queda movimiento para pagarlo, y lo que sobra se pierde (0x4a6290; leído del código,
+          probado en un caso de juguete con control, no emulado).
+        - Movimiento de cada unidad: +0x9b de su registro en la guardada; coincide con el del ejército en el mapa
+          (+0x10 de 0x54fe52) en los 83 ejércitos comunes de las guardadas de prueba.
+        `amenaza.py` ahora dice, por enemigo, en qué turno llega al paso y a la ciudad más cercana del defensor,
+        saliendo de sus ciudades del otro lado con la unidad no voladora más rápida que puede producir (una por bono
+        de terreno; se queda con la que llega antes). Resultados (inicio de partida):
+        - Borderlands (Gnoll Cavalry, mov 24, por caminos): todo enemigo con ciudad junto a un paso lo cruza en el
+          turno 1; el 4 (el mejor caso) deja a la ciudad de 7 a 2 turnos de cinco bandos. Una MURALLA ahí tiene que
+          estar antes del turno 2.
+        - Kor (Orcs Ram, mov 22, bono colinas): el de 7 llega al paso en el turno 2 y a la ciudad de 0 en el 4; 0
+          llega a la de 7 en el 3.
+        - Hexagon (Blade Runners, mov 24-30, bono colinas): los pasos de sector se alcanzan en los turnos 4 a 7 y las
+          capitales del otro lado recién en el 9 a 12. Hay tiempo para cerrarlos, pero se rodean por agua y por aire.
+        No cuenta héroes, objetos, el oro del enemigo ni las MURALLAS ya construidas: es el peor caso de un ejército
+        recién producido. Tarda unos segundos por mapa.
      c. Recién ahí la regla de decisión dentro del juego.
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
@@ -163,6 +186,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho en parte (ia\amenaza.py: enemigos, distancia en casillas, rodeo por agua y por aire). Siguiente: los turnos del 3.b (ubicar el costo de movimiento por terreno y los pasos de cada unidad) y después 3.c.
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py: enemigos, distancia, turnos con ia\movimiento.py verificado contra el juego, rodeo por agua y por aire). Siguiente: 3.c, la regla de decisión dentro del juego (con qué datos de amenaza.py decide la IA cerrar un paso, y si se calcula en el juego o se deja precalculado por mapa).
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.b (turnos)».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.c».

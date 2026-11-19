@@ -2,7 +2,12 @@
 # cada lado, qué enemigos llegan por él, a cuántas casillas, y si lo pueden rodear por agua o por aire. Sin tocar el
 # juego: lee una guardada. Vocabulario (CLAUDE.md): MURALLA = lo que se construye; MURO = terreno «Walls».
 # - Por tierra: distancia en casillas (8 direcciones) desde el paso a la ciudad más cercana de cada bando, por tierra
-#   transitable (pasos.grilla). Todavía no en turnos: falta el costo de movimiento de cada terreno.
+#   transitable (pasos.grilla).
+# - Turnos (ia\movimiento.py, verificado contra el juego): en qué turno llega el enemigo al paso y a la ciudad más
+#   cercana del defensor, saliendo de sus ciudades del otro lado al empezar el turno 1, por su lado, el tramo y el
+#   nuestro. Con la unidad no voladora más rápida que puede producir, por cada bono de terreno (colinas, pantano o
+#   bosque), y se queda con la que llega antes. No cuenta héroes, objetos, el oro del enemigo ni las MURALLAS ya
+#   construidas: es el peor caso de un ejército recién producido.
 # - Por agua: agua = clase 1 sin camino que no sea lava. El barco de cada bando (ranura 15) con «Landing» sube en un
 #   puerto propio y baja en cualquier costa (build.py, LANDING); con «Raft» zarpa y baja en cualquier costa, sin
 #   alejarse más de 1 casilla de tierra; sin ninguno de los dos, sube y baja solo en puertos (casilla de agua con el
@@ -18,10 +23,12 @@ import ciudades
 import historia
 from intercambiar import EJERCITOS_N, EJERCITOS, EJ_TAM
 from muros import casilla
+import movimiento
 from pasos import grilla, vuelo, VEC, componentes
 from sin_ruinas import offset
 
 LANDING, RAFT, VOLADOR = 'landing', 'raft', 4
+BONOS = {1: 'pantano/bosque', 2: 'colinas', 3: 'colinas y pantano/bosque'}
 
 
 def bando(d, c):
@@ -105,6 +112,8 @@ def analizar(guardada, mapa=None):
     info = {c: bando(d, c) for c in jugando}
     volando = voladores_en_mapa(d)
     ali = aliados(guardada)
+    mg = movimiento.grilla(d)
+    perf = {c: movimiento.perfiles(d, c) for c in jugando}
 
     def vecinas(casillas, conj):
         return {conj[(x + dx, y + dy)] for x, y in casillas for dx, dy in VEC if (x + dx, y + dy) in conj}
@@ -121,8 +130,10 @@ def analizar(guardada, mapa=None):
             alc = dist([q for q in celdas(cs[ids[0]]) if q in sin], sin)
             lados.append((ids, set(alc)))
         res = {'n': n, 'tramo': tramo, 'camino': any(camino[t] for t in tramo), 'lados': []}
+        viajes = {}
         for k, (ids, zona) in enumerate(lados):
             otro_ids, otra = lados[1 - k] if len(lados) == 2 else ([], set())
+            nodos = otra | set(tramo) | zona
             dueños = collections.Counter(cs[i]['dueño'] for i in ids)
             enemigos = collections.Counter(cs[i]['dueño'] for i in otro_ids)
             costa = {q for q in zona if any((q[0] + dx, q[1] + dy) in agua for dx, dy in VEC)}
@@ -143,7 +154,19 @@ def analizar(guardada, mapa=None):
                     llega_vuelo = bool({cvuelo.get(q) for i in suyas for q in celdas(cs[i])} &
                                        {cvuelo.get(q) for i in ids if cs[i]['dueño'] == dfn for q in celdas(cs[i])}
                                        - {None})
+                    if (k, e) not in viajes:     # una vez por lado y enemigo: [(mov, bono, nombre, {casilla: (turno, resto)})]
+                        origen = [q for i in suyas for q in celdas(cs[i])]
+                        viajes[k, e] = [(m, b, nm, movimiento.turnos(origen, m, mg, nodos, b)) for m, b, nm in perf.get(e, [])]
+                    blanco = [q for i in ids if cs[i]['dueño'] == dfn for q in celdas(cs[i])]
+                    mejor = None
+                    for m, b, nm, tt in viajes[k, e]:
+                        al_paso = min((tt[t][0] for t in tramo if t in tt), default=None)
+                        a_ciudad = min((tt[q][0] for q in blanco if q in tt), default=None)
+                        clave = (a_ciudad or 10**6, al_paso or 10**6)
+                        if a_ciudad and (mejor is None or clave < mejor[0]):
+                            mejor = (clave, {'paso': al_paso, 'ciudad': a_ciudad, 'unidad': nm, 'mov': m, 'bono': b})
                     ame.append({'color': e, 'ciudades': len(suyas), 'casillas': lejos, 'barco': barco,
+                                'turnos': mejor and mejor[1],
                                 'por_agua': por_agua, 'voladores': vol, 'volando': volando[e],
                                 'por_aire': llega_vuelo and bool(vol or volando[e])})
                 defensores.append({'color': dfn, 'ciudades': dueños[dfn], 'casillas': cerca, 'enemigos': ame})
@@ -163,11 +186,15 @@ def informe(guardada, mapa=None):
             for dfn in l['defensores']:
                 print(f"     defiende {dfn['color']} ({dfn['ciudades']} ciudades, la más cercana a {dfn['casillas']} casillas"
                       f" del paso)")
-                for e in sorted(dfn['enemigos'], key=lambda e: e['casillas']):
+                for e in sorted(dfn['enemigos'], key=lambda e: (e['turnos'] or {}).get('ciudad', 10**6)):
                     rodea = [t for t, v in (('por agua (' + (e['barco'] or 'barco común, de puerto a puerto') + ')', e['por_agua']),
                                             ('por aire', e['por_aire'])) if v]
+                    t = e['turnos']
+                    tx = (f"llega al paso en el turno {t['paso']} y a la ciudad en el {t['ciudad']} ({t['unidad']}, "
+                          f"mov {t['mov']}{', bono ' + BONOS[t['bono']] if t['bono'] else ''})" if t
+                          else 'no llega por tierra')
                     print(f"       enemigo {e['color']}: {e['ciudades']} ciudades del otro lado, la más cercana a "
-                          f"{e['casillas']} casillas; " + ('lo rodea ' + ' y '.join(rodea) if rodea
+                          f"{e['casillas']} casillas; {tx}; " + ('lo rodea ' + ' y '.join(rodea) if rodea
                                                           else 'no lo rodea: la muralla lo frena')
                           + (f"; voladores: {', '.join(e['voladores'])} ({e['volando']} en el mapa)"
                              if e['voladores'] or e['volando'] else ''))
