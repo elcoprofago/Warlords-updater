@@ -760,4 +760,21 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
 - **Paso 5.5 cerrado.** Lo que queda abierto: la brecha con varias pilas juntas (punto 3) y que la IA construya
   muros (paso aparte).
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md» (próximo paso después del 5.5).
+
+## Paso 5.6: la balsa (Raft) en el banco (18/11/2026)
+
+Lo único del relevamiento del paso 5 que nunca se midió en partida: la balsa (1.0.250.0) solo tiene pruebas emuladas
+(prueba_balsa.py). La IA no necesita código propio: el buscador de caminos ya agrega los pasos costa-agua y ai_move
+parte el grupo al tope de 3 (evento 3).
+- `iaalsa.py <guardada>` escribe `<guardada>_RF.SAV` con solo «Raft» en los bonos de movimiento del barco
+  (ranura 15) de los 8 bandos (reusa convoy.py). Hechas y verificadas releyendo el archivo: Tanda_Scarpart_RF y
+  Tanda_Kor_RF (32 bytes cambiados cada una; antes decían «None»).
+- Tanda: TAREAS 264, 64 partidas, las _RF y sus originales en la misma tanda (mismo exe, así el control vale).
+- Al volver, por guardada _RF contra su original: eventos 3 (grupo partido al embarcar: si la balsa se usa, tiene
+  que aparecer mucho más que en el control), PV y puesto por color, y si hay partidas colgadas que no aparecen en
+  el control (caminos nuevos por la costa). Si los eventos 3 salen en 0, primero confirmar que el juego tomó el bono
+  (la balsa a la vista en una partida cargada) antes de concluir nada.
+- Límite: no hay un evento propio de «zarpó desde una costa sin puerto»; el evento 3 solo cuenta grupos de más de 3.
+  Si la lectura no alcanza, se agrega ese evento.
+
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.6: terminó la tarea 264».
