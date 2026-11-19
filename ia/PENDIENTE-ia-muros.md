@@ -220,11 +220,35 @@ predeterminadas.»*
              torre, faro: ahí no se puede construir), no se elige. Probado con `ia\prueba_cerrar_paso.py` (MURALLAS
              puestas en memoria en Borderlands, partida 1477, turno 15; control: las opciones de un bando sin obras en
              sus pasos no cambian; y la lectura de la tabla de obras de Tanda_hex_MU): TODO OK.
-        - **Cómo va a quedar en el juego (build.py), a escribir:** `mp_scan` (una vez por estado del mapa: grilla de
-          tierra, tramos candidatos donde `ob_okt(OB_MURO)` acepta o ya hay MURALLA, separación de lados, ciudades de
-          cada lado, costa y puertos, distancias) y `mp_pick(p)` en `ia_turn` (condiciones, amenaza, elección; deja el
-          objetivo del bando y el evento 51, «paso que la IA decide cerrar»: x, y del tramo, n = amenaza × 100 +
-          bloques). Igual en todas las PC (sin azar). Se verifica en el emulador contra `cerrar_paso.py`.
+        - **Cómo va a quedar en el juego (build.py), a escribir** (diseño, 19/11/2026):
+          - `mp_scan`, una vez por estado del mapa (se recalcula si cambian OB_N, los dueños o los tamaños de las
+            ciudades; no cada turno). Igual en todas las PC: sin azar, mismo orden de recorrido.
+            1. Grilla de un byte por casilla (OB_MAPSZ): tierra transitable (clase fuera de 1, 4 y 5, o camino),
+               candidata (`ob_okt(OB_MURO)` acepta, o ya hay una MURALLA; nunca casilla de ciudad), costa y puerto
+               (vecina de agua que no es lava: nombre del terreno en 0x535f12 + terreno × 0x58; puerto = byte +1 &
+               0x40). Componentes de tierra numerados.
+            2. Tramos: x por fuera, y por dentro; largo 1 a 3; horizontal y después vertical (el de largo 1, una sola
+               vez), como `pasos.tramos`.
+            3. Separación como `pasos.separa`: un grupo por vecina del tramo, cada uno con su cola; se expande siempre
+               el grupo más chico (a igualdad, el de menor número); dos grupos que se tocan se unen (unión de a lo
+               sumo 8 etiquetas). Termina cuando un grupo se agota (ese es el lado chico) o queda uno solo (no separa).
+               Memoria: las colas en un bloque pedido con malloc al empezar (8 × OB_MAPSZ palabras), no en el .exe.
+               Antes de escribirlo, medir en Python que la cola FIFO por grupo da los mismos pasos que hoy.
+            4. Lado chico y lado grande (= componente − chico − tramo): las dos con ≥ MIN_LADO casillas y ≥ 1
+               ciudad. Máscara de ciudades de cada lado (80 bits), costa y puerto de cada lado. Pasos con las mismas
+               máscaras: queda el tramo más corto, mejor si tiene camino, a igualdad el primero.
+            5. Por paso y lado: distancia en casillas desde el tramo (para MP_DIST) y, por bono de terreno (0-3), el
+               costo hacia atrás desde el tramo con la grilla 0x57d158 del juego. Como los costos van de 1 a 9, alcanza
+               una cola por cubos (Dial) en lugar de un montículo. Se guarda el mínimo por ciudad, no la grilla.
+          - `mp_pick(p)` en `ia_turn`, después de `ai_wobs`, solo para la computadora (+0xe2 != -1): condiciones
+            (personalidad, oro ≥ AW_DIV × `bd_price`, constructor en sus 16 ranuras), amenaza de cada paso con los
+            dueños y la diplomacia del momento (DIPLO, wl_war/fogally), barco (ranura 15: común, «landing», «raft»)
+            y voladores (isfly), regla 5 con OB_TAB, y elección. Deja el objetivo del bando (`mp_obj[p]`: paso y
+            lado) para el punto 4, y el evento 51 («paso que la IA decide cerrar»: x, y del primer bloque del tramo,
+            n = amenaza × 100 + bloques), que hay que sumar a EVENTOS en `ia	anda.py`.
+          - Verificación: emulador (simcombate\motor.py, como `ia\prueba_movimiento.py`): mismos pasos y lados que
+            `pasos.py` en los cuatro mapas, y misma elección que `cerrar_paso.py` en guardadas con MURALLAS y dueños
+            distintos, con los controles del «Esquema de trabajo».
 4. **Cómo.** El constructor tiene que ir a la casilla y construir con la misma función que el humano (BD_PW con
    OB_MURO y su dirección), cobrando con 0x43fd60. Mover al constructor es lo nuevo: `ai_wrep` no mueve a nadie.
    Una primera etapa más simple: construir solo donde el constructor ya está (junto a una ciudad propia), sin
