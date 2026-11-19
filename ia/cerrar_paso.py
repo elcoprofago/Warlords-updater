@@ -28,9 +28,10 @@
 # 3. Se descartan los pasos cuya ciudad propia más cercana queda a más de MP_DIST casillas (el constructor tendría
 #    que cruzar medio mapa) y los que no tienen amenaza.
 # 4. Elige la mayor amenaza; a igualdad, la ciudad propia más cerca del paso y después el tramo más corto. Un paso
-#    que el bando ya empezó a cerrar va primero (terminar lo empezado).
+#    que el bando (o un aliado) ya empezó a cerrar va primero (terminar lo empezado); uno ya cerrado del todo, o con
+#    una obra ajena en el tramo (donde no se puede construir), no se elige.
 # Uso: python ia\cerrar_paso.py Tanda_Borderlands [partida turno] [--control]
-import os, sys, json, sqlite3, collections, heapq
+import os, sys, json, sqlite3, collections, heapq, struct
 
 import tanda
 import ciudades
@@ -48,6 +49,7 @@ MP_DIST = 20              # casillas: más lejos, el constructor no va
 CONTROL = False           # --control: compara los turnos aproximados con los exactos (lento)
 HORIZONTE = 4             # turnos: «3-4 jugadas» (usuario); un enemigo que tarda más en llegar al paso no cuenta
 ARTIFICER, ENGINEER = 1 << 19, 1 << 18
+OB_MURO = 7               # MURALLA en la tabla de obras (build.py)
 ORO = 0xe4                # oro en el registro del jugador (0x536c14 - 0x536b30)
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datos.db')
 
@@ -89,6 +91,17 @@ def hacia_atras(destino, nodos, g, bono):
     return best
 
 
+def obras(d):
+    """{(x, y): (tipo, dueño)} de la tabla de obras de la guardada (bloque 'OBR2', o 'OBRA' en las viejas)."""
+    for tag in (b'OBR2', b'OBRA'):
+        o = d.rfind(tag)
+        if o >= 0 and len(d) - o <= 8 + 512 * 8 + 8:
+            n = struct.unpack_from('<I', d, o + 4)[0]
+            return {(x, y): (t, du) for x, y, t, _, du, _ in
+                    (struct.unpack_from('<hhBBBB', d, o + 8 + k * 8) for k in range(n))}
+    return {}
+
+
 def estado(d, guardada, partida=None, turno=None):
     """(dueño de cada ciudad, oro de cada color, aliados de cada color) de la guardada o de esa partida y turno."""
     cs = ciudades.leer(d)
@@ -110,8 +123,10 @@ def estado(d, guardada, partida=None, turno=None):
     return dueño, oro, ali
 
 
-def analizar(guardada, partida=None, turno=None):
+def analizar(guardada, partida=None, turno=None, ob=None):
+    """ob: tabla de obras {(x, y): (tipo, dueño)} en lugar de la de la guardada (para las pruebas)."""
     d = open(os.path.join(tanda.JUEGO, 'SAVES', guardada + '.SAV'), 'rb').read()
+    ob = obras(d) if ob is None else ob
     w, h, tierra, clase, camino, cs, final = pasos.detectar(d)
     dueño, oro, ali = estado(d, guardada, partida, turno)
     base = componentes(tierra)
@@ -171,7 +186,14 @@ def analizar(guardada, partida=None, turno=None):
         r['cumple'] = bool(perfil.get(p, 0) & (ARTIFICER | ENGINEER)) and r['oro'] >= AW_DIV * r['precio']
         if not any(dueño[i] == p for i in dueño):
             r['eliminado'] = True
+        amigos = {p} | ali[p]
         for P in pas:
+            # MURALLAS del bando o de sus aliados en el tramo: cerrado entero, no se elige; empezado, va primero.
+            # Una obra ajena (de otro bando, o una torre o un faro) en el tramo: ahí no se puede construir.
+            hechos = sum(ob.get(t, (0, 9))[0] == OB_MURO and ob[t][1] in amigos for t in P['tramo'])
+            if hechos == len(P['tramo']) or any(t in ob and not (ob[t][0] == OB_MURO and ob[t][1] in amigos)
+                                                  for t in P['tramo']):
+                continue
             for k, D in enumerate(P['lados']):
                 O = P['lados'][1 - k]
                 mias = [i for i in D['ids'] if dueño[i] == p]
@@ -206,8 +228,8 @@ def analizar(guardada, partida=None, turno=None):
                 if total:
                     r['opciones'].append({'paso': P['n'], 'tramo': P['tramo'], 'lado': 'chico' if k == 0 else 'grande',
                                           'mias': len(mias), 'cerca': cerca, 'amenaza': total, 'enemigos': enem,
-                                          'lejos': cerca > MP_DIST})
-        r['opciones'].sort(key=lambda o: (o['lejos'], -o['amenaza'], o['cerca'], len(o['tramo'])))
+                                          'lejos': cerca > MP_DIST, 'hechos': hechos})
+        r['opciones'].sort(key=lambda o: (o['lejos'], not o['hechos'], -o['amenaza'], o['cerca'], len(o['tramo'])))
         out[p] = r
     # control del agua simplificado contra el cálculo exacto de amenaza.py (solo con los dueños de la guardada)
     difiere = []
@@ -220,6 +242,10 @@ def analizar(guardada, partida=None, turno=None):
                     if simple and bool(simple[2]) != e['por_agua']:
                         difiere.append((n, dfn['color'], e['color'], simple[2], e['por_agua']))
     return out, pas, difiere, llegan
+
+
+def empezado(o):
+    return f", empezado ({o['hechos']} de {len(o['tramo'])})" if o['hechos'] else ''
 
 
 def informe(guardada, partida=None, turno=None):
@@ -246,7 +272,8 @@ def informe(guardada, partida=None, turno=None):
             en = ', '.join(f"{e} ({c} ciudades{'; rodea ' + ' y '.join(x for x in (a, b) if x) if a or b else ''})"
                            for e, c, a, b, _ in o['enemigos'])
             print(f"   paso {o['paso']:2}: amenaza {o['amenaza']:2}, {o['mias']} ciudades propias del lado {o['lado']}, "
-                  f"la más cercana a {o['cerca']} casillas{' (LEJOS)' if o['lejos'] else ''}; enemigos: {en}")
+                  f"la más cercana a {o['cerca']} casillas{' (LEJOS)' if o['lejos'] else ''}"
+                  f"{empezado(o)}; enemigos: {en}")
     if difiere:
         print('\n agua simplificada distinta de la exacta (paso, defensor, enemigo, simple, exacta):', difiere)
     if CONTROL:

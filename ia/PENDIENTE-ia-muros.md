@@ -215,8 +215,11 @@ predeterminadas.»*
           - Hexagon: todo se rodea por aire (Descenders'); los pasos de sector quedan a 44-48 casillas de las
             capitales (más de 20: lejos).
           - Kor: amenaza 1-6, se rodea por agua.
-        - **Falta en la regla:** terminar lo empezado (un paso a medio cerrar va primero) y no volver a elegir un
-          paso ya cerrado; las dos cosas se ven en la tabla de obras (OB_MURO del bando en el tramo).
+          5. Con la tabla de obras: un paso a medio cerrar con MURALLA del bando o de un aliado **va primero**
+             (terminar lo empezado); uno cerrado del todo, o con una obra ajena en el tramo (MURALLA de otro bando,
+             torre, faro: ahí no se puede construir), no se elige. Probado con `ia\prueba_cerrar_paso.py` (MURALLAS
+             puestas en memoria en Borderlands, partida 1477, turno 15; control: las opciones de un bando sin obras en
+             sus pasos no cambian; y la lectura de la tabla de obras de Tanda_hex_MU): TODO OK.
         - **Cómo va a quedar en el juego (build.py), a escribir:** `mp_scan` (una vez por estado del mapa: grilla de
           tierra, tramos candidatos donde `ob_okt(OB_MURO)` acepta o ya hay MURALLA, separación de lados, ciudades de
           cada lado, costa y puertos, distancias) y `mp_pick(p)` en `ia_turn` (condiciones, amenaza, elección; deja el
@@ -233,6 +236,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py). 3.c decidido y prototipado (ia\cerrar_paso.py: se calcula en el juego; regla v1). Siguiente: sumar a la regla «terminar lo empezado» y «paso ya cerrado», y escribirla en build.py (`mp_scan` / `mp_pick`, evento 51), verificada en el emulador contra cerrar_paso.py. Después, el punto 4 (mover al constructor y construir).
+Puntos 1 y 2 cerrados; criterio del punto 3 definido por el usuario (19/11/2026). 3.a hecho (ia\pasos.py); falta la confirmación del usuario (TAREAS 267). 3.b hecho (ia\amenaza.py). 3.c decidido y prototipado (ia\cerrar_paso.py: se calcula en el juego; regla v1). Siguiente: escribir la regla en build.py (`mp_scan` / `mp_pick`, evento 51), verificada en el emulador contra cerrar_paso.py. Después, el punto 4 (mover al constructor y construir).
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 3.c en el juego».
