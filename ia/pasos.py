@@ -4,7 +4,7 @@
 # camino entre montañas o costa, cerrado con un tramo corto de muro, en vez de un anillo alrededor de una ciudad.
 # Transitable por tierra: todo terreno salvo agua (clase 1) y montaña o bosque profundo («Forest», también clase 4)
 # sin camino, y los muros del escenario («Walls», clase 5: Hexagon los tiene alrededor de los núcleos y en el borde;
-# intransitables siempre, también por aire, según el usuario 19/11/2026); un puente (agua con
+# intransitables también por aire; con camino se pasan, como en el juego, 0x4a4f90); un puente (agua con
 # camino) y un camino de montaña sí (la misma regla del constructor y del desembarco, build.py 0x4a52c3).
 # Se mueve en 8 direcciones (como el juego), por eso solo valen tramos horizontales o verticales: uno en diagonal
 # deja pasar en zigzag. No mira barcos ni voladores (eso es el punto 3.b), ni grupos que cruzan montañas.
@@ -30,8 +30,19 @@ def grilla(d):
             wd = int.from_bytes(t[:2], 'little')
             clase[x, y] = int.from_bytes(d[offset(TERRENOS + (wd & 0x1f) * 0x58):][:2], 'little')
             camino[x, y] = t[3] & 7 == 1
-    paso = {p for p in clase if clase[p] != 5 and (clase[p] not in (1, 4) or camino[p])}
+    paso = {p for p in clase if clase[p] not in (1, 4, 5) or camino[p]}
     return w, h, paso, clase, camino
+
+
+def vuelo(d, clase, camino):
+    """Casillas donde un volador puede entrar (para el punto 3.b). Igual que el juego con vista-aliada (build.py,
+    «Montañas altas: tampoco por aire», pedido del usuario 19/11/2026): todo salvo los muros del escenario (clase 5) y
+    la montaña (clase 4 cuyo nombre empieza con «moun»; el bosque profundo, también clase 4, sí se sobrevuela), las dos
+    sin camino ni puente."""
+    nom = historia.terrenos(d)
+    def alta(p):
+        return clase[p] == 4 and nom[casilla(d, *p)[0] & 0x1f][0].lower().startswith('moun')
+    return {p for p in clase if camino[p] or not (clase[p] == 5 or alta(p))}
 
 
 VEC = [(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]

@@ -107,8 +107,12 @@ predeterminadas.»*
         Corrección del usuario (19/11/2026): también son intransitables el bosque profundo («Forest», clase 4: ya
         estaba incluido, ahora se dibuja aparte en verde oscuro) y los muros del escenario («Walls», clase 5: en
         Hexagon rodean los núcleos y el borde del mapa; ni por aire). Los mapas al azar no los tienen; los
-        escenarios editados, quizás: la regla vale para cualquier mapa. Para 3.b: la clase 5 frena también a los
-        voladores.
+        escenarios editados, quizás: la regla vale para cualquier mapa.
+        Para 3.b, `pasos.vuelo()`: dónde entra un volador. Desde la reforma de otra sesión (build.py, «Montañas altas:
+        tampoco por aire», 19/11/2026) ni los muros del escenario (clase 5) ni la montaña («Mountains», clase 4) se
+        sobrevuelan; el bosque profundo sí. Con camino o puente, las dos se pasan, como por tierra. Medido: Kor,
+        2712 casillas cerradas al vuelo (todas sus montañas); Hexagon, 5162 (sus muros). Así, un paso entre montañas
+        frena también a los voladores, salvo que lo rodeen por otro lado.
         Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
