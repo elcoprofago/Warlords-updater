@@ -11579,8 +11579,8 @@ ps_ink:
 OV_BARMAX = 20
 OV_VK = 0x7b   # F12 (desde 1.0.259.0; F3 por DispatchMessage no llegaba y keys.w3 la tiene en Chat Mode)
 OV_MODE = place_data('ov_mode', bytes(4))       # byte 0: 0 apagado, 1..4 Winning/Armies/Cities/Gold; byte 1: numeros
-OV_CUR = place_data('ov_cur', bytes(36))        # dword modo|num<<8|n<<16, 4 bandos, 4 valores
-OV_OLD = place_data('ov_old', bytes(36))
+OV_CUR = place_data('ov_cur', bytes(40))        # dword modo|vista<<8|n<<16, 4 bandos, 4 valores, mascara de hechizos
+OV_OLD = place_data('ov_old', bytes(40))
 OV_VAL = place_data('ov_val', bytes(32))
 OV_BAR = place_data('ov_bar', bytes(4 * 32))
 OV_FMT = place_data('ov_fmt', cstr_('%d'))
@@ -11594,6 +11594,16 @@ OV_RX = place_data('ov_rx', struct.pack('<3I', 0x1ec, 0x21c, 0x30c))
 OV_DX, OV_Y, OV_DY = 66, 0x54 + 2, 12
 OV_FONT, OV_FTIT = 4, 8
 OV_BW, OV_BH, OV_BP, OV_BY = 2, 5, 3, 3
+# 1.0.261.0 (pedido del usuario del 19/11/2026): SHIFT+F12 pasa por 4 vistas (byte 1 de OV_MODE, 0..3: bit 0 numeros,
+# bit 1 escudos): nombres y barras, nombres y numeros, escudos y barras, escudos y numeros. Los escudos son las imagenes
+# 0x69 + bando del RES (hoja 7, 'shield', 11x14, con transparencia), pegados con 0x4dd530 alineados a la derecha en X;
+# con escudos el renglon mide OV_DYS. El bando con hechizos activos (tabla 0x55f030, 40 de 0x56 bytes: byte +0 vivo,
+# palabra +2 la unidad del heroe, como 0x409e40) lleva al principio del renglon la estrella violeta (imagen 160 del
+# RES: picts\picts, archivo 56, 13x13 en (392,0)), pegada a la izquierda del nombre (ancho con 0x4e5930, la medida de
+# texto del juego) o del escudo. El titulo pasa a Arial 11 negrita (0x10b) porque la 9 negrita no se distinguia.
+OV_DYS = 15
+OV_NHE = 40
+OV_SHXY = place_data('ov_shxy', b''.join(struct.pack('<II', 33 + 53 * (i % 3), 1 + 37 * (i // 3)) for i in range(8)))
 ov_calc = place('ov_calc', f'''
     cmp byte ptr [{OV_MODE:#x}], 0
     jne oc_go
@@ -11692,8 +11702,8 @@ oc_bar:
     shl edi, 5
     add edi, {OV_BAR:#x}
     mov eax, dword ptr [ebx*4 + {OV_CUR + 20:#x}]
-    cmp byte ptr [{OV_MODE + 1:#x}], 0
-    je oc_lines
+    test byte ptr [{OV_MODE + 1:#x}], 1
+    jz oc_lines
     push eax
     push {OV_FMT:#x}
     push edi
@@ -11725,15 +11735,38 @@ oc_bn:
     inc ebx
     jmp oc_bar
 oc_cmp:
+    xor edx, edx
+    xor ecx, ecx
+oc_hl:
+    imul eax, ecx, 0x56
+    cmp byte ptr [eax + 0x55f030], 0
+    je oc_hn
+    movsx eax, word ptr [eax + 0x55f032]
+    test eax, eax
+    jle oc_hn
+    cmp ax, word ptr [0x54fe50]
+    jge oc_hn
+    imul eax, eax, 0x1c
+    movzx eax, word ptr [eax + 0x54fe5e]
+    shr eax, 5
+    and eax, 0xf
+    cmp eax, 8
+    jae oc_hn
+    bts edx, eax
+oc_hn:
+    inc ecx
+    cmp ecx, {OV_NHE}
+    jb oc_hl
+    mov dword ptr [{OV_CUR + 36:#x}], edx
     cld
     mov esi, {OV_CUR:#x}
     mov edi, {OV_OLD:#x}
-    mov ecx, 9
+    mov ecx, 10
     repe cmpsd
     je oc_out
     mov esi, {OV_CUR:#x}
     mov edi, {OV_OLD:#x}
-    mov ecx, 9
+    mov ecx, 10
     rep movsd dword ptr es:[edi], dword ptr [esi]
     mov byte ptr [0x569588 + 0x1a4], 1
 oc_out:
@@ -11761,7 +11794,10 @@ ok_have:
     call dword ptr [{pk_gak:#x}]
     test ax, ax
     jns ok_cycle
-    xor byte ptr [{OV_MODE + 1:#x}], 1
+    mov al, byte ptr [{OV_MODE + 1:#x}]
+    inc al
+    and al, 3
+    mov byte ptr [{OV_MODE + 1:#x}], al
     jmp ok_now
 ok_cycle:
     mov al, byte ptr [{OV_MODE:#x}]
@@ -11868,6 +11904,29 @@ op_out:
     popad
     ret
 ''')
+# ov_pic: como 0x4dd530 (archivo, sx, sy, w, h, superficie, dx, dy), pero antes carga la hoja si hace falta (como mo_one).
+ov_pic = place('ov_pic', '''
+    pushad
+    mov ebp, dword ptr [esp + 0x24]
+    push ebp
+    mov ecx, 0x58cf78
+    call 0x4e4a90
+    test eax, eax
+    jz opi_r
+    cmp dword ptr [eax + 8], 0
+    jne opi_b
+    push ebp
+    call 0x4dd3f0
+    add esp, 4
+    test eax, eax
+    jz opi_r
+opi_b:
+    popad
+    jmp 0x4dd530
+opi_r:
+    popad
+    ret
+''')
 ov_draw = place('ov_draw', f'''
     movzx eax, byte ptr [{OV_CUR:#x}]
     test eax, eax
@@ -11903,6 +11962,10 @@ od_row:
     cmp edi, eax
     jae od_out
     add ebp, {OV_DY}
+    test byte ptr [{OV_CUR + 1:#x}], 2
+    jz od_dy
+    add ebp, {OV_DYS - OV_DY}
+od_dy:
     imul ecx, dword ptr [edi*4 + {OV_CUR + 4:#x}], 0x1f8
     push ecx
     push 1
@@ -11916,12 +11979,58 @@ od_row:
     add esp, 0x14
     mov ecx, dword ptr [esp]
     add ecx, 0x536b34
+    test byte ptr [{OV_CUR + 1:#x}], 2
+    jnz od_esc
+    push ecx
+    push -1
+    push ecx
+    mov ecx, 0x58d0e8
+    call 0x4e5930
+    pop ecx
+    lea edx, [eax + 15]
+    push edx
     push ecx
     push ebp
     push ebx
     push esi
     call 0x4dd200
-    add esp, 0x14
+    add esp, 0x10
+    jmp od_star
+od_esc:
+    mov eax, dword ptr [edi*4 + {OV_CUR + 4:#x}]
+    lea edx, [ebp - 2]
+    push edx
+    lea edx, [ebx - 11]
+    push edx
+    push esi
+    push 14
+    push 11
+    push dword ptr [eax*8 + {OV_SHXY + 4:#x}]
+    push dword ptr [eax*8 + {OV_SHXY:#x}]
+    push 7
+    call {ov_pic:#x}
+    add esp, 0x20
+    push 26
+od_star:
+    pop edx
+    mov eax, dword ptr [edi*4 + {OV_CUR + 4:#x}]
+    bt dword ptr [{OV_CUR + 36:#x}], eax
+    jnc od_ns
+    lea eax, [ebp - 1]
+    push eax
+    mov eax, ebx
+    sub eax, edx
+    push eax
+    push esi
+    push 13
+    push 13
+    push 0
+    push 392
+    push 56
+    call {ov_pic:#x}
+    add esp, 0x20
+od_ns:
+    add esp, 4
     mov eax, edi
     shl eax, 5
     add eax, {OV_BAR:#x}
@@ -24502,12 +24611,12 @@ pcx = io.BytesIO(); seal_hoja.save(pcx, 'PCX'); SEAL_PCX = pcx.getvalue()
 struct.pack_into('<I', butt_std, 0, SEAL_FILE)
 setstr(butt_std, 4, 32, 'sello')
 table_add(res, 2, SEAL_FILE, bytes(butt_std))
-# Fuente OV_FTIT del marcador (1.0.260.0): Arial 9 negrita, entrada nueva de la tabla de fuentes (tipo 1; el juego
+# Fuente OV_FTIT del marcador (1.0.260.0): Arial 9 negrita (11 negrita desde 1.0.261.0), entrada nueva de la tabla de fuentes (tipo 1; el juego
 # carga de la 1 a la última, hasta 9). El RES solo guarda nombre y tamaño: el bit 0x100 del tamaño pide negrita (ov_bold).
 _o1, _h1 = table(res, 1)
 assert _h1[2] == OV_FTIT and _h1[3] == 40
 assert struct.unpack_from('<I', res, _o1 + 20 + 4 * 40)[0] == 4 and res[_o1 + 20 + 4 * 40 + 4:_o1 + 20 + 4 * 40 + 10] == b'Arial' + bytes(1) and struct.unpack_from('<I', res, _o1 + 20 + 4 * 40 + 36)[0] == 9
-_f = bytearray(40); struct.pack_into('<I', _f, 0, OV_FTIT); _f[4:9] = b'Arial'; struct.pack_into('<I', _f, 36, 0x109)
+_f = bytearray(40); struct.pack_into('<I', _f, 0, OV_FTIT); _f[4:9] = b'Arial'; struct.pack_into('<I', _f, 36, 0x10b)
 table_add(res, 1, OV_FTIT, bytes(_f))
 # Ventana de fin de partida (ver go_tit): el título (diálogo 46, control 1) pasa de la fuente 2 a la 1. Hoja GO_FILE =
 # PICTS\alianza.pcx con los campos de picts (56) y la imagen GO_IMG: el pergamino de alianza (imagen 0xae, picts en
@@ -25086,7 +25195,8 @@ NUEVOS.update(NUEVOS_TIT)
 # (que vuelve a ser Chat Mode si la 1.0.258.0 la habia cambiado); si ya estaba, queda igual.
 _help = open(os.path.join(W3, 'help.txt'), 'rb').read()
 _HELP_CHAT = b'F3\t\t\t- Chat Mode'
-_HELP_F12 = b'F12\t\t\t- Scoreboard (again: next; SHIFT+F12: numbers)'
+_HELP_F12 = b'F12\t\t\t- Scoreboard (again: next; SHIFT+F12: bars/numbers/shields)'
+_help = _help.replace(b'F12\t\t\t- Scoreboard (again: next; SHIFT+F12: numbers)', _HELP_F12)
 _help = _help.replace(b'F3\t\t\t- Scoreboard (again: next; SHIFT+F3: numbers)', _HELP_CHAT)
 if _HELP_F12 not in _help:
     _help = _help.replace(_HELP_CHAT, _HELP_CHAT + b'\r\n~P~\r\n' + _HELP_F12, 1)

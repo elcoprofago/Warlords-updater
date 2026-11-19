@@ -1,7 +1,7 @@
 # Prueba de juguete del marcador en el mapa (F12: ov_key, ov_calc y ov_draw de build.py) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_marcador.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
 # Arma 8 bandos a mano (vivos y muertos, oro, ciudades, Winning, ejércitos) y comprueba: F12 va pasando Winning, Armies,
-# Cities, Gold y apagado; SHIFT+F12 cambia barras por números; la repetición de la tecla y otras teclas no hacen nada; los
+# Cities, Gold y apagado; SHIFT+F12 pasa por nombres/escudos con barras/números; estrella del bando con hechizos; la repetición de la tecla y otras teclas no hacen nada; los
 # 4 primeros vivos van de mayor a menor con barras escaladas al primero; un muerto no aparece aunque tenga más; sin
 # cambios no se pide redibujo y con cambios sí; lo que se dibuja (título, nombres, colores, posiciones).
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
@@ -15,16 +15,18 @@ pe = pefile.PE(os.path.join(DIR, 'DarklordAV.exe')); BASE = pe.OPTIONAL_HEADER.I
 img = bytes(pe.get_memory_mapped_image())
 SIZE = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
 T0 = BASE + img.index(b'%d\0Winning\0Armies\0Cities\0Gold\0') + 3
-OV_FMT = T0 - 3; OV_BAR = OV_FMT - 128; OV_VAL = OV_BAR - 32; OV_OLD = OV_VAL - 36; OV_CUR = OV_OLD - 36
+OV_FMT = T0 - 3; OV_BAR = OV_FMT - 128; OV_VAL = OV_BAR - 32; OV_OLD = OV_VAL - 40; OV_CUR = OV_OLD - 40
 OV_MODE = OV_CUR - 4
 OV_RX = T0 + len(b'Winning\0Armies\0Cities\0Gold\0') + 16
 def tras(a):   # rutina siguiente: después del «popad; ret» que cierra la anterior, alineada a 16
     i = img.index(b'\x61\xc3', a - BASE) + BASE + 2
     return (i + 15) & ~15
-OV_CALC = (OV_RX + 12 + 15) & ~15
+OV_SHXY = OV_RX + 12
+OV_CALC = (OV_SHXY + 64 + 15) & ~15
 OV_KEY = tras(OV_CALC)
 OV_POLL = (img.index(struct.pack('<IIII', 0, 0x100, 0x7b, 1)) + BASE + 16 + 15) & ~15   # ov_poll va detrás de ov_fake
-OV_DRAW = tras(OV_POLL)
+OV_PIC = tras(OV_POLL)                 # ov_pic: carga la hoja y sigue a 0x4dd530
+OV_DRAW = tras(OV_PIC)
 PK_GAK = BASE + img.index(b'GetAsyncKeyState\0') + 17
 SPRINTF = 0x5a9bec
 REPAINT = 0x569588 + 0x1a4
@@ -87,6 +89,12 @@ class Juego:
         elif a == 0x4ede30:   # recoloreo de un rectángulo (superficie, x, y, ancho, alto, tabla): el color de la tabla
             t = bytes(mu.mem_read(r(6), 256))
             self.calls.append(('rect', r(1), r(2), r(3), r(4), r(5), t[0] if t == t[:1] * 256 else None)); ret()
+        elif a == 0x4e5930:   # ancho del texto (thiscall, cadena, fuente): 5 px por letra
+            mu.reg_write(UC_X86_REG_EAX, 5 * len(self.s(r(1)))); ret(8)
+        elif a == 0x4e4a90:   # busqueda de la hoja (thiscall, 1 argumento): ya cargada
+            mu.mem_write(STUB + 0x80, struct.pack('<III', 0, 0, 1)); mu.reg_write(UC_X86_REG_EAX, STUB + 0x80); ret(4)
+        elif a == 0x4dd530:   # pegar (archivo, sx, sy, w, h, superficie, dx, dy)
+            self.calls.append(('pic',) + tuple(r(k) for k in range(1, 9))); ret()
 
     def corre(self, a, *args):
         sp = STACK - 4 * len(args)
@@ -102,7 +110,7 @@ class Juego:
 
     def modo(self): return tuple(self.mu.mem_read(OV_MODE, 2))
     def tabla(self):
-        c = bytes(self.mu.mem_read(OV_CUR, 36)); n = c[2]
+        c = bytes(self.mu.mem_read(OV_CUR, 40)); n = c[2]
         idx = struct.unpack('<4i', c[4:20])[:n]; val = struct.unpack('<4i', c[20:36])[:n]
         return [(i, v, self.s(OV_BAR + 32 * k)) for k, (i, v) in enumerate(zip(idx, val))]
     def repinta(self):
@@ -141,9 +149,19 @@ ver('SHIFT+F12: números, mismo informe', (j.modo(), j.tabla()[0]), ((2, 1), (5,
 j.tecla()
 ver('Cities con números', j.tabla(), [(1, 9, '9'), (5, 5, '5'), (0, 3, '3'), (3, 1, '1')])
 j.tecla(shift=True)
+ver('SHIFT+F12 otra vez: escudos y barras', j.modo()[1], 2)
 j.tecla()
 ver('Gold con barras', j.tabla(), [(0, 900, '|' * 20), (3, 450, '|' * 10), (5, 300, '|' * 6), (1, 100, '|' * 2)])
 
+j.tecla(shift=True)
+ver('SHIFT+F12 otra vez: escudos y numeros', j.modo()[1], 3)
+j.tecla(shift=True)
+ver('SHIFT+F12 al cuarto toque vuelve a nombres y barras', j.modo(), (4, 0))
+HE = 0x55f030
+j.mu.mem_write(HE + 5 * 0x56, struct.pack('<BBh', 1, 0, 3))     # hechizo vivo del heroe 3 (ejercito del bando 3)
+j.mu.mem_write(HE + 6 * 0x56, struct.pack('<BBh', 0, 0, 7))     # control: muerto, del heroe 7 (bando 2)
+j.corre(OV_CALC)
+ver('mascara de hechizos: solo el bando 3', (struct.unpack('<I', j.mu.mem_read(OV_CUR + 36, 4))[0], j.repinta()), (8, 1))
 j.calls = []
 j.mu.mem_write(0x4ff7a4, b'\1')
 j.mu.reg_write(UC_X86_REG_ESI, 0x1234); j.mu.reg_write(UC_X86_REG_EBX, 1000); j.mu.reg_write(UC_X86_REG_EBP, 50)
@@ -151,14 +169,25 @@ j.corre(OV_DRAW)
 X = 1000 + 0x21c - 66; Y = 50 + 0x56
 def barra(x, y, n, color): return [('rect', 0x1234, x + 3 * k, y, 2, 5, color) for k in range(n)]
 ver('dibujo: título en negrita (fuente 8) dorado; nombres (fuente 4) a la derecha de X; barras de rectángulos',
-    j.calls[:4 + 40 + 2], [
+    j.calls[:4 + 40 + 3], [
     ('estilo', 8, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
     ('estilo', 4, 100, 200), ('der', 0x1234, X, Y + 12, 'Lado0')]
     + barra(X + 5, Y + 12 + 4, 20, 200) + barra(X + 4, Y + 12 + 3, 20, 100)
-    + [('estilo', 4, 103, 203), ('der', 0x1234, X, Y + 24, 'Lado3')])
-ver('cuatro renglones', len(j.calls), 2 + 2 * 4 + 2 * (20 + 10 + 6 + 2))
+    + [('estilo', 4, 103, 203), ('der', 0x1234, X, Y + 24, 'Lado3'),
+       ('pic', 56, 392, 0, 13, 13, 0x1234, X - 5 * 5 - 15, Y + 24 - 1)])
+ver('cuatro renglones y una estrella', len(j.calls), 1 + 2 + 2 * 4 + 2 * (20 + 10 + 6 + 2))
 ver('ov_draw preserva los registros', (j.mu.reg_read(UC_X86_REG_ESI), j.mu.reg_read(UC_X86_REG_EBX),
                                        j.mu.reg_read(UC_X86_REG_EBP)), (0x1234, 1000, 50))
+j.tecla(shift=True); j.tecla(shift=True); j.tecla(shift=True)
+j.calls = []
+j.corre(OV_DRAW)
+YS = Y + 15
+ver('escudos y numeros: escudo (hoja 7) a la izquierda de X, renglon de 15, estrella a su izquierda, numero', j.calls[:2 + 3 + 5], [
+    ('estilo', 8, 137, 0xa), ('der', 0x1234, X, Y, 'Gold'),
+    ('estilo', 4, 100, 200), ('pic', 7, 33, 1, 11, 14, 0x1234, X - 11, YS - 2), ('izq', 0x1234, X + 4, YS, '900'),
+    ('estilo', 4, 103, 203), ('pic', 7, 33, 38, 11, 14, 0x1234, X - 11, YS + 15 - 2),
+    ('pic', 56, 392, 0, 13, 13, 0x1234, X - 26, YS + 15 - 1), ('izq', 0x1234, X + 4, YS + 15, '450'),
+    ('estilo', 4, 105, 205)])
 j.tecla()
 j.calls = []
 j.corre(OV_DRAW)
