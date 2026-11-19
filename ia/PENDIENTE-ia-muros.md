@@ -36,6 +36,19 @@ predeterminadas.»*
 1. **Constructores.** Sin «build» la IA no puede construir. Ver qué unidades lo llevan en los .ARM del ranking
    (`C:\Warlords\ARMY`) y en las guardadas del banco. Si ninguna lo tiene, armar guardadas `_BD` (como `balsa.py`:
    «build» en una ranura de los 8 bandos) para la tanda, con artificer/engineer en los colores que deben construir.
+   **Medido (19/11/2026):**
+   - **.ARM del ranking (`C:\Warlords\ARMY`, 380):** llevan «build» `archers.ARM` (Archers: solo build),
+     `Dwarfsap.ARM` (Dwarf Sappers: hills + build) y `red_scav.ARM` (Red Scavens: desert + build).
+   - **Guardadas:** la guardada lleva su propia copia de cada unidad, no el .ARM. En las 28 de `C:\Warlords\SAVES`
+     ninguna unidad tiene «build». En el banco (44) solo las de prueba de caminos y obras (`build_01/02`, `roads01/02`,
+     `agua04`: Blade Runners y Red Scavens con build); ninguna de las `Tanda_*`. En `Tanda_hex_MU` los Red Scavens
+     tienen desert + dungeon (copia anterior al .ARM actual) y los Zapadores tienen «road», que no es «build».
+   - **Personalidades:** en `Tanda_hex_MU` y sus controles (`_MU_control`, `_control`, `_espejo_control`,
+     `_lugar_control`) los 6 colores que juegan (0, 1, 3, 4, 5, 7) tienen **Artificer**: todos cumplirían la
+     condición. En `Tanda_hex_perfiles` y `Tanda_juguete`, el 4 tiene Engineer y el 7 Artificer; los demás, ninguno.
+   - **Conclusión:** para la tanda hay que armar guardadas `_BD` (como `balsa.py`): «build» en una ranura de cada
+     bando. Base propuesta: `Tanda_hex_perfiles` (solo 4 y 7 cumplen la condición: los demás son el control natural
+     dentro de la misma partida) o `Tanda_hex_MU` sin muros, quitando Artificer a la mitad de los colores.
 2. **El oro mínimo.** 12 bloques = 6 ciudades fundadas. Medir en el banco el oro de cada color a mitad de partida.
 3. **Dónde.** Propuesta: solo en la capital y en las ciudades amenazadas (pila enemiga en guerra a pocas casillas),
    tapando primero los accesos por tierra (la tanda 183 mostró que lo que deja abierta la costa no la cierra).
@@ -50,6 +63,6 @@ Registrar (evento nuevo: bloque construido por la IA, x, y, n = ciudad que prote
 (IA de prueba construye, original no) → PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 ## Próximo paso
-Punto 1 (constructores) y punto 2 (oro mínimo): solo leer y medir, sin cambiar código.
+Punto 1 cerrado (19/11/2026). Punto 2 (oro mínimo): medir el oro de cada color a mitad de partida en las tandas ya corridas (evento 30), sin cambiar código.
 
-Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 1».
+Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 2».
