@@ -102,7 +102,13 @@ predeterminadas.»*
           7 ciudades del noroeste; 7: 3 bloques aíslan las 6 de los goblins del sudeste).
         - Scarpart: 6 (los de un bloque en caminos: 4 y 6 aíslan 2 y 4 ciudades; 1, 2, 3 y 5 en islas del sur/norte).
         - Kor: 1 (3 bloques aíslan Erdarc y Bethem). El resto del mapa es abierto: no tiene pasos de 1-3 casillas.
-        - Hexagon: 6, uno por sector de color (11 ciudades cada uno), de 2-3 bloques junto al centro.
+        - Hexagon: 12. Seis, uno por sector de color (11 ciudades), de 2-3 bloques junto al centro; y seis de 2
+          bloques en la abertura de cada núcleo amurallado (3 ciudades cada uno).
+        Corrección del usuario (19/11/2026): también son intransitables el bosque profundo («Forest», clase 4: ya
+        estaba incluido, ahora se dibuja aparte en verde oscuro) y los muros del escenario («Walls», clase 5: en
+        Hexagon rodean los núcleos y el borde del mapa; ni por aire). Los mapas al azar no los tienen; los
+        escenarios editados, quizás: la regla vale para cualquier mapa. Para 3.b: la clase 5 frena también a los
+        voladores.
         Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo

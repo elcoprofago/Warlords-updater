@@ -1,2 +1,3 @@
 Tanda_Kor: 100x125, 40 ciudades, 1 pasos
    1. ((69, 6), (69, 7), (69, 8))  sin camino | 459 casillas, 2 ciudades: Erdarc, Bethem; 7476 casillas, 37 ciudades
+  (586 casillas de bosque profundo, intransitables salvo con camino)

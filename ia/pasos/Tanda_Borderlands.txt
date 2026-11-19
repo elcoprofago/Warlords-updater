@@ -9,3 +9,4 @@ Tanda_Borderlands: 100x125, 50 ciudades, 10 pasos
    8. ((34, 64), (35, 64), (36, 64))  camino | 306 casillas, 2 ciudades: Gnollhome, Gnolloc; 4516 casillas, 46 ciudades
    9. ((28, 15),)  camino | 450 casillas, 3 ciudades: Werrit, Fleymark, Harrik; 4374 casillas, 45 ciudades
   10. ((57, 44), (57, 45), (57, 46))  camino | 837 casillas, 7 ciudades: Trollbridge, Trollheim, Magrun, Blackpass, Werrit, Fleymark, Harrik; 3985 casillas, 41 ciudades
+  (1978 casillas de bosque profundo, intransitables salvo con camino)

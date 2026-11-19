@@ -2,7 +2,9 @@
 # Paso clave = tramo recto de 1 a 3 casillas de tierra donde se puede poner muro (muros.sirve) que, cerrado, corta
 # TODO camino por tierra entre dos zonas del mapa que tienen ciudades. Es el criterio del usuario (19/11/2026): un
 # camino entre montañas o costa, cerrado con un tramo corto de muro, en vez de un anillo alrededor de una ciudad.
-# Transitable por tierra: todo terreno salvo agua (clase 1) y montaña (clase 4) sin camino; un puente (agua con
+# Transitable por tierra: todo terreno salvo agua (clase 1) y montaña o bosque profundo («Forest», también clase 4)
+# sin camino, y los muros del escenario («Walls», clase 5: Hexagon los tiene alrededor de los núcleos y en el borde;
+# intransitables siempre, también por aire, según el usuario 19/11/2026); un puente (agua con
 # camino) y un camino de montaña sí (la misma regla del constructor y del desembarco, build.py 0x4a52c3).
 # Se mueve en 8 direcciones (como el juego), por eso solo valen tramos horizontales o verticales: uno en diagonal
 # deja pasar en zigzag. No mira barcos ni voladores (eso es el punto 3.b), ni grupos que cruzan montañas.
@@ -10,6 +12,7 @@
 import os, struct, sys, collections
 
 import tanda
+import historia
 import ciudades
 from muros import casilla, sirve, MAPA, TERRENOS
 from sin_ruinas import offset
@@ -27,7 +30,7 @@ def grilla(d):
             wd = int.from_bytes(t[:2], 'little')
             clase[x, y] = int.from_bytes(d[offset(TERRENOS + (wd & 0x1f) * 0x58):][:2], 'little')
             camino[x, y] = t[3] & 7 == 1
-    paso = {p for p in clase if (clase[p] not in (1, 4)) or camino[p]}
+    paso = {p for p in clase if clase[p] != 5 and (clase[p] not in (1, 4) or camino[p])}
     return w, h, paso, clase, camino
 
 
@@ -96,13 +99,13 @@ def detectar(d):
     return w, h, paso, clase, camino, cs, final
 
 
-def dibujar(nombre, w, h, paso, clase, camino, cs, final, dst):
+def dibujar(nombre, w, h, paso, clase, camino, cs, final, dst, bosque=()):
     from PIL import Image, ImageDraw
     E = 5
     im = Image.new('RGB', (w * E, h * E))
     dr = ImageDraw.Draw(im)
     for (x, y), k in clase.items():
-        col = (40, 90, 170) if k == 1 else (110, 100, 90) if k == 4 else (90, 140, 70)
+        col = (40, 90, 170) if k == 1 else (45, 45, 45) if k == 5 else (20, 70, 30) if (x, y) in bosque else (110, 100, 90) if k == 4 else (90, 140, 70)
         if camino[x, y]:
             col = (200, 180, 120)
         dr.rectangle([x * E, y * E, x * E + E - 1, y * E + E - 1], fill=col)
@@ -130,4 +133,7 @@ if __name__ == '__main__':
             lados = '; '.join(f'{t} casillas, {len(cc)} ciudades' + (': ' + ', '.join(cs[i]['nombre'] for i in cc)
                               if len(cc) <= 12 else '') for t, cc in sorted(con))
             print(f'  {n:2}. {seg}  {"camino" if any(camino[p] for p in seg) else "sin camino"} | {lados}')
-        dibujar(g, w, h, paso, clase, camino, cs, final, os.path.join(salida, g + '_pasos.png'))
+        nom = historia.terrenos(d)
+        bosque = {p for p in clase if clase[p] == 4 and nom[casilla(d, *p)[0] & 0x1f][0] == 'Forest'}
+        print(f'  ({len(bosque)} casillas de bosque profundo, intransitables salvo con camino)')
+        dibujar(g, w, h, paso, clase, camino, cs, final, os.path.join(salida, g + '_pasos.png'), bosque)
