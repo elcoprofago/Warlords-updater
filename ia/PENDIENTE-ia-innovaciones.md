@@ -720,4 +720,19 @@ con la IA de prueba en una tanda sobre Tanda_hex_MU_control.
   bloques caídos de la prueba, asaltos ganados a capitales amuralladas, perdidos por partida (5,6 en la 186) y PV
   prueba − original (−0,80). Si el PV sube, la regla de asaltos y la brecha pasan juntas al ranking.
 
+### Resultado de la tanda 187 (TAREAS 262, brecha, 64 partidas, revisado 18/11/2026) y brecha apagada (1.0.254.0)
+
+- 64 «ok». De 266 asaltos cortados, solo 16 terminaron en brecha (evento 49): todas del negro (7), contra el mismo
+  bloque (33,20) de Red Main. **Las 16 perdidas**: 9 con un grupo de 1 ejército (murió sin matar ningún arquero) y 7
+  con grupos de 8 (murieron los 8, mataron 0 a 3 arqueros cada vez). En total, 65 ejércitos muertos por 8 arqueros
+  de 24, y ningún bloque cayó.
+- PV prueba − original −0,80 (186) → **−1,46** (−2,99 a +0,08): dentro del ruido, pero hacia abajo. Perdidos por
+  partida de la prueba 5,6 → 5,3.
+- Conclusión: un bloque entero (24 Longbows virtuales) es demasiado fuerte para un grupo de la IA; abrir brecha solo
+  sirve con una fuerza que la IA hoy no junta. **1.0.254.0: AB_ON = False**, ab_cut vuelve al corte simple (código y
+  evento 49 quedan para otra vez). prueba_muroataque: los casos de brecha ahora esperan «corta».
+- Lo que queda del paso 5.5: la regla de asaltos (AP_PCT = 20) en la IA de prueba, que ahorra pérdidas sin cambiar el
+  PV. Si se retoma la brecha, tendría que exigir juntar varias pilas contra el mismo bloque (un objetivo de grupo, no
+  de una pila suelta), o atacar solo bloques ya muy dañados.
+
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-innovaciones.md, paso 5.5».

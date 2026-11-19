@@ -406,11 +406,11 @@ def brecha(muros=((5, 7, 0),), grupo=(6, 8), pct=10, modo=1, guerra=True, dueño
     g.correr(0x4c50c5, 0x4c50cd, bytes(pila), [(UC_X86_REG_EAX, p), (UC_X86_REG_ESI, CX), (UC_X86_REG_EDI, CY)])
     return ev, orden, mu.reg_read(UC_X86_REG_EAX) & 0xffff
 print('ac_gate2', hex(AC2), 'ab_cut', hex(AB_CUT))
-ver('muro enemigo en diagonal del grupo: 48 cortado, 49 y orden al bloque', brecha(),
-    ([(48, 5, CX, CY, 1010), (49, 5, 5, 7, 0)], [(5, 5, 7)], 7))
-ver('dos bloques: el más dañado (10 muertos contra 3)', brecha(muros=((5, 7, 3), (7, 7, 10))),
-    ([(48, 5, CX, CY, 1010), (49, 5, 7, 7, 10)], [(5, 7, 7)], 7))
-ver('el primero del grupo vacío: toma el siguiente', brecha(huecos=1)[1], [(5, 5, 7)])
+# 1.0.254.0: brecha apagada (AB_ON = False, tanda 187): con muro al lado también corta, sin orden ni evento 49
+ver('brecha apagada: muro enemigo en diagonal del grupo: corta, sin orden', brecha(),
+    ([(48, 5, CX, CY, 1010)], [], 0))
+ver('brecha apagada: dos bloques: corta, sin orden', brecha(muros=((5, 7, 3), (7, 7, 10))),
+    ([(48, 5, CX, CY, 1010)], [], 0))
 ver('control: bloque a 2 casillas: corta, sin orden', brecha(grupo=(7, 9)), ([(48, 5, CX, CY, 1010)], [], 0))
 ver('control: muro propio: corta', brecha(dueño=5), ([(48, 5, CX, CY, 1010)], [], 0))
 ver('control: bloque caído (24): corta', brecha(muros=((5, 7, 24),)), ([(48, 5, CX, CY, 1010)], [], 0))

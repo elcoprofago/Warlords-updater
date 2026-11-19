@@ -17117,7 +17117,10 @@ nw_out:
 # más arqueros muertos (+7), así insiste en el mismo hasta derribarlo y abre el paso. Evento 49: x, y = bloque, n =
 # arqueros muertos antes del ataque. Sin IA.INI (ranking) no actúa, porque el corte de ciudades tampoco.
 # ab_brk: ebx = jugador -> eax = registro del bloque elegido, o 0 (con ZF). Preserva el resto.
-AB_EVT = 49
+# Tanda 187 (TAREAS 262, 64 partidas): 16 brechas, todas perdidas contra un bloque entero (24 arqueros): 65 ejércitos
+# muertos para matar 8 arqueros, ningún bloque caído, PV −1,46. Un bloque entero es demasiado fuerte: AB_ON = False
+# (1.0.254.0) deja ab_cut como el corte simple de antes; el código queda para cuando la IA pueda juntar fuerza suficiente.
+AB_EVT, AB_ON = 49, False
 ab_brk = place('ab_brk', f'''
     push ecx
     push edx
@@ -17185,7 +17188,11 @@ abk_out:
 # ab_cut: se entra con jmp desde ap_gate o ac_gate2, con su pushad en la pila (p en [esp + 0x24]) y ebx = jugador, cuando
 # el asalto no se da. Con un bloque para atacar (ab_brk) da esa orden (0x4648d0(p, x, y)) y devuelve lo que devuelve;
 # si no, 0 (asalto no dado), como antes.
-ab_cut = place('ab_cut', f'''
+ab_cut = place('ab_cut', ('''
+    popad
+    xor eax, eax
+    ret
+''' if not AB_ON else '') + f'''
     call {ab_brk:#x}
     jz abc_no
     mov ebp, eax
