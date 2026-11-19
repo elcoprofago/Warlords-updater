@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.36'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.37'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -348,8 +348,12 @@ class Monitor(tk.Tk):
         b.bind('<ButtonRelease-1>', lambda e: (estado('hover'), self.b_config.abierta or self.configurar()))
         caja, f = self.panel(arriba, 'Tanda'); caja.pack(side='left', fill='x', expand=True, anchor='n', **pad)
         self.v_tanda = tk.StringVar(); self.v_tanda2 = tk.StringVar(); self.v_parche = tk.StringVar(); self.v_todas = tk.StringVar()
-        self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=8, pady=(4, 0))
-        self.rotulo(f, textvariable=self.v_tanda2).pack(anchor='w', padx=8, pady=(2, 0))
+        l1 = self.rotulo(f, textvariable=self.v_tanda, font=('Segoe UI', 11, 'bold'), justify='left')
+        l1.pack(anchor='w', padx=8, pady=(4, 0))
+        l2 = self.rotulo(f, textvariable=self.v_tanda2, justify='left')
+        l2.pack(anchor='w', padx=8, pady=(2, 0))
+        # El detalle de la tanda se parte en renglones al ancho del panel: con la ventana angosta no queda oculto.
+        f.bind('<Configure>', lambda e: [l.configure(wraplength=max(e.width - 16, 100)) for l in (l1, l2)], add='+')
         fp = self.caja(f); fp.pack(anchor='w', padx=8, pady=(2, 0))
         self.rotulo(fp, text='Parche de esta tanda: ').grid(row=0, column=0, sticky='nw')
         self.rotulo(fp, textvariable=self.v_parche, font=('Consolas', 9), justify='left', anchor='w',
