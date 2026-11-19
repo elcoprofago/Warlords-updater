@@ -11574,9 +11574,10 @@ ps_ink:
 # recalcula las ciudades de 0x4407d0; Armies como go_cuenta; Gold de la ficha del bando) y, si algo cambio, pide el
 # redibujo entero del mapa ([0x569588 + 0x1a4], como los avisos al vencer) para borrar lo viejo. ov_draw dibuja desde
 # mo_pdraw, despues de los paneles del marco. La tecla la lee ov_key al entrar a pz_disp (WM_KEYDOWN 0x72 sin la
-# repeticion, bit 30 de lParam), antes de la pausa. Desde 1.0.258.0 F3 no sigue hacia el juego (eax = 1 y pz_disp la
-# descarta): keys.w3 la tiene en Chat Mode, cuyo lugar ocupa la Pausa, y en red F3 la pedia.
+# repeticion, bit 30 de lParam). Desde 1.0.259.0 la tecla es F12 y no llega por pz_disp (F3 por DispatchMessage no
+# respondia en el juego): ov_poll la lee directo del teclado y le pasa a ov_key un MSG armado. F3 vuelve a ser del juego.
 OV_BARMAX = 20
+OV_VK = 0x7b   # F12 (desde 1.0.259.0; F3 por DispatchMessage no llegaba y keys.w3 la tiene en Chat Mode)
 OV_MODE = place_data('ov_mode', bytes(4))       # byte 0: 0 apagado, 1..4 Winning/Armies/Cities/Gold; byte 1: numeros
 OV_CUR = place_data('ov_cur', bytes(36))        # dword modo|num<<8|n<<16, 4 bandos, 4 valores
 OV_OLD = place_data('ov_old', bytes(36))
@@ -11739,7 +11740,7 @@ ov_key = place('ov_key', f'''
     mov eax, dword ptr [esp + 8]
     cmp dword ptr [eax + 4], 0x100
     jne ok_no
-    cmp dword ptr [eax + 8], 0x72
+    cmp dword ptr [eax + 8], {OV_VK:#x}
     jne ok_no
     test byte ptr [eax + 0xf], 0x40
     jnz ok_eat
@@ -11777,6 +11778,37 @@ ok_no:
     ret
 ''')
 # ov_draw (desde mo_pdraw, con esi = superficie, ebx = x0, ebp = y0). Preserva todo.
+# ov_poll (1.0.259.0, pedido del usuario del 18/11/2026: F3 seguia sin responder): lee F12 directo del teclado en cada
+# vuelta de la funcion ociosa (como pz_keys con la pausa) y, al bajar la tecla (no mientras sigue apretada), le pasa a
+# ov_key un MSG armado de WM_KEYDOWN F12. Conserva todos los registros.
+OV_PREV = place_data('ov_prev', bytes(4))
+OV_FAKE = place_data('ov_fake', struct.pack('<IIII', 0, 0x100, OV_VK, 1))
+ov_poll = place('ov_poll', f'''
+    pushad
+    cmp dword ptr [{pk_gak:#x}], 0
+    jne op_have
+    call {pk_resolve:#x}
+    cmp dword ptr [{pk_gak:#x}], 0
+    je op_out
+op_have:
+    push {OV_VK:#x}
+    call dword ptr [{pk_gak:#x}]
+    shr eax, 15
+    and eax, 1
+    mov cl, byte ptr [{OV_PREV:#x}]
+    mov byte ptr [{OV_PREV:#x}], al
+    test al, al
+    jz op_out
+    test cl, cl
+    jnz op_out
+    push {OV_FAKE:#x}
+    push 0
+    call {ov_key:#x}
+    add esp, 8
+op_out:
+    popad
+    ret
+''')
 ov_draw = place('ov_draw', f'''
     movzx eax, byte ptr [{OV_CUR:#x}]
     test eax, eax
@@ -11851,9 +11883,6 @@ od_out:
 # DispatchMessageA de los 6 bucles de mensajes del juego: en pausa no pasan teclas (0x100..0x109) ni botones y rueda
 # del mouse (0x201..0x20e). El movimiento del mouse sí.
 pz_disp = place('pz_disp', f'''
-    call {ov_key:#x}
-    test eax, eax
-    jnz pd_drop
     cmp byte ptr [{PZ_ON:#x}], 0
     je pd_pass
     mov eax, dword ptr [esp + 4]
@@ -15997,6 +16026,7 @@ ts{t}_end:
 tl_idle = place('tl_idle', f'''
     pushad
     call {pz_tick:#x}
+    call {ov_poll:#x}
     cmp byte ptr [{TL_BUSY:#x}], 0
     jne ti_done
     call dword ptr [{GETTICK:#x}]
@@ -24966,12 +24996,16 @@ NUEVOS[os.path.join('RUINS', 'anulada.pcx')] = MOA_PCX
 NUEVOS[os.path.join('FX', 'Burst.wav')] = BURST
 NUEVOS[os.path.join('FX', 'Lightning.wav')] = LIGHTNING
 NUEVOS.update(NUEVOS_TIT)
-# help.txt (la Ayuda del juego, F1): F3 ya no es Chat Mode sino el marcador en el mapa (1.0.258.0, pedido del usuario
-# del 18/11/2026). Sale del help.txt de la carpeta base cambiando solo esa linea; si ya estaba cambiada, queda igual.
+# help.txt (la Ayuda del juego, F1): el marcador en el mapa va en F12 (1.0.259.0; en 1.0.258.0 estaba en F3, pedido
+# del usuario del 18/11/2026). Sale del help.txt de la carpeta base: se agrega la linea de F12 debajo de la de F3
+# (que vuelve a ser Chat Mode si la 1.0.258.0 la habia cambiado); si ya estaba, queda igual.
 _help = open(os.path.join(W3, 'help.txt'), 'rb').read()
-_HELP_F3 = b'F3			- Scoreboard (again: next; SHIFT+F3: numbers)'
-_help = _help.replace(b'F3			- Chat Mode', _HELP_F3)
-assert _HELP_F3 in _help, 'help.txt sin la linea de F3'
+_HELP_CHAT = b'F3\t\t\t- Chat Mode'
+_HELP_F12 = b'F12\t\t\t- Scoreboard (again: next; SHIFT+F12: numbers)'
+_help = _help.replace(b'F3\t\t\t- Scoreboard (again: next; SHIFT+F3: numbers)', _HELP_CHAT)
+if _HELP_F12 not in _help:
+    _help = _help.replace(_HELP_CHAT, _HELP_CHAT + b'\r\n~P~\r\n' + _HELP_F12, 1)
+assert _help.count(b'Scoreboard') == 1, 'help.txt sin la linea del marcador'
 NUEVOS['help.txt'] = _help
 # Listas de ítems de los mapas al azar (random\Grass del repo, editadas por el usuario el 23/10/2026: sin los ítems
 # de vuelo). Con ri_go cuentan sobre todo sus 8 especiales; los 32 comunes valen en el Darklord.exe original.

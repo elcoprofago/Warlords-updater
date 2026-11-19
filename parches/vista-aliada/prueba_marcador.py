@@ -1,7 +1,7 @@
-# Prueba de juguete del marcador en el mapa (F3: ov_key, ov_calc y ov_draw de build.py) sobre el exe parcheado, en unicorn.
+# Prueba de juguete del marcador en el mapa (F12: ov_key, ov_calc y ov_draw de build.py) sobre el exe parcheado, en unicorn.
 # Uso: python prueba_marcador.py [carpeta]   (por defecto E:\Warlords-TEST\Warlords3; armarla antes con build.py)
-# Arma 8 bandos a mano (vivos y muertos, oro, ciudades, Winning, ejércitos) y comprueba: F3 va pasando Winning, Armies,
-# Cities, Gold y apagado; SHIFT+F3 cambia barras por números; la repetición de la tecla y otras teclas no hacen nada; los
+# Arma 8 bandos a mano (vivos y muertos, oro, ciudades, Winning, ejércitos) y comprueba: F12 va pasando Winning, Armies,
+# Cities, Gold y apagado; SHIFT+F12 cambia barras por números; la repetición de la tecla y otras teclas no hacen nada; los
 # 4 primeros vivos van de mayor a menor con barras escaladas al primero; un muerto no aparece aunque tenga más; sin
 # cambios no se pide redibujo y con cambios sí; lo que se dibuja (título, nombres, colores, posiciones).
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))  # para encontrar juego_pruebas.py
@@ -23,7 +23,8 @@ def tras(a):   # rutina siguiente: después del «popad; ret» que cierra la ant
     return (i + 15) & ~15
 OV_CALC = (OV_RX + 12 + 15) & ~15
 OV_KEY = tras(OV_CALC)
-OV_DRAW = (img.index(bytes.fromhex('31c0c3'), OV_KEY - BASE) + BASE + 3 + 15) & ~15   # ov_key termina en «xor eax, eax; ret»
+OV_POLL = (img.index(struct.pack('<IIII', 0, 0x100, 0x7b, 1)) + BASE + 16 + 15) & ~15   # ov_poll va detrás de ov_fake
+OV_DRAW = tras(OV_POLL)
 PK_GAK = BASE + img.index(b'GetAsyncKeyState\0') + 17
 SPRINTF = 0x5a9bec
 REPAINT = 0x569588 + 0x1a4
@@ -44,7 +45,7 @@ class Juego:
         mu.mem_write(STUB, b'\xc3'); mu.mem_write(FIN, b'\xc3')
         mu.mem_write(PK_GAK, struct.pack('<I', STUB)); mu.mem_write(SPRINTF, struct.pack('<I', STUB + 0x10))
         mu.mem_write(STUB + 0x10, b'\xc3')
-        self.shift, self.calls, self.calc = False, [], 0
+        self.shift, self.f12, self.calls, self.calc = False, False, [], 0
         for p in range(8):
             r = 0x536b30 + p * 0x1f8
             mu.mem_write(r, b'\0\0'); mu.mem_write(r + 4, f'Lado{p}\0'.encode())
@@ -73,7 +74,8 @@ class Juego:
         r = lambda k: struct.unpack('<i', mu.mem_read(sp + 4 * k, 4))[0]
         ret = lambda n=0: (mu.reg_write(UC_X86_REG_ESP, sp + 4 + n), mu.reg_write(UC_X86_REG_EIP, r(0)))
         if a == STUB:   # GetAsyncKeyState (stdcall, 1 argumento)
-            mu.reg_write(UC_X86_REG_EAX, 0x8000 if self.shift and r(1) == 0x10 else 0); ret(4)
+            k = r(1)
+            mu.reg_write(UC_X86_REG_EAX, 0x8000 if (k == 0x10 and self.shift) or (k == 0x7b and self.f12) else 0); ret(4)
         elif a == STUB + 0x10:   # sprintf(buf, "%d", n)
             mu.mem_write(r(1), b'%d\0' % r(3)); ret()
         elif a == 0x440840:
@@ -89,7 +91,7 @@ class Juego:
         self.mu.reg_write(UC_X86_REG_ESP, sp - 4)
         self.mu.emu_start(a, FIN)
 
-    def tecla(self, vk=0x72, repetida=False, shift=False):
+    def tecla(self, vk=0x7b, repetida=False, shift=False):
         self.shift = shift
         self.mu.mem_write(MSG, struct.pack('<IIII', 0, 0x100, vk, (1 << 30) if repetida else 1))
         self.corre(OV_KEY, 0, MSG)   # como desde pz_disp: [esp + 4] es la vuelta de pz_disp, el MSG va en [esp + 8]
@@ -116,8 +118,8 @@ j.corre(OV_CALC)
 ver('apagado: no calcula ni pide redibujo', (j.calc, j.repinta()), (0, 0))
 ver('otra tecla (F2) sigue hacia el juego', j.tecla(0x71), 0)
 ver('y no cambia nada', j.modo(), (0, 0))
-ver('F3 no sigue hacia el juego', j.tecla(), 1)
-ver('F3: Winning', j.modo(), (1, 0))
+ver('F12 no sigue hacia el juego', j.tecla(), 1)
+ver('F12: Winning', j.modo(), (1, 0))
 ver('pide redibujo', j.repinta(), 1)
 ver('Winning: 4 primeros vivos, de mayor a menor, barras escaladas al primero', j.tabla(),
     [(1, 40, '|' * 20), (3, 20, '|' * 10), (0, 10, '|' * 5), (5, 5, '|' * 2)])
@@ -132,7 +134,7 @@ j.tecla()
 ver('Armies (cuenta por dueño, sin el muerto)', j.tabla(),
     [(5, 3, '|' * 20), (1, 2, '|' * 13), (3, 1, '|' * 6), (0, 0, '')])
 j.tecla(shift=True)
-ver('SHIFT+F3: números, mismo informe', (j.modo(), j.tabla()[0]), ((2, 1), (5, 3, '3')))
+ver('SHIFT+F12: números, mismo informe', (j.modo(), j.tabla()[0]), ((2, 1), (5, 3, '3')))
 j.tecla()
 ver('Cities con números', j.tabla(), [(1, 9, '9'), (5, 5, '5'), (0, 3, '3'), (3, 1, '1')])
 j.tecla(shift=True)
@@ -155,6 +157,14 @@ j.tecla()
 j.calls = []
 j.corre(OV_DRAW)
 ver('apagado: no dibuja y pide redibujo para borrar', (j.modo()[0], j.calls, j.repinta()), (0, [], 1))
+
+p = Juego()
+def poll(abajo):
+    p.f12 = abajo; p.corre(OV_POLL)
+poll(False); ver('ov_poll: sin F12 no cambia nada', p.modo(), (0, 0))
+poll(True); ver('ov_poll: al bajar F12, Winning', p.modo(), (1, 0))
+poll(True); poll(True); ver('ov_poll: mientras sigue apretada no avanza', p.modo(), (1, 0))
+poll(False); poll(True); ver('ov_poll: soltar y volver a apretar, Armies', p.modo(), (2, 0))
 
 k = Juego()
 k.lado(4, oro=10); k.lado(7, oro=20)
