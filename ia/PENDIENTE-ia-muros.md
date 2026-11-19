@@ -305,6 +305,31 @@ construye murallas. Elegir mal o bien el lugar es el próximo desafío.»* Prime
 189 (y la guardada de cada partida), medir por cada MURALLA levantada si el paso daba a una ciudad que después fue
 atacada o perdida, si el enemigo la rodeó, y cuántos bloques quedaron sin cerrar el tramo; de ahí sale qué cambiar en
 la regla de `mp_pick` (ia\cerrar_paso.py).
+**Medido (19/11/2026): `ia\murallas_tanda.py 189`.** Por color y paso empezado (63 casos de prueba; control: 46 casos
+de colores originales que eligieron el mismo tipo de paso sin construir), desde el turno del primer bloque o de la
+elección. Lado protegido = el lado del paso con más ciudades del color en ese turno (dueños reconstruidos con las
+batallas ganadas sobre ciudades). 9 bloques cayeron en tramos alternativos del paso (fuera de `pasos\*.json`) y no
+se cuentan.
+- Completos 60 de 63: la IA termina lo que empieza.
+- **58 de 63 MURALLAS protegen un lado que nadie atacó después** (control: 39 de 46). El color perdió 23 ciudades en
+  el mapa desde ese turno; solo 12 del lado protegido (control: 29 y 16). Nadie atacó una MURALLA (0 batallas en sus
+  casillas).
+- **Tarde:** primer bloque en el turno 19,4 de partidas de 28 (control: 18,9 de 26,4). Cuando se cierra, el reparto
+  de ciudades ya está casi decidido.
+- **Rodeo:** 7 ataques llegaron con el tramo ya cerrado (6 en el paso 8: por agua, aire u otro paso). En Hexagon todo
+  paso se rodea por aire, y la regla v1 solo divide la amenaza (× 1 en vez de × 2).
+- Por paso: el 10 (Green, 15 casos, 156 ciudades) y el 9, 11, 12: cero ataques. El 5 (Red, 4 casos) y el 8 (Black,
+  9) concentran los ataques: donde el peligro era real, la MURALLA llegó tarde o fue rodeada.
+**Lectura:** la regla v1 elige por amenaza *potencial* (ciudades enemigas a ≤ 4 turnos del paso) y en Hexagon eso
+marca casi todos los pasos; no mira si el enemigo de verdad se acerca. Cambios propuestos para la regla v2, de a uno
+y midiendo:
+  a. **Amenaza real:** contar ejércitos enemigos (no ciudades) a ≤ 4 turnos del paso, del otro lado, con su fuerza.
+  b. **Antes:** permitir la elección desde el turno 1 (hoy se dispara cuando sobra oro, ~turno 19); priorizar los
+     pasos que el enemigo alcanza antes.
+  c. **Rodeo:** si el enemigo amenazante tiene voladores o barco para rodear, no construir (× 0), salvo bando en
+     decadencia.
+Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
+mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
 
 Frase para retomar: «Seguimos con ia\PENDIENTE-ia-muros.md, punto 5».
