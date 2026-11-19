@@ -2328,7 +2328,7 @@ boatland = place('boatland', boatbon_src('boatland', landstr))
 # del líder, que viaja por red (el camino no).
 CARRIER = b'carrier'
 carrstr = place_data('carrstr', CARRIER + b'\0')
-boatcarr = place('boatcarr', boatbon_src('boatcarr', carrstr))
+boatcarr0 = place('boatcarr0', boatbon_src('boatcarr0', carrstr))   # "Carrier" escrito; boatcarr (más abajo) descarta la balsa
 CABOTAGE = b'cabotage'
 cabstr = place_data('cabstr', CABOTAGE + b'\0')
 boatcab = place('boatcab', boatbon_src('boatcab', cabstr))   # ver Cabotaje, más abajo
@@ -2337,9 +2337,21 @@ boatcab = place('boatcab', boatbon_src('boatcab', cabstr))   # ver Cabotaje, má
 # desembarca en cualquier costa como con "Landing" (landchk), lleva a lo sumo RAFTCAP unidades (landcap, boatcap) y no
 # se aleja más de RAFT_N casillas de tierra (el filtro de Cabotaje, cabfilt, con su propio tope). Con "Raft" no rigen
 # "Landing" ni "Cabotage" aunque estén escritos: manda la balsa. Los pasos son los del .ARM (sin tope por código).
+# Desde 1.0.266.0 tampoco rige "Carrier" (boatcarr): la balsa no forma convoyes, y el byte +0x1b de sus ejércitos
+# (el enlace del convoy) guarda las vueltas que lleva en el agua (rf_turn, más abajo).
 RAFT = b'raft'
 raftstr = place_data('raftstr', RAFT + b'\0')
 boatraft = place('boatraft', boatbon_src('boatraft', raftstr))
+# boatcarr: eax = jugador -> eax != 0 si su barco tiene "Carrier" y no "Raft". Preserva lo mismo que boatcarr0.
+boatcarr = place('boatcarr', f'''
+    push eax
+    call {boatraft:#x}
+    test eax, eax
+    pop eax
+    jz {boatcarr0:#x}
+    xor eax, eax
+    ret
+''')
 RAFTCAP = 3
 RAFT_N = 1
 # eax = jugador (0..7) -> eax = tope del stack embarcado: RAFTCAP con "Raft", LANDCAP + "Carrier" con "Landing", 0 sin
@@ -13102,8 +13114,13 @@ pmr_no:
 # br_untrap(n) cdecl: las trampas sobre las n casillas de br_xy (el puente que se acaba de derribar) caen al agua: se
 # quitan de la tabla (el último registro pasa a su lugar) y se rearma po_map. Pedido del clan (18/11/2026): sin esto,
 # la trampa quedaba como mina submarina donde estaba el puente. Corre en todas las PC (br_razeapply). Preserva todo.
+# Desde 1.0.266.0 (pedido del usuario, 19/11/2026) la mina que cae suena "splash" (0x4465e0(0x18, -1), el sonido del
+# ítem que cae al agua) en la PC ([0x560b20]) de su dueño (+7) o de quien la había descubierto (máscara +6): a los
+# demás no les delata una mina que no veían.
+bu_snd = place_data('bu_snd', bytes(4))
 br_untrap = place('br_untrap', f'''
     pushad
+    mov byte ptr [{bu_snd:#x}], 0
     mov ebp, dword ptr [esp + 0x24]
     mov ebx, dword ptr [{PO_N:#x}]
 bu_loop:
@@ -13119,6 +13136,18 @@ bu_j:
     js bu_loop
     cmp edx, dword ptr [ecx*4 + {br_xy:#x}]
     jne bu_j
+    movsx ecx, word ptr [0x560b20]
+    cmp ecx, 8
+    jae bu_rm
+    movzx eax, byte ptr [esi + 7]
+    cmp eax, ecx
+    je bu_hear
+    movzx eax, byte ptr [esi + 6]
+    bt eax, ecx
+    jnc bu_rm
+bu_hear:
+    mov byte ptr [{bu_snd:#x}], 1
+bu_rm:
     mov eax, dword ptr [{PO_N:#x}]
     dec eax
     mov dword ptr [{PO_N:#x}], eax
@@ -13132,6 +13161,13 @@ bu_j:
     jmp bu_loop
 bu_end:
     call {po_rebuild:#x}
+    cmp byte ptr [{bu_snd:#x}], 0
+    je bu_out
+    push -1
+    push 0x18
+    call 0x4465e0
+    add esp, 8
+bu_out:
     popad
     ret
 ''')
@@ -20850,6 +20886,88 @@ tt_end:
     popad
     ret
 ''')
+# rf_turn: ebx = jugador que empieza su turno. Tope de la balsa (pedido del usuario, 19/11/2026): un grupo con "Raft"
+# no puede estar más de RAFT_VUELTAS vueltas en el agua; si no volvió a tierra, al empezar la vuelta siguiente se
+# hunde con todo lo embarcado. Cuenta en el byte +0x1b del ejército (libre con "Raft": boatcarr): 0x40 | vueltas.
+# Por cada ejército vivo del jugador: embarcado (bit 8 de +0x14) y ahogable (0x43c240) suma 1 vuelta; al llegar a
+# RAFT_VUELTAS cae al agua con 0x485610(jugador, ejército, 1, 0, 1, 0), como en el puente derribado (br_drown: ahoga a
+# todos los de la casilla y da el aviso) y, en la PC del jugador ([0x560b20]), suena "splash" (0x4465e0(0x18, -1), el
+# sonido del ítem que cae al agua, 0x4076d0). En tierra la cuenta vuelve a 0. La vuelta en que zarpó es la primera:
+# zarpa en la vuelta T, sigue en el agua en T + 1 y, si al empezar T + 2 no desembarcó, se hunde. Corre en todas las PC
+# con los mismos datos (ia_turn) y la cuenta se guarda con la partida (es parte del ejército). Preserva todo.
+RAFT_VUELTAS = 2
+rf_turn = place('rf_turn', f'''
+    pushad
+    mov eax, ebx
+    call {boatraft:#x}
+    test eax, eax
+    jz rft_out
+    mov esi, 1
+rft_loop:
+    movsx eax, word ptr [0x54fe50]
+    cmp esi, eax
+    jge rft_out
+    imul edi, esi, 0x1c
+    test byte ptr [edi + 0x54fe63], 0x40
+    jz rft_next
+    movzx eax, word ptr [edi + 0x54fe5e]
+    and eax, 0x1e0
+    shr eax, 5
+    cmp eax, ebx
+    jne rft_next
+    mov al, byte ptr [edi + 0x54fe6b]
+    mov cl, al
+    and cl, 0xc0
+    test byte ptr [edi + 0x54fe64], 8
+    jz rft_land
+    push esi
+    push ebx
+    call 0x43c240
+    add esp, 8
+    test al, al
+    jz rft_next
+    mov al, byte ptr [edi + 0x54fe6b]
+    test al, 0x80
+    jnz rft_next
+    test al, 0x40
+    jnz rft_cnt
+    xor al, al
+rft_cnt:
+    and al, 3
+    inc al
+    cmp al, {RAFT_VUELTAS}
+    jae rft_sink
+    or al, 0x40
+    mov byte ptr [edi + 0x54fe6b], al
+    jmp rft_next
+rft_sink:
+    mov byte ptr [edi + 0x54fe6b], 0
+    push 0
+    push 1
+    push 0
+    push 1
+    push esi
+    push ebx
+    call 0x485610
+    add esp, 0x18
+    cmp word ptr [0x560b20], bx
+    jne rft_next
+    push -1
+    push 0x18
+    call 0x4465e0
+    add esp, 8
+    jmp rft_next
+rft_land:
+    cmp cl, 0x40
+    jne rft_next
+    mov byte ptr [edi + 0x54fe6b], 0
+rft_next:
+    inc esi
+    jmp rft_loop
+rft_out:
+    popad
+    ret
+''')
 # ---- La IA elige hechizos sin casillas vacías al azar (ia\PENDIENTE-ideas-moddb.md, Paso 3; idea pública del Code Patch
 # 1.q10, código propio). Al elegir qué hechizo lanzar (0x49b7ed), la IA suma 0x492c40(unidad, efecto, 1) de los 4
 # efectos del hechizo; un efecto vacío (id 0) cae en el caso por defecto de 0x492c40 y vale un azar 1..6 x 1..6, así
@@ -21079,6 +21197,7 @@ ia_turn = place('ia_turn', f'''
     cmp ebx, 8
     jae it_out
     call {tr_turn:#x}
+    call {rf_turn:#x}
     call {ai_wrep:#x}
     call {ai_wobs:#x}
     cmp byte ptr [ebx*8 + {OR_TAB + 1:#x}], 0

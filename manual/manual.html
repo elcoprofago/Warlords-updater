@@ -175,7 +175,7 @@ ser «Warlords III Era de Alianzas», con su propio logotipo en el menú princip
 <tr><td>Vista aliada compartida</td><td>Los aliados mutuos ven el mapa que explora cada uno, también con niebla.</td><td>IV</td></tr>
 <tr><td>Ciudades compartidas</td><td>Las tropas aliadas entran y se refugian en las ciudades del socio; banderas de los socios en las torres.</td><td>IV</td></tr>
 <tr><td>Landing, Carrier, Cabotage</td><td>Barcos que desembarcan en cualquier costa, convoyes de hasta 24 unidades y barcos costeros que cruzan ríos.</td><td>V</td></tr>
-<tr><td>Raft</td><td>Balsas precarias: zarpan y desembarcan en cualquier costa, con hasta 3 unidades y pegadas a tierra.</td><td>V</td></tr>
+<tr><td>Raft</td><td>Balsas precarias: zarpan y desembarcan en cualquier costa, con hasta 3 unidades, pegadas a tierra y hasta 2 vueltas en el agua.</td><td>V</td></tr>
 <tr><td>Puentes</td><td>Derribarlos, reconstruirlos, pelear sobre ellos con el bono Bridge y misiones de héroe para volarlos.</td><td>VI</td></tr>
 <tr><td>Pozos, remolinos y trampas</td><td>Peligros ocultos que matan a quien los pisa; trampas y minas submarinas que construye el jugador.</td><td>VII</td></tr>
 <tr><td>Día y noche</td><td>Una vuelta de día y otra de noche: oscuridad con halos de luz, tropas camufladas y monstruos más fuertes de noche.</td><td>VIII</td></tr>
@@ -381,6 +381,9 @@ todo el bando. El Army List los muestra entre las habilidades de la unidad.</p>
   Cabotage.</li>
   <li>El movimiento y la fuerza son los de su archivo <code>.ARM</code> (bajos: es una balsa precaria). Si el barco
   tiene además Landing, Carrier o Cabotage, manda Raft: tope de 3, 1 casilla de la costa y sin convoyes.</li>
+  <li><b>Aguanta 2 vueltas en el agua.</b> La vuelta en que zarpa es la primera; si al empezar la tercera todavía no
+  desembarcó, la balsa se hunde con todas las unidades que lleva (con el aviso de ahogados y, en la PC de su dueño, el
+  sonido del ítem que cae al agua). Volver a tierra, aunque sea un paso, deja la cuenta en cero.</li>
   <li>La IA también puede usarla: su buscador de caminos sabe zarpar y desembarcar en la costa con ella.</li>
 </ul>
 
@@ -395,7 +398,7 @@ usarlo.</p>
 <tr><td>Landing + Carrier</td><td>6 (convoy de hasta 3 barcos)</td><td>20</td><td>Costa; en convoy, solo puertos</td></tr>
 <tr><td>Carrier</td><td>Tope del bando (convoy de hasta 3)</td><td>24</td><td>Solo en puertos</td></tr>
 <tr><td>Cabotage</td><td>Tope del bando</td><td>El del barco</td><td>Solo en puertos; no se aleja de la costa</td></tr>
-<tr><td>Raft (con o sin los demás)</td><td>3</td><td>El del barco</td><td>Cualquier costa; zarpa de cualquier costa; 1 casilla de tierra</td></tr>
+<tr><td>Raft (con o sin los demás)</td><td>3</td><td>El del barco</td><td>Cualquier costa; zarpa de cualquier costa; 1 casilla de tierra; se hunde si pasa 2 vueltas en el agua</td></tr>
 </table>
 
 <!-- ============================================================ VI -->
@@ -409,7 +412,7 @@ usarlo.</p>
   <li>Se usa la orden de arrasar del menú de órdenes del grupo. El diálogo muestra el retrato del ariete orco.</li>
   <li>Si hay ejércitos ajenos sobre el puente, primero hay que atacarlos.</li>
   <li>Los ejércitos propios que quedan encima <b>caen al agua</b> (salvo los voladores).</li>
-  <li>Las <b>trampas</b> sembradas sobre el puente también caen al agua y desaparecen (no quedan como minas submarinas).</li>
+  <li>Las <b>trampas</b> sembradas sobre el puente también caen al agua y desaparecen (no quedan como minas submarinas). Su dueño, o quien la había descubierto, oye el sonido del ítem que cae al agua.</li>
   <li>Un puente derribado es agua: lo cruzan los barcos y deja de servir a las tropas de tierra.</li>
 </ul>
 
@@ -1050,6 +1053,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.266.0</td><td>19/11/2026</td><td>Balsas (Raft): aguantan 2 vueltas en el agua. Si al empezar la tercera no desembarcaron, se hunden con todo lo que llevan, con el sonido del ítem que cae al agua. Con Raft tampoco rige Carrier (sin convoyes, como ya decía este Manual). La mina que cae al agua al derribarse su puente suena igual, para su dueño o quien la había descubierto.</td></tr>
 <tr><td>1.0.265.0</td><td>19/11/2026</td><td>Marcador en el mapa: la estrella del bando con hechizos en juego es ahora la del propio juego, la rosa de cuatro puntas de la esfera de maná (PICTS.PCX), con sus píxeles originales (11 × 11, del alto del texto).</td></tr>
 <tr><td>1.0.264.0</td><td>19/11/2026</td><td>Marcador en el mapa: la estrella violeta del bando con hechizos en juego tiene un dibujo nuevo, hecho por el usuario (picts\star.pcx), reducido a 7 × 7.</td></tr>
 <tr><td>1.0.263.0</td><td>19/11/2026</td><td>Construcciones: el tope de la partida sube de 64 a 512 obras (torres, faros y bloques de muro, sumando todos los bandos). Las partidas guardadas con versiones anteriores se siguen cargando.</td></tr>

@@ -1,11 +1,13 @@
 # Prueba de juguete: al derribar un puente, sus trampas caen al agua (br_untrap de build.py, pedido del clan 18/11/2026).
 # Uso: python prueba_puentetrampa.py [carpeta]   (por defecto la del juego de pruebas)
 # Controles que deben sobrevivir: trampa fuera del puente, pozo (no trampa) sobre el puente, puente con 0 casillas.
+# Sonido (1.0.266.0): la mina que cae suena "splash" (0x4465e0(0x18, -1)) solo en la PC ([0x560b20]) de su dueño o de
+# quien la había descubierto; control: una mina ajena y no descubierta cae sin sonar, y sin minas que caigan no suena.
 import os as _os, sys as _sys; _sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', '..'))
 from juego_pruebas import W3
 import os, sys, re, struct, pefile
-from unicorn import Uc, UC_ARCH_X86, UC_MODE_32
-from unicorn.x86_const import UC_X86_REG_ESP
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
+from unicorn.x86_const import UC_X86_REG_ESP, UC_X86_REG_EIP
 
 DIR = sys.argv[1] if len(sys.argv) > 1 else W3
 STACK, RET = 0x1f0000, 0x100
@@ -28,7 +30,7 @@ def ver(nombre, r, esperado):
     ok = r == esperado; mal += not ok
     print('OK ' if ok else 'MAL', nombre, '->', r)
 
-def correr(regs, puente):
+def correr(regs, puente, local=0, sonidos=None):
     mu = Uc(UC_ARCH_X86, UC_MODE_32)
     size = (pe.OPTIONAL_HEADER.SizeOfImage + 0xfff) & ~0xfff
     mu.mem_map(BASE, size); mu.mem_write(BASE, img[:size])
@@ -37,6 +39,11 @@ def correr(regs, puente):
     mu.mem_write(PO_N, struct.pack('<i', len(regs)))
     for i, r in enumerate(regs): mu.mem_write(PO_TAB + PO_REC * i, struct.pack('<hhBBBB', *r))
     for i, (x, y) in enumerate(puente): mu.mem_write(BR_XY + 4 * i, struct.pack('<hh', x, y))
+    mu.mem_write(0x560b20, struct.pack('<h', local))
+    def snd(m, a, size, _):   # 0x4465e0(sonido, -1): se anota y vuelve
+        sp = m.reg_read(UC_X86_REG_ESP); ret, s1, s2 = struct.unpack('<Iii', m.mem_read(sp, 12))
+        (sonidos if sonidos is not None else []).append((s1, s2)); m.reg_write(UC_X86_REG_ESP, sp + 4); m.reg_write(UC_X86_REG_EIP, ret)
+    mu.hook_add(UC_HOOK_CODE, snd, begin=0x4465e0, end=0x4465e0)
     mu.mem_write(STACK, struct.pack('<II', RET, len(puente))); mu.reg_write(UC_X86_REG_ESP, STACK)
     mu.emu_start(BR_UNTRAP, RET, count=2000000)
     n = struct.unpack('<i', mu.mem_read(PO_N, 4))[0]
@@ -54,4 +61,13 @@ t, m2 = correr(regs, [])
 ver('puente vacío: no toca nada', t, sorted(regs))
 t, m2 = correr([(10, 5, T, 0, 1, 0)], puente)
 ver('única trampa sobre el puente', t, [])
+SPL = [(0x18, -1)]
+for nombre, rr, local, esperado in (
+        ('mina propia: suena', [(10, 5, T, 0, 0, 3)], 3, SPL),
+        ('mina ajena descubierta por el local: suena', [(10, 5, T, 0, 1 << 3, 5)], 3, SPL),
+        ('mina ajena no descubierta: no suena', [(10, 5, T, 0, 1 << 2, 5)], 3, []),
+        ('dos minas propias: suena una vez', [(10, 5, T, 0, 0, 3), (10, 6, T, 0, 0, 3)], 3, SPL),
+        ('mina fuera del puente: no suena', [(3, 3, T, 0, 0xff, 3)], 3, []),
+        ('pozo sobre el puente: no suena', [(10, 5, 0, 0, 0xff, 3)], 3, [])):
+    sn = []; correr(rr, puente, local, sn); ver(nombre, sn, esperado)
 print('TODO OK' if not mal else f'{mal} MAL'); sys.exit(1 if mal else 0)
