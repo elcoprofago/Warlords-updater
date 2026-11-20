@@ -7,7 +7,9 @@
 # Con --artificer (20/11/2026) además da el perfil Artificer a todos los colores que juegan (elegir un paso lo exige:
 # Borderlands, Kor y Scarpart no tienen ningún Artificer ni Engineer, y la tanda 192 no eligió nada por eso). Escribe
 # SAVES\<guardada>_BDA.SAV. El oro no se toca: la condición de oro se cumple sola durante la partida.
-# Uso: python ia\constructores.py [--sin-voladores] [--artificer] Tanda_hex_control
+# Con --sin-build (20/11/2026, junto con --artificer) no pone «build»: el control de una tanda _BDA (mismo perfil,
+# nadie puede levantar MURALLA). Escribe SAVES\<guardada>_A.SAV.
+# Uso: python ia\constructores.py [--sin-voladores] [--artificer] [--sin-build] Tanda_hex_control
 import os, sys
 
 import tanda
@@ -51,8 +53,10 @@ if __name__ == '__main__':
         with open(os.path.join(tanda.JUEGO, 'SAVES', g + '.SAV'), 'rb') as f:
             orig = f.read()
         art = '--artificer' in sys.argv
-        destino = os.path.join(tanda.JUEGO, 'SAVES', g + ('_BDSV' if sv else '_BD') + ('A' if art else '') + '.SAV')
-        nuevo = bytearray(constructores(orig, sv))
+        sb = '--sin-build' in sys.argv
+        assert not sb or (art and not sv), '--sin-build va solo con --artificer'
+        destino = os.path.join(tanda.JUEGO, 'SAVES', g + ('_A' if sb else ('_BDSV' if sv else '_BD') + ('A' if art else '')) + '.SAV')
+        nuevo = bytearray(orig if sb else constructores(orig, sv))
         if art:
             for c, o in tanda.jugadores(bytes(nuevo)).items():
                 v = int.from_bytes(nuevo[o + tanda.PERFIL:o + tanda.PERFIL + 3], 'little') | ARTIFICER
