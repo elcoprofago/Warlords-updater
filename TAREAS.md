@@ -11,6 +11,7 @@ Sorteo están acá (tarea 18).
 2. **Puente 7** (botón «Copiar IP», con lo que tiene que anotar Nico): en la próxima partida con él.
 3. **Tarea 36** (revisar el borrador del Manual) y **tarea 42** (leer el anexo de la IA).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+5. **Tarea 280** (tanda de MURALLAS en Borderlands, desde Monitor-IA).
 
 # Pendientes
 - [ ] **280.** Tanda de MURALLAS en Borderlands (vista-aliada **1.0.281.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, punto 5). Desde Monitor-IA, lanzar una tanda con `Tanda_Borderlands_BD` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 32 partidas como la 189. En este mapa no hay voladores y el paso 4 encierra una ciudad que nadie puede rodear: es donde la MURALLA debería servir. Avisame el número de tanda al terminar y la analizo yo.
