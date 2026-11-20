@@ -133,7 +133,14 @@ predeterminadas.»*
         puente no se construye); PUERTO (celeste: tierra vecina del puerto). Resultado: Scarpart 6 + 9 corredores,
         10 puentes, 20 puertos; Kor 1 + 6, 6, 9; Hexagon 12 + 24, 1, 18; Borderlands 10 + 0, 6, 12 (control: sus 10
         siguen). Dibujos `ia\pasos\<mapa>_v2.png`; el usuario los revisa (TAREAS 267). Después: que el juego
-        (mp_pick) use el criterio v2. No mira barcos, voladores ni grupos
+        (mp_pick) use el criterio v2.
+        **Confirmado por el usuario (20/11/2026):** las cuatro categorías resumen bien los puntos clave a proteger con
+        MURALLA, aunque en una partida algún bando (armas regulares, aliados, mercenarios) o héroe (ítem, magia)
+        tenga voladores. Analogía suya: en Kor, en la isla de los 4 puentes, algún color suele derribar uno por
+        verlo como paso clave. Derribar un puente y levantar una MURALLA son mecanismos defensivos del mismo tipo,
+        con distinta eficacia: el puente es candidato a las dos cosas, y conviene que la IA los elija con el mismo
+        mapa de pasos (ai_brdef y mp_pick).
+        **Siguiente:** llevar el criterio v2 al juego (mp_pick, build.py) y probarlo con `prueba_mp_scan.py`. No mira barcos, voladores ni grupos
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
         (barcos con landing/raft, voladores).
