@@ -364,6 +364,14 @@ construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores;
   en `Tanda_Borderlands_F` eligen los colores 4, 6 y 7, y en `Tanda_Borderlands_VL_F` (fixture con vuelo en la
   ranura 1 de todos) nadie. Falta la tanda con voladores (TAREAS 279, la lanza el usuario): esperado, casi nadie
   construye en Hexagon y las pérdidas del lado protegido no empeoran.
+- **Tanda 191** (20/11/2026, parche 1.0.281.0, con voladores; 128 válidas de 128): **0 eventos 51 y 52**, ni en
+  prueba ni en original (189: 522 y 147; 190: 570 y 152). Con la regla v2 nadie elige ni levanta MURALLA en Hexagon:
+  todo paso se rodea por aire. Medición sana: los demás eventos están (p. ej. 42: 45 482), y el 47 (pilas junto a
+  MURALLA enemiga) también da 0, coherente. `python ia\informe.py 191`: PV 14,9 vs 14,9; prueba − original
+  −0,18 (−1,33 a +0,97), dentro del ruido; ciudades 10,8 vs 12,6 (la misma brecha de otras destrezas que en la
+  189/190). **Lectura:** la propuesta c hace lo esperado: en Hexagon la MURALLA ya no se gasta donde no sirve.
+  Para medir dónde sí sirve hace falta el mapa con pasos sin rodeo (Borderlands, paso 4), y después las
+  propuestas a y b.
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
