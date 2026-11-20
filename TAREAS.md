@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 278).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 279).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,7 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+- [ ] **278.** Army List y la balsa (19/11/2026; tu informe). El juego no estaba desactualizado: la balsa marcada es la copia vieja que trae la partida `agua04.SAV` (con «carrier», costo 600 y mantenimiento 10: regla 25), no la del disco, que no viola nada. 1) En `E:\Warlords-TEST\Warlords3`, empezar una partida **nueva** con la balsa como barco de un bando y abrir Army List (botón del libro): la balsa **no** tiene que salir con el icono de prohibido. 2) Control: cargar `agua04.SAV` y abrir Army List: ahí sí sale marcada. Anotar lo que no coincida.
 - [x] **275.** Aro del Comparador por fuera (vista-aliada **1.0.275.0**, 19/11/2026). Ya está instalado en `E:\Warlords-TEST\Warlords3`. En *Edit Side*, pasar el puntero por el botón del Comparador: el aro naranja tiene que rodear el borde dorado **por fuera**, y al sacar el puntero tiene que desaparecer sin dejar marcas en el fondo. Apretarlo: aro entero. Control: sigue abriendo DarkCompare. Para el ranking, actualizar `C:\Warlords` con la opción 9.
 - [ ] **273.** La IA elige qué paso cerraría con muralla (vista-aliada **1.0.271.0**, 19/11/2026). Por dentro: la computadora todavía no construye nada, solo decide. En `E:\Warlords-TEST\Warlords3` (actualizar con la opción 9), jugar una partida en un mapa grande (por ejemplo Hexagon o Borderlands) con varios colores de la computadora, unos 5 turnos. Tiene que andar como siempre: anotar si se cuelga o si el comienzo del turno de la computadora tarda notablemente más que antes (el primer turno hace un cálculo del mapa entero). Para el ranking (`C:\Warlords`) no hace falta todavía.
 - [x] **270.** Montañas altas, ni volando (vista-aliada **1.0.267.0**, 19/11/2026; tu pedido). Ya está instalado en `E:\Warlords-TEST\Warlords3`. 1) En un mapa con montañas (Borderlands, Scarpart o Kor), elegir un grupo con un volador y ordenarle ir al otro lado de una cordillera: el camino tiene que rodearla, sin pisar ninguna casilla de montaña. 2) Controles: sobre colinas y bosque profundo sigue volando derecho; por un camino de montaña se sigue pasando. 3) Mirar que los voladores de la computadora tampoco crucen montañas. 4) Para el ranking, actualizar `C:\Warlords` con la opción 9. Anotar lo que no coincida.
