@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import informe, tanda   # noqa: E402
 
-VERSION = '1.0.37'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
+VERSION = '1.0.38'                # sube con cada release; publicar.py la exige igual a la etiqueta v<VERSION>
 REPO = 'elcoprofago/Monitor-IA'   # repo público donde se publican las releases del .exe
 ALARMA = r'C:\Windows\Media\Alarm01.wav'
 CUELGUE_MIN = 10           # minutos sin turnos nuevos para dar la partida por colgada (tanda.py --cuelgue)
@@ -991,7 +991,8 @@ class Monitor(tk.Tk):
         desde = db.execute('select inicio from tanda where id=?', (t0,)).fetchone()
         a_seg = lambda f: time.mktime(time.strptime(f, '%Y-%m-%d %H:%M:%S'))
         self.reloj_desde = a_seg(desde[0]) if desde and desde[0] else None
-        if self.corriendo() or self.externa:
+        # Tanda terminada: el reloj se para aunque el hilo siga vivo (cuenta para suspender, alarma, serie).
+        if (self.corriendo() or self.externa) and not term:
             self.reloj_hasta = None
         else:
             fin = db.execute('select max(fin) from partida where tanda between ? and ?', (t0, tid)).fetchone()[0]
