@@ -359,6 +359,11 @@ construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores;
   ≈ −2 a −3 ciudades), igual que en la 189: viene de otras destrezas, no de la MURALLA (ver arriba).
   **Siguiente:** con voladores, la regla tiene que no cerrar (× 0) un paso que el enemigo amenazante rodea por aire
   (propuesta c); y para el tiempo y el lugar, las propuestas a (ejércitos enemigos reales) y b (antes).
+- **Propuesta c hecha (vista-aliada 1.0.281.0, 19/11/2026):** en mp_pick la amenaza pesa × 0 si el enemigo rodea
+  el paso por aire (antes × 1, como por agua); igual en `ia\cerrar_paso.py` (regla v2). `prueba_mp_scan.py`: TODO OK;
+  en `Tanda_Borderlands_F` eligen los colores 4, 6 y 7, y en `Tanda_Borderlands_VL_F` (fixture con vuelo en la
+  ranura 1 de todos) nadie. Falta la tanda con voladores (TAREAS 279, la lanza el usuario): esperado, casi nadie
+  construye en Hexagon y las pérdidas del lado protegido no empeoran.
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).

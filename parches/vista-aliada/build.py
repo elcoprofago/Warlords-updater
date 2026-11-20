@@ -22624,7 +22624,8 @@ mo_out:
 # construye en un tramo sin obras ajenas); amenaza = por cada bando no aliado con ciudades del otro lado O y ninguna en
 # D, sus ciudades de O que llegan al tramo en MP_HOR turnos (costo <= MP_HOR x movimiento de su unidad no voladora
 # más rápida con ese bono), x 2 si no puede rodear el paso por agua (barco común: puerto en los dos lados; «Landing»:
-# puerto en O y costa en D; «Raft»: costa en los dos) ni por aire (produce voladores o los tiene en el mapa).
+# puerto en O y costa en D; «Raft»: costa en los dos), x 1 si puede, y x 0 si lo rodea por aire (produce voladores o
+# los tiene en el mapa; regla v2, 19/11/2026: la MURALLA no frena voladores, medido en las tandas 189 y 190).
 # Descarta los que tienen la ciudad propia más cercana a más de MP_DIST casillas. Elige por (empezado, MURALLA ajena,
 # mayor amenaza, más cerca, tramo más corto); a igualdad, el primero. Deja mp_obj[p] = paso | lado << 8 | tramo << 16
 # (-1 si nada) y el evento 51 (x, y del primer bloque del tramo, n = amenaza * 100 + bloques). Preserva todo.
@@ -22915,7 +22916,7 @@ pk_xon:
     mov eax, edx
     shl eax, 5
     cmp dword ptr [eax + {MP_E + 20:#x}], 0
-    jne pk_x1
+    jne pk_xz
     mov ecx, dword ptr [eax + {MP_E + 16:#x}]
     imul eax, dword ptr [{MP_PQ:#x}], 64
     add eax, {MP_PAS:#x}

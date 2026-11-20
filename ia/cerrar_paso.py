@@ -14,8 +14,9 @@
 # 2. Por cada paso (pasos.detectar) que no esté ya cerrado y por cada lado D con ciudades propias (f(D) >= 1):
 #    amenaza = suma, por cada bando no aliado (en guerra o en paz: el enemigo potencial, criterio del usuario) con
 #    ciudades del otro lado O y ninguna en D, de sus ciudades en O que llegan al paso en HORIZONTE turnos o menos
-#    («3-4 jugadas»), x 2 si no puede rodear el paso, x 1 si puede (por agua o por aire: «cerrarlo vale menos», no
-#    «no vale»).
+#    («3-4 jugadas»), x 2 si no puede rodear el paso, x 1 si lo rodea por agua («cerrarlo vale menos») y x 0 si lo
+#    rodea por aire (v2, 19/11/2026: la tanda 190, sin voladores, mostró que la MURALLA protege; la 189, con
+#    voladores, que la burlan).
 #    - Llegar al paso (aproximado, para el juego): un recorrido hacia atrás desde el tramo por O con el costo de cada
 #      casilla (movimiento.grilla, la grilla 0x57d158 del juego), uno por bono de terreno; la ciudad llega en
 #      techo(costo / movimiento) turnos con la unidad no voladora más rápida del enemigo (movimiento.perfiles). Lo
@@ -234,7 +235,7 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                         mar = O['puerto'] and D['costa']
                     else:
                         mar = O['puerto'] and D['puerto']
-                    peso = en_o * (1 if mar or aire else 2)
+                    peso = 0 if aire else en_o * (1 if mar else 2)   # v2 (19/11/2026, tanda 190): aire anula
                     total += peso
                     enem.append((e, en_o, 'agua' if mar else '', 'aire' if aire else '', peso))
                 if total:
