@@ -1,6 +1,6 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 280).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 281).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
@@ -13,6 +13,7 @@ Sorteo están acá (tarea 18).
 4. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
 
 # Pendientes
+- [ ] **280.** Tanda de MURALLAS en Borderlands (vista-aliada **1.0.281.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, punto 5). Desde Monitor-IA, lanzar una tanda con `Tanda_Borderlands_BD` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 32 partidas como la 189. En este mapa no hay voladores y el paso 4 encierra una ciudad que nadie puede rodear: es donde la MURALLA debería servir. Avisame el número de tanda al terminar y la analizo yo.
 - [x] **279.** Tanda de MURALLAS con voladores (vista-aliada **1.0.281.0**, 19/11/2026; ia\PENDIENTE-ia-muros.md, punto 5). Desde Monitor-IA, lanzar una tanda con `Tanda_hex_control_BD` y `Tanda_hex_perfiles_BD` (las de siempre, con Descenders), la misma cantidad de partidas que la 189. Ahora la computadora no debería levantar MURALLA en pasos que el enemigo rodea volando. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 191, 128 partidas: nadie levantó MURALLA (lo esperado); PV parejos.
 - [x] **278.** **Hecho 19/11/2026:** confirmado, era la balsa vieja con «carrier» de la partida; no hay nada que corregir. Army List y la balsa (19/11/2026; tu informe). El juego no estaba desactualizado: la balsa marcada es la copia vieja que trae la partida `agua04.SAV` (con «carrier», costo 600 y mantenimiento 10: regla 25), no la del disco, que no viola nada. 1) En `E:\Warlords-TEST\Warlords3`, empezar una partida **nueva** con la balsa como barco de un bando y abrir Army List (botón del libro): la balsa **no** tiene que salir con el icono de prohibido. 2) Control: cargar `agua04.SAV` y abrir Army List: ahí sí sale marcada. Anotar lo que no coincida.
 - [x] **275.** Aro del Comparador por fuera (vista-aliada **1.0.275.0**, 19/11/2026). Ya está instalado en `E:\Warlords-TEST\Warlords3`. En *Edit Side*, pasar el puntero por el botón del Comparador: el aro naranja tiene que rodear el borde dorado **por fuera**, y al sacar el puntero tiene que desaparecer sin dejar marcas en el fondo. Apretarlo: aro entero. Control: sigue abriendo DarkCompare. Para el ranking, actualizar `C:\Warlords` con la opción 9.

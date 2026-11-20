@@ -372,6 +372,11 @@ construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores;
   189/190). **Lectura:** la propuesta c hace lo esperado: en Hexagon la MURALLA ya no se gasta donde no sirve.
   Para medir dónde sí sirve hace falta el mapa con pasos sin rodeo (Borderlands, paso 4), y después las
   propuestas a y b.
+- Guardada `Tanda_Borderlands_BD` (20/11/2026, `python ia\constructores.py Tanda_Borderlands`): verificado al leer lo
+  escrito, «build» en 13 ranuras de cada bando (antes 0), voladores 0 antes y después (Borderlands no tiene). Tanda
+  A/B con ella (TAREAS 280); se analiza con `python ia\murallas_tanda.py <tanda> Tanda_Borderlands`. Esperado: el
+  paso 4 (una ciudad de 7, sin puerto) cerrado y sin ataques del lado protegido; los pasos 3, 6 y 10 se rodean de
+  puerto a puerto.
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
