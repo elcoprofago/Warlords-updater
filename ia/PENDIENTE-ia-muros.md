@@ -120,7 +120,20 @@ predeterminadas.»*
         con camino no es muro, es camino (usuario, 19/11/2026; así lo hace el juego, 0x4a4f90). Medido: Kor,
         2712 casillas cerradas al vuelo (todas sus montañas); Hexagon, 5162 (su muro). Así, un paso entre montañas
         frena también a los voladores, salvo que lo rodeen por otro lado.
-        Falta que el usuario confirme que son los que él reconoce (TAREAS 267). No mira barcos, voladores ni grupos
+        Falta que el usuario confirme que son los que él reconoce (TAREAS 267).
+        **Corrección del usuario (20/11/2026), al revisar los dibujos de la 267:** en Scarpart, Kor y Hexagon faltaban
+        pasos (Borderlands estaba completo). *«Todo puerto o puente es un paso estratégico»*, y también los caminos
+        obligados entre montañas o por bosque profundo (Scarpart, cuadrante I), aunque tengan rodeo; en el clan se
+        juegan torneos enteros sin voladores. La causa medida no eran los voladores (`pasos.py` nunca los miró): era
+        exigir que el tramo corte TODO camino por tierra entre dos zonas con ciudades. El aire se pesa después, en la
+        elección, por partida y por bando enemigo (`cerrar_paso.py` 231-238): sin voladores en la partida, no anula.
+        **`ia\pasos_v2.py`** (no pisa los .json de v1, con los que se analizaron las tandas 189-191): CORTE (rojo, lo
+        de v1); CORREDOR (naranja: 1-3 casillas entre terreno intransitable cuyo cierre obliga a un rodeo de 24 a 96
+        casillas; sin rodeo es un rincón o un corte); PUENTE (violeta: tierra con camino en sus puntas; sobre el
+        puente no se construye); PUERTO (celeste: tierra vecina del puerto). Resultado: Scarpart 6 + 9 corredores,
+        10 puentes, 20 puertos; Kor 1 + 6, 6, 9; Hexagon 12 + 24, 1, 18; Borderlands 10 + 0, 6, 12 (control: sus 10
+        siguen). Dibujos `ia\pasos\<mapa>_v2.png`; el usuario los revisa (TAREAS 267). Después: que el juego
+        (mp_pick) use el criterio v2. No mira barcos, voladores ni grupos
         que cruzan montañas (eso es 3.b). Tarda ~5 min por mapa.
      b. Por cada paso: qué enemigos llegan por él a ciudades propias, y en cuántos turnos; y si pueden rodearlo
         (barcos con landing/raft, voladores).
