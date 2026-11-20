@@ -337,9 +337,28 @@ construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores;
   escrito: voladores [1,1,0,1,1,1,0,1] → todos 0, «build» en las 16 ranuras igual que en `_BD`. Control: la `_BD`
   rehecha sin la opción conserva los voladores. Sin voladores, `mp_pick` ya no ve rodeo por aire (× 2): la regla v1
   se mide sin cambios. Queda el rodeo por agua (barco común de puerto a puerto).
-- Tanda (sin lanzar todavía: otra sesión estaba compilando vista-aliada): `python ia\tanda.py nueva --partidas 32
-  --guardadas Tanda_hex_control_BDSV,Tanda_hex_perfiles_BDSV`, y después `python ia\murallas_tanda.py <tanda>`,
-  comparando con la 189.
+- **Tanda 190** (19/11/2026, parche 1.0.280.0; 30 válidas, 2 colgadas): 152 bloques (evento 52), ningún 53.
+  `python ia\murallas_tanda.py 190`, comparado con la 189 (con voladores):
+
+  | | 189 prueba | 189 control | 190 prueba | 190 control |
+  |---|---|---|---|---|
+  | casos (color, paso, partida) | 63 | 46 | 67 | 50 |
+  | ciudades perdidas en el mapa desde el turno del paso | 23 | 29 | 25 | 50 |
+  | de esas, del lado protegido | 12 (52 %) | 16 (55 %) | **5 (20 %)** | 19 (38 %) |
+  | ataques al lado protegido por 100 turnos | 2,8 | 6,1 | **1,3** | 4,2 |
+  | ataques con el tramo ya cerrado | 7 | – | 3 | – |
+
+  **Sin voladores la MURALLA sí protege:** el lado cerrado pierde la cuarta parte que el control y casi la mitad
+  que con voladores. El caso más claro es el paso 8 (Black): con voladores, 8 ataques y 6 ciudades perdidas con el
+  tramo cerrado; sin voladores, 12 casos completos y 0 ataques. Los 3 ataques con el tramo cerrado son todos en el
+  paso 5 (Red, por agua o por otro tramo). Nadie atacó la MURALLA misma.
+  **Lo que sigue igual:** el primer bloque llega tarde (turno 20,4 de 28,6) y 64 de 67 lados cerrados no fueron
+  atacados nunca: la regla elige pasos que el enemigo no usa (amenaza potencial, no real). Lo de «mal construidas»
+  queda así: bien construidas, mal elegidas en tiempo y lugar.
+  En el total de la partida la IA de prueba sigue por debajo de la original (PV 14,3 vs 15,2 y 13,7 vs 15,6;
+  ≈ −2 a −3 ciudades), igual que en la 189: viene de otras destrezas, no de la MURALLA (ver arriba).
+  **Siguiente:** con voladores, la regla tiene que no cerrar (× 0) un paso que el enemigo amenazante rodea por aire
+  (propuesta c); y para el tiempo y el lugar, las propuestas a (ejércitos enemigos reales) y b (antes).
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
