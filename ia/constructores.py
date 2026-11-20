@@ -4,11 +4,16 @@
 # Con --sin-voladores (punto 5: medir la MURALLA sin lo que la burla) además quita el vuelo a toda unidad: borra el
 # bono «fly» y el bit 4 de +0xe0 (el que el juego usa para volar); la unidad queda terrestre con lo demás igual.
 # Escribe SAVES\<guardada>_BDSV.SAV. Los héroes que vuelan por un objeto no se tocan (en el banco no hay).
-# Uso: python ia\constructores.py [--sin-voladores] Tanda_hex_control
+# Con --artificer (20/11/2026) además da el perfil Artificer a todos los colores que juegan (elegir un paso lo exige:
+# Borderlands, Kor y Scarpart no tienen ningún Artificer ni Engineer, y la tanda 192 no eligió nada por eso). Escribe
+# SAVES\<guardada>_BDA.SAV. El oro no se toca: la condición de oro se cumple sola durante la partida.
+# Uso: python ia\constructores.py [--sin-voladores] [--artificer] Tanda_hex_control
 import os, sys
 
 import tanda
 import amenaza
+
+ARTIFICER = 0x80000
 
 
 def constructores(d, sin_vuelo=False):
@@ -45,13 +50,21 @@ if __name__ == '__main__':
     for g in [a for a in sys.argv[1:] if not a.startswith('--')]:
         with open(os.path.join(tanda.JUEGO, 'SAVES', g + '.SAV'), 'rb') as f:
             orig = f.read()
-        destino = os.path.join(tanda.JUEGO, 'SAVES', g + ('_BDSV.SAV' if sv else '_BD.SAV'))
+        art = '--artificer' in sys.argv
+        destino = os.path.join(tanda.JUEGO, 'SAVES', g + ('_BDSV' if sv else '_BD') + ('A' if art else '') + '.SAV')
+        nuevo = bytearray(constructores(orig, sv))
+        if art:
+            for c, o in tanda.jugadores(bytes(nuevo)).items():
+                v = int.from_bytes(nuevo[o + tanda.PERFIL:o + tanda.PERFIL + 3], 'little') | ARTIFICER
+                nuevo[o + tanda.PERFIL:o + tanda.PERFIL + 3] = v.to_bytes(3, 'little')
         with open(destino, 'wb') as f:
-            f.write(constructores(orig, sv))
+            f.write(nuevo)
         with open(destino, 'rb') as f:   # verificar lo escrito, no lo calculado
             v = f.read()
         dif = sum(a != b for a, b in zip(orig, v))
         print(destino, len(v) == len(orig), f'{dif} bytes cambiados',
               [con_build(orig, c) for c in range(8)], '->', [con_build(v, c) for c in range(8)],
               'voladores', [len(amenaza.bando(orig, c)[1]) for c in range(8)], '->',
-              [len(amenaza.bando(v, c)[1]) for c in range(8)])
+              [len(amenaza.bando(v, c)[1]) for c in range(8)],
+              'perfiles', {c: tanda.nombre_perfil(int.from_bytes(v[o + tanda.PERFIL:o + tanda.PERFIL + 3], 'little'))
+                           for c, o in tanda.jugadores(v).items()})

@@ -397,6 +397,13 @@ construidas".»* De menor a mayor complejidad: primero la MURALLA sin voladores;
   A/B con ella (TAREAS 280); se analiza con `python ia\murallas_tanda.py <tanda> Tanda_Borderlands`. Esperado: el
   paso 4 (una ciudad de 7, sin puerto) cerrado y sin ataques del lado protegido; los pasos 3, 6 y 10 se rodean de
   puerto a puerto.
+- **Tanda 192** (20/11/2026, 1.0.281.0, `Tanda_Borderlands_BD`, 32 válidas): **0 eventos 51, 52 y 53. No mide
+  nada: error mío al armar la guardada.** Elegir paso exige perfil Artificer o Engineer, y en Borderlands no lo
+  tiene ningún color (ya estaba anotado arriba); `constructores.py` solo ponía «build». Corregido:
+  `constructores.py --artificer` da además Artificer a todos los colores → `Tanda_Borderlands_BDA` (verificado al
+  leerla: 13 constructores por color, 0 voladores, los 8 Artificer). `cerrar_paso` sobre ella: al empezar nadie
+  tiene oro (72-151, mínimo 160), pero con oro el 7 elige el paso 4 (amenaza 44, sin rodeo) y el 4 y el 6 otros
+  que se rodean por agua. Nueva tanda: TAREAS 281.
 Falta: un mapa con pasos que no se rodean (Borderlands, paso 4) para que la MURALLA tenga dónde servir; Hexagon
 mide sobre todo el caso en que no sirve.
 Antes: armar las guardadas `_BD` (como `balsa.py`: «build» en una ranura de cada bando, ninguna de las del banco tiene Artificer/Engineer) y correr la tanda A/B (prueba construye, original no); mirar eventos 52/53, PV, ciudades perdidas y pérdidas. Si mejora, pasa al ranking (CLAUDE.md).
