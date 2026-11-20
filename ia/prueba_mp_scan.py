@@ -35,6 +35,11 @@ class Juego:
         sav = FORZADAS.get(g) or os.path.join(tanda.JUEGO, 'SAVES', g + '.SAV')
         self.d = open(sav, 'rb').read()
         self.m = Motor(exe, sav, rul=os.path.join(tanda.JUEGO, 'Default.rul'))
+        # Motor solo carga [COMBAT]; el precio de la MURALLA (bd_price) sale de BuildCity ([0x56950e]), que está en
+        # otra sección del .rul: sin esto queda en 0, el precio en 1 y la condición de oro no se prueba.
+        for ln in open(os.path.join(tanda.JUEGO, 'Default.rul'), encoding='latin-1'):
+            if ln.strip().lower().startswith('buildcity='):
+                self.m.mu.mem_write(0x56950e, struct.pack('<h', int(ln.split('=', 1)[1])))
         img = open(exe, 'rb').read()
         import pefile
         pe = pefile.PE(data=img)
@@ -107,7 +112,11 @@ _amenaza_analizar = amenaza.analizar
 def _amenaza(guardada, mapa=None):
     """El control de agua exacto de cerrar_paso necesita ia/pasos/<guardada>.json: sin él (variantes forzadas), vacío."""
     try:
-        return _amenaza_analizar(guardada, mapa or guardada.removesuffix('_F'))
+        if not mapa:   # el mapa sin los sufijos de las variantes (_F forzada, _BD/_BDA/_BDSV de constructores.py)
+            mapa = guardada.removesuffix('_F')
+            for suf in ('_BDA', '_BDSV', '_BD'):
+                mapa = mapa.removesuffix(suf)
+        return _amenaza_analizar(guardada, mapa)
     except FileNotFoundError:
         return [], None
 

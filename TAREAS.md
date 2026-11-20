@@ -1,22 +1,22 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 283).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 284).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 281** (tanda de MURALLAS en Borderlands, corregida, desde Monitor-IA).
-2. **Tarea 282** (tanda de MURALLAS en corredores, desde Monitor-IA).
-3. **Tarea 266** (tope de construcciones de 64 a 512).
-4. **Tarea 267** (mirar los dibujos de los pasos para muros).
-5. **Tarea 257** (PC de Nico), en la próxima partida con él.
-6. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
-7. **Tarea 216** (primer contacto con Slitherine): en espera hasta que la IA maneje bien las innovaciones.
+1. **Tarea 283** (tanda de MURALLAS en Kor, desde Monitor-IA).
+2. **Tarea 266** (tope de construcciones de 64 a 512).
+3. **Tarea 267** (mirar los dibujos de los pasos para muros).
+4. **Tarea 257** (PC de Nico), en la próxima partida con él.
+5. **Tarea 27** (misión de la trampa, con dos jugadores humanos).
+6. **Tarea 216** (primer contacto con Slitherine): en espera hasta que la IA maneje bien las innovaciones.
 
 # Pendientes
-- [x] **282.** Tanda de MURALLAS en corredores (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_hex_control_BD` y `Tanda_hex_perfiles_BD`, 32 partidas como la 189. Ahora la computadora de prueba también puede levantar MURALLA en corredores. Avisame el número de tanda al terminar y la analizo yo.
+- [ ] **283.** Tanda de MURALLAS en Kor (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_Kor_BDA` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 64 partidas como la 193. Kor no tiene voladores y tiene corredores que la computadora de prueba elige. Avisame el número de tanda al terminar y la analizo yo.
+- [x] **282.** Tanda de MURALLAS en corredores (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_hex_control_BD` y `Tanda_hex_perfiles_BD`, 32 partidas como la 189. Ahora la computadora de prueba también puede levantar MURALLA en corredores. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 194, sin ninguna MURALLA, y es lo correcto: en Hexagon todos los enemigos tienen voladores, y ante ellos la MURALLA no sirve (regla del 19/11). No midió los corredores; se miden en Kor (tarea 283).
 - [x] **281.** Tanda de MURALLAS en Borderlands, corregida (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, punto 5). Desde Monitor-IA, lanzar una tanda con `Tanda_Borderlands_BDA` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 32 partidas como la 192. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 193 (corrió con la 1.0.281.0, criterio viejo): 740 bloques de MURALLA, pero el lado protegido perdió las mismas ciudades que sin ella (54 %), casi siempre porque el enemigo entró por otro lado, y la ventaja de la IA de prueba se achicó respecto de la 192. No pasa al ranking; lo corrige el criterio nuevo.
 - [x] **280.** Tanda de MURALLAS en Borderlands (vista-aliada **1.0.281.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, punto 5). Desde Monitor-IA, lanzar una tanda con `Tanda_Borderlands_BD` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 32 partidas como la 189. En este mapa no hay voladores y el paso 4 encierra una ciudad que nadie puede rodear: es donde la MURALLA debería servir. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 192 sin ninguna MURALLA, por un error mío en la guardada (a ningún color le daba el perfil necesario). Se repite en la 281.
 - [x] **275.** Aro del Comparador por fuera (vista-aliada **1.0.275.0**, 19/11/2026). Ya está instalado en `E:\Warlords-TEST\Warlords3`. En *Edit Side*, pasar el puntero por el botón del Comparador: el aro naranja tiene que rodear el borde dorado **por fuera**, y al sacar el puntero tiene que desaparecer sin dejar marcas en el fondo. Apretarlo: aro entero. Control: sigue abriendo DarkCompare. Para el ranking, actualizar `C:\Warlords` con la opción 9.
