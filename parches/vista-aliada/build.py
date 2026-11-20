@@ -21564,6 +21564,15 @@ MP_VAR = mp_bss(128)
 (MP_OK, MP_NP, MP_NT, MP_NC, MP_ST, MP_W, MP_H, MP_NG, MP_VIS, MP_TL, MP_TDD, MP_T1, MP_T2, MP_TO, MP_SK, MP_STS,
  MP_PQ, MP_PB, MP_CUR, MP_PEN, MP_MB, MP_BK, MP_BV, MP_BA, MP_FULL, MP_AJ, MP_KK, MP_TOT, MP_CER, MP_SCN) = \
     (MP_VAR + 4 * k for k in range(30))
+# Criterio v2 (CORREDORES, ia\mp_modelo.corredores): rodeo con el tramo cerrado (MP_RV: sello << 8 | pasos), lista de
+# candidatos (MP_CL, 32 bytes: +0 clave de orden, +4 casilla / largo / vertical como un tramo, +8 caja x1 y1 x2 y2).
+MP_RODEO, MP_RODMAX, MP_ZONA, MP_CLMAX = 24, 96, 6, 1024
+MP_RV = mp_bss(4 * MP_SZ)
+MP_CL = mp_bss(32 * MP_CLMAX)
+MP_CVV = mp_bss(64)
+(CV_DD, CV_PP, CV_N, CV_ST, CV_NB, CV_NC, CV_NA) = (MP_CVV + 4 * k for k in range(7))
+CV_B, CV_BX, CV_TMP = mp_bss(4 * 8), mp_bss(16), mp_bss(32)
+CV_AC = mp_bss(4 * MP_PMAX)
 assert _mp_off[0] <= 0x200000
 MP_DV = place_data('mp_dv', struct.pack('<8i', *[dx * MP_P + dy for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]))
 # variantes de tramo en el orden de pasos.tramos: (1, horizontal), (2, h), (2, vertical), (3, h), (3, v)
@@ -22167,6 +22176,517 @@ msd_2:
     ret
 ''')
 
+# mp_xy: eax = casilla -> eax = x, edx = y. Preserva el resto.
+mp_xy = place('mp_xy', f'''
+    push ecx
+    xor edx, edx
+    mov ecx, {MP_P}
+    div ecx
+    dec eax
+    dec edx
+    pop ecx
+    ret
+''')
+
+# ---- CORREDORES (criterio v2, ia\mp_modelo.corredores / lados_corredor). Las dos bocas de un tramo: las vecinas
+# transitables de la fila de un lado (boca a, -perp) y del otro (boca b, +perp), desde la casilla anterior al tramo
+# hasta la siguiente.
+# mp_rod: esi = casilla, ecx = largo, edx = paso -> eax = pasos de la boca a a la b con el tramo cerrado (recorrido
+# FIFO que no sigue más allá de MP_RODMAX), -1 si no llega, 0 si falta una boca. Preserva el resto.
+mp_rod = place('mp_rod', f'''
+    pushad
+    mov dword ptr [{CV_DD:#x}], edx
+    mov eax, 1
+    cmp edx, {MP_P}
+    je ro_p
+    mov eax, {MP_P}
+ro_p:
+    mov dword ptr [{CV_PP:#x}], eax
+    inc dword ptr [{CV_ST:#x}]
+    mov ebp, dword ptr [{CV_ST:#x}]
+    shl ebp, 8
+    mov eax, esi
+    mov ebx, ecx
+    lea edi, [ebp + 0xff]
+ro_m:
+    mov dword ptr [eax*4 + {MP_RV:#x}], edi
+    add eax, edx
+    dec ebx
+    jnz ro_m
+    xor ebx, ebx
+    mov dword ptr [{CV_NB:#x}], 0
+    mov edi, esi
+    sub edi, edx
+    lea edx, [ecx + 2]
+ro_f:
+    mov eax, edi
+    sub eax, dword ptr [{CV_PP:#x}]
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz ro_fb
+    mov ecx, dword ptr [eax*4 + {MP_RV:#x}]
+    and ecx, 0xffffff00
+    cmp ecx, ebp
+    je ro_fb
+    mov dword ptr [eax*4 + {MP_RV:#x}], ebp
+    mov word ptr [ebx*2 + {MP_Q:#x}], ax
+    inc ebx
+ro_fb:
+    mov eax, edi
+    add eax, dword ptr [{CV_PP:#x}]
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz ro_fn
+    mov ecx, dword ptr [{CV_NB:#x}]
+    mov dword ptr [ecx*4 + {CV_B:#x}], eax
+    inc dword ptr [{CV_NB:#x}]
+ro_fn:
+    add edi, dword ptr [{CV_DD:#x}]
+    dec edx
+    jnz ro_f
+    xor eax, eax
+    test ebx, ebx
+    jz ro_out
+    cmp dword ptr [{CV_NB:#x}], 0
+    je ro_out
+    xor esi, esi
+ro_l:
+    or eax, -1
+    cmp esi, ebx
+    jae ro_out
+    movzx edi, word ptr [esi*2 + {MP_Q:#x}]
+    inc esi
+    mov edx, dword ptr [edi*4 + {MP_RV:#x}]
+    and edx, 0xff
+    mov ecx, dword ptr [{CV_NB:#x}]
+ro_b:
+    dec ecx
+    js ro_nf
+    cmp edi, dword ptr [ecx*4 + {CV_B:#x}]
+    jne ro_b
+    mov eax, edx
+    jmp ro_out
+ro_nf:
+    cmp edx, {MP_RODMAX}
+    jae ro_l
+    inc edx
+    or edx, ebp
+    xor ecx, ecx
+ro_v:
+    mov eax, dword ptr [ecx*4 + {MP_DV:#x}]
+    add eax, edi
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz ro_vn
+    inc dword ptr [{MP_VIS:#x}]
+    push edx
+    mov edx, dword ptr [eax*4 + {MP_RV:#x}]
+    and edx, 0xffffff00
+    cmp edx, ebp
+    pop edx
+    je ro_vn
+    mov dword ptr [eax*4 + {MP_RV:#x}], edx
+    mov word ptr [ebx*2 + {MP_Q:#x}], ax
+    inc ebx
+ro_vn:
+    inc ecx
+    cmp ecx, 8
+    jb ro_v
+    jmp ro_l
+ro_out:
+    mov dword ptr [esp + 28], eax
+    popad
+    ret
+''')
+
+# mp_bx: eax = tramo (+0 casilla, +2 largo, +3 vertical), edi = caja (x1, y1, x2, y2). Preserva todo.
+mp_bx = place('mp_bx', f'''
+    pushad
+    mov ebx, eax
+    movzx eax, word ptr [ebx]
+    call {mp_xy:#x}
+    mov dword ptr [edi], eax
+    mov dword ptr [edi + 4], edx
+    mov dword ptr [edi + 8], eax
+    mov dword ptr [edi + 12], edx
+    movzx ecx, byte ptr [ebx + 2]
+    dec ecx
+    cmp byte ptr [ebx + 3], 0
+    jne bx_v
+    add dword ptr [edi + 8], ecx
+    jmp bx_o
+bx_v:
+    add dword ptr [edi + 12], ecx
+bx_o:
+    popad
+    ret
+''')
+
+# mp_gap: esi, edi = cajas -> eax = max(x1a - x2b, x1b - x2a, y1a - y2b, y1b - y2a): <= 0 si comparten casilla; si no,
+# la distancia de Chebyshev entre sus casillas más cercanas. Preserva el resto.
+mp_gap = place('mp_gap', f'''
+    push edx
+    mov eax, dword ptr [esi]
+    sub eax, dword ptr [edi + 8]
+    mov edx, dword ptr [edi]
+    sub edx, dword ptr [esi + 8]
+    cmp edx, eax
+    jle gp_1
+    mov eax, edx
+gp_1:
+    mov edx, dword ptr [esi + 4]
+    sub edx, dword ptr [edi + 12]
+    cmp edx, eax
+    jle gp_2
+    mov eax, edx
+gp_2:
+    mov edx, dword ptr [edi + 4]
+    sub edx, dword ptr [esi + 12]
+    cmp edx, eax
+    jle gp_3
+    mov eax, edx
+gp_3:
+    pop edx
+    ret
+''')
+
+# mp_ctry: esi = casilla, ecx = largo, edx = paso (como mp_try). Si las dos puntas del tramo son intransitables y
+# cerrarlo obliga a un rodeo de más de MP_RODEO pasos, lo anota en MP_CL. Con largo 1 prueba horizontal y después
+# vertical (se queda con la primera). Clave: largo << 20 | sin camino << 19 | x << 11 | y << 3 | horizontal: el
+# orden de mp_modelo (largo, sin camino, casillas). Preserva todo.
+mp_ctry = place('mp_ctry', f'''
+    pushad
+ct_t:
+    mov eax, esi
+    sub eax, edx
+    test byte ptr [eax + {MP_G:#x}], 1
+    jnz ct_n
+    mov eax, edx
+    imul eax, ecx
+    add eax, esi
+    test byte ptr [eax + {MP_G:#x}], 1
+    jnz ct_n
+    call {mp_rod:#x}
+    cmp eax, {MP_RODEO}
+    jle ct_n
+    mov edi, dword ptr [{CV_NC:#x}]
+    cmp edi, {MP_CLMAX}
+    jae ct_full
+    mov eax, esi
+    mov ebx, ecx
+    mov ebp, 0x80000
+ct_r:
+    test byte ptr [eax + {MP_G:#x}], 0x10
+    jz ct_rn
+    xor ebp, ebp
+ct_rn:
+    add eax, edx
+    dec ebx
+    jnz ct_r
+    mov eax, ecx
+    shl eax, 20
+    or ebp, eax
+    xor ebx, ebx
+    cmp edx, 1
+    sete bl
+    test ebx, ebx
+    jnz ct_v
+    or ebp, 1
+ct_v:
+    push edx
+    mov eax, esi
+    call {mp_xy:#x}
+    shl eax, 11
+    or ebp, eax
+    shl edx, 3
+    or ebp, edx
+    pop edx
+    shl edi, 5
+    add edi, {MP_CL:#x}
+    mov dword ptr [edi], ebp
+    mov word ptr [edi + 4], si
+    mov byte ptr [edi + 6], cl
+    mov byte ptr [edi + 7], bl
+    lea eax, [edi + 4]
+    add edi, 8
+    call {mp_bx:#x}
+    inc dword ptr [{CV_NC:#x}]
+    jmp ct_out
+ct_full:
+    mov dword ptr [{MP_FULL:#x}], 1
+    jmp ct_out
+ct_n:
+    cmp ecx, 1
+    jne ct_out
+    cmp edx, 1
+    je ct_out
+    mov edx, 1
+    jmp ct_t
+ct_out:
+    popad
+    ret
+''')
+
+# mp_cp32: esi -> edi, 32 bytes. Preserva todo.
+mp_cp32 = place('mp_cp32', '''
+    pushad
+    mov ecx, 32
+    rep movsb
+    popad
+    ret
+''')
+
+# mp_corr: después de los cortes (mp_try). Quita los candidatos que comparten casilla con el tramo principal de un
+# corte, los ordena por clave y se queda, en ese orden, con los que quedan a más de MP_ZONA casillas de todos los ya
+# elegidos. Cada elegido es un paso nuevo (+47 = 1, corredor) de un solo tramo, que es su principal. Preserva todo.
+mp_corr = place('mp_corr', f'''
+    pushad
+    xor esi, esi
+    xor edi, edi
+cr_f:
+    cmp esi, dword ptr [{CV_NC:#x}]
+    jae cr_fd
+    mov ebx, esi
+    shl ebx, 5
+    add ebx, {MP_CL:#x}
+    xor ecx, ecx
+cr_p:
+    cmp ecx, dword ptr [{MP_NP:#x}]
+    jae cr_keep
+    imul eax, ecx, 64
+    mov eax, dword ptr [eax + {MP_PAS + 40:#x}]
+    lea eax, [eax*8 + {MP_TR:#x}]
+    push edi
+    mov edi, {CV_BX:#x}
+    call {mp_bx:#x}
+    push esi
+    lea esi, [ebx + 8]
+    call {mp_gap:#x}
+    pop esi
+    pop edi
+    test eax, eax
+    jle cr_drop
+    inc ecx
+    jmp cr_p
+cr_keep:
+    cmp esi, edi
+    je cr_k2
+    push esi
+    push edi
+    mov esi, ebx
+    shl edi, 5
+    add edi, {MP_CL:#x}
+    call {mp_cp32:#x}
+    pop edi
+    pop esi
+cr_k2:
+    inc edi
+cr_drop:
+    inc esi
+    jmp cr_f
+cr_fd:
+    mov dword ptr [{CV_NC:#x}], edi
+    mov ebx, 1
+cr_s:
+    cmp ebx, dword ptr [{CV_NC:#x}]
+    jae cr_sd
+    mov esi, ebx
+    shl esi, 5
+    add esi, {MP_CL:#x}
+    mov edi, {CV_TMP:#x}
+    call {mp_cp32:#x}
+    mov ecx, ebx
+cr_si:
+    test ecx, ecx
+    jz cr_sp
+    lea esi, [ecx - 1]
+    shl esi, 5
+    add esi, {MP_CL:#x}
+    mov eax, dword ptr [esi]
+    cmp eax, dword ptr [{CV_TMP:#x}]
+    jbe cr_sp
+    lea edi, [esi + 32]
+    call {mp_cp32:#x}
+    dec ecx
+    jmp cr_si
+cr_sp:
+    mov edi, ecx
+    shl edi, 5
+    add edi, {MP_CL:#x}
+    mov esi, {CV_TMP:#x}
+    call {mp_cp32:#x}
+    inc ebx
+    jmp cr_s
+cr_sd:
+    mov dword ptr [{CV_NA:#x}], 0
+    xor esi, esi
+cr_g:
+    cmp esi, dword ptr [{CV_NC:#x}]
+    jae cr_out
+    mov ebx, esi
+    shl ebx, 5
+    add ebx, {MP_CL:#x}
+    xor ecx, ecx
+cr_ga:
+    cmp ecx, dword ptr [{CV_NA:#x}]
+    jae cr_acc
+    mov edi, dword ptr [ecx*4 + {CV_AC:#x}]
+    add edi, 8
+    push esi
+    lea esi, [ebx + 8]
+    call {mp_gap:#x}
+    pop esi
+    cmp eax, {MP_ZONA}
+    jle cr_gn
+    inc ecx
+    jmp cr_ga
+cr_acc:
+    mov eax, dword ptr [{MP_NP:#x}]
+    cmp eax, {MP_PMAX}
+    jae cr_full
+    mov edx, dword ptr [{MP_NT:#x}]
+    cmp edx, {MP_TMAX}
+    jae cr_full
+    mov ecx, dword ptr [{CV_NA:#x}]
+    mov dword ptr [ecx*4 + {CV_AC:#x}], ebx
+    inc dword ptr [{CV_NA:#x}]
+    imul edi, eax, 64
+    add edi, {MP_PAS:#x}
+    mov byte ptr [edi + 47], 1
+    mov dword ptr [edi + 40], edx
+    mov ecx, dword ptr [ebx]
+    shr ecx, 19
+    and ecx, 1
+    movzx ebp, byte ptr [ebx + 6]
+    lea ecx, [ebp*2 + ecx]
+    mov byte ptr [edi + 44], cl
+    lea ebp, [edx*8 + {MP_TR:#x}]
+    mov edx, dword ptr [ebx + 4]
+    mov dword ptr [ebp], edx
+    mov byte ptr [ebp + 4], cl
+    mov byte ptr [ebp + 5], 0
+    mov word ptr [ebp + 6], ax
+    inc dword ptr [{MP_NP:#x}]
+    inc dword ptr [{MP_NT:#x}]
+cr_gn:
+    inc esi
+    jmp cr_g
+cr_full:
+    mov dword ptr [{MP_FULL:#x}], 1
+cr_out:
+    popad
+    ret
+''')
+
+# mp_vlab: eax = casilla, ecx = lado (0 / 1), ebp = sello, ebx = fin de la cola MP_Q. Si la casilla no tiene el sello,
+# la marca de ese lado, la encola (ebx + 1) y la suma al tamaño (MP_RS) y a la máscara (MP_RM) del lado.
+mp_vlab = place('mp_vlab', f'''
+    push edx
+    mov edx, dword ptr [eax*4 + {MP_V:#x}]
+    and edx, 0xffffff00
+    cmp edx, ebp
+    je vl_out
+    lea edx, [ebp + ecx]
+    mov dword ptr [eax*4 + {MP_V:#x}], edx
+    mov word ptr [ebx*2 + {MP_Q:#x}], ax
+    inc ebx
+    inc dword ptr [ecx*4 + {MP_RS:#x}]
+    movzx edx, byte ptr [eax + {MP_C:#x}]
+    test edx, edx
+    jz vl_out
+    dec edx
+    push ecx
+    shl ecx, 4
+    bts dword ptr [ecx + {MP_RM:#x}], edx
+    pop ecx
+vl_out:
+    pop edx
+    ret
+''')
+
+# mp_vor: esi = casilla, ecx = largo, edx = paso -> eax = 0. Lados de un corredor, como mp_side los lee después de un
+# mp_sep: sello nuevo en MP_V, el tramo con 0xff y cada casilla del componente con el lado de la boca más cercana
+# (recorrido FIFO desde las dos bocas a la vez, primero la a); MP_GR = 0, 1; MP_RS / MP_RM tamaño y máscara de cada
+# lado. Preserva el resto.
+mp_vor = place('mp_vor', f'''
+    pushad
+    mov dword ptr [{CV_DD:#x}], edx
+    mov eax, 1
+    cmp edx, {MP_P}
+    je vo_p
+    mov eax, {MP_P}
+vo_p:
+    mov dword ptr [{CV_PP:#x}], eax
+    inc dword ptr [{MP_ST:#x}]
+    mov ebp, dword ptr [{MP_ST:#x}]
+    shl ebp, 8
+    mov eax, esi
+    mov ebx, ecx
+    lea edi, [ebp + 0xff]
+vo_m:
+    mov dword ptr [eax*4 + {MP_V:#x}], edi
+    add eax, edx
+    dec ebx
+    jnz vo_m
+    push ecx
+    xor eax, eax
+    mov edi, {MP_RM:#x}
+    mov ecx, 8
+    rep stosd
+    pop ecx
+    mov dword ptr [{MP_RS:#x}], eax
+    mov dword ptr [{MP_RS + 4:#x}], eax
+    mov dword ptr [{MP_GR:#x}], 0
+    mov dword ptr [{MP_GR + 4:#x}], 1
+    lea eax, [ecx + 2]
+    mov dword ptr [{CV_N:#x}], eax
+    xor ebx, ebx
+    xor ecx, ecx
+vo_g:
+    mov edi, esi
+    sub edi, dword ptr [{CV_DD:#x}]
+    mov edx, dword ptr [{CV_N:#x}]
+vo_f:
+    mov eax, edi
+    sub eax, dword ptr [{CV_PP:#x}]
+    test ecx, ecx
+    jz vo_t
+    add eax, dword ptr [{CV_PP:#x}]
+    add eax, dword ptr [{CV_PP:#x}]
+vo_t:
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz vo_fn
+    call {mp_vlab:#x}
+vo_fn:
+    add edi, dword ptr [{CV_DD:#x}]
+    dec edx
+    jnz vo_f
+    inc ecx
+    cmp ecx, 2
+    jb vo_g
+    xor esi, esi
+vo_l:
+    cmp esi, ebx
+    jae vo_d
+    movzx edi, word ptr [esi*2 + {MP_Q:#x}]
+    inc esi
+    mov ecx, dword ptr [edi*4 + {MP_V:#x}]
+    and ecx, 0xff
+    xor edx, edx
+vo_v:
+    mov eax, dword ptr [edx*4 + {MP_DV:#x}]
+    add eax, edi
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz vo_vn
+    call {mp_vlab:#x}
+vo_vn:
+    inc edx
+    cmp edx, 8
+    jb vo_v
+    jmp vo_l
+vo_d:
+    mov dword ptr [esp + 28], 0
+    popad
+    ret
+''')
+
 # mp_post(ebx = paso): vuelve a separar con el tramo principal y llena, por ciudad (MP_PC: +0 distancia en casillas
 # desde las vecinas del tramo, +4.. costo de movimiento hasta el tramo con bono 0-3, como cerrar_paso.hacia_atras:
 # lo que cuesta entrar a cada casilla hasta el tramo, inclusive), las banderas de costa / puerto de cada lado y de qué
@@ -22193,7 +22713,20 @@ mp_post = place('mp_post', f'''
     je pp_h
     mov edx, 1
 pp_h:
+    cmp byte ptr [edi + 47], 0
+    je pp_s
+    call {mp_vor:#x}
+''' + '\n'.join(f'''    mov eax, dword ptr [{MP_RM + o:#x}]
+    mov dword ptr [edi + {o}], eax''' for o in range(0, 32, 4)) + f'''
+    mov eax, dword ptr [{MP_RS:#x}]
+    mov dword ptr [edi + 32], eax
+    mov eax, dword ptr [{MP_RS + 4:#x}]
+    mov dword ptr [edi + 36], eax
+    xor eax, eax
+    jmp pp_sd
+pp_s:
     call {mp_sep:#x}
+pp_sd:
     mov dword ptr [{MP_SK:#x}], eax
     mov eax, dword ptr [{MP_ST:#x}]
     shl eax, 8
@@ -22472,6 +23005,14 @@ sc_new:
     mov dword ptr [{MP_NT:#x}], eax
     mov dword ptr [{MP_VIS:#x}], eax
     mov dword ptr [{MP_FULL:#x}], eax
+    mov dword ptr [{CV_ST:#x}], eax
+    mov dword ptr [{CV_NC:#x}], eax
+    mov edi, {MP_RV:#x}
+    mov ecx, {MP_SZ}
+    rep stosd
+    mov edi, {MP_PAS:#x}
+    mov ecx, {16 * MP_PMAX}
+    rep stosd
     xor esi, esi
 sc_x:
     cmp esi, dword ptr [{MP_W:#x}]
@@ -22500,6 +23041,7 @@ sc_ck:
     mov esi, ebx
     movzx ecx, byte ptr [ebp + {MP_VL:#x}]
     call {mp_try:#x}
+    call {mp_ctry:#x}
     pop esi
 sc_vn:
     inc ebp
@@ -22512,6 +23054,7 @@ sc_yd:
     inc esi
     jmp sc_x
 sc_xd:
+    call {mp_corr:#x}
     xor ebx, ebx
 sc_p:
     cmp ebx, dword ptr [{MP_NP:#x}]
@@ -22519,6 +23062,9 @@ sc_p:
     call {mp_post:#x}
     imul edi, ebx, 64
     add edi, {MP_PAS:#x}
+    lea eax, [ebx + 0xf0000000]
+    cmp byte ptr [edi + 47], 0
+    jne sc_ck2
     mov eax, dword ptr [edi + 32]
     cmp eax, dword ptr [edi + 36]
     jbe sc_ch
@@ -22535,6 +23081,7 @@ sc_ch:
     lea ecx, [ecx*4 + edx]
     movzx ecx, byte ptr [ecx + {MP_RK:#x}]
     or eax, ecx
+sc_ck2:
     mov dword ptr [edi + 48], eax
     mov ecx, ebx
 sc_ins:
@@ -22562,17 +23109,6 @@ sc_out:
     ret
 ''')
 
-# mp_xy: eax = casilla -> eax = x, edx = y. Preserva el resto.
-mp_xy = place('mp_xy', f'''
-    push ecx
-    xor edx, edx
-    mov ecx, {MP_P}
-    div ecx
-    dec eax
-    dec edx
-    pop ecx
-    ret
-''')
 # mp_ally: eax = jugador, edx = otro -> eax = 1 si son el mismo o aliados (con Diplomacy; sin ella nadie lo es).
 # Preserva el resto.
 mp_ally = place('mp_ally', f'''

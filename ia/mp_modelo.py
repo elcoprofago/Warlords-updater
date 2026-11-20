@@ -60,6 +60,8 @@ def grilla(d, obras=None):
             i = idx(x, y)
             if k not in (1, 4, 5) or road:
                 G[i] |= 1
+            if road:
+                G[i] |= 0x10
             if k == 1 and not road:
                 nom = d[offset(NOMBRES + (t[0] & 0x1f) * 0x58):][:4]
                 if bytes(b | 0x20 for b in nom) != b'lava':
@@ -245,3 +247,131 @@ if __name__ == '__main__':
     r = [comparar(g) for g in gs]
     print('TODO OK' if all(r) else 'FALLA')
     sys.exit(0 if all(r) else 1)
+
+
+# ---- Criterio v2 (ia\pasos_v2.py, confirmado por el usuario el 20/11/2026): CORREDORES.
+# Tramo recto de 1-3 candidatas con algo intransitable (o el borde) en las dos puntas, cuyo cierre obliga a un rodeo
+# de más de RODEO casillas y de RODEO_MAX o menos (sin rodeo es un rincón o un CORTE de v1). Se ordenan como pasos_v2
+# (largo, sin camino, casillas) y se queda uno por zona (a 6 casillas o menos de uno ya elegido, se descarta), sin
+# los que pisan el tramo principal de un CORTE. Cada corredor es un paso de un solo tramo, después de los cortes.
+# Sus dos lados: cada casilla del componente queda del lado de la boca (fila de un lado del tramo) que tenga más
+# cerca, con el tramo cerrado (recorrido FIFO desde las dos bocas a la vez, primero la de arriba / izquierda).
+RODEO, RODEO_MAX, ZONA = 24, 96, 6
+
+
+def bocas(G, seg, dd):
+    """(a, b): vecinas transitables de un lado y del otro del tramo, en orden a lo largo del tramo."""
+    perp = 1 if dd == MP_P else MP_P
+    s = set(seg)
+    fila = [seg[0] - dd] + list(seg) + [seg[-1] + dd]
+    a = [i - perp for i in fila if G[i - perp] & 1 and i - perp not in s]
+    b = [i + perp for i in fila if G[i + perp] & 1 and i + perp not in s]
+    return a, b
+
+
+def rodeo(G, seg, dd, tope=RODEO_MAX):
+    """Pasos de una boca a la otra con el tramo cerrado; None si son más de tope; 0 si falta una boca. Devuelve
+    también las visitas (vecinas transitables miradas)."""
+    a, b = bocas(G, seg, dd)
+    if not a or not b:
+        return 0, 0
+    dist = {i: 0 for i in a}
+    for i in seg:
+        dist[i] = -1
+    fin, q, k, vis = set(b), list(a), 0, 0
+    while k < len(q):
+        i = q[k]; k += 1
+        if i in fin:
+            return dist[i], vis
+        if dist[i] >= tope:
+            continue
+        for dv in DV:
+            j = i + dv
+            if G[j] & 1:
+                vis += 1
+                if j not in dist:
+                    dist[j] = dist[i] + 1
+                    q.append(j)
+    return None, vis
+
+
+def corredores(w, h, G, pas):
+    """Corredores en el orden de pasos_v2: [(seg, dd)], y las visitas."""
+    principal = {i for p in pas for i in p['tramos'][p['principal']][1]}
+    cand, vis = [], 0
+    for seg in tramos(w, h, G):
+        dds = (MP_P, 1) if len(seg) == 1 else ((seg[1] - seg[0]),)
+        for dd in dds:
+            if G[seg[0] - dd] & 1 or G[seg[-1] + dd] & 1:
+                continue
+            r, v = rodeo(G, seg, dd)
+            vis += v
+            if r is not None and r > RODEO:
+                cand.append((seg, dd))
+                break
+    cand = [(s, dd) for s, dd in cand if not principal & set(s)]
+    # orden de pasos_v2: (largo, sin camino, casillas (x, y))
+    cand.sort(key=lambda c: (len(c[0]), not any(G[i] & 0x10 for i in c[0]), [xy(i) for i in c[0]]))
+    elegidos = []
+    for s, dd in cand:
+        if not any(max(abs(xy(i)[0] - xy(j)[0]), abs(xy(i)[1] - xy(j)[1])) <= ZONA
+                   for e, _ in elegidos for i in e for j in s):
+            elegidos.append((s, dd))
+    return elegidos, vis
+
+
+def lados_corredor(G, C, seg, dd):
+    """[(tamaño, máscara, casillas)] de cada lado del corredor (0 = boca a, 1 = boca b)."""
+    a, b = bocas(G, seg, dd)
+    lado = {i: 0xff for i in seg}
+    q = []
+    for g, bb in ((0, a), (1, b)):
+        for i in bb:
+            if i not in lado:
+                lado[i] = g
+                q.append(i)
+    k = 0
+    while k < len(q):
+        i = q[k]; k += 1
+        for dv in DV:
+            j = i + dv
+            if G[j] & 1 and j not in lado:
+                lado[j] = lado[i]
+                q.append(j)
+    out = []
+    for g in (0, 1):
+        cs = [i for i in q if lado[i] == g]
+        m = 0
+        for i in cs:
+            if C[i]:
+                m |= 1 << (C[i] - 1)
+        out.append((len(cs), m, cs))
+    return out
+
+
+def detectar_v2(d, obras=None):
+    """detectar() más los corredores al final: cada uno {'tramos': [(orden, seg)], 'principal': 0, 'lados',
+    'corredor': dd}."""
+    w, h, G, C, pas, vis = detectar(d, obras)
+    corr, v2 = corredores(w, h, G, pas)
+    for s, dd in corr:
+        ld = lados_corredor(G, C, s, dd)
+        pas.append({'tramos': [((len(s), not any(G[i] & 0x10 for i in s)), s)], 'principal': 0,
+                    'lados': [(t, m) for t, m, _ in ld], 'corredor': dd})
+    return w, h, G, C, pas, vis + v2
+
+
+def comparar_v2(g):
+    import json
+    d = open(os.path.join(tanda.JUEGO, 'SAVES', g + '.SAV'), 'rb').read()
+    ref = [[tuple(p) for p in s] for s in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                                     'pasos', g + '_v2.json')))['corredores']]
+    w, h, G, C, pas, vis = detectar(d)
+    corr, v = corredores(w, h, G, pas)
+    mio = [[xy(i) for i in s] for s, _ in corr]
+    ok = mio == ref
+    print(f'{g}: pasos_v2 {len(ref)} corredores, modelo {len(mio)}; {v} visitas; {"IGUALES" if ok else "DISTINTOS"}')
+    if not ok:
+        print('  solo pasos_v2:', [s for s in ref if s not in mio][:5])
+        print('  solo modelo:  ', [s for s in mio if s not in ref][:5])
+    return ok

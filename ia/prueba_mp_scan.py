@@ -134,7 +134,7 @@ def forzar(g):
 def comparar_pasos(J, obras=None):
     """Punto 1 y 2. Devuelve (ok, pasos del juego)."""
     ok = True
-    w, _, G, C, pas, vis = mp_modelo.detectar(J.d, obras)
+    w, _, G, C, pas, vis = mp_modelo.detectar_v2(J.d, obras)
     jp = J.pasos()
     gj = bytes(J.m.mu.mem_read(J.G, len(G)))
     if any((a & 0xf) != (b & 0xf) for a, b in zip(gj, G)):
@@ -157,12 +157,17 @@ def comparar_pasos(J, obras=None):
             continue
         # lados del principal, con el modelo: el grupo agotado es el lado 0
         seg = b['tramos'][b['principal']][1]
-        (_, _, celdas0), _ = mp_modelo.separa(G, C, seg)
         lab, _, _ = mp_modelo.componentes(w, G, C)
-        z0 = {xy(i) for i in celdas0}
         comp = {xy(i) for i in range(len(G)) if lab[i] == lab[seg[0]]}
         sg = [xy(i) for i in seg]
-        z1 = comp - z0 - set(sg)
+        if 'corredor' in b:
+            # corredor: lados por la boca más cercana; distancias y costos por todo el componente
+            l0, l1 = mp_modelo.lados_corredor(G, C, seg, b['corredor'])
+            z0, z1 = {xy(i) for i in l0[2]}, {xy(i) for i in l1[2]}
+        else:
+            (_, _, celdas0), _ = mp_modelo.separa(G, C, seg)
+            z0 = {xy(i) for i in celdas0}
+            z1 = comp - z0 - set(sg)
         agua = {xy(i) for i in range(len(G)) if not G[i] & 1}
         pcs = J.pc(q)
         for k, z in enumerate((z0, z1)):
@@ -173,16 +178,19 @@ def comparar_pasos(J, obras=None):
             if bool(ban & 4) != costa or bool(ban & 8) != puerto:
                 print(f'   paso {n} lado {k}: costa/puerto juego {ban & 12:#x}, Python {costa}/{puerto}')
                 ok = False
+            zd = comp - set(sg) if 'corredor' in b else z
             dist = amenaza.dist([q2 for t in sg for q2 in ((t[0] + dx, t[1] + dy) for dx, dy in mp_modelo.VEC)
-                                 if q2 in z], z)
-            atras = [cerrar_paso.hacia_atras(sg, z | set(sg), mg, bb) for bb in range(4)]
+                                 if q2 in zd], zd)
+            atras = [cerrar_paso.hacia_atras(sg, zd | set(sg), mg, bb) for bb in range(4)]
             for c in cs:
                 if not c['tam']:
                     continue
                 cel = [p for p in amenaza.celdas(c) if p in z]
                 if not cel:
                     continue
-                esp = (min(dist[p] for p in cel),) + tuple(min(at.get(p, 0xffffffff) for p in cel) for at in atras)
+                if 'corredor' in b:
+                    cel = amenaza.celdas(c)     # la ciudad entera, como cerrar_paso (puede tocar los dos lados)
+                esp = (min(dist.get(p, 0xffffffff) for p in cel),) + tuple(min(at.get(p, 0xffffffff) for p in cel) for at in atras)
                 if tuple(pcs[c['i']]) != esp:
                     nmal += 1
                     if nmal <= 4:

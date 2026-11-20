@@ -183,6 +183,27 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                                                 if q in zona], zona)})
         pas.append({'n': n, 'tramo': seg, 'camino': any(camino[t] for t in seg), 'lados': lados,
                     'otros': otros[n - 1]})
+    # Criterio v2 (usuario, 20/11/2026): CORREDORES, después de los cortes, como mp_scan (mp_modelo.detectar_v2).
+    # No separan: cada lado es lo que queda más cerca de cada boca con el tramo cerrado, y la distancia y el costo
+    # hasta el tramo se miden por todo el componente (el enemigo puede llegar dando el rodeo).
+    import mp_modelo
+    _, _, G, C, mpas, _ = mp_modelo.detectar_v2(d, ob)
+    for p in mpas:
+        if 'corredor' not in p:
+            continue
+        seg = [mp_modelo.xy(i) for i in p['tramos'][0][1]]
+        todo = base[comp_de[seg[0]]] - set(seg)
+        vec_t = [q for t in seg for q in ((t[0] + dx, t[1] + dy) for dx, dy in VEC) if q in todo]
+        dd = amenaza.dist(vec_t, todo)
+        lados = []
+        for _, _, cs_ in mp_modelo.lados_corredor(G, C, p['tramos'][0][1], p['corredor']):
+            zona = {mp_modelo.xy(i) for i in cs_}
+            ids = [i for i in celdas if any(q in zona for q in celdas[i])]
+            vec = {(x + dx, y + dy) for x, y in zona for dx, dy in VEC}
+            lados.append({'zona': zona, 'mov': todo, 'ids': ids, 'costa': bool(vec & agua),
+                          'puerto': bool(vec & puerto), 'dist': dd})
+        pas.append({'n': len(pas) + 1, 'tramo': seg, 'camino': any(camino[t] for t in seg), 'lados': lados,
+                    'otros': [seg], 'corredor': True})
 
     out = {}
     for p in sorted(jugando):
@@ -221,7 +242,7 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                     for i in O['ids']:
                         if dueño[i] != e:
                             continue
-                        t = turnos_ciudad(P['n'], 1 - k, O['zona'], P['tramo'], e, i)
+                        t = turnos_ciudad(P['n'], 1 - k, O.get('mov', O['zona']), P['tramo'], e, i)
                         if CONTROL and (P['n'], e, i) not in {x[:3] for x in llegan}:
                             llegan.append((P['n'], e, i, t, turnos_exactos(O['zona'], P['tramo'], e, i)))
                         en_o += bool(t and t <= HORIZONTE)
