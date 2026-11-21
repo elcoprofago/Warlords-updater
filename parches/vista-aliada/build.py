@@ -23409,7 +23409,7 @@ mo_out:
 # unidad con «build»; f) sin importar los voladores del enemigo; g) sin importar una MURALLA enemiga en el paso).
 # Condiciones: Artificer o Engineer, oro >= AW_DIV x bd_price(OB_FRAC), y una unidad con «build» en sus 16 ranuras.
 # Pasos: los obligados (cortes, +47 = 0) y los corredores de PUENTE (+47 = 2) y de PUERTO (+47 = 3; solo se protege
-# la tierra, lado 1, de lo que llega por mar, mp_pside); no los corredores de terreno (+47 = 1, tanda 195).
+# la tierra, lado 1, de lo que llega por mar, mp_pside) y de terreno (+47 = 1; el usuario, 21/11/2026: también cuentan).
 # Por paso (en el orden de pasos.py) y lado D con ciudades propias: cerrado por MURALLA propia o aliada: no; un tramo
 # sirve si tiene alguna casilla vacía y ninguna obra que no sea MURALLA (la MURALLA ajena no lo impide); empezado
 # primero. Amenaza = por cada bando no aliado con ciudades del otro lado O y ninguna en D, sus ciudades de O que llegan
@@ -23551,9 +23551,6 @@ pk_p:
     push esi
     mov esi, dword ptr [esi*4 + {MP_ORD:#x}]
     mov dword ptr [{MP_PQ:#x}], esi
-    imul eax, esi, 64
-    cmp byte ptr [eax + {MP_PAS + 47:#x}], 1
-    je pk_pn
     mov dword ptr [{MP_AJ:#x}], 0
     xor edi, edi
     xor ebp, ebp

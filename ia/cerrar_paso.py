@@ -192,8 +192,8 @@ def analizar(guardada, partida=None, turno=None, ob=None):
     # hasta el tramo se miden por todo el componente (el enemigo puede llegar dando el rodeo).
     import mp_modelo
     _, _, G, C, mpas, _ = mp_modelo.detectar_v2(d, ob)
-    # Desde 1.0.284.0 (usuario, 21/11/2026) los corredores son PUENTES (tipo 2) y PUERTOS (tipo 3); los de terreno
-    # (tipo 1) siguen sin elegirse. PUERTO: se protege solo la tierra (lado 1); el otro lado es el mar: las ciudades con
+    # Desde 1.0.284.0 (usuario, 21/11/2026) los corredores son PUENTES (tipo 2) y PUERTOS (tipo 3); desde 1.0.285.0
+    # también los de terreno (tipo 1). PUERTO: se protege solo la tierra (lado 1); el otro lado es el mar: las ciudades con
     # puerto a mp_modelo.PRAD casillas o menos, que llegan por barco en un turno (mp_pside).
     for p in mpas:
         if 'corredor' not in p:
@@ -224,10 +224,7 @@ def analizar(guardada, partida=None, turno=None, ob=None):
             r['eliminado'] = True
         amigos = {p} | ali[p]
         for P in pas:
-            # Los corredores de terreno (tipo 1) no se eligen desde 1.0.283.0: tienen rodeo y enemigos de los dos
-            # lados (tanda 195). Los de PUENTE y PUERTO sí (regla del usuario, 21/11/2026).
-            if P.get('tipo') == 1:
-                continue
+            # Todos los pasos se eligen: cortes y corredores de terreno, PUENTE y PUERTO (el usuario, 21/11/2026).
             # Regla 5, con todos los tramos que cortan las mismas ciudades (pasos.detectar(todos=True)):
             # - uno cerrado entero con MURALLA del bando o de sus aliados: el paso está cerrado, no se elige;
             # - una MURALLA ajena no cambia nada (punto g del usuario, 21/11/2026: «es indiferente que el paso ya tenga
