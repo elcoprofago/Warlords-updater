@@ -5,7 +5,8 @@
 #    cerrar_paso.hacia_atras sobre cada lado; costa y puerto de cada lado; de qué lado queda cada tramo;
 # 3. la elección de cada color (mp_obj y el evento 51) contra cerrar_paso.analizar;
 # 4. controles (lo que tiene que cambiar la elección): sin Artificer/Engineer, sin oro, sin unidad con «build», tabla de
-#    obras llena (ninguna candidata), tramo cerrado con MURALLA propia (el paso no se elige), MURALLA ajena (va primero),
+#    obras llena (ninguna candidata), tramo cerrado con MURALLA propia (el paso no se elige), MURALLA ajena (no cambia
+#    el paso elegido: punto g del usuario, 21/11/2026),
 #    y el caché: sin cambios no recalcula; con una obra nueva, sí.
 # Uso: python ia\prueba_mp_scan.py [exe] [guardadas...]   (exe por defecto: el instalado en la carpeta de pruebas)
 # Vocabulario (CLAUDE.md): MURALLA = lo que se construye; MURO = terreno «Walls» del escenario.
@@ -171,7 +172,7 @@ def comparar_pasos(J, obras=None):
         sg = [xy(i) for i in seg]
         if 'corredor' in b:
             # corredor: lados por la boca más cercana; distancias y costos por todo el componente
-            l0, l1 = mp_modelo.lados_corredor(G, C, seg, b['corredor'])
+            l0, l1 = mp_modelo.lados_corredor(G, C, seg, b['corredor'], b['tipo'])
             z0, z1 = {xy(i) for i in l0[2]}, {xy(i) for i in l1[2]}
         else:
             (_, _, celdas0), _ = mp_modelo.separa(G, C, seg)
@@ -184,6 +185,9 @@ def comparar_pasos(J, obras=None):
             ban = a['banderas'][k]
             costa = any(G[idx(*p)] & 4 for p in z)
             puerto = any(G[idx(*p)] & 8 for p in z)
+            mar = k == 0 and b.get('tipo') == 3       # PUERTO: el lado 0 es el mar (mp_pside)
+            if mar:
+                costa = puerto = True
             if bool(ban & 4) != costa or bool(ban & 8) != puerto:
                 print(f'   paso {n} lado {k}: costa/puerto juego {ban & 12:#x}, Python {costa}/{puerto}')
                 ok = False
@@ -193,6 +197,11 @@ def comparar_pasos(J, obras=None):
             atras = [cerrar_paso.hacia_atras(sg, zd | set(sg), mg, bb) for bb in range(4)]
             for c in cs:
                 if not c['tam']:
+                    continue
+                if mar:
+                    if c['i'] in b['mar'] and tuple(pcs[c['i']]) != (b['mar'][c['i']], 0, 0, 0, 0):
+                        print(f'   paso {n} ciudad {c["i"]} del mar: juego {pcs[c["i"]]}, Python {b["mar"][c["i"]]}')
+                        ok = False
                     continue
                 cel = [p for p in amenaza.celdas(c) if p in z]
                 if not cel:
@@ -340,8 +349,8 @@ def probar(exe, g):
         return rec and okp and oke and bien
     # MURALLA propia en todo el tramo elegido: el paso queda cerrado y se elige otro o nada
     ok &= murallas('MURALLA propia en el tramo', p, tramo, p, lambda a: not a or a[0] != n)
-    # MURALLA ajena (o un bloque propio: tramo empezado) en un paso que no es el elegido y que conserva un tramo
-    # libre: ese paso pasa adelante
+    # bloque propio (tramo empezado) en un paso que no es el elegido y que conserva un tramo libre: ese paso pasa
+    # adelante; MURALLA ajena ahí: la elección no cambia (punto g)
     def otro_paso(nombre, cual):
         for q in elegidos:
             ali = {q} | set(amenaza.aliados(g)[q])
@@ -354,7 +363,8 @@ def probar(exe, g):
                 t = next((t for tr in otros for t in tr if any(t not in tr2 for tr2 in otros)
                           and all(tuple(tr2) != (t,) for tr2 in otros)), None)
                 if t:
-                    return murallas(nombre, q, [t], dueño, lambda a, n2=o['paso']: a and a[0] == n2)
+                    n2 = o['paso'] if cual == 'propio' else base[q][0]
+                    return murallas(nombre, q, [t], dueño, lambda a, n2=n2: a and a[0] == n2)
         print(f'   ({nombre}: ningún color con una segunda opción)')
         return True
     for nombre, cual in (('MURALLA ajena en otro paso', 'ajeno'), ('tramo empezado en otro paso', 'propio')):

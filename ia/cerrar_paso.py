@@ -33,6 +33,10 @@
 #    aliado) ya empezó a cerrar va primero (terminar lo empezado); después, uno con MURALLA ajena (señal de que el paso
 #    importa: le sirve solo al enemigo, usuario 19/11/2026); uno ya cerrado del todo no se elige. Se construye en un
 #    tramo sin obras ajenas (encima no se puede), con preferencia por el empezado y por uno de nuestro lado.
+# Regla vigente (usuario, 21/11/2026; vista-aliada 1.0.284.0): la IA construye cuando hay a la vez a) amenaza: enemigo
+# potencial cercano; b) un paso obligado o un corredor defendible (PUENTE o PUERTO que se puede rodear); c) oro
+# suficiente; d) Artificer o Engineer; e) una unidad con «build»; f) sin importar si el enemigo tiene voladores (ya no
+# anulan la amenaza); g) sin importar si el paso ya tiene una MURALLA enemiga (ni adelanta el paso ni lo descarta).
 # Uso: python ia\cerrar_paso.py Tanda_Borderlands [partida turno] [--control]
 import os, sys, json, sqlite3, collections, heapq, struct
 
@@ -188,6 +192,9 @@ def analizar(guardada, partida=None, turno=None, ob=None):
     # hasta el tramo se miden por todo el componente (el enemigo puede llegar dando el rodeo).
     import mp_modelo
     _, _, G, C, mpas, _ = mp_modelo.detectar_v2(d, ob)
+    # Desde 1.0.284.0 (usuario, 21/11/2026) los corredores son PUENTES (tipo 2) y PUERTOS (tipo 3); los de terreno
+    # (tipo 1) siguen sin elegirse. PUERTO: se protege solo la tierra (lado 1); el otro lado es el mar: las ciudades con
+    # puerto a mp_modelo.PRAD casillas o menos, que llegan por barco en un turno (mp_pside).
     for p in mpas:
         if 'corredor' not in p:
             continue
@@ -196,14 +203,17 @@ def analizar(guardada, partida=None, turno=None, ob=None):
         vec_t = [q for t in seg for q in ((t[0] + dx, t[1] + dy) for dx, dy in VEC) if q in todo]
         dd = amenaza.dist(vec_t, todo)
         lados = []
-        for _, _, cs_ in mp_modelo.lados_corredor(G, C, p['tramos'][0][1], p['corredor']):
+        for _, _, cs_ in mp_modelo.lados_corredor(G, C, p['tramos'][0][1], p['corredor'], p['tipo']):
             zona = {mp_modelo.xy(i) for i in cs_}
             ids = [i for i in celdas if any(q in zona for q in celdas[i])]
             vec = {(x + dx, y + dy) for x, y in zona for dx, dy in VEC}
             lados.append({'zona': zona, 'mov': todo, 'ids': ids, 'costa': bool(vec & agua),
                           'puerto': bool(vec & puerto), 'dist': dd})
+        if p['tipo'] == 3:
+            lados[0].update(ids=sorted(p['mar']), costa=True, puerto=True, mar=True,
+                            dist={q: p['mar'][i] for i in p['mar'] for q in celdas[i]})
         pas.append({'n': len(pas) + 1, 'tramo': seg, 'camino': any(camino[t] for t in seg), 'lados': lados,
-                    'otros': [seg], 'corredor': True})
+                    'otros': [seg], 'corredor': True, 'tipo': p['tipo']})
 
     out = {}
     for p in sorted(jugando):
@@ -214,26 +224,29 @@ def analizar(guardada, partida=None, turno=None, ob=None):
             r['eliminado'] = True
         amigos = {p} | ali[p]
         for P in pas:
-            # Desde vista-aliada 1.0.283.0 (21/11/2026) mp_pick no elige los corredores de terreno: tienen rodeo y
-            # enemigos de los dos lados (tanda 195). Corredor, para el usuario: puerto o puente que se rodea.
-            if P.get('corredor'):
+            # Los corredores de terreno (tipo 1) no se eligen desde 1.0.283.0: tienen rodeo y enemigos de los dos
+            # lados (tanda 195). Los de PUENTE y PUERTO sí (regla del usuario, 21/11/2026).
+            if P.get('tipo') == 1:
                 continue
             # Regla 5, con todos los tramos que cortan las mismas ciudades (pasos.detectar(todos=True)):
             # - uno cerrado entero con MURALLA del bando o de sus aliados: el paso está cerrado, no se elige;
-            # - MURALLA ajena (de un bando que no es aliado) en alguno: señal de que el paso importa (usuario,
-            #   19/11/2026: «le sirve solo al enemigo»; él pasa por la puerta y nosotros no): va antes que los demás;
-            # - se construye en un tramo sin obras ajenas (encima de una obra no se puede): primero el ya empezado,
-            #   después uno de nuestro lado, después el orden de pasos.py (el más corto, mejor con camino).
+            # - una MURALLA ajena no cambia nada (punto g del usuario, 21/11/2026: «es indiferente que el paso ya tenga
+            #   construida una muralla enemiga»): ni adelanta el paso ni descarta el tramo;
+            # - se construye en un tramo con alguna casilla vacía y sin obras que no sean MURALLA: primero el ya
+            #   empezado, después uno de nuestro lado, después el orden de pasos.py (el más corto, mejor con camino).
             def propio(t):
                 return ob.get(t, (0, 9))[0] == OB_MURO and ob[t][1] in amigos
             if any(all(propio(t) for t in tr) for tr in P['otros']):
                 continue
             ajena = any(t in ob and ob[t][0] == OB_MURO and ob[t][1] not in amigos for tr in P['otros'] for t in tr)
-            libres = [tr for tr in P['otros'] if all(propio(t) or t not in ob for t in tr)]
+            libres = [tr for tr in P['otros'] if all(t not in ob or ob[t][0] == OB_MURO for t in tr)
+                      and any(t not in ob for t in tr)]
             if not libres:
                 continue
             for k, D in enumerate(P['lados']):
                 O = P['lados'][1 - k]
+                if D.get('mar'):
+                    continue
                 mias = [i for i in D['ids'] if dueño[i] == p]
                 if not mias:
                     continue
@@ -246,21 +259,24 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                     for i in O['ids']:
                         if dueño[i] != e:
                             continue
-                        t = turnos_ciudad(P['n'], 1 - k, O.get('mov', O['zona']), P['tramo'], e, i)
+                        if O.get('mar'):     # PUERTO: por barco, en un turno, si tiene con qué moverse
+                            t = 1 if perf.get(e) else None
+                        else:
+                            t = turnos_ciudad(P['n'], 1 - k, O.get('mov', O['zona']), P['tramo'], e, i)
                         if CONTROL and (P['n'], e, i) not in {x[:3] for x in llegan}:
                             llegan.append((P['n'], e, i, t, turnos_exactos(O['zona'], P['tramo'], e, i)))
                         en_o += bool(t and t <= HORIZONTE)
                     if not en_o:
                         continue
                     barco, vol = info[e]
-                    aire = bool(vol or volando[e])
+                    aire = bool(vol or volando[e])     # se informa, pero ya no anula (punto f, 21/11/2026)
                     if barco == amenaza.RAFT:
                         mar = O['costa'] and D['costa']
                     elif barco == amenaza.LANDING:
                         mar = O['puerto'] and D['costa']
                     else:
                         mar = O['puerto'] and D['puerto']
-                    peso = 0 if aire else en_o * (1 if mar else 2)   # v2 (19/11/2026, tanda 190): aire anula
+                    peso = en_o * (1 if mar else 2)
                     total += peso
                     enem.append((e, en_o, 'agua' if mar else '', 'aire' if aire else '', peso))
                 if total:
@@ -269,7 +285,7 @@ def analizar(guardada, partida=None, turno=None, ob=None):
                     r['opciones'].append({'paso': P['n'], 'tramo': tr, 'lado': 'chico' if k == 0 else 'grande',
                                           'mias': len(mias), 'cerca': cerca, 'amenaza': total, 'enemigos': enem,
                                           'lejos': cerca > MP_DIST, 'hechos': sum(map(propio, tr)), 'ajena': ajena})
-        r['opciones'].sort(key=lambda o: (o['lejos'], not o['hechos'], not o['ajena'], -o['amenaza'], o['cerca'],
+        r['opciones'].sort(key=lambda o: (o['lejos'], not o['hechos'], -o['amenaza'], o['cerca'],
                                           len(o['tramo'])))
         out[p] = r
     # control del agua simplificado contra el cálculo exacto de amenaza.py (solo con los dueños de la guardada)

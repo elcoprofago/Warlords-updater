@@ -9,7 +9,7 @@
 # - índice de casilla con borde: i = (x + 1) * MP_P + (y + 1), MP_P = 162 (alto máximo 160 + 2); el borde vale 0 en
 #   todas las grillas, así que los recorridos no miran los límites del mapa. Vecinas en el orden de pasos.VEC.
 # - MP_G (byte): 1 tierra transitable, 2 candidata (ahí se puede poner MURALLA o ya hay una), 4 vecina de agua (costa),
-#   8 vecina de puerto. MP_C (byte): ciudad + 1 (solo ciudades con tamaño > 0).
+#   8 vecina de puerto, 0x10 camino, 0x20 puente (camino sobre agua), 0x40 casilla de puerto (agua). MP_C (byte): ciudad + 1 (solo ciudades con tamaño > 0).
 # - componentes de tierra (palabra por casilla) con su tamaño y su máscara de ciudades (80 bits).
 # - separación de cada tramo: sello por casilla (24 bits de tramo, 8 de grupo; 0xff = casilla del tramo), un grupo por
 #   vecina del tramo (hasta 12) con su cola FIFO; se expande una casilla del grupo vivo más chico (a igualdad, el de
@@ -62,10 +62,14 @@ def grilla(d, obras=None):
                 G[i] |= 1
             if road:
                 G[i] |= 0x10
+                if k == 1:
+                    G[i] |= 0x20            # puente: camino sobre agua
             if k == 1 and not road:
                 nom = d[offset(NOMBRES + (t[0] & 0x1f) * 0x58):][:4]
                 if bytes(b | 0x20 for b in nom) != b'lava':
                     agua[i] = 2 if t[1] & 0x40 else 1
+                    if agua[i] == 2:
+                        G[i] |= 0x40        # casilla de puerto (en el agua)
             # candidata: ob_okt(OB_MURO) del juego sin obras (pasos.sirve) o ya hay una MURALLA; nunca ciudad
             wd = int.from_bytes(t[:2], 'little')
             ok = not wd & 0x4000 and k != 1 and t[3] & 7 in (0, 1)
@@ -295,40 +299,70 @@ def rodeo(G, seg, dd, tope=RODEO_MAX):
     return None, vis
 
 
+def puerto(G, seg):
+    """La primera casilla de puerto vecina del tramo cuyas vecinas de tierra están todas en el tramo, o 0."""
+    for t in seg:
+        for dv in DV:
+            q = t + dv
+            if G[q] & 0x40 and all(not G[q + e] & 1 or q + e in seg for e in DV):
+                return q
+    return 0
+
+
+def puente(G, seg):
+    return any(G[t + dv] & 0x20 for t in seg for dv in DV)
+
+
 def corredores(w, h, G, pas):
-    """Corredores en el orden de pasos_v2: [(seg, dd)], y las visitas."""
+    """Corredores en el orden de mp_scan: [(seg, dd, tipo, puerto)], y las visitas. Tipo (usuario, 21/11/2026:
+    corredor = puerto o puente que se puede rodear): 3 PUERTO (el tramo tapa todas las vecinas de tierra de un puerto),
+    2 PUENTE (vecino de un puente; cerrado, el rodeo pasa de RODEO o no aparece dentro de RODEO_MAX), 1 corredor de
+    terreno (puntas intransitables y rodeo de más de RODEO). Puertos y puentes van antes que los de terreno."""
     principal = {i for p in pas for i in p['tramos'][p['principal']][1]}
     cand, vis = [], 0
     for seg in tramos(w, h, G):
         dds = (MP_P, 1) if len(seg) == 1 else ((seg[1] - seg[0]),)
         for dd in dds:
+            P = puerto(G, seg)
+            if P:
+                cand.append((seg, dd, 3, P))
+                break
+            if puente(G, seg):
+                r, v = rodeo(G, seg, dd)
+                vis += v
+                if r is None or r > RODEO:
+                    cand.append((seg, dd, 2, 0))
+                    break
+                continue
             if G[seg[0] - dd] & 1 or G[seg[-1] + dd] & 1:
                 continue
             r, v = rodeo(G, seg, dd)
             vis += v
             if r is not None and r > RODEO:
-                cand.append((seg, dd))
+                cand.append((seg, dd, 1, 0))
                 break
-    cand = [(s, dd) for s, dd in cand if not principal & set(s)]
-    # orden de pasos_v2: (largo, sin camino, casillas (x, y))
-    cand.sort(key=lambda c: (len(c[0]), not any(G[i] & 0x10 for i in c[0]), [xy(i) for i in c[0]]))
+    cand = [c for c in cand if not principal & set(c[0])]
+    cand.sort(key=lambda c: (c[2] == 1, len(c[0]), not any(G[i] & 0x10 for i in c[0]), [xy(i) for i in c[0]]))
     elegidos = []
-    for s, dd in cand:
+    for c in cand:
         if not any(max(abs(xy(i)[0] - xy(j)[0]), abs(xy(i)[1] - xy(j)[1])) <= ZONA
-                   for e, _ in elegidos for i in e for j in s):
-            elegidos.append((s, dd))
+                   for e in elegidos for i in e[0] for j in c[0]):
+            elegidos.append(c)
     return elegidos, vis
 
 
-def lados_corredor(G, C, seg, dd):
-    """[(tamaño, máscara, casillas)] de cada lado del corredor (0 = boca a, 1 = boca b)."""
+def lados_corredor(G, C, seg, dd, tipo=1):
+    """[(tamaño, máscara, casillas)] de cada lado del corredor (0 = boca a, 1 = boca b). PUERTO (tipo 3): toda la
+    tierra es del lado 1 (el lado 0, el mar, lo arma ciudades_puerto)."""
     a, b = bocas(G, seg, dd)
+    if tipo == 3:   # PUERTO en la punta de una península: la tierra también sigue por las puntas del tramo
+        b = b + [i for i in (seg[0] - dd, seg[-1] + dd) if G[i] & 1]
     lado = {i: 0xff for i in seg}
     q = []
     for g, bb in ((0, a), (1, b)):
         for i in bb:
             if i not in lado:
-                lado[i] = g
+                lado[i] = 1 if tipo == 3 else g
                 q.append(i)
     k = 0
     while k < len(q):
@@ -349,15 +383,45 @@ def lados_corredor(G, C, seg, dd):
     return out
 
 
+PRAD = 24
+
+
+def ciudades_puerto(d, G, C, P, m1):
+    """Lado 0 (el mar) de un PUERTO, como mp_pside: {ciudad: distancia} de las ciudades en pie que no están en m1, con
+    una casilla vecina de puerto y a PRAD casillas o menos (Chebyshev desde su esquina) de la casilla de puerto P."""
+    w, h = struct.unpack('<hh', d[offset(MAPA):][:4])
+    px, py = xy(P)
+    out = {}
+    n = min(80, int.from_bytes(d[offset(0x537e2a):][:2], 'little', signed=True))
+    for c in range(n):
+        r = d[offset(0x537e2c + c * 0xde):][:0xde]
+        if not r[0xa4] or m1 >> c & 1:
+            continue
+        cx, cy = struct.unpack('<hh', r[:4])
+        if not any(0 <= cx + a < w and 0 <= cy + b < h and C[idx(cx + a, cy + b)] == c + 1
+                   and G[idx(cx + a, cy + b)] & 8 for a in (0, 1) for b in (0, 1)):
+            continue
+        dd = max(abs(cx - px), abs(cy - py))
+        if dd <= PRAD:
+            out[c] = dd
+    return out
+
+
 def detectar_v2(d, obras=None):
     """detectar() más los corredores al final: cada uno {'tramos': [(orden, seg)], 'principal': 0, 'lados',
-    'corredor': dd}."""
+    'corredor': dd, 'tipo', 'puerto'} (PUERTO: 'mar' = {ciudad: distancia} del lado 0)."""
     w, h, G, C, pas, vis = detectar(d, obras)
     corr, v2 = corredores(w, h, G, pas)
-    for s, dd in corr:
-        ld = lados_corredor(G, C, s, dd)
-        pas.append({'tramos': [((len(s), not any(G[i] & 0x10 for i in s)), s)], 'principal': 0,
-                    'lados': [(t, m) for t, m, _ in ld], 'corredor': dd})
+    for s, dd, tipo, P in corr:
+        ld = lados_corredor(G, C, s, dd, tipo)
+        lados = [(t, m) for t, m, _ in ld]
+        p = {'tramos': [((len(s), not any(G[i] & 0x10 for i in s)), s)], 'principal': 0, 'corredor': dd,
+             'tipo': tipo, 'puerto': P}
+        if tipo == 3:
+            p['mar'] = ciudades_puerto(d, G, C, P, lados[1][1])
+            lados[0] = (0, sum(1 << c for c in p['mar']))
+        p['lados'] = lados
+        pas.append(p)
     return w, h, G, C, pas, vis + v2
 
 
@@ -368,7 +432,7 @@ def comparar_v2(g):
                                                                      'pasos', g + '_v2.json')))['corredores']]
     w, h, G, C, pas, vis = detectar(d)
     corr, v = corredores(w, h, G, pas)
-    mio = [[xy(i) for i in s] for s, _ in corr]
+    mio = [[xy(i) for i in c[0]] for c in corr if c[2] == 1]
     ok = mio == ref
     print(f'{g}: pasos_v2 {len(ref)} corredores, modelo {len(mio)}; {v} visitas; {"IGUALES" if ok else "DISTINTOS"}')
     if not ok:

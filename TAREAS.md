@@ -1,13 +1,13 @@
 # Tareas del usuario
 
-Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 286).
+Cada tarea tiene un número fijo: no cambia aunque se resuelva. Las nuevas toman el número siguiente (hoy, la 287).
 `- [ ]` pendiente, `- [x]` cumplida; las cumplidas pasan a «Hecho» con su fecha y resultado.
 Esta es la lista completa. Las del Puente Warlords están en `puente-warlords\TAREAS.md` y figuran abajo en el
 orden sugerido como «Puente 1», «Puente 2». El repo Votacion no tiene tareas propias: las de la Votación y el
 Sorteo están acá (tarea 18).
 
 ## Orden sugerido
-1. **Tarea 285** (actualizar `C:\Warlords` para la MURALLA de la computadora).
+1. **Tarea 286** (actualizar `C:\Warlords` para la regla nueva de la MURALLA; reemplaza a la 285).
 2. **Tarea 266** (tope de construcciones de 64 a 512).
 3. **Tarea 267** (mirar los dibujos de los pasos para muros).
 4. **Tarea 257** (PC de Nico), en la próxima partida con él.
@@ -15,7 +15,8 @@ Sorteo están acá (tarea 18).
 6. **Tarea 216** (primer contacto con Slitherine): en espera hasta que la IA maneje bien las innovaciones.
 
 # Pendientes
-- [ ] **285.** MURALLA de la computadora en el ranking (vista-aliada **1.0.283.0**, 21/11/2026; tu pedido). Actualizar `C:\Warlords` con la opción 9. Desde esta versión, en las partidas del ranking, la computadora con Artificer o Engineer y una unidad con «Build» levanta MURALLA en los pasos obligados (sin rodeo por tierra) cuando la amenaza un enemigo sin voladores. Anotar si se ve a la computadora levantando MURALLA en un lugar que no tiene sentido.
+- [ ] **286.** Regla nueva de la MURALLA en el ranking (vista-aliada **1.0.284.0**, 21/11/2026; tu pedido). Actualizar `C:\Warlords` con la opción 9 (cubre también la 285). Desde esta versión la computadora con Artificer o Engineer, una unidad con «Build» y oro levanta MURALLA en pasos obligados, puentes y puertos cuando hay un enemigo cerca, aunque tenga voladores o ya haya una MURALLA enemiga. Anotar si se ve a la computadora levantando MURALLA en un lugar que no tiene sentido.
+- [x] **285.** MURALLA de la computadora en el ranking (vista-aliada **1.0.283.0**, 21/11/2026; tu pedido). Actualizar `C:\Warlords` con la opción 9. Desde esta versión, en las partidas del ranking, la computadora con Artificer o Engineer y una unidad con «Build» levanta MURALLA en los pasos obligados (sin rodeo por tierra) cuando la amenaza un enemigo sin voladores. Anotar si se ve a la computadora levantando MURALLA en un lugar que no tiene sentido.
 - [x] **284.** Tanda de control en Kor (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_Kor_A` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 64 partidas como la 195. Es la misma guardada de la 195 pero sin unidades que construyan: sirve para saber cuánto de lo que pasó en la 195 es por la MURALLA. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 196, sin ninguna MURALLA (como debe). Sin MURALLA la IA de prueba le gana a la original (6,2 contra 5,3 PV; 4,3 contra 3,9 ciudades); con MURALLA (tanda 195) perdía (5,6 contra 6,2). La diferencia es por la MURALLA: en los corredores de Kor empeora a la IA. No pasa al ranking.
 - [x] **283.** Tanda de MURALLAS en Kor (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_Kor_BDA` (ya está en `E:\Warlords-TEST\Warlords3\SAVES`), 64 partidas como la 193. Kor no tiene voladores y tiene corredores que la computadora de prueba elige. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 195: 336 bloques de MURALLA (219 en corredores). La IA de prueba terminó peor que la original (5,6 contra 6,2 PV), cuando en Kor sin MURALLA le ganaba. Falta el control con la misma guardada (tarea 284) para saber si es por la MURALLA.
 - [x] **282.** Tanda de MURALLAS en corredores (vista-aliada **1.0.282.0**, 20/11/2026; ia\PENDIENTE-ia-muros.md, criterio v2). Desde Monitor-IA, lanzar una tanda con `Tanda_hex_control_BD` y `Tanda_hex_perfiles_BD`, 32 partidas como la 189. Ahora la computadora de prueba también puede levantar MURALLA en corredores. Avisame el número de tanda al terminar y la analizo yo. **Resultado (20/11/2026):** tanda 194, sin ninguna MURALLA, y es lo correcto: en Hexagon todos los enemigos tienen voladores, y ante ellos la MURALLA no sirve (regla del 19/11). No midió los corredores; se miden en Kor (tarea 283).

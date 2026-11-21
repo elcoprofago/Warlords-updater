@@ -27,7 +27,7 @@ def pasos_v2(guardada):
     for p in pas:
         seg = p['tramos'][p['principal']][1]
         if 'corredor' in p:
-            zs = [set(z) for _, _, z in mp_modelo.lados_corredor(G, C, seg, p['corredor'])]
+            zs = [set(z) for _, _, z in mp_modelo.lados_corredor(G, C, seg, p['corredor'], p['tipo'])]
         else:
             (_, _, z0), _ = mp_modelo.separa(G, C, seg)
             z0 = set(z0)

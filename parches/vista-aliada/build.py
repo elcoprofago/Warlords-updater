@@ -21532,7 +21532,7 @@ wo_out:
 # Índice de casilla con borde: i = (x + 1) * MP_P + (y + 1); el borde vale 0 en las grillas.
 MP_P, MP_XS = 162, 131
 MP_SZ = MP_XS * MP_P
-MP_CMAX, MP_PMAX, MP_TMAX, MP_GMAX = 5400, 64, 1024, 12
+MP_CMAX, MP_PMAX, MP_TMAX, MP_GMAX = 5400, 128, 1024, 12
 MP_MIN, MP_DIST, MP_HOR = 12, 20, 4
 MP_EVT = 51
 MP_BSS_OFF = 0x100000
@@ -21570,7 +21570,7 @@ MP_RODEO, MP_RODMAX, MP_ZONA, MP_CLMAX = 24, 96, 6, 1024
 MP_RV = mp_bss(4 * MP_SZ)
 MP_CL = mp_bss(32 * MP_CLMAX)
 MP_CVV = mp_bss(64)
-(CV_DD, CV_PP, CV_N, CV_ST, CV_NB, CV_NC, CV_NA) = (MP_CVV + 4 * k for k in range(7))
+(CV_DD, CV_PP, CV_N, CV_ST, CV_NB, CV_NC, CV_NA, CV_TY, CV_PO, CV_PT, CV_EM) = (MP_CVV + 4 * k for k in range(11))
 CV_B, CV_BX, CV_TMP = mp_bss(4 * 8), mp_bss(16), mp_bss(32)
 CV_AC = mp_bss(4 * MP_PMAX)
 assert _mp_off[0] <= 0x200000
@@ -21588,7 +21588,7 @@ def _mp_eq16(reg, off, addr, lbl):
     jne {lbl}''' for o in (0, 4, 8, 12))
 
 # mp_grid -> eax = 1, o 0 si el mapa no entra (más de 128 x 160). Grillas MP_G (1 tierra transitable, 2 candidata,
-# 4 costa, 8 puerto vecino, 0x10 camino), MP_C (ciudad + 1, con tamaño > 0) y MP_K (costo de 0x57d158). Candidata:
+# 4 costa, 8 puerto vecino, 0x10 camino, 0x20 puente: camino sobre agua, 0x40 casilla de puerto, en el agua), MP_C (ciudad + 1, con tamaño > 0) y MP_K (costo de 0x57d158). Candidata:
 # tierra que no es ciudad donde ob_okt(OB_MURO) acepta, o que ya tiene una MURALLA. Preserva todo.
 mp_grid = place('mp_grid', f'''
     pushad
@@ -21687,6 +21687,9 @@ mg_y:
     cmp al, 1
     jne mg_nr
     or byte ptr [ebx + {MP_G:#x}], 0x10
+    cmp word ptr [ecx + 0x535f0c], 1
+    jne mg_land
+    or byte ptr [ebx + {MP_G:#x}], 0x20
     jmp mg_land
 mg_nr:
     movzx eax, word ptr [ecx + 0x535f0c]
@@ -21726,6 +21729,7 @@ mg_water:
     mov al, 1
     test byte ptr [edx + 1], 0x40
     jz mg_w1
+    or byte ptr [ebx + {MP_G:#x}], 0x40
     mov al, 2
 mg_w1:
     mov byte ptr [ebx + {MP_AG:#x}], al
@@ -22347,13 +22351,118 @@ gp_3:
     ret
 ''')
 
-# mp_ctry: esi = casilla, ecx = largo, edx = paso (como mp_try). Si las dos puntas del tramo son intransitables y
-# cerrarlo obliga a un rodeo de más de MP_RODEO pasos, lo anota en MP_CL. Con largo 1 prueba horizontal y después
-# vertical (se queda con la primera). Clave: largo << 20 | sin camino << 19 | x << 11 | y << 3 | horizontal: el
-# orden de mp_modelo (largo, sin camino, casillas). Preserva todo.
+# mp_cport: esi = casilla, ecx = largo, edx = paso -> eax = la primera casilla de puerto (MP_G 0x40) vecina del tramo
+# cuyas vecinas de tierra están todas en el tramo (cerrarlo tapa el puerto), o 0. Preserva el resto.
+mp_cport = place('mp_cport', f'''
+    pushad
+    mov ebx, esi
+    mov ebp, ecx
+cpo_t:
+    xor edi, edi
+cpo_d:
+    mov eax, dword ptr [edi*4 + {MP_DV:#x}]
+    add eax, ebx
+    test byte ptr [eax + {MP_G:#x}], 0x40
+    jz cpo_dn
+    push edi
+    xor edi, edi
+cpo_e:
+    push eax
+    add eax, dword ptr [edi*4 + {MP_DV:#x}]
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz cpo_en
+    push ebx
+    push ecx
+    mov ebx, esi
+cpo_s:
+    cmp eax, ebx
+    je cpo_in
+    add ebx, edx
+    dec ecx
+    jnz cpo_s
+    pop ecx
+    pop ebx
+    pop eax
+    pop edi
+    jmp cpo_dn
+cpo_in:
+    pop ecx
+    pop ebx
+cpo_en:
+    pop eax
+    inc edi
+    cmp edi, 8
+    jb cpo_e
+    pop edi
+    jmp cpo_out
+cpo_dn:
+    inc edi
+    cmp edi, 8
+    jb cpo_d
+    add ebx, edx
+    dec ebp
+    jnz cpo_t
+    xor eax, eax
+cpo_out:
+    mov dword ptr [esp + 28], eax
+    popad
+    ret
+''')
+
+# mp_cbr: esi = casilla, ecx = largo, edx = paso -> eax = 1 si alguna vecina del tramo es puente (MP_G 0x20). Preserva
+# el resto.
+mp_cbr = place('mp_cbr', f'''
+    pushad
+cbr_t:
+    xor edi, edi
+cbr_d:
+    mov eax, dword ptr [edi*4 + {MP_DV:#x}]
+    add eax, esi
+    test byte ptr [eax + {MP_G:#x}], 0x20
+    jnz cbr_si
+    inc edi
+    cmp edi, 8
+    jb cbr_d
+    add esi, edx
+    dec ecx
+    jnz cbr_t
+    xor eax, eax
+    jmp cbr_out
+cbr_si:
+    mov eax, 1
+cbr_out:
+    mov dword ptr [esp + 28], eax
+    popad
+    ret
+''')
+
+# mp_ctry: esi = casilla, ecx = largo, edx = paso (como mp_try). Anota el tramo en MP_CL si es (en este orden):
+# 3 = PUERTO (cierra todas las vecinas de tierra de un puerto, mp_cport), 2 = PUENTE (vecino de un puente y, cerrado,
+# obliga a un rodeo de más de MP_RODEO pasos o a ninguno dentro de MP_RODMAX: mp_rod -1), o 1 = corredor de terreno
+# (las dos puntas intransitables y rodeo de más de MP_RODEO). Con largo 1 prueba horizontal y después vertical (se
+# queda con la primera). Clave: terreno << 31 | largo << 20 | sin camino << 19 | x << 11 | y << 3 | horizontal: los
+# puertos y puentes antes que los corredores de terreno, y entre sí el orden de mp_modelo (largo, sin camino,
+# casillas). +24 tipo, +26 casilla del puerto. Preserva todo.
 mp_ctry = place('mp_ctry', f'''
     pushad
 ct_t:
+    call {mp_cport:#x}
+    mov dword ptr [{CV_PO:#x}], eax
+    mov dword ptr [{CV_TY:#x}], 3
+    test eax, eax
+    jnz ct_add
+    mov dword ptr [{CV_TY:#x}], 2
+    call {mp_cbr:#x}
+    test eax, eax
+    jz ct_tr
+    call {mp_rod:#x}
+    test eax, eax
+    jz ct_n
+    cmp eax, {MP_RODEO}
+    jbe ct_n
+    jmp ct_add
+ct_tr:
+    mov dword ptr [{CV_TY:#x}], 1
     mov eax, esi
     sub eax, edx
     test byte ptr [eax + {MP_G:#x}], 1
@@ -22366,6 +22475,7 @@ ct_t:
     call {mp_rod:#x}
     cmp eax, {MP_RODEO}
     jle ct_n
+ct_add:
     mov edi, dword ptr [{CV_NC:#x}]
     cmp edi, {MP_CLMAX}
     jae ct_full
@@ -22380,6 +22490,10 @@ ct_rn:
     add eax, edx
     dec ebx
     jnz ct_r
+    cmp dword ptr [{CV_TY:#x}], 1
+    jne ct_nt
+    or ebp, 0x80000000
+ct_nt:
     mov eax, ecx
     shl eax, 20
     or ebp, eax
@@ -22404,6 +22518,10 @@ ct_v:
     mov word ptr [edi + 4], si
     mov byte ptr [edi + 6], cl
     mov byte ptr [edi + 7], bl
+    mov eax, dword ptr [{CV_TY:#x}]
+    mov byte ptr [edi + 24], al
+    mov eax, dword ptr [{CV_PO:#x}]
+    mov word ptr [edi + 26], ax
     lea eax, [edi + 4]
     add edi, 8
     call {mp_bx:#x}
@@ -22549,7 +22667,10 @@ cr_acc:
     inc dword ptr [{CV_NA:#x}]
     imul edi, eax, 64
     add edi, {MP_PAS:#x}
-    mov byte ptr [edi + 47], 1
+    movzx ecx, byte ptr [ebx + 24]
+    mov byte ptr [edi + 47], cl
+    movzx ecx, word ptr [ebx + 26]
+    mov dword ptr [edi + 52], ecx
     mov dword ptr [edi + 40], edx
     mov ecx, dword ptr [ebx]
     shr ecx, 19
@@ -22653,7 +22774,10 @@ vo_f:
 vo_t:
     test byte ptr [eax + {MP_G:#x}], 1
     jz vo_fn
+    push ecx
+    or ecx, dword ptr [{CV_PT:#x}]
     call {mp_vlab:#x}
+    pop ecx
 vo_fn:
     add edi, dword ptr [{CV_DD:#x}]
     dec edx
@@ -22661,6 +22785,23 @@ vo_fn:
     inc ecx
     cmp ecx, 2
     jb vo_g
+    cmp dword ptr [{CV_PT:#x}], 0
+    je vo_e
+    mov ecx, 1
+    mov eax, esi
+    sub eax, dword ptr [{CV_DD:#x}]
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz vo_e1
+    call {mp_vlab:#x}
+vo_e1:
+    mov eax, dword ptr [{CV_N:#x}]
+    sub eax, 2
+    imul eax, dword ptr [{CV_DD:#x}]
+    add eax, esi
+    test byte ptr [eax + {MP_G:#x}], 1
+    jz vo_e
+    call {mp_vlab:#x}
+vo_e:
     xor esi, esi
 vo_l:
     cmp esi, ebx
@@ -22683,6 +22824,105 @@ vo_vn:
     jmp vo_l
 vo_d:
     mov dword ptr [esp + 28], 0
+    popad
+    ret
+''')
+
+# mp_pside(ebx = paso de PUERTO): todas las tierras quedaron del lado 1 (mp_vor con CV_PT). El lado 0 es el mar: las
+# ciudades que no están en el lado 1, con una casilla vecina de puerto (MP_G 8) y a MP_PRAD casillas o menos del puerto
+# (Chebyshev desde su esquina). Llegan por barco: MP_PC +0 = esa distancia y costos 0; banderas del lado 0 = costa y
+# puerto. Preserva todo.
+MP_PRAD = 24
+mp_pside = place('mp_pside', f'''
+    pushad
+    imul edi, ebx, 64
+    add edi, {MP_PAS:#x}
+    mov byte ptr [edi + 45], 0xc
+    mov eax, dword ptr [edi + 52]
+    call {mp_xy:#x}
+    mov dword ptr [{CV_TMP:#x}], eax
+    mov dword ptr [{CV_TMP + 4:#x}], edx
+    imul ebp, ebx, {MP_PCS * 80}
+    add ebp, {MP_PC:#x}
+    movsx ecx, word ptr [0x537e2a]
+    cmp ecx, 80
+    jle ps_cn
+    mov ecx, 80
+ps_cn:
+    xor esi, esi
+ps_c:
+    cmp esi, ecx
+    jge ps_out
+    imul ebx, esi, 0xde
+    cmp byte ptr [ebx + 0x537ed0], 0
+    je ps_n
+    bt dword ptr [edi + 16], esi
+    jc ps_n
+    push ecx
+    xor ecx, ecx
+ps_t:
+    movsx eax, word ptr [ebx + 0x537e2c]
+    mov edx, ecx
+    shr edx, 1
+    add eax, edx
+    movsx edx, word ptr [ebx + 0x537e2e]
+    push ecx
+    and ecx, 1
+    add edx, ecx
+    pop ecx
+    test eax, eax
+    js ps_tn
+    cmp eax, dword ptr [{MP_W:#x}]
+    jge ps_tn
+    test edx, edx
+    js ps_tn
+    cmp edx, dword ptr [{MP_H:#x}]
+    jge ps_tn
+    inc eax
+    imul eax, eax, {MP_P}
+    lea eax, [eax + edx + 1]
+    lea edx, [esi + 1]
+    cmp byte ptr [eax + {MP_C:#x}], dl
+    jne ps_tn
+    test byte ptr [eax + {MP_G:#x}], 8
+    jnz ps_pt
+ps_tn:
+    inc ecx
+    cmp ecx, 4
+    jb ps_t
+    pop ecx
+    jmp ps_n
+ps_pt:
+    pop ecx
+    movsx eax, word ptr [ebx + 0x537e2c]
+    sub eax, dword ptr [{CV_TMP:#x}]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    push eax
+    movsx eax, word ptr [ebx + 0x537e2e]
+    sub eax, dword ptr [{CV_TMP + 4:#x}]
+    cdq
+    xor eax, edx
+    sub eax, edx
+    pop edx
+    cmp eax, edx
+    jge ps_mx
+    mov eax, edx
+ps_mx:
+    cmp eax, {MP_PRAD}
+    jg ps_n
+    bts dword ptr [edi], esi
+    imul edx, esi, {MP_PCS}
+    mov dword ptr [ebp + edx], eax
+    mov dword ptr [ebp + edx + 4], 0
+    mov dword ptr [ebp + edx + 8], 0
+    mov dword ptr [ebp + edx + 12], 0
+    mov dword ptr [ebp + edx + 16], 0
+ps_n:
+    inc esi
+    jmp ps_c
+ps_out:
     popad
     ret
 ''')
@@ -22715,6 +22955,10 @@ mp_post = place('mp_post', f'''
 pp_h:
     cmp byte ptr [edi + 47], 0
     je pp_s
+    xor eax, eax
+    cmp byte ptr [edi + 47], 3
+    sete al
+    mov dword ptr [{CV_PT:#x}], eax
     call {mp_vor:#x}
 ''' + '\n'.join(f'''    mov eax, dword ptr [{MP_RM + o:#x}]
     mov dword ptr [edi + {o}], eax''' for o in range(0, 32, 4)) + f'''
@@ -22944,6 +23188,12 @@ pt_n:
     inc ebx
     jmp pt_r
 pt_d:
+    mov ebx, dword ptr [{MP_PQ:#x}]
+    imul eax, ebx, 64
+    cmp byte ptr [eax + {MP_PAS + 47:#x}], 3
+    jne pt_x
+    call {mp_pside:#x}
+pt_x:
     popad
     ret
 ''')
@@ -23154,18 +23404,20 @@ mo_out:
     ret
 ''')
 
-# mp_pick(ebx = jugador de la computadora): regla v1 de ia\cerrar_paso.py. Condiciones: Artificer o Engineer, oro >=
-# AW_DIV x bd_price(OB_FRAC), y una unidad con «build» en sus 16 ranuras. Por paso (en el orden de pasos.py) y lado D
-# con ciudades propias: regla 5 (cerrado por MURALLA propia o aliada: no; empezado primero; MURALLA ajena después; se
-# construye en un tramo sin obras ajenas); amenaza = por cada bando no aliado con ciudades del otro lado O y ninguna en
-# D, sus ciudades de O que llegan al tramo en MP_HOR turnos (costo <= MP_HOR x movimiento de su unidad no voladora
-# más rápida con ese bono), x 2 si no puede rodear el paso por agua (barco común: puerto en los dos lados; «Landing»:
-# puerto en O y costa en D; «Raft»: costa en los dos), x 1 si puede, y x 0 si lo rodea por aire (produce voladores o
-# los tiene en el mapa; regla v2, 19/11/2026: la MURALLA no frena voladores, medido en las tandas 189 y 190).
-# Desde la 1.0.283.0 no elige los corredores de terreno (PAS+47 != 0; tanda 195: tienen rodeo y enemigos de los dos
-# lados, la MURALLA no frenó ningún ataque). Corredor, para el usuario (21/11/2026): puerto o puente que se rodea.
-# Descarta los que tienen la ciudad propia más cercana a más de MP_DIST casillas. Elige por (empezado, MURALLA ajena,
-# mayor amenaza, más cerca, tramo más corto); a igualdad, el primero. Deja mp_obj[p] = paso | lado << 8 | tramo << 16
+# mp_pick(ebx = jugador de la computadora): regla de ia\cerrar_paso.py (formulada por el usuario el 21/11/2026: la IA
+# construye cuando hay a la vez a) amenaza, b) paso o corredor defendible, c) oro, d) Artificer o Engineer, e) una
+# unidad con «build»; f) sin importar los voladores del enemigo; g) sin importar una MURALLA enemiga en el paso).
+# Condiciones: Artificer o Engineer, oro >= AW_DIV x bd_price(OB_FRAC), y una unidad con «build» en sus 16 ranuras.
+# Pasos: los obligados (cortes, +47 = 0) y los corredores de PUENTE (+47 = 2) y de PUERTO (+47 = 3; solo se protege
+# la tierra, lado 1, de lo que llega por mar, mp_pside); no los corredores de terreno (+47 = 1, tanda 195).
+# Por paso (en el orden de pasos.py) y lado D con ciudades propias: cerrado por MURALLA propia o aliada: no; un tramo
+# sirve si tiene alguna casilla vacía y ninguna obra que no sea MURALLA (la MURALLA ajena no lo impide); empezado
+# primero. Amenaza = por cada bando no aliado con ciudades del otro lado O y ninguna en D, sus ciudades de O que llegan
+# al tramo en MP_HOR turnos (costo <= MP_HOR x movimiento de su unidad no voladora más rápida con ese bono), x 2 si no
+# puede rodear el paso por agua (barco común: puerto en los dos lados; «Landing»: puerto en O y costa en D; «Raft»:
+# costa en los dos), x 1 si puede. Los voladores ya no la anulan (punto f).
+# Descarta los que tienen la ciudad propia más cercana a más de MP_DIST casillas. Elige por (empezado, mayor amenaza,
+# más cerca, tramo más corto); a igualdad, el primero. Deja mp_obj[p] = paso | lado << 8 | tramo << 16
 # (-1 si nada) y el evento 51 (x, y del primer bloque del tramo, n = amenaza * 100 + bloques). Preserva todo.
 mp_pick = place('mp_pick', f'''
     pushad
@@ -23300,8 +23552,8 @@ pk_p:
     mov esi, dword ptr [esi*4 + {MP_ORD:#x}]
     mov dword ptr [{MP_PQ:#x}], esi
     imul eax, esi, 64
-    cmp byte ptr [eax + {MP_PAS + 47:#x}], 0
-    jne pk_pn
+    cmp byte ptr [eax + {MP_PAS + 47:#x}], 1
+    je pk_pn
     mov dword ptr [{MP_AJ:#x}], 0
     xor edi, edi
     xor ebp, ebp
@@ -23322,24 +23574,38 @@ p5_r:
 p5_h:
     movzx edx, byte ptr [edx + 2]
     mov byte ptr [edi + {MP_TH:#x}], 0x80
+    mov dword ptr [{CV_EM:#x}], 0
 p5_c:
     push ecx
     mov eax, esi
     mov ecx, dword ptr [{MP_AJ:#x}]
+    push ecx
     call {mp_own:#x}
     mov dword ptr [{MP_AJ:#x}], ecx
     pop ecx
     cmp eax, 1
-    jb p5_cn
-    ja p5_ot
-    inc byte ptr [edi + {MP_TH:#x}]
-    jmp p5_cn
-p5_ot:
+    jb p5_em
+    je p5_pr
+    cmp ecx, dword ptr [{MP_AJ:#x}]
+    pop ecx
+    jne p5_cn
     and byte ptr [edi + {MP_TH:#x}], 0x7f
+    jmp p5_cn
+p5_em:
+    inc dword ptr [{CV_EM:#x}]
+    pop ecx
+    jmp p5_cn
+p5_pr:
+    pop ecx
+    inc byte ptr [edi + {MP_TH:#x}]
 p5_cn:
     add esi, ecx
     dec edx
     jnz p5_c
+    cmp dword ptr [{CV_EM:#x}], 0
+    jne p5_ce
+    and byte ptr [edi + {MP_TH:#x}], 0x7f
+p5_ce:
     pop edx
     pop esi
     mov al, byte ptr [edi + {MP_TH:#x}]
@@ -23359,6 +23625,11 @@ p5_d:
 pk_k:
     imul edi, dword ptr [{MP_PQ:#x}], 64
     add edi, {MP_PAS:#x}
+    cmp byte ptr [edi + 47], 3
+    jne pk_k3
+    cmp dword ptr [{MP_KK:#x}], 0
+    je pk_kn
+pk_k3:
     mov ebp, dword ptr [{MP_KK:#x}]
     shl ebp, 4
     add ebp, edi
@@ -23456,8 +23727,6 @@ pk_xon:
     jz pk_xz
     mov eax, edx
     shl eax, 5
-    cmp dword ptr [eax + {MP_E + 20:#x}], 0
-    jne pk_xz
     mov ecx, dword ptr [eax + {MP_E + 16:#x}]
     imul eax, dword ptr [{MP_PQ:#x}], 64
     add eax, {MP_PAS:#x}
@@ -23556,10 +23825,6 @@ pk_td:
     cmp eax, 1
     sbb eax, eax
     and eax, 0x20000
-    cmp dword ptr [{MP_AJ:#x}], 0
-    jne pk_aj
-    or eax, 0x10000
-pk_aj:
     mov ecx, dword ptr [{MP_TOT:#x}]
     cmp ecx, 255
     jbe pk_t255
