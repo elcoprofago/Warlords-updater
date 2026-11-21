@@ -23162,6 +23162,8 @@ mo_out:
 # más rápida con ese bono), x 2 si no puede rodear el paso por agua (barco común: puerto en los dos lados; «Landing»:
 # puerto en O y costa en D; «Raft»: costa en los dos), x 1 si puede, y x 0 si lo rodea por aire (produce voladores o
 # los tiene en el mapa; regla v2, 19/11/2026: la MURALLA no frena voladores, medido en las tandas 189 y 190).
+# Desde la 1.0.283.0 no elige los corredores de terreno (PAS+47 != 0; tanda 195: tienen rodeo y enemigos de los dos
+# lados, la MURALLA no frenó ningún ataque). Corredor, para el usuario (21/11/2026): puerto o puente que se rodea.
 # Descarta los que tienen la ciudad propia más cercana a más de MP_DIST casillas. Elige por (empezado, MURALLA ajena,
 # mayor amenaza, más cerca, tramo más corto); a igualdad, el primero. Deja mp_obj[p] = paso | lado << 8 | tramo << 16
 # (-1 si nada) y el evento 51 (x, y del primer bloque del tramo, n = amenaza * 100 + bloques). Preserva todo.
@@ -23297,6 +23299,9 @@ pk_p:
     push esi
     mov esi, dword ptr [esi*4 + {MP_ORD:#x}]
     mov dword ptr [{MP_PQ:#x}], esi
+    imul eax, esi, 64
+    cmp byte ptr [eax + {MP_PAS + 47:#x}], 0
+    jne pk_pn
     mov dword ptr [{MP_AJ:#x}], 0
     xor edi, edi
     xor ebp, ebp
@@ -23621,7 +23626,8 @@ place_data('mp_sym', b'MPSYM\0\0\0' + struct.pack('<16I', mp_scan, mp_pick, mp_g
 # (código MPW_CODE, valor MPW_VAL) a una pila con «build»; mw_go la lleva al primer bloque libre del tramo y, parada
 # ahí, manda la misma orden de red que el humano (BD_PKT con 0x4000 | dirección << 8 | OB_MURO), que bd_recv cobra y
 # pone en todas las PC. Un bloque por pila y por turno; mp_pick vuelve a elegir al empezar cada turno.
-# Por ahora solo los colores en prueba de una tanda (IA.INI, IA_MODE = 1): todavía no pasó por el banco (CLAUDE.md).
+# Desde la 1.0.283.0 (pedido del usuario del 21/11/2026) también sin IA.INI: es IA estándar del ranking. Con IA.INI,
+# solo los colores en prueba (IA_MODE = 1).
 MW_PW = place_data('mw_pw', bytes(4))
 # mw_hasb(p, x, y) cdecl -> eax = 1 si algún ejército vivo de p en (x, y) tiene «build». Preserva el resto.
 mw_hasb = place('mw_hasb', f'''
@@ -23734,8 +23740,6 @@ mw_ev = place('mw_ev', f'''
     movsx ebx, word ptr [0x4fb0ec]
     cmp ebx, 8
     jae mwe_no
-    cmp byte ptr [{IA_ON:#x}], 0
-    je mwe_no
     cmp byte ptr [ebx + {IA_MODE:#x}], 1
     jne mwe_no
     push dword ptr [esp + 0x18]

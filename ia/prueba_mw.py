@@ -3,7 +3,7 @@
 Con cada guardada (y su variante forzada de prueba_mp_scan), para cada color que elige un paso (mp_pick):
 - mw_ev desde la casilla de una pila suya con «build» tiene que proponer MPW_CODE, con la distancia de rey hasta el
   primer bloque del tramo elegido; y mw_tile tiene que dar ese bloque con la dirección del tramo (E o N).
-Controles (cada uno tiene que dar -1): sin tanda (IA_ON = 0), color original (IA_MODE = 0), sin oro, casilla sin pila
+Controles (cada uno tiene que dar -1; sin IA.INI, desde la 1.0.283.0, propone): color original (IA_MODE = 0), sin oro, casilla sin pila
 con «build», tramo entero con MURALLA propia. Y uno que tiene que cambiar el bloque: MURALLA en el primer bloque del
 tramo -> mw_tile da el segundo.
 Lo que no se emula: mw_go (mover la pila y mandar BD_PKT); eso se ve en el juego (TAREAS).
@@ -24,7 +24,7 @@ ARMY = 0x54fe50
 
 def simbolos(exe):
     """ai_brreb empieza con cmp word [esp+4], MPW_CODE; jl; jmp [MW_VEC]. MW_VEC = (mw_go, mw_ev). En mw_ev:
-    cmp byte [IA_ON], 0 y cmp byte [ebx + IA_MODE], 1. mw_tile es el primer call de mw_ev después de mw_hasb."""
+    cmp byte [ebx + IA_MODE], 1 (IA_ON = IA_MODE + 8). mw_tile es el primer call de mw_ev después de mw_hasb."""
     img = open(exe, 'rb').read()
     import pefile
     pe = pefile.PE(data=img)
@@ -36,8 +36,8 @@ def simbolos(exe):
     vec = struct.unpack_from('<I', img, o + 11)[0]
     go, ev = struct.unpack_from('<II', img, off(vec))
     e = off(ev)
-    on = struct.unpack_from('<I', img, img.find(b'\x80\x3d', e) + 2)[0]
     mode = struct.unpack_from('<I', img, img.find(b'\x80\xbb', e) + 2)[0]
+    on = mode + 8     # ia_on va justo después de ia_mode (8 bytes); desde la 1.0.283.0 mw_ev ya no lo mira
     calls = []
     i = e
     while len(calls) < 2:
@@ -147,7 +147,9 @@ def probar(exe, g, S):
             print(f'   control {nombre}: {"bien" if bien else "MAL " + str(r)}')
             return bien
         nada = lambda: None
-        ok &= control('sin tanda (IA_ON = 0)', lambda: mu.mem_write(on, b'\0'), lambda: mu.mem_write(on, b'\1'))
+        # desde la 1.0.283.0 la MURALLA es IA del ranking: sin IA.INI (IA_ON = 0, IA_MODE = 1) también propone
+        ok &= control('sin IA.INI (ranking: IA_ON = 0) propone', lambda: mu.mem_write(on, b'\0'),
+                      lambda: mu.mem_write(on, b'\1'), espera=MPW_CODE)
         ok &= control('color original (IA_MODE = 0)', lambda: mu.mem_write(mode + p, b'\0'),
                       lambda: mu.mem_write(mode + p, b'\1'))
         oro = bytes(mu.mem_read(P.ORO + p * P.SIDE, 4))

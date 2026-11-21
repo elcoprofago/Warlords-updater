@@ -214,6 +214,10 @@ def analizar(guardada, partida=None, turno=None, ob=None):
             r['eliminado'] = True
         amigos = {p} | ali[p]
         for P in pas:
+            # Desde vista-aliada 1.0.283.0 (21/11/2026) mp_pick no elige los corredores de terreno: tienen rodeo y
+            # enemigos de los dos lados (tanda 195). Corredor, para el usuario: puerto o puente que se rodea.
+            if P.get('corredor'):
+                continue
             # Regla 5, con todos los tramos que cortan las mismas ciudades (pasos.detectar(todos=True)):
             # - uno cerrado entero con MURALLA del bando o de sus aliados: el paso está cerrado, no se elige;
             # - MURALLA ajena (de un bando que no es aliado) en alguno: señal de que el paso importa (usuario,

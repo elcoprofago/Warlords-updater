@@ -747,6 +747,10 @@ que se mide con partidas reales en el banco de simulación (capítulo XIV).</p>
   <li><b>Asaltos a ciudades:</b> desde la versión 1.0.255.0 no asalta una ciudad (con muralla o sin ella) si su
   probabilidad de victoria es menor de 20 %. Por debajo de ese número los asaltos se pierden casi siempre. En 128
   partidas del banco perdió un 10 % menos de ejércitos, sin jugar peor.</li>
+  <li><b>Murallas en los pasos:</b> desde la versión 1.0.283.0, también en las partidas del ranking, la computadora
+  que tiene Artificer o Engineer, una unidad con «Build» y oro suficiente levanta MURALLA en los pasos obligados del
+  mapa (los que no se pueden rodear por tierra) cuando un enemigo sin voladores amenaza sus ciudades por ahí. No la
+  levanta en los corredores de terreno que tienen rodeo.</li>
 </ul>
 <h2>Lo que todavía no hace</h2>
 <ul>
@@ -1077,6 +1081,7 @@ partidas; <span class="estado e-dev">en desarrollo</span> = incompleto.</p>
 <h1><span class="num">Apéndice E</span>Historial de versiones</h1>
 <p>Lo que cambió en cada versión del parche, de la más nueva a la más vieja.</p>
 <table>
+<tr><td>1.0.283.0</td><td>21/11/2026</td><td>IA: la MURALLA en los pasos obligados pasa a las partidas normales y del ranking. Deja de elegir los corredores de terreno que se rodean (en el banco no frenaron ningún ataque).</td></tr>
 <tr><td>1.0.282.0</td><td>20/11/2026</td><td>IA (solo colores en prueba): además de los pasos de antes, elige para la MURALLA los corredores, donde rodearlos cuesta un camino largo (criterio v2).</td></tr>
 <tr><td>1.0.281.0</td><td>19/11/2026</td><td>IA (solo colores en prueba): no levanta MURALLA en un paso que el enemigo puede rodear volando; la MURALLA no frena a los voladores.</td></tr>
 <tr><td>1.0.280.0</td><td>19/11/2026</td><td>La mina que cae al derribar un puente suena «splash» también en la PC de quien derriba el puente (antes solo en la de su dueño o de quien la había descubierto, y no se oía).</td></tr>
