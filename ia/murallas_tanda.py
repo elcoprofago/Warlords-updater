@@ -9,17 +9,50 @@
 # Control: el mismo paso elegido (evento 51) por un color original, que elige pero no construye; se mide igual
 # desde su primer turno de elección.
 # Uso: python ia\murallas_tanda.py 189 [Tanda_hex_perfiles]   (el segundo, el .json de pasos del mapa)
+#      python ia\murallas_tanda.py 195 Tanda_Kor_BDA --v2   (pasos v2 como los arma el juego: cortes y corredores,
+#      con sus lados, calculados de esa guardada con mp_modelo.detectar_v2)
 import json, os, sqlite3, sys
 from collections import defaultdict
 
-import ciudades, tanda
+import ciudades, mp_modelo, tanda
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
 
-def main(t, mapa):
+def pasos_v2(guardada):
+    d = open(os.path.join(tanda.JUEGO, 'SAVES', guardada + '.SAV'), 'rb').read()
+    _, _, G, C, pas, _ = mp_modelo.detectar_v2(d)
+    cs = ciudades.leer(d)
+    out = []
+    for p in pas:
+        seg = p['tramos'][p['principal']][1]
+        if 'corredor' in p:
+            zs = [set(z) for _, _, z in mp_modelo.lados_corredor(G, C, seg, p['corredor'])]
+        else:
+            (_, _, z0), _ = mp_modelo.separa(G, C, seg)
+            z0 = set(z0)
+            # el otro lado: lo alcanzable desde el tramo sin pasar por z0
+            vis, q = set(seg) | z0, [j for s in seg for dv in mp_modelo.DV for j in [s + dv] if G[j] & 1 and j not in z0 and j not in seg]
+            vis |= set(q); k = 0
+            while k < len(q):
+                i = q[k]; k += 1
+                for dv in mp_modelo.DV:
+                    j = i + dv
+                    if G[j] & 1 and j not in vis:
+                        vis.add(j); q.append(j)
+            zs = [z0, set(q)]
+        lados = []
+        for z in zs:
+            zc = {mp_modelo.xy(i) for i in z}
+            lados.append({'casillas': len(z), 'ciudades': [n for n, c in enumerate(cs) if c.get('tam', 1) and
+                                                          any(t in zc for t in ((c['x'] + a, c['y'] + b) for a in (0, 1) for b in (0, 1)))]})
+        out.append({'tramo': [list(mp_modelo.xy(i)) for i in seg], 'lados': lados, 'corredor': 'corredor' in p})
+    return out
+
+
+def main(t, mapa, v2=False):
     db = sqlite3.connect(os.path.join(AQUI, 'datos.db'))
-    pasos = json.load(open(os.path.join(AQUI, 'pasos', mapa + '.json')))
+    pasos = pasos_v2(mapa) if v2 else json.load(open(os.path.join(AQUI, 'pasos', mapa + '.json')))
     de_casilla = {tuple(c): k for k, p in enumerate(pasos) for c in p['tramo']}
     guard = {}
     filas = {'P': [], 'O': []}
@@ -98,7 +131,7 @@ def main(t, mapa):
             por[f['paso']].append(f)
         for k in sorted(por):
             g = por[k]
-            print(f"  paso {k:2} ({pasos[k - 1]['tramo'][0]}, {len(pasos[k - 1]['tramo'])} bl): {len(g)} casos, "
+            print(f"  paso {k:2}{' C' if pasos[k - 1].get('corredor') else '  '} ({pasos[k - 1]['tramo'][0]}, {len(pasos[k - 1]['tramo'])} bl): {len(g)} casos, "
                   f"completos {sum(f['completo'] for f in g)}, ciudades {sum(f['ciudades'] for f in g)}, "
                   f"ataques {sum(f['ataques'] for f in g)}, perdidas {sum(f['perdidas'] for f in g)}, "
                   f"cerrado {sum(f['ataques_cerrado'] for f in g)}, al muro {sum(f['al_muro'] for f in g)}, "
@@ -106,4 +139,5 @@ def main(t, mapa):
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else 'Tanda_hex_perfiles')
+    a = [x for x in sys.argv[1:] if x != '--v2']
+    main(int(a[0]), a[1] if len(a) > 1 else 'Tanda_hex_perfiles', '--v2' in sys.argv)
